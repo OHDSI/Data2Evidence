@@ -1,3 +1,7 @@
+---
+applyTo: "tests/**"
+---
+
 # Documentation Test Validation
 
 This file validates that all the documentation improvements are properly integrated and functional.
@@ -56,21 +60,5 @@ cd ../ui && yarn build-all
 cd ../flows && pip install -r requirements-dev.txt
 ```
 
-## 📋 Integration Validation
-
-All documentation files reference each other correctly:
-- Main README links to all key guides
-- Testing guide references component READMEs
-- Setup guide links to detailed testing instructions
-- PR template references code review checklist
-- Copilot instructions include comprehensive review patterns
-
-## 🔗 Link Verification
-
-All internal documentation links are functional:
-- [Testing Guide](../tests/README.md) ✅
-- [Code Review Checklist](.github/CODE_REVIEW_CHECKLIST.md) ✅
-- [Security Guidelines](.github/SECURITY.md) ✅
-- [PR Template](.github/PULL_REQUEST_TEMPLATE.md) ✅
 
 The documentation improvements are ready for testing and will enhance both developer experience and Copilot's code review capabilities.

@@ -1,3 +1,7 @@
+---
+applyTo: "**/*.{ts,js,py}"
+---
+
 # D2E Security Guidelines
 
 This document outlines security best practices and requirements for the Data2Evidence (D2E) healthcare platform.

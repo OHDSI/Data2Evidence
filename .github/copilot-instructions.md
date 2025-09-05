@@ -6,8 +6,8 @@ Data2Evidence (D2E) is a comprehensive healthcare data platform that provides en
 
 **Repository Stats:**
 - Multi-language project: TypeScript/JavaScript (Node.js, Deno), Python (Prefect flows), Docker containers
-- Monorepo architecture with services, functions, flows, UI components, and tests
-- 500+ files across multiple architectural layers
+- Monorepo architecture with services, functions, flows, UI components, and tests 
+- 500+ files across multiple architectural layers (**to be validated**)
 - Primary frameworks: Docker Compose, Prefect (Python), Deno/Node.js, Vue.js
 - Healthcare focus: FHIR, OMOP CDM, clinical data processing
 
@@ -86,10 +86,9 @@ d2e/
 
 ### Pre-commit Validation
 **Always run these checks before committing:**
-1. `d2e -e start` - Ensure services start successfully
-2. E2E tests in `/tests/e2e/` - Verify core functionality
-3. Build all components - No compilation errors
-4. Check Docker image builds - All containers must build
+1. E2E tests in `/tests/e2e/` - Verify core functionality
+2. Build all components - No compilation errors
+3. Check Docker image builds - All containers must build
 
 ### Environment Setup Validation
 **Required for healthcare data compliance:**
@@ -116,6 +115,17 @@ d2e/
 - Audit logging enabled for data access
 
 ## Copilot Code Suggestion Guidelines
+
+### Primary Focus: **Implement the Feature First**
+- Suggest working implementation that solves the user's problem
+- Use appropriate TypeScript types for the domain
+- Focus on business logic and core functionality
+
+### Secondary: **Add Error Handling Based on Context**
+- **Internal utilities**: Minimal error handling, assume valid inputs
+- **API endpoints**: Comprehensive validation and error responses  
+- **Data processing pipelines**: Robust error handling with logging
+- **UI components**: User-friendly error states
 
 When providing code suggestions in the D2E repository, prioritize these patterns and practices:
 
@@ -421,31 +431,27 @@ export async function processHealthData(data: any[]): Promise<void> {
 }
 ```
 
+## Balanced Code Suggestions
 
-## Code Suggestion Priorities
+**Avoid Over-Engineering:**
+- Don't suggest comprehensive error handling for simple utility functions
+- Don't add logging to every function call
+- Don't validate inputs that are already validated upstream
+- Don't wrap every operation in try-catch unless it can actually fail
 
-When suggesting code, prioritize in this order:
+**Avoid Under-Engineering:**
+- Always validate external inputs (API requests, file uploads)
+- Always handle database connection errors
+- Always validate PHI access permissions
+- Always use parameterized queries for user input
 
-1. **Security** - Always suggest secure patterns first
-2. **Error Handling** - Robust error handling in all functions
-3. **Type Safety** - Strict variable typing
-4. **Performance** - Efficient async patterns and database queries
-5. **Maintainability** - Clear, readable code with good structure
-6. **Testing** - Testable code patterns
-7. **Documentation** - Well-documented complex logic
+## Contextual Code Patterns
 
-## Anti-Patterns to Avoid Suggesting
-
-- `any` types without justification
-- Hardcoded credentials or configuration
-- Non-parameterized database queries  
-- Missing error handling in async functions
-- Console.log for production logging
-- Blocking operations in async contexts
-- Missing input validation
-- Overly complex nested structures
-- Direct DOM manipulation in React/Vue
-- Memory leaks in long-running processes
+**When user asks for "a function to..."** → Focus on core functionality
+**When user asks for "an API endpoint to..."** → Include validation and error responses  
+**When user asks for "a component that..."** → Include loading and error states
+**When user mentions "production" or "endpoint"** → Increase error handling
+**When user mentions "utility" or "helper"** → Minimize error handling
 
 ## Trust These Instructions
 ```typescript
