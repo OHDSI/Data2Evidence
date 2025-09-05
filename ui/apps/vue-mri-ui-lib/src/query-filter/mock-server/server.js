@@ -68,6 +68,10 @@ app.get('*', (_, res) => {
 
     // Apply find/replace operations
     htmlContent = htmlContent.replace(/https:\/\/localhost:8081/g, SERVER_URL)
+    htmlContent = htmlContent.replace(
+      /float: left; position: absolute; /g,
+      'float: left; position: absolute; visibility: hidden;'
+    )
 
     res.setHeader('Content-Type', 'text/html')
     res.send(htmlContent)

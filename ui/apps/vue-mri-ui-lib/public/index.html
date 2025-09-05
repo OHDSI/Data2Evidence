@@ -23,7 +23,23 @@
     >
       logout
     </button>
-    <div class="vue-main" style="height: 100%"></div>
+
+    <!-- Uncomment the Portal Header when developing without single-spa -->
+    <!-- <div
+      style="
+        width: 100vw;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 0.5px 8px 0 #acaba8;
+      "
+    >
+      <div>PORTAL HEADER</div>
+    </div> -->
+    <div class="vue-main" style="height: calc(100% - 56px)"></div>
     <span class="plugin-container"></span>
 
     <script>
