@@ -17,7 +17,14 @@ For active development with hot-reload and Vue CLI dev tools:
 
 3. **Start the Vue CLI dev server**:
 
+   First change the vue proxy in vue.config.js
+
    ```bash
+   target: 'http://localhost:3001'
+   ```
+
+   ```bash
+
    nx serve vue-mri
    ```
 

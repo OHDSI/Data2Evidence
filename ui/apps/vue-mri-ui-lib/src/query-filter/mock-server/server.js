@@ -35,6 +35,8 @@ setupMockRoutes(app)
 app.use('/mri', express.static(path.join(__dirname, 'mri')))
 app.use('/js', express.static(path.join(__dirname, 'mri', 'js')))
 app.use('/css', express.static(path.join(__dirname, 'mri', 'css')))
+app.use('/img', express.static(path.join(__dirname, 'mri', 'img')))
+app.use('/fonts', express.static(path.join(__dirname, 'mri', 'fonts')))
 
 // Serve authenticate.js with modifications
 app.get('/authenticate.js', (_, res) => {
@@ -75,7 +77,7 @@ app.get('*', (_, res) => {
   }
 })
 
-const SERVER_URL = process.env.SERVER_URL || 'https://localhost:3001'
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3001'
 const PORT = new URL(SERVER_URL).port || 3001
 app.listen(PORT, () => {
   console.log(`Server URL replacement: https://localhost:8081 -> ${SERVER_URL}`)
