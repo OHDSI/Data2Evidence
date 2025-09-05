@@ -195,35 +195,6 @@ onMounted(() => {
   initializeComponent()
 })
 
-const applyFilters = () => {
-  try {
-    console.log('Applying filters:', getAllFilters())
-    alert('Filters applied! Check console for configuration.')
-  } catch (error: unknown) {
-    console.error('Error in applyFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-    alert('Error applying filters! Check console for details.')
-  }
-}
-
-const exportFilters = () => {
-  try {
-    const config = JSON.stringify(getAllFilters(), null, 2)
-    console.log('Exported configuration:', config)
-  } catch (error: unknown) {
-    console.error('Error in exportFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-  }
-}
-
 watch(
   () => {
     return props.atlasData
@@ -879,9 +850,7 @@ const saveAtlasCohort = async () => {
 
     <!-- Action Buttons -->
     <div v-if="showDebug" class="query-filter-actions">
-      <button class="btn btn-primary" @click="applyFilters">Apply Filters</button>
       <button class="btn btn-secondary" @click="clearFilters">Clear All</button>
-      <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
     <!-- Debug Output -->
