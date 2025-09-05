@@ -1,5 +1,6 @@
 const express = require('express')
 const cors = require('cors')
+const path = require('path')
 const setupWebapiRoutes = require('./webapi-routes')
 const setupMockRoutes = require('./mock-routes')
 const app = express()
@@ -30,9 +31,54 @@ setupWebapiRoutes(app)
 // Setup mock routes from external file
 setupMockRoutes(app)
 
-const PORT = process.env.PORT || 3001
+// Serve static files from PA-Atlas build
+app.use('/mri', express.static(path.join(__dirname, 'mri')))
+app.use('/js', express.static(path.join(__dirname, 'mri', 'js')))
+app.use('/css', express.static(path.join(__dirname, 'mri', 'css')))
+
+// Serve authenticate.js with modifications
+app.get('/authenticate.js', (_, res) => {
+  const fs = require('fs')
+  const authPath = path.join(__dirname, 'mri', 'authenticate.js')
+
+  try {
+    let jsContent = fs.readFileSync(authPath, 'utf8')
+
+    // Apply find/replace operations
+    jsContent = jsContent.replace(/const USE_MOCK_SERVER = false/g, 'const USE_MOCK_SERVER = true')
+    jsContent = jsContent.replace(/https:\/\/localhost:8081/g, SERVER_URL)
+
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+    res.send(jsContent)
+  } catch (error) {
+    console.error('Error serving authenticate.js:', error)
+    res.status(500).send('// Error loading authenticate.js')
+  }
+})
+
+// Catch-all handler: serve index.html for any unmatched route (SPA fallback)
+app.get('*', (_, res) => {
+  const fs = require('fs')
+  const indexPath = path.join(__dirname, 'mri', 'index.html')
+
+  try {
+    let htmlContent = fs.readFileSync(indexPath, 'utf8')
+
+    // Apply find/replace operations
+    htmlContent = htmlContent.replace(/https:\/\/localhost:8081/g, SERVER_URL)
+
+    res.setHeader('Content-Type', 'text/html')
+    res.send(htmlContent)
+  } catch (error) {
+    console.error('Error serving index.html:', error)
+    res.status(500).send('Error loading page')
+  }
+})
+
+const SERVER_URL = process.env.SERVER_URL || 'https://localhost:3001'
+const PORT = new URL(SERVER_URL).port || 3001
 app.listen(PORT, () => {
-  console.log(`Mock server running on port ${PORT}`)
+  console.log(`Server URL replacement: https://localhost:8081 -> ${SERVER_URL}`)
   console.log(`Available mock endpoints:`)
   console.log('  ✅ GET /oidc/auth')
   console.log('  ✅ GET /authenticate.js')
@@ -62,4 +108,7 @@ app.listen(PORT, () => {
   console.log('  🔄 GET /analytics-svc/api/services/bookmark (placeholder)')
   console.log('  🔄 GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e (placeholder)')
   console.log('  🔄 DELETE /d2e-webapi/cohortdefinition/1 (placeholder)')
+
+  console.log(`Mock server running on port ${PORT}`)
+  console.log(`Server URL: ${SERVER_URL}\n`)
 })

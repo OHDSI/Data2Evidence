@@ -30,7 +30,7 @@ const signinRedirect = async () => {
 const getUser = () => {
   return userManager.getUser()
 }
-if (!authToken) {
+if (!authToken && !USE_MOCK_SERVER) {
   signinRedirect()
 }
 

@@ -7,6 +7,7 @@
     "upgrade": "vue-cli-service upgrade",
     "build": "vue-cli-service build",
     "build:local": "VUE_APP_HOST=https://localhost:41000 vue-cli-service build",
+    "build:mock": "npm run build && cp -r ../../resources/mri src/query-filter/mock-server/ && cp public/authenticate.js src/query-filter/mock-server/mri/",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit",
     "test:ci": "vue-cli-service test:unit --maxWorkers=4 --coverage --reporters=\"jest-junit\""
