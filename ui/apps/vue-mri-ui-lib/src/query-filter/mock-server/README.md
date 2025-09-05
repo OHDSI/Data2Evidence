@@ -2,6 +2,58 @@
 
 This mock server provides a development environment for PA-Atlas (query-filter) with mock API endpoints and the ability to serve the built application.
 
+## Architecture Overview
+
+### Development Mode Routing
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────┐    ┌─────────────────┐
+│   Browser       │    │  Vue CLI Dev     │    │  Mock Server        │    │  Demo Atlas     │
+│   localhost:8081│◄──►│  Server          │◄──►│  localhost:3001     │◄──►│  Instance       │
+│                 │    │  (Hot Reload)    │    │  (API Endpoints)    │    │                 │
+│   - Vue App     │    │  - Serves UI     │    │  - Mock APIs        │    │  - Live Atlas   │
+│   - Dev Tools   │    │  - Proxy API     │    │  - CORS Headers     │    │  - WebAPI       │
+│   - Hot Reload  │    │  - Source Maps   │    │  - Proxy to Atlas   │    │  - Real Data    │
+└─────────────────┘    └──────────────────┘    └─────────────────────┘    └─────────────────┘
+                              │                         │
+                              └─── Proxy Config ───────┘
+                              target: 'http://localhost:3001'
+```
+
+### Built/Production Mode Routing
+
+```
+┌─────────────────────────────────────────────────────────────────────┐    ┌─────────────────┐
+│                        Mock Server (localhost:3131)                 │    │  Demo Atlas     │
+│                                                                     │◄──►│  Instance       │
+│  ┌─────────────────┐              ┌──────────────────────────────┐  │    │                 │
+│  │  Static Files   │              │       API Routes             │  │    │  - Live Atlas   │
+│  │                 │              │                              │  │    │  - WebAPI       │
+│  │  - Built UI     │              │  - Mock APIs                 │  │    │  - Real Data    │
+│  │  - Assets       │              │  - Data Responses            │  │    │                 │
+│  │  - Index HTML   │              │  - Proxy to Atlas            │  │    │                 │
+│  └─────────────────┘              └──────────────────────────────┘  │    │                 │
+│           │                                      │                  │    │                 │
+│           └──────── Single Express Server ───────┘                  │    │                 │
+└─────────────────────────────────────────────────────────────────────┘    └─────────────────┘
+```
+
+### Request Flow Comparison
+
+```
+Development Flow:
+Browser → Vue CLI Dev Server → Proxy → Mock Server → Response
+  │              │                        │
+  │              ├─ UI Assets (hot)       ├─ API Data (mock)
+  │              └─ Source Maps           └─ CORS Headers
+
+Production Flow:
+Browser → Mock Server → Response
+             │
+             ├─ UI Assets (built)
+             └─ API Data (mock)
+```
+
 ## Development Setup
 
 For active development with hot-reload and Vue CLI dev tools:
