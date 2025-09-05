@@ -203,6 +203,26 @@
     }
 
     .debug-column {
+      .debug-column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+
+        h4 {
+          margin: 0;
+          font-size: 14px;
+          color: #666;
+        }
+
+        .copy-button {
+          font-size: 12px;
+          padding: 4px 8px;
+          line-height: 1;
+          white-space: nowrap;
+        }
+      }
+
       h4 {
         margin: 0 0 8px 0;
         font-size: 14px;

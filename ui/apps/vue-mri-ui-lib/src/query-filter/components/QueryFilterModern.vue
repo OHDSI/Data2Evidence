@@ -711,6 +711,23 @@ const saveAtlasCohort = async () => {
     console.error('Error saving Atlas cohort:', error)
   }
 }
+
+const copyToClipboard = async (text: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    console.log(`${label} copied to clipboard`)
+  } catch (error) {
+    console.error(`Error copying ${label} to clipboard:`, error)
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    console.log(`${label} copied to clipboard (fallback method)`)
+  }
+}
 </script>
 
 <template>
@@ -858,12 +875,30 @@ const saveAtlasCohort = async () => {
       <h3>Debug Information</h3>
       <div class="debug-columns">
         <div class="debug-column">
-          <h4>Hierarchical Criteria JSON:</h4>
+          <div class="debug-column-header">
+            <h4>Hierarchical Criteria JSON:</h4>
+            <button
+              class="btn btn-sm btn-outline-primary copy-button"
+              @click="copyToClipboard(JSON.stringify(getAllFilters(), null, 2), 'Hierarchical Criteria JSON')"
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+          </div>
           <pre>{{ JSON.stringify(getAllFilters(), null, 2) }}</pre>
         </div>
 
         <div class="debug-column">
-          <h4>Atlas JSON:</h4>
+          <div class="debug-column-header">
+            <h4>Atlas JSON:</h4>
+            <button
+              class="btn btn-sm btn-outline-primary copy-button"
+              @click="copyToClipboard(JSON.stringify(convertToAtlasFormat(), null, 2), 'Atlas JSON')"
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+          </div>
           <pre>{{ JSON.stringify(convertToAtlasFormat(), null, 2) }}</pre>
         </div>
       </div>
