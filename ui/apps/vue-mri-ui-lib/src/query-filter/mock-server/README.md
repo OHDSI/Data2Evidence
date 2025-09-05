@@ -2,6 +2,19 @@
 
 This mock server provides a development environment for PA-Atlas (query-filter) with mock API endpoints and the ability to serve the built application.
 
+## Quick Start
+
+```bash
+# Build and bundle the application
+npm run build:mock
+
+# Start the server
+cd src/query-filter/mock-server
+node server.js
+```
+
+Then open `http://localhost:3001` in your browser.
+
 ## Architecture Overview
 
 ### Development Mode Routing
@@ -24,7 +37,7 @@ This mock server provides a development environment for PA-Atlas (query-filter) 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐    ┌─────────────────┐
-│                        Mock Server (localhost:3131)                 │    │  Demo Atlas     │
+│                        Mock Server (localhost:3001)                 │    │  Demo Atlas     │
 │                                                                     │◄──►│  Instance       │
 │  ┌─────────────────┐              ┌──────────────────────────────┐  │    │                 │
 │  │  Static Files   │              │       API Routes             │  │    │  - Live Atlas   │
@@ -119,6 +132,9 @@ For a production-like bundle that serves both the application and APIs from a si
 
    ```bash
    cd src/query-filter/mock-server
+   node server.js
+
+   # or with url specified (3001 by default)
    SERVER_URL=http://localhost:3131 node server.js
    ```
 
@@ -139,19 +155,6 @@ For a production-like bundle that serves both the application and APIs from a si
 - **`PORT`** (optional)
   - Overrides the port extracted from SERVER_URL
   - Only use if you need a different port than what's in SERVER_URL
-
-### Examples
-
-```bash
-# Run on port 8080
-SERVER_URL=http://localhost:8080 node server.js
-
-# Run with HTTPS
-SERVER_URL=https://localhost:3001 node server.js
-
-# Override port specifically
-SERVER_URL=http://localhost:8080 PORT=9000 node server.js
-```
 
 ## File Modifications
 
