@@ -1,44 +1,81 @@
-FROM python:3.10-slim
+ARG PYTHON_VERSION=3.12
 
-ARG BUILD_TYPE
+FROM python:${PYTHON_VERSION}-slim AS python-dependencies-build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libpq-dev \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    UV_PYTHON_DOWNLOADS=never
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /uvx /bin/
+
+WORKDIR /app
+
+# Install dependencies with uv into /app/venv
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=./search_embedding/uv.lock,target=uv.lock \
+    --mount=type=bind,source=./search_embedding/pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-editable --no-dev
+
+FROM python:${PYTHON_VERSION}-slim AS runtime
+
+ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_EXTENSIONS="postgres_scanner,fts,vss"
+
 ARG USER=docker
 ENV USER=${USER}
-ARG UID=1001
+ARG UID=1000
 ARG GID=1000
-RUN groupadd -g $GID ${USER}
-RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER}
+
+RUN groupadd -g $GID ${USER} \
+    && useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
+    # align with create_cachedb_plugin
+    && groupadd alp \
+    && adduser docker alp
+
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libpq5 \
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+
+COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
+
+RUN \
+    # Create output directory and set ownership
+    mkdir -p /output /app/duckdb_extensions /app/duckdb_data/cache \
+    && chown -R docker:docker /output /app/duckdb_extensions \
+    && chown -R docker:alp /app/duckdb_data/cache \
+    && chmod -R 755 /app/duckdb_extensions \
+    # Install DuckDB extensions
+    && chmod +x /app/download_duckdb_extensions.sh \
+    && cd /app/duckdb_extensions \
+    && /app/download_duckdb_extensions.sh "$DUCKDB_VERSION" "$DUCKDB_EXTENSIONS" \
+    && rm -f /app/download_duckdb_extensions.sh
+
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
+
+COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
+
+# Application files
+COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
+COPY --chown=docker:docker --chmod=711 ./search_embedding/search_embedding_plugin /app/flows/search_embedding_plugin
 
 WORKDIR /app
-RUN apt-get update && apt-get install libpq5 libpq-dev curl gcc g++ unzip wget -y --no-install-recommends && apt-get clean
 
-# Create folder to store duckdb extensions for offline plugins
-# version must match duckdb in requirements.txt
-ENV duckdb_version 1.2.1
-RUN mkdir -p /app/duckdb_extensions
-WORKDIR /app/duckdb_extensions
-RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \
-    && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/fts.duckdb_extension.gz \
-    && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/vss.duckdb_extension.gz \
-    && gzip -d postgres_scanner.duckdb_extension.gz \
-    && gzip -d fts.duckdb_extension.gz \
-    && gzip -d vss.duckdb_extension.gz
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+ENV INSTALL_SQLALCHEMY_HANA=false
 
-WORKDIR /app
-
-# Change owner of duckdb_data to align with create_cachedb_plugin
-RUN groupadd alp && \
-    adduser docker alp && \
-    mkdir -p ./duckdb_data && \
-    chown -R docker:alp ./duckdb_data
-
-COPY --chown=docker:docker  ./__init__.py .
-COPY --chown=docker:docker --chmod=711 ./search_embedding/requirements_search_embedding.txt .
-ENV RUN_TYPE=$BUILD_TYPE
-RUN if [ $BUILD_TYPE = 'OSS' ]; then sed -i '/sqlalchemy-hana/d' requirements*.txt; fi
-RUN pip install -r requirements_search_embedding.txt
-
-COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./search_embedding flows
-
-
-USER docker
+# USER docker
