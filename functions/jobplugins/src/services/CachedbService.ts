@@ -29,7 +29,7 @@ export class CachedbService {
 
     // Poll every 1 min up to 5 mins
     const POLL_INTERVAL_MS = 60000;
-    const MAX_ATTEMPTS = 5;
+    const MAX_ATTEMPTS = 10;
     let attempts = 0;
 
     let flowRun = await prefectApi.getFlowRun(flowRunId);
