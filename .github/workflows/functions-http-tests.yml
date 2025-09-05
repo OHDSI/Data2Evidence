@@ -146,6 +146,11 @@ jobs:
         run: |
           docker exec alp-minerva-postgres-1 printenv
 
+      - name: Print DEMO__DB_USER & DEMO__DB_PASSWORD
+        run: |
+          echo "DEMO__DB_USER: $(docker exec alp-trex printenv DEMO__DB_USER)"
+          echo "DEMO__DB_PASSWORD: $(docker exec alp-trex printenv DEMO__DB_PASSWORD)"
+
       - name: Login to logto and get Bearer token and sub
         run: |
           # Get sign in page
