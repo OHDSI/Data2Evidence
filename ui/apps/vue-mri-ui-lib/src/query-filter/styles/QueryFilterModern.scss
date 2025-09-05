@@ -235,9 +235,12 @@
         border-radius: 4px;
         padding: 12px;
         font-size: 11px;
-        overflow-x: auto;
         max-height: 400px;
         overflow-y: auto;
+        max-width: 100%;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
     }
   }
