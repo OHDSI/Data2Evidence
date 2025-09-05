@@ -1,56 +1,113 @@
-# Mock Server
+# PA-Atlas Mock Server
 
-Mock server for query filter UI component testing.
+This mock server provides a development environment for PA-Atlas (query-filter) with mock API endpoints and the ability to serve the built application.
 
-## Quick Start
+## Development Setup
+
+For active development with hot-reload and Vue CLI dev tools:
+
+1. **Configure authentication**:
+
+   - Set `USE_MOCK_SERVER = true` in `public/authenticate.js`
+
+2. **Configure single-spa wrapper** (optional):
+
+   - Set `isLocal: true` in `public/index.html` to disable single-spa wrapper
+   - Set `isLocal: false` to use single-spa wrapper
+
+3. **Start the Vue CLI dev server**:
+
+   ```bash
+   nx serve vue-mri
+   ```
+
+4. **Start the mock server** (in a separate terminal):
+   ```bash
+   cd src/query-filter/mock-server
+   npm start
+   ```
+
+This setup allows you to develop with Vue CLI's hot-reload while the mock server provides API endpoints on port 3001.
+
+## Mock Server Only
+
+To run just the mock server for API testing:
 
 ```bash
+cd src/query-filter/mock-server
 npm start
 ```
 
-Server runs on `http://localhost:3001`
+The mock server will start on port 3001 and provide mock API endpoints.
 
-## Update Mock Data
+## Combined Build Setup
 
-**For Analytics/Static Assets:**
+For a production-like bundle that serves both the application and APIs from a single server:
 
-1. Export new HAR file from Chrome DevTools Network tab
-2. Copy the entries from exported .har and append to `localhost1.har`
-3. Run: `npm run parse-har`
+1. **Build and bundle the application**:
 
-**For WebAPI Endpoints:**
+   ```bash
+   npm run build:mock
+   ```
 
-1. Add webapi network calls to `webapi.har`
-2. Run: `npm run parse-har` (new endpoints auto-added to `webapi-routes.js`)
-3. Customize endpoints in `webapi-routes.js` as needed
+   This command:
 
-## Scripts
+   - Builds the Vue application (`npm run build`)
+   - Copies built files to the mock server directory
+   - Copies `authenticate.js` with necessary modifications
+
+2. **Start the bundled server**:
+
+   ```bash
+   cd src/query-filter/mock-server
+   SERVER_URL=http://localhost:3131 node server.js
+   ```
+
+3. **Access the application**:
+   - Open your browser to `http://localhost:3131`
+   - The server will serve both the application and API endpoints
+
+## Configuration Options
+
+### Environment Variables
+
+- **`SERVER_URL`** (default: `https://localhost:3001`)
+
+  - Sets the base URL for the server
+  - Automatically extracts the port number for the server
+  - Used for URL replacement in mock data and served files
+
+- **`PORT`** (optional)
+  - Overrides the port extracted from SERVER_URL
+  - Only use if you need a different port than what's in SERVER_URL
+
+### Examples
 
 ```bash
-npm start          # Start mock server
-npm run parse-har  # Regenerate from HAR file
+# Run on port 8080
+SERVER_URL=http://localhost:8080 node server.js
+
+# Run with HTTPS
+SERVER_URL=https://localhost:3001 node server.js
+
+# Override port specifically
+SERVER_URL=http://localhost:8080 PORT=9000 node server.js
 ```
 
-## Files
+## File Modifications
 
-- `server.js` - Express mock server (auto-generated)
-- `mock-data.json` - Response data for mock endpoints (auto-generated)
-- `parse-har.js` - HAR file processor
-- `localhost1.har` - Network capture for analytics/static assets
-- `webapi.har` - Network capture for WebAPI endpoints
-- `webapi-routes.js` - Custom WebAPI endpoint handlers (customizable)
-- `extracted-endpoints.json` - Debug/analysis data (optional)
+The mock server automatically modifies certain files when serving:
 
-## Endpoints
+### `authenticate.js`
 
-**Mock Endpoints** (with real data):
+- Replaces `const USE_MOCK_SERVER = false` with `const USE_MOCK_SERVER = true`
+- Replaces `https://localhost:8081` with the current `SERVER_URL`
 
-- Analytics APIs: `/analytics-svc/api/*`
-- Auth: `/oidc/auth`
-- Static assets: `/ui/*`, `/js/*`, `/sap/*`
+### `index.html`
 
-**WebAPI Placeholders** (logs requests, returns 501):
+- Replaces `https://localhost:8081` with the current `SERVER_URL`
 
-- WebAPI: `/d2e-webapi/*`
+### Mock Data
 
-Mock server returns exact responses for analytics endpoints. WebAPI endpoints log requests and return placeholders until connected to real WebAPI server.
+- All mock API responses have URLs replaced dynamically
+- `https://localhost:8081` is replaced with the current `SERVER_URL`
