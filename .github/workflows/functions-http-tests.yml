@@ -113,6 +113,7 @@ jobs:
         run: |
           grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
           echo "USE_TREX_DB_CONN=true" >> $DOTENV_FILE
+          USE_TREX_DB_CONN=true
 
       - name: Build system services
         run: |
@@ -138,21 +139,21 @@ jobs:
         run: |
           docker ps -a
 
-      - name: Print alp-trex container env vars
-        run: |
-          docker exec alp-trex printenv
+      # - name: Print alp-trex container env vars
+      #   run: |
+      #     docker exec alp-trex printenv
 
-      - name: Print alp-minerva-postgres-1 container env vars
-        run: |
-          docker exec alp-minerva-postgres-1 printenv
+      # - name: Print alp-minerva-postgres-1 container env vars
+      #   run: |
+      #     docker exec alp-minerva-postgres-1 printenv
 
       - name: Print DEMO__DB_USER & DEMO__DB_PASSWORD
         run: |
           sudo apt install -y jq
           USERNAME=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
-          PWD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
+          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
           echo "DEMO__DB_USER: $USERNAME"
-          echo "DEMO__DB_PASSWORD: $PWD"
+          echo "DEMO__DB_PASSWORD: $PGPASSWORD"
 
       - name: Login to logto and get Bearer token and sub
         run: |
