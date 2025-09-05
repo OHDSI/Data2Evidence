@@ -53,7 +53,7 @@ export class CachedbService {
       FLOW_RUN_STATE_TYPES.CRASHED,
       FLOW_RUN_STATE_TYPES.CANCELLING,
       FLOW_RUN_STATE_TYPES.CANCELLED,
-      FLOW_RUN_STATE_TYPES.TIMED_OUT,
+      FLOW_RUN_STATE_TYPES.PAUSED,
       FLOW_RUN_STATE_TYPES.SUSPENDED,
       FLOW_RUN_STATE_TYPES.TIMED_OUT,
     ];
@@ -76,8 +76,8 @@ export class CachedbService {
       attempts++;
     }
 
-    if (flowRun.state_type === FlowRunState.COMPLETED) {
-      return flowRun.id;
+    if (flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED) {
+      return { flowRunId: flowRun.id };
     }
     throw new Error(
       `Flow run did not complete within the polling window. Final state: ${flowRun.state_type}`
