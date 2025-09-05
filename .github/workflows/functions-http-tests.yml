@@ -148,8 +148,11 @@ jobs:
 
       - name: Print DEMO__DB_USER & DEMO__DB_PASSWORD
         run: |
-          echo "DEMO__DB_USER: $(docker exec alp-trex printenv DEMO__DB_USER)"
-          echo "DEMO__DB_PASSWORD: $(docker exec alp-trex printenv DEMO__DB_PASSWORD)"
+          sudo apt install -y jq
+          USERNAME=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
+          PWD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
+          echo "DEMO__DB_USER: $USERNAME"
+          echo "DEMO__DB_PASSWORD: $PWD"
 
       - name: Login to logto and get Bearer token and sub
         run: |
