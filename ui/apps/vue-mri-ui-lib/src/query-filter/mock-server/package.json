@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js",
-    "parse-har": "node parse-har.js"
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "axios": "^1.11.0",

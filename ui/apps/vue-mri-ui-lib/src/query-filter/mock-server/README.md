@@ -5,7 +5,11 @@ This mock server provides a development environment for PA-Atlas (query-filter) 
 ## Quick Start
 
 ```bash
+# Install dependencies from ui folder
+yarn
+
 # Build and bundle the application
+cd d2e/ui/apps/vue-mri-ui-lib/src/query-filter
 npm run build:mock
 
 # Start the server
