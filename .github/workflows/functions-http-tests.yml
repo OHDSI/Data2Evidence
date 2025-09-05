@@ -324,6 +324,11 @@ jobs:
 
       - name: Print env vars
         run: |
+          sudo apt install -y jq
+          USERNAME=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
+          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
+          echo "DEMO__DB_USER: $USERNAME"
+          echo "DEMO__DB_PASSWORD: $PGPASSWORD"
           echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
