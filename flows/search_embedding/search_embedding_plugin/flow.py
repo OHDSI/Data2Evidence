@@ -19,7 +19,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
                   database_code=database_code, 
                   connect_to_duckdb=True)
     
-    duckdb_database_name = f"{database_code}"
+    duckdb_database_name = f"{database_code}.db"
     duckdb_file_path = f"{Variable.get('duckdb_data_folder')}/{duckdb_database_name}"
     vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
 
@@ -43,7 +43,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
 
             logger.info(f'{round(percent,2)} % completed')
 
-        if not check_duckdb_column_exists(conn, 'concept', 'concept_name_embedding'):
+        if not check_duckdb_column_exists(conn, f"{schema_name}.concept", 'concept_name_embedding'):
             conn.execute(f"""
                             ALTER TABLE {schema_name}.concept
                             ADD COLUMN concept_name_embedding FLOAT[384];
