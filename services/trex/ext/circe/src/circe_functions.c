@@ -63,10 +63,10 @@ static char* base64_decode(const char* input, size_t input_len, size_t* output_l
     if (!decoded) return NULL;
     
     for (size_t i = 0, j = 0; i < input_len;) {
-        uint32_t sextet_a = input[i] == '=' ? 0 & i++ : base64_decode_table[(int)input[i++]];
-        uint32_t sextet_b = input[i] == '=' ? 0 & i++ : base64_decode_table[(int)input[i++]];
-        uint32_t sextet_c = input[i] == '=' ? 0 & i++ : base64_decode_table[(int)input[i++]];
-        uint32_t sextet_d = input[i] == '=' ? 0 & i++ : base64_decode_table[(int)input[i++]];
+        uint32_t sextet_a = input[i] == '=' ? (i++, 0) : base64_decode_table[(int)input[i++]];
+        uint32_t sextet_b = input[i] == '=' ? (i++, 0) : base64_decode_table[(int)input[i++]];
+        uint32_t sextet_c = input[i] == '=' ? (i++, 0) : base64_decode_table[(int)input[i++]];
+        uint32_t sextet_d = input[i] == '=' ? (i++, 0) : base64_decode_table[(int)input[i++]];
 
         uint32_t triple = (sextet_a << 3 * 6) + (sextet_b << 2 * 6) + (sextet_c << 1 * 6) + (sextet_d << 0 * 6);
 
