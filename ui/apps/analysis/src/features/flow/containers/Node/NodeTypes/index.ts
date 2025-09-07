@@ -625,7 +625,6 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
         handleType: HandleIOType.Cohort,
       },
     ],
-    outputs: [{ handleType: HandleIOType.ModuleSpecification }],
   },
   cohort_node: {
     title: "Cohort Selection",
