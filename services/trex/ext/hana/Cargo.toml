@@ -20,7 +20,7 @@ path = "src/wasm_lib.rs"
 crate-type = ["staticlib"]
 
 [dependencies]
-duckdb = { version = "1.3.2", features = ["vtab-loadable"] }
+duckdb = { version = "1.3.2", features = ["vtab-loadable", "vscalar", "vtab-arrow"] }
 duckdb-loadable-macros = "0.1.5"
 libduckdb-sys = { version = "1.3.2", features = ["loadable-extension"] }
 hdbconnect = "0.31.0"  # Using older version compatible with current Cargo
