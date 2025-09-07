@@ -32,6 +32,7 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
 
 export DUCKDB_VERSION=v1.3.2
 echo "Building extension..."
+make configure
 make release -j8
 
 echo "Moving extension binary..."
