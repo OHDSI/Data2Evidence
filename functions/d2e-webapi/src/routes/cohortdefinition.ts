@@ -12,6 +12,8 @@ import {
   CohortDefinitionCopyResponseDto,
   CohortDefinitionResponseDto,
   GenerateCohortResponseDto,
+  ICohortDefinitionIdInfoResponseDto,
+  ICohortDefinitionCheckV2ResponseDto,
 } from "../dto/cohortdefinition.ts";
 import {
   createCohortDefinition,
@@ -220,7 +222,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
     },
     (_req, res) => {
       // TODO: ADD  LOGIC
-      const dummyresponse = [
+      const dummyresponse: ICohortDefinitionIdInfoResponseDto = [
         {
           id: {
             cohortDefinitionId: 1791707,
@@ -308,7 +310,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
     },
     (_req, res) => {
       // TODO: ADD  LOGIC
-      const dummyresult = {
+      const dummyresult: ICohortDefinitionCheckV2ResponseDto = {
         warnings: [
           // {
           //   type: "DefaultWarning",

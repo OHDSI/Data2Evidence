@@ -79,8 +79,8 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
 
 WORKDIR /app
 
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
-# COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 COPY --chown=docker:docker  ./__init__.py .
 
@@ -159,5 +159,7 @@ RUN rm flows/ner_extract_plugin/external/CUItoOHDSIv1.zip
 
 #White rabbit need to run as root user
 #USER docker
+
+ENV INSTALL_SQLALCHEMY_HANA=false
 
 ENTRYPOINT []

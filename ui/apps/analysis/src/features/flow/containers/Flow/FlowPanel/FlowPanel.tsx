@@ -231,13 +231,16 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       dispatch(setNode(newNode));
 
       let edge: EdgeState | undefined;
-      edge = {
-        id: uuidv4(),
-        source: newNode.id,
-        target: addNodeTypeDialog.selectedNodeId,
-        sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.selectedNodeHandleType}`,
-        targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.nodeHandleLabel}_${addNodeTypeDialog.selectedNodeHandleType}`,
-      };
+
+      if (addNodeTypeDialog.selectedNodeId) {
+        edge = {
+          id: uuidv4(),
+          source: newNode.id,
+          target: addNodeTypeDialog.selectedNodeId,
+          sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.selectedNodeHandleType}`,
+          targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.nodeHandleLabel}_${addNodeTypeDialog.selectedNodeHandleType}`,
+        };
+      }
 
       if (edge) {
         dispatch(setEdge(edge));

@@ -108,7 +108,17 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
 
             let mut responses = Vec::new();
 
-            for sql in queries {
+            for tmpsql in queries {
+                let mut sql = &tmpsql.replace("::regclass", "::string")
+        .replace("AND datallowconn AND NOT datistemplate", "AND NOT db.datname =('system') AND NOT db.datname =('temp')")
+        .replace("pg_get_expr(ad.adbin, ad.adrelid, true)","pg_get_expr(ad.adbin, ad.adrelid)")
+        .replace("pg_catalog.pg_relation_size(i.indexrelid)","''")
+        .replace("pg_catalog.pg_stat_get_numscans(i.indexrelid)","''")
+        .replace("pg_catalog.pg_inherits i,pg_catalog.pg_class c WHERE",
+        "(select 0 as inhseqno, 0 as inhrelid, 0 as inhparent) as i join pg_catalog.pg_class as c ON")
+        .replace("SELECT c.oid,c.*,t.relname as tabrelname,rt.relnamespace as refnamespace,d.description, null as consrc_copy",
+        "SELECT c.oid,t.relname  as tabrelname,rt.relnamespace as refnamespace,d.description, null as consrc_copy");
+
                 if sql.to_uppercase().starts_with("SELECT") || sql.to_uppercase().starts_with("WITH") {
                     let mut stmt = conn
                         .prepare(sql)
@@ -133,9 +143,15 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
                         stream::iter(data.into_iter()),
                     )));
                 } else {
-                    let affected_rows = conn.execute(sql, params![])
-                        .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
-                    responses.push(Response::Execution(Tag::new("OK").with_rows(affected_rows)));
+                    if sql.to_uppercase().starts_with("SET") 
+                    && (sql.to_uppercase().contains("EXTRA_FLOAT_DIGITS") 
+                        || sql.to_uppercase().contains("APPLICATION_NAME")) {
+                        responses.push(Response::Execution(Tag::new("OK")));
+                    } else {
+                        let affected_rows = conn.execute_batch(sql)
+                            .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                        responses.push(Response::Execution(Tag::new("OK").with_rows(0)));
+                    }
                 }
             }
 
@@ -207,9 +223,15 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
                     stream::iter(data.into_iter()),
                 )))
             } else {
-                let affected_rows = conn.execute(&query, params![])
-                    .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
-                Ok(Response::Execution(Tag::new("OK").with_rows(affected_rows)))
+                if query.to_uppercase().starts_with("SET") 
+                && (query.to_uppercase().contains("EXTRA_FLOAT_DIGITS") 
+                    || query.to_uppercase().contains("APPLICATION_NAME")) {
+                    Ok(Response::Execution(Tag::new("OK")))
+                } else {
+                    let affected_rows = conn.execute_batch(&query)
+                        .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                    Ok(Response::Execution(Tag::new("OK").with_rows(0)))
+                }
             }
         })
         .await

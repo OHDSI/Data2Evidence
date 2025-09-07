@@ -86,7 +86,7 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), r
 RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v1.0.0")' # https://github.com/OHDSI/Andromeda
 RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
 RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.5.1")' # https://github.com/OHDSI/Cyclops
-RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.35.0")' # https://github.com/rstudio/reticulate
+RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.41.0")' # https://github.com/rstudio/reticulate
 
 # OHDSI HADES
 # private d2e repo auth - ssh key
@@ -98,13 +98,14 @@ RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
 
 #RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
 # include a d2e version of Strategus - with CohortSurvival module integrated
+RUN Rscript -e 'remotes::install_github("darwin-eu/TreatmentPatterns@v3.1.1", upgrade = "never", dependencies=TRUE)'
 RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", upgrade = "never", dependencies=TRUE)'
 
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
 # Verify installation and fail if any are missing
-RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'CohortSurvival', 'CDMConnector', 'PatientProfiles', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
+RUN Rscript -e "required <- c('Hades', 'CohortGenerator', 'CohortIncidence', 'CohortSurvival', 'CDMConnector', 'PatientProfiles', 'Strategus', 'Characterization', 'CirceR', 'CohortDiagnostics', 'TreatmentPatterns', 'CohortMethod', 'FeatureExtraction', 'PatientLevelPrediction', 'SelfControlledCaseSeries', 'DatabaseConnector'); \
     installed <- rownames(installed.packages()); \
     missing <- setdiff(required, installed); \
     if (length(missing) > 0) { \
@@ -122,8 +123,8 @@ FROM base-build AS final-build
 ARG BUILD_TYPE
 WORKDIR /app
 
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
-COPY --chown=docker:docker  ./__init__.py .
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 COPY --chown=docker:docker --chmod=711 ./hades/requirements_hades.txt .
 ENV RUN_TYPE=$BUILD_TYPE
@@ -139,5 +140,7 @@ RUN rm -f .Renviron
 RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
+
+ENV INSTALL_SQLALCHEMY_HANA=false
 
 # USER docker
