@@ -322,6 +322,10 @@ jobs:
       #         -H 'referer: https://localhost:41100/portal/systemadmin/dataset-overview' \
       #         --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
 
+      - name: Print alp-trex env vars
+        run: |
+          echo $(docker exec alp-trex printenv)
+
       - name: Print env vars
         run: |
           sudo apt install -y jq
