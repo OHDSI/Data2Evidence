@@ -7,6 +7,7 @@ import {
   IPhenotypeCreateFlowRun,
   ICacheCreateFlowRun,
   ICacheStatusFlowRun,
+  IDQDResultFlowRun,
 } from "../type.d.ts";
 import { post, get } from "./request-util.ts";
 
@@ -74,6 +75,22 @@ export class JobPluginsAPI {
       return result.data;
     } catch (error) {
       console.error(`Error while creating DQD flow run: ${error}`);
+      throw error;
+    }
+  }
+
+  async getDqdFlowRunOverviewResults(dto: IDQDResultFlowRun) {
+    try {
+      this.logger.info(
+        `Get DQD flow run overview results for flow run: ${JSON.stringify(dto)}`
+      );
+
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dqd/data-quality/flow-run/${dto.flowRunId}/overview?datasetId=${dto.datasetId}`;
+      const result = await get(url, options);
+      return result.data;
+    } catch (error) {
+      console.error(`Error while checking results of DQD flow run: ${error}`);
       throw error;
     }
   }

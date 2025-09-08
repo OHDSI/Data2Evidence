@@ -129,10 +129,24 @@ export class DemoService {
 
     this.logger.info(`DQD flow-run created: ${JSON.stringify(result.data)}`);
 
-    // Wait for 5 minutes before returning result
-    await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000));
+    const flowRunId = result.flowRunId ? result : result.data;
 
-    return result.flowRunId ? result : result.data;
+    const dqdResults = await jobPluginsAPI.getDqdFlowRunOverviewResults({
+      flowRunId,
+      datasetId,
+    });
+
+    // Assert correctedPassPercentage is 94
+    const correctedPassPercentage =
+      dqdResults?.total?.total?.correctedPassPercentage;
+    if (correctedPassPercentage !== "94%" && correctedPassPercentage !== 94) {
+      throw new Error(
+        `DQD results assertion failed: correctedPassPercentage is ${correctedPassPercentage}, expected 94 or "94%"`
+      );
+    }
+
+    this.logger.info(`DQD flow-run results: ${JSON.stringify(dqdResults)}`);
+    return dqdResults ? dqdResults : dqdResults.data;
   }
 
   public async runDC(token: string, _input: any, progress?: IProgress) {

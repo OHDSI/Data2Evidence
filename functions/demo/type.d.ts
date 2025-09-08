@@ -74,6 +74,11 @@ export interface IDqdCreateFlowRun {
   releaseId?: string;
 }
 
+export interface IDQDResultFlowRun {
+  datasetId: string;
+  flowRunId: string;
+}
+
 export interface IDcCreateFlowRun {
   datasetId: string | undefined;
   comment?: string;
