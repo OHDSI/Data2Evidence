@@ -324,8 +324,11 @@ jobs:
 
       - name: Print alp-trex env vars
         run: |
-          echo $(docker exec alp-trex printenv)
+          echo "$(docker exec alp-trex printenv)"
 
+      - name: Print alp-demodb env vars
+        run: |
+          echo "$(docker exec alp-demodb printenv)"
       - name: Print env vars
         run: |
           sudo apt install -y jq
