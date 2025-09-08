@@ -7,6 +7,8 @@ import {
   markStatusAsDraft,
   replaceEdges,
   replaceNodes,
+  replaceVariables,
+  replaceImportLibs,
 } from "~/features/flow/reducers";
 
 export interface ImportFlowButtonProps {}
@@ -32,6 +34,8 @@ export const ImportFlowButton: FC<ImportFlowButtonProps> = () => {
 
           dispatch(replaceNodes(json.flow.nodes));
           dispatch(replaceEdges(json.flow.edges));
+          dispatch(replaceVariables(json.flow.variables));
+          dispatch(replaceImportLibs(json.flow.importLibs));
           dispatch(markStatusAsDraft());
         } catch (err) {
           console.error("Error parsing JSON:", err);
