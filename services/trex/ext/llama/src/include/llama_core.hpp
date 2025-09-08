@@ -154,7 +154,7 @@ struct BatchResult {
 
 class ContextPool {
 private:
-    std::queue<std::unique_ptr<ContextPoolEntry>> available_contexts_;
+    std::queue<ContextPoolEntry*> available_contexts_;  // Raw pointers, ownership in all_contexts_
     std::vector<std::unique_ptr<ContextPoolEntry>> all_contexts_;
     mutable std::mutex pool_mutex_;
     llama_model* model_;
@@ -258,6 +258,8 @@ public:
     
     PerformanceSnapshot GetMetrics() const;
     void ResetMetrics();
+    void Cleanup();
+    void ConfigureSampler(llama_sampler* sampler, const GenerationParams& params);
     std::string GetStatus() const;
     void SetMemoryLimit(size_t limit_mb);
     bool CheckMemoryHealth() const;

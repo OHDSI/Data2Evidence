@@ -1,5 +1,6 @@
 #include "include/llama_functions.h"
 #include "include/llama_core.hpp"
+#include "include/http_downloader.hpp"
 
 
 #include "llama.h"
@@ -583,13 +584,11 @@ char* cpp_llama_download_model(const char* source, const char* name, const char*
             return string_to_cstring(response);
         }
         
+        // Download using HttpDownloader
+        llama_capi::HttpDownloader::DownloadResult download_result = 
+            llama_capi::HttpDownloader::download_file(source_str, output_path);
         
-        std::string curl_command = "curl -L --fail --connect-timeout 30 --max-time 3600 " +
-                                 source_str + " -o " + output_path.string();
-        
-        int result = std::system(curl_command.c_str());
-        
-        if (result == 0 && std::filesystem::exists(output_path)) {
+        if (download_result.success && std::filesystem::exists(output_path)) {
             size_t file_size = std::filesystem::file_size(output_path);
             
             
@@ -618,11 +617,17 @@ char* cpp_llama_download_model(const char* source, const char* name, const char*
                 return string_to_cstring(response);
             }
         } else {
-            
+            // Download failed
             if (std::filesystem::exists(output_path)) {
                 std::filesystem::remove(output_path);
             }
-            return string_to_cstring("Error: Failed to download model from " + source_str + ". Check URL and network connection.");
+            std::string error_msg = "Error: Failed to download model from " + source_str + ".";
+            if (!download_result.error_message.empty()) {
+                error_msg += " " + download_result.error_message;
+            } else {
+                error_msg += " Check URL and network connection.";
+            }
+            return string_to_cstring(error_msg);
         }
     } catch (const std::exception& e) {
         return string_to_cstring(std::string("Error: ") + e.what());
@@ -827,11 +832,12 @@ char* cpp_llama_cleanup_contexts() {
     try {
         auto& mgr = get_manager();
         
-        mgr.ResetMetrics();
+        // Perform comprehensive cleanup
+        mgr.Cleanup();
         
         std::string json = "{";
         json += "\"status\": \"success\",";
-        json += "\"action\": \"metrics_reset\"";
+        json += "\"action\": \"comprehensive_cleanup\"";
         json += "}";
         
         return string_to_cstring(json);

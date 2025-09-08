@@ -51,8 +51,10 @@ if(ENABLE_LLAMA_CPP)
         # Ensure Position Independent Code (PIC) for shared library
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
         
-        # Enable common library for CURL support
-        set(LLAMA_BUILD_COMMON ON CACHE BOOL "Build common library for CURL support" FORCE)
+        # Disable CURL in llama.cpp since we use our own http_downloader
+        set(LLAMA_CURL OFF CACHE BOOL "Disable libcurl to use our own http_downloader" FORCE)
+        # Enable common library but without CURL dependency
+        set(LLAMA_BUILD_COMMON ON CACHE BOOL "Build common library without CURL dependency" FORCE)
         
         # GPU backend options - ALWAYS enable GPU support
         set(LLAMA_CUDA OFF CACHE BOOL "" FORCE)
@@ -145,19 +147,19 @@ endif()
 # Find required libraries
 find_package(OpenSSL REQUIRED)
 
-# Find CURL
-find_package(PkgConfig QUIET)
-if(PKG_CONFIG_FOUND)
-    pkg_check_modules(CURL libcurl)
-    if(CURL_FOUND)
-        set(CURL_AVAILABLE 1)
-        message(STATUS "CURL found: ${CURL_LIBRARIES}")
-    else()
-        message(STATUS "CURL not found via pkg-config")
-    endif()
-else()
-    message(STATUS "pkg-config not found, skipping CURL detection")
-endif()
+# CURL detection disabled - using our own http_downloader instead
+# find_package(PkgConfig QUIET)
+# if(PKG_CONFIG_FOUND)
+#     pkg_check_modules(CURL libcurl)
+#     if(CURL_FOUND)
+#         set(CURL_AVAILABLE 1)
+#         message(STATUS "CURL found: ${CURL_LIBRARIES}")
+#     else()
+#         message(STATUS "CURL not found via pkg-config")
+#     endif()
+# else()
+#     message(STATUS "pkg-config not found, skipping CURL detection")
+# endif()
 
 ###
 # Build Configuration
@@ -173,6 +175,7 @@ set(EXTENSION_SOURCES
     src/llama_functions.c
     src/llama_backend_bridge.cpp
     src/llama_core.cpp
+    src/http_downloader.cpp
     third_party/yyjson.c
 )
 
@@ -209,10 +212,10 @@ set(VISIBILITY_INLINES_HIDDEN ON)
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
-# Add CURL support define since we have it available  
-if(CURL_AVAILABLE)
-    target_compile_definitions(${TARGET_NAME} PRIVATE LLAMA_USE_CURL)
-endif()
+# CURL support disabled - using our own http_downloader instead
+# if(CURL_AVAILABLE)
+#     target_compile_definitions(${TARGET_NAME} PRIVATE LLAMA_USE_CURL)
+# endif()
 
 # Link basic libraries
 target_link_libraries(${TARGET_NAME} 
@@ -246,8 +249,8 @@ if(ENABLE_LLAMA_CPP)
     if(TARGET common)
         target_link_libraries(${TARGET_NAME} common)
         
-        # Ensure CURL support is enabled if common library is available
-        target_compile_definitions(${TARGET_NAME} PRIVATE LLAMA_USE_CURL)
+        # CURL support disabled - using our own http_downloader instead
+        # target_compile_definitions(${TARGET_NAME} PRIVATE LLAMA_USE_CURL)
     endif()
     
     # Add GPU backend libraries
@@ -265,10 +268,10 @@ if(ENABLE_LLAMA_CPP)
     endif()
 endif()
 
-# Link CURL if available
-if(CURL_AVAILABLE)
-    target_link_libraries(${TARGET_NAME} ${CURL_LIBRARIES})
-    target_compile_definitions(${TARGET_NAME} PRIVATE CURL_AVAILABLE=1)
-endif()
+# CURL linking disabled - using our own http_downloader instead
+# if(CURL_AVAILABLE)
+#     target_link_libraries(${TARGET_NAME} ${CURL_LIBRARIES})
+#     target_compile_definitions(${TARGET_NAME} PRIVATE CURL_AVAILABLE=1)
+# endif()
 
 message(STATUS "LLaMA C API extension configured successfully")
