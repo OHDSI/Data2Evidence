@@ -9,9 +9,15 @@ sudo apt-get install -y build-essential cmake python3 python3-pip pkg-config lib
 export DUCKDB_VERSION=v1.3.2
 echo "Building extension..."
 make configure
-make release -j8
+make
 
 echo "Moving extension binary..."
-mv build/release/extension/*/llama*_extension .
+if [ -f build/release/llama.duckdb_extension ]; then
+    cp build/release/llama.duckdb_extension ./llama.duckdb_extension
+    echo "Extension copied successfully"
+else
+    echo "Extension file not found, looking for alternatives..."
+    find build -name "*llama*.duckdb_extension" -exec cp {} ./llama.duckdb_extension \;
+fi
 
 echo "Build complete."

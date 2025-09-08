@@ -147,7 +147,7 @@ std::unique_ptr<ContextPoolEntry> ContextPool::CreateNewContext() {
     ctx_params.offload_kqv = config_.n_gpu_layers > 0;
     
     
-    llama_context* context = llama_new_context_with_model(model_, ctx_params);
+    llama_context* context = llama_init_from_model(model_, ctx_params);
     if (!context) {
         return nullptr;
     }
@@ -227,7 +227,7 @@ LoadedModel::~LoadedModel() {
     }
     
     if (model) {
-        llama_free_model(model);
+        llama_model_free(model);
         model = nullptr;  
     }
 }
@@ -339,7 +339,7 @@ bool SimpleModelManager::LoadModel(const std::string& model_name, const ModelCon
     model_params.use_mlock = config.use_mlock;
 
     
-    llama_model* model = llama_load_model_from_file(model_path.c_str(), model_params);
+    llama_model* model = llama_model_load_from_file(model_path.c_str(), model_params);
     if (!model) {
         std::cerr << "Failed to load model from: " << model_path << std::endl;
         return false;
