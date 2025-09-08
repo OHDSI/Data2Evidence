@@ -1,32 +1,66 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5...3.29)
+option(DUCKDB_WASM_EXTENSION "Whether compiling for Wasm target" OFF)
 
-# Set extension name here
-set(TARGET_NAME circe)
+###
+# Configuration
+###
+if(NOT DEFINED EXTENSION_NAME)
+    set(EXTENSION_NAME circe)
+endif()
+
+if (DEFINED TARGET_DUCKDB_VERSION_MAJOR)
+    add_definitions(-DDUCKDB_EXTENSION_API_VERSION_MAJOR=${TARGET_DUCKDB_VERSION_MAJOR})
+endif()
+if (DEFINED TARGET_DUCKDB_VERSION_MINOR)
+    add_definitions(-DDUCKDB_EXTENSION_API_VERSION_MINOR=${TARGET_DUCKDB_VERSION_MINOR})
+endif()
+if (DEFINED TARGET_DUCKDB_VERSION_PATCH)
+    add_definitions(-DDUCKDB_EXTENSION_API_VERSION_PATCH=${TARGET_DUCKDB_VERSION_PATCH})
+endif()
+
+add_definitions(-DDUCKDB_EXTENSION_NAME=${EXTENSION_NAME})
+
+if (DEFINED DUCKDB_EXTENSION_API_VERSION_UNSTABLE)
+    add_definitions(-DDUCKDB_EXTENSION_API_VERSION_UNSTABLE=${DUCKDB_EXTENSION_API_VERSION_UNSTABLE})
+endif()
+
+###
+# Build
+###
+project(${EXTENSION_NAME} LANGUAGES C CXX)
 
 # DuckDB's extension distribution supports vcpkg. As such, dependencies can be added in ./vcpkg.json and then
 # used in cmake with find_package. Feel free to remove or replace with other dependencies.
 # Note that it should also be removed from vcpkg.json to prevent needlessly installing it..
 find_package(OpenSSL REQUIRED)
 
-set(EXTENSION_NAME ${TARGET_NAME}_extension)
-set(LOADABLE_EXTENSION_NAME ${TARGET_NAME}_loadable_extension)
+# Create Extension library - updated for C API
+set(EXTENSION_SOURCES
+        src/circe_capi.c
+        src/circe_functions.c
+)
 
-project(${TARGET_NAME})
-include_directories(src/include)
+if (DUCKDB_WASM_EXTENSION)
+	add_library(${EXTENSION_NAME} STATIC ${EXTENSION_SOURCES})
+else()
+	add_library(${EXTENSION_NAME} SHARED ${EXTENSION_SOURCES})
+endif()
 
-# Ensure only circe_extension.cpp is referenced
-set(EXTENSION_SOURCES src/circe_extension.cpp)
+# Hide symbols
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(VISIBILITY_INLINES_HIDDEN ON)
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -s")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -s")
 
-build_static_extension(${TARGET_NAME} ${EXTENSION_SOURCES})
-build_loadable_extension(${TARGET_NAME} " " ${EXTENSION_SOURCES})
+# Include own headers
+target_include_directories(${EXTENSION_NAME} PRIVATE src/include)
 
-# Link OpenSSL in both the static library as the loadable extension
+# Include DuckDB C API headers
+target_include_directories(${EXTENSION_NAME} PRIVATE duckdb_capi)
+
+# Link OpenSSL
 target_link_libraries(${EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto)
-target_link_libraries(${LOADABLE_EXTENSION_NAME} OpenSSL::SSL OpenSSL::Crypto)
 
-
-install(
-  TARGETS ${EXTENSION_NAME}
-  EXPORT "${DUCKDB_EXPORT_SET}"
-  LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
-  ARCHIVE DESTINATION "${INSTALL_LIB_DIR}")
+# Include extension config for Java/GraalVM build
+include(extension_config.cmake)
