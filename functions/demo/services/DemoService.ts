@@ -120,16 +120,28 @@ export class DemoService {
     }
 
     const { id: datasetId, vocabSchemaName } = dataset;
-    const result = await jobPluginsAPI.createDqdFlowRun({
+    const dqdFlowRun = await jobPluginsAPI.createDqdFlowRun({
       datasetId,
       releaseId: "",
       vocabSchemaName,
       comment: "Demo setup",
     });
 
-    this.logger.info(`DQD flow-run created: ${JSON.stringify(result.data)}`);
+    // Normalize result to always be { flowRunId: string }
+    let result: { flowRunId: string };
+    if (dqdFlowRun?.flowRunId) {
+      result = { flowRunId: dqdFlowRun.flowRunId };
+    } else if (dqdFlowRun?.data?.flowRunId) {
+      result = { flowRunId: dqdFlowRun.data.flowRunId };
+    } else {
+      throw new Error(
+        `No flowRunId found in response: ${JSON.stringify(dqdFlowRun)}`
+      );
+    }
 
-    const flowRunId = result.flowRunId ? result : result.data;
+    this.logger.info(`DQD flow-run created: ${JSON.stringify(result)}`);
+
+    const flowRunId = result.flowRunId;
 
     const dqdResults = await jobPluginsAPI.getDqdFlowRunOverviewResults({
       flowRunId,
