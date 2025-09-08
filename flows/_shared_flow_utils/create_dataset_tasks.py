@@ -104,7 +104,6 @@ def create_and_assign_roles_task(dbdao: DaoBase, schema: str):
         logger.info(f"Granting read privileges to '{dbdao.read_role}' role")
         dbdao.grant_read_privileges(schema, dbdao.read_role)
 
-@task(log_prints=True)
 def drop_schema_hook(task, task_run, state, dbdao: DaoBase, schema: str):
     logger = task_run_logger(task_run, task)
     logger.info(

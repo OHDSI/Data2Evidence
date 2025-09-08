@@ -119,6 +119,6 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
             table_name,
             dbdao.engine,
             schema=schema,
-            if_exists="replace",
+            if_exists="append",
             index=False
         )

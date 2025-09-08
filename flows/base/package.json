@@ -45,7 +45,10 @@
               }
             }
           },
-          "type": "hana_load"
+          "type": "datamodel",
+          "datamodels": [
+            "omop5-3"
+          ]
         },
         {
           "name": "create_cachedb_file_plugin",
