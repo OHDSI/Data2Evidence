@@ -5,6 +5,7 @@
       :text="getText('MRI_PA_DATE_FROM_LABEL')"
       @update="updateFrom"
       :config="dateControlConfig"
+      :config-format="dateControlConfig.format"
       :placeholder="getText('MRI_PA_INPUT_PLACEHOLDER_ALL')"
       datetype="from"
       :errMsg="errTextFrom"
@@ -14,6 +15,7 @@
       :text="getText('MRI_PA_DATE_TO_LABEL')"
       @update="updateTo"
       :config="dateControlConfig"
+      :config-format="dateControlConfig.format"
       :placeholder="getText('MRI_PA_INPUT_PLACEHOLDER_TODAY')"
       datetype="to"
       :errMsg="errTextTo"
@@ -30,9 +32,6 @@ export default {
   props: ['model'],
   data() {
     return {
-      dateControlConfig: {
-        format: 'YYYY-MM-DD',
-      },
       errTextFrom: '',
       errTextTo: '',
       fromDate: '',
@@ -54,7 +53,20 @@ export default {
     },
   },
   computed: {
-    ...mapGetters(['getText', 'getConstraint']),
+    ...mapGetters(['getText', 'getConstraint', 'getMriFrontendConfig']),
+    dateControlConfig() {
+      try {
+        const configFormat = this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat
+        return {
+          format: configFormat || 'YYYY-MM-DD',
+        }
+      } catch (error) {
+        console.warn('Could not access MRI frontend config for date format, using default:', error)
+        return {
+          format: 'YYYY-MM-DD',
+        }
+      }
+    },
   },
   methods: {
     ...mapActions(['updateDateConstraintValue']),
