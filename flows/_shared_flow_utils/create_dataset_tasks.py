@@ -21,15 +21,16 @@ def get_plugin_classpath(flow_name: str) -> str:
 
 @task(log_prints=True, task_run_name="create_schema_task_{schema}")
 def create_schema_task(dbdao: DaoBase, schema: str):
-    schema_exists = dbdao.check_schema_exists(schema)
-    if not schema_exists:
-        dbdao.create_schema(schema)
-    else:
-        error_msg = (
-            f"Schema '{schema}' already exists in database '{dbdao.database_code}'"
-        )
-        get_run_logger().error(error_msg)
-        raise ValueError(error_msg)
+    # schema_exists = dbdao.check_schema_exists(schema)
+    # if not schema_exists:
+    #     dbdao.create_schema(schema)
+    # else:
+    #     error_msg = (
+    #         f"Schema '{schema}' already exists in database '{dbdao.database_code}'"
+    #     )
+    #     get_run_logger().error(error_msg)
+    #     raise ValueError(error_msg)
+    dbdao.create_schema(schema)
 
 
 @task(log_prints=True)
