@@ -9,7 +9,7 @@
       <div class="app-date__trigger">
         <input
           v-model="displayValue"
-          :placeholder="dynamicPlaceholder"
+          :placeholder="placeholder"
           :class="inputClasses"
           :readonly="false"
           :tabindex="0"
@@ -177,16 +177,6 @@ const mergedConfig = computed(() => {
 const displayFormat = computed(() => {
   const format = mergedConfig.value.format
   return momentToDateFnsFormat(format)
-})
-
-// Generate dynamic placeholder with example date
-const dynamicPlaceholder = computed(() => {
-  if (props.placeholder) {
-    return props.placeholder
-  }
-  const format = mergedConfig.value.format
-  const exampleDate = moment().format(format)
-  return `e.g., ${exampleDate}`
 })
 
 const enableTime = computed(() => {
