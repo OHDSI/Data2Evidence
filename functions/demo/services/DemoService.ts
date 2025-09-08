@@ -128,6 +128,10 @@ export class DemoService {
     });
 
     this.logger.info(`DQD flow-run created: ${JSON.stringify(result.data)}`);
+
+    // Wait for 5 minutes before returning result
+    await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000));
+
     return result.flowRunId ? result : result.data;
   }
 
