@@ -26,18 +26,22 @@ def dqd_plugin(options: DqdOptionsType):
     flow_run_id = runtime.flow_run.id
     output_folder = f"/output/{flow_run_id}"
 
-    dbdao = DBDao(dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-                  use_cache_db=options.use_cache_db, 
-                  database_code=options.databaseCode)
+    dbdao = DBDao(
+        dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
+        use_cache_db=options.use_cache_db,
+        database_code=options.databaseCode,
+    )
 
     # Todo: Update implementation if Hana uses trex
-    use_trex_connection = False if dbdao.dialect == SupportedDatabaseDialects.HANA else options.use_trex_connection
+    use_trex_connection = (
+        False
+        if dbdao.dialect == SupportedDatabaseDialects.HANA
+        else options.use_trex_connection
+    )
 
     r_connection_string = dbdao.get_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
-
-    logger.info(f"R connection string: {r_connection_string}")
 
     db_driver_string = dbdao.set_db_driver_env()
 
