@@ -154,7 +154,7 @@ struct BatchResult {
 
 class ContextPool {
 private:
-    std::queue<ContextPoolEntry*> available_contexts_;  // Raw pointers, ownership in all_contexts_
+    std::queue<ContextPoolEntry*> available_contexts_;  
     std::vector<std::unique_ptr<ContextPoolEntry>> all_contexts_;
     mutable std::mutex pool_mutex_;
     llama_model* model_;

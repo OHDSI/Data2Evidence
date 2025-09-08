@@ -84,11 +84,11 @@ ContextPool::ContextPool(llama_model* model, const ModelConfig& config, size_t m
 
 ContextPool::~ContextPool() {
     std::lock_guard<std::mutex> lock(pool_mutex_);
-    // Clear available contexts queue (just raw pointers)
+    
     while (!available_contexts_.empty()) {
         available_contexts_.pop();
     }
-    // Clear all contexts (this will properly delete the objects)
+    
     all_contexts_.clear();
 }
 
@@ -103,7 +103,7 @@ std::unique_ptr<ContextPoolEntry> ContextPool::AcquireContext() {
         raw_entry->last_used = std::chrono::steady_clock::now();
         raw_entry->usage_count++;
         
-        // Find and extract the unique_ptr from all_contexts_
+        
         for (auto it = all_contexts_.begin(); it != all_contexts_.end(); ++it) {
             if (it->get() == raw_entry) {
                 auto result = std::move(*it);
@@ -129,7 +129,7 @@ void ContextPool::ReleaseContext(std::unique_ptr<ContextPoolEntry> entry) {
     entry->in_use = false;
     entry->last_used = std::chrono::steady_clock::now();
     
-    // Add raw pointer to available queue and move ownership back to all_contexts_
+    
     ContextPoolEntry* raw_ptr = entry.get();
     available_contexts_.push(raw_ptr);
     all_contexts_.push_back(std::move(entry));
@@ -159,12 +159,12 @@ std::unique_ptr<ContextPoolEntry> ContextPool::CreateNewContext() {
         return nullptr;
     }
     
-    // Add basic samplers to the chain for safety
+    
     llama_sampler_chain_add(sampler, llama_sampler_init_top_k(40));
     llama_sampler_chain_add(sampler, llama_sampler_init_top_p(0.9f, 1));
     llama_sampler_chain_add(sampler, llama_sampler_init_temp(0.8f));
     
-    // Add the final distribution sampler (CRITICAL - this is required!)
+    
     llama_sampler_chain_add(sampler, llama_sampler_init_dist(12345));
     
     auto entry = std::make_unique<ContextPoolEntry>();
@@ -173,8 +173,8 @@ std::unique_ptr<ContextPoolEntry> ContextPool::CreateNewContext() {
     entry->in_use = true;
     entry->usage_count = 1;
     
-    // We return the entry directly since ownership passes to caller
-    // No need to store in all_contexts_ until it's released
+    
+    
     return entry;
 }
 
@@ -182,7 +182,7 @@ void ContextPool::CleanupExpiredContexts() {
     std::lock_guard<std::mutex> lock(pool_mutex_);
     auto now = std::chrono::steady_clock::now();
     
-    // Clean up expired contexts from available queue
+    
     std::queue<ContextPoolEntry*> new_queue;
     while (!available_contexts_.empty()) {
         ContextPoolEntry* entry = available_contexts_.front();
@@ -191,7 +191,7 @@ void ContextPool::CleanupExpiredContexts() {
         if (now - entry->last_used < context_ttl_) {
             new_queue.push(entry);
         } else {
-            // Remove from all_contexts_ as well
+            
             all_contexts_.erase(
                 std::remove_if(all_contexts_.begin(), all_contexts_.end(),
                     [entry](const std::unique_ptr<ContextPoolEntry>& ptr) {
@@ -221,21 +221,21 @@ LoadedModel::LoadedModel()
 }
 
 LoadedModel::~LoadedModel() {
-    // Clear context pool first, while model is still valid
+    
     if (context_pool) {
         context_pool.reset();
     }
-    // Now safe to free the model
+    
     if (model) {
         llama_free_model(model);
-        model = nullptr;  // Prevent double-free
+        model = nullptr;  
     }
 }
 
 
 SimpleModelManager& SimpleModelManager::GetInstance() {
-    // Use a pointer to prevent automatic destruction on process exit
-    // This avoids cleanup order issues and segfaults during shutdown
+    
+    
     static SimpleModelManager* instance = new SimpleModelManager(0, 10); 
     return *instance;
 }
@@ -263,9 +263,9 @@ SimpleModelManager::~SimpleModelManager() {
         streaming_sessions_.clear();
     }
     
-    // Stop the cleanup thread - try to join gracefully first
+    
     if (cleanup_thread_.joinable()) {
-        // Give it a chance to exit cleanly
+        
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         if (cleanup_thread_.joinable()) {
             cleanup_thread_.join();
@@ -278,7 +278,7 @@ SimpleModelManager::~SimpleModelManager() {
     }
     
     if (backend_initialized_) {
-        // Only free backend if we're sure no resources are left
+        
         if (models_.empty()) {
             llama_backend_free();
             backend_initialized_ = false;
@@ -374,33 +374,33 @@ bool SimpleModelManager::UnloadModel(const std::string& model_name) {
     if (it != models_.end()) {
         auto& loaded_model = it->second;
         
-        // Wait for all references to be released
+        
         while (loaded_model->reference_count > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         
-        // Wait for all contexts to be returned to the pool
+        
         if (loaded_model->context_pool) {
-            // Keep checking until all contexts are back in the pool
-            size_t max_wait_ms = 5000; // 5 second timeout
+            
+            size_t max_wait_ms = 5000; 
             size_t wait_ms = 0;
             while (wait_ms < max_wait_ms) {
                 size_t total_contexts = loaded_model->context_pool->GetPoolSize();
                 size_t available_contexts = loaded_model->context_pool->GetAvailableCount();
                 
                 if (total_contexts == available_contexts) {
-                    break; // All contexts are available, safe to unload
+                    break; 
                 }
                 
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 wait_ms += 100;
             }
             
-            // Explicitly clear the context pool before unloading
+            
             loaded_model->context_pool.reset();
         }
         
-        // Update metrics
+        
         metrics_.memory_usage_bytes -= loaded_model->memory_usage_bytes;
         
         models_.erase(it);
@@ -468,15 +468,15 @@ void SimpleModelManager::ResetMetrics() {
 }
 
 void SimpleModelManager::Cleanup() {
-    // Stop background cleanup thread
+    
     background_cleanup_enabled_ = false;
     
-    // Join the cleanup thread if it's running
+    
     if (cleanup_thread_.joinable()) {
         cleanup_thread_.join();
     }
     
-    // Clean up all streaming sessions
+    
     {
         std::lock_guard<std::mutex> streaming_lock(streaming_mutex_);
         for (auto& session_pair : streaming_sessions_) {
@@ -487,19 +487,19 @@ void SimpleModelManager::Cleanup() {
         streaming_sessions_.clear();
     }
     
-    // Clear all models and their contexts
+    
     {
         std::lock_guard<std::mutex> lock(models_mutex_);
         models_.clear();
     }
     
-    // Shutdown the llama backend to stop any internal threads
+    
     if (backend_initialized_) {
         llama_backend_free();
         backend_initialized_ = false;
     }
     
-    // Reset metrics
+    
     ResetMetrics();
 }
 
@@ -532,22 +532,22 @@ size_t SimpleModelManager::EstimateModelMemoryUsage(llama_model* model) const {
 void SimpleModelManager::ConfigureSampler(llama_sampler* sampler, const GenerationParams& params) {
     if (!sampler) return;
     
-    // Clear the existing sampler chain
+    
     llama_sampler_reset(sampler);
     
-    // The sampler chain was already initialized, but we need to reconfigure it
-    // with the correct parameters. Since llama.cpp doesn't provide functions to 
-    // update sampler parameters dynamically, we need to work with what we have.
     
-    // Reset to clear any previous sampling state
-    // The actual parameters were set during sampler creation, so we just reset
-    // Note: This is a limitation - ideally we'd recreate the sampler with correct params
+    
+    
+    
+    
+    
+    
 }
 
 void SimpleModelManager::BackgroundCleanupWorker() {
     while (background_cleanup_enabled_) {
-        // Sleep in smaller chunks so we can respond to shutdown quickly
-        for (int i = 0; i < 300 && background_cleanup_enabled_; ++i) { // 300 seconds = 5 minutes
+        
+        for (int i = 0; i < 300 && background_cleanup_enabled_; ++i) { 
             std::this_thread::sleep_for(std::chrono::seconds(1));
         }
         
@@ -581,10 +581,10 @@ std::string SimpleModelManager::Generate(const std::string& model_name,
     metrics_.total_requests++;
 
     try {
-        // Configure sampler with the generation parameters
+        
         ConfigureSampler(context_entry->sampler, params);
         
-        // Get model vocabulary for tokenization
+        
         const llama_vocab* vocab = llama_model_get_vocab(model->model);
         
         
@@ -820,10 +820,10 @@ void StreamingSession::StartGeneration() {
                 return;
             }
 
-            // Configure sampler with the generation parameters
+            
             manager.ConfigureSampler(context_entry->sampler, params);
 
-            // Get model vocabulary for tokenization
+            
             const llama_vocab* vocab = llama_model_get_vocab(model->model);
             std::vector<llama_token> tokens(prompt.length() + 100);
             int n_tokens = llama_tokenize(vocab, prompt.c_str(), prompt.length(), 

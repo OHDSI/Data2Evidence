@@ -584,7 +584,7 @@ char* cpp_llama_download_model(const char* source, const char* name, const char*
             return string_to_cstring(response);
         }
         
-        // Download using HttpDownloader
+        
         llama_capi::HttpDownloader::DownloadResult download_result = 
             llama_capi::HttpDownloader::download_file(source_str, output_path);
         
@@ -617,7 +617,7 @@ char* cpp_llama_download_model(const char* source, const char* name, const char*
                 return string_to_cstring(response);
             }
         } else {
-            // Download failed
+            
             if (std::filesystem::exists(output_path)) {
                 std::filesystem::remove(output_path);
             }
@@ -832,7 +832,7 @@ char* cpp_llama_cleanup_contexts() {
     try {
         auto& mgr = get_manager();
         
-        // Perform comprehensive cleanup
+        
         mgr.Cleanup();
         
         std::string json = "{";
