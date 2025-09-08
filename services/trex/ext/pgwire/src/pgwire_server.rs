@@ -261,16 +261,23 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
         "SELECT c.oid,t.relname  as tabrelname,rt.relnamespace as refnamespace,d.description, null as consrc_copy");
 
                 // Determine the actual query to execute
-                let actual_sql = if let Some(hana_creds) = &hana_credentials {
-                    wrap_query_for_hana(sql, hana_creds)
+                let (actual_sql, fallback_sql) = if let Some(hana_creds) = &hana_credentials {
+                    (wrap_query_for_hana(sql, hana_creds), Some(sql.to_string()))
                 } else {
-                    sql.to_string()
+                    (sql.to_string(), None)
                 };
 
                 if actual_sql.to_uppercase().starts_with("SELECT") || actual_sql.to_uppercase().starts_with("WITH") {
-                    let mut stmt = conn
-                        .prepare(&actual_sql)
-                        .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                    // Try the primary query (wrapped for HANA if applicable)
+                    let mut query_result = conn.prepare(&actual_sql);
+                    
+                    // If it fails and we have a fallback, try the original query
+                    if query_result.is_err() && fallback_sql.is_some() {
+                        eprintln!("HANA wrapped query failed, falling back to original query");
+                        query_result = conn.prepare(fallback_sql.as_ref().unwrap());
+                    }
+                    
+                    let mut stmt = query_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
 
                     let ret = stmt
                         .query_arrow(params![])
@@ -296,8 +303,16 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
                         || sql.to_uppercase().contains("APPLICATION_NAME")) {
                         responses.push(Response::Execution(Tag::new("OK")));
                     } else {
-                        let _affected_rows = conn.execute_batch(&actual_sql)
-                            .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                        
+                        let mut execute_result = conn.execute_batch(&actual_sql);
+                        
+                        
+                        if execute_result.is_err() && fallback_sql.is_some() {
+                            eprintln!("HANA wrapped query failed, falling back to original query");
+                            execute_result = conn.execute_batch(fallback_sql.as_ref().unwrap());
+                        }
+                        
+                        let _affected_rows = execute_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                         responses.push(Response::Execution(Tag::new("OK").with_rows(0)));
                     }
                 }
@@ -354,16 +369,23 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
             
             let hana_credentials = set_database_if_needed(&database, &server_host, server_port, &conn);
             
-            let actual_query = if let Some(hana_creds) = &hana_credentials {
-                wrap_query_for_hana(&query, hana_creds)
+            let (actual_query, fallback_query) = if let Some(hana_creds) = &hana_credentials {
+                (wrap_query_for_hana(&query, hana_creds), Some(query.clone()))
             } else {
-                query.clone()
+                (query.clone(), None)
             };
             
             if actual_query.to_uppercase().starts_with("SELECT") || actual_query.to_uppercase().starts_with("WITH") {
-                let mut stmt = conn
-                    .prepare_cached(&actual_query)
-                    .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                
+                let mut query_result = conn.prepare_cached(&actual_query);
+                
+                
+                if query_result.is_err() && fallback_query.is_some() {
+                    eprintln!("HANA wrapped query failed, falling back to original query");
+                    query_result = conn.prepare_cached(fallback_query.as_ref().unwrap());
+                }
+                
+                let mut stmt = query_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
 
                 let ret = stmt
                     .query_arrow(params![])
@@ -389,8 +411,16 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
                     || query.to_uppercase().contains("APPLICATION_NAME")) {
                     Ok(Response::Execution(Tag::new("OK")))
                 } else {
-                    let _affected_rows = conn.execute_batch(&actual_query)
-                        .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                    
+                    let mut execute_result = conn.execute_batch(&actual_query);
+                    
+                    
+                    if execute_result.is_err() && fallback_query.is_some() {
+                        eprintln!("HANA wrapped query failed, falling back to original query");
+                        execute_result = conn.execute_batch(fallback_query.as_ref().unwrap());
+                    }
+                    
+                    let _affected_rows = execute_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                     Ok(Response::Execution(Tag::new("OK").with_rows(0)))
                 }
             }
@@ -427,15 +457,22 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
             
             let hana_credentials = set_database_if_needed(&database, &server_host, server_port, &conn);
             
-            let actual_statement = if let Some(hana_creds) = &hana_credentials {
-                wrap_query_for_hana(&statement, hana_creds)
+            let (actual_statement, fallback_statement) = if let Some(hana_creds) = &hana_credentials {
+                (wrap_query_for_hana(&statement, hana_creds), Some(statement.clone()))
             } else {
-                statement.clone()
+                (statement.clone(), None)
             };
             
-            let stmt = conn
-                .prepare_cached(&actual_statement)
-                .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+            
+            let mut stmt_result = conn.prepare_cached(&actual_statement);
+            
+            
+            if stmt_result.is_err() && fallback_statement.is_some() {
+                eprintln!("HANA wrapped statement failed, falling back to original statement");
+                stmt_result = conn.prepare_cached(fallback_statement.as_ref().unwrap());
+            }
+            
+            let stmt = stmt_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 
             let fields = row_desc_from_stmt(&stmt, &Format::UnifiedBinary)?;
             Ok(DescribeStatementResponse::new(param_types, fields))
@@ -472,15 +509,22 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
             
             let hana_credentials = set_database_if_needed(&database, &server_host, server_port, &conn);
             
-            let actual_statement = if let Some(hana_creds) = &hana_credentials {
-                wrap_query_for_hana(&statement, hana_creds)
+            let (actual_statement, fallback_statement) = if let Some(hana_creds) = &hana_credentials {
+                (wrap_query_for_hana(&statement, hana_creds), Some(statement.clone()))
             } else {
-                statement.clone()
+                (statement.clone(), None)
             };
             
-            let stmt = conn
-                .prepare_cached(&actual_statement)
-                .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+            
+            let mut stmt_result = conn.prepare_cached(&actual_statement);
+            
+            
+            if stmt_result.is_err() && fallback_statement.is_some() {
+                eprintln!("HANA wrapped statement failed, falling back to original statement");
+                stmt_result = conn.prepare_cached(fallback_statement.as_ref().unwrap());
+            }
+            
+            let stmt = stmt_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 
             let fields = row_desc_from_stmt(&stmt, &format)?;
             Ok(DescribePortalResponse::new(fields))
