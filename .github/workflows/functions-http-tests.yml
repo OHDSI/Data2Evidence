@@ -342,6 +342,9 @@ jobs:
           
       - name: Check PG DB connection
         run: |
+          sudo apt install -y jq
+          PGUSER=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
+          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
           echo "PGUSER: ${PGUSER}"
@@ -353,6 +356,9 @@ jobs:
 
       - name: Setup Test DB
         run: |
+          sudo apt install -y jq
+          PGUSER=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
+          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
           echo "PGUSER: ${PGUSER}"
