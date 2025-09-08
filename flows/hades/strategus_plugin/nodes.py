@@ -148,7 +148,7 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = OutcomeDef(node)
         case "cohort_incidence_node":
             nodeobj = CohortIncidenceModuleSpec(node)
-        case "cohort_definition_set_node":
+        case "cohort_node":
             nodeobj = CohortDefinitionSharedResource(node)
         case "outcomes_node":
             nodeobj = CMOutcomes(node)
@@ -354,13 +354,13 @@ class CohortDefinitionSharedResource(Node):
                 rCohortDefinitionSet = rCohortGenerator.createEmptyCohortDefinitionSet()
                 datasetId = self.flowOptions.get("datasetId", "") # TODO: throw error if not found
                 for c in self.cohortIds:
-                    cohort_definition = webapi.get_cohort_definition(c, datasetId)
+                    cohort_definition = webapi.get_cohort_definition(c["cohortId"], datasetId)
                     cohortDefStr = json.dumps(cohort_definition["expression"])
                     rcohortExpr = rCirce.cohortExpressionFromJson(cohortDefStr)
                     rOptions = rCirce.createGenerateOptions(generateStats = convert_py_to_R(False))
                     rCohortSql = rCirce.buildCohortQuery(rcohortExpr, options = rOptions)
                     new_row = ro.r['data.frame'](
-                        cohortId = convert_py_to_R(c),
+                        cohortId = convert_py_to_R(c["cohortId"]),
                         cohortName = convert_py_to_R(cohort_definition["name"]),
                         sql = rCohortSql,
                         json = convert_py_to_R(cohortDefStr)
@@ -968,10 +968,12 @@ class TreatmentPatterns(Node):
         self.maxPathLength = int(node.get("maxPathLength", 5))  # default 5
         self.minEraDuration = int(node.get("minEraDuration", 0))  # default 0
         self.eraCollapseSize = int(node.get("eraCollapseSize", 30))  # default 30
-        self.indexDateOffset = int(node.get("indexDateOffset", 0))  # default 0
         self.filterTreatments = node.get("filterTreatments", "First")  # default "First"
         self.combinationWindow = int(node.get("combinationWindow", 30))  # default 30
-        self.includeTreatments = node.get("includeTreatments", "startDate")  # default "startDate"
+        self.startAnchor = node.get("startAnchor", "startDate")
+        self.windowStart = int(node.get("windowStart", 0))
+        self.endAnchor = node.get("endAnchor", "endDate")
+        self.windowEnd = int(node.get("windowEnd", 0))
         self.splitEventCohorts = node.get("splitEventCohorts", None)  # default None
         self.minPostCombinationDuration = int(node.get("minPostCombinationDuration", 30))  # default 30
 
@@ -992,8 +994,6 @@ class TreatmentPatterns(Node):
 
                 rSpec = rCreateTreatmentPatternsModuleSpec(
                     cohorts = convert_py_to_R(cohorts_df),
-                    includeTreatments = convert_py_to_R(self.includeTreatments),
-                    indexDateOffset = convert_py_to_R(self.indexDateOffset),
                     minEraDuration = convert_py_to_R(self.minEraDuration),
                     splitEventCohorts = convert_py_to_R(self.splitEventCohorts),
                     splitTime = convert_py_to_R(self.splitTime),
@@ -1004,7 +1004,11 @@ class TreatmentPatterns(Node):
                     maxPathLength = convert_py_to_R(self.maxPathLength),
                     ageWindow = convert_py_to_R(self.ageWindow),
                     minCellCount = convert_py_to_R(self.minCellCount),
-                    censorType = convert_py_to_R(self.censorType)
+                    censorType = convert_py_to_R(self.censorType),
+                    startAnchor = convert_py_to_R(self.startAnchor),
+                    windowStart = convert_py_to_R(self.windowStart),
+                    endAnchor = convert_py_to_R(self.endAnchor),
+                    windowEnd = convert_py_to_R(self.windowEnd),
                 )
 
                 return Result(False, rSpec, self, task_run_context)

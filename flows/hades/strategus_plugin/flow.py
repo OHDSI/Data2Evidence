@@ -2,9 +2,9 @@ import re
 import traceback
 from functools import partial
 import json
+from uuid import uuid4
 
 from prefect import flow, task
-from prefect.logging import get_run_logger
 from prefect.context import TaskRunContext, FlowRunContext
 from prefect.artifacts import create_markdown_artifact
 
@@ -117,7 +117,7 @@ def execute_nodes_flow(graph, sorted_nodes, test):
                 "study_population_settings_node",
                 "cohort_incidence_target_cohorts_node",
                 "cohort_incidence_node",
-                "cohort_definition_set_node",
+                "cohort_node",
                 "outcomes_node",
                 "cohort_method_node",
                 "era_covariate_settings_node",
@@ -170,7 +170,7 @@ def execute_node_task(nodename, node_type, node, input, test):
         match node_type:
             case ('cohort_diagnostic_node' | 'calendar_time_covariate_settings_node' |
                 'cohort_generator_node' | 'time_at_risk_node' | 'default_covariate_settings_node' | 
-                'study_population_settings_node' | 'cohort_incidence_target_cohorts_node' | 'cohort_definition_set_node' | 
+                'study_population_settings_node' | 'cohort_incidence_target_cohorts_node' | 'cohort_node' | 
                 'era_covariate_settings_node' | 'seasonality_covariate_settings_node' | 'nco_cohort_set_node'):
                 result = _node.task(task_run_context)
             case _:
@@ -180,7 +180,11 @@ def execute_node_task(nodename, node_type, node, input, test):
 
 
 def runStrategus(json_graph, options):
-    root_flow_run_context = FlowRunContext.get().flow_run.dict()
+    logger = Logger()
+    try:
+        root_flow_run_context = FlowRunContext.get().flow_run.dict()
+    except:
+        root_flow_run_context = {"id":uuid4()}
     flow_run_id = str(root_flow_run_context.get("id"))
     
     study_id = options.get('studyId', None)
@@ -214,6 +218,15 @@ def runStrategus(json_graph, options):
     if isinstance(analysisSpec, str):
         analysisSpec = json.loads(analysisSpec)
     
+    try:
+        for resourceIndex in range(len(analysisSpec['sharedResources'])):
+            for cohortDefIndex in range(len(analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'])):
+                cohortDef = analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex]
+                analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex] = json.loads(cohortDef["cohortDefinition"])
+    except Exception as e:
+        logger.error(f"Error converting cohortDefinitions to JSON: {e}")
+        raise e
+
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
         "schemaName": schema_name,
