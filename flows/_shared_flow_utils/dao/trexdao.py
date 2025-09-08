@@ -23,7 +23,7 @@ class TrexDao(IbisDao):
 
     @property
     def dialect(self):
-        return SupportedDatabaseDialects.TREX
+        return SupportedDatabaseDialects.TREX.value
 
     @property
     def tenant_configs(self) -> DBCredentialsType:
@@ -34,7 +34,7 @@ class TrexDao(IbisDao):
             adminPassword=SecretStr(Secret.load("trex-sql-password").get()),
             user=Variable.get("trex_sql_user"),
             password=SecretStr(Secret.load("trex-sql-password").get()),
-            dialect=SupportedDatabaseDialects.TREX,
+            dialect=SupportedDatabaseDialects.TREX.value,
             databaseName=self.database_code,
             databaseCode=self.database_code,
             host=Variable.get("trex_sql_host"),
