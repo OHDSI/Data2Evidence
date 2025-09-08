@@ -352,6 +352,7 @@ jobs:
           sudo apt install -y jq
           PGUSER=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
           PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
+          PGHOST=demodb
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
           echo "PGUSER: ${PGUSER}"
