@@ -180,7 +180,6 @@ export class DemoService {
     this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
     const flowRunId = result.flowRunId ? result : result.data;
 
-    // call jobPluginsApi getCreateCacheFlowRunStatus
     const cacheStatusResponse = await jobPluginsAPI.getCacheFlowRunStatus(
       flowRunId
     );
