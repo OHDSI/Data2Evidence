@@ -8,7 +8,7 @@ import { useActiveDataset, useFeedback } from "../../contexts";
 import { IPluginItem, PluginDropdown } from "../../types";
 import { getPluginChildPathPattern, loadPlugins, sortPluginsByType } from "../../utils";
 import { ResearcherStudyPluginRenderer } from "../../plugins/core/ResearcherStudyPluginRenderer";
-import { useEnabledFeatures } from "../../hooks";
+import { useEnabledFeatures, useDataset } from "../../hooks";
 import { Overview } from "./Overview/Overview";
 import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
@@ -30,6 +30,19 @@ interface StateProps {
   tenantId: string;
 }
 
+// TODO: mapping should be from the server
+const mapping: Record<string, string[]> = {
+  source: [],
+  fhir: [],
+  non_omop: ["Cohort", "Notebooks", "Concepts"],
+  omop: ["Cohort", "Notebooks", "Analysis", "Concepts"],
+  study: ["Cohort", "Notebooks", "Results"],
+  hana_omop: ["Cohort", "Concepts"],
+  hana_non_omop: ["Cohort", "Concepts"],
+};
+
+const restricted = ["Cohort", "Notebooks", "Analysis", "Concepts", "Results"];
+
 export const Researcher: FC = () => {
   const { clearFeedback, getFeedback } = useFeedback();
   const feedback = getFeedback();
@@ -42,6 +55,8 @@ export const Researcher: FC = () => {
   const { activeDataset } = useActiveDataset();
   const activeDatasetId = activeDataset.id;
   const activeReleaseId = activeDataset.releaseId;
+
+  const [dataset] = useDataset(activeDatasetId);
 
   const [pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
   const [activeTenantId, setActiveTenantId] = useState<string>(state?.tenantId || "");
@@ -56,7 +71,7 @@ export const Researcher: FC = () => {
       setActiveTenantId(state.tenantId);
     }
   }, [state]);
-
+  console.log(dataset?.type);
   const featureFlagsDict = useMemo(() => {
     // Convert to dictionary of { [featureFlag]: { [subFeatureFlag]: enabledBoolean } }
     const result: { [featureFlag: string]: SubFeatureFlags } = {};
@@ -77,20 +92,36 @@ export const Researcher: FC = () => {
 
   const researcherPluginsFlat = useMemo(() => {
     const flatPlugins: IPluginItem[] = [];
+    const allowed = new Set(mapping[dataset?.type ?? ""] ?? []);
     plugins.researcher.forEach((plugin) => {
-      flatPlugins.push(plugin);
-      plugin.children?.forEach((childPlugin) => {
-        flatPlugins.push(childPlugin);
-      });
+      if (restricted.includes(plugin.name)) {
+        if (dataset != null && allowed.has(plugin.name)) {
+          flatPlugins.push(plugin);
+        }
+      } else {
+        flatPlugins.push(plugin);
+        plugin.children?.forEach((childPlugin) => {
+          flatPlugins.push(childPlugin);
+        });
+      }
     });
     return flatPlugins;
-  }, [plugins]);
+  }, [plugins, dataset]);
 
   const onFetchMenus = useCallback((route: string, menus: PluginDropdownItem[]) => {
     setPluginDropdown((current: any) => ({ ...current, [route]: menus }));
   }, []);
 
-  const sortedResearcherPlugins = useMemo(() => sortPluginsByType(plugins.researcher), []);
+  const sortedResearcherPlugins = useMemo(() => {
+    const allowed = new Set(mapping[dataset?.type ?? ""] ?? []);
+    return sortPluginsByType(plugins.researcher).filter((plugin) => {
+      if (restricted.includes(plugin.name)) {
+        return dataset != null && allowed.has(plugin.name);
+      }
+      return true;
+    });
+  }, [plugins.researcher, dataset?.type]);
+
   const sortedPlugins = JSON.parse(JSON.stringify(plugins));
   sortedPlugins.researcher = sortedResearcherPlugins;
 
