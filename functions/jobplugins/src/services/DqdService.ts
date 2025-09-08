@@ -142,7 +142,7 @@ export class DqdService {
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
 
-    const name = `${databaseCode}.${schemaName}`;
+    const name = `DQD_${databaseCode}.${schemaName}`;
     const parameters = {
       options: {
         schemaName,
@@ -350,10 +350,7 @@ export class DqdService {
       .map((r) => r as IDataQualityResult);
   }
 
-  private async getDqdResults(
-    prefectApi: PrefectAPI,
-    flowRunIds: string[]
-  ) {
+  private async getDqdResults(prefectApi: PrefectAPI, flowRunIds: string[]) {
     let dqdResults;
     try {
       dqdResults = await prefectApi.getFlowRunsArtifacts(flowRunIds);

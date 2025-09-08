@@ -141,7 +141,7 @@ export class DataCharacterizationService {
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
 
-    const name = `${databaseCode}.${schemaName}`;
+    const name = `DC_${databaseCode}.${schemaName}`;
     const parameters = {
       options: {
         schemaName,
