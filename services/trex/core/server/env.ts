@@ -81,6 +81,7 @@ export const env = {
     SERVICE_ENV: _env.SERVICE_ENV ? JSON.parse(_env.SERVICE_ENV) : {},
     CADDY__ALP__PUBLIC_FQDN: _env.CADDY__ALP__PUBLIC_FQDN || 'localhost',
     PREFECT_HEALTH_CHECK: `${_env.PREFECT_API_URL}/health`,
+    FHIR_CONFIG_HEALTHCHECK: _env.FHIR_CONFIG_HEALTHCHECK,
   
     PG__DB_NAME: _env.PG__DB_NAME,
     PG__HOST: _env.PG__HOST,

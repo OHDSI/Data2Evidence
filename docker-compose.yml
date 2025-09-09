@@ -536,6 +536,7 @@ services:
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
       PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api
+      FHIR_CONFIG_HEALTHCHECK: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-config/healthcheck
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",

@@ -25,7 +25,7 @@
           "function": "/d2e-medplum-server/src",
           "env": "alp-fhir-init",
           "imports": "/d2e-medplum-server/deno.json",
-          "waitfor": "http://alp-trex.alp.local:33001/fhir-config/healthcheck"
+          "waitforEnvVar": "FHIR_CONFIG_HEALTHCHECK"
         },
         {
           "function": "/alp-fhir-init/src/postStart",
