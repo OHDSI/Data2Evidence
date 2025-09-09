@@ -1,14 +1,13 @@
 from __future__ import annotations
 import pandas as pd
 from typing import TYPE_CHECKING
-
+import json
 from prefect import flow, task
 from prefect.logging import get_run_logger
 
-from .types import DataloadOptions
+from .types import DataloadOptions, FileType
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.FhirAPI import FhirAPI
-import json
 
 if TYPE_CHECKING:
     from _shared_flow_utils.dao.daobase import DaoBase
@@ -23,16 +22,16 @@ def data_load_fhir_plugin(options: DataloadOptions):
     dataset_token = options.dataset_token
     try:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code="alp_fhir")
-        tenantConfigs = dbdao.tenant_configs()
+                  database_code="alp-fhir")
         fhir_tables_all = set()
         for incoming_file in files:
             if(truncate_tables):
+                logger.info(f"get_unique_resource_types_from_file '{incoming_file.path}'")
                 fhir_tables = get_unique_resource_types_from_file(incoming_file)
                 # Only truncate tables not already truncated
                 tables_to_truncate = [table for table in fhir_tables if table not in fhir_tables_all]
                 if tables_to_truncate:
-                    truncate_tables(tables_to_truncate, "fhir", dbdao, logger)
+                    truncate_fhir_tables(tables_to_truncate, "fhir", dbdao, logger)
                 # Add only new tables to the set
                 fhir_tables_all.update(tables_to_truncate)
             load_data(dataset_token, incoming_file, logger)
@@ -41,7 +40,7 @@ def data_load_fhir_plugin(options: DataloadOptions):
         raise e
         
 @task(log_prints=True)
-def truncate_tables(table_list: list[str], schema: str, dbdao: DaoBase, logger):   
+def truncate_fhir_tables(table_list: list[str], schema: str, dbdao: DaoBase, logger):   
     # Truncate tables
     for table in table_list:
         logger.info(f"Truncating table '{schema}.{table}'")
@@ -62,27 +61,35 @@ def post_fhir_resource(resource, idx, json_file, fhir_api: FhirAPI, logger, stud
     except Exception as e:
         logger.error(f"Error posting resource for index {idx}: {e}")
 
+@task(log_prints=True)
 def load_data(dataset_token, json_file, logger):
+    logger.debug(f"Loading data from file '{json_file}' into FHIR service")
     fhir_api = FhirAPI()
     try:
-        if json_file.endswith('.ndjson'):
-            with open(json_file, "r") as f:
+        if json_file.path.endswith('.ndjson'):
+            with open(json_file.path, "r") as f:
                 for idx, line in enumerate(f):
                     line = line.strip()
                     if not line:
                         continue
                     resource_data = json.loads(line)
+                    logger.debug(f"Processing line {idx} in file '{json_file}'")
                     post_fhir_resource(resource_data, idx, json_file, fhir_api, logger, dataset_token)
-        elif json_file.endswith('.json'):
-            with open(json_file, "r") as f:
+        elif json_file.path.endswith('.json'):
+            with open(json_file.path, "r") as f:
+                logger.debug(f"Processing JSON file '{json_file}'")
                 data = json.load(f)
-            if isinstance(data, dict) and data.get("resourceType") == "Bundle":
-                response = fhir_api.post(studyToken=dataset_token, resourceType="Bundle", resource=data)
-                logger.info(f"Posted Bundle: {response}")
-            elif isinstance(data, list):
-                for idx, entry in enumerate(data):
-                    post_fhir_resource(entry, idx, json_file, fhir_api, logger, dataset_token)
-            else:
+                logger.debug(data.get("resourceType"))
+                if isinstance(data, dict) and data.get("resourceType") == "Bundle":
+                    logger.debug(f"Processing Bundle in file '{json_file}'")
+                    response = fhir_api.post(studyToken=dataset_token, resourceType="Bundle", resource=data)
+                    logger.info(f"Posted Bundle: {response}")
+                elif isinstance(data, list):
+                    for idx, entry in enumerate(data):
+                        logger.debug(f"Processing entry {idx} in list from file '{json_file}'")
+                        post_fhir_resource(entry, idx, json_file, fhir_api, logger, dataset_token)
+                else:
+                    logger.debug(f"Processing single resource in file '{json_file}'")
                 post_fhir_resource(data, 0, json_file, fhir_api, logger, dataset_token)
         else:
             logger.error(f"Unsupported file type for '{json_file}'. Only .ndjson and .json are supported.")
@@ -91,15 +98,14 @@ def load_data(dataset_token, json_file, logger):
         logger.error(f"Error loading data from file '{json_file}': {e}")
         raise e
 
-def get_unique_resource_types_from_file(json_file):
+def get_unique_resource_types_from_file(json_file: FileType) -> list[str]:
     """
     Returns a set of unique FHIR resourceType names from a .json or .ndjson file.
     If the file is a Bundle, returns the resource types in its entries.
     """
-    import json
     resource_types = set()
-    if json_file.endswith('.ndjson'):
-        with open(json_file, "r") as f:
+    if json_file.path.endswith('.ndjson'):
+        with open(json_file.path, "r") as f:
             for line in f:
                 line = line.strip()
                 if not line:
@@ -117,8 +123,8 @@ def get_unique_resource_types_from_file(json_file):
                         resource_types.add(rtype)
                 except Exception:
                     continue
-    elif json_file.endswith('.json'):
-        with open(json_file, "r") as f:
+    elif json_file.path.endswith('.json'):
+        with open(json_file.path, "r") as f:
             data = json.load(f)
         if isinstance(data, dict) and data.get("resourceType") == "Bundle" and "entry" in data:
             for entry in data["entry"]:

@@ -9,13 +9,13 @@ class FhirAPI(BaseAPI):
         self.url = self.get_service_route("fhirSvc")
         self.headers = self.get_options()
 
-    def post(self, studyToken: str, resourceType: str, inputFhirResource: dict):
-        url = f"{self.url}/{resourceType}/{studyToken}"
+    def post(self, studyToken: str, resourceType: str, resource):
+        url = f"{self.url}{resourceType}/{studyToken}"
         result = requests.post(
             url,
             headers=self.headers,
             verify=self.get_verify_value(),
-            json=inputFhirResource
+            json=resource
         )
         if ((result.status_code >= 400) and (result.status_code < 600)):
             raise Exception(
