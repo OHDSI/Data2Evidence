@@ -4,7 +4,6 @@ const TEST_NAME = 'cohort-generation'
 const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-
 test('cohort-generation', async ({ page }) => {
   // Generate unique cohort name to avoid conflicts with other tests
   const timestamp = Date.now()
@@ -14,7 +13,7 @@ test('cohort-generation', async ({ page }) => {
   // AUTHENTICATION SECTION
   // ========================
   // Navigate to the D2E portal login page
-  await page.goto('https://localhost:443')
+  await page.goto('/portal')
 
   // Fill in admin credentials and sign in
   await page.locator('input[name="identifier"]').click()
