@@ -11,8 +11,8 @@
   },
   "imports": {
     "pg": "npm:pg@^8.4.2",
-    "./src/seed": "./src/seed.ts",
-    "./src/env": "./src/env.ts",
+    "./src/seed": "./src/postStart/seed.ts",
+    "./src/env": "./src/postStart/env.ts",
     "winston": "npm:winston",
     "axios": "npm:axios",
     "async": "npm:async",

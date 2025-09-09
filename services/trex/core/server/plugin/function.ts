@@ -20,8 +20,8 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
 	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv], {TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
-	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
-		workerTimeoutMs: 1 * 60 * 1000, noModuleCache: false,
+	const options: any = {servicePath: servicePath, memoryLimitMb: 1000,
+		workerTimeoutMs: 1 * 60 * 10000, noModuleCache: false,
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 100000, cpuTimeHardLimitMs: 200000,
@@ -158,18 +158,20 @@ export async function addPlugin(app: Hono, value: any, dir: string) {
         global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes)
     }
     
-    if(value.api)
-        value.api.forEach(r => {
-        if(r.function) {
-            logger.log(`add fn ${r.source} @ ${dir}${r.function}`)
-            _addFunction(app, r.source, `${dir}${r.function}`, 
-            r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
-            r, dir);
-        } else if (r.service) {  
-            logger.log(`add svc ${r.source} @ ${r.service}`)
-            _addService(app, r.source, r.service, r.rmsrc);
-        } else {
-            logger.error("unknown  route type");
+    if(value.api) {
+        for (const r of value.api) {
+            if(r.function) {
+                logger.log(`add fn ${r.source} @ ${dir}${r.function}`)
+                if (r.delay) await new Promise(resolve => setTimeout(resolve, r.delay));
+                _addFunction(app, r.source, `${dir}${r.function}`, 
+                    r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
+                    r, dir);
+            } else if (r.service) {  
+                logger.log(`add svc ${r.source} @ ${r.service}`)
+                _addService(app, r.source, r.service, r.rmsrc);
+            } else {
+                logger.error("unknown  route type");
+            }
         }
-    }); 
+    } 
 }

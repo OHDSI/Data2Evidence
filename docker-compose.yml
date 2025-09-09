@@ -78,8 +78,8 @@ x-envs:
        "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
        "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
        "minio": "",
-       "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir/R4",
-       "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth2/token",
+       "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:33001/fhir-server/fhir/R4",
+       "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:33001/fhir-server/oauth2/token",
        "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
        "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
@@ -212,8 +212,8 @@ services:
               "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
               "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
               "minio": "",
-              "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
-              "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
+              "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:33001/fhir-server/fhir/R4",
+              "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:33001/fhir-server/oauth2/token",
               "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
               "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
               "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
@@ -263,18 +263,23 @@ services:
             "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
           },
           "alp-fhir-init": {
+            "FHIR_SERVER_BASE_URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
             "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
             "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
             "FHIR__LOG_LEVEL": "debug",
-            "PORT": 41112,
-            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
+            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-99f29ec3-bd24-4b01-be07-c64f5176dfdd}",
             "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
-            "DUCKDB_PATH": "/home/docker/alp-data-node/app/src/duckdb",
-            "PLUGIN_PATH": "/usr/src/plugins/d2ef/alp-fhir-init",
+            "MEDPLUM_PLUGIN_PATH": "/usr/src/data/plugins/node_modules/@data2evidence/d2e-medplum-server",
+            "FHIR_FUNCTIONS_PLUGIN_PATH": "/usr/src/plugins/fhir/",
             "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
             "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
             "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
-            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
+            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}",
+            "PG__DB_NAME": "alp",
+            "REDIS_PASSWORD": "${REDIS_PASSWORD}",
+            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}",
+            "REDIS_HOST": "${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}",
+            "REDIS_PORT": "${REDIS_PORT:-6379}"
           },
           "query-gen-svc": {
             "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
@@ -491,23 +496,8 @@ services:
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
           },
-          "d2e-fhir": {
-            "PG__DB_NAME": "alp",
-            "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
-            "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
-            "REDIS_PASSWORD": "${REDIS_PASSWORD}",
-            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}",
-            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}",
-            "max-old-space-size": "8192"
-          },
           "d2e-medplum-server": {
-            "PG__DB_NAME": "alp",
-            "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
-            "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
-            "REDIS_PASSWORD": "${REDIS_PASSWORD}",
-            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}",
-            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}",
-            "max-old-space-size": "8192"
+            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
           }
         }
       SERVICE_ROUTES: |-
@@ -527,8 +517,8 @@ services:
         "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
         "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
         "minio": "",
-        "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir/R4",
-        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth2/token",
+        "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:33001/fhir-server/fhir/R4",
+        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:33001/fhir-server/oauth2/token",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
