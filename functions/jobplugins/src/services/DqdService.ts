@@ -40,8 +40,11 @@ export class DqdService {
 
   public async getDataQualityOverview(flowRunId: string, token: string) {
     const prefectApi = new PrefectAPI(token);
+
+    const completedFlowRun = await prefectApi.pollFlowRunCompletion(flowRunId);
+
     const artifacts = await prefectApi.getFlowRunsArtifactsByFlowRunId(
-      flowRunId
+      completedFlowRun.flowRunId
     );
     if (artifacts.length === 0) {
       return null;
