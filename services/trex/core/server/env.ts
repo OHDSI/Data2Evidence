@@ -39,7 +39,9 @@ export const publicURLs = [
     '^/consent$',
     '^/callback$',
     '^/prefect/docs$',
-    '^/openapi.json$'
+    '^/openapi.json$',
+    '^/fhir-config/healthcheck$',
+    '^/fhir-server/healthcheck$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([

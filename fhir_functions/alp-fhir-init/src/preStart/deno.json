@@ -13,6 +13,6 @@
     "check": "deno check ./index.ts && deno lint"
   },
   "imports": {
-    
+    "express": "npm:express@^4.19.2"
   }
 }
