@@ -1,4 +1,4 @@
---HANA CDM Primary Key Constraints for OMOP Common Data Model 5.3 2
+--HANA CDM Primary Key Constraints for OMOP Common Data Model 5.3
 ALTER TABLE @cdmDatabaseSchema.person  ADD CONSTRAINT xpk_person PRIMARY KEY (person_id);
 ALTER TABLE @cdmDatabaseSchema.observation_period  ADD CONSTRAINT xpk_observation_period PRIMARY KEY (observation_period_id);
 ALTER TABLE @cdmDatabaseSchema.visit_occurrence  ADD CONSTRAINT xpk_visit_occurrence PRIMARY KEY (visit_occurrence_id);
