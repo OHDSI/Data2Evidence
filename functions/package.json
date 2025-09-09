@@ -75,17 +75,6 @@
           "function": "/supabase/src/init",
           "imports": "/supabase/deno.json",
           "env": "supabase-storage"
-        },
-        {
-          "function": "/d2e-fhir",
-          "imports": "/d2e-fhir/deno.json",
-          "env": "d2e-fhir",
-          "delay": 10000
-        },
-        {
-          "function": "/d2e-medplum-server/src",
-          "imports": "/d2e-medplum-server/deno.json",
-          "env": "d2e-medplum-server"
         }
       ],
       "api": [
