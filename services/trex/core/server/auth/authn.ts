@@ -26,8 +26,8 @@ export async function authn(c: Context, next: Function) {
     // Check for cookie if no token in header and if req url path is /gateway/dashboard/* or /strategus-results/*
     if (token === "" && 
         (c.req.path.startsWith("/strategus-results/") || 
-        c.req.path.startsWith("/gateway/dashboard/")) || 
-        c.req.path.startsWith("/dockerlogs")
+        c.req.path.startsWith("/gateway/dashboard/") ||
+        c.req.path.startsWith("/dockerlogs"))
     ) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
