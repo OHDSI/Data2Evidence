@@ -55,7 +55,7 @@ export class JobPluginsAPI {
         `Get create cache flow run status for flow run: ${JSON.stringify(dto)}`
       );
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/cachedb/results/${dto.flowRunId}`;
+      const url = `${this.baseURL}/cachedb/completed/${dto.flowRunId}`;
       const result = await get(url, options);
       return result.data;
     } catch (error) {

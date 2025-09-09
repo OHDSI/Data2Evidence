@@ -1,5 +1,6 @@
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import {
+  FlowRunState,
   FLOW_RUN_STATE_TYPES,
   PrefectDeploymentName,
   PrefectFlowName,
@@ -26,61 +27,13 @@ export class CachedbService {
 
   public async getFlowRunResults(flowRunId: string, token: string) {
     const prefectApi = new PrefectAPI(token);
+    const flowRun: FlowRunState = await prefectApi.getFlowRun(flowRunId);
+    return flowRun;
+  }
 
-    // Poll every 1 min up to 5 mins
-    const POLL_INTERVAL_MS = 60000;
-    const MAX_ATTEMPTS = 10;
-    let attempts = 0;
-
-    let flowRun = await prefectApi.getFlowRun(flowRunId);
-
-    // If the flowRun is an array, get the first object
-    if (Array.isArray(flowRun)) {
-      flowRun = flowRun[0];
-    }
-
-    const pollingStates = [
-      FLOW_RUN_STATE_TYPES.SCHEDULED,
-      FLOW_RUN_STATE_TYPES.LATE,
-      FLOW_RUN_STATE_TYPES.PENDING,
-      FLOW_RUN_STATE_TYPES.RUNNING,
-      FLOW_RUN_STATE_TYPES.RETRYING,
-      FLOW_RUN_STATE_TYPES.AWAITING_RETRY,
-    ];
-
-    const failureStates = [
-      FLOW_RUN_STATE_TYPES.FAILED,
-      FLOW_RUN_STATE_TYPES.CRASHED,
-      FLOW_RUN_STATE_TYPES.CANCELLING,
-      FLOW_RUN_STATE_TYPES.CANCELLED,
-      FLOW_RUN_STATE_TYPES.PAUSED,
-      FLOW_RUN_STATE_TYPES.SUSPENDED,
-      FLOW_RUN_STATE_TYPES.TIMED_OUT,
-    ];
-
-    while (
-      pollingStates.includes(flowRun.state_type) &&
-      attempts < MAX_ATTEMPTS
-    ) {
-      // Early exit if flowRun enters a failure state
-      if (failureStates.includes(flowRun.state_type)) {
-        throw new Error(
-          `Flow run failed or was cancelled. Final state: ${flowRun.state_type}`
-        );
-      }
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-      flowRun = await prefectApi.getFlowRun(flowRunId);
-      if (Array.isArray(flowRun)) {
-        flowRun = flowRun[0];
-      }
-      attempts++;
-    }
-
-    if (flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED) {
-      return { flowRunId: flowRun.id };
-    }
-    throw new Error(
-      `Flow run did not complete within the polling window. Final state: ${flowRun.state_type}`
-    );
+  public async getCompletedFlowRunId(flowRunId: string, token: string) {
+    const prefectApi = new PrefectAPI(token);
+    const completedFlowRun = await prefectApi.pollFlowRunCompletion(flowRunId);
+    return completedFlowRun.flowRunId;
   }
 }
