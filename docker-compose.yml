@@ -495,9 +495,6 @@ services:
             "PG_SCHEMA": "strategus",
             "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
             "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
-          },
-          "d2e-medplum-server": {
-            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
           }
         }
       SERVICE_ROUTES: |-
