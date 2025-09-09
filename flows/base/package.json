@@ -20,6 +20,37 @@
       "image": "ghcr.io/ohdsi/d2e/flow-base",
       "flows": [
         {
+          "name": "hana_load_plugin",
+          "entrypoint": "flows.hana_load_plugin.flow.hana_load_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/DataloadOptions",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": ["options"],
+            "definitions": {
+              "DataloadOptions": {
+                "properties": {
+                  "database_code": { "title": "Database Code", "type": "string" },
+                  "schema_name": { "title": "Schema Name", "type": "string" }
+                },
+                "required": ["database_code", "schema_name"],
+                "title": "DataloadOptions",
+                "type": "object"
+              }
+            }
+          },
+          "type": "datamodel",
+          "datamodels": [
+            "omop5-3"
+          ]
+        },
+        {
           "name": "create_cachedb_file_plugin",
           "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
           "parameter_openapi_schema": {
