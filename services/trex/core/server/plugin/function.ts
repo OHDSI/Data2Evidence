@@ -158,20 +158,18 @@ export async function addPlugin(app: Hono, value: any, dir: string) {
         global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes)
     }
     
-    if(value.api) {
-        for (const r of value.api) {
-            if(r.function) {
-                logger.log(`add fn ${r.source} @ ${dir}${r.function}`)
-                if (r.delay) await new Promise(resolve => setTimeout(resolve, r.delay));
-                _addFunction(app, r.source, `${dir}${r.function}`, 
-                    r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
-                    r, dir);
-            } else if (r.service) {  
-                logger.log(`add svc ${r.source} @ ${r.service}`)
-                _addService(app, r.source, r.service, r.rmsrc);
-            } else {
-                logger.error("unknown  route type");
-            }
+    if(value.api)
+        value.api.forEach(r => {
+        if(r.function) {
+            logger.log(`add fn ${r.source} @ ${dir}${r.function}`)
+            _addFunction(app, r.source, `${dir}${r.function}`, 
+            r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
+            r, dir);
+        } else if (r.service) {  
+            logger.log(`add svc ${r.source} @ ${r.service}`)
+            _addService(app, r.source, r.service, r.rmsrc);
+        } else {
+            logger.error("unknown  route type");
         }
-    } 
+    });
 }
