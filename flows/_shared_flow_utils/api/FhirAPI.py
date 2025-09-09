@@ -10,7 +10,7 @@ class FhirAPI(BaseAPI):
         self.headers = self.get_options()
 
     def post(self, studyToken: str, resourceType: str, resource):
-        url = f"{self.url}{resourceType}/{studyToken}"
+        url = f"{self.url}project/{studyToken}/{resourceType}"
         result = requests.post(
             url,
             headers=self.headers,

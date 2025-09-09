@@ -22,7 +22,7 @@ def data_load_fhir_plugin(options: DataloadOptions):
     dataset_token = options.dataset_token
     try:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code="alp-fhir")
+                  database_code="alp_fhir")
         fhir_tables_all = set()
         for incoming_file in files:
             if(truncate_tables):
