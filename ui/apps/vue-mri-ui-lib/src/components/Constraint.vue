@@ -1,7 +1,7 @@
 <template>
   <div v-if="isVisible" class="form-group constraint" @mouseenter="onInputHover()" @mouseleave="isHelpVisible = false">
     <div style="display: inline-flex">
-      <app-label :text="labelWithExample" :title="model.props.name"></app-label>
+      <app-label :text="model.props.name" :title="model.props.name"></app-label>
       <helpPopover :isHelpVisible="isHelpVisible" :helpType="helpType"></helpPopover>
     </div>
     <app-tag-input
@@ -89,42 +89,6 @@ export default {
     },
     attributeTitle() {
       return `${this.parentName} - ${this.model.props.name}`
-    },
-    labelWithExample() {
-      const baseName = this.model.props.name
-      if (this.model.props.type === 'time') {
-        return `${baseName} (${this.dateFormatExample})`
-      } else if (this.model.props.type === 'datetime') {
-        return `${baseName} (${this.datetimeFormatExample})`
-      }
-      return baseName
-    },
-    dateFormatExample() {
-      try {
-        const configFormat =
-          this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat || 'YYYY-MM-DD'
-        // Use September 30, 2025 - makes it clear which is month (09) vs day (30)
-        const exampleDate = moment('2025-09-30')
-        const formattedExample = exampleDate.format(configFormat)
-        return `eg: ${formattedExample}`
-      } catch (error) {
-        console.warn('Could not access MRI frontend config for date format, using default:', error)
-        return 'eg: 2025-09-30'
-      }
-    },
-    datetimeFormatExample() {
-      try {
-        const configFormat =
-          this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat || 'YYYY-MM-DD'
-        const format = `${configFormat} HH:mm:ss`
-        // Use September 30, 2025 14:30:00 - makes it clear which is month (09) vs day (30)
-        const exampleDate = moment('2025-09-30 14:30:00')
-        const formattedExample = exampleDate.format(format)
-        return `eg: ${formattedExample}`
-      } catch (error) {
-        console.warn('Could not access MRI frontend config for date format, using default:', error)
-        return 'eg: 2025-09-30 14:30:00'
-      }
     },
   },
   methods: {

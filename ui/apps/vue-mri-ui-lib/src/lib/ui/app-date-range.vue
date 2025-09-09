@@ -6,7 +6,7 @@
       @update="updateFrom"
       :config="dateControlConfig"
       :config-format="dateControlConfig.format"
-      :placeholder="getText('MRI_PA_INPUT_PLACEHOLDER_ALL')"
+      :placeholder="dateFormatPlaceholder"
       datetype="from"
       :errMsg="errTextFrom"
     ></appDate>
@@ -16,7 +16,7 @@
       @update="updateTo"
       :config="dateControlConfig"
       :config-format="dateControlConfig.format"
-      :placeholder="getText('MRI_PA_INPUT_PLACEHOLDER_TODAY')"
+      :placeholder="dateFormatPlaceholder"
       datetype="to"
       :errMsg="errTextTo"
     ></appDate>
@@ -26,6 +26,7 @@
 import { mapGetters, mapActions } from 'vuex'
 import DateUtils from '../../utils/DateUtils'
 import appDate from './app-date.vue'
+import moment from 'moment'
 
 export default {
   name: 'app-date-range',
@@ -65,6 +66,19 @@ export default {
         return {
           format: 'YYYY-MM-DD',
         }
+      }
+    },
+    dateFormatPlaceholder() {
+      try {
+        const configFormat =
+          this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat || 'YYYY-MM-DD'
+        // Use September 30, 2025 - makes it clear which is month (09) vs day (30)
+        const exampleDate = moment('2025-09-30')
+        const formattedExample = exampleDate.format(configFormat)
+        return `eg: ${formattedExample}`
+      } catch (error) {
+        console.warn('Could not access MRI frontend config for date format, using default:', error)
+        return 'eg: 2025-09-30'
       }
     },
   },
