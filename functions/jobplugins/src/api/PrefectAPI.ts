@@ -95,7 +95,8 @@ export class PrefectAPI {
   async getFlowRunsByDataset(
     databaseCode: string,
     dataset: string,
-    tags: string[] = []
+    tags: string[] = [],
+    prefix: string
   ) {
     const errorMessage = "Error while getting flow runs by dataset";
     try {
@@ -105,7 +106,7 @@ export class PrefectAPI {
         sort: "START_TIME_DESC",
         flow_runs: {
           operator: "and_",
-          name: { any_: [`${databaseCode}.${dataset}`] },
+          name: { any_: [`${prefix}_${databaseCode}.${dataset}`] },
           tags: { operator: "and_", all_: tags },
           state: { type: { not_any_: ["CANCELLED", "CANCELLING"] } },
         },
