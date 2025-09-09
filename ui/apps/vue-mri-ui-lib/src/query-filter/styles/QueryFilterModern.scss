@@ -2,6 +2,7 @@
   height: calc(100% - 35px);
   overflow: auto;
   position: relative;
+  background-color: #f2f0f1;
 
   // Overlay styles for SplashScreen
   .splash-overlay {
@@ -49,7 +50,7 @@
     gap: 24px;
     justify-content: center;
     align-items: center;
-    background: #ffffff;
+    background: #f2f0f1;
     border: 1px solid #e0e0e0;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
