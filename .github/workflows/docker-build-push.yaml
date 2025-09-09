@@ -115,12 +115,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-fhir-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
-          - AZ_REG_REPOSITORY: d2e-fhir-fe-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile.frontend
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
           - AZ_REG_REPOSITORY: d2e-cachedb
             DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .

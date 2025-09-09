@@ -108,18 +108,6 @@ services:
     # volumes:
     #   - ./services/alp-logto/post-init:/home/docker
 
-  # alp-fhir-server-post-init:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/alp-fhir/Dockerfile.client
-  #   volumes:
-  #     - ./services/alp-fhir/dist:/home/docker/src/alp-data-node/app/dist
-  #     - ./services/alp-fhir/src:/home/docker/src/alp-data-node/app/src
-  #   environment:
-  #     LOCAL_DEBUG: "true"
-  #   ports:
-  #     - 9226:9226
-
   alp-cachedb:
     build:
       context: .
@@ -135,20 +123,6 @@ services:
       - 41191:41191
     environment:
       LOCAL_DEBUG: "true"
-
-  # fhir-server:
-  #   build:
-  #     context: ./services/alp-fhir
-  #     dockerfile: Dockerfile
-
-  # fhir-fe-server:
-  #   build:
-  #     context: ./services/alp-fhir/
-  #     dockerfile: Dockerfile.frontend
-  #   volumes:
-  #     - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
-  #   ports:
-  #     - 41130:3000
 
   enterprise-gateway:
     build:
