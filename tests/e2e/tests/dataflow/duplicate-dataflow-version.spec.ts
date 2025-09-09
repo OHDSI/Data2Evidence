@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test('duplicate-dataflow-version', async ({ page }) => {
   // Authentication
-  await page.goto('https://localhost:443/portal')
+  await page.goto('/portal')
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
