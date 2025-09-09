@@ -157,6 +157,24 @@ fn wrap_query_for_hana(query: &str, hana_creds: &HanaCredentials) -> String {
     }
 }
 
+fn execute_with_fallback<F, R>(
+    primary_query: &str,
+    fallback_query: Option<&str>,
+    operation: F,
+) -> Result<R, duckdb::Error>
+where
+    F: Fn(&str) -> Result<R, duckdb::Error>,
+{
+    let result = operation(primary_query);
+    
+    if result.is_err() && fallback_query.is_some() {
+        eprintln!("Primary query failed, falling back to original query. Error: {:?}", result.as_ref().err());
+        operation(fallback_query.unwrap())
+    } else {
+        result
+    }
+}
+
 pub fn random_salt() -> Vec<u8> {
     Vec::from(rand::random::<[u8; 10]>())
 }
@@ -260,7 +278,6 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
         .replace("SELECT c.oid,c.*,t.relname as tabrelname,rt.relnamespace as refnamespace,d.description, null as consrc_copy",
         "SELECT c.oid,t.relname  as tabrelname,rt.relnamespace as refnamespace,d.description, null as consrc_copy");
 
-                // Determine the actual query to execute
                 let (actual_sql, fallback_sql) = if let Some(hana_creds) = &hana_credentials {
                     (wrap_query_for_hana(sql, hana_creds), Some(sql.to_string()))
                 } else {
@@ -268,20 +285,28 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
                 };
 
                 if actual_sql.to_uppercase().starts_with("SELECT") || actual_sql.to_uppercase().starts_with("WITH") {
-                    // Try the primary query (wrapped for HANA if applicable)
-                    let mut query_result = conn.prepare(&actual_sql);
+                    let fallback_ref = fallback_sql.as_deref();
                     
-                    // If it fails and we have a fallback, try the original query
-                    if query_result.is_err() && fallback_sql.is_some() {
-                        eprintln!("HANA wrapped query failed, falling back to original query");
-                        query_result = conn.prepare(fallback_sql.as_ref().unwrap());
+                    let mut stmt_result = conn.prepare(&actual_sql);
+                    let mut query_to_use = actual_sql.as_str();
+                    
+                    if stmt_result.is_err() && fallback_ref.is_some() {
+                        eprintln!("HANA wrapped query prepare failed, falling back to original query. Error: {:?}", stmt_result.as_ref().err());
+                        stmt_result = conn.prepare(fallback_ref.unwrap());
+                        query_to_use = fallback_ref.unwrap();
                     }
                     
-                    let mut stmt = query_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
-
-                    let ret = stmt
-                        .query_arrow(params![])
-                        .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                    let mut stmt = stmt_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                    
+                    let mut ret_result = stmt.query_arrow(params![]);
+                    
+                    if ret_result.is_err() && fallback_ref.is_some() && query_to_use != fallback_ref.unwrap() {
+                        eprintln!("HANA wrapped query execution failed, falling back to original query. Error: {:?}", ret_result.as_ref().err());
+                        stmt = conn.prepare(fallback_ref.unwrap()).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                        ret_result = stmt.query_arrow(params![]);
+                    }
+                    
+                    let ret = ret_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                     let schema = ret.get_schema();
                     let header = Arc::new(arrow_schema_to_pg_fields(
                         schema.as_ref(),
@@ -303,16 +328,12 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
                         || sql.to_uppercase().contains("APPLICATION_NAME")) {
                         responses.push(Response::Execution(Tag::new("OK")));
                     } else {
+                        let fallback_ref = fallback_sql.as_deref();
                         
-                        let mut execute_result = conn.execute_batch(&actual_sql);
+                        let _affected_rows = execute_with_fallback(&actual_sql, fallback_ref, |query_str| {
+                            conn.execute_batch(query_str)
+                        }).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                         
-                        
-                        if execute_result.is_err() && fallback_sql.is_some() {
-                            eprintln!("HANA wrapped query failed, falling back to original query");
-                            execute_result = conn.execute_batch(fallback_sql.as_ref().unwrap());
-                        }
-                        
-                        let _affected_rows = execute_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                         responses.push(Response::Execution(Tag::new("OK").with_rows(0)));
                     }
                 }
@@ -376,20 +397,28 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
             };
             
             if actual_query.to_uppercase().starts_with("SELECT") || actual_query.to_uppercase().starts_with("WITH") {
+                let fallback_ref = fallback_query.as_deref();
                 
-                let mut query_result = conn.prepare_cached(&actual_query);
+                let mut stmt_result = conn.prepare_cached(&actual_query);
+                let mut query_to_use = actual_query.as_str();
                 
-                
-                if query_result.is_err() && fallback_query.is_some() {
-                    eprintln!("HANA wrapped query failed, falling back to original query");
-                    query_result = conn.prepare_cached(fallback_query.as_ref().unwrap());
+                if stmt_result.is_err() && fallback_ref.is_some() {
+                    eprintln!("HANA wrapped query prepare failed, falling back to original query. Error: {:?}", stmt_result.as_ref().err());
+                    stmt_result = conn.prepare_cached(fallback_ref.unwrap());
+                    query_to_use = fallback_ref.unwrap();
                 }
                 
-                let mut stmt = query_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
-
-                let ret = stmt
-                    .query_arrow(params![])
-                    .map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                let mut stmt = stmt_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                
+                let mut ret_result = stmt.query_arrow(params![]);
+                
+                if ret_result.is_err() && fallback_ref.is_some() && query_to_use != fallback_ref.unwrap() {
+                    eprintln!("HANA wrapped query execution failed, falling back to original query. Error: {:?}", ret_result.as_ref().err());
+                    stmt = conn.prepare_cached(fallback_ref.unwrap()).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                    ret_result = stmt.query_arrow(params![]);
+                }
+                
+                let ret = ret_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 let schema = ret.get_schema();
                 let header = Arc::new(arrow_schema_to_pg_fields(
                     schema.as_ref(),
@@ -411,16 +440,12 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
                     || query.to_uppercase().contains("APPLICATION_NAME")) {
                     Ok(Response::Execution(Tag::new("OK")))
                 } else {
+                    let fallback_ref = fallback_query.as_deref();
                     
-                    let mut execute_result = conn.execute_batch(&actual_query);
+                    let _affected_rows = execute_with_fallback(&actual_query, fallback_ref, |query_str| {
+                        conn.execute_batch(query_str)
+                    }).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                     
-                    
-                    if execute_result.is_err() && fallback_query.is_some() {
-                        eprintln!("HANA wrapped query failed, falling back to original query");
-                        execute_result = conn.execute_batch(fallback_query.as_ref().unwrap());
-                    }
-                    
-                    let _affected_rows = execute_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                     Ok(Response::Execution(Tag::new("OK").with_rows(0)))
                 }
             }
@@ -463,16 +488,10 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
                 (statement.clone(), None)
             };
             
-            
-            let mut stmt_result = conn.prepare_cached(&actual_statement);
-            
-            
-            if stmt_result.is_err() && fallback_statement.is_some() {
-                eprintln!("HANA wrapped statement failed, falling back to original statement");
-                stmt_result = conn.prepare_cached(fallback_statement.as_ref().unwrap());
-            }
-            
-            let stmt = stmt_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+            let fallback_ref = fallback_statement.as_deref();
+            let stmt = execute_with_fallback(&actual_statement, fallback_ref, |query_str| {
+                conn.prepare_cached(query_str)
+            }).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 
             let fields = row_desc_from_stmt(&stmt, &Format::UnifiedBinary)?;
             Ok(DescribeStatementResponse::new(param_types, fields))
@@ -515,16 +534,10 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
                 (statement.clone(), None)
             };
             
-            
-            let mut stmt_result = conn.prepare_cached(&actual_statement);
-            
-            
-            if stmt_result.is_err() && fallback_statement.is_some() {
-                eprintln!("HANA wrapped statement failed, falling back to original statement");
-                stmt_result = conn.prepare_cached(fallback_statement.as_ref().unwrap());
-            }
-            
-            let stmt = stmt_result.map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+            let fallback_ref = fallback_statement.as_deref();
+            let stmt = execute_with_fallback(&actual_statement, fallback_ref, |query_str| {
+                conn.prepare_cached(query_str)
+            }).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 
             let fields = row_desc_from_stmt(&stmt, &format)?;
             Ok(DescribePortalResponse::new(fields))
