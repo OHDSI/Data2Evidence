@@ -46,13 +46,31 @@ def hello_flow(name: str = "World") -> dict:
         return {"status": "error", "message": "Processing failed"}
 ```
 
+**CRITICAL: Always check utility files used by flow.py:**
+- **types.py** - Parameter validation, type definitions, conditional field requirements
+- **README.md** - Plugin documentation, parameter examples, usage instructions  
+- **__init__.py** - Required for Python package structure
+- **Shared utilities** - Check `_shared_flow_utils` imports for APIs, DAOs, types
+
+**Before modifying any flow:**
+1. **Read types.py first** - Understand parameter structure, validation rules, conditional requirements
+2. **Check imports** - Identify all dependencies and shared utilities being used
+3. **Review README.md** - Understand the plugin's purpose and parameter examples
+4. **Test parameter validation** - Ensure your changes don't break existing validation logic
+
 ### 2. Package.json Generation
 ```bash
 cd flows
 python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
 ```
-**Required:** package_name, entrypoint (e.g. `path/to/flow.py:function`)
-**Optional:** plugin_type ('datamodel' for datamodel plugins), -dm (comma-separated datamodels)
+**Required:** package_name, entrypoint (e.g. `path/to/flow.py:function`), plugin_type
+**Optional:** -dm (comma-separated datamodels)
+**Plugin types:** Use 'datamodel' for datamodel plugins, or a descriptive type like 'phenotype', 'test', 'analysis', etc.
+
+**Note:** If you encounter `ModuleNotFoundError: No module named 'fastapi'`, install it with:
+```bash
+pip install fastapi uvicorn --force-reinstall
+```
 
 ### 3. Build & Test
 ```bash
@@ -112,8 +130,15 @@ def test_flow():
 
 ## Common Development Tasks
 
-**Creating new flow:** Create `@flow` function → Break into `@task` functions → Run `flowinit.py` → `yarn build`
-**Modifying existing flow:** Update logic → Regenerate package.json if entry points changed → Rebuild → Test locally
-**Adding new task:** Create `@task` function → Add proper type hints → Add to flow orchestration
+**Creating new flow:** 
+1. Create `types.py` with Pydantic models and validation
+2. Create `@flow` function → Break into `@task` functions 
+3. Create `README.md` with parameter documentation
+4. Run `flowinit.py` → `yarn build`
+
+**Modifying existing flow:** 
+1. **Read `types.py` first** - Understand current parameter structure
+2. **Check all imports** - Identify dependencies that might be affected
+3. Update logic → Update types.py if parameters change → **Only regenerate package.json for your specific plugin if entry points changed** → Rebuild → Test locally
 
 This instruction file prioritizes practical development workflows with accurate build processes and plugin detection patterns.
