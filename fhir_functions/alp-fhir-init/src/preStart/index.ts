@@ -49,7 +49,6 @@ async function copy_config_files(d2e_fhirPath: string, dest: string) {
     if (config.redis && config.redis.port) config.redis.port = Number(config.redis.port);
     await Deno.writeTextFile(d2e_fhirPath + "/temp.json", JSON.stringify(config, null, 2));
     await copyFileStream(d2e_fhirPath + "/temp.json", dest + "/medplum.config.json");
-    await copyFileStream(d2e_fhirPath + "/deno_medplum.json", dest + "/deno.json");
     console.log("Configuration file processed and copied");
   } catch (err) {
     console.error("Error processing configuration file:", err);
