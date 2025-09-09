@@ -5,7 +5,7 @@
         <pane :size="paneSize" :min-size="splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
-              <div>
+              <div v-if="!isLocal">
                 <button
                   type="button"
                   class="actionButton"
@@ -469,7 +469,7 @@ export default {
         }
         // Wait for component to be mounted
         await this.$nextTick()
-        
+
         if (atlasJson === null) {
           // Clear any existing data and set null for empty initialization
           this.atlasDataForQueryFilter = null
