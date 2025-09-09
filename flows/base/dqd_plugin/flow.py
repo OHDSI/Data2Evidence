@@ -43,8 +43,6 @@ def dqd_plugin(options: DqdOptionsType):
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
 
-    logger.info(f"r_connection_string is {r_connection_string}")
-
     db_driver_string = dbdao.set_db_driver_env()
 
     # Todo: Update implementation if Hana uses trex
