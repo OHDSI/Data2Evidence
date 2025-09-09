@@ -320,7 +320,7 @@
             "notes": "",
             "pluginPath": "plugins/Setup/DemoSetup/module",
             "route": "demo-setup"
-          }
+          }          
         ],
         "systemadmin": [
           {
@@ -368,6 +368,13 @@
             "enabled": true,
             "pluginPath": "plugins/Setup/module",
             "route": "setup"
+          },
+          {
+            "name": "Logs",
+            "nameI18nKey": "UI_PLUGIN_LOGS",
+            "pluginPath": "plugins/SystemAdmin/D2ELogs/module",
+            "enabled": true,
+            "route": "docker-logs"
           }
         ]
       }

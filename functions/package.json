@@ -288,8 +288,8 @@
         },
         {
           "source": "/dockerlogs",
-          "service": "logging",
-          "rmsrc": true
+          "service": "docker-logs",
+          "rmsrc": false
         }
       ],
       "roles": {
@@ -2435,7 +2435,7 @@
           ]
         },
         {
-          "path": "^/dockerlogs/logs(.*)",
+          "path": "^/dockerlogs(.*)",
           "scopes": [
             "d2e.container.logs.read"
           ]
