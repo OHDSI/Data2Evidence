@@ -285,6 +285,11 @@
           "source": "/mlflow",
           "service": "mlflow",
           "rmsrc": true
+        },
+        {
+          "source": "/dockerlogs",
+          "service": "logging",
+          "rmsrc": true
         }
       ],
       "roles": {
@@ -454,7 +459,8 @@
           "strategus.results.read",
           "strategus.results.write",
           "strategus.results.delete",
-          "mlflow"
+          "mlflow",
+          "d2e.container.logs.read"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content",
@@ -2426,6 +2432,12 @@
           "path": "^/mlflow(.*)",
           "scopes": [
             "mlflow"
+          ]
+        },
+        {
+          "path": "^/dockerlogs/logs(.*)",
+          "scopes": [
+            "d2e.container.logs.read"
           ]
         },
         {
