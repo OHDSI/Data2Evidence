@@ -9,15 +9,13 @@ This mock server provides a development environment for PA-Atlas (query-filter) 
 yarn
 
 # Build and bundle the application
-cd d2e/ui/apps/vue-mri-ui-lib/src/query-filter
+cd d2e/ui/apps/vue-mri-ui-lib
 npm run build:mock
-
 # Start the server
-cd src/query-filter/mock-server
-node server.js
+npm run start:mock
 ```
 
-Then open `http://localhost:3001` in your browser.
+Then open `http://localhost:3131` in your browser.
 
 ## Architecture Overview
 
@@ -41,7 +39,7 @@ Then open `http://localhost:3001` in your browser.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐    ┌─────────────────┐
-│                        Mock Server (localhost:3001)                 │    │  Demo Atlas     │
+│                        Mock Server (localhost:3131)                 │    │  Demo Atlas     │
 │                                                                     │◄──►│  Instance       │
 │  ┌─────────────────┐              ┌──────────────────────────────┐  │    │                 │
 │  │  Static Files   │              │       API Routes             │  │    │  - Live Atlas   │
@@ -138,7 +136,7 @@ For a production-like bundle that serves both the application and APIs from a si
    cd src/query-filter/mock-server
    node server.js
 
-   # or with url specified (3001 by default)
+   # or with url specified (3131 by default)
    SERVER_URL=http://localhost:3131 node server.js
    ```
 

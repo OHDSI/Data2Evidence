@@ -8,6 +8,7 @@
     "build": "vue-cli-service build",
     "build:local": "VUE_APP_HOST=https://localhost:41000 vue-cli-service build",
     "build:mock": "npm run build && cp -r ../../resources/mri src/query-filter/mock-server/ && cp public/authenticate.js src/query-filter/mock-server/mri/ && echo '\n✅ Build complete!\n\nTo start the mock server:\n  cd mock-server\n  node server.js\n\nThen open http://localhost:3001 in your browser.\n'",
+    "start:mock": "cd src/query-filter/mock-server && SERVER_URL=http://localhost:3131 npm start",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit",
     "test:ci": "vue-cli-service test:unit --maxWorkers=4 --coverage --reporters=\"jest-junit\""
