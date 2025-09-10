@@ -81,10 +81,10 @@ export default {
         // Use September 30, 2025 14:30:00 - makes it clear which is month (09) vs day (30)
         const exampleDate = moment('2025-09-30 14:30:00')
         const formattedExample = exampleDate.format(format)
-        return `eg: ${formattedExample}`
+        return `e.g., ${formattedExample}`
       } catch (error) {
         console.warn('Could not access MRI frontend config for date format, using default:', error)
-        return 'eg: 2025-09-30 14:30:00'
+        return 'e.g., 2025-09-30 14:30:00'
       }
     },
   },
