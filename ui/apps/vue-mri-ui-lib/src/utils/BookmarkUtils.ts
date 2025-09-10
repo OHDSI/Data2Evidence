@@ -120,10 +120,10 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
     return {
       id: acd.id,
       name: acd.name,
-      username: acd.createdBy,
       createdOn: new Date(acd.createdDate).toISOString(),
-      updatedOn: new Date(acd.modifiedDate).toISOString(),
-      cohortDefinitionId: acd.cohortDefinitionId,
+      updatedOn: new Date(acd.modifiedDate || acd.createdDate).toISOString(),
+      ...(acd.createdBy && { username: acd.createdBy }),
+      ...(acd.cohortDefinitionId && { cohortDefinitionId: acd.cohortDefinitionId }),
     }
   }
 
