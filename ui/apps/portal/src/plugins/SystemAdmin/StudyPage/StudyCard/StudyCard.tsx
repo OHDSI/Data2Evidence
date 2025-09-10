@@ -60,10 +60,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
         console.error("Error setting cookie in iframe:", error);
       }
     }
-  }, [isIframeViewerOpen, bearerToken]);
 
-  // Update iframe cookie when the app refreshes the access token
-  useEffect(() => {
     const onTokenRefreshed = (e: Event) => {
       const token = (e as CustomEvent)?.detail?.accessToken as string | undefined;
       if (!token) return;
@@ -75,7 +72,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
         } catch (err) {
           console.error("Error updating iframe cookie after OIDC refresh:", err);
         }
-        // Light reload to ensure resources pick up the new cookie
         try {
           const src = new URL(iframeRef.current.src);
           src.searchParams.set("t", Date.now().toString());
@@ -88,7 +84,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     };
     window.addEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
     return () => window.removeEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
-  }, [isIframeViewerOpen]);
+  }, [isIframeViewerOpen, bearerToken]);
 
   const fetchViewerStatus = useCallback(async () => {
     if (!study.id) {
@@ -108,7 +104,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   });
 
   const handleOpenIframeViewer = useCallback(() => {
-    // Ensure cookie is present before first iframe navigation
     if (bearerToken) {
       try {
         document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
