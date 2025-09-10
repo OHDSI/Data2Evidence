@@ -108,7 +108,7 @@ const setupWebapiRoutes = app => {
     return res.send()
   })
 
-  app.get('/analytics-svc/api/services/bookmark', async (req, res) => {
+  app.get('/d2e-webapi/cohortdefinition', async (req, res) => {
     const cacheKey = CACHE_KEYS.COHORT_DEFINITIONS
     logRequest(req)
     let data = cache[cacheKey]
