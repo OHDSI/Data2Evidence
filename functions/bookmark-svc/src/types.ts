@@ -189,5 +189,4 @@ export interface IFrontendBookmark {
   schemaName: string
   bookmarks: IFormattedBookmark[]
   materializedCohorts: IFormattedMaterializedCohort[]
-  // atlasCohortDefinitions: IFormattedAtlasCohortDefinition[]
 }

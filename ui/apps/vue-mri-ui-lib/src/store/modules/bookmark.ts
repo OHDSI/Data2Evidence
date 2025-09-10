@@ -419,7 +419,6 @@ const mutations = {
     modulestate.loading = loading
   },
   [types.SET_MATERIALIZED_COHORTS](modulestate, materializedCohorts) {
-    // fallback to cohortDefinitions in interim until api changes
     modulestate.materializedCohorts = materializedCohorts ?? []
   },
   [types.SET_ATLAS_COHORT_DEFINITIONS](modulestate, atlasCohortDefinitions) {

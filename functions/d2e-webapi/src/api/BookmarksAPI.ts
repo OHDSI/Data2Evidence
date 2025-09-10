@@ -12,7 +12,7 @@ export class BookmarksAPI {
       throw new Error("No token passed for BookmarksAPI!");
     }
 
-    if (env.SERVICE_ROUTES.portalServer) {
+    if (env.SERVICE_ROUTES.bookmark) {
       this.baseURL = env.SERVICE_ROUTES.bookmark;
     } else {
       console.error("No url is set for BookmarksAPI");
