@@ -71,6 +71,10 @@ python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
 ```bash
 pip install fastapi uvicorn --force-reinstall
 ```
+or for uv projects:
+```bash
+uv add fastapi uvicorn --force
+```
 
 ### 3. Build & Test
 ```bash
