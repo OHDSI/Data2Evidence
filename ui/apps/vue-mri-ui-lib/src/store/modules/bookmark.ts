@@ -21,6 +21,7 @@ const state = {
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
+const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
 
 // getters
 const getters = {
@@ -144,7 +145,11 @@ const getters = {
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
         // check bookmark exists, if yes, should use the bookmark name
-        const bookmark = bookmarks.find(bookmark => (bookmark?.cohortDefinitionId === cohortDefinition.id && bookmark.bookmarkname === cohortDefinition?.cohortDefinitionName))
+        const bookmark = bookmarks.find(
+          bookmark =>
+            bookmark?.cohortDefinitionId === cohortDefinition.id &&
+            bookmark.bookmarkname === cohortDefinition?.cohortDefinitionName
+        )
         const atlasCohortDefinition = atlasCohortDefinitions.find(cd => cd.cohortDefinitionId === cohortDefinition.id)
         if (!bookmark && !atlasCohortDefinition) {
           return displayBookmarks.push({
@@ -191,7 +196,9 @@ const getters = {
 
       // bookmarks without a materialized cohort
       bookmarks.forEach(bookmark => {
-        const materializedCohort = materializedCohorts.find(cohort => (bookmark.bookmarkname === cohort?.cohortDefinitionName && cohort.id === bookmark?.cohortDefinitionId))
+        const materializedCohort = materializedCohorts.find(
+          cohort => bookmark.bookmarkname === cohort?.cohortDefinitionName && cohort.id === bookmark?.cohortDefinitionId
+        )
 
         if (materializedCohort) {
           return
@@ -233,9 +240,7 @@ const actions = {
     })
     let url = ''
     if (params.cmd === 'loadAll') {
-      url = `${bookmarkURL}?paConfigId=${rootGetters.getMriFrontendConfig.getPaConfigId()}&r=${Math.random()}&datasetId=${
-        rootGetters.getSelectedDataset.id
-      }`
+      url = `${webApiCohortDefinitionURL}?paConfigId=${rootGetters.getMriFrontendConfig.getPaConfigId()}`
     } else {
       url = `${bookmarkURL}/${bookmarkId || ''}`
       params.paConfigId = rootGetters.getMriFrontendConfig.getPaConfigId()
@@ -244,7 +249,17 @@ const actions = {
       params.datasetId = rootGetters.getSelectedDataset.id
     }
 
-    return dispatch('ajaxAuth', { url, method, params, cancelToken })
+    const dispatchOptions: {
+      url: string
+      method: string
+      params: any
+      cancelToken: typeof cancelToken
+      datasetId?: string
+    } = { url, method, params, cancelToken }
+    if (params.cmd === 'loadAll') {
+      dispatchOptions.datasetId = rootGetters.getSelectedDataset.id
+    }
+    return dispatch('ajaxAuth', dispatchOptions)
       .then(({ data }) => {
         let toastMessage = ''
         if (params.cmd === 'loadAll') {

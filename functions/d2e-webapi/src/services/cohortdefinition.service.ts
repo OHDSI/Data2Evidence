@@ -1,10 +1,15 @@
 import { z } from "zod";
 
-import { ICohortDefinition, ICohortGeneratorFlowRun } from "../api/types.ts";
+import {
+  Bookmarks,
+  ICohortDefinition,
+  ICohortGeneratorFlowRun,
+} from "../api/types.ts";
 
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   AtlasCohortDefinitionDto,
   CohortDefinitionCreateResponseDto,
@@ -14,6 +19,7 @@ import {
   ICohortDefinitionListResponseDto,
   IGenerateCohortResponseDto,
 } from "../dto/cohortdefinition.ts";
+import { BookmarkSchema } from "../api/types.ts";
 import { UserArtifactServiceNames } from "../types.ts";
 
 export const generateCohort = async (
@@ -171,32 +177,17 @@ export const createCohortDefinition = async (
   return response;
 };
 
-export const getCohortDefinitionList = async (
+export const getCohortDefinitionList: Bookmarks = async (
   token: string,
-  datasetId: string
+  datasetId: string,
+  paConfigId?: string
 ) => {
-  const portalServerApi = new PortalServerAPI(token);
-  const atlasCohortDefinitions =
-    await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+  const bookmarksApi = new BookmarksAPI(token);
+  const bookmarks: z.infer<typeof BookmarkSchema> =
+    await bookmarksApi.getAllBookmarks(datasetId, paConfigId);
+  console.log(typeof bookmarks);
 
-  // Construct response
-  const result: ICohortDefinitionListResponseDto = atlasCohortDefinitions.map(
-    (atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto) => {
-      return {
-        id: atlasCohortDefinition.id,
-        name: atlasCohortDefinition.name,
-        description: atlasCohortDefinition.description,
-        createdBy: atlasCohortDefinition.createdBy,
-        createdDate: atlasCohortDefinition.createdDate,
-        modifiedBy: atlasCohortDefinition.modifiedBy,
-        modifiedDate: atlasCohortDefinition.modifiedDate,
-        hasWriteAccess: true,
-        hasReadAccess: true,
-        tags: atlasCohortDefinition.tags,
-      };
-    }
-  );
-  return result;
+  return bookmarks;
 };
 
 export const getCohortDefinition = async (

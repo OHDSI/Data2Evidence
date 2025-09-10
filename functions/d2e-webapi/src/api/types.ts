@@ -176,6 +176,43 @@ export interface PortalUserArtifacts {
   artifacts: unknown;
 }
 
+export const AtlasCohortDefinitionSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  username: z.string(),
+  createdOn: z.string(),
+  updatedOn: z.string(),
+});
+
+export const BookmarkSchema = z.object({
+  bmkId: z.string(),
+  bookmarkname: z.string(),
+  bookmark: z.string(),
+  viewname: z.string().nullable(),
+  modified: z.string(),
+  version: z.number().nullable(),
+  user_id: z.string(),
+  shared: z.boolean(),
+  cohortDefinitionId: z.number().optional(),
+});
+
+export const MaterializedCohortSchema = z.object({
+  id: z.number(),
+  patientCount: z.number(),
+  cohortDefinitionName: z.string(),
+  createdOn: z.string(),
+  description: z.string(),
+});
+
+export const BookmarksSchema = z.object({
+  atlasCohortDefinitions: z.array(AtlasCohortDefinitionSchema),
+  bookmarks: z.array(BookmarkSchema),
+  materializedCohorts: z.array(MaterializedCohortSchema),
+  schemaName: z.string(),
+});
+
+export type Bookmarks = z.infer<typeof BookmarksSchema>;
+
 export interface IUserMe {
   id: string;
   username: string;

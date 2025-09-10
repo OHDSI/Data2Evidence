@@ -35,6 +35,9 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         description:
           "Returns metadata about all cohort definitions in the database",
         tags: ["cohortdefinition"],
+        querystring: z.object({
+          paConfigId: z.string().optional(),
+        }),
         response: { 200: CohortDefinitionListResponseDto },
         security: [
           {
@@ -45,7 +48,12 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       },
     },
     async (req, res) => {
-      const result = await getCohortDefinitionList(req.token, req.datasetId);
+      const { paConfigId } = req.query;
+      const result = await getCohortDefinitionList(
+        req.token,
+        req.datasetId,
+        paConfigId
+      );
       res.send(result);
     }
   );
