@@ -811,6 +811,8 @@ services:
 
         https://$CADDY__ALP__PUBLIC_FQDN {
           $TLS__CADDY_DIRECTIVE
+          redir /sign-in /portal 308
+          redir /unknown-session /portal 308
           redir / /portal
           import portal
         }
