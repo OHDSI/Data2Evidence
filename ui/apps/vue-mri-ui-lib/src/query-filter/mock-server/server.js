@@ -72,6 +72,9 @@ app.get('*', (_, res) => {
       /float: left; position: absolute; /g,
       'float: left; position: absolute; visibility: hidden;'
     )
+    if (process.env.DEBUG) {
+      htmlContent = htmlContent.replace(/debug: false/g, 'debug: true')
+    }
 
     res.setHeader('Content-Type', 'text/html')
     res.send(htmlContent)

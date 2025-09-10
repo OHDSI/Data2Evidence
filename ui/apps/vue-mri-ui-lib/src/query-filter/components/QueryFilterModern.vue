@@ -142,6 +142,11 @@ const hasExceededLength = computed(() => {
   return cohortName.value.length >= maxLength
 })
 
+const debug = computed(() => {
+  const portalAPI = getPortalAPI()
+  return portalAPI?.debug
+})
+
 // Initialize criteria manager composable
 const {
   criteriaManager,
@@ -647,7 +652,6 @@ const saveAtlasCohort = async () => {
     const portalAPI = getPortalAPI()
     const username = portalAPI?.username || 'system'
     const currentDatasetId = getDatasetId()
-
     if (!currentDatasetId) {
       return
     }
@@ -799,7 +803,7 @@ const copyToClipboard = async (text: string, label: string) => {
     </div>
 
     <!-- Debug Toggle -->
-    <div class="debug-toggle-section">
+    <div class="debug-toggle-section" v-if="debug">
       <label class="debug-toggle">
         <input type="checkbox" v-model="showDebug" class="debug-checkbox" />
         <span class="debug-label">Show Debug Information</span>

@@ -154,8 +154,9 @@ For a production-like bundle that serves both the application and APIs from a si
   - Automatically extracts the port number for the server
   - Used for URL replacement in mock data and served files
 
-- **`PORT`** (optional)
-  - Overrides the port extracted from SERVER_URL
+- **`DEBUG`**
+  - default `DEBUG=false`
+  - show debug information at bottom of a cohort definition
   - Only use if you need a different port than what's in SERVER_URL
 
 ## File Modifications
