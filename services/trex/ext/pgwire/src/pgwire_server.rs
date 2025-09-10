@@ -39,13 +39,14 @@ pub struct HanaCredentials {
     pub password: String,
 }
 
-enum DatabaseAction {
+#[derive(Debug)]
+pub enum DatabaseAction {
     SetDatabase,
     UseHana(HanaCredentials),
     Skip,
 }
 
-fn check_database_action(database_name: &str, db_credentials: &str) -> DatabaseAction {
+pub fn check_database_action(database_name: &str, db_credentials: &str) -> DatabaseAction {
     if let Ok(decoded_bytes) = general_purpose::STANDARD.decode(db_credentials) {
         if let Ok(decoded_str) = String::from_utf8(decoded_bytes) {
             if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(&decoded_str) {
@@ -55,13 +56,11 @@ fn check_database_action(database_name: &str, db_credentials: &str) -> DatabaseA
                             if db_id == database_name {
                                 if let Some(dialect) = db.get("dialect").and_then(|v| v.as_str()) {
                                     if dialect == "hana" {
-                                        // Extract HANA credentials
                                         if let (Some(host), Some(port), Some(name)) = (
                                             db.get("host").and_then(|v| v.as_str()),
                                             db.get("port").and_then(|v| v.as_u64()),
                                             db.get("name").and_then(|v| v.as_str())
                                         ) {
-                                            // Find Admin credentials
                                             if let Some(credentials_array) = db.get("credentials").and_then(|v| v.as_array()) {
                                                 for cred in credentials_array {
                                                     if let Some(user_scope) = cred.get("userScope").and_then(|v| v.as_str()) {
@@ -83,10 +82,8 @@ fn check_database_action(database_name: &str, db_credentials: &str) -> DatabaseA
                                                 }
                                             }
                                         }
-                                        // If we couldn't extract HANA credentials, skip
                                         return DatabaseAction::Skip;
                                     } else {
-                                        // For any other dialect (duckdb, postgres, bigquery, etc.), set the database
                                         return DatabaseAction::SetDatabase;
                                     }
                                 }
@@ -97,31 +94,21 @@ fn check_database_action(database_name: &str, db_credentials: &str) -> DatabaseA
             }
         }
     }
-    // Default: skip if we can't parse or find the database
     DatabaseAction::Skip
 }
 
-fn set_database_if_needed(
+fn get_hana_credentials_if_available(
     database: &Option<String>,
     server_host: &str,
     server_port: u16,
-    conn: &Connection
 ) -> Option<HanaCredentials> {
     if let Some(db) = database {
         if let Some(db_credentials) = ServerRegistry::instance().get_db_credentials(server_host, server_port) {
             match check_database_action(db, &db_credentials) {
-                DatabaseAction::SetDatabase => {
-                    if let Err(e) = conn.execute(&format!("USE {}", db), params![]) {
-                        eprintln!("Warning: Failed to set database '{}': {}", db, e);
-                    }
-                    None
-                }
                 DatabaseAction::UseHana(hana_creds) => {
                     Some(hana_creds)
                 }
-                DatabaseAction::Skip => {
-                    None
-                }
+                _ => None
             }
         } else {
             None
@@ -257,7 +244,19 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
         let result = tokio::task::spawn_blocking(move || -> PgWireResult<Vec<Response<'static>>> {
             let conn = connection.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             
-            let hana_credentials = set_database_if_needed(&database, &server_host, server_port, &conn);
+            
+            if let Some(db) = &database {
+                if let Some(db_credentials) = ServerRegistry::instance().get_db_credentials(&server_host, server_port) {
+                    match check_database_action(db, &db_credentials) {
+                        DatabaseAction::SetDatabase => {
+                            if let Err(e) = conn.execute(&format!("USE {}", db), params![]) {
+                                eprintln!("Warning: Failed to set database '{}': {}", db, e);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
             
             let queries: Vec<&str> = query
                 .split(';')
@@ -278,6 +277,8 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
         .replace("SELECT c.oid,c.*,t.relname as tabrelname,rt.relnamespace as refnamespace,d.description, null as consrc_copy",
         "SELECT c.oid,t.relname  as tabrelname,rt.relnamespace as refnamespace,d.description, null as consrc_copy");
 
+                let hana_credentials = get_hana_credentials_if_available(&database, &server_host, server_port);
+
                 let (actual_sql, fallback_sql) = if let Some(hana_creds) = &hana_credentials {
                     (wrap_query_for_hana(sql, hana_creds), Some(sql.to_string()))
                 } else {
@@ -287,12 +288,14 @@ impl SimpleQueryHandler for DuckDBQueryHandler {
                 if actual_sql.to_uppercase().starts_with("SELECT") || actual_sql.to_uppercase().starts_with("WITH") {
                     let fallback_ref = fallback_sql.as_deref();
                     
-                    let mut stmt_result = conn.prepare(&actual_sql);
+                    
+                    
+                    let mut stmt_result = conn.prepare(&actual_sql);  
                     let mut query_to_use = actual_sql.as_str();
                     
                     if stmt_result.is_err() && fallback_ref.is_some() {
                         eprintln!("HANA wrapped query prepare failed, falling back to original query. Error: {:?}", stmt_result.as_ref().err());
-                        stmt_result = conn.prepare(fallback_ref.unwrap());
+                        stmt_result = conn.prepare(fallback_ref.unwrap());  
                         query_to_use = fallback_ref.unwrap();
                     }
                     
@@ -388,7 +391,7 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
         tokio::task::spawn_blocking(move || -> PgWireResult<Response<'static>> {
             let conn = connection.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             
-            let hana_credentials = set_database_if_needed(&database, &server_host, server_port, &conn);
+            let hana_credentials = get_hana_credentials_if_available(&database, &server_host, server_port);
             
             let (actual_query, fallback_query) = if let Some(hana_creds) = &hana_credentials {
                 (wrap_query_for_hana(&query, hana_creds), Some(query.clone()))
@@ -399,12 +402,14 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
             if actual_query.to_uppercase().starts_with("SELECT") || actual_query.to_uppercase().starts_with("WITH") {
                 let fallback_ref = fallback_query.as_deref();
                 
-                let mut stmt_result = conn.prepare_cached(&actual_query);
+                
+                
+                let mut stmt_result = conn.prepare(&actual_query);  
                 let mut query_to_use = actual_query.as_str();
                 
                 if stmt_result.is_err() && fallback_ref.is_some() {
                     eprintln!("HANA wrapped query prepare failed, falling back to original query. Error: {:?}", stmt_result.as_ref().err());
-                    stmt_result = conn.prepare_cached(fallback_ref.unwrap());
+                    stmt_result = conn.prepare(fallback_ref.unwrap());  
                     query_to_use = fallback_ref.unwrap();
                 }
                 
@@ -414,7 +419,7 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
                 
                 if ret_result.is_err() && fallback_ref.is_some() && query_to_use != fallback_ref.unwrap() {
                     eprintln!("HANA wrapped query execution failed, falling back to original query. Error: {:?}", ret_result.as_ref().err());
-                    stmt = conn.prepare_cached(fallback_ref.unwrap()).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
+                    stmt = conn.prepare(fallback_ref.unwrap()).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                     ret_result = stmt.query_arrow(params![]);
                 }
                 
@@ -480,7 +485,8 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
         tokio::task::spawn_blocking(move || -> PgWireResult<DescribeStatementResponse> {
             let conn = connection.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             
-            let hana_credentials = set_database_if_needed(&database, &server_host, server_port, &conn);
+            
+            let hana_credentials = get_hana_credentials_if_available(&database, &server_host, server_port);
             
             let (actual_statement, fallback_statement) = if let Some(hana_creds) = &hana_credentials {
                 (wrap_query_for_hana(&statement, hana_creds), Some(statement.clone()))
@@ -490,7 +496,7 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
             
             let fallback_ref = fallback_statement.as_deref();
             let stmt = execute_with_fallback(&actual_statement, fallback_ref, |query_str| {
-                conn.prepare_cached(query_str)
+                conn.prepare(query_str)  
             }).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 
             let fields = row_desc_from_stmt(&stmt, &Format::UnifiedBinary)?;
@@ -526,7 +532,8 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
         tokio::task::spawn_blocking(move || -> PgWireResult<DescribePortalResponse> {
             let conn = connection.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             
-            let hana_credentials = set_database_if_needed(&database, &server_host, server_port, &conn);
+            
+            let hana_credentials = get_hana_credentials_if_available(&database, &server_host, server_port);
             
             let (actual_statement, fallback_statement) = if let Some(hana_creds) = &hana_credentials {
                 (wrap_query_for_hana(&statement, hana_creds), Some(statement.clone()))
@@ -536,7 +543,7 @@ impl ExtendedQueryHandler for DuckDBQueryHandler {
             
             let fallback_ref = fallback_statement.as_deref();
             let stmt = execute_with_fallback(&actual_statement, fallback_ref, |query_str| {
-                conn.prepare_cached(query_str)
+                conn.prepare(query_str)  
             }).map_err(|e| PgWireError::ApiError(Box::new(e)))?;
                 
             let fields = row_desc_from_stmt(&stmt, &format)?;
