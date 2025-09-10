@@ -86,7 +86,7 @@
 
     <div class="bookmark-content">
       <div class="bookmark-content__header">
-        <div class="bookmark-content__header-title">Create Cohort:</div>
+        <div class="bookmark-content__header-title" v-if="!isLocal">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
           <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
           <Button
@@ -276,6 +276,9 @@ export default {
     },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
+    },
+    isLocal() {
+      return getPortalAPI().isLocal
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
