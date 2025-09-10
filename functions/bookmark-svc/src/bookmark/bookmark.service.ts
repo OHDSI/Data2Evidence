@@ -116,12 +116,6 @@ export async function _loadAllBookmarks(
     const bookmarks = await portalAPI.getBookmarks(datasetId)
     const formattedBookmarks = formatUserArtifactData(bookmarks, userName, datasetId)
 
-    // Get and format atlas cohort definitions
-    // const atlasCohortDefinitions = await portalAPI.getAtlasCohortDefinitions(datasetId)
-    // const formattedAtlasCohortDefinitions = atlasCohortDefinitions.map(atlasCohortDefinition =>
-    //   _formatAtlasCohortDefinition(atlasCohortDefinition, datasetId)
-    // )
-
     // Get and format materialized cohorts
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
     const materializedCohorts = await analyticsSvcAPI.getAllCohorts(datasetId)
@@ -580,18 +574,6 @@ const _formatMaterializedCohort = (cohortDefinition: IMaterializedCohort): IForm
   description: cohortDefinition.description,
 })
 
-const _formatAtlasCohortDefinition = (
-  atlasCohortDefinition: IAtlasCohortDefinition,
-  datasetId: string
-): IFormattedAtlasCohortDefinition => ({
-  id: atlasCohortDefinition.id,
-  name: atlasCohortDefinition.name,
-  username: atlasCohortDefinition.createdBy,
-  createdOn: new Date(atlasCohortDefinition.createdDate).toISOString(),
-  updatedOn: new Date(atlasCohortDefinition.modifiedDate).toISOString(),
-  cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(atlasCohortDefinition, datasetId),
-})
-
 /*
 Function to filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
 */
@@ -609,14 +591,6 @@ const _filterUntaggedMaterializedCohorts = (
     }
     return acc
   }, cohortDefinitionIds)
-
-  // Get cohort definition ids from formattedAtlasCohortDefinitions
-  // formattedAtlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
-  //   if (atlasCohortDefinition.cohortDefinitionId) {
-  //     acc.push(atlasCohortDefinition.cohortDefinitionId)
-  //   }
-  //   return acc
-  // }, cohortDefinitionIds)
 
   const filteredMaterializedCohorts = formattedMaterializedCohorts.filter(materializedCohorts => {
     return cohortDefinitionIds.includes(materializedCohorts.id)
