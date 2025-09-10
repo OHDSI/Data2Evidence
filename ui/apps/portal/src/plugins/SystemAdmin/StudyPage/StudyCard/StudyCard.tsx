@@ -55,7 +55,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   useEffect(() => {
     if (isIframeViewerOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
       try {
-        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure;`;
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict;`;
       } catch (error) {
         console.error("Error setting cookie in iframe:", error);
       }
@@ -68,14 +68,10 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       const token = (e as CustomEvent)?.detail?.accessToken as string | undefined;
       if (!token) return;
       setBearerToken(token);
-      try {
-        document.cookie = `authtoken=${token}; path=/strategus-results; secure;`;
-      } catch (err) {
-        console.error("Error setting parent cookie after OIDC refresh:", err);
-      }
+      document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
       if (isIframeViewerOpen && iframeRef.current?.contentWindow) {
         try {
-          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure;`;
+          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
         } catch (err) {
           console.error("Error updating iframe cookie after OIDC refresh:", err);
         }
@@ -115,7 +111,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     // Ensure cookie is present before first iframe navigation
     if (bearerToken) {
       try {
-        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure;`;
+        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
       } catch (err) {
         console.error("Error setting parent cookie before opening iframe:", err);
       }
