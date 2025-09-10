@@ -72,7 +72,6 @@ export const OidcApp: FC = () => {
         }
       }
 
-      // Broadcast access token updates so iframe viewers can react
       if (TOKEN_EVENTS.includes(name)) {
         try {
           const accessToken = await getOidcToken(false);
@@ -81,7 +80,6 @@ export const OidcApp: FC = () => {
               new CustomEvent("oidc:token_refreshed", { detail: { accessToken } })
             );
           }
-          console.log("oidc:token_refreshed");
         } catch (e) {
           console.error("Unable to retrieve refreshed access token", e);
         }
