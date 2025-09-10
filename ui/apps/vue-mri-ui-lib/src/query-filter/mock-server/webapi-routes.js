@@ -11,7 +11,7 @@ const SOURCE = 'SYNPUF1K'
 
 // server has 20,000
 const MAX_COHORT_DEFINITIONS = 100
-const USE_CACHE = true
+const USE_CACHE = process.env.USE_CACHE || false
 const cache = {}
 
 // Cache keys
