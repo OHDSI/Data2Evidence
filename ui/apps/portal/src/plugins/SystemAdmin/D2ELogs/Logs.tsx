@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import { FC, useEffect } from "react";
 import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
 import { getAuthToken } from "../../../containers/auth";
 import "./Logs.scss";
@@ -8,7 +8,7 @@ interface LogsPageProps extends PageProps<SystemAdminPageMetadata> {}
 
 export const Logs: FC<LogsPageProps> = () => {
 
-  React.useEffect(() => {
+  useEffect(() => {
     const setCookie = async () => {
       const expires = new Date(Date.now() + 3600000).toUTCString();
       const token = await getAuthToken();

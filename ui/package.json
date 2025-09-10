@@ -320,7 +320,7 @@
             "notes": "",
             "pluginPath": "plugins/Setup/DemoSetup/module",
             "route": "demo-setup"
-          }          
+          }
         ],
         "systemadmin": [
           {
