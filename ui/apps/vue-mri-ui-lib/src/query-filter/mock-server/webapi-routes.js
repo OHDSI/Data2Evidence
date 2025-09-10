@@ -18,6 +18,9 @@ const cache = {}
 const CACHE_KEYS = {
   COHORT_DEFINITIONS: 'get_/WebAPI/cohortdefinition/',
   CONCEPT_SETS: 'get_/d2e-webapi/conceptset',
+  COHORT_DEFINITION: id => `get_/d2e-webapi/cohortdefinition/${id}`,
+  CONCEPT_SET_EXPRESSION: id => `get_/d2e-webapi/conceptset/${id}/expression`,
+  VOCABULARY_SEARCH: (datasetId, query) => `get_/d2e-webapi/vocabulary/${datasetId}/search?query=${query}`,
 }
 
 const logRequest = req => {
@@ -35,8 +38,13 @@ const setupWebapiRoutes = app => {
   app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
-    const response = await api.get(`/cohortdefinition/${cohortDefinitionId}`)
-    const { data } = response
+    const cacheKey = CACHE_KEYS.COHORT_DEFINITION(cohortDefinitionId)
+    let data = cache[cacheKey]
+    if (!data || !USE_CACHE) {
+      const response = await api.get(`/cohortdefinition/${cohortDefinitionId}`)
+      data = response.data
+      cache[cacheKey] = data
+    }
     const mapped = {
       id: data.id,
       name: data.name,
@@ -104,6 +112,7 @@ const setupWebapiRoutes = app => {
 
     // Invalidate cohort definitions cache since we updated one
     delete cache[CACHE_KEYS.COHORT_DEFINITIONS]
+    delete cache[CACHE_KEYS.COHORT_DEFINITION(cohortDefinitionId)]
 
     return res.send()
   })
@@ -162,6 +171,7 @@ const setupWebapiRoutes = app => {
 
     // Invalidate cohort definitions cache since we deleted one
     delete cache[CACHE_KEYS.COHORT_DEFINITIONS]
+    delete cache[CACHE_KEYS.COHORT_DEFINITION(cohortDefinitionId)]
 
     return res.send()
   })
@@ -174,9 +184,14 @@ const setupWebapiRoutes = app => {
       return res.status(400).json({ error: 'conceptSetId is required' })
     }
     try {
-      // Call Atlas demo API to get concept set expression
-      const response = await api.get(`/conceptset/${conceptSetId}/expression`)
-      const { data } = response
+      const cacheKey = CACHE_KEYS.CONCEPT_SET_EXPRESSION(conceptSetId)
+      let data = cache[cacheKey]
+      if (!data || !USE_CACHE) {
+        // Call Atlas demo API to get concept set expression
+        const response = await api.get(`/conceptset/${conceptSetId}/expression`)
+        data = response.data
+        cache[cacheKey] = data
+      }
       // The Atlas API returns the expression directly, just forward it
       return res.json(data)
     } catch (error) {
@@ -253,6 +268,11 @@ const setupWebapiRoutes = app => {
     try {
       // Forward to Atlas API
       const response = await api.put(`/conceptset/${conceptSetId}/items`, req.body)
+
+      // Invalidate concept set caches since we updated items
+      delete cache[CACHE_KEYS.CONCEPT_SETS]
+      delete cache[CACHE_KEYS.CONCEPT_SET_EXPRESSION(conceptSetId)]
+
       return res.json(response.data)
     } catch (error) {
       console.error('Error updating concept set items in Atlas API:', error.message)
@@ -276,9 +296,14 @@ const setupWebapiRoutes = app => {
       return res.status(400).json({ error: 'query parameter is required' })
     }
     try {
-      // Call Atlas demo API to search vocabularies
-      const response = await api.get(`/vocabulary/${SOURCE}/search?query=${QUERY}`)
-      const { data } = response
+      const cacheKey = CACHE_KEYS.VOCABULARY_SEARCH(datasetId, QUERY)
+      let data = cache[cacheKey]
+      if (!data || !USE_CACHE) {
+        // Call Atlas demo API to search vocabularies
+        const response = await api.get(`/vocabulary/${SOURCE}/search?query=${QUERY}`)
+        data = response.data
+        cache[cacheKey] = data
+      }
       // Map from Atlas API format to the expected format
       const mappedData = data.map(item => ({
         concept_class_id: item.CONCEPT_CLASS_ID,
