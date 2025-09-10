@@ -1,3 +1,5 @@
+import { SourceDatasetType, CacheDatasetType, DatasetType, ActionValue, DatasetInfoTab } from "./types";
+
 export enum DatasetAttribute {
   PATIENT_COUNT = "patient_count",
   CREATED_DATE = "created_date",
@@ -28,27 +30,52 @@ export enum ConfigTypes {
 
 export const PUB_SLOT_NAME = "data2evidence";
 
-export enum DatasetSourceTypes {
-  SOURCE = "source",
-  FHIR = "fhir",
-}
+export const DatasetMap: Record<SourceDatasetType, CacheDatasetType[]> = {
+  [SourceDatasetType.SOURCE]: [
+    CacheDatasetType.OMOP,
+    CacheDatasetType.STUDY,
+    CacheDatasetType.HANA__OMOP,
+    CacheDatasetType.HANA__NON_OMOP,
+  ],
+  [SourceDatasetType.FHIR]: [CacheDatasetType.NON_OMOP],
+};
 
-export enum DatasetChildTypes {
-  // parent: SOURCE
-  OMOP = "omop",
-  STUDY = "study",
-  HANA__OMOP = "hana__omop",
+export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts", "Analysis"];
 
-  // parent: not confirmed
-  HANA__NON_OMOP = "hana__non_omop",
+export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
+  source: ["info", "metadata", "version", "delete"],
+  fhir: ["info", "metadata", "version", "delete"],
+  non_omop: ["metadata", "permissions", "resources", "delete"],
+  omop: [
+    "metadata",
+    "permissions",
+    "resources",
+    "delete",
+    "data-quality",
+    "data-characterization",
+    "setup-semantic-search",
+  ],
+  study: ["metadata", "permissions", "resources", "delete"],
+  hana__omop: ["metadata", "permissions", "resources", "delete", "data-quality", "data-characterization"],
+  hana__non_omop: ["metadata", "permissions", "resources", "delete"],
+};
 
-  // parent: fhir
-  NON_OMOP = "non_omop",
-}
+export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
+  source: [],
+  fhir: [],
+  non_omop: [DatasetInfoTab.DatasetInfo],
+  omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
+  study: [DatasetInfoTab.DatasetInfo],
+  hana__omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
+  hana__non_omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
+};
 
-export type DatasetTypes = DatasetSourceTypes | DatasetChildTypes;
-
-export const DatasetMap: Record<DatasetSourceTypes, DatasetChildTypes[]> = {
-  [DatasetSourceTypes.SOURCE]: [DatasetChildTypes.OMOP, DatasetChildTypes.STUDY, DatasetChildTypes.HANA__OMOP],
-  [DatasetSourceTypes.FHIR]: [DatasetChildTypes.NON_OMOP],
+export const ResearcherFeatureMap: Record<DatasetType, typeof ResearcherFeatures[number][]> = {
+  source: [],
+  fhir: [],
+  non_omop: ["Cohorts", "Notebooks", "Concepts"],
+  omop: ["Cohorts", "Notebooks", "Analysis", "Concepts"],
+  study: ["Cohorts", "Notebooks", "Results"],
+  hana__omop: ["Cohorts", "Concepts"],
+  hana__non_omop: ["Cohorts", "Concepts"],
 };

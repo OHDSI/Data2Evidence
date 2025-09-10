@@ -15,13 +15,15 @@ import {
   IDatabase,
   NewFhirProjectInput,
   CopyStudyInput,
+  SourceDatasetType,
+  CacheDatasetType,
 } from "../../../../types";
 import SimpleMDE from "react-simplemde-editor";
 import { usePaConfigs, useTenant, useDbVocabSchemas, useEnabledFeatures } from "../../../../hooks";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { FEATURE_FHIR_SERVER } from "../../../../config";
-import { DatasetSourceTypes, DatasetChildTypes, DatasetMap } from "../../../../constant";
+import { DatasetMap } from "../../../../constant";
 import "./AddStudyDialog.scss";
 
 interface AddStudyDialogProps {
@@ -64,7 +66,7 @@ interface FormData {
   visibilityStatus: string;
 
   cacheDatasetName: string;
-  cacheDatasetType: DatasetChildTypes;
+  cacheDatasetType: CacheDatasetType;
   paConfigId: string;
 }
 
@@ -125,7 +127,7 @@ const EMPTY_FORM_ERROR: FormError = {
 };
 
 const EMPTY_FORM_DATA: FormData = {
-  type: DatasetSourceTypes.SOURCE,
+  type: SourceDatasetType.SOURCE,
   tokenStudyCode: "",
   schemaOption: "",
   cdmSchemaValue: "", //Optional
@@ -144,7 +146,7 @@ const EMPTY_FORM_DATA: FormData = {
   paConfigId: "",
   visibilityStatus: "HIDDEN",
   cacheDatasetName: "",
-  cacheDatasetType: DatasetChildTypes.OMOP,
+  cacheDatasetType: CacheDatasetType.OMOP,
 };
 
 /**
@@ -585,7 +587,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               value={formData.schemaOption}
               onChange={(event: SelectChangeEvent<string>) => {
                 const schemaOption = event.target.value;
-                const newType = schemaOption === SchemaTypes.FHIR ? DatasetSourceTypes.FHIR : DatasetSourceTypes.SOURCE;
+                const newType = schemaOption === SchemaTypes.FHIR ? SourceDatasetType.FHIR : SourceDatasetType.SOURCE;
                 handleFormDataChange({
                   schemaOption,
                   cdmSchemaValue: schemaOption === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
@@ -973,14 +975,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               sx={styles}
               value={formData.cacheDatasetType}
               onChange={(event: SelectChangeEvent<string>) =>
-                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+                handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
               }
               inputProps={{
                 name: "cacheDatasetType",
                 id: "cache-dataset-option",
               }}
             >
-              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+              {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
                 <MenuItem sx={styles} key={type} value={type}>
                   {type}
                 </MenuItem>
@@ -1070,14 +1072,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               sx={styles}
               value={formData.cacheDatasetType}
               onChange={(event: SelectChangeEvent<string>) =>
-                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+                handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
               }
               inputProps={{
                 name: "cacheDatasetType",
                 id: "cache-dataset-option",
               }}
             >
-              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+              {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
                 <MenuItem sx={styles} key={type} value={type}>
                   {type}
                 </MenuItem>
@@ -1102,14 +1104,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               sx={styles}
               value={formData.cacheDatasetType}
               onChange={(event: SelectChangeEvent<string>) =>
-                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+                handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
               }
               inputProps={{
                 name: "cacheDatasetType",
                 id: "cache-dataset-option",
               }}
             >
-              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+              {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
                 <MenuItem sx={styles} key={type} value={type}>
                   {type}
                 </MenuItem>
@@ -1171,14 +1173,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               sx={styles}
               value={formData.cacheDatasetType}
               onChange={(event: SelectChangeEvent<string>) =>
-                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+                handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
               }
               inputProps={{
                 name: "cacheDatasetType",
                 id: "cache-dataset-option",
               }}
             >
-              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+              {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
                 <MenuItem sx={styles} key={type} value={type}>
                   {type}
                 </MenuItem>
@@ -1268,14 +1270,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               sx={styles}
               value={formData.cacheDatasetType}
               onChange={(event: SelectChangeEvent<string>) =>
-                handleFormDataChange({ cacheDatasetType: event.target.value as DatasetChildTypes })
+                handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
               }
               inputProps={{
                 name: "cacheDatasetType",
                 id: "cache-dataset-option",
               }}
             >
-              {DatasetMap[formData.type as DatasetSourceTypes]?.map((type) => (
+              {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
                 <MenuItem sx={styles} key={type} value={type}>
                   {type}
                 </MenuItem>

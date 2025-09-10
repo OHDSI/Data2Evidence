@@ -16,14 +16,19 @@ import { SxProps } from "@mui/system";
 import SimpleMdeReact from "react-simplemde-editor";
 import { AddSquareIcon, Box, Button, Checkbox, Dialog, Feedback, IconButton } from "@portal/components";
 import { api } from "../../../../axios/api";
-import { NewStudyMetadataInput, CloseDialogType, UpdateStudyMetadataInput, Study } from "../../../../types";
+import {
+  NewStudyMetadataInput,
+  CloseDialogType,
+  UpdateStudyMetadataInput,
+  Study,
+  SourceDatasetType,
+} from "../../../../types";
 import { usePaConfigs, useDatasetTagConfigs, useDatasetAttributeConfigs } from "../../../../hooks";
 import MetadataForm from "./MetadataForm/MetadataForm";
 import "./UpdateStudyDialog.scss";
 import { useTranslation } from "../../../../contexts";
-import { DatasetSourceTypes } from "../../../../constant";
 
-const DATASET_SOURCE_TYPES = new Set<string>(Object.values(DatasetSourceTypes));
+const DATASET_SOURCE_TYPES = new Set<string>(Object.values(SourceDatasetType));
 
 interface UpdateStudyDialogProps {
   dataset: Study;

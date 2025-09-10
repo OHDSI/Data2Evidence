@@ -3,7 +3,8 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import { SelectChangeEvent } from "@mui/material/Select";
 import { FormControl } from "@mui/material";
-import { Study } from "../../../../types";
+import { Study, DatasetType, ActionValue } from "../../../../types";
+import { ActionSelectorMap } from "../../../../constant";
 import { SxProps } from "@mui/system";
 import { useTranslation, useUser } from "../../../../contexts";
 
@@ -28,39 +29,6 @@ interface Action {
   name: string;
   value: string;
 }
-
-type ActionValue =
-  | "info"
-  | "metadata"
-  | "version"
-  | "delete"
-  | "permissions"
-  | "resources"
-  | "data-quality"
-  | "data-characterization"
-  | "setup-semantic-search"
-  | "update"
-  | "release"
-  | "create-cache";
-
-// TODO: mapping should be from the server
-const mapping: Record<string, ActionValue[]> = {
-  source: ["info", "metadata", "version", "delete"],
-  fhir: ["info", "metadata", "version", "delete"],
-  non_omop: ["metadata", "permissions", "resources", "delete"],
-  omop: [
-    "metadata",
-    "permissions",
-    "resources",
-    "delete",
-    "data-quality",
-    "data-characterization",
-    "setup-semantic-search",
-  ],
-  study: ["metadata", "permissions", "resources", "delete"],
-  hana_omop: ["metadata", "permissions", "resources", "delete", "data-quality", "data-characterization"],
-  hana_non_omop: ["metadata", "permissions", "resources", "delete"],
-};
 
 const styles: SxProps = {
   color: "#000080",
@@ -122,9 +90,8 @@ const ActionSelector: FC<ActionSelectorProps> = ({
     [getText, i18nKeys]
   );
 
-  // filter actions list from given mapping and type
   const filteredActions: Action[] = useMemo(() => {
-    const allowedValues: ActionValue[] = mapping[dataset.type] ?? [];
+    const allowedValues: ActionValue[] = ActionSelectorMap[dataset.type as DatasetType] ?? [];
     return actionsList.filter((action) => allowedValues.includes(action.value as ActionValue));
   }, [dataset.type, actionsList]);
 

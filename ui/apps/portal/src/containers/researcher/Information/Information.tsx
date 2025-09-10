@@ -26,8 +26,9 @@ import { i18nKeys } from "../../../contexts/app-context/states";
 import { useDataset, useDatasetResources } from "../../../hooks";
 import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQDJobResults";
 import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
-import { DatasetResource, StudyAttribute, StudyTag } from "../../../types";
+import { DatasetResource, StudyAttribute, StudyTag, DatasetInfoTab } from "../../../types";
 import { downloadFromJsonResponse } from "../../../utils/downloadResource";
+import { InformationPageMap } from "../../../constant";
 import "./Information.scss";
 
 enum Access {
@@ -36,31 +37,12 @@ enum Access {
   Approved,
 }
 
-enum DatasetInfoTab {
-  DatasetInfo = "info",
-  DataQuality = "quality",
-  DataCharacterization = "characterization",
-  History = "history",
-  Dashboard = "dashboard",
-}
-
 interface StudyAccessRequest {
   id: string;
   userId: string;
   studyId: string;
   role: string;
 }
-
-// TODO: mapping should be from the server
-const mapping: Record<string, string[]> = {
-  source: [],
-  fhir: [],
-  non_omop: ["info"],
-  omop: ["info", "quality", "characterization"],
-  study: ["info"],
-  hana_omop: ["info", "quality", "characterization"],
-  hana_non_omop: ["info", "quality", "characterization"],
-};
 
 export const Information: FC = () => {
   const { getText } = useTranslation();
@@ -82,23 +64,29 @@ export const Information: FC = () => {
 
   const attributes = useMemo(() => dataset?.attributes || [], [dataset]);
   const tags = useMemo(() => dataset?.tags || [], [dataset]);
+  const isUserResearcher = useMemo(
+    () => !!user.isDatasetResearcher?.[activeDatasetId],
+    [user.isDatasetResearcher, activeDatasetId]
+  );
+
+  const availableTabs = useMemo(() => {
+    if (!dataset?.type) return [];
+    return InformationPageMap[dataset.type] || [];
+  }, [dataset?.type]);
+
   const showDatasetInfo = useMemo(
-    () =>
-      !!user.isDatasetResearcher?.[activeDatasetId] &&
-      !!mapping?.[dataset?.type as keyof typeof mapping]?.includes(DatasetInfoTab.DatasetInfo),
-    [dataset]
+    () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DatasetInfo),
+    [isUserResearcher, availableTabs]
   );
+
   const showDataQuality = useMemo(
-    () =>
-      !!user.isDatasetResearcher?.[activeDatasetId] &&
-      !!mapping?.[dataset?.type as keyof typeof mapping]?.includes(DatasetInfoTab.DataQuality),
-    [dataset]
+    () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DataQuality),
+    [isUserResearcher, availableTabs]
   );
+
   const showDataCharacterization = useMemo(
-    () =>
-      !!user.isDatasetResearcher?.[activeDatasetId] &&
-      !!mapping?.[dataset?.type as keyof typeof mapping]?.includes(DatasetInfoTab.DataCharacterization),
-    [dataset]
+    () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DataCharacterization),
+    [isUserResearcher, availableTabs]
   );
 
   const loadAccessRequests = useCallback(async (): Promise<void> => {

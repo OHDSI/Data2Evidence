@@ -12,6 +12,7 @@ import { useEnabledFeatures, useDataset } from "../../hooks";
 import { Overview } from "./Overview/Overview";
 import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
+import { ResearcherFeatureMap, ResearcherFeatures } from "../../constant";
 import "./Researcher.scss";
 
 const plugins = loadPlugins();
@@ -29,19 +30,6 @@ interface StateProps {
   tab: string;
   tenantId: string;
 }
-
-// TODO: mapping should be from the server
-const mapping: Record<string, string[]> = {
-  source: [],
-  fhir: [],
-  non_omop: ["Cohort", "Notebooks", "Concepts"],
-  omop: ["Cohort", "Notebooks", "Analysis", "Concepts"],
-  study: ["Cohort", "Notebooks", "Results"],
-  hana_omop: ["Cohort", "Concepts"],
-  hana_non_omop: ["Cohort", "Concepts"],
-};
-
-const restricted = ["Cohort", "Notebooks", "Analysis", "Concepts", "Results"];
 
 export const Researcher: FC = () => {
   const { clearFeedback, getFeedback } = useFeedback();
@@ -71,7 +59,7 @@ export const Researcher: FC = () => {
       setActiveTenantId(state.tenantId);
     }
   }, [state]);
-  console.log(dataset?.type);
+
   const featureFlagsDict = useMemo(() => {
     // Convert to dictionary of { [featureFlag]: { [subFeatureFlag]: enabledBoolean } }
     const result: { [featureFlag: string]: SubFeatureFlags } = {};
@@ -92,35 +80,32 @@ export const Researcher: FC = () => {
 
   const researcherPluginsFlat = useMemo(() => {
     const flatPlugins: IPluginItem[] = [];
-    const allowed = new Set(mapping[dataset?.type ?? ""] ?? []);
+
     plugins.researcher.forEach((plugin) => {
-      if (restricted.includes(plugin.name)) {
-        if (dataset != null && allowed.has(plugin.name)) {
-          flatPlugins.push(plugin);
-        }
-      } else {
-        flatPlugins.push(plugin);
-        plugin.children?.forEach((childPlugin) => {
-          flatPlugins.push(childPlugin);
-        });
-      }
+      flatPlugins.push(plugin);
+      plugin.children?.forEach((childPlugin) => {
+        flatPlugins.push(childPlugin);
+      });
     });
     return flatPlugins;
-  }, [plugins, dataset]);
+  }, [dataset]);
 
   const onFetchMenus = useCallback((route: string, menus: PluginDropdownItem[]) => {
     setPluginDropdown((current: any) => ({ ...current, [route]: menus }));
   }, []);
 
   const sortedResearcherPlugins = useMemo(() => {
-    const allowed = new Set(mapping[dataset?.type ?? ""] ?? []);
+    if (!dataset) return;
+    const allowed = ResearcherFeatureMap.hasOwnProperty(dataset.type)
+      ? (ResearcherFeatureMap[dataset.type] as string[])
+      : [];
     return sortPluginsByType(plugins.researcher).filter((plugin) => {
-      if (restricted.includes(plugin.name)) {
-        return dataset != null && allowed.has(plugin.name);
+      if (ResearcherFeatures.includes(plugin.name)) {
+        return allowed.includes(plugin.name);
       }
       return true;
     });
-  }, [plugins.researcher, dataset?.type]);
+  }, [dataset]);
 
   const sortedPlugins = JSON.parse(JSON.stringify(plugins));
   sortedPlugins.researcher = sortedResearcherPlugins;
