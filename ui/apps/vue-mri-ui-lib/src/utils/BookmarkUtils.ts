@@ -1,4 +1,5 @@
 import DateUtils from './DateUtils'
+import { BookmarkSchema, AtlasCohortDefinitionSchema, MaterializedCohortSchema } from '@/schema/bookmarksSchema'
 
 export function formatBookmark(bookmark: FormattedBookmark) {
   if (!bookmark) {
@@ -87,4 +88,67 @@ export function getBookmarkType(obj: BookmarkDisplay): BookmarkType {
   if (obj.bookmark) {
     return 'D'
   }
+}
+
+export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], paConfigId: string) => {
+  const filterBookmarkByConfigId = (bookmark: IBookmark, paConfigId: string) => {
+    if (bookmark.paConfigId === paConfigId) {
+      return bookmark
+    }
+    return null
+  }
+
+  const filterUntaggedMaterializedCohorts = (
+    atlasCohortDefinitions: ICohortDefinition[],
+    materializedCohorts: IMaterializedCohort[]
+  ) => {
+    const cohortDefinitionIds: number[] = []
+    atlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
+      if (atlasCohortDefinition.cohortDefinitionId) {
+        acc.push(atlasCohortDefinition.cohortDefinitionId)
+      }
+      return acc
+    }, cohortDefinitionIds)
+
+    const filteredMaterializedCohorts = materializedCohorts.filter(materializedCohort => {
+      return cohortDefinitionIds.includes(materializedCohort.id)
+    })
+    return filteredMaterializedCohorts
+  }
+
+  const formatRawAtlasCohortDefinition = (acd: ICohortDefinition) => {
+    return {
+      id: acd.id,
+      name: acd.name,
+      username: acd.createdBy,
+      createdOn: new Date(acd.createdDate).toISOString(),
+      updatedOn: new Date(acd.modifiedDate).toISOString(),
+      cohortDefinitionId: acd.cohortDefinitionId,
+    }
+  }
+
+  const formattedBookmarks = {
+    bookmarks: [],
+    atlasCohortDefinitions: [],
+    materializedCohorts: [],
+  }
+
+  data.forEach(item => {
+    if (BookmarkSchema.safeParse(item).success) {
+      formattedBookmarks.bookmarks.push(filterBookmarkByConfigId(item as IBookmark, paConfigId))
+    }
+    if (AtlasCohortDefinitionSchema.safeParse(item).success) {
+      formattedBookmarks.atlasCohortDefinitions.push(formatRawAtlasCohortDefinition(item as ICohortDefinition))
+    }
+    if (MaterializedCohortSchema.safeParse(item).success) {
+      formattedBookmarks.materializedCohorts.push(item as IMaterializedCohort)
+    }
+  })
+
+  formattedBookmarks.materializedCohorts = filterUntaggedMaterializedCohorts(
+    formattedBookmarks.atlasCohortDefinitions,
+    formattedBookmarks.materializedCohorts
+  )
+
+  return formattedBookmarks
 }

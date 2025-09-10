@@ -4,7 +4,12 @@ import BMv2Parser from '../../lib/bookmarks/BMv2Parser'
 import Constants from '../../utils/Constants'
 import * as types from '../mutation-types'
 import isEqual from 'lodash/isEqual'
-import { formatBookmark, formatCohortDefinition, formatAtlasCohortDefinition } from '@/utils/BookmarkUtils'
+import {
+  formatBookmark,
+  formatCohortDefinition,
+  formatAtlasCohortDefinition,
+  processBookmarksData,
+} from '@/utils/BookmarkUtils'
 
 const CancelToken = axios.CancelToken
 let cancel
@@ -263,14 +268,15 @@ const actions = {
       .then(({ data }) => {
         let toastMessage = ''
         if (params.cmd === 'loadAll') {
-          commit(types.SET_BOOKMARKS, data)
-          commit(types.SET_MATERIALIZED_COHORTS, data)
+          const { bookmarks, materializedCohorts, atlasCohortDefinitions } = processBookmarksData(
+            data,
+            rootGetters.getMriFrontendConfig.getPaConfigId()
+          )
+          commit(types.SET_BOOKMARKS, bookmarks)
+          commit(types.SET_MATERIALIZED_COHORTS, materializedCohorts)
           if (rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition) {
-            commit(types.SET_ATLAS_COHORT_DEFINITIONS, data)
+            commit(types.SET_ATLAS_COHORT_DEFINITIONS, atlasCohortDefinitions)
           }
-          commit(types.SET_SCHEMANAME, {
-            schemaName: data.schemaName,
-          })
         }
         if (params.cmd === 'delete') {
           toastMessage = rootGetters.getText('MRI_PA_DELETE_BMK_SUCCESS')
@@ -406,17 +412,17 @@ const actions = {
 
 // mutations
 const mutations = {
-  [types.SET_BOOKMARKS](modulestate, { bookmarks }) {
+  [types.SET_BOOKMARKS](modulestate, bookmarks) {
     modulestate.bookmarks = bookmarks
   },
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
   },
-  [types.SET_MATERIALIZED_COHORTS](modulestate, { materializedCohorts, cohortDefinitions }) {
+  [types.SET_MATERIALIZED_COHORTS](modulestate, materializedCohorts) {
     // fallback to cohortDefinitions in interim until api changes
-    modulestate.materializedCohorts = materializedCohorts ?? cohortDefinitions
+    modulestate.materializedCohorts = materializedCohorts ?? []
   },
-  [types.SET_ATLAS_COHORT_DEFINITIONS](modulestate, { atlasCohortDefinitions }) {
+  [types.SET_ATLAS_COHORT_DEFINITIONS](modulestate, atlasCohortDefinitions) {
     modulestate.atlasCohortDefinitions = atlasCohortDefinitions ?? []
   },
   [types.SET_FILTERSUMMARY](modulestate, { filterSummaryVisibility }) {
