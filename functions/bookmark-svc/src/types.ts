@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 export const bookmarkIdSchema = z.object({
   query: z.object({
-    paConfigId: z.string(),
+    paConfigId: z.string().optional(),
     r: z.string(),
   }),
 })
@@ -152,6 +152,7 @@ export interface IFormattedBookmark {
   user_id: string
   shared: boolean
   cohortDefinitionId?: number | undefined
+  paConfigId?: string | undefined
 }
 export interface IFormattedMaterializedCohort {
   id: number
@@ -188,5 +189,5 @@ export interface IFrontendBookmark {
   schemaName: string
   bookmarks: IFormattedBookmark[]
   materializedCohorts: IFormattedMaterializedCohort[]
-  atlasCohortDefinitions: IFormattedAtlasCohortDefinition[]
+  // atlasCohortDefinitions: IFormattedAtlasCohortDefinition[]
 }

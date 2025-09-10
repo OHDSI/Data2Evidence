@@ -62,18 +62,17 @@ export function createBookmarkDto(
 }
 
 export function formatUserArtifactData(
-  paConfigId: string,
   data: any[],
   userName: string,
-  datasetId: string
+  datasetId: string,
+  paConfigId?: string
 ): IFormattedBookmark[] {
-  return data
-    .filter(
-      row =>
-        row.pa_config_id === paConfigId &&
-        (row.user_id === userName || (userName && row.user_id !== userName && row.shared))
-    )
-    .map(row => ({
+  let filtered = data.filter(row => row.user_id === userName || (userName && row.user_id !== userName && row.shared))
+  if (paConfigId) {
+    filtered = filtered.filter(row => row.pa_config_id === paConfigId)
+  }
+  return filtered.map(row => {
+    const obj: any = {
       bmkId: row.id,
       bookmarkname: row.bookmark_name,
       bookmark: row.bookmark,
@@ -83,7 +82,12 @@ export function formatUserArtifactData(
       user_id: row.user_id,
       shared: row.shared,
       cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(row, datasetId),
-    }))
+    }
+    if (!paConfigId) {
+      obj.paConfigId = row.pa_config_id
+    }
+    return obj
+  })
 }
 
 /**
@@ -101,7 +105,6 @@ export function formatUserArtifactData(
 export async function _loadAllBookmarks(
   userName,
   token,
-  paConfigId,
   datasetId: string,
   connection: ConnectionInterface,
   callback: CallBackInterface
@@ -111,13 +114,13 @@ export async function _loadAllBookmarks(
 
     // Get and format bookmarks
     const bookmarks = await portalAPI.getBookmarks(datasetId)
-    const formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName, datasetId)
+    const formattedBookmarks = formatUserArtifactData(bookmarks, userName, datasetId)
 
     // Get and format atlas cohort definitions
-    const atlasCohortDefinitions = await portalAPI.getAtlasCohortDefinitions(datasetId)
-    const formattedAtlasCohortDefinitions = atlasCohortDefinitions.map(atlasCohortDefinition =>
-      _formatAtlasCohortDefinition(atlasCohortDefinition, datasetId)
-    )
+    // const atlasCohortDefinitions = await portalAPI.getAtlasCohortDefinitions(datasetId)
+    // const formattedAtlasCohortDefinitions = atlasCohortDefinitions.map(atlasCohortDefinition =>
+    //   _formatAtlasCohortDefinition(atlasCohortDefinition, datasetId)
+    // )
 
     // Get and format materialized cohorts
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
@@ -129,7 +132,6 @@ export async function _loadAllBookmarks(
       // Filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
       formattedMaterializedCohorts = _filterUntaggedMaterializedCohorts(
         formattedBookmarks,
-        formattedAtlasCohortDefinitions,
         formattedMaterializedCohorts
       )
     }
@@ -137,7 +139,6 @@ export async function _loadAllBookmarks(
     const returnValue: IFrontendBookmark = {
       schemaName: connection.schemaName,
       bookmarks: formattedBookmarks,
-      atlasCohortDefinitions: formattedAtlasCohortDefinitions,
       materializedCohorts: formattedMaterializedCohorts,
     }
     callback(null, _convertBookmarkIFR(returnValue))
@@ -169,7 +170,7 @@ export async function loadSingleBookmark(
   try {
     const portalAPI = new PortalAPI(token)
     const result = await portalAPI.getBookmarkById(bookmarkId, datasetId)
-    const formattedRows = formatUserArtifactData(paConfigId, [result], userName, datasetId)
+    const formattedRows = formatUserArtifactData([result], userName, datasetId, paConfigId)
     const returnValue = _convertBookmarkIFR({
       bookmarks: formattedRows,
     })
@@ -543,7 +544,7 @@ export async function queryBookmarks(
         })
         break
       case 'loadAll':
-        await _loadAllBookmarks(userName, token, paConfigId, datasetId, configConnection, callback)
+        await _loadAllBookmarks(userName, token, datasetId, configConnection, callback)
         break
       default:
         throw new Error('unknown command: ' + cmd)
@@ -596,7 +597,6 @@ Function to filter out materialized cohorts which do not belong to a formatted b
 */
 const _filterUntaggedMaterializedCohorts = (
   formattedBookmarks: IFormattedBookmark[],
-  formattedAtlasCohortDefinitions: IFormattedAtlasCohortDefinition[],
   formattedMaterializedCohorts: IFormattedMaterializedCohort[]
 ): IFormattedMaterializedCohort[] => {
   // Create a list of cohort definitions ids which are tagged to either a bookmark or atlas cohort definition
@@ -611,12 +611,12 @@ const _filterUntaggedMaterializedCohorts = (
   }, cohortDefinitionIds)
 
   // Get cohort definition ids from formattedAtlasCohortDefinitions
-  formattedAtlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
-    if (atlasCohortDefinition.cohortDefinitionId) {
-      acc.push(atlasCohortDefinition.cohortDefinitionId)
-    }
-    return acc
-  }, cohortDefinitionIds)
+  // formattedAtlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
+  //   if (atlasCohortDefinition.cohortDefinitionId) {
+  //     acc.push(atlasCohortDefinition.cohortDefinitionId)
+  //   }
+  //   return acc
+  // }, cohortDefinitionIds)
 
   const filteredMaterializedCohorts = formattedMaterializedCohorts.filter(materializedCohorts => {
     return cohortDefinitionIds.includes(materializedCohorts.id)

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CohortExpressionQueryOptions, CohortExpression } from "../types.ts";
 import { AtlasCohortDefinitionArtifact } from "../../../_shared/user-artifacts/types.ts";
-import { BookmarksSchema } from "../api/types.ts";
+import { CombinedCohortDefinitionListSchema } from "../api/types.ts";
 
 export const AtlasCohortDefinitionDto = AtlasCohortDefinitionArtifact.omit({
   materializedCohortDefinitions: true,
@@ -16,7 +16,9 @@ export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
   typeof UserArtifactAtlasCohortDefinitionDto
 >;
 
-export const CohortDefinitionListResponseDto = BookmarksSchema;
+export const CohortDefinitionListResponseDto = z.array(
+  CombinedCohortDefinitionListSchema
+);
 export type ICohortDefinitionListResponseDto = z.infer<
   typeof CohortDefinitionListResponseDto
 >;

@@ -176,12 +176,18 @@ export interface PortalUserArtifacts {
   artifacts: unknown;
 }
 
-export const AtlasCohortDefinitionSchema = z.object({
+export const CohortDefinitionSchema = z.object({
   id: z.number(),
   name: z.string(),
-  username: z.string(),
-  createdOn: z.string(),
-  updatedOn: z.string(),
+  description: z.string().nullable(),
+  createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+  createdDate: z.number().nullable(),
+  modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+  modifiedDate: z.number().nullable(),
+  hasWriteAccess: z.boolean(),
+  hasReadAccess: z.boolean(),
+  tags: z.array(z.string()),
+  cohortDefinitionId: z.number().optional(),
 });
 
 export const BookmarkSchema = z.object({
@@ -194,6 +200,7 @@ export const BookmarkSchema = z.object({
   user_id: z.string(),
   shared: z.boolean(),
   cohortDefinitionId: z.number().optional(),
+  paConfigId: z.string().optional(),
 });
 
 export const MaterializedCohortSchema = z.object({
@@ -205,13 +212,22 @@ export const MaterializedCohortSchema = z.object({
 });
 
 export const BookmarksSchema = z.object({
-  atlasCohortDefinitions: z.array(AtlasCohortDefinitionSchema),
   bookmarks: z.array(BookmarkSchema),
   materializedCohorts: z.array(MaterializedCohortSchema),
   schemaName: z.string(),
 });
 
-export type Bookmarks = z.infer<typeof BookmarksSchema>;
+export const CombinedCohortDefinitionListSchema = z.union([
+  BookmarkSchema,
+  CohortDefinitionSchema,
+  MaterializedCohortSchema,
+]);
+
+export type ICombinedCohortDefnitionListItem = z.infer<
+  typeof CombinedCohortDefinitionListSchema
+>;
+
+export type IBookmarks = z.infer<typeof BookmarksSchema>;
 
 export interface IUserMe {
   id: string;
