@@ -62,6 +62,38 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     }
   }, [isIframeViewerOpen, bearerToken]);
 
+  // Update iframe cookie when the app refreshes the access token
+  useEffect(() => {
+    const onTokenRefreshed = (e: Event) => {
+      const token = (e as CustomEvent)?.detail?.accessToken as string | undefined;
+      if (!token) return;
+      setBearerToken(token);
+      try {
+        document.cookie = `authtoken=${token}; path=/strategus-results; secure;`;
+      } catch (err) {
+        console.error("Error setting parent cookie after OIDC refresh:", err);
+      }
+      if (isIframeViewerOpen && iframeRef.current?.contentWindow) {
+        try {
+          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure;`;
+        } catch (err) {
+          console.error("Error updating iframe cookie after OIDC refresh:", err);
+        }
+        // Light reload to ensure resources pick up the new cookie
+        try {
+          const src = new URL(iframeRef.current.src);
+          src.searchParams.set("t", Date.now().toString());
+          iframeRef.current.src = src.toString();
+        } catch (err) {
+          console.warn("Cache-busting failed; resetting to base URL", err);
+          if (iframeRef.current) iframeRef.current.src = VIEWER_BASE_URL;
+        }
+      }
+    };
+    window.addEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
+    return () => window.removeEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
+  }, [isIframeViewerOpen]);
+
   const fetchViewerStatus = useCallback(async () => {
     if (!study.id) {
       return;
@@ -80,8 +112,16 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   });
 
   const handleOpenIframeViewer = useCallback(() => {
+    // Ensure cookie is present before first iframe navigation
+    if (bearerToken) {
+      try {
+        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure;`;
+      } catch (err) {
+        console.error("Error setting parent cookie before opening iframe:", err);
+      }
+    }
     setIsIframeViewerOpen(true);
-  }, []);
+  }, [bearerToken]);
 
   const handleCloseIframeViewer = useCallback(() => {
     setIsIframeViewerOpen(false);
