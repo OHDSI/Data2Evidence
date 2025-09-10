@@ -299,11 +299,11 @@ interface IBookmark {
 interface ICohortDefinition {
   id: number
   name: string
-  description: string | null
-  createdBy: string | null
+  description?: string | null
+  createdBy?: string | null
   createdDate: number | null
-  modifiedBy: string | null
-  modifiedDate: number | null
+  modifiedBy?: string | null
+  modifiedDate?: number | null
   hasWriteAccess: boolean
   hasReadAccess: boolean
   tags: string[]
