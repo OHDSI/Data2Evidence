@@ -245,7 +245,7 @@ const actions = {
     })
     let url = ''
     if (params.cmd === 'loadAll') {
-      url = `${webApiCohortDefinitionURL}?paConfigId=${rootGetters.getMriFrontendConfig.getPaConfigId()}`
+      url = webApiCohortDefinitionURL
     } else {
       url = `${bookmarkURL}/${bookmarkId || ''}`
       params.paConfigId = rootGetters.getMriFrontendConfig.getPaConfigId()
