@@ -298,7 +298,7 @@ export class DqdService {
       await prefectApi.getFlowRunsByDataset(
         databaseCode,
         schemaName,
-        PrefectTagNames.DATA_CHARACTERIZATION,
+        PrefectTagNames.DQD,
         this.flowRunNamePrefix
       )
     ).filter(
