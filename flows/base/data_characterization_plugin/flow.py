@@ -1,99 +1,108 @@
 import os
 import json
-import pandas as pd
-from re import match
+
 from rpy2 import robjects
 from string import Template
 from functools import partial
 from sqlalchemy import text
 
+from prefect import runtime
 from prefect import flow, task
 from prefect.variables import Variable
-from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
-from .types import *
+from .utils import *
+from .types import DCOptionsType, AchillesParams
+
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-from _shared_flow_utils.types import UserType
-os.environ['plugin_name'] = 'data_characterization_plugin'
+from _shared_flow_utils.rutils import set_trex_env_var, py_bool_to_r
+from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
+
+
+os.environ["plugin_name"] = "data_characterization_plugin"
+
 
 @flow(log_prints=True)
 def data_characterization_plugin(options: DCOptionsType):
     logger = get_run_logger()
-    
-    database_code = options.databaseCode
-    use_cache_db = options.use_cache_db
-    results_schema = options.resultsSchema
-    schema_name = options.schemaName
-    vocab_schema = options.vocabSchemaName
 
-    cdm_version_number = options.cdmVersionNumber
-    release_date = options.releaseDate
+    threads = int(Variable.get("achilles_thread_count", 1))
 
-    flow_run_context = FlowRunContext.get().flow_run.dict()
-    flow_run_id = str(flow_run_context.get("id"))
+    exclude_analysis_ids = Variable.get(
+        "exclude_analysis_ids", ""
+    )  # comma separated values in a string
+
+    flow_run_id = runtime.flow_run.id
     output_folder = f"/output/{flow_run_id}"
 
-    admin_user = UserType.ADMIN_USER
-    read_user = UserType.READ_USER
+    dbdao = DBDao(
+        dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
+        use_cache_db=options.use_cache_db,
+        database_code=options.databaseCode,
+    )
 
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+    # Todo: Update implementation if Hana uses trex
+    # If the actual dialect is HANA, force use_trex_connection to False
+    use_trex_connection = False if dbdao.dialect == SupportedDatabaseDialects.HANA else options.use_trex_connection
 
-    match dbdao.dialect:
-        case SupportedDatabaseDialects.POSTGRES:
-            results_schema = results_schema.lower()
-            vocab_schema = vocab_schema.lower()
-            schema_name = schema_name.lower()
-        case SupportedDatabaseDialects.HANA:
-            results_schema = results_schema.upper()
-            vocab_schema = vocab_schema.upper()
-            schema_name = schema_name.upper()
+    cdm_source = get_cdm_source(
+        dbdao,
+        schema=options.schemaName,
+        use_trex_connection=use_trex_connection,
+    )
 
-    dc_schema = create_data_characterization_schema(results_schema,
-                                                    vocab_schema,
-                                                    dbdao,
-                                                    logger)
+    r_connection_string = dbdao.get_database_connector_connection_string(
+        user_type=UserType.ADMIN_USER, release_date=options.releaseDate
+    )
+
+    db_driver_string = dbdao.set_db_driver_env()
+
+    # Todo: Update implementation if Hana uses trex
+    # Create Achilles parameters from DCOptions
+    achilles_params = AchillesParams(
+        **options.model_dump(),
+        numThreads=threads,
+        outputFolder=output_folder,
+        setDBDriverEnv=db_driver_string,
+        connectionDetails=r_connection_string,
+        excludeAnalysisIds=exclude_analysis_ids,
+        use_trex_connection=use_trex_connection,
+    )
+
+    dc_schema = create_results_schema(
+        achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
+    )
 
     if dc_schema:
-        set_admin_connection_string = dbdao.get_database_connector_connection_string(
-            user_type=admin_user,
-            release_date=release_date)
-
-        set_read_connection_string = dbdao.get_database_connector_connection_string(
-            user_type=read_user,
-            release_date=release_date
+        execute_achilles_wo = execute_achilles.with_options(
+            on_failure=[
+                partial(
+                    drop_schema_hook,
+                    **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
+                )
+            ]
         )
 
-        dc_status = execute_data_characterization(schema_name=schema_name,
-                                                  results_schema=results_schema,
-                                                  vocab_schema=vocab_schema,
-                                                  cdm_version_number=cdm_version_number,
-                                                  dbdao=dbdao,
-                                                  output_folder=output_folder,
-                                                  set_connection_string=set_admin_connection_string,
-                                                  flow_run_id=flow_run_id
-                                                  )
+        execute_achilles_wo(achilles_params, flow_run_id)
 
-        if dc_status:
-            msg = dc_status.get("error_message")
-            raise Exception(
-                f"An error occurred while executing data characterization: {msg}")
+        # Todo: Update implementation if Hana uses trex
+        if not use_trex_connection:
 
-        execute_export_to_ares(schema_name=schema_name,
-                               vocab_schema=vocab_schema,
-                               results_schema=results_schema,
-                               dbdao=dbdao,
-                               output_folder=output_folder,
-                               set_connection_string=set_read_connection_string)
+            execute_export_to_ares_wo = execute_export_to_ares.with_options(
+                on_failure=[
+                    partial(
+                        drop_schema_hook,
+                        **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
+                    )
+                ]
+            )
+
+            execute_export_to_ares_wo(achilles_params, cdm_source)
 
 
-def create_data_characterization_schema(results_schema: str,
-                                        vocab_schema: str,
-                                        dbdao,
-                                        logger):
+def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger):
     try:
         # create results schema
         create_schema_task(dbdao, results_schema)
@@ -101,206 +110,231 @@ def create_data_characterization_schema(results_schema: str,
         # create result tables
         schema_params = {
             "DATA_CHARACTERIZATION_SCHEMA": results_schema,
-            "VOCAB_SCHEMA": vocab_schema
+            "VOCAB_SCHEMA": vocab_schema,
         }
 
         for k, v in schema_params.items():
             if not is_safe_schema_name(v):
                 raise ValueError(f"Unsafe schema name: {v}")
 
+        # Todo: migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/trex_duckdb/concept_hierarchy.sql"
         migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_hierarchy.sql"
 
-        with open(migration_script_filepath, 'r') as f:
+        with open(migration_script_filepath, "r") as f:
             sql_template = Template(f.read())
-        
+
         # Use safe_substitute because of 'US$' in sql script
         sql_script = sql_template.safe_substitute(schema_params)
-        
+
         create_tables_wo = create_results_tables.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))]
+            on_failure=[
+                partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))
+            ]
         )
 
         create_tables_wo(sql_script, dbdao)
 
         # task
-        enable_audit_policies_wo = enable_and_create_audit_policies_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))])
+        if dbdao.dialect == SupportedDatabaseDialects.HANA:
+            enable_audit_policies_wo = (
+                enable_and_create_audit_policies_task.with_options(
+                    on_failure=[
+                        partial(
+                            drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema)
+                        )
+                    ]
+                )
+            )
 
-        enable_audit_policies_wo(dbdao, results_schema)
+            enable_audit_policies_wo(dbdao, results_schema)
 
-        # task
         create_and_assign_roles_wo = create_and_assign_roles_task.with_options(
-            on_failure=[partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))])
+            on_failure=[
+                partial(drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema))
+            ]
+        )
 
         create_and_assign_roles_wo(dbdao, results_schema)
 
         logger.info(
-            f"Data Characterization results schema '{results_schema}' successfully created and privileges assigned!")
+            f"Data Characterization results schema '{results_schema}' successfully created!"
+        )
 
     except Exception as e:
-        logger.error(e)
-        raise e
+        raise
     else:
         return True
 
+
 @task(log_prints=True)
-def create_results_tables(sql_script, dbdao):
-    with dbdao.engine.begin() as conn:
-        for statement in sql_script.strip().split(";"):
-            if statement.strip():
-                conn.execute(text(statement))
+def create_results_tables(sql_script: str, dbdao):
+    if dbdao.dialect == SupportedDatabaseDialects.TREX:
+        dbdao.execute_sql(sql_script)
+    else:
+        with dbdao.engine.begin() as conn:
+            try:
+                for statement in sql_script.strip().split(";"):
+                    if statement.strip():
+                        conn.execute(text(statement))
+            finally:
+                conn.close()
 
 
-  
-@task(log_prints=True)
-def execute_data_characterization(schema_name: str,
-                                  results_schema: str,
-                                  vocab_schema: str,
-                                  cdm_version_number: str,
-                                  output_folder: str,
-                                  dbdao,
-                                  set_connection_string: str,
-                                  flow_run_id: str):
+@task(log_prints=True, task_run_name="execute_achilles_{achilles_params.schemaName}")
+def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
+    logger = get_run_logger()
+
+    set_trex_env_string = set_trex_env_var(achilles_params.use_trex_connection)
+
+    logger.debug(f"set_trex_env_string is {set_trex_env_string}")
+
+    failed_analysis_ids = []
+
     try:
-        logger = get_run_logger()
+        logger.info(
+            f"Running Achilles::achilles on thread count: {achilles_params.numThreads}"
+        )
 
-        # Set these in .env
-        threads = int(Variable.get("achilles_thread_count"))
-        exclude_analysis_ids = Variable.get("exclude_analysis_ids") # comma separated values in a string
+        r_script = f"""
+            library('Achilles')
+                
+            {set_trex_env_string}
+            {achilles_params.setDBDriverEnv}
+            {achilles_params.connectionDetails}
 
-        logger.info(f'Running achilles on thread count: {threads}')
+            cdmVersion <- '{achilles_params.cdmVersionNumber}'
+            cdmDatabaseSchema <- '{achilles_params.schemaName}'
+            vocabDatabaseSchema <- '{achilles_params.vocabSchemaName}'
+            resultsDatabaseSchema <- '{achilles_params.resultsSchema}'
+            outputFolder <- '{achilles_params.outputFolder}'
+            numThreads <- {achilles_params.numThreads}
+            createTable <- {py_bool_to_r(achilles_params.createTable)}
+            sqlOnly <- {py_bool_to_r(achilles_params.sqlOnly)}
+            verboseMode <- {py_bool_to_r(achilles_params.verboseMode)}
+            createIndices <- {py_bool_to_r(achilles_params.createIndices)}
+            excludeAnalysisIds <- c({achilles_params.excludeAnalysisIds})
+
+            Achilles::achilles(
+                connectionDetail = connectionDetails, 
+                cdmVersion = cdmVersion, 
+                cdmDatabaseSchema = cdmDatabaseSchema, 
+                createTable = createTable, 
+                resultsDatabaseSchema = resultsDatabaseSchema, 
+                outputFolder = outputFolder, 
+                sqlOnly = sqlOnly, 
+                numThreads = numThreads, 
+                verboseMode = verboseMode, 
+                excludeAnalysisIds = excludeAnalysisIds, 
+                createIndices = createIndices
+            )
+            """
+
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(f'''
-                    library('Achilles')
-                    {dbdao.set_db_driver_env()}
-                    {set_connection_string}
-                    cdmVersion <- '{cdm_version_number}'
-                    cdmDatabaseSchema <- '{schema_name}'
-                    vocabDatabaseSchema <- '{vocab_schema}'
-                    resultsDatabaseSchema <- '{results_schema}'
-                    outputFolder <- '{output_folder}'
-                    numThreads <- {threads}
-                    createTable <- TRUE
-                    sqlOnly <- FALSE
-                    excludeAnalysisIds <- c({exclude_analysis_ids})
-                    Achilles::achilles( connectionDetails = connectionDetails, cdmVersion = cdmVersion, cdmDatabaseSchema = cdmDatabaseSchema, createTable = createTable, resultsDatabaseSchema = resultsDatabaseSchema, outputFolder = outputFolder, sqlOnly=sqlOnly, numThreads=numThreads, excludeAnalysisIds=excludeAnalysisIds)''')
-    except Exception as e:
-        logger.error(f"execute_data_characterization task failed")
-        result_json = {}
-        with open(f'{output_folder}/errorReportR.txt', 'rt') as f:
-            error_message = f.read()
-        logger.error(error_message)
+            robjects.r(r_script)
 
-        # drop schema
-        logger.info(f"Dropping schema")
-        dbdao.drop_schema(results_schema, cascade=True)
+        # Todo: Task will succeed so need to check for error report or analyses
+        error_message = get_error_message(
+            "errorReportR.txt", achilles_params.outputFolder
+        )
+        failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
+        if error_message or failed_analysis_ids:
+            raise RuntimeError(
+                f"Achilles run failed: Error report or analysis ID exists for flow run {flow_run_id}"
+            )
+
+    except Exception as e:
+        error_file_name = "errorReportR.txt"
+
+        error_message = (
+            get_error_message(error_file_name, achilles_params.outputFolder)
+            or f"{error_file_name} does not exist at {achilles_params.outputFolder}."
+        )
+
+        logger.error(f"Error message from Achilles run: {error_message}")
+
+        failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
+        logger.error(f"The following analysis IDs failed: {failed_analysis_ids}")
 
         error_result = {
             "flow_run_id": flow_run_id,
-            "result": result_json,
+            "result": {},
             "error": True,
-            "error_message": error_message
+            "error_message": error_message,
+            "failed_analysis_ids": failed_analysis_ids,
         }
 
         # Create an artifact to store the error result
         create_markdown_artifact(
-            key="data-characterization-error",
-            markdown=json.dumps(error_result)
+            key="data-characterization-error", markdown=json.dumps(error_result)
         )
 
-        return error_result
+        raise
+    else:
+        logger.info(
+            f"Achilles run completed successfully for schema: {achilles_params.schemaName}"
+        )
 
 
-@task()
-def execute_export_to_ares(schema_name: str,
-                           vocab_schema: str,
-                           results_schema: str,
-                           dbdao,
-                           output_folder: str,
-                           set_connection_string: str):
+@task(log_prints=True, task_run_name="execute_achilles_{achilles_params.schemaName}")
+def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
     logger = get_run_logger()
-    logger.info('Running exportToAres')
+    logger.info("Running Achilles::exportToAres")
 
-    cdm_source_abbreviation = dbdao.get_value(schema=schema_name,
-                                            table="cdm_source",
-                                            column="cdm_source_abbreviation")
-    
-    if output_folder is None or cdm_source_abbreviation is None:
-        raise ValueError("output_folder and cdm_source_abbreviation must not be None")
-    
-    # Get name of folder created by at {outputFolder/cdm_source_abbreviation}
-    ares_path = os.path.join(output_folder, cdm_source_abbreviation[:25] if len(cdm_source_abbreviation) > 25 \
-                             else cdm_source_abbreviation)
+    set_trex_env_string = set_trex_env_var(achilles_params.use_trex_connection)
+
+    r_script = f"""
+        library('Achilles')
+
+        {set_trex_env_string}
+        {achilles_params.setDBDriverEnv}
+        {achilles_params.connectionDetails}
+
+        cdmVersion <- '{achilles_params.cdmVersionNumber}'
+        cdmDatabaseSchema <- '{achilles_params.schemaName}'
+        vocabDatabaseSchema <- '{achilles_params.vocabSchemaName}'
+        resultsDatabaseSchema <- '{achilles_params.resultsSchema}'
+        outputPath <- '{achilles_params.outputFolder}'
+
+        Achilles::exportToAres(
+            connectionDetails = connectionDetails,
+            cdmDatabaseSchema = cdmDatabaseSchema,
+            resultsDatabaseSchema = resultsDatabaseSchema,
+            vocabDatabaseSchema = vocabDatabaseSchema,
+            outputPath = outputPath,
+            reports = c()
+        )
+    """
 
     try:
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(f'''
-                    library('Achilles')
-                    {dbdao.set_db_driver_env()}
-                    {set_connection_string}
-                    cdmDatabaseSchema <- '{schema_name}'
-                    vocabDatabaseSchema <- '{vocab_schema}'
-                    resultsDatabaseSchema <- '{results_schema}'
-                    outputPath <- '{output_folder}'
-                    Achilles::exportToAres(
-                        connectionDetails = connectionDetails,
-                        cdmDatabaseSchema = cdmDatabaseSchema,
-                        resultsDatabaseSchema = resultsDatabaseSchema,
-                        vocabDatabaseSchema = vocabDatabaseSchema,
-                        outputPath,
-                        reports = c()
-                    )
-            ''')
+            robjects.r(r_script)
+
     except Exception as e:
-        logger.error(f"Execute_export_to_ares task failed")
+        logger.error("execute_export_to_ares task failed")
+        error_file_name = "errorReportSql.txt"
 
-        cdm_release_date = os.listdir(ares_path)[0]
-        error_report_path = os.path.join(ares_path, cdm_release_date, "errorReportSql.txt")
+        # Get name of folder created by at {output_folder/cdm_source_abbreviation}
+        ares_output_path = get_export_to_ares_output_path(
+           achilles_params.outputFolder, cdm_source
+        )
 
-        if not os.path.exists(error_report_path):
-            error_message = f"errorReportSql.txt does not exist at Ares export path : {ares_path}"
-        else:
-            with open(error_report_path, 'rt') as f:
-                error_message = f.read()
-
+        error_message = (
+            get_error_message(error_file_name, ares_output_path)
+            or get_error_message(error_file_name)
+            or f"{error_file_name} does not exist at {ares_output_path} or current working directory."
+        )
         logger.error(error_message)
-
-        logger.info(
-            f"Dropping Data Characterization results schema '{results_schema}'")
-        
-        dbdao.drop_schema(results_schema, cascade=True)
-
-        raise Exception(
-            f"An error occurred while executing export to ares: {error_message}")
     else:
+        ares_output_path = get_export_to_ares_output_path(
+           achilles_params.outputFolder, cdm_source
+        )
+
         # Create an artifact to store the export result
         create_markdown_artifact(
             key="export-to-ares-result",
-            markdown=json.dumps(
-                get_export_to_ares_results_from_file(ares_path)),
-            description=f"Export to Ares completed successfully for schema: {schema_name}"
+            markdown=json.dumps(get_export_to_ares_results_from_file(ares_output_path)),
+            description=f"Export to Ares completed successfully for schema: {achilles_params.schemaName}",
         )
-
-
-def get_export_to_ares_results_from_file(ares_path: str):
-    cdm_release_date = os.listdir(ares_path)[0]
-
-    # export_to_ares creates many csv files, but now we are only interested in saving results from records-by-domain.csv
-    # Read records-by-domain.csv and parse csv into json
-    file_name = "records-by-domain"
-    df = pd.read_csv(os.path.join(
-        ares_path, cdm_release_date, f"{file_name}.csv"))
-    df = df.rename(columns={"count_records": "countRecords"})
-
-    data = {
-        "exportToAres": {
-            "cdmReleaseDate": cdm_release_date,
-            file_name: df.to_dict(orient="records")
-        }
-    }
-
-    return data
-
-
-def is_safe_schema_name(schema: str) -> bool:
-    return match(r'^[a-zA-Z][a-zA-Z0-9_]*$', schema) is not None
+        logger.info(
+            f"Export to Ares completed successfully for schema: {achilles_params.schemaName}"
+        )
