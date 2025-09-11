@@ -20,6 +20,20 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update dataset metadata' })).toBeEnabled()
   // Make sure the dqd and dc jobs are completed before switching to Researcher portal
   await page.getByRole('link', { name: 'Jobs' }).click()
+  // Get the first (top) entry link
+  const dqd_entry = page
+    .locator('.flow-run-list-item')
+    .filter({ has: page.locator('a:text("dqd_plugin")') })
+    .first()
+  const dc_entry = page
+    .locator('.flow-run-list-item')
+    .filter({ has: page.locator('a:text("data_characterization_plugin")') })
+    .first()
+  // Find the closest state badge to this entry (adjust the selector as needed)
+  const dqd_state = dqd_entry.locator('.state-badge')
+  await expect(dqd_state).toHaveText('Completed', { timeout: 120000 })
+  const dc_state = dqd_entry.locator('.state-badge')
+  await expect(dc_state).toHaveText('Completed', { timeout: 120000 })
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
 
