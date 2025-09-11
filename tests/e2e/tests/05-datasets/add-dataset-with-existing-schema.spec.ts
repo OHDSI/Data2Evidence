@@ -63,14 +63,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Schema name', exact: true }).fill(schemaName)
   await page.getByRole('textbox', { name: 'Vocab Schema Name' }).fill('demo_cdm')
   await page.locator('#mui-component-select-dataModelOption').click()
-  await page.waitForTimeout(1000)
+  await expect(page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' })).toBeVisible({ timeout: 1000 })
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill('new_test_dataset_2')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await page.waitForTimeout(1000)
-  await expect(page.locator('tbody').getByText(datasetExistingSchema)).toBeVisible()
+  await expect(page.locator('tbody').getByText(datasetExistingSchema)).toBeVisible({ timeout: 1000 })
 
   // Clean up
   await page.locator('tr', { hasText: datasetExistingSchema }).getByRole('button', { name: 'Select action' }).click()
