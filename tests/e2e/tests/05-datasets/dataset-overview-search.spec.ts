@@ -58,7 +58,7 @@ test('test', async ({ page }) => {
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('xxxxxxxxx')
 
   // Seems like there is some kind debounce or delay in the search functionality
-  await page.waitForTimeout(2000)
+  await page.waitForTimeout(10000)
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
   await expect(page.locator('.overview__datasets--empty')).toContainText('No dataset available')
 
