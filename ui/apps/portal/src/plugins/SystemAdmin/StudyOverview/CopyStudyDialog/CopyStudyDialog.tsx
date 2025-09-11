@@ -2,7 +2,11 @@ import React, { ChangeEvent, FC, FormEvent, useCallback, useState, useEffect } f
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import dayjs from "dayjs";
-import { Button, Dialog, Checkbox } from "@portal/components";
+import { Button, Dialog, Checkbox, InputLabel } from "@portal/components";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import { SxProps } from "@mui/system";
+import FormControl from "@mui/material/FormControl";
+import MenuItem from "@mui/material/MenuItem";
 import {
   CopyStudyInput,
   CopyStudyColumnMetadata,
@@ -13,19 +17,17 @@ import {
   Feedback,
   CohortMapping,
   CloseDialogType,
+  SourceDatasetType,
+  CacheDatasetType,
 } from "../../../../types";
 import webComponentWrapper from "../../../../webcomponents/webComponentWrapper";
 import "./CopyStudyDialog.scss";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
 import { Gateway } from "../../../../axios/gateway";
-
 import CohortFilter from "./CohortFilter/CohortFilter";
 import SchemaFilter from "./SchemaFilter/SchemaFilter";
+import { usePaConfigs } from "../../../../hooks";
 import { useTranslation } from "../../../../contexts";
+import { DatasetMap } from "../../../../constant";
 interface CopyStudyDialogProps {
   study: Study | undefined;
   open: boolean;
@@ -40,6 +42,8 @@ interface FormData {
   snapshotLocation: string;
   copyStudySchemaMetadata: Array<CopyStudyTableMetadata>;
   cohortDefinitionId: string;
+  type: CacheDatasetType;
+  paConfigId: string;
 }
 
 interface RootFilterSelection {
@@ -48,8 +52,28 @@ interface RootFilterSelection {
   isTableFilterSelected: boolean;
 }
 
+const styles: SxProps = {
+  color: "#000080",
+  "&::after, &:hover:not(.Mui-disabled)::before": {
+    borderBottom: "2px solid #000080",
+  },
+  ".MuiInputLabel-root": {
+    color: "#000080",
+    "&.MuiInputLabel-shrink, &.Mui-focused": {
+      color: "var(--color-neutral)",
+    },
+  },
+  ".MuiInput-input:focus": {
+    backgroundColor: "transparent",
+  },
+  "&.MuiMenuItem-root:hover": {
+    backgroundColor: "#ebf2fa",
+  },
+};
+
 const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loading, setLoading }) => {
   const { getText, i18nKeys } = useTranslation();
+  const [paConfigs] = usePaConfigs();
   const [rootFilterCheckbox, setRootFilterCheckbox] = useState<RootFilterSelection>({
     isDateFilterSelected: false,
     isCohortFilterSelected: false,
@@ -66,6 +90,8 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
     snapshotLocation: "",
     copyStudySchemaMetadata: [],
     cohortDefinitionId: "",
+    type: study?.type === SourceDatasetType.FHIR ? CacheDatasetType.NON_OMOP : CacheDatasetType.OMOP,
+    paConfigId: "",
   });
 
   const fetchCopyStudyMetadata = useCallback(async () => {
@@ -223,6 +249,14 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
         sourceStudyId: study.id,
         snapshotLocation: "DB",
         dataModel: study.dataModel,
+        type: formData.type,
+        detail: {
+          name: name,
+          summary: "",
+          description: "",
+          showRequestAccess: false,
+        },
+        paConfigId: formData.paConfigId,
       };
       // If snapshotCopyConfig is not empty, add to CopyStudyInput
       if (!(Object.keys(snapshotCopyConfig).length === 0)) {
@@ -389,6 +423,50 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
                 error={copyStudyMetadataFetchError}
               ></SchemaFilter>
             )}
+          </div>
+          <div className="snapshotmetadata__filtergroup">
+            <FormControl sx={styles} className="select" variant="standard" fullWidth>
+              <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+              <Select
+                sx={styles}
+                value={formData.type}
+                onChange={(event: SelectChangeEvent<string>) =>
+                  setFormData({ ...formData, type: event.target.value as CacheDatasetType })
+                }
+                inputProps={{
+                  name: "cacheDatasetType",
+                  id: "cache-dataset-option",
+                }}
+              >
+                {DatasetMap[study?.type as SourceDatasetType]?.map((type) => (
+                  <MenuItem sx={styles} key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
+          <div className="snapshotmetadata__filtergroup">
+            <FormControl sx={styles} className="select" variant="standard" fullWidth>
+              <InputLabel htmlFor="pa-config-option">{getText(i18nKeys.ADD_STUDY_DIALOG__PA_CONFIG)}</InputLabel>
+              <Select
+                sx={styles}
+                value={formData.paConfigId}
+                onChange={(event: SelectChangeEvent<string>) =>
+                  setFormData({ ...formData, paConfigId: event.target.value })
+                }
+                inputProps={{
+                  name: "paConfigOption",
+                  id: "pa-config-option",
+                }}
+              >
+                {paConfigs?.map((config) => (
+                  <MenuItem sx={styles} key={config.configId} value={config.configId}>
+                    {config.configName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </div>
           <Divider />
           <div className="button-group-actions">
