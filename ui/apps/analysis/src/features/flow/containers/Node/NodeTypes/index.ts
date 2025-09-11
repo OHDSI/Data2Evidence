@@ -318,7 +318,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   kaplan_meier_node: {
     title: "Kaplan-Meier Analysis",
     description: "Run Kaplan-Meier survival analysis code.",
-    tag: NodeTag.Stable,
+    tag: NodeTag.Experimental,
     defaultData: {
       kaplanMeierArgs: {
         // CM Analysis Configuration
@@ -546,7 +546,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     title: "Outcomes",
     description:
       "Define clinical outcomes and endpoints for the study analysis.",
-    tag: NodeTag.Stable,
+    tag: NodeTag.Experimental,
     defaultData: {
       ncoCohortSetIds: [],
       outcomeOfInterest: false,
