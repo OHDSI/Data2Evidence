@@ -2,6 +2,9 @@ extern crate duckdb;
 extern crate duckdb_loadable_macros;
 extern crate libduckdb_sys;
 
+mod pgwire_server;
+mod server_registry;
+
 use duckdb::{
     core::{DataChunkHandle, Inserter, LogicalTypeHandle, LogicalTypeId},
     vtab::{BindInfo, InitInfo, TableFunctionInfo, VTab, arrow::WritableVector},
@@ -31,9 +34,6 @@ pub fn store_shared_connection(connection: &Connection) -> Result<(), Box<dyn Er
 pub fn get_shared_connection() -> Option<Arc<Mutex<Connection>>> {
     SHARED_CONNECTION.get().cloned()
 }
-
-mod pgwire_server;
-mod server_registry;
 
 struct PgwireVersionScalar;
 

@@ -41,10 +41,7 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
 
     # Todo: Update implementation if Hana uses trex
     # If flow passes TREX but test_instance infers HANA, use HANA
-    if (
-        dialect == SupportedDatabaseDialects.TREX
-        and test_instance.dialect == SupportedDatabaseDialects.HANA
-    ):
+    if dialect == SupportedDatabaseDialects.TREX and test_instance.dialect == SupportedDatabaseDialects.HANA:
         selected_dialect = SupportedDatabaseDialects.HANA
     else:
         selected_dialect = dialect if dialect is not None else test_instance.dialect
