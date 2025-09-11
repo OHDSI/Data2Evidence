@@ -117,13 +117,13 @@ onMounted(() => {
 .bs-alert {
   position: relative;
   padding: 0.75rem 1.25rem;
-  margin-bottom: 1rem;
   border: 1px solid transparent;
   border-radius: 0.375rem;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-
+  width: 100%;
+  z-index: 1050;
   &__content {
     flex: 1;
   }
@@ -148,8 +148,8 @@ onMounted(() => {
 
   // Variant styles based on Bootstrap 5 patterns
   &--primary {
-    color: #084298;
-    background-color: #cfe2ff;
+    color: #fff;
+    background-color: var(--color-primary);
     border-color: #b6d4fe;
   }
 
@@ -173,13 +173,13 @@ onMounted(() => {
 
   &--danger {
     color: #fff;
-    background-color: #c00000;
+    background-color: #d53939;
     border-color: #fff;
   }
 
   &--info {
-    color: #055160;
-    background-color: #d1ecf1;
+    color: var(--color-primary);
+    background-color: #bdd4f0;
     border-color: #bee5eb;
   }
 

@@ -9,6 +9,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
     <script type="text/javascript" src="authenticate.js"></script>
+    <script type="text/javascript" src="system.min.js"></script>
 
     <% for (key in htmlWebpackPlugin.files.css) { %>
     <link href="<%= htmlWebpackPlugin.files.css[key] %>" rel="stylesheet" />
@@ -22,20 +23,6 @@
     >
       logout
     </button>
-    <div
-      style="
-        width: 100vw;
-        height: 56px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        z-index: 10;
-        box-shadow: 0 0.5px 8px 0 #acaba8;
-      "
-    >
-      <div>PORTAL HEADER</div>
-    </div>
     <div class="vue-main" style="height: 100%"></div>
     <span class="plugin-container"></span>
 
