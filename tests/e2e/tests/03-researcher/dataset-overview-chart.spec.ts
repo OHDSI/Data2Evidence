@@ -57,10 +57,10 @@ test(TEST_NAME, async ({ page }) => {
     // Hover over the ECharts container
     await expect(page.locator('canvas').first()).toBeVisible()
     await page.waitForTimeout(500)
-    const bb = (await page.locator('.echarts-for-react ').nth(1).boundingBox())!
+    const bb = (await page.locator('.echarts-for-react ').first().boundingBox())!
     await page
       .locator('.echarts-for-react ')
-      .nth(1)
+      .first()
       .locator('canvas')
       .hover({ position: { x: (1 / 2) * bb.width, y: (3 / 4) * bb.height } })
     await expect(page.locator('div:has-text("Entity distribution")').last()).toBeVisible({ timeout: 3000 })
