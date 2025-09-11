@@ -55,11 +55,35 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   useEffect(() => {
     if (isIframeViewerOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
       try {
-        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure;`;
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
       } catch (error) {
         console.error("Error setting cookie in iframe:", error);
       }
     }
+
+    const onTokenRefreshed = (e: Event) => {
+      const token = (e as CustomEvent)?.detail?.accessToken as string | undefined;
+      if (!token) return;
+      setBearerToken(token);
+      document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+      if (isIframeViewerOpen && iframeRef.current?.contentWindow) {
+        try {
+          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+        } catch (err) {
+          console.error("Error updating iframe cookie after OIDC refresh:", err);
+        }
+        try {
+          const src = new URL(iframeRef.current.src);
+          src.searchParams.set("t", Date.now().toString());
+          iframeRef.current.src = src.toString();
+        } catch (err) {
+          console.warn("Cache-busting failed; resetting to base URL", err);
+          if (iframeRef.current) iframeRef.current.src = VIEWER_BASE_URL;
+        }
+      }
+    };
+    window.addEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
+    return () => window.removeEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
   }, [isIframeViewerOpen, bearerToken]);
 
   const fetchViewerStatus = useCallback(async () => {
@@ -80,8 +104,15 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   });
 
   const handleOpenIframeViewer = useCallback(() => {
+    if (bearerToken) {
+      try {
+        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+      } catch (err) {
+        console.error("Error setting parent cookie before opening iframe:", err);
+      }
+    }
     setIsIframeViewerOpen(true);
-  }, []);
+  }, [bearerToken]);
 
   const handleCloseIframeViewer = useCallback(() => {
     setIsIframeViewerOpen(false);
