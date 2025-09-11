@@ -11,7 +11,6 @@ import { CohortIncidentTargetCohortNode } from "./CohortIncidentTargetCohortNode
 import { CohortMethodAnalysisNode } from "./CohortMethodAnalysisNode/CohortMethodAnalysisNode";
 import { CohortMethodNode } from "./CohortMethodNode/CohortMethodNode";
 import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
-import { CompetingOutcomeCohortStratificationNode } from "./CompetingOutcomeCohortStratificationNode/CompetingOutcomeCohortStratificationNode";
 import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/DefaultCovariateSettingsNode";
 import { EraCovariateSettingsNode } from "./EraCovariateSettingsNode/EraCovariateSettingsNode";
 import { ExposureNode } from "./ExposureNode/ExposureNode";
@@ -59,8 +58,6 @@ export const NODE_TYPES: {
   cohort_method_node: CohortMethodNode,
   kaplan_meier_node: KaplanMeierNode,
   kaplan_meier_characterization_node: KaplanMeierCharacterizationNode,
-  competing_outcome_cohort_stratification_node:
-    CompetingOutcomeCohortStratificationNode,
   era_covariate_settings_node: EraCovariateSettingsNode,
   calendar_time_covariate_settings_node: CalendarTimeCovariateSettingsNode,
   seasonality_covariate_settings_node: SeasonalityCovariateSettingsNode,
@@ -657,18 +654,6 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       { label: "Stratification", handleType: HandleIOType.Cohort },
     ],
     outputs: [{ handleType: HandleIOType.CohortMethodAnalysis }],
-  },
-  competing_outcome_cohort_stratification_node: {
-    title: "Competing Outcome / Stratification",
-    description:
-      "Define competing outcome cohorts or stratification cohort for Kaplan-Meier analysis.",
-    tag: NodeTag.Stable,
-    defaultData: {
-      competingOutcomeCohortStratificationArgs: {
-        cohortType: "competing_outcome",
-      },
-    },
-    outputs: [{ handleType: HandleIOType.Cohort }],
   },
 };
 
