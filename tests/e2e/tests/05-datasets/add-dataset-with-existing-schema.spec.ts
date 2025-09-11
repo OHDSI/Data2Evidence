@@ -69,6 +69,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill('new_test_dataset_2')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
+  await page.waitForTimeout(1000)
   await expect(page.locator('tbody').getByText(datasetExistingSchema)).toBeVisible({ timeout: 1000 })
 
   // Clean up

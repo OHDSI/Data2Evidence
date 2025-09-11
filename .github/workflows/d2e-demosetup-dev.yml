@@ -177,7 +177,7 @@ jobs:
         # continue-on-error: true
         run: |
           cd ./tests/e2e
-          npm test ./tests/12-concepts/concept-sets.spec.ts ./tests/05-datasets/add-dataset-with-existing-schema.spec.ts
+          npm test
 
       - name: Upload Error Context
         if: always()  # Always run, even if the previous step fails
