@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "playwright test",
+    "test-last-failed": "playwright test --last-failed",
     "init": "playwright install chromium --with-deps",
     "local-codegen": "playwright codegen --ignore-https-errors https://localhost:443"
   },
@@ -10,5 +11,8 @@
     "@playwright/test": "1.52.0",
     "playwright": "1.52.0",
     "playwright-ctrf-json-reporter": "0.0.22"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1"
   }
 }

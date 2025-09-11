@@ -1475,12 +1475,14 @@ version = "0.1.0"
 dependencies = [
  "arrow-pg",
  "async-trait",
+ "base64",
  "duckdb",
  "duckdb-loadable-macros",
  "futures",
  "libduckdb-sys",
  "pgwire 0.32.1",
  "rand 0.8.5",
+ "serde_json",
  "tokio",
 ]
 
