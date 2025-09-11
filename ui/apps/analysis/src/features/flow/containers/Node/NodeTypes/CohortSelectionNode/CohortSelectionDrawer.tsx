@@ -81,6 +81,21 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
     typeof onClose === "function" && onClose();
   }, [formData]);
 
+  const handleCancel = useCallback(() => {
+    if (node.data) {
+      setFormData({
+        name: node.data.name,
+        cohorts: node.data.cohorts,
+      });
+    } else {
+      setFormData({
+        ...EMPTY_FORM_DATA,
+        ...NodeChoiceMap["cohort_selection_node"].defaultData,
+      });
+    }
+    typeof onClose === "function" && onClose();
+  }, [node.data]);
+
   const handleAddCohort = useCallback(
     (value: Cohort) => {
       onFormDataChange({
@@ -118,7 +133,7 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
   );
 
   return (
-    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
+    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={handleCancel}>
       <Box mb={4}>
         <InputLabel shrink>Cohort Selection</InputLabel>
         <Select
