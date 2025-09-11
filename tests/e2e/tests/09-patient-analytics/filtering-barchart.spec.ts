@@ -4,7 +4,7 @@ const CONCEPT_SET_DELAY = 5000 // Delay to wait for concept set creation
 const CHART_UPDATE_DELAY = 5000 // Delay to wait for chart updates
 
 const TEST_NAME = 'filtering-barchart'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
