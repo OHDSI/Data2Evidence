@@ -162,8 +162,6 @@ export class PrefectController {
   }
 
   private getToken(req: Request) {
-    return decode(
-      req.headers["authorization"].replace(/bearer /i, "")
-    ) as JwtPayload;
+    return req.headers["authorization"];
   }
 }

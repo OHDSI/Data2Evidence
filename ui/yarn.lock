@@ -3593,7 +3593,7 @@
 
 "@data2evidence/d2e-starboard-wrap@https://github.com/data2evidence/d2e-starboard-wrap.git#develop":
   version "1.0.0"
-  resolved "https://github.com/data2evidence/d2e-starboard-wrap.git#598ed7512f6e34f9caa0d6f20628b7b6dbce96e0"
+  resolved "https://github.com/data2evidence/d2e-starboard-wrap.git#0682494e64c762ad9b0832621400bbb57fa091fb"
   dependencies:
     "@data2evidence/d2e-starboard-notebook" "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop"
     "@ungap/custom-elements" "^0.1.15"
@@ -29590,6 +29590,11 @@ signum@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/signum/-/signum-1.0.0.tgz"
   integrity sha512-yodFGwcyt59XRh7w5W3jPcIQb3Bwi21suEfT7MAWnBX3iCdklJpgDgvGT9o04UonglZN5SNMfJFkHIR/jO8GHw==
+
+single-spa@^6.0.0:
+  version "6.0.3"
+  resolved "https://registry.yarnpkg.com/single-spa/-/single-spa-6.0.3.tgz#030c1b4a1dab80d29da858d93361d49127371a3b"
+  integrity sha512-pXlwHXHhs3hx/MnGQHBLdFCVAN2rlm9TLBKazbDMyZ25QRxoen2vlUZ47MyXKa9K8Gd5UZs/gkuQad4TGbViwg==
 
 sirv@^1.0.7:
   version "1.0.19"

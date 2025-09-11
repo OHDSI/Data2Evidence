@@ -12,6 +12,7 @@ import {
   CohortDefinitionResponseDto,
   IUserArtifactAtlasCohortDefinitionDto,
   ICohortDefinitionListResponseDto,
+  IGenerateCohortResponseDto,
 } from "../dto/cohortdefinition.ts";
 import { UserArtifactServiceNames } from "../types.ts";
 
@@ -106,7 +107,7 @@ export const generateCohort = async (
     cohortGeneratorFlowRun
   );
 
-  const result = {
+  const result: IGenerateCohortResponseDto = {
     status: "STARTING",
     startDate: null,
     endDate: null,

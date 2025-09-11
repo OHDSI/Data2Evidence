@@ -67,26 +67,23 @@ endif()
 
 add_compile_definitions(CIRCE_EMBEDDED_NATIVE_LIB)
 
-# Load the extension
-duckdb_extension_load(circe
-    SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}
-    LOAD_TESTS
-)
+# Load the extension - updated for C API
+# Note: For C API extensions, we don't use duckdb_extension_load but handle directly in CMakeLists.txt
 
 # Post-target configuration (deferred so targets exist)
 function(configure_circe_extension_dependencies)
-  foreach(tgt IN ITEMS circe_extension circe_loadable_extension)
-    if(TARGET ${tgt})
-      target_include_directories(${tgt} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/include/circe_native)
-      target_include_directories(${tgt} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-      target_compile_definitions(${tgt} PRIVATE CIRCE_EMBEDDED_NATIVE_LIB)
-      if(TARGET circe_native)
-        add_dependencies(${tgt} circe_native)
-      endif()
-      if(TARGET circe_embed_header)
-        add_dependencies(${tgt} circe_embed_header)
-      endif()
+  # Updated target name for C API extension
+  set(target_name circe)
+  if(TARGET ${target_name})
+    target_include_directories(${target_name} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src/include/circe_native)
+    target_include_directories(${target_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+    target_compile_definitions(${target_name} PRIVATE CIRCE_EMBEDDED_NATIVE_LIB)
+    if(TARGET circe_native)
+      add_dependencies(${target_name} circe_native)
     endif()
-  endforeach()
+    if(TARGET circe_embed_header)
+      add_dependencies(${target_name} circe_embed_header)
+    endif()
+  endif()
 endfunction()
 cmake_language(DEFER CALL configure_circe_extension_dependencies)
