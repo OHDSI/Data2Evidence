@@ -553,7 +553,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       };
 
       await api.gateway.copyDataset(datamartInput);
-      await api.dataflow.createCacheFlowRun({ datasetId: dataset.id });
       handleClose("success");
     } catch (err: any) {
       setFeedback({
