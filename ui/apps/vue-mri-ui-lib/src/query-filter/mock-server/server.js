@@ -32,16 +32,17 @@ setupWebapiRoutes(app)
 setupMockRoutes(app)
 
 // Serve static files from PA-Atlas build
-app.use('/mri', express.static(path.join(__dirname, 'mri')))
-app.use('/js', express.static(path.join(__dirname, 'mri', 'js')))
-app.use('/css', express.static(path.join(__dirname, 'mri', 'css')))
-app.use('/img', express.static(path.join(__dirname, 'mri', 'img')))
-app.use('/fonts', express.static(path.join(__dirname, 'mri', 'fonts')))
+app.use('/mri', express.static(path.join(__dirname, 'static', 'mri')))
+app.use('/js', express.static(path.join(__dirname, 'static', 'mri', 'js')))
+app.use('/css', express.static(path.join(__dirname, 'static', 'mri', 'css')))
+app.use('/img', express.static(path.join(__dirname, 'static', 'mri', 'img')))
+app.use('/fonts', express.static(path.join(__dirname, 'static', 'mri', 'fonts')))
+app.use('/ui', express.static(path.join(__dirname, 'static', 'ui5', 'resources')))
 
 // Serve authenticate.js with modifications
 app.get('/authenticate.js', (_, res) => {
   const fs = require('fs')
-  const authPath = path.join(__dirname, 'mri', 'authenticate.js')
+  const authPath = path.join(__dirname, 'static', 'mri', 'authenticate.js')
 
   try {
     let jsContent = fs.readFileSync(authPath, 'utf8')
@@ -61,7 +62,7 @@ app.get('/authenticate.js', (_, res) => {
 // Catch-all handler: serve index.html for any unmatched route (SPA fallback)
 app.get('*', (_, res) => {
   const fs = require('fs')
-  const indexPath = path.join(__dirname, 'mri', 'index.html')
+  const indexPath = path.join(__dirname, 'static', 'mri', 'index.html')
 
   try {
     let htmlContent = fs.readFileSync(indexPath, 'utf8')
