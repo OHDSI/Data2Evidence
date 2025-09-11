@@ -24,7 +24,7 @@ export function addRoutes(app: Hono) {
         if(q === 'none')
             return  c.json(instplugins);
 
-        const pkgs =  await fetch(`https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true`)
+        const pkgs =  await fetch(env.PLUGINS_INFORMATION_URL)
         const pkgs_json = await pkgs.json();
         const tmp = pkgs_json.value.map((pkg:any) => {
             const pkgname = pkg.name.replace(`@${env.GH_ORG}/`, ""); 

@@ -5,7 +5,7 @@
 	path = services/trex/ext/llama/llama.cpp
 	url = https://github.com/ggml-org/llama.cpp.git
 [submodule "services/trex/Trex"]
-	path = services/trex/trex
+	path = services/trex/Trex
 	url = https://github.com/OHDSI/Trex.git
 [submodule "services/trex/ext/duckdb"]
 	path = services/trex/ext/duckdb
