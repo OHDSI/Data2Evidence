@@ -38,6 +38,13 @@ export const parseBarChartData = (
   intervalOffset = 0,
   parseLabelToYears = false
 ): { data: number[]; labels: string[] } => {
+  if (data.length === 0) {
+    return {
+      data: [],
+      labels: [],
+    };
+  }
+
   // Backfill array to replace missing objects in array
   data = backFillArray(data, "INTERVALINDEX");
   // Sort data based on INTERVALINDEX

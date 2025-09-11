@@ -3,6 +3,7 @@ import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import {
     Logger,
     DBConnectionUtil as dbConnectionUtil,
+    Connection,
 } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
 import { DataCharacterizationEndpoint } from "../../mri/endpoint/DataCharacterizationEndpoint";
@@ -146,6 +147,25 @@ const resolveDcSchemaName = (schemaName: string) => {
     }
 };
 
+const resolveDcConnection = async (
+    req: IMRIRequest,
+    vocabSchema: string
+): Promise<Connection.ConnectionInterface> => {
+    if (env.USE_TREX_DB_CONN === "false" && env.USE_CACHEDB === "true") {
+        const { studyAnalyticsCredential } = req.dbCredentials;
+        const analyticsConnection =
+            await dbConnectionUtil.DBConnectionUtil.getDBConnection({
+                credentials: studyAnalyticsCredential,
+                schemaName: studyAnalyticsCredential.schema, // getDBConnection schemaName has to be from studyAnalyticsCredential as resultsSchema duckdb file does not exist
+                vocabSchemaName: vocabSchema,
+            });
+        return analyticsConnection;
+    } else {
+        const { analyticsConnection } = req.dbConnections;
+        return analyticsConnection;
+    }
+};
+
 export async function getDataCharacterizationResult(
     req: IMRIRequest,
     res,
@@ -156,14 +176,8 @@ export async function getDataCharacterizationResult(
         const resultsSchema = req.params.resultsSchema;
         const vocabSchema = req.params.vocabSchema;
         const sourceKey = req.params.sourceKey;
-        const { studyAnalyticsCredential } = req.dbCredentials;
 
-        const analyticsConnection =
-            await dbConnectionUtil.DBConnectionUtil.getDBConnection({
-                credentials: studyAnalyticsCredential,
-                schemaName: studyAnalyticsCredential.schema, // getDBConnection schemaName has to be from studyAnalyticsCredential as resultsSchema duckdb file does not exist
-                vocabSchemaName: vocabSchema,
-            });
+        const analyticsConnection = await resolveDcConnection(req, vocabSchema);
 
         let dataCharacterizationEndpoint = new DataCharacterizationEndpoint(
             analyticsConnection
@@ -226,14 +240,8 @@ export async function getDataCharacterizationDrilldownResult(
         const vocabSchema = req.params.vocabSchema;
         const sourceKey = req.params.sourceKey;
         const conceptId = req.params.conceptId;
-        const { studyAnalyticsCredential } = req.dbCredentials;
 
-        const analyticsConnection =
-            await dbConnectionUtil.DBConnectionUtil.getDBConnection({
-                credentials: studyAnalyticsCredential,
-                schemaName: studyAnalyticsCredential.schema, // getDBConnection schemaName has to be from studyAnalyticsCredential as resultsSchema duckdb file does not exist
-                vocabSchemaName: vocabSchema,
-            });
+        const analyticsConnection = await resolveDcConnection(req, vocabSchema);
 
         let dataCharacterizationEndpoint = new DataCharacterizationEndpoint(
             analyticsConnection
