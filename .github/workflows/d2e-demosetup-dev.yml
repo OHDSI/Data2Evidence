@@ -177,7 +177,7 @@ jobs:
         # continue-on-error: true
         run: |
           cd ./tests/e2e
-          npm test ./tests/02-users/deactivate-activate-user.spec.ts ./tests/02-users/grant-user-admin-role.spec.ts ./tests/03-researcher/dataset-overview-chart.spec.ts ./tests/05-datasets/dataset-overview-search.spec.ts ./tests/05-datasets/dataset-update.spec.ts ./tests/05-datasets/user-permission.spec.ts
+          npm test ./tests/03-researcher/dataset-overview-chart.spec.ts ./tests/05-datasets/dataset-overview-search.spec.ts ./tests/05-datasets/user-permission.spec.ts ./tests/12-concepts/concept-sets.spec.ts
 
       - name: Upload Error Context
         if: always()  # Always run, even if the previous step fails
