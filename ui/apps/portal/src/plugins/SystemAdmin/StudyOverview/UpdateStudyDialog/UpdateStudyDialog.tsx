@@ -358,6 +358,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
                 value={formData.tokenStudyCode}
                 onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
                 error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+                disabled
               />
               {formError.tokenStudyCode.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
