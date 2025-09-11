@@ -18,11 +18,11 @@ export default defineConfig({
     ignoreHTTPSErrors: true,
     screenshot: 'only-on-failure' // Take screenshot of page if test fails
   },
-  retries: process.env.CI ? 2 : 0, // retry failed tests once
+  retries: process.env.CI ? 3 : 0, // retry failed tests once
   reporter: [
     ['list'], // You can combine multiple reporters
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: process.env.CI ? 10 : 0
+  maxFailures: process.env.CI ? 1 : 0
 })
