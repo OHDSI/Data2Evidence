@@ -1036,7 +1036,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             checkbox-id="request-access"
             label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
             onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              handleFormDataChange({ showRequestAccess: event.target.checked });
+              handleFormDataChange({ cacheDatasetShowRequestAccess: event.target.checked });
             }}
           />
         </Box>
