@@ -117,6 +117,10 @@ interface FormError {
   cacheDatasetPaConfigId: {
     required: boolean;
   };
+  cacheDatasetTokenStudyCode: {
+    required: boolean;
+    valid: boolean;
+  };
 }
 
 const EMPTY_FORM_ERROR: FormError = {
@@ -133,6 +137,7 @@ const EMPTY_FORM_ERROR: FormError = {
   cacheDatasetName: { required: false },
   cacheDatasetType: { required: false },
   cacheDatasetPaConfigId: { required: false },
+  cacheDatasetTokenStudyCode: { required: false, valid: false },
 };
 
 const EMPTY_FORM_DATA: FormData = {
@@ -369,6 +374,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cacheDatasetName,
       cacheDatasetType,
       cacheDatasetPaConfigId,
+      cacheDatasetTokenStudyCode,
     } = formData;
 
     let formError: FormError | {} = {};
@@ -434,6 +440,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     if (!cacheDatasetPaConfigId) {
       formError = { ...formError, cacheDatasetPaConfigId: { required: true } };
+    }
+
+    if (!cacheDatasetTokenStudyCode) {
+      formError = { ...formError, cacheDatasetTokenStudyCode: { required: true } };
+    }
+
+    if (cacheDatasetTokenStudyCode && !tokenIsValid(cacheDatasetTokenStudyCode)) {
+      formError = { ...formError, cacheDatasetTokenStudyCode: { valid: true } };
     }
 
     if (Object.keys(formError).length > 0) {
@@ -1074,6 +1088,25 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
+            value={formData.cacheDatasetTokenStudyCode}
+            onChange={(event) => handleFormDataChange({ cacheDatasetTokenStudyCode: event.target.value })}
+            inputProps={{ maxLength: 48 }}
+            error={formError.cacheDatasetTokenStudyCode.required || formError.cacheDatasetTokenStudyCode.valid}
+          />
+          {formError.cacheDatasetTokenStudyCode.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+          {formError.cacheDatasetTokenStudyCode.valid && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
+          )}
+          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </Box>
       </div>
       <Divider />
