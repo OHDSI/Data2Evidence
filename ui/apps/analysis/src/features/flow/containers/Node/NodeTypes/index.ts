@@ -508,7 +508,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     title: "Study Population Settings",
     description:
       "Configure risk windows, time at risk, and analysis-specific population parameters.",
-    tag: NodeTag.Stable,
+    tag: NodeTag.Experimental,
     defaultData: {
       cohortMethodArgs: {
         minDaysAtRisk: 1,
