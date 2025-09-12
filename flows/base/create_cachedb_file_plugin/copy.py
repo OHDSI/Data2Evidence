@@ -1,28 +1,47 @@
 import traceback
+from sqlglot import select, exp
+from typing import Any
+
 from prefect import task
 from prefect.logging import get_run_logger
 
 from .fts import create_fts_index
-from .utils import execute_statement
+from .config import CopyParameters, QueryColumns
+
+
+from .utils import execute_statement, set_bigquery_global_settings
+from .filter import filter_tables, filter_columns, _CDM_COLUMN_FILTER_MAP
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
-@task(log_prints=True, task_run_name="copy_all_schemas_{read_conn.database_code}")
-def copy_all_schemas(write_conn: any, read_conn: any, tables_to_create_duckdb_fts_index: list[str]):
+@task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
+def copy_all_schemas(
+    write_conn: Any,
+    read_conn: Any,
+    copy_params: CopyParameters,
+):
     logger = get_run_logger()
-    
-    logger.info(f"Starting schema copy for all schemas in database '{read_conn.database_code}'...")
+
+    logger.info(
+        f"Starting schema copy for all schemas in database '{read_conn.database_code}'..."
+    )
+
     schemas_to_copy = sorted(read_conn.get_schema_names())
+
     logger.info(f"Found {len(schemas_to_copy)} schemas to copy: {schemas_to_copy}")
 
     failed_schemas = []
 
     for idx, schema in enumerate(schemas_to_copy, start=1):
+
         logger.info(f"[{idx}/{len(schemas_to_copy)}] Copying schema '{schema}'...")
+
         try:
-            create_schema_tables(write_conn, read_conn, schema)
+            create_schema_if_not_exists(write_conn, copy_params)
+            create_schema_tables(write_conn, read_conn, copy_params)
             logger.info(f"Schema '{schema}' tables copied successfully.")
+
         except Exception as e:
             logger.error(f"Failed to copy tables for schema '{schema}': {e}")
             logger.error(traceback.format_exc())
@@ -30,8 +49,9 @@ def copy_all_schemas(write_conn: any, read_conn: any, tables_to_create_duckdb_ft
             continue
 
         try:
-            create_fts_index(write_conn, read_conn, schema, tables_to_create_duckdb_fts_index)
+            create_fts_index(write_conn, read_conn, copy_params)
             logger.info(f"FTS index created for schema '{schema}'.")
+
         except Exception as e:
             logger.error(f"Failed to create FTS index for schema '{schema}': {e}")
             logger.error(traceback.format_exc())
@@ -55,140 +75,284 @@ def copy_all_schemas(write_conn: any, read_conn: any, tables_to_create_duckdb_ft
         logger.info("All schemas copied and indexed successfully.")
 
 
-
-@task(log_prints=True, task_run_name="create_schema_tables_{schema}")
-def create_schema_tables(write_conn: any, 
-                         read_conn: any, 
-                         schema: str, 
-                         create_cdw_config: bool = False):
-    """
-    Create or replace the schema tables from the source database to the DuckDB file.
-    """
+@task(log_prints=True, task_run_name="create_schema_if_not_exists_{copy_params.target_schema}")
+def create_schema_if_not_exists(
+    write_conn: any,
+    copy_params: CopyParameters,
+) -> None:
     logger = get_run_logger()
-    logger.info(f"Starting creation of tables for schema '{schema}' in database '{read_conn.database_code}'.")
 
-    limit_statement = "LIMIT 0" if create_cdw_config else ""
+    logger.info(
+        f"Starting creation of schema '{copy_params.target_schema}' in database '{copy_params.target_database}' if it doesn't exist..."
+    )
 
-    logger.debug(f"Executing schema creation query for '{schema}'.")
-    execute_statement(write_conn, create_schema_query(schema))
+    execute_statement(
+        write_conn, create_schema_query(copy_params.target_database, copy_params.target_schema)
+    )
 
-    tables_to_copy = sorted(read_conn.get_table_names(
-        schema, include_views=create_cdw_config
-    ))
-    logger.info(f"Found {len(tables_to_copy)} tables/views to copy in schema '{schema}': {tables_to_copy}")
+    logger.info("Creation of schema completed successfully.")
+
+
+@task(log_prints=True, task_run_name="create_schema_tables_from_{copy_params.source_schema}")
+def create_schema_tables(
+    write_conn: any,
+    read_conn: any,
+    copy_params: CopyParameters
+) -> None:
+    
+    logger = get_run_logger()
+
+    logger.info(
+        f"Starting creation of tables from '{copy_params.source_database}'.'{copy_params.source_schema}' schema to '{copy_params.target_database}'.'{copy_params.target_schema}'..."
+    )
+
+    # TODO: CURRENTLY CREATE CACHE GETS TABLES FROM TABLEFILTER BECAUSE IT IS NOT FALSE
+    if copy_params.table_filter:
+        source_tables = copy_params.table_filter.keys()
+    else:
+        source_tables = read_conn.get_table_names(copy_params.source_schema)
+
+    # Filter out system tables that may appear in some databases
+    tables_to_copy = sorted(filter_tables(source_tables))
+
+    logger.info(
+        f"Found {len(tables_to_copy)} tables/views to copy in schema '{copy_params.source_schema}': {tables_to_copy}"
+    )
 
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
         logger.debug("Setting BigQuery-specific DuckDB connection settings.")
-        # Todo: For duckdb upgrade >= 1.3.2
-        # execute_statement(write_conn, set_bigquery_global_settings())
+        execute_statement(write_conn, set_bigquery_global_settings())
 
-    logger.info(f"Beginning table copy for schema '{schema}'.")
+    logger.info(f"Beginning table copy for schema '{copy_params.source_schema}'.")
 
     for idx, table in enumerate(tables_to_copy, start=1):
-        logger.info(f"[{idx}/{len(tables_to_copy)}] Copying table '{table}' in schema '{schema}'...")
-        try: 
-            query = create_or_replace_table_query(
-                source_schema=schema,
-                source_table=table,
-                source_credentials=read_conn.tenant_configs,
-                limit_statement=limit_statement
-            )
-            
-            logger.debug(f"Create/replace table query for '{table}': {query}")
+        logger.info(
+            f"[{idx}/{len(tables_to_copy)}] Copying table '{table}' in schema '{copy_params.source_schema}'..."
+        )
 
-            table_creation_time = execute_statement(write_conn, query)
+        # Determine columns to copy for the current table
+        source_columns = copy_params.table_filter.get(table) if copy_params.table_filter else None
+        if not source_columns:
+            source_columns = ["*"]
 
-            row_count_query = f"SELECT COUNT(*) FROM {schema}.{table};"
-            logger.debug(f"Row count query for '{table}': {row_count_query}")
-            write_conn.execute(row_count_query)
-            rows_copied = write_conn.fetchall()[0][0]
+
+        # Todo: Make filter columns work
+        columns_to_copy = source_columns # filter_columns(source_columns)
+
+        patient_filter_col, timestamp_filter_col = (lambda x: (
+            x.get(table, {}).get("person_id_column"),
+            x.get(table, {}).get("timestamp_column")
+        ))(_CDM_COLUMN_FILTER_MAP)
+
+        query_columns = QueryColumns(
+            table=table,
+            columns_to_copy=columns_to_copy,
+            patient_filter_col=None if patient_filter_col not in columns_to_copy else patient_filter_col,
+            timestamp_filter_col=None if timestamp_filter_col not in columns_to_copy else timestamp_filter_col
+        )
+
+        try:
+            rows_copied = copy_table(write_conn, copy_params, query_columns, logger)
+
+            copy_indexes(write_conn, read_conn, copy_params, query_columns, logger)
 
             logger.info(
-                f"Table '{table}' in schema '{schema}' created with {rows_copied} rows. Execution took {table_creation_time} seconds."
+                f"Table '{table}' in '{copy_params.target_database}'.'{copy_params.target_schema}' schema created with {rows_copied} rows."
+            )
+        except Exception as e:
+            logger.error(
+                f"[{table}] Error copying table and indexes from '{copy_params.source_database}'.'{copy_params.source_schema}' schema to '{copy_params.target_database}'.'{copy_params.target_schema}' schema: {e}"
+            )
+            logger.error(traceback.format_exc())
+            
+            raise
+        else:
+            logger.info(
+                f"[{table}] Successfully copied table and indexes from schema '{copy_params.source_database}'.'{copy_params.source_schema}' schema to '{copy_params.target_database}'.'{copy_params.target_schema}' schema."
             )
 
-            # Sync indexes
-            indexes = read_conn.get_indexes_for_table(schema, table)
-            logger.info(f"Found {len(indexes)} indexes for table '{table}'.")
 
-            for index in indexes:
-                logger.debug(f"Creating index '{index.get('name')}' on columns {index.get('column_names')} (unique={index.get('unique')}) for table '{table}'.")
-                execute_statement(write_conn, create_index_query(
-                    schema,
-                    table,
-                    index.get("name"),
-                    index.get("column_names"),
-                    index.get("unique")
-                ))
+def get_source_tables(
+    read_conn, source_schema, snapshot_copy_config, create_cdw_config
+):
+    if snapshot_copy_config and snapshot_copy_config.table_config:
+        table_config_dict = snapshot_copy_config.table_config_to_dict()
+        return table_config_dict.keys(), table_config_dict
+    else:
+        source_tables = read_conn.get_table_names(
+            source_schema, include_views=create_cdw_config
+        )
+        return source_tables, None
+
+
+
+# @task(log_prints=True, task_run_name="copy_table_{query_columns.table}")
+def copy_table(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, logger) -> int:    
+    select_source_statement = create_select_query(copy_params, query_columns)
+    create_table_statement = create_or_replace_table_query(copy_params, query_columns.table, select_source_statement)
+    execute_statement(write_conn, create_table_statement)
+    row_count_query = get_row_count_query(copy_params.target_database, copy_params.target_schema, query_columns.table)
+    write_conn.execute(row_count_query)
+    rows_copied = write_conn.fetchall()[0][0]
+    return rows_copied
+
+
+# @task(log_prints=True, task_run_name="copy_indexes_for_{query_columns.table}")
+def copy_indexes(write_conn, read_conn, copy_params: CopyParameters, query_columns: QueryColumns, logger):
+    # logger = get_run_logger()
+
+    table = query_columns.table
+    columns_to_copy = query_columns.columns_to_copy
+
+    source_schema = copy_params.source_schema
+    target_database = copy_params.target_database
+    target_schema = copy_params.target_schema   
+
+
+    indexes = read_conn.get_indexes_for_table(source_schema, table)
+    
+    if not indexes:
+        logger.info(
+            f"No indexes found for table '{table}'. Skipping index copy."
+        )
+    else:
+        logger.info(f"Found {len(indexes)} indexes for table '{table}'.")
+        
+        for index in indexes:
+            if index.get("column_names") not in columns_to_copy:
+                logger.info(
+                    f"Skipping index '{index.get('name')}' on columns {index.get('column_names')} as these columns were not copied."
+                )
+                continue
+            else:
+                logger.debug(
+                    f"Creating index '{index.get('name')}' on columns {index.get('column_names')} (unique={index.get('unique')}) for table '{table}'."
+                )
+
+                execute_statement(
+                    write_conn,
+                    create_index_query(
+                        target_database,
+                        target_schema,
+                        table,
+                        index.get("name"),
+                        index.get("column_names"),
+                        index.get("unique"),
+                    ),
+                )
+
                 logger.info(
                     f"{'Unique' if index.get('unique') else 'Non-unique'} index '{index.get('name')}' created for table '{table}' on columns {index.get('column_names')}."
                 )
 
-            pk_index = read_conn.get_indexes_for_pk(schema, table)
-            pk_index_name = pk_index.get("name")
-            pk_index_columns = pk_index.get("constrained_columns")
+    pk_index = read_conn.get_indexes_for_pk(source_schema, table)
+    pk_index_name = pk_index.get("name")
+    pk_index_columns = pk_index.get("constrained_columns")
+    
+    if not pk_index_name and not pk_index_columns:
+        logger.info(
+            f"No primary key index found for table '{table}'. Skipping primary index copy"
+        )
 
-            if pk_index_name is not None and pk_index_columns != []:
-                logger.debug(f"Creating primary key index '{pk_index_name}' on columns {pk_index_columns} for table '{table}'.")
-                execute_statement(write_conn, create_index_query(
-                    schema,
+    elif pk_index_columns not in columns_to_copy:
+        logger.info(
+            f"Skipping primary key index '{pk_index_name}' on columns {pk_index_columns} as these columns were not copied."
+        )
+    else:
+        if pk_index_name is not None and pk_index_columns != []:
+            logger.debug(
+                f"Creating primary key index '{pk_index_name}' on columns {pk_index_columns} for table '{table}'."
+            )
+            execute_statement(
+                write_conn,
+                create_index_query(
+                    target_database,
+                    target_schema,
                     table,
                     pk_index_name,
                     pk_index_columns,
-                    unique=True
-                ))
-                logger.info(
-                    f"Primary Key Index '{pk_index_name}' recreated for table '{table}' in schema '{schema}'."
-                )
-
-        except Exception as e:
-            logger.error(f"Error copying table '{table}' from schema '{schema}': {e}")
-            logger.error(traceback.format_exc())
-            logger.error(f"Failed to copy table '{table}' from schema '{schema}'. See above for details.")
-            raise
-        else:
+                    unique=True,
+                ),
+            )
             logger.info(
-                f"[{table}] Table and indexes from schema '{read_conn.database_code}.{schema}' copied successfully."
+                f"Primary Key Index '{pk_index_name}' copied for table '{table}' in schema '{target_database}'.'{target_schema}'."
             )
 
 
-def create_schema_query(schema_name: str) -> str:
-    return f'CREATE SCHEMA IF NOT EXISTS "{schema_name}";'
+def create_schema_query(database_name: str, schema_name: str) -> str:
+    return f'CREATE SCHEMA IF NOT EXISTS "{database_name}"."{schema_name}";'
 
 
-def create_or_replace_table_query(source_schema: str,
-                                  source_table: str,
-                                  source_credentials: dict,
-                                  limit_statement: str) -> str:    
-    project_name = source_credentials.host
-    select_statement = None
-    match source_credentials.dialect:
-        case SupportedDatabaseDialects.POSTGRES.value:
-            select_statement = f'SELECT * FROM postgres_scan("host={source_credentials.host} port={source_credentials.port} dbname={source_credentials.databaseName} user={source_credentials.readUser} password={source_credentials.readPassword.get_secret_value()}", "{source_schema}", "{source_table}")'
-        case SupportedDatabaseDialects.BIGQUERY.value:
-            # Todo: Change to use `bigquery_arrow_scan` when duckdb upgrade >= 1.3.2
-            select_statement = f"SELECT * FROM bigquery_scan('{project_name}.{source_schema}.{source_table}')"
-        case _:
-            raise ValueError(f"Unsupported dialect: {source_credentials.dialect}")
-
-    return f'CREATE OR REPLACE TABLE "{source_schema}"."{source_table}" AS FROM ({select_statement}) {limit_statement};'
+def get_row_count_query(database_name: str, schema_name: str, table_name: str) -> str:
+    return f'SELECT COUNT(*) FROM "{database_name}"."{schema_name}"."{table_name}";'
 
 
-def create_index_query(schema_name: str,
-                       table_name: str,
-                       index_name: str,
-                       column_names: list[str],
-                       unique: bool = False) -> str:  
+def create_or_replace_table_query(
+    copy_params: CopyParameters,
+    table: str,
+    select_statement: str,
+) -> str:
+    return f'''
+        CREATE OR REPLACE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" 
+        AS FROM ({select_statement}){copy_params.limit_statement};
+        '''
+
+
+def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns) -> str:
+    where_condition = None
+
+    # Todo: Date/Timestamp mixed up
+    columns_to_copy = query_columns.columns_to_copy
+    timestamp_filter_col = query_columns.timestamp_filter_col
+    patient_filter_col = query_columns.patient_filter_col
+    patient_filter_values = copy_params.patient_filter
+    timestamp_filter_value = copy_params.date_filter
+
+    database = copy_params.source_database
+    schema = copy_params.source_schema
+    table = query_columns.table
+
+    if patient_filter_col is not None and patient_filter_values is not None:
+        where_condition = exp.Column(this=patient_filter_col).isin(
+            *patient_filter_values
+        )
+
+    if timestamp_filter_col is not None and timestamp_filter_value is not None:
+        where_condition = (
+            (
+                where_condition & exp.Column(this=timestamp_filter_col)
+                == timestamp_filter_value
+            )
+            if where_condition
+            else exp.Column(this=timestamp_filter_col) == timestamp_filter_value
+        )
+
+    if where_condition is not None:
+        sql_expression = (
+            select(*columns_to_copy)
+            .from_(f"{database}.{schema}.{table}")
+            .where(where_condition)
+        )
+    else:
+        sql_expression = select(*columns_to_copy).from_(
+            f"{database}.{schema}.{table}"
+        )
+    return sql_expression.sql(dialect="duckdb")
+
+
+def create_index_query(
+    database_name: str,
+    schema_name: str,
+    table_name: str,
+    index_name: str,
+    column_names: list[str],
+    unique: bool = False,
+) -> str:
     # by default indexes created on columns in asc order
     columns_str = ", ".join(column_names)
-    return f'''CREATE {"UNIQUE" if unique else ""} INDEX {index_name} ON "{schema_name}"."{table_name}" ({columns_str});'''
+    return f'''
+        CREATE OR REPLACE {"UNIQUE" if unique else ""} INDEX {index_name} 
+        ON "{database_name}"."{schema_name}"."{table_name}" ({columns_str});
+        '''
 
 
-def set_bigquery_global_settings():
-    """
-    Set BigQuery specific settings for the DuckDB connection.
-    """
-    return """
-    SET bq_arrow_compression='ZSTD'; 
-    SET bq_experimental_use_incubating_scan=TRUE;
-    """

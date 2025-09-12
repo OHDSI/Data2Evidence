@@ -73,15 +73,16 @@ class TrexDao(IbisDao):
             if con:
                 con.close()
 
-    def execute_sql(self, sql: str, fetch: bool = False):
+    def execute_sql(self, sql: str):
         """Execute SQL using a context manager for connection and cursor."""
         with self._get_connection() as con:
             cur = None
             try:
                 cur = con.cursor()
                 cur.execute(sql)
-                if fetch:
-                    return cur.fetchall()
+                result = cur.fetchall()
+                if result is not None:
+                    return result
                 if not con.autocommit:
                     con.commit()
             except Exception:
@@ -98,7 +99,7 @@ class TrexDao(IbisDao):
     def check_schema_exists(self, schema: str) -> bool:
         try:
             sql = "SELECT schema_name FROM information_schema.schemata;"
-            result = self.execute_sql(sql, fetch=True)
+            result = self.execute_sql(sql)
             schemas = {row[0] for row in result}
             return schema in schemas
         except psycopg2.Error as e:
