@@ -17,21 +17,10 @@
     "functions": {
       "init": [
         {
-          "function": "/alp-fhir-init/src/preStart",
-          "imports": "/alp-fhir-init/src/preStart/deno.json",
-          "env": "alp-fhir-init"
-        },
-        {
-          "function": "/d2e-medplum-server/src",
+          "function": "/alp-fhir-init/src",
+          "imports": "/alp-fhir-init/src/deno.json",
           "env": "alp-fhir-init",
-          "imports": "/d2e-medplum-server/deno.json",
-          "waitforEnvVar": "FHIR_CONFIG_HEALTHCHECK"
-        },
-        {
-          "function": "/alp-fhir-init/src/postStart",
-          "imports": "/alp-fhir-init/src/postStart/deno.json",
-          "env": "alp-fhir-init",
-          "waitfor": "http://alp-trex.alp.local:33001/fhir-server/healthcheck"
+          "waitforEnvVar": "FHIR_SERVER_HEALTHCHECK"
         }
       ],
       "api": [
@@ -40,18 +29,6 @@
           "function": "/alp-fhir-svc",
           "env": "alp-fhir-svc",
           "imports": "/alp-fhir-svc/deno.json"
-        },
-        {
-          "source": "/fhir-server",
-          "function": "/d2e-medplum-server/src",
-          "env": "alp-fhir-init",
-          "imports": "/d2e-medplum-server/deno.json"        
-        },
-        {
-          "source": "/fhir-config",
-          "function": "/alp-fhir-init/src/preStart",
-          "env": "alp-fhir-init",
-          "imports": "/alp-fhir-init/src/preStart/deno.json"
         }
       ],
       "roles": {
@@ -98,22 +75,9 @@
           ]
         },
         {
-          "path": "^/fhir-server/(.*)",
+          "path": "^/gateway/api/fhir/test",
           "scopes": [
             "gateway.fhir.create"
-          ],
-          "httpMethods": [
-            "POST",
-            "GET",
-            "PUT",
-            "PATCH",
-            "DELETE"
-          ]
-        },
-        {
-          "path": "^/fhir-config/healthcheck",
-          "scopes": [
-            "fhir.server.config.get"
           ],
           "httpMethods": [
             "GET"

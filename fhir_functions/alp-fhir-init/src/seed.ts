@@ -54,27 +54,7 @@ export const seed = async () => {
 
   console.log("Seeding tables");
 
-  let jsonParsedProjectContent = JSON.parse(projectContent);
-  jsonParsedProjectContent.meta.versionId =
-    "2c8b0331-863a-432e-a5d1-ef0619acc3d2";
-  jsonParsedProjectContent.secret = [
-    {
-      name: "client_id",
-      valueString: env.IDP__ALP_DATA_CLIENT_ID,
-    },
-    {
-      name: "client_secret",
-      valueString: env.IDP__ALP_DATA__CLIENT_SECRET,
-    },
-    {
-      name: "alp_auth_route",
-      valueString: env.ALP_GATEWAY_OAUTH__URL,
-    },
-    {
-      name: "fhir_svc_route",
-      valueString: services.fhirSvc,
-    },
-  ];
+ let jsonParsedProjectContent = JSON.parse(projectContent);
 
   await queryPostgres(
     client,
