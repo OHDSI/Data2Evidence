@@ -1,15 +1,16 @@
 import { ArrowBack, OpenInBrowser, PlayCircleFilled } from "@mui/icons-material";
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
-import { Button, Card, RunStudyIcon, TrashIcon } from "@portal/components";
+import { Button, Card, RunStudyIcon, TrashIcon, EditIcon, IconButton } from "@portal/components";
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
 import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
 import env from "../../../../env";
-import { usePollingEffect } from "../../../../hooks";
+import { usePollingEffect, useDialogHelper } from "../../../../hooks";
 import { StrategusStudy, StrategusStudyType } from "../../../../types/strategusStudy";
+import StudyTemplateDialog from "../StudyTemplateDialog/StudyTemplateDialog";
 import "./StudyCard.scss";
 
 interface StudyCardProps {
@@ -35,6 +36,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const VIEWER_BASE_URL = `${env.REACT_APP_DN_BASE_URL}strategus-results/${study.id}/`;
+  const [showStudyTemplateDialog, openStudyTemplateDialog, closeStudyTemplateDialog] = useDialogHelper(false);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -292,6 +294,12 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                 text={(study.id || getText(i18nKeys.STUDY_CARD__UNTITLED)).replace(/_/g, " ")}
                 searchText={highlightText}
               />
+              <IconButton
+                onClick={openStudyTemplateDialog}
+                startIcon={<EditIcon className="study-card__action-icon" />}
+                disabled={selectedDatasetId ? false : true}
+                variant="text"
+              />
             </div>
             {study.email && (
               <div className="study-card__contact">
@@ -407,6 +415,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           />
         </div>
       )}
+      <StudyTemplateDialog studyId={study.id} open={showStudyTemplateDialog} onClose={closeStudyTemplateDialog} />
     </>
   );
 };
