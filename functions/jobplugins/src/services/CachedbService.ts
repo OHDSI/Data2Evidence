@@ -1,6 +1,7 @@
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import {
   FlowRunState,
+  FLOW_RUN_STATE_TYPES,
   PrefectDeploymentName,
   PrefectFlowName,
 } from "../const.ts";
@@ -28,5 +29,11 @@ export class CachedbService {
     const prefectApi = new PrefectAPI(token);
     const flowRun: FlowRunState = await prefectApi.getFlowRun(flowRunId);
     return flowRun;
+  }
+
+  public async getCompletedFlowRunId(flowRunId: string, token: string) {
+    const prefectApi = new PrefectAPI(token);
+    const completedFlowRun = await prefectApi.pollFlowRunCompletion(flowRunId);
+    return completedFlowRun.flowRunId;
   }
 }
