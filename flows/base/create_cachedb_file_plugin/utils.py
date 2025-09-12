@@ -1,12 +1,12 @@
 import os
 
-from typing import Set, Tuple, List
+from typing import Set
 from pathlib import Path
 from time import time
 
 from prefect.blocks.system import Secret
 
-from .config import DUCKDB_FULLTEXT_SEARCH_CONFIG, DatamartConfig
+from .config import DUCKDB_FULLTEXT_SEARCH_CONFIG
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
@@ -88,52 +88,3 @@ def resolve_duckdb_file_path(duckdb_database_name: str, folder_path: str) -> str
     Returns the full path to the DuckDB database file
     """
     return str(Path(folder_path) / f"{duckdb_database_name}.db")
-
-
-
-
-
-def get_date_filter(snapshot_copy_config: DatamartConfig) -> str | None:
-    """
-    Extracts the date filter from DatamartConfig.
-    """
-    if not snapshot_copy_config:
-        return None
-    return getattr(snapshot_copy_config, "timestamp", None)
-
-
-def get_table_filter(snapshot_copy_config: DatamartConfig) -> Set[str]:
-    """
-    Extracts the table filter (set of table names) from DatamartConfig.
-    """
-    if not snapshot_copy_config or not getattr(
-        snapshot_copy_config, "table_config", None
-    ):
-        return set()
-    return {_.table_name for _ in getattr(snapshot_copy_config, "table_config", [])}
-
-
-def get_patient_filter(snapshot_copy_config: DatamartConfig) -> List[str] | None:
-    """
-    Extracts the patient filter (tuple of patient IDs) from DatamartConfig.
-    """
-    if not snapshot_copy_config:
-        return None
-    return list(getattr(snapshot_copy_config, "patients_to_be_copied", []) or [])
-
-
-def parse_datamart_copy_config(
-    snapshot_copy_config: DatamartConfig,
-) -> tuple[str, Set[str], List[str]]:
-    """
-    Parses the DatamartConfig object and extracts the date filter, table filter, and patient filter.
-
-    Returns:
-        date_filter (str): The timestamp filter, or empty string if not set.
-        table_filter (Set[str]): Set of table names to be copied.
-        patient_filter (tuple): Tuple of patient IDs to be copied.
-    """
-    date_filter = get_date_filter(snapshot_copy_config)
-    table_filter = get_table_filter(snapshot_copy_config)
-    patient_filter = get_patient_filter(snapshot_copy_config)
-    return date_filter, table_filter, patient_filter
