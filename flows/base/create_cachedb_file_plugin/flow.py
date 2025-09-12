@@ -49,7 +49,7 @@ def create_cache_flow(options: CreateCacheOptions):
         source_schema=options.schema_name,
         target_schema=options.target_schema_name,
         table_filter=options.snapshot_copy_config.table_config_to_dict() if options.snapshot_copy_config else None,
-        date_filter=options.snapshot_copy_config.timestamp if options.snapshot_copy_config else None,
+        timestamp_filter=options.snapshot_copy_config.timestamp if options.snapshot_copy_config else None,
         patient_filter=options.snapshot_copy_config.patients_to_be_copied if options.snapshot_copy_config else None,
         fts_tables=options.tables_to_create_duckdb_fts_index,
         limit_statement=""  # Limit 0 only applied to CDW config

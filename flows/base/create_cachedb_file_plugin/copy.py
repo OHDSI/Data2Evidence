@@ -106,7 +106,6 @@ def create_schema_tables(
         f"Starting creation of tables from '{copy_params.source_database}'.'{copy_params.source_schema}' schema to '{copy_params.target_database}'.'{copy_params.target_schema}'..."
     )
 
-    # TODO: CURRENTLY CREATE CACHE GETS TABLES FROM TABLEFILTER BECAUSE IT IS NOT FALSE
     if copy_params.table_filter:
         source_tables = copy_params.table_filter.keys()
     else:
@@ -135,9 +134,7 @@ def create_schema_tables(
         if not source_columns:
             source_columns = ["*"]
 
-
-        # Todo: Make filter columns work
-        columns_to_copy = source_columns # filter_columns(source_columns)
+        columns_to_copy = source_columns
 
         patient_filter_col, timestamp_filter_col = (lambda x: (
             x.get(table, {}).get("person_id_column"),
@@ -185,22 +182,23 @@ def get_source_tables(
         return source_tables, None
 
 
-
-# @task(log_prints=True, task_run_name="copy_table_{query_columns.table}")
 def copy_table(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, logger) -> int:    
     select_source_statement = create_select_query(copy_params, query_columns)
+    
     create_table_statement = create_or_replace_table_query(copy_params, query_columns.table, select_source_statement)
+    
     execute_statement(write_conn, create_table_statement)
+    
     row_count_query = get_row_count_query(copy_params.target_database, copy_params.target_schema, query_columns.table)
+    
     write_conn.execute(row_count_query)
+    
     rows_copied = write_conn.fetchall()[0][0]
+
     return rows_copied
 
 
-# @task(log_prints=True, task_run_name="copy_indexes_for_{query_columns.table}")
 def copy_indexes(write_conn, read_conn, copy_params: CopyParameters, query_columns: QueryColumns, logger):
-    # logger = get_run_logger()
-
     table = query_columns.table
     columns_to_copy = query_columns.columns_to_copy
 
@@ -301,12 +299,11 @@ def create_or_replace_table_query(
 def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns) -> str:
     where_condition = None
 
-    # Todo: Date/Timestamp mixed up
     columns_to_copy = query_columns.columns_to_copy
     timestamp_filter_col = query_columns.timestamp_filter_col
     patient_filter_col = query_columns.patient_filter_col
     patient_filter_values = copy_params.patient_filter
-    timestamp_filter_value = copy_params.date_filter
+    timestamp_filter_value = copy_params.timestamp_filter
 
     database = copy_params.source_database
     schema = copy_params.source_schema

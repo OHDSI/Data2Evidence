@@ -68,7 +68,7 @@ class CopyParameters:
 
     patient_filter: List[int] | None
     table_filter: Dict[str, List[str]] | None
-    date_filter: str | None
+    timestamp_filter: str | None
 
     fts_tables: List[str]
 
