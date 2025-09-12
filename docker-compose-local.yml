@@ -1,6 +1,6 @@
 services:
   trex:
-    command: npm run startdev
+    command: npm run start
     build:
       context: .
       dockerfile: ./services/trex/Dockerfile
@@ -17,6 +17,7 @@ services:
       # - ./services/trex/core:/usr/src/core # For debugging trex with local code
       # - ./services/trex/deno.json:/usr/src/deno.json 
       # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
+      - /Users/alicia.koh/d2e/ohdsi/d2e/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
     environment:
       RUST_LOG: info
       RUST_BACKTRACE: full
