@@ -23,7 +23,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Concept set
   const conceptSetName = `Concept Set Test 1`
-  // If the concept set already exists (retry), remove the seconde conept set we added last time
+  // If the concept set already exists (retry), remove the second conept set we added last time
   if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
     await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
@@ -79,7 +79,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
   await expect(page.getByRole('cell', { name: '81893' })).toBeVisible({ timeout: 10000 })
-  // Only add "81893 64766004 Ulcerative" when it is not already selected, in the senario of re-running the test
+  // Only add "81893 64766004 Ulcerative" when it is not already selected, in the scenario of re-running the test
   if (await assertCount('1')) {
     await page.getByRole('row', { name: '81893 64766004 Ulcerative' }).locator('path').click()
     await expect(await assertCount('2')).toBeTruthy()
