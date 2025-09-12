@@ -255,6 +255,10 @@ export class DatasetRouter {
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
       const newSchemaName = sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "";
+      const parsedNewSchemaName = this.schemaCase(
+        newSchemaName,
+        dialect as DbDialect
+      );
 
       const dataModels = await jobpluginsAPI.getDatamodels();
       const dataModelInfo = dataModels.find(
@@ -266,7 +270,7 @@ export class DatasetRouter {
           id,
           sourceDatasetId: sourceStudyId,
           newDatasetName: newStudyName,
-          schemaName: newSchemaName,
+          schemaName: parsedNewSchemaName,
           timestamp: new Date(),
           type,
         };
@@ -284,10 +288,7 @@ export class DatasetRouter {
               options: {
                 flow_action_type: this.flowSnapshotType(snapshotLocation),
                 database_code: databaseCode,
-                schema_name: this.schemaCase(
-                  newSchemaName,
-                  dialect as DbDialect
-                ),
+                schema_name: parsedNewSchemaName,
                 source_schema: schemaName,
                 dialect: dialect,
                 snapshot_copy_config: snapshotCopyConfig,
