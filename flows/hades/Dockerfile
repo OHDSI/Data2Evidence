@@ -85,7 +85,7 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), r
 # https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
 RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v1.0.0")' # https://github.com/OHDSI/Andromeda
 RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
-RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.5.1")' # https://github.com/OHDSI/Cyclops
+RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.6.0")' # https://github.com/OHDSI/Cyclops
 RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.41.0")' # https://github.com/rstudio/reticulate
 
 # OHDSI HADES

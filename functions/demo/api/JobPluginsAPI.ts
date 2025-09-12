@@ -5,8 +5,11 @@ import {
   IDqdCreateFlowRun,
   IGetVersionInfoCreateFlowRun,
   IPhenotypeCreateFlowRun,
+  ICacheCreateFlowRun,
+  ICacheStatusFlowRun,
+  IDQDResultFlowRun,
 } from "../type.d.ts";
-import { post } from "./request-util.ts";
+import { post, get } from "./request-util.ts";
 
 export class JobPluginsAPI {
   private readonly baseURL: string;
@@ -46,6 +49,23 @@ export class JobPluginsAPI {
     }
   }
 
+  async getCacheFlowRunStatus(dto: ICacheStatusFlowRun) {
+    try {
+      this.logger.info(
+        `Get create cache flow run status for flow run: ${JSON.stringify(dto)}`
+      );
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/cachedb/completed/${dto.flowRunId}`;
+      const result = await get(url, options);
+      return result.data;
+    } catch (error) {
+      console.error(
+        `Error while checking status of create cache flow run: ${error}`
+      );
+      throw error;
+    }
+  }
+
   async createDqdFlowRun(dto: IDqdCreateFlowRun) {
     try {
       this.logger.info(`Create DQD flow run: ${JSON.stringify(dto)}`);
@@ -55,6 +75,22 @@ export class JobPluginsAPI {
       return result.data;
     } catch (error) {
       console.error(`Error while creating DQD flow run: ${error}`);
+      throw error;
+    }
+  }
+
+  async getDqdFlowRunOverviewResults(dto: IDQDResultFlowRun) {
+    try {
+      this.logger.info(
+        `Get DQD flow run overview results for flow run: ${JSON.stringify(dto)}`
+      );
+
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dqd/data-quality/flow-run/${dto.flowRunId}/overview?datasetId=${dto.datasetId}`;
+      const result = await get(url, options);
+      return result.data;
+    } catch (error) {
+      console.error(`Error while checking results of DQD flow run: ${error}`);
       throw error;
     }
   }
