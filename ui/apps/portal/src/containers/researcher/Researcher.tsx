@@ -95,7 +95,7 @@ export const Researcher: FC = () => {
   }, []);
 
   const sortedResearcherPlugins = useMemo(() => {
-    if (!dataset) return;
+    if (!dataset) return [];
     const allowed = ResearcherFeatureMap.hasOwnProperty(dataset.type)
       ? (ResearcherFeatureMap[dataset.type] as string[])
       : [];
