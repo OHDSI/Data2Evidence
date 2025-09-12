@@ -46,7 +46,7 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
         portal_server_api = PortalServerAPI()
 
         logger.info(f"Checking if schema '{schema_name}' exists in cache for db {database_code} for dataset id '{dataset_id}'")
-        # Todo: check if schema exists in cache
+
         schema_exists = dbdao.check_schema_exists(schema_name)
 
         if schema_exists is False:
