@@ -21,7 +21,7 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
 	const options: any = {servicePath: servicePath, memoryLimitMb: 1000,
-		workerTimeoutMs: 1 * 60 * 10000, noModuleCache: false,
+		workerTimeoutMs: 1 * 60 * 2000, noModuleCache: false,
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 100000, cpuTimeHardLimitMs: 200000,
