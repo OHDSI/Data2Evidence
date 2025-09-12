@@ -1,7 +1,7 @@
-from re import match as regex_match
 from typing import Set, List
+from re import match as regex_match
 
-# Base tables in CDM Schema and the timestamp and person_id columns sto filter on
+# Base tables in CDM Schema and the timestamp and person_id columns to filter on
 _CDM_COLUMN_FILTER_MAP = {
     "cohort": {"timestamp_column": "cohort_start_date"},
     "cohort_attribute": {"timestamp_column": "cohort_start_date"},
@@ -67,7 +67,6 @@ TABLES_TO_EXCLUDE = [
     r"^DATABASECHANGELOG$",
     # Postgres system tables
     r"^pg_.*",
-    r"^sql_.*",
 ]
 
 TABLES_TO_EXCLUDE_REGEX = "(?i)(" + "|".join(TABLES_TO_EXCLUDE) + ")"
