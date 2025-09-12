@@ -502,6 +502,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
 
     const dataModelDetails = parseDatamodelOption(dataModel);
+    const parsedDataModel =
+      dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
     let fhirProjectId;
 
     const input: NewStudyInput = {
@@ -518,8 +520,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       vocabSchemaValue,
       cleansedSchemaOption,
-      dataModel:
-        dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel,
+      dataModel: parsedDataModel,
       plugin: dataModelDetails.plugin,
       databaseCode,
       dialect,
@@ -555,7 +556,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         newStudyName: cacheDatasetName,
         sourceStudyId: dataset.id,
         snapshotLocation: "DB",
-        dataModel: dataset.dataModel,
+        dataModel: parsedDataModel,
         type: cacheDatasetType,
         paConfigId: cacheDatasetPaConfigId,
         detail: {
