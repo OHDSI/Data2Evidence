@@ -1,19 +1,27 @@
 import requests
-
+from prefect.logging import get_run_logger
 from _shared_flow_utils.api.BaseAPI import BaseAPI
-
+from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 class FhirAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.url = self.get_service_route("fhirSvc")
-        self.headers = self.get_options()
-
+        self.logger = get_run_logger()
+        self.auth = OpenIdAPI()
+    
+    def _get_headers(self):
+        token = self.auth.getClientCredentialToken()
+        return {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+    
     def post(self, studyToken: str, resourceType: str, resource):
         url = f"{self.url}project/{studyToken}/{resourceType}"
         result = requests.post(
             url,
-            headers=self.headers,
+            headers=self._get_headers(),
             verify=self.get_verify_value(),
             json=resource
         )
