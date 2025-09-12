@@ -283,7 +283,7 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
             case SupportedDatabaseDialects.BIGQUERY.value:
                 logger.debug("Installing and loading BigQuery scan extension.")
                 # Todo: Requires internet connection
-                write_conn.install_extension("bigquery", repository="community")
+                # write_conn.install_extension("bigquery", repository="community")
                 write_conn.load_extension("bigquery")
                 logger.debug("BigQuery scan extension loaded successfully.")
             case _:

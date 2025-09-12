@@ -1,21 +1,12 @@
-from .config import CreateCacheOptions
-
 from prefect import task
 from prefect.logging import get_run_logger
 
-from .utils import execute_statement
+from .config import CreateCacheOptions
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.update_dataset_metadata import update_metadata_last_fetched_date, OMOP_NON_PERSON_ENTITIES, get_total_entity_count
-#     extract_version,
-#     update_entity_value,
-#     update_total_entity_count,
-#     update_entity_distinct_count,
-#     update_entity_count_distribution,
-#     update_metadata_last_fetched_date,
-# )
 
 @task(log_prints=True)
 def update_dataset_metadata(options: CreateCacheOptions):
