@@ -39,11 +39,11 @@ impl VScalar for StartChdbDatabaseScalar {
     fn signatures() -> Vec<ScalarFunctionSignature> {
         vec![
             ScalarFunctionSignature::exact(
-                vec![], // No parameters
+                vec![], 
                 LogicalTypeId::Varchar.into(),
             ),
             ScalarFunctionSignature::exact(
-                vec![LogicalTypeId::Varchar.into()], // Optional path parameter
+                vec![LogicalTypeId::Varchar.into()], 
                 LogicalTypeId::Varchar.into(),
             ),
         ]
@@ -72,7 +72,7 @@ impl VScalar for StopChdbDatabaseScalar {
 
     fn signatures() -> Vec<ScalarFunctionSignature> {
         vec![ScalarFunctionSignature::exact(
-            vec![], // No parameters
+            vec![], 
             LogicalTypeId::Varchar.into(),
         )]
     }
@@ -117,7 +117,7 @@ impl VScalar for ExecuteDmlScalar {
 
     fn signatures() -> Vec<ScalarFunctionSignature> {
         vec![ScalarFunctionSignature::exact(
-            vec![LogicalTypeId::Varchar.into()], // Query parameter
+            vec![LogicalTypeId::Varchar.into()], 
             LogicalTypeId::Varchar.into(),
         )]
     }

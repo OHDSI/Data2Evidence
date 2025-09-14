@@ -32,7 +32,7 @@ pub fn start_chdb_database_scalar(data_path: Option<&str>) -> Result<String, Box
     
     let session_arc = Arc::new(Mutex::new(session));
     
-    // OnceLock limitation: can't replace once set
+    
     if GLOBAL_SESSION.set(session_arc.clone()).is_err() {
         crate::chdb_debug!("DATABASE", "Global session already exists, using existing one");
     }
@@ -98,7 +98,7 @@ pub fn parse_query_result(result: &QueryResult) -> Result<Vec<Vec<String>>, Box<
     parse_csv_result(&result_str)
 }
 
-// Simple schema determination - defaults to varchar types
+
 pub fn determine_schema(query: &str, _session_path: &Option<String>) -> Result<(Vec<String>, Vec<duckdb::core::LogicalTypeId>), Box<dyn Error>> {
     use duckdb::core::LogicalTypeId;
     

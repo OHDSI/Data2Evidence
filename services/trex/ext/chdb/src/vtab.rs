@@ -96,7 +96,7 @@ impl VTab for ChdbScanVTab {
                 }
             }
         } else {
-            // Use standalone query
+            
             crate::chdb_debug!("INIT", "Using standalone query");
             let result = execute(&bind_data_ref.query, None)
                 .map_err(|e| ChdbError::new(&format!("Standalone query failed: {}", e)))?;
@@ -150,8 +150,8 @@ impl VTab for ChdbScanVTab {
 
         output.set_len(batch_size);
 
-        // Fill the output with data - convert all values to strings for simplicity
-        // Get column count from result data structure
+        
+        
         let column_count = if let Some(first_row) = init_data.result_data.first() {
             first_row.len()
         } else {
