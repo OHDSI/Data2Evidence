@@ -19,14 +19,6 @@ volumes:
   hana-data:
 
 x-envs:
-  db-svc: &x-dbsvc
-    DB_SVC__IDP_SUBJECT_PROP: sub
-    DB_SVC__LOG_LEVEL: info
-    DB_SVC__PATH: /alpdb
-    DISABLE_SSL: "TRUE"
-    HANA__READ_ROLE: TENANT_READ_ROLE
-    LB__LOG_LEVEL: ${LB__LOG_LEVEL:-FINE}
-    PG__READ_ROLE: postgres_tenant_read_role
   env_converter: &x-converter
     URL__DATABASE_LIST__GET: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db/database-creds/
     DB_CREDENTIALS__PRIVATE_KEY: ${DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY}
@@ -49,8 +41,6 @@ x-envs:
   fhir: &x-fhir
     FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
-  perseus: &x-perseus
-    PERSEUS__FILES_MANAGER_HOST: trex
   redis: &x-redis
     REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
     REDIS_PORT: ${REDIS_PORT:-6379}
@@ -66,12 +56,6 @@ x-envs:
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
     TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
-  cachedb: &cachedb
-    CACHEDB__HOST: ${PROJECT_NAME:-d2e}-cachedb
-    CACHEDB__PORT: 41191
-    CACHEDB__POOL_SIZE: ${CACHEDB__POOL_SIZE:-10}
-  python-internal-ssl: &python-internal-ssl
-    PYTHON_VERIFY_SSL: false # Only use this for apis calling internal docker urls
 
 services:
   trex:
@@ -119,7 +103,6 @@ services:
         - *x-tls
         - *x-fhir
         - *x-pg
-        - *x-perseus
         - *x-trex-sql
       REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
       SERVICE_ROUTES: |-
@@ -210,7 +193,17 @@ services:
       PG_STUDY_RESULTS_ADMIN_PASSWORD: ${PG_STUDY_RESULTS_ADMIN_PASSWORD}
       SUPABASE_STORAGE_JWT_TOKEN: ${SUPABASE_STORAGE_JWT_TOKEN}
       SUPABASE_STORAGE_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET}
-      
+      PERSEUS__FILES_MANAGER_HOST: trex
+      isHttpTestRun: ${isHttpTestRun:-false}
+      isTestEnv: ${isTestEnv:-false}
+      local: ${local}
+      TESTSCHEMA: ${TESTSCHEMA}
+      REFRESH_TOKEN__ENDPOINT: ${REFRESH_TOKEN__ENDPOINT}
+      REFRESH_TOKEN__CLIENT_ID: ${REFRESH_TOKEN__CLIENT_ID}
+      REFRESH_TOKEN__CLIENT_SECRET: ${REFRESH_TOKEN__CLIENT_SECRET}
+      EXCLUDE_ANALYSIS_IDS: ${EXCLUDE_ANALYSIS_IDS}
+      DC_HANA_READ_ROLE: ${DC_HANA_READ_ROLE}
+
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
