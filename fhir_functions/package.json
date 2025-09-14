@@ -32,6 +32,7 @@
         }
       ],
       "env": { 
+        "_shared": {},
         "alp-fhir-svc": {
           "FHIR__LOG_LEVEL": "debug",
           "PORT": 41112,
