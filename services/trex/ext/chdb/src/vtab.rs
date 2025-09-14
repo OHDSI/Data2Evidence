@@ -1,7 +1,8 @@
 //! Virtual Table (VTab) implementations for ChDB extension
 
 use crate::types::{ChdbScanBindData, ChdbScanInitData, ChdbError, GLOBAL_SESSION};
-use crate::functions::{determine_schema, parse_csv_result, parse_query_result};
+use crate::functions::{determine_schema, parse_csv_result};
+use crate::safe_query_result::safe_execute_query;
 use duckdb::{
     vtab::{BindInfo, InitInfo, VTab, TableFunctionInfo},
     core::{LogicalTypeId, DataChunkHandle, Inserter},
@@ -10,7 +11,7 @@ use duckdb::{
 use std::error::Error;
 use std::sync::RwLock;
 use std::time::SystemTime;
-use chdb_rust::execute;
+use chdb_rust::{session, arg};
 
 pub struct ChdbScanVTab;
 
@@ -71,37 +72,68 @@ impl VTab for ChdbScanVTab {
 
     fn init(init: &InitInfo) -> Result<Self::InitData, Box<dyn Error>> {
         let bind_data = init.get_bind_data::<Self::BindData>();
+        
+        
+        if bind_data.is_null() {
+            return Err(ChdbError::new("Bind data pointer is null").into());
+        }
+        
+        
+        
         let bind_data_ref = unsafe { &*bind_data };
 
         crate::chdb_debug!("INIT", "Initializing ChDB scan");
 
         let start_time = SystemTime::now();
         
-        let result_data = if let Some(global_session) = GLOBAL_SESSION.get() {
-            crate::chdb_debug!("INIT", "Using global session");
-            match global_session.lock() {
-                Ok(session) => {
-                    let result = session.execute(&bind_data_ref.query, None)
-                        .map_err(|e| ChdbError::new(&format!("Global session query failed: {}", e)))?;
+        let result_data = if let Some(ref _session_path) = bind_data_ref.session_path {
+            if let Some(session_arc) = GLOBAL_SESSION.get() {
+                if let Ok(session) = session_arc.lock() {
+                    crate::chdb_debug!("INIT", "Using global session");
+                    let result_string = safe_execute_query(&session, &bind_data_ref.query)
+                        .map_err(|e| ChdbError::new(&format!("Session query failed: {}", e)))?;
                     
-                    parse_query_result(&result)?
-                }
-                Err(_) => {
-                    crate::chdb_debug!("INIT", "Failed to acquire global session lock, falling back to standalone");
-                    let result = execute(&bind_data_ref.query, None)
-                        .map_err(|e| ChdbError::new(&format!("Standalone query failed: {}", e)))?;
+                    parse_csv_result(&result_string)?
+                } else {
+                    crate::chdb_debug!("INIT", "Failed to lock global session, creating temporary session");
+                    let session = session::SessionBuilder::new()
+                        .with_data_path("/tmp/chdb_dml")
+                        .with_auto_cleanup(false)
+                        .with_arg(arg::Arg::MultiQuery)
+                        .build()
+                        .map_err(|e| ChdbError::new(&format!("Failed to create ChDB session: {}", e)))?;
                     
-                    let result_string = result.data_utf8().unwrap_or_default();
+                    let result_string = safe_execute_query(&session, &bind_data_ref.query)
+                        .map_err(|e| ChdbError::new(&format!("Session query failed: {}", e)))?;
+                    
                     parse_csv_result(&result_string)?
                 }
+            } else {
+                crate::chdb_debug!("INIT", "Global session not available, creating temporary session");
+                let session = session::SessionBuilder::new()
+                    .with_data_path("/tmp/chdb_dml")
+                    .with_auto_cleanup(false)
+                    .with_arg(arg::Arg::MultiQuery)
+                    .build()
+                    .map_err(|e| ChdbError::new(&format!("Failed to create ChDB session: {}", e)))?;
+                
+                let result_string = safe_execute_query(&session, &bind_data_ref.query)
+                    .map_err(|e| ChdbError::new(&format!("Session query failed: {}", e)))?;
+                
+                parse_csv_result(&result_string)?
             }
         } else {
+            crate::chdb_debug!("INIT", "Creating standalone session with proper configuration");
+            let session = session::SessionBuilder::new()
+                .with_data_path("/tmp/chdb_dml")
+                .with_auto_cleanup(false)
+                .with_arg(arg::Arg::MultiQuery)
+                .build()
+                .map_err(|e| ChdbError::new(&format!("Failed to create ChDB session: {}", e)))?;
             
-            crate::chdb_debug!("INIT", "Using standalone query");
-            let result = execute(&bind_data_ref.query, None)
-                .map_err(|e| ChdbError::new(&format!("Standalone query failed: {}", e)))?;
+            let result_string = safe_execute_query(&session, &bind_data_ref.query)
+                .map_err(|e| ChdbError::new(&format!("Session query failed: {}", e)))?;
             
-            let result_string = result.data_utf8().unwrap_or_default();
             parse_csv_result(&result_string)?
         };
 

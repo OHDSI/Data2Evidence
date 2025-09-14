@@ -20,8 +20,8 @@ impl VScalar for StartChdbDatabaseScalar {
         let data_path = if input.len() > 0 {
             let path_vector = input.flat_vector(0);
             let path_slice = path_vector.as_slice_with_len::<libduckdb_sys::duckdb_string_t>(input.len());
-            if !path_slice.is_empty() {
-                let path = duckdb::types::DuckString::new(&mut { path_slice[0] }).as_str().to_string();
+            if let Some(first_path) = path_slice.get(0) {
+                let path = duckdb::types::DuckString::new(&mut { *first_path }).as_str().to_string();
                 if path.is_empty() { None } else { Some(path) }
             } else { None }
         } else { None };
@@ -97,12 +97,14 @@ impl VScalar for ExecuteDmlScalar {
         let query_vector = input.flat_vector(0);
         let query_slice = query_vector.as_slice_with_len::<libduckdb_sys::duckdb_string_t>(input.len());
         
-        if !query_slice.is_empty() {
-            let query = duckdb::types::DuckString::new(&mut { query_slice[0] }).as_str().to_string();
+        if let Some(first_query) = query_slice.get(0) {
+            let query = duckdb::types::DuckString::new(&mut { *first_query }).as_str().to_string();     
             
-            let result = match execute_dml_database_scalar(&query) {
-                Ok(result) => result,
-                Err(e) => format!("Error: {}", e),
+            let result = {
+                match execute_dml_database_scalar(&query) {
+                    Ok(result) => result,
+                    Err(e) => format!("Error: DML execution failed: {}", e),
+                }
             };
             
             let flat_vector = output.flat_vector();

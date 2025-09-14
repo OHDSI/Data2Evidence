@@ -7,11 +7,13 @@ mod types;
 mod functions;
 mod vtab;
 mod scalar;
+mod safe_query_result;
 
 pub use types::{ChdbError, ChdbPerformanceMetrics, LogLevel, ChdbLogger, ChdbScanBindData, ChdbScanInitData};
 pub use functions::{validate_chdb_connection, create_chdb_session};
 pub use vtab::ChdbScanVTab;
 pub use scalar::{StartChdbDatabaseScalar, StopChdbDatabaseScalar, ExecuteDmlScalar};
+pub use safe_query_result::{SafeQueryResult, safe_execute_query};
 
 #[allow(dead_code)]
 static EXTENSION_NAME: &str = "chdb";
