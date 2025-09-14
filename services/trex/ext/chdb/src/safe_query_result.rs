@@ -1,6 +1,5 @@
 use chdb_rust::query_result::QueryResult;
 
-/
 pub struct SafeQueryResult {
     inner: QueryResult,
 }
@@ -10,7 +9,6 @@ impl SafeQueryResult {
         Self { inner: result }
     }
 
-    /
     pub fn safe_data_utf8(&self) -> Result<String, Box<dyn std::error::Error>> {
         
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
