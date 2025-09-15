@@ -46,6 +46,7 @@ export class PrefectService {
   public async createAnalysisFlowRun(
     id: string,
     datasetId: string,
+    uploadResults: boolean | undefined,
     token: string
   ) {
     const revision = await this.analysisflowService.getLastAnalysisflowRevision(
@@ -77,7 +78,8 @@ export class PrefectService {
           schemaName,
           databaseCode,
           studyName,
-          studyId
+          studyId,
+          ...(uploadResults !== undefined ? { uploadResults } : {}),
         },
       }
     );
