@@ -195,7 +195,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       }
       try {
         setViewerStatus("starting");
-        await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId);
+        await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId, viewerCode);
         setFeedback({
           type: "success",
           message: getText(i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED, [study.name || study.id || "Unknown"]),
@@ -216,6 +216,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       selectedDatasetId,
       setFeedback,
       study,
+      viewerCode,
       i18nKeys.STUDY_CARD__ERROR_START_VIEWER,
       i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED,
     ]

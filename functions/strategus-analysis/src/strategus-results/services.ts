@@ -5,7 +5,6 @@ import {
   IKernelConnection,
 } from "@jupyterlab/services";
 import { services } from "../env.ts";
-import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer_template.ts";
 import { env } from "../env.ts";
 
 interface IKernelModel extends Kernel.IModel {
@@ -16,7 +15,8 @@ interface IKernelModel extends Kernel.IModel {
 export const startStrategusResultsViewer = async (
   token: string,
   studyId: string,
-  datasetId: string
+  datasetId: string,
+  viewerCode: string
 ): Promise<void> => {
   console.log("Creating Strategus Results Viewer for study:", studyId);
 
@@ -35,10 +35,8 @@ export const startStrategusResultsViewer = async (
       manager
     );
 
-    const r_code = RESULT_VIEWER_TEMPLATE.replace(
-      "$DATABASE_SCHEMA",
-      "results_" + studyId
-    )
+    const r_code = viewerCode
+      .replace("$DATABASE_SCHEMA", "results_" + studyId)
       .replace(
         "$DATABASE_CONNECTION_STRING",
         `jdbc:postgresql://${env.PG__HOST}:${env.PG__PORT}/${env.PG__RESULTS_DB_NAME}`

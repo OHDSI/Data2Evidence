@@ -3,7 +3,7 @@ import { request } from "./request";
 const STRATEGUS_RESULTS_URL = "strategus-results";
 
 export class StrategusResults {
-  public startStrategusResultViewer(studyId: string, datasetId: string) {
+  public startStrategusResultViewer(studyId: string, datasetId: string, viewerCode: string) {
     return request({
       baseURL: STRATEGUS_RESULTS_URL,
       url: "/",
@@ -11,6 +11,7 @@ export class StrategusResults {
       data: {
         studyId,
         datasetId,
+        viewerCode,
       },
     });
   }
