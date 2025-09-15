@@ -74,20 +74,18 @@ def create_cdm_tables(dbdao: DaoBase, schema_name: str, cdm_version: str, logger
         user_type=admin_user
     )
     set_db_driver_env_string = dbdao.set_db_driver_env()
+    create_script_path = os.path.join(os.path.dirname(__file__), 'create_cdm_tables.R')
     
     logger.info(f"Running CommonDataModel version '{cdm_version}' on schema '{schema_name}' in database '{dbdao.database_code}'")
     try:
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(
-                f'''
-                library('CommonDataModel')
+            robjects.r(f"""
                 {set_db_driver_env_string}
                 {set_connection_string}
-                cdm_version <- "{cdm_version}"
-                schema_name <- "{schema_name}"
-                CommonDataModel::executeDdl(connectionDetails = connectionDetails, cdmVersion = cdm_version, cdmDatabaseSchema = schema_name, executeDdl = TRUE, executePrimaryKey = TRUE, executeForeignKey = FALSE)
-                '''
-            )
+                source("{create_script_path}")
+                """)
+            r_create_cdm_tables = robjects.r['create_cdm_tables']
+            r_create_cdm_tables(cdmVersion=cdm_version, schemaName=schema_name)
         logger.info(f"Succesfully ran CommonDataModel version '{cdm_version}' on schema '{schema_name}' in database '{dbdao.database_code}'")
     except Exception as e:
         logger.error(f"Failed to run CommonDataModel version '{cdm_version}' on schema '{schema_name}' in database '{dbdao.database_code}'")

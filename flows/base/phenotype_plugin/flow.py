@@ -74,8 +74,8 @@ def get_cohort_definitions(cohorts_id: str, vocabschema_name: str, materialize: 
         
         # Call the function through R
         result = r_get_cohort_definitions(
-            cohorts_id='3',
-            vocabschema_name=vocabschema_name,
+            cohortsID=cohorts_id,
+            vocabschemaName=vocabschema_name,
             materialize = materialize)
         
         if materialize:
@@ -171,18 +171,18 @@ def materialize_cohort_definitions(
         # Call materialize_cohorts function
         logger.info("Materializing cohorts to database...")
         r_materialize_cohorts(
-            cohort_definitions=cohort_definitions,
-            cdmschema_name=cdmschema_name,
-            cohortschema_name=cohortschema_name,
-            cohorttable_name=cohorttable_name
+            cohortDefinitions=cohort_definitions,
+            cdmschemaName=cdmschema_name,
+            cohortschemaName=cohortschema_name,
+            cohorttableName=cohorttable_name
         )
         
         # Call create_result_tables function
         logger.info("Creating result tables...")
         r_create_result_tables(
-            cohortschema_name=cohortschema_name,
-            cohorttable_name=cohorttable_name,
-            cohort_definitions=cohort_definitions
+            cohortschemaName=cohortschema_name,
+            cohorttableName=cohorttable_name,
+            cohortDefinitions=cohort_definitions
         )
         
         logger.info("Cohort materialization completed successfully.")

@@ -5,18 +5,18 @@ library(PhenotypeLibrary)
 
 #' Create result tables from cohort data
 #'
-#' @param cohortschema_name Cohort schema name
-#' @param cohorttable_name Cohort table name
-#' @param cohort_definitions R dataframe with cohort definitions
+#' @param cohortschemaName Cohort schema name
+#' @param cohorttableName Cohort table name
+#' @param cohortDefinitions R dataframe with cohort definitions
 #' @return Nothing (creates tables in database)
-create_result_tables <- function(cohortschema_name, 
-                                cohorttable_name, 
-                                cohort_definitions) {
+create_result_tables <- function(cohortschemaName, 
+                                cohorttableName, 
+                                cohortDefinitions) {
     
     connection <- DatabaseConnector::connect(connectionDetails)
     
     tryCatch({
-        cohorts_id <- cohort_definitions$cohortId
+        cohorts_id <- cohortDefinitions$cohortId
         
         # Query to create result table with phenotype_result_id as primary key
         sql <- paste0(
@@ -25,7 +25,7 @@ create_result_tables <- function(cohortschema_name,
             "COHORT_DEFINITION_ID as phenotype_id, ",
             "cohort_start_date, ",
             "cohort_end_date ",
-            "FROM ", cohortschema_name, ".", cohorttable_name, " ",
+            "FROM ", cohortschemaName, ".", cohorttableName, " ",
             "ORDER BY SUBJECT_ID, COHORT_DEFINITION_ID"
         )
         
@@ -34,15 +34,15 @@ create_result_tables <- function(cohortschema_name,
         # Remove raw cohort tables
         DatabaseConnector::dbRemoveTable(
             conn = connection,
-            name = cohorttable_name,
-            databaseSchema = cohortschema_name
+            name = cohorttableName,
+            databaseSchema = cohortschemaName
         )
 
         # Save result_df
         DatabaseConnector::insertTable(
             connection = connection,
-            databaseSchema = cohortschema_name,
-            tableName = paste0(cohorttable_name, "_result_all"),
+            databaseSchema = cohortschemaName,
+            tableName = paste0(cohorttableName, "_result_all"),
             data = result_df,
             createTable = TRUE,
             tempTable = FALSE
@@ -50,7 +50,7 @@ create_result_tables <- function(cohortschema_name,
         
         # Add primary key constraint
         sql <- paste0(
-            "ALTER TABLE ", cohortschema_name, ".", cohorttable_name, 
+            "ALTER TABLE ", cohortschemaName, ".", cohorttableName, 
             "_result_all ADD PRIMARY KEY (phenotype_result_id);"
         )
         DatabaseConnector::executeSql(connection = connection, sql = sql)
@@ -59,8 +59,8 @@ create_result_tables <- function(cohortschema_name,
         master_table <- data.frame(getPhenotypeLog(cohorts_id, showHidden = TRUE))
         DatabaseConnector::insertTable(
             connection = connection,
-            databaseSchema = cohortschema_name,
-            tableName = paste0(cohorttable_name, "_result_master"),
+            databaseSchema = cohortschemaName,
+            tableName = paste0(cohorttableName, "_result_master"),
             data = master_table,
             createTable = TRUE,
             tempTable = FALSE

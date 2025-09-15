@@ -5,15 +5,15 @@ library(DatabaseConnector)
 
 #' Materialize cohort definitions into database
 #'
-#' @param cohort_definitions R dataframe with cohort definitions
-#' @param cdmschema_name CDM schema name
-#' @param cohortschema_name Cohort schema name  
-#' @param cohorttable_name Cohort table name
+#' @param cohortDefinitions R dataframe with cohort definitions
+#' @param cdmschemaName CDM schema name
+#' @param cohortschemaName Cohort schema name  
+#' @param cohorttableName Cohort table name
 #' @return List with cohortsGenerated and cohortCounts
-materialize_cohorts <- function(cohort_definitions, 
-                               cdmschema_name, 
-                               cohortschema_name, 
-                               cohorttable_name) {
+materialize_cohorts <- function(cohortDefinitions, 
+                               cdmschemaName, 
+                               cohortschemaName, 
+                               cohorttableName) {
     
     connection <- DatabaseConnector::connect(connectionDetails)
 
@@ -33,34 +33,34 @@ materialize_cohorts <- function(cohort_definitions,
 
     tryCatch({
         # Create the cohort tables to hold the cohort generation results
-        cohortTableNames <- CohortGenerator::getCohortTableNames(cohortTable = cohorttable_name)
+        cohortTableNames <- CohortGenerator::getCohortTableNames(cohortTable = cohorttableName)
         CohortGenerator::createCohortTables(
             connection = connection,
-            cohortDatabaseSchema = cohortschema_name,
+            cohortDatabaseSchema = cohortschemaName,
             cohortTableNames = cohortTableNames
         )
 
         # Generate the cohorts
         cohortsGenerated <- CohortGenerator::generateCohortSet(
             connection = connection,
-            cdmDatabaseSchema = cdmschema_name,
-            cohortDatabaseSchema = cohortschema_name,
+            cdmDatabaseSchema = cdmschemaName,
+            cohortDatabaseSchema = cohortschemaName,
             cohortTableNames = cohortTableNames,
-            cohortDefinitionSet = cohort_definitions
+            cohortDefinitionSet = cohortDefinitions
         )
         # create_replica(connection, cohortschema, cohort_table_name)
 
         # Get the cohort counts
         cohortCounts <- CohortGenerator::getCohortCounts(
             connection = connection,
-            cohortDatabaseSchema = cohortschema_name,
+            cohortDatabaseSchema = cohortschemaName,
             cohortTable = cohortTableNames$cohortTable
         )
 
         # Drop cohort statistics tables (cleanup)
         CohortGenerator::dropCohortStatsTables(
             connection = connection,
-            cohortDatabaseSchema = cohortschema_name,
+            cohortDatabaseSchema = cohortschemaName,
             cohortTableNames = cohortTableNames
         )
         
