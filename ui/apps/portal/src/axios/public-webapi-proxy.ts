@@ -1,5 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios";
+import { request } from "./request";
 import env from "../env";
+import { IWebapiConcept } from "../plugins/Researcher/Terminology/utils/types";
 
 export class PublicWebapiProxyAPI {
   private readonly baseURL: string;
@@ -72,6 +74,46 @@ export class PublicWebapiProxyAPI {
     } catch (error) {
       console.error(error);
       throw new Error(`Error while getting data characterization drilldown results from public webapi`);
+    }
+  }
+
+  async getTerminologies(
+    page: number,
+    rowsPerPage: number,
+    dataSource: string,
+    searchText: string,
+    conceptClassId: string[],
+    domainId: string[],
+    vocabularyId: string[],
+    standardConcept: string[],
+    validity: string[]
+  ): Promise<[IWebapiConcept[], number]> {
+    if (searchText === "") {
+      return [[], 0];
+    }
+
+    try {
+      const data = {
+        QUERY: searchText,
+        CONCEPT_CLASS_ID: conceptClassId,
+        DOMAIN_ID: domainId,
+        VOCABULARY_ID: vocabularyId,
+        STANDARD_CONCEPT: standardConcept[0],
+        INVALID_REASON: validity[0],
+      };
+
+      const result = await request({
+        baseURL: this.baseURL,
+        url: `/vocabulary/${dataSource}/search`,
+        method: "POST",
+        data,
+      });
+
+      // Truncate results based on pagination parameters
+      return [result.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage), result.length];
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while getting concepts from public webapi`);
     }
   }
 }

@@ -11,6 +11,8 @@ import { tabNames } from "../../utils/constants";
 import SearchBar from "../../../../../components/SearchBar/SearchBar";
 import "./TerminologyList.scss";
 import { mapd2eWebapiConcept } from "../../utils/d2eWebapiMappers";
+import { PUBLIC_WEBAPI_DATASOURCE } from "../../../../../components/Charts/util";
+import env from "../../../../../env";
 
 interface TerminologyListProps {
   userId?: string;
@@ -118,28 +120,43 @@ const TerminologyList: FC<TerminologyListProps> = ({
             Array.isArray(vocabularyIdFilters) &&
             Array.isArray(standardConceptFilters)
           ) {
-            const [concepts, conceptsCount] = await Promise.all([
-              api.d2eWebapi.getTerminologies(
+            let concepts, conceptsCount;
+            if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+              [concepts, conceptsCount] = await api.publicWebapiProxyAPI.getTerminologies(
                 page,
                 rowsPerPage,
-                datasetId,
+                PUBLIC_WEBAPI_DATASOURCE.SYNPUF5PCT,
                 searchText.toLowerCase(),
                 conceptClassIdFilters,
                 domainIdFilters,
                 vocabularyIdFilters,
                 standardConceptFilters,
                 validityFilters
-              ),
-              api.terminology.getConceptsCount(
-                datasetId,
-                searchText.toLowerCase(),
-                conceptClassIdFilters,
-                domainIdFilters,
-                vocabularyIdFilters,
-                standardConceptFilters,
-                validityFilters
-              ),
-            ]);
+              );
+            } else {
+              [concepts, conceptsCount] = await Promise.all([
+                api.d2eWebapi.getTerminologies(
+                  page,
+                  rowsPerPage,
+                  datasetId,
+                  searchText.toLowerCase(),
+                  conceptClassIdFilters,
+                  domainIdFilters,
+                  vocabularyIdFilters,
+                  standardConceptFilters,
+                  validityFilters
+                ),
+                api.terminology.getConceptsCount(
+                  datasetId,
+                  searchText.toLowerCase(),
+                  conceptClassIdFilters,
+                  domainIdFilters,
+                  vocabularyIdFilters,
+                  standardConceptFilters,
+                  validityFilters
+                ),
+              ]);
+            }
             const response = {
               count: conceptsCount,
               data: concepts.map(mapd2eWebapiConcept),

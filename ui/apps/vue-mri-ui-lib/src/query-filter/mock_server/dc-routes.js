@@ -17,7 +17,6 @@ const logRequest = req => {
 
 const setupWebapiDCRoutes = app => {
   // GET /cdmresults/:dataSource/:sourceKey
-
   app.get('/cdmresults/:dataSource/:sourceKey', async (req, res) => {
     logRequest(req)
     const { dataSource, sourceKey } = req.params
@@ -34,7 +33,21 @@ const setupWebapiDCRoutes = app => {
     )
     return res.send(response.data)
   })
+
+  // POST /vocabulary/:dataSource/search
+  app.post('/vocabulary/:dataSource/search', async (req, res) => {
+    logRequest(req)
+    const { dataSource } = req.params
+    const body = req.body
+    try {
+      const response = await api.post(`/vocabulary/${encodeURIComponent(dataSource)}/search`, body)
+      console.log(response)
+      return res.send(response.data)
+    } catch (err) {
+      console.error(err)
+      return res.status(err.status).send()
+    }
+  })
 }
 
 module.exports = setupWebapiDCRoutes
-
