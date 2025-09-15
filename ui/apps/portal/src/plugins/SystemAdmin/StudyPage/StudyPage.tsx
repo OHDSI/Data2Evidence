@@ -52,6 +52,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
             id: studyId,
             name: strategusStudy.name || studyId,
             type: StrategusStudyType.NETWORK,
+            viewerCode: "", // TODO: add template here
           })
         );
 
@@ -76,6 +77,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
           name: study.notebookName || study.studyId,
           strategus_json: study.analysisSpec,
           type: StrategusStudyType.LOCAL,
+          viewerCode: study.viewerCode ?? "",
         }));
         setStrategusStudies(convertedStudies);
       } catch (error) {

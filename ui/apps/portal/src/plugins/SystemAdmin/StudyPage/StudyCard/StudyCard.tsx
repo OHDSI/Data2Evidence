@@ -7,6 +7,7 @@ import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
 import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
+import { i18nKeys } from "../../../../contexts/app-context/states";
 import env from "../../../../env";
 import { usePollingEffect, useDialogHelper } from "../../../../hooks";
 import { StrategusStudy, StrategusStudyType } from "../../../../types/strategusStudy";
@@ -25,11 +26,11 @@ interface StudyCardProps {
 type ViewerStatus = "idle" | "starting" | "up" | "stopping" | "down";
 
 export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDatasetId, setFeedback }) => {
-  const { getText, i18nKeys } = useTranslation();
+  const { getText } = useTranslation();
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [bearerToken, setBearerToken] = useState<string>("");
   const [viewerStatus, setViewerStatus] = useState<ViewerStatus>("idle");
-  const [viewerCode, setViewerCode] = useState(study.viewer_code ?? "");
+  const [viewerCode, setViewerCode] = useState(study.viewerCode);
 
   const isViewerUp = viewerStatus === "up";
   const isStartingViewer = viewerStatus === "starting";

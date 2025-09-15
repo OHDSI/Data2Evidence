@@ -5,7 +5,7 @@ export interface StrategusStudy {
   name: string;
   id: string;
   type: StrategusStudyType;
-  viewer_code?: string;
+  viewerCode: string;
 }
 
 export interface NetworkStrategusStudy {
@@ -14,6 +14,7 @@ export interface NetworkStrategusStudy {
   analysisSpec: string;
   notebookName: string;
   mode: string;
+  viewerCode?: string;
 }
 
 export enum StrategusStudyType {
