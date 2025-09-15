@@ -363,6 +363,77 @@ const setupWebapiRoutes = app => {
     }
   )
 
+  // GET /cdmresults/:dataSource/:sourceKey
+  app.get('/cdmresults/:dataSource/:sourceKey', async (req, res) => {
+    logRequest(req)
+    const { dataSource, sourceKey } = req.params
+    const response = await api.get(`/cdmresults/${encodeURIComponent(dataSource)}/${encodeURIComponent(sourceKey)}`)
+    return res.send(response.data)
+  })
+
+  // GET /cdmresults/:dataSource/:sourceKey/:conceptId
+  app.get('/cdmresults/:dataSource/:sourceKey/:conceptId', async (req, res) => {
+    logRequest(req)
+    const { dataSource, sourceKey, conceptId } = req.params
+    const response = await api.get(
+      `/cdmresults/${encodeURIComponent(dataSource)}/${encodeURIComponent(sourceKey)}/${encodeURIComponent(conceptId)}`
+    )
+    return res.send(response.data)
+  })
+
+  // POST /vocabulary/:dataSource/search
+  app.post('/vocabulary/:dataSource/search', async (req, res) => {
+    logRequest(req)
+    const { dataSource } = req.params
+    const body = req.body
+    try {
+      const response = await api.post(`/vocabulary/${encodeURIComponent(dataSource)}/search`, body)
+      console.log(response)
+      return res.send(response.data)
+    } catch (err) {
+      console.error(err)
+      return res.status(err.status).send()
+    }
+  })
+
+  // GET /conceptset
+  app.get('/conceptset', async (req, res) => {
+    logRequest(req)
+    try {
+      const response = await api.get(`/conceptset`)
+      return res.send(response.data)
+    } catch (err) {
+      console.error(err)
+      return res.status(err.status).send()
+    }
+  })
+
+  // GET /conceptset/:id
+  app.get('/conceptset/:id', async (req, res) => {
+    logRequest(req)
+    const { id } = req.params
+    try {
+      const response = await api.get(`/conceptset/${encodeURIComponent(id)}`)
+      return res.send(response.data)
+    } catch (err) {
+      console.error(err)
+      return res.status(err.status).send()
+    }
+  })
+
+  // GET /conceptset/:id/expression
+  app.get('/conceptset/:id/expression', async (req, res) => {
+    logRequest(req)
+    const { id } = req.params
+    try {
+      const response = await api.get(`/conceptset/${encodeURIComponent(id)}/expression`)
+      return res.send(response.data)
+    } catch (err) {
+      console.error(err)
+      return res.status(err.status).send()
+    }
+  })
+
   // Add more webapi routes here as needed
   // Example:
   // app.get('/d2e-webapi/vocabulary/search', (req, res) => {

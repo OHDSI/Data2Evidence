@@ -1,7 +1,11 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { request } from "./request";
 import env from "../env";
-import { IWebapiConcept } from "../plugins/Researcher/Terminology/utils/types";
+import {
+  IWebapiConcept,
+  IWebapiConceptSet,
+  IWebapiConceptSetExpression,
+} from "../plugins/Researcher/Terminology/utils/types";
 
 export class PublicWebapiProxyAPI {
   private readonly baseURL: string;
@@ -116,4 +120,48 @@ export class PublicWebapiProxyAPI {
       throw new Error(`Error while getting concepts from public webapi`);
     }
   }
+
+  // CONCEPT SETS
+  public async getConceptSets(): Promise<IWebapiConceptSet[]> {
+    const result = await request<IWebapiConceptSet[]>({
+      baseURL: this.baseURL,
+      url: `/conceptset`,
+      method: "GET",
+      timeout: 60000,
+    });
+
+    return result.map(this.mapConceptSet);
+  }
+
+  public async getConceptSet(conceptSetId: number): Promise<IWebapiConceptSet> {
+    const result = await request<IWebapiConceptSet>({
+      baseURL: this.baseURL,
+      url: `/conceptset/${conceptSetId}`,
+      method: "GET",
+    });
+
+    return this.mapConceptSet(result);
+  }
+
+  public getConceptSetExpression(conceptSetId: number) {
+    return request<IWebapiConceptSetExpression>({
+      baseURL: this.baseURL,
+      url: `/conceptset/${conceptSetId}/expression`,
+      method: "GET",
+    });
+  }
+
+  private mapConceptSet = (conceptSet: IWebapiConceptSet): IWebapiConceptSet => {
+    // Add values required by portal
+    return {
+      ...conceptSet,
+      shared: true,
+      createdBy: {
+        name: "anonymous",
+      },
+      modifiedBy: {
+        name: "anonymous",
+      },
+    };
+  };
 }

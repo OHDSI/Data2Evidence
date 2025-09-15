@@ -6,6 +6,8 @@ import {
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
 } from "../plugins/Researcher/Terminology/utils/types";
+import { api } from "./api";
+import env from "../env";
 
 const D2E_WEBAPI_BASE_URL = "d2e-webapi";
 
@@ -44,30 +46,42 @@ export class D2eWebapi {
 
   // CONCEPT SETS
   public getConceptSets(datasetId: string) {
-    return request<IWebapiConceptSet[]>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset`,
-      method: "GET",
-      headers: { datasetid: datasetId },
-    });
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.getConceptSets();
+    } else {
+      return request<IWebapiConceptSet[]>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset`,
+        method: "GET",
+        headers: { datasetid: datasetId },
+      });
+    }
   }
 
   public getConceptSet(conceptSetId: number, datasetId: string) {
-    return request<IWebapiConceptSet>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}`,
-      method: "GET",
-      headers: { datasetid: datasetId },
-    });
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.getConceptSet(conceptSetId);
+    } else {
+      return request<IWebapiConceptSet>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}`,
+        method: "GET",
+        headers: { datasetid: datasetId },
+      });
+    }
   }
 
   public getConceptSetExpression(conceptSetId: number, datasetId: string) {
-    return request<IWebapiConceptSetExpression>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}/expression?datasetId=${datasetId}`,
-      method: "GET",
-      headers: { datasetid: datasetId },
-    });
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.getConceptSetExpression(conceptSetId);
+    } else {
+      return request<IWebapiConceptSetExpression>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}/expression?datasetId=${datasetId}`,
+        method: "GET",
+        headers: { datasetid: datasetId },
+      });
+    }
   }
 
   public async createConceptSet(name: string, datasetId: string): Promise<number> {
