@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { HttpException } from '@danet/core'
 import { decode, JwtPayload } from "jsonwebtoken";
 import dataSource from "../db/datasource.ts";
 
@@ -55,6 +56,20 @@ export default class StrategusAnalysisService {
         }
 
         return { analysisId, message: "Analysis specification saved successfully." };
+    }
+
+    async saveStudyAnalysisViewerCode(studyId: string, viewerCode: string) {
+        const existingAnalysis = await this.strategusAnalysisRepository.findOne({
+            where: { studyId: studyId }
+        });
+
+        if (!existingAnalysis) {
+            throw new HttpException(400, "Study does not exist.")
+        }
+
+        await this.strategusAnalysisRepository.update({id: existingAnalysis.id}, {viewerCode: viewerCode})
+
+        return { analysisId: existingAnalysis.analysisId, message: "Result viewer code saved successfully." }
     }
 
     private addOwnerInfo(analysis: any, isNew: boolean = false) {

@@ -5,6 +5,7 @@ export interface StrategusStudy {
   name: string;
   id: string;
   type: StrategusStudyType;
+  viewer_code?: string;
 }
 
 export interface NetworkStrategusStudy {

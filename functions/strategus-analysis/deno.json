@@ -35,6 +35,7 @@
     "knex": "npm:knex@3.1.0",
     "pg": "npm:pg@^8.4.2",
     "uuid": "npm:uuid@^10.0.0",
-    "typeorm": "npm:typeorm@^0.3.20"
+    "typeorm": "npm:typeorm@^0.3.20",
+    "@danet/core": "jsr:@danet/core@2.4.3"
   }
 }

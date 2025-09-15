@@ -29,6 +29,8 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [bearerToken, setBearerToken] = useState<string>("");
   const [viewerStatus, setViewerStatus] = useState<ViewerStatus>("idle");
+  const [viewerCode, setViewerCode] = useState(study.viewer_code ?? "");
+
   const isViewerUp = viewerStatus === "up";
   const isStartingViewer = viewerStatus === "starting";
   const isStoppingViewer = viewerStatus === "stopping";
@@ -415,7 +417,14 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           />
         </div>
       )}
-      <StudyTemplateDialog studyId={study.id} open={showStudyTemplateDialog} onClose={closeStudyTemplateDialog} />
+
+      <StudyTemplateDialog
+        studyId={study.id}
+        open={showStudyTemplateDialog}
+        onClose={closeStudyTemplateDialog}
+        code={viewerCode}
+        onCodeChange={setViewerCode}
+      />
     </>
   );
 };
