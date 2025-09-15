@@ -299,12 +299,6 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                 text={(study.id || getText(i18nKeys.STUDY_CARD__UNTITLED)).replace(/_/g, " ")}
                 searchText={highlightText}
               />
-              <IconButton
-                onClick={openStudyTemplateDialog}
-                startIcon={<EditIcon className="study-card__action-icon" />}
-                disabled={selectedDatasetId ? false : true}
-                variant="text"
-              />
             </div>
             {study.email && (
               <div className="study-card__contact">
@@ -332,6 +326,14 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                 )
               }
               text={isRunning ? getText(i18nKeys.STUDY_CARD__RUNNING) : getText(i18nKeys.STUDY_CARD__RUN_STUDY)}
+              disabled={selectedDatasetId ? false : true}
+              variant="text"
+            />
+
+            <Button
+              onClick={openStudyTemplateDialog}
+              startIcon={<EditIcon className="study-card__action-icon" />}
+              text="Edit Viewer"
               disabled={selectedDatasetId ? false : true}
               variant="text"
             />
