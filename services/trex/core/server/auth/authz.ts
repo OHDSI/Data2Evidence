@@ -271,13 +271,17 @@ export async function authz(c: Context, next: any) {
     const originalUrl = c.req.path;
 
     let bearerToken = c.req.raw.headers.get("authorization");
-    if (!bearerToken && (originalUrl.startsWith("/strategus-results/") || originalUrl.startsWith("/gateway/dashboard/"))) {
+    if (!bearerToken && (originalUrl.startsWith("/strategus-results/") || originalUrl.startsWith("/gateway/dashboard/")) 
+        || (bearerToken && originalUrl.startsWith("/fhir-server/"))) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
           if (cookie.startsWith("authtoken=")) {
             bearerToken = cookie.split("=")[1];
             bearerToken = `Bearer ${bearerToken}`;
+            break;
+          } else if (cookie.startsWith("fhirtoken=")) {
+            bearerToken = cookie.split("=")[1];
             break;
           }
         }
@@ -293,6 +297,7 @@ export async function authz(c: Context, next: any) {
     }
 
     const token = jwt.decode(bearerToken.split(" ")[1]); //as IToken
+    logger.info(JSON.stringify(token));
     //const { client_id, grant_type } = token
     const sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
     const idpUserId = token["oid"] || sub;
