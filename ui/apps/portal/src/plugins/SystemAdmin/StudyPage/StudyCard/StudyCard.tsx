@@ -23,7 +23,7 @@ interface StudyCardProps {
   onShareResults?: (study: StrategusStudy) => void;
 }
 
-type ViewerStatus = "idle" | "starting" | "up" | "stopping" | "down";
+type ViewerStatus = "idle" | "starting" | "up" | "stopping" | "down" | "failed";
 
 export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDatasetId, setFeedback }) => {
   const { getText } = useTranslation();
@@ -33,6 +33,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const [viewerCode, setViewerCode] = useState(study.viewerCode);
 
   const isViewerUp = viewerStatus === "up";
+  const isViewerFailed = viewerStatus === "failed";
   const isStartingViewer = viewerStatus === "starting";
   const isStoppingViewer = viewerStatus === "stopping";
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
@@ -208,7 +209,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           message: getText(i18nKeys.STUDY_CARD__ERROR_START_VIEWER, [study.name || study.id || "Unknown"]),
           autoClose: 5000,
         });
-        setViewerStatus("idle");
+        setViewerStatus("failed");
       }
     },
     [
@@ -335,7 +336,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               variant="text"
             />
 
-            {isViewerUp ? (
+            {isViewerUp || isViewerFailed ? (
               <Button
                 onClick={handleStopViewer}
                 startIcon={
