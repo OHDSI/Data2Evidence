@@ -22,15 +22,14 @@ services:
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-medplum-server"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
         {
           "analytics-svc": false,
           "mri-pg-config": false,
-          "alp-fhir-svc": false,
-          "alp-fhir-init": false,
+          "alp-fhir-gateway": false,
           "alp-dataflow-gen-init": false,
           "query-gen-svc": false,
           "alp-usermgmt": false,
@@ -50,8 +49,7 @@ services:
           "d2e-webapi": false,
           "perseus": false,
           "white-rabbit": false,
-          "strategus-analysis": false,
-          "d2e-medplum-server": false
+          "strategus-analysis": false
         }
 
   alp-caddy:
