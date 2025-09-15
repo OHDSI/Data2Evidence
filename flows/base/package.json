@@ -684,7 +684,7 @@
                   "vocabschema_name": {
                     "type": "string",
                     "title": "Vocabulary Schema Name",
-                    "default": null,
+                    "default": "@vocab_schema",
                     "description": "Required when materialize=true."
                   },
                   "cohortschema_name": {
