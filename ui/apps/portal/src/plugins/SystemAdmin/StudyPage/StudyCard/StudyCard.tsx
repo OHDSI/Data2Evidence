@@ -326,7 +326,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                 )
               }
               text={isRunning ? getText(i18nKeys.STUDY_CARD__RUNNING) : getText(i18nKeys.STUDY_CARD__RUN_STUDY)}
-              disabled={selectedDatasetId ? false : true}
+              disabled={!selectedDatasetId}
               variant="text"
             />
 
@@ -334,7 +334,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               onClick={openStudyTemplateDialog}
               startIcon={<EditIcon className="study-card__action-icon" />}
               text="Edit Viewer"
-              disabled={selectedDatasetId ? false : true}
+              disabled={!selectedDatasetId}
               variant="text"
             />
 
@@ -353,7 +353,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                     ? getText(i18nKeys.STUDY_CARD__STOPPING_VIEWER)
                     : getText(i18nKeys.STUDY_CARD__STOP_VIEWER)
                 }
-                disabled={selectedDatasetId ? false : true}
+                disabled={!selectedDatasetId}
                 variant="text"
               />
             ) : (
@@ -371,7 +371,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                     ? getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)
                     : getText(i18nKeys.STUDY_CARD__START_VIEWER)
                 }
-                disabled={selectedDatasetId ? false : true}
+                disabled={!selectedDatasetId}
                 variant="text"
               />
             )}
@@ -396,7 +396,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               text={
                 isCleaningUp ? getText(i18nKeys.STUDY_CARD__CLEANING_UP) : getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)
               }
-              disabled={selectedDatasetId ? false : true}
+              disabled={!selectedDatasetId}
               variant="text"
             />
           </div>

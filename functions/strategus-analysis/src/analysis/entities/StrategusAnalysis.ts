@@ -37,6 +37,6 @@ export default class StrategusAnalysis {
   @Column({ name: "modified_by", type: "varchar", default: "system" })
   modifiedBy: string;
 
-  @Column({ name: "viewer_code", type: "text" })
+  @Column({ name: "viewer_code", type: "text", nullable: true })
   viewerCode: string;
 }
