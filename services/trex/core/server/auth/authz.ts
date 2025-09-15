@@ -297,7 +297,6 @@ export async function authz(c: Context, next: any) {
     }
 
     const token = jwt.decode(bearerToken.split(" ")[1]); //as IToken
-    logger.info(JSON.stringify(token));
     //const { client_id, grant_type } = token
     const sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
     const idpUserId = token["oid"] || sub;
