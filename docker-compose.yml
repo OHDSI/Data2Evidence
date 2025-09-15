@@ -206,6 +206,7 @@ services:
       REFRESH_TOKEN__CLIENT_SECRET: ${REFRESH_TOKEN__CLIENT_SECRET}
       EXCLUDE_ANALYSIS_IDS: ${EXCLUDE_ANALYSIS_IDS}
       DC_HANA_READ_ROLE: ${DC_HANA_READ_ROLE}
+      MINIO__SECRET_KEY: ${MINIO__SECRET_KEY}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
