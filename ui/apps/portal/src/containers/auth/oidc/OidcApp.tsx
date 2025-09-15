@@ -14,6 +14,7 @@ import { OidcError } from "./OidcError";
 import { OidcCallbackSuccess } from "./OidcCallbackSuccess";
 import { OidcSessionLost } from "./OidcSessionLost";
 import { getOidcTokenPayload } from "./oidc";
+import { getOidcToken } from "./oidc";
 import env from "../../../env";
 
 let oidcConfig: any;
@@ -68,6 +69,19 @@ export const OidcApp: FC = () => {
           }
         } catch {
           console.error("Unable to get decoded token");
+        }
+      }
+
+      if (TOKEN_EVENTS.includes(name)) {
+        try {
+          const accessToken = await getOidcToken(false);
+          if (accessToken) {
+            window.dispatchEvent(
+              new CustomEvent("oidc:token_refreshed", { detail: { accessToken } })
+            );
+          }
+        } catch (e) {
+          console.error("Unable to retrieve refreshed access token", e);
         }
       }
     },

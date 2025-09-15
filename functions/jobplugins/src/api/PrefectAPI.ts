@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { decode } from "jsonwebtoken";
 import { services } from "../env.ts";
+import { FLOW_RUN_STATE_TYPES } from "../const.ts";
 import { IFlowRunQueryDto, IPrefectFlowRunDto } from "../types.ts";
 
 interface FlowRunParams {
@@ -94,7 +95,8 @@ export class PrefectAPI {
   async getFlowRunsByDataset(
     databaseCode: string,
     dataset: string,
-    tags: string[] = []
+    tags: string[] = [],
+    prefix: string
   ) {
     const errorMessage = "Error while getting flow runs by dataset";
     try {
@@ -104,7 +106,7 @@ export class PrefectAPI {
         sort: "START_TIME_DESC",
         flow_runs: {
           operator: "and_",
-          name: { any_: [`${databaseCode}.${dataset}`] },
+          name: { any_: [`${prefix}_${databaseCode}.${dataset}`] },
           tags: { operator: "and_", all_: tags },
           state: { type: { not_any_: ["CANCELLED", "CANCELLING"] } },
         },
@@ -340,18 +342,18 @@ export class PrefectAPI {
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
 
     const thirdPartyToken: string | undefined = decode(
-      this.token.replace(/bearer /i, ""),
-    )['thirdPartyToken'];
+      this.token.replace(/bearer /i, "")
+    )["thirdPartyToken"];
     const thirdPartyRefreshToken: string | undefined = decode(
-      this.token.replace(/bearer /i, ""),
-    )['thirdPartyRefreshToken'];
+      this.token.replace(/bearer /i, "")
+    )["thirdPartyRefreshToken"];
 
     const options = this.createOptions("POST", {
       key: key,
-      value: JSON.stringify({ 
+      value: JSON.stringify({
         token: this.token,
-        thirdpartytoken: thirdPartyToken || '',
-        thirdpartyrefreshtoken: thirdPartyRefreshToken || '',
+        thirdpartytoken: thirdPartyToken || "",
+        thirdpartyrefreshtoken: thirdPartyRefreshToken || "",
       }), // 'value' must be a string always. Convert the json object to a string
     });
     const errorMessage =
@@ -485,6 +487,64 @@ export class PrefectAPI {
       console.info(`${errorMessage}: ${error}`);
       throw new Error(errorMessage);
     }
+  }
+
+  async pollFlowRunCompletion(flowRunId: string) {
+    // Poll every 1 min up to 10 mins
+    const POLL_INTERVAL_MS = 60000;
+    const MAX_ATTEMPTS = 10;
+    let attempts = 0;
+
+    let flowRun = await this.getFlowRun(flowRunId);
+
+    // If the flowRun is an array, get the first object
+    if (Array.isArray(flowRun)) {
+      flowRun = flowRun[0];
+    }
+
+    const pollingStates = [
+      FLOW_RUN_STATE_TYPES.SCHEDULED,
+      FLOW_RUN_STATE_TYPES.LATE,
+      FLOW_RUN_STATE_TYPES.PENDING,
+      FLOW_RUN_STATE_TYPES.RUNNING,
+      FLOW_RUN_STATE_TYPES.RETRYING,
+      FLOW_RUN_STATE_TYPES.AWAITING_RETRY,
+    ];
+
+    const failureStates = [
+      FLOW_RUN_STATE_TYPES.FAILED,
+      FLOW_RUN_STATE_TYPES.CRASHED,
+      FLOW_RUN_STATE_TYPES.CANCELLING,
+      FLOW_RUN_STATE_TYPES.CANCELLED,
+      FLOW_RUN_STATE_TYPES.PAUSED,
+      FLOW_RUN_STATE_TYPES.SUSPENDED,
+      FLOW_RUN_STATE_TYPES.TIMED_OUT,
+    ];
+
+    while (
+      pollingStates.includes(flowRun.state_type) &&
+      attempts < MAX_ATTEMPTS
+    ) {
+      // Early exit if flowRun enters a failure state
+      if (failureStates.includes(flowRun.state_type)) {
+        throw new Error(
+          `Flow run failed or was cancelled. Final state: ${flowRun.state_type}`
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      flowRun = await this.getFlowRun(flowRunId);
+      if (Array.isArray(flowRun)) {
+        flowRun = flowRun[0];
+      }
+      attempts++;
+    }
+
+    if (flowRun.state_type === FLOW_RUN_STATE_TYPES.COMPLETED) {
+      return { flowRunId: flowRun.id };
+    }
+    throw new Error(
+      `Flow run did not complete within the polling window. Final state: ${flowRun.state_type}`
+    );
   }
 
   async getFlowRunsArtifactsByFlowRunId(flowRunId: string) {

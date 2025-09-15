@@ -7,6 +7,50 @@ import { proxy } from 'npm:hono/proxy'
 
 import { STATUS_CODE } from 'https://deno.land/std/http/status.ts';
 
+const fnmap = {}
+
+Trex.createRequestListener(async (message, respond) => {
+	try {
+
+		if (!message || !message.request) {
+			respond({
+				ok: false,
+				status: 400,
+				statusText: 'Bad Request',
+				headers: { 'Content-Type': 'application/json' },
+				body: { error: 'Invalid message structure' }
+			});
+			return;
+		}
+		
+		const httpRequest = message.request;
+		
+		const httpResponse = await fnmap[message.service]?.(httpRequest);
+		if (httpResponse instanceof Response) {		
+			const responseBody = await httpResponse.text();
+			const responseData = {
+				body: responseBody,
+				status: httpResponse.status,
+				statusText: httpResponse.statusText,
+				ok: httpResponse.ok,
+				headers: Object.fromEntries(httpResponse.headers.entries()),
+				url: httpResponse.url
+			};
+			respond(responseData);
+		} else {
+			respond(httpResponse);
+		}
+	} catch (error) {
+		respond({
+			ok: false,
+			status: 500,
+			statusText: 'Internal Server Error',
+			headers: { 'Content-Type': 'application/json' },
+			body: { error: error.message }
+		});
+	}
+});
+
 const headers = new Headers({
 	'Content-Type': 'application/json',
 });
@@ -88,7 +132,8 @@ async function _callWorker (req: any, servicePath: string, imports: any, fncfg: 
 	}
 };
 
-function _addFunction(app: Hono, url: string, path: string, imports: any, fncfg: any, dir: string) {
+function _addFunction(app: Hono, url: string, path: string, imports: any, fncfg: any, dir: string, name: string) {
+	fnmap[`${name}${fncfg.function}`] = (req) => _callWorker(req, `${path}`, imports, fncfg, dir);
 	app.all(url+"/*", authn, authz, (c: Context) =>  _callWorker(c.req.raw, `${path}`, imports, fncfg, dir));
 }
 
@@ -122,7 +167,7 @@ async function _addInit(path: string, imports: any, env: any, eszip: string, dir
 	_callInit(`${path}`, imports, env, eszip, dir);
 }
 
-export async function addPlugin(app: Hono, value: any, dir: string) {
+export async function addPlugin(app: Hono, value: any, dir: string, name: string) {
     if(value.init) {
         for(const r of value.init) {
             if(r.function) {
@@ -164,7 +209,7 @@ export async function addPlugin(app: Hono, value: any, dir: string) {
             logger.log(`add fn ${r.source} @ ${dir}${r.function}`)
             _addFunction(app, r.source, `${dir}${r.function}`, 
             r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
-            r, dir);
+            r, dir, name);
         } else if (r.service) {  
             logger.log(`add svc ${r.source} @ ${r.service}`)
             _addService(app, r.source, r.service, r.rmsrc);

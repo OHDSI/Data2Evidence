@@ -61,7 +61,7 @@ const Death: FC<DeathProps> = ({ flowRunId, datasetId }) => {
         <div className="info__section">{errDeath}</div>
       ) : (
         <>
-          <DrilldownTrellisChart data={deathData.prevalenceByGenderAgeYear} trellisXAxisKey="Y_PREVALENCE_1000PP" />
+          <DrilldownTrellisChart data={deathData.prevalenceByGenderAgeYear} trellisXAxisKey="YPREVALENCE1000PP" />
           <DeathPrevalenceByMonthChart data={deathData.prevalenceByMonth} />
           <div className="chart__container">
             <PieChart
