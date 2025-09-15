@@ -22,6 +22,7 @@ const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
 let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
+let PROJECT_NAME=process.env.PROJECT_NAME || 'd2e';
 
 var response= await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256"`
 
@@ -118,6 +119,11 @@ var resp_message = await $`echo ${resp} | grep -o '"message":"[^"]*"' | sed 's/"
 var progress_id = await $`echo ${resp} | grep -o '"id":"[^"]*"' | sed 's/"id":"\\([^"]*\\)"/\\1/'`
 console.log(chalk.blue(`${resp_message}`));       
 var progress_status = "inprogress";
+
+console.log(chalk.blue(`Restarting ${PROJECT_NAME}-trex container...`));
+await $`docker restart ${PROJECT_NAME}-trex`;
+await $`timeout 120 bash -c 'until docker inspect --format="{{.State.Status}}" ${PROJECT_NAME}-trex | grep -q "running"; do echo "Waiting for container to start..."; sleep 15; done'`;
+console.log(chalk.green(`${PROJECT_NAME}-trex container has restarted successfully`));
 
 try { 
     while (progress_status == "inprogress") {
