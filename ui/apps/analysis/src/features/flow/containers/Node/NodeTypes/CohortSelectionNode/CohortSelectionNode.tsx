@@ -7,6 +7,7 @@ import { CohortSelectionDrawer } from "./CohortSelectionDrawer";
 import { Cohort } from "./CohortSelectionType";
 
 export interface CohortSelectionNodeData extends NodeDataState {
+  type?: "event" | "target" | "exit" | "comparator" | "outcome" | "";
   cohorts: Cohort[];
 }
 

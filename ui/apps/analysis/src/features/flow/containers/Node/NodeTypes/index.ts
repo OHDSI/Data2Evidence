@@ -628,7 +628,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     description: "Select cohort for analysis.",
     tag: NodeTag.Stable,
     defaultData: {
-      type: "event",
+      type: "",
       cohorts: [],
     },
     outputs: [
