@@ -10,7 +10,6 @@
     "emitDecoratorMetadata": true
   },
   "imports": {
-    "@medplum/core": "npm:@medplum/core@3.2.2",
     "express": "npm:express@^4.19.2",
     "express-validator": "npm:express-validator@^7.2.0",
     "typedi": "npm:typedi@^0.10.0",

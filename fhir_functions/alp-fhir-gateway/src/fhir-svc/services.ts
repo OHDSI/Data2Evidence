@@ -25,34 +25,30 @@ const getDatasetId = async (
 
 const checkProjectNameExists = async (
   fhirApi: FhirAPI,
-  projectName: string
+  projectName: string,
+  adminCredentials: ClientCredentials
 ): Promise<boolean> => {
-  // check project with same name already exists
-  const existingProject = await fhirApi.getOneResource(
-    "Project",
-    `name=${projectName}`
-  );
-
-  if (existingProject !== undefined) {
+  const existingProject = await fhirApi.forwardRequest(
+    "Project", adminCredentials, HTTPMethod.GET, `name=${projectName}`, '');
+  if (existingProject?.status > 300) {
     return true;
   } else {
     return false;
   }
 };
 
-const getClientCredentials = async (
+const getProjectCredentials = async (
   fhirApi: FhirAPI,
-  projectName: string
+  projectName: string,
+  token: string
 ): Promise<ClientCredentials> => {
-  const searchResult = await fhirApi.getOneResource(
-    "ClientApplication",
-    `name=${projectName}`
-  );
-
-  if (searchResult) {
+  let adminCredentials = fhirApi.getAdminCredentials()
+  const searchResult = await fhirApi.forwardRequest("ClientApplication", adminCredentials, HTTPMethod.GET, `name=${projectName}`, '');
+  console.log(`Client application search result: ${JSON.stringify(searchResult.data)}`);
+  if (searchResult.data) {
     return {
-      clientId: searchResult.id,
-      clientSecret: searchResult.secret,
+      clientId: searchResult.data.id,
+      clientSecret: searchResult.data.secret,
     };
   } else {
     throw new Error(
@@ -63,24 +59,24 @@ const getClientCredentials = async (
 
 export const createProject = async (token: string, id: string, description: string) => {
   console.info(`Creating a fhir project for the dataset '${id}'..`);
-  let fhirApi = new FhirAPI();
-  await fhirApi.clientCredentialsLogin();
-
+  let fhirApi = new FhirAPI(token);
   // check if project with same id already exists
-  const projectExists = await checkProjectNameExists(fhirApi, id);
+  const projectExists = await checkProjectNameExists(fhirApi, id, fhirApi.getAdminCredentials());
   if (projectExists === true) {
     throw new Error(`Project with id '${id}' already exists!`);
   }
-
   const projectDetails = {
     resourceType: "Project",
     name: id,
     strictMode: true, // whether this project uses strict FHIR validation
     description: description,
   };
-  const projectResult = await fhirApi.post("Project", projectDetails);
-  const projectId = projectResult.id;
-
+  const projectResult = await fhirApi.forwardRequest("Project", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectDetails);
+  if(projectResult == undefined)
+    throw new Error("Error creating fhir project!");
+  const projectId = projectResult?.data.id;
+  console.log(`Created fhir project with id '${projectId}'`);
+  // Create a client application for the project
   console.info(`Creating a client application for project '${id}'..`);
   const clientSecret = uuidv4();
   const clientApplicationDetails = {
@@ -97,12 +93,11 @@ export const createProject = async (token: string, id: string, description: stri
     },
     secret: clientSecret,
   };
-  const clientApplicationResult = await fhirApi.post(
-    "ClientApplication",
-    clientApplicationDetails
-  );
-  const clientId = clientApplicationResult.id;
-
+  const clientApplicationResult = await fhirApi.forwardRequest("ClientApplication", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', clientApplicationDetails);
+  if(clientApplicationResult == undefined)
+    throw new Error("Error creating client application for fhir project!");
+  const clientId = clientApplicationResult?.data.id;
+  //Create a project membership for the client application
   console.info(`Creating project membership for project ${id}..`);
   const projectMembershipDetails = {
     resourceType: "ProjectMembership",
@@ -126,8 +121,7 @@ export const createProject = async (token: string, id: string, description: stri
       display: id,
     },
   };
-  await fhirApi.post("ProjectMembership", projectMembershipDetails);
-
+  await fhirApi.forwardRequest("ProjectMembership", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectMembershipDetails);
   //Update dataset information
   const portalAPI = new PortalAPI(token);
   const dataset: Dataset = await portalAPI.getDatasetById(id);
@@ -136,12 +130,9 @@ export const createProject = async (token: string, id: string, description: stri
   return true
 };
 
-export const deleteProject = async(id: string) =>{
+export const deleteProject = async(token, id: string) =>{
   console.info(`Deleting fhir project with dataset Id '${id}'..`);
-  let fhirApi = new FhirAPI();
-  //Authenticate with superadmin credentials
-  await fhirApi.clientCredentialsLogin();
-
+  let fhirApi = new FhirAPI(token);
   //Delete project and all its related resources
   return await fhirApi.forwardRequest(
     `Project/${id}/$expunge?everything=true`,
@@ -161,10 +152,7 @@ export const forwardRequest = async (
   body: any,
   fhirHeaders: Headers
 ) => {
-  let fhirApi = new FhirAPI();
-
-  //Authenticate with superadmin credentials
-  await fhirApi.clientCredentialsLogin();
+  // await fhirApi.clientCredentialsLogin();
 
   //Get datasetId for incoming token study code
   const datasetId = await getDatasetId(token, projectName);
@@ -172,18 +160,22 @@ export const forwardRequest = async (
     throw new Error(`No dataset id found for project '${projectName}'`);
   }
   //DatasetId is the Fhir project name
-  projectName = datasetId
+  projectName = datasetId;
+  //Authenticate with superadmin credentials
+  let fhirApi = new FhirAPI(token);
+  let adminCredentials = fhirApi.getAdminCredentials()
   //Check fhir project exists which has unique name
-  const projectExists = await checkProjectNameExists(fhirApi, projectName);
+  const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
 
   if (projectExists === false) {
     throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
   }
 
   //Get client ID and secret for project
-  const projClientCredentials = await getClientCredentials(
+  const projClientCredentials = await getProjectCredentials(
     fhirApi,
-    projectName
+    projectName,
+    token
   );
 
   //Add dataset metadata to req body
@@ -204,4 +196,10 @@ export const forwardRequest = async (
     resourceDetails,
     fhirHeaders
   );
+};
+
+export const testClientCredentials = async (token: string): Promise<boolean> => {
+  let fhirApi = new FhirAPI(token);
+  await fhirApi.testConnection();
+  return true;
 };
