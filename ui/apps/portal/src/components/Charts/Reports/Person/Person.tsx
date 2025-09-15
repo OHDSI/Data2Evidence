@@ -20,11 +20,11 @@ interface PersonProps {
 const Person: FC<PersonProps> = ({ flowRunId, datasetId }) => {
   const { getText, i18nKeys } = useTranslation();
   const [personData, setPersonData] = useState<PERSON_REPORT_TYPE>({
-    population: [],
+    summary: [],
     gender: [],
     race: [],
     ethnicity: [],
-    yearOfBirthData: [],
+    yearOfBirth: [],
     yearOfBirthStats: [],
   });
   const [isloadingPersonData, setIsLoadingPersonData] = useState(true);
@@ -62,7 +62,7 @@ const Person: FC<PersonProps> = ({ flowRunId, datasetId }) => {
       ) : (
         <>
           <BarChart
-            barChartData={parseBarChartData(personData.yearOfBirthData, personData.yearOfBirthStats[0].MINVALUE)}
+            barChartData={parseBarChartData(personData.yearOfBirth, personData.yearOfBirthStats[0].MINVALUE)}
             title={getText(i18nKeys.PERSON__BAR_CHART_TITLE)}
             xAxisName={getText(i18nKeys.PERSON__BAR_CHART_X_AXIS_NAME)}
             yAxisName={getText(i18nKeys.PERSON__BAR_CHART_Y_AXIS_NAME)}

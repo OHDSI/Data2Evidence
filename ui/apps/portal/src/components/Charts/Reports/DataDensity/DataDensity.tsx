@@ -8,7 +8,7 @@ import BoxPlotChart from "../../Common/BoxPlotChart";
 import DataDensityRecordsPerPersonChart from "../../SourceKeys/DataDensity/DataDensityRecordsPerPersonChart/DataDensityRecordsPerPersonChart";
 import DataDensityTotalRecordsChart from "../../SourceKeys/DataDensity/DataDensityTotalRecordsChart/DataDensityTotalRecordsChart";
 
-import { DATA_DENSITY_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
+import { DATADENSITY_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
 import "./DataDensity.scss";
 import { useTranslation } from "../../../../contexts";
 
@@ -19,7 +19,7 @@ interface DataDensityProps {
 
 const DataDensity: FC<DataDensityProps> = ({ flowRunId, datasetId }) => {
   const { getText, i18nKeys } = useTranslation();
-  const [dataDensityData, setDataDensityData] = useState<DATA_DENSITY_REPORT_TYPE>({
+  const [dataDensityData, setDataDensityData] = useState<DATADENSITY_REPORT_TYPE>({
     totalRecords: [],
     recordsPerPerson: [],
     conceptsPerPerson: [],
@@ -32,10 +32,10 @@ const DataDensity: FC<DataDensityProps> = ({ flowRunId, datasetId }) => {
     try {
       const result = await api.dataflow.getDataCharacterizationResults(
         flowRunId,
-        WEBAPI_CDMRESULTS_SOURCE_KEYS.DATA_DENSITY,
+        WEBAPI_CDMRESULTS_SOURCE_KEYS.DATADENSITY,
         datasetId
       );
-      setDataDensityData(result as DATA_DENSITY_REPORT_TYPE);
+      setDataDensityData(result as DATADENSITY_REPORT_TYPE);
       setIsLoadingDataDensityData(false);
       setErrDataDensity("");
     } catch (error) {
