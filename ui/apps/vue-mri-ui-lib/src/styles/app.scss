@@ -6,7 +6,6 @@ body,
 #app {
   height: 100%;
   max-width: 100vw !important;
-  scrollbar-width: thin;
   font-family: $font-family-base;
 
   .UiLbl {
@@ -24,4 +23,8 @@ body,
   .MriHilite {
     @include mriHiliteStyle;
   }
+}
+
+* {
+  scrollbar-width: thin;
 }
