@@ -5,7 +5,7 @@ import {
   IWebapiConcept,
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
-} from "../Terminology/utils/types";
+} from "../types/terminology";
 
 const D2E_WEBAPI_BASE_URL = "d2e-webapi";
 

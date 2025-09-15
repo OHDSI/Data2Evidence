@@ -232,7 +232,6 @@ export interface IWebapiConceptSet {
   description?: string | undefined;
   tags?: unknown;
 }
-[];
 
 export interface IWebapiConceptSetExpression {
   items: {
