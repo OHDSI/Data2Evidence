@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const path = require('path')
 const setupWebapiRoutes = require('./webapi-routes')
+const setupWebapiDCRoutes = require('./dc-routes')
 const setupMockRoutes = require('./mock-routes')
 const app = express()
 
@@ -66,6 +67,9 @@ app.use((req, res, next) => {
 
 // Setup WebAPI routes from external file (customizable)
 setupWebapiRoutes(app)
+
+// Setup WebAPI DC routes
+setupWebapiDCRoutes(app)
 
 // Setup mock routes from external file
 setupMockRoutes(app)
@@ -157,6 +161,10 @@ app.listen(PORT, () => {
   console.log('  🔄 GET /analytics-svc/api/services/bookmark (placeholder)')
   console.log('  🔄 GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e (placeholder)')
   console.log('  🔄 DELETE /d2e-webapi/cohortdefinition/1 (placeholder)')
+
+  console.log(`\nWebAPI proxy endpoints:`)
+  console.log('  🔄 GET /cdmresults/:dataSource/:sourceKey')
+  console.log('  🔄 GET /cdmresults/:dataSource/:sourceKey/:conceptId')
 
   console.log(`Mock server running on port ${PORT}`)
   console.log(`Server URL: ${SERVER_URL}\n`)
