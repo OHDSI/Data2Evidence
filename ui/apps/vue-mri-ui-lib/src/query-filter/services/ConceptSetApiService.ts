@@ -306,7 +306,7 @@ export const getConceptSetExpression = async (
   conceptSetId: string
 ): Promise<ConceptSetExpression> => {
   try {
-    return await d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId), datasetId)
+    return await d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId, 10), datasetId)
   } catch (error) {
     console.error('Error fetching concept set expression:', error)
     throw error

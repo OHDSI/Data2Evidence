@@ -31,11 +31,36 @@ const logRequest = req => {
   console.log('Params:', req.params)
 }
 
+// Input validation middleware
+const validateId = paramName => (req, res, next) => {
+  const id = req.params[paramName]
+  if (!id || !/^\d+$/.test(id) || parseInt(id) <= 0) {
+    return res.status(400).json({ error: `Invalid ${paramName}: must be a positive integer` })
+  }
+  next()
+}
+
+const sanitizeQuery = query => {
+  if (!query || typeof query !== 'string') return ''
+  // Remove potentially dangerous characters and limit length
+  return encodeURIComponent(query.replace(/[<>'"&]/g, '')).substring(0, 200)
+}
+
+const validateDatasetId = (req, res, next) => {
+  const { datasetId } = req.params
+  if (!datasetId || !/^[a-zA-Z0-9_-]+$/.test(datasetId) || datasetId.length > 50) {
+    return res
+      .status(400)
+      .json({ error: 'Invalid datasetId: must be alphanumeric with dashes/underscores, max 50 chars' })
+  }
+  next()
+}
+
 /**
  * @param {import('express').Application} app
  */
 const setupWebapiRoutes = app => {
-  app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
+  app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId', validateId('cohortDefinitionId'), async (req, res) => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
     const cacheKey = CACHE_KEYS.COHORT_DEFINITION(cohortDefinitionId)
@@ -105,7 +130,7 @@ const setupWebapiRoutes = app => {
     return res.send(data)
   })
 
-  app.put('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
+  app.put('/d2e-webapi/cohortdefinition/:cohortDefinitionId', validateId('cohortDefinitionId'), async (req, res) => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
     await api.put(`/cohortdefinition/${cohortDefinitionId}`, req.body)
@@ -155,16 +180,21 @@ const setupWebapiRoutes = app => {
     })
   })
 
-  app.get('/d2e-webapi/cohortdefinition/:cohortDefinitionId/generate/:datasetId', async (req, res) => {
-    logRequest(req)
-    // datasetId not used for demo purpose
-    const { cohortDefinitionId, datasetId } = req.params
-    // using hardcoded sourceKey from GET https://atlas-demo.ohdsi.org/WebAPI/source/sources
-    await api.get(`/cohortdefinition/${cohortDefinitionId}/generate/${SOURCE}`, req.body)
-    return res.send()
-  })
+  app.get(
+    '/d2e-webapi/cohortdefinition/:cohortDefinitionId/generate/:datasetId',
+    validateId('cohortDefinitionId'),
+    validateDatasetId,
+    async (req, res) => {
+      logRequest(req)
+      // datasetId not used for demo purpose
+      const { cohortDefinitionId, datasetId } = req.params
+      // using hardcoded sourceKey from GET https://atlas-demo.ohdsi.org/WebAPI/source/sources
+      await api.get(`/cohortdefinition/${cohortDefinitionId}/generate/${SOURCE}`, req.body)
+      return res.send()
+    }
+  )
 
-  app.delete('/d2e-webapi/cohortdefinition/:cohortDefinitionId', async (req, res) => {
+  app.delete('/d2e-webapi/cohortdefinition/:cohortDefinitionId', validateId('cohortDefinitionId'), async (req, res) => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
     await api.delete(`/cohortdefinition/${cohortDefinitionId}`, req.body)
@@ -176,7 +206,7 @@ const setupWebapiRoutes = app => {
     return res.send()
   })
 
-  app.get('/d2e-webapi/conceptset/:conceptSetId/expression', async (req, res) => {
+  app.get('/d2e-webapi/conceptset/:conceptSetId/expression', validateId('conceptSetId'), async (req, res) => {
     logRequest(req)
     const { conceptSetId } = req.params
     const { datasetId } = req.query
@@ -259,7 +289,7 @@ const setupWebapiRoutes = app => {
     }
   })
 
-  app.put('/d2e-webapi/conceptset/:conceptSetId/items', async (req, res) => {
+  app.put('/d2e-webapi/conceptset/:conceptSetId/items', validateId('conceptSetId'), async (req, res) => {
     logRequest(req)
     const { conceptSetId } = req.params
     if (!conceptSetId) {
@@ -288,19 +318,26 @@ const setupWebapiRoutes = app => {
   })
 
   // GET endpoint for vocabulary search (matches d2e-webapi pattern)
-  app.get('/d2e-webapi/vocabulary/:datasetId/search', async (req, res) => {
+  app.get('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, async (req, res) => {
     logRequest(req)
     const { datasetId } = req.params
     const { query: QUERY } = req.query
     if (!QUERY) {
       return res.status(400).json({ error: 'query parameter is required' })
     }
+
+    // Sanitize the query parameter
+    const sanitizedQuery = sanitizeQuery(QUERY)
+    if (!sanitizedQuery) {
+      return res.status(400).json({ error: 'Invalid query parameter' })
+    }
+
     try {
-      const cacheKey = CACHE_KEYS.VOCABULARY_SEARCH(datasetId, QUERY)
+      const cacheKey = CACHE_KEYS.VOCABULARY_SEARCH(datasetId, sanitizedQuery)
       let data = cache[cacheKey]
       if (!data || !USE_CACHE) {
-        // Call Atlas demo API to search vocabularies
-        const response = await api.get(`/vocabulary/${SOURCE}/search?query=${QUERY}`)
+        // Call Atlas demo API to search vocabularies with sanitized query
+        const response = await api.get(`/vocabulary/${SOURCE}/search?query=${sanitizedQuery}`)
         data = response.data
         cache[cacheKey] = data
       }
@@ -327,7 +364,7 @@ const setupWebapiRoutes = app => {
       return res.status(status).json({
         error: 'Failed to search vocabulary in Atlas API',
         message: error.message,
-        query: QUERY,
+        query: sanitizedQuery,
         datasetId: datasetId,
         timestamp: new Date().toISOString(),
       })

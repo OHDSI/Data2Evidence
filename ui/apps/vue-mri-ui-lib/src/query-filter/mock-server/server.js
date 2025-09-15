@@ -5,6 +5,45 @@ const setupWebapiRoutes = require('./webapi-routes')
 const setupMockRoutes = require('./mock-routes')
 const app = express()
 
+// Simple in-memory rate limiter
+const rateLimiter = {
+  requests: new Map(),
+  windowMs: 1 * 60 * 1000, // 1 minute
+  maxRequests: 100,
+
+  isAllowed(ip) {
+    const now = Date.now()
+    const clientData = this.requests.get(ip)
+
+    if (!clientData) {
+      this.requests.set(ip, { count: 1, resetTime: now + this.windowMs })
+      return true
+    }
+
+    if (now > clientData.resetTime) {
+      this.requests.set(ip, { count: 1, resetTime: now + this.windowMs })
+      return true
+    }
+
+    if (clientData.count >= this.maxRequests) {
+      return false
+    }
+
+    clientData.count++
+    return true
+  },
+
+  middleware() {
+    return (req, res, next) => {
+      const ip = req.ip || req.connection.remoteAddress
+      if (!this.isAllowed(ip)) {
+        return res.status(429).json({ error: 'Too many requests from this IP' })
+      }
+      next()
+    }
+  },
+}
+
 // Global error handlers
 process.on('uncaughtException', error => {
   console.error('Uncaught Exception:', error)
@@ -40,7 +79,7 @@ app.use('/fonts', express.static(path.join(__dirname, 'static', 'mri', 'fonts'))
 app.use('/ui', express.static(path.join(__dirname, 'static', 'ui5', 'resources')))
 
 // Serve authenticate.js with modifications
-app.get('/authenticate.js', (_, res) => {
+app.get('/authenticate.js', rateLimiter.middleware(), (_, res) => {
   const fs = require('fs')
   const authPath = path.join(__dirname, 'static', 'mri', 'authenticate.js')
 
@@ -60,7 +99,7 @@ app.get('/authenticate.js', (_, res) => {
 })
 
 // Catch-all handler: serve index.html for any unmatched route (SPA fallback)
-app.get('*', (_, res) => {
+app.get('*', rateLimiter.middleware(), (_, res) => {
   const fs = require('fs')
   const indexPath = path.join(__dirname, 'static', 'mri', 'index.html')
 
