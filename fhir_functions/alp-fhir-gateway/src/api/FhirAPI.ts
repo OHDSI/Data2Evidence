@@ -35,9 +35,8 @@ export class FhirAPI {
     resourceDetails: any,
     fhirHeaders?: Headers,
   ) {
-    const resourceUrl = `${this.baseUrl}/${encodeURIComponent(resourcePath)}`;
+    const resourceUrl = `${this.baseUrl}/${resourcePath}`;
     const log_msg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
-
     try {
       let options = await this.getRequestConfig(clientCredentials);
       if (!options || typeof options !== 'object') {
@@ -46,18 +45,7 @@ export class FhirAPI {
       if (queryParams && Object.keys(queryParams).length > 0) {
         options.params = queryParams;
       }
-
       options.headers = { ...(options.headers || {}), ...(fhirHeaders || {}) };
-
-      if (options.headers.httpsAgent) {
-        options.httpsAgent = options.headers.httpsAgent;
-        delete options.headers.httpsAgent;
-      }
-
-      if (options.cookie) {
-        options.headers.cookie = options.cookie;
-        delete options.cookie;
-      }
       let response;
       if (httpMethod === HTTPMethod.GET) {
         response = await axios.get(resourceUrl, options);
@@ -153,8 +141,6 @@ export class FhirAPI {
         rejectUnauthorized: true,
       }),
     };
-    this.logger.log("Token obtained: ", token);
-    this.logger.log("Request options: ", JSON.stringify(options));
     return options;
   }
   

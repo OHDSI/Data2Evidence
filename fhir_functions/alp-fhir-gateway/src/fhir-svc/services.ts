@@ -29,27 +29,32 @@ const checkProjectNameExists = async (
   adminCredentials: ClientCredentials
 ): Promise<boolean> => {
   const existingProject = await fhirApi.forwardRequest(
-    "Project", adminCredentials, HTTPMethod.GET, `name=${projectName}`, '');
-  if (existingProject?.status > 300) {
-    return true;
-  } else {
-    return false;
-  }
+    `Project?name=${projectName}`, adminCredentials, HTTPMethod.GET, '', '');
+  return existingProject?.data?.entry && existingProject.data.entry.length > 0 && existingProject.data.entry[0].resource.resourceType === "Project";
 };
 
 const getProjectCredentials = async (
   fhirApi: FhirAPI,
   projectName: string,
-  token: string
+  adminCredentials: ClientCredentials
 ): Promise<ClientCredentials> => {
-  let adminCredentials = fhirApi.getAdminCredentials()
-  const searchResult = await fhirApi.forwardRequest("ClientApplication", adminCredentials, HTTPMethod.GET, `name=${projectName}`, '');
-  console.log(`Client application search result: ${JSON.stringify(searchResult.data)}`);
-  if (searchResult.data) {
-    return {
-      clientId: searchResult.data.id,
-      clientSecret: searchResult.data.secret,
-    };
+  const searchResult = await fhirApi.forwardRequest(`ClientApplication?name=${projectName}`, adminCredentials, HTTPMethod.GET, '', '');
+  if (searchResult?.data) {
+    const entry = searchResult.data.entry || [];
+    if(entry.length == 0){
+        throw new Error(
+          `Client application with project name '${projectName}' not found!`
+        );
+    }else if(entry[0].resource.resourceType === "ClientApplication"){
+      return {
+        clientId: entry[0].resource.id,
+        clientSecret: entry[0].resource.secret,
+      };
+    }else{
+        throw new Error(
+          `Client application with project name '${projectName}' not found!`
+        );
+    }
   } else {
     throw new Error(
       `Client application with project name '${projectName}' not found!`
@@ -161,13 +166,14 @@ export const forwardRequest = async (
   }
   //DatasetId is the Fhir project name
   projectName = datasetId;
+  
   //Authenticate with superadmin credentials
   let fhirApi = new FhirAPI(token);
-  let adminCredentials = fhirApi.getAdminCredentials()
+  let adminCredentials = fhirApi.getAdminCredentials();
+
   //Check fhir project exists which has unique name
   const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
-
-  if (projectExists === false) {
+  if (projectExists !==undefined && projectExists === false) {
     throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
   }
 
@@ -175,7 +181,7 @@ export const forwardRequest = async (
   const projClientCredentials = await getProjectCredentials(
     fhirApi,
     projectName,
-    token
+    adminCredentials
   );
 
   //Add dataset metadata to req body
