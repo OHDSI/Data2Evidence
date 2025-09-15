@@ -96,7 +96,7 @@ function substituteVariable(varExpression: string): string {
 	} else {
 		const envValue = Deno.env.get(varExpression);
 		if(envValue == undefined ) console.log(`### ENV UNDEFINED ${varExpression}`);
-		return envValue !== undefined ? envValue : "${" + varExpression + "}"; // Return original if not found
+		return envValue !== undefined ? envValue : "";
 	}
 }
 
@@ -169,7 +169,7 @@ const getFullyQualifiedUserFunctionName = (function_name: string) => {
 
 async function _callInit (servicePath: string, imports: any, fnEnv: any, xenv: any, eszip: string, dir: string) {
 	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fnEnv)
-	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fnEnv in xenv ? xenv[fnEnv] : {}, {TREX_FUNCTION_PATH: `/usr/src/${dir}`})
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fnEnv in xenv ? xenv[fnEnv] : {}, {SERVICE_ROUTES: env.SERVICE_ROUTES, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
 	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
@@ -199,7 +199,7 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, xenv: a
     
 async function _callWorker (req: any, servicePath: string, imports: any, fncfg: any, dir: string, xenv: any) {
 	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fncfg.env);
-	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fncfg.env in xenv ? xenv[fncfg.env] : {}, {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fncfg.env in xenv ? xenv[fncfg.env] : {}, {SERVICE_ROUTES: env.SERVICE_ROUTES, DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv = Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fncfg.env] || false; 
 
