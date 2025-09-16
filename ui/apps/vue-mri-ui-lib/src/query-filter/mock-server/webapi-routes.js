@@ -10,7 +10,7 @@ const api = axios.create({
 const SOURCE = 'SYNPUF1K'
 
 // server has 20,000
-const MAX_COHORT_DEFINITIONS = 100
+const MAX_COHORT_DEFINITIONS = 50000
 const USE_CACHE = process.env.USE_CACHE || false
 const cache = {}
 
@@ -152,7 +152,8 @@ const setupWebapiRoutes = app => {
       cache[cacheKey] = data
     }
     const mappedData = []
-    for (let i = 0; i < MAX_COHORT_DEFINITIONS; i += 1) {
+    const maxItemCount = MAX_COHORT_DEFINITIONS - data.length ? data.length : MAX_COHORT_DEFINITIONS
+    for (let i = 0; i < maxItemCount; i += 1) {
       const d = data[i]
       mappedData[i] = {
         id: d.id,
@@ -163,16 +164,7 @@ const setupWebapiRoutes = app => {
       }
     }
     return res.send({
-      atlasCohortDefinitions: [
-        {
-          id: 1,
-          name: 'Atlas Cohort',
-          username: 'current_user',
-          createdOn: '2025-06-19T21:08:09.028Z',
-          updatedOn: '2025-06-19T21:08:09.028Z',
-        },
-        ...mappedData,
-      ],
+      atlasCohortDefinitions: [...mappedData],
       bookmarks: [],
       // we will not need this for pa-atlas. Info on the generation runs can be found at
       // https://atlas-demo.ohdsi.org/WebAPI/cohortdefinition/1794229/info
