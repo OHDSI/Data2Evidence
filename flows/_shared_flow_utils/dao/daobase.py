@@ -126,11 +126,11 @@ class DaoBase(ABC):
     # --- Read methods ---
 
     @abstractmethod
-    def check_schema_exists(schema: str) -> bool:
+    def check_schema_exists(self, schema: str) -> bool:
         pass
 
     @abstractmethod
-    def check_empty_schema(schema: str) -> bool:
+    def check_empty_schema(self, schema: str) -> bool:
         pass
 
     @abstractmethod

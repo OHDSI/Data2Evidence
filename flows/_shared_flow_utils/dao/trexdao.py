@@ -123,7 +123,7 @@ class TrexDao(DaoBase):
             raise
 
 
-    def check_empty_schema(schema: str) -> bool:
+    def check_empty_schema(self, schema: str) -> bool:
         pass
 
 
