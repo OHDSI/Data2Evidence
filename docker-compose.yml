@@ -262,7 +262,7 @@ services:
             "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
             "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
           },
-          "d2e-medplum-server": {
+          "d2e-fhir-server": {
             "FHIR_SERVER_BASE_URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
             "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
             "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
