@@ -17,6 +17,7 @@
     "prettier": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@babel/runtime": "^7.18.9",
     "@axa-fr/react-oidc": "6.10.9",
     "@d4l/web-components-library": "^3.20.2",
     "@data2evidence/d2e-starboard-notebook": "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop",

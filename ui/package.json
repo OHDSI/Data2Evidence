@@ -28,7 +28,9 @@
       "**/@vue",
       "**/@vue/**",
       "**/@babel/**",
-      "**/babel-**"
+      "**/babel-**",
+      "**/webpack-manifest-plugin",
+      "**/webpack-manifest-plugin/**"
     ]
   },
   "devDependencies": {
