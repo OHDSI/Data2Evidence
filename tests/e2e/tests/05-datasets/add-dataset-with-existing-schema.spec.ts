@@ -23,14 +23,18 @@ test(TEST_NAME, async ({ page }) => {
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.locator('tr', { hasText: datasetNewSchema }).getByRole('button', { name: 'Select action' }).click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
-  await page.locator('tr', { hasText: datasetExistingSchema }).getByRole('button', { name: 'Select action' }).click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
-  await expect(page.locator('tbody')).not.toContainText(datasetNewSchema)
-  await expect(page.locator('tbody')).not.toContainText(datasetExistingSchema)
+  if (page.locator('tbody').containsText(datasetNewSchema)) {
+    await page.locator('tr', { hasText: datasetNewSchema }).getByRole('button', { name: 'Select action' }).click()
+    await page.getByRole('option', { name: 'Delete dataset' }).click()
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
+    await expect(page.locator('tbody')).not.toContainText(datasetNewSchema)
+  }
+  if (page.locator('tbody').containsText(datasetExistingSchema)) {
+    await page.locator('tr', { hasText: datasetExistingSchema }).getByRole('button', { name: 'Select action' }).click()
+    await page.getByRole('option', { name: 'Delete dataset' }).click()
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
+    await expect(page.locator('tbody')).not.toContainText(datasetExistingSchema)
+  }
 
   // Add new dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
