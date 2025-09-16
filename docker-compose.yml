@@ -19,14 +19,6 @@ volumes:
   hana-data:
 
 x-envs:
-  db-svc: &x-dbsvc
-    DB_SVC__IDP_SUBJECT_PROP: sub
-    DB_SVC__LOG_LEVEL: info
-    DB_SVC__PATH: /alpdb
-    DISABLE_SSL: "TRUE"
-    HANA__READ_ROLE: TENANT_READ_ROLE
-    LB__LOG_LEVEL: ${LB__LOG_LEVEL:-FINE}
-    PG__READ_ROLE: postgres_tenant_read_role
   env_converter: &x-converter
     URL__DATABASE_LIST__GET: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db/database-creds/
     DB_CREDENTIALS__PRIVATE_KEY: ${DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY}
@@ -34,13 +26,6 @@ x-envs:
     IDP__ALP_SVC__CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
     IDP__SCOPE: https://alp-default
     IDP_SUBJECT_PROP: sub
-  minio: &x-minio
-    MINIO__ACCESS_KEY: ${MINIO__ACCESS_KEY:-root}
-    MINIO__ENDPOINT: ${MINIO__ENDPOINT:-${PROJECT_NAME:-d2e}-minerva-s3}
-    MINIO__PORT: ${MINIO__PORT:-9000}
-    MINIO__REGION: ${MINIO__REGION:-ap-southeast-1}
-    MINIO__SECRET_KEY: ${MINIO__SECRET_KEY}
-    MINIO__SSL: ${MINIO__SSL:-false}
   pg: &x-pg
     PG__DB_NAME: alp
     ## Flag to display executed Knex queries in log
@@ -56,38 +41,9 @@ x-envs:
   fhir: &x-fhir
     FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
-  perseus: &x-perseus
-    PERSEUS__FILES_MANAGER_HOST: trex
   redis: &x-redis
     REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
     REDIS_PORT: ${REDIS_PORT:-6379}
-  service: &x-routes
-    SERVICE_ROUTES: |-
-      {
-       "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
-       "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
-       "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
-       "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
-       "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
-       "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
-       "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
-       "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
-       "minio": "",
-       "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
-       "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
-       "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
-       "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-       "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-       "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-       "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
-       "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
-       "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
-      }
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
     TREX__SQL__PORT: 5432
@@ -100,12 +56,6 @@ x-envs:
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
     TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
-  cachedb: &cachedb
-    CACHEDB__HOST: ${PROJECT_NAME:-d2e}-cachedb
-    CACHEDB__PORT: 41191
-    CACHEDB__POOL_SIZE: ${CACHEDB__POOL_SIZE:-10}
-  python-internal-ssl: &python-internal-ssl
-    PYTHON_VERIFY_SSL: false # Only use this for apis calling internal docker urls
 
 services:
   trex:
@@ -152,346 +102,9 @@ services:
         - *x-converter
         - *x-tls
         - *x-fhir
-        - *x-minio
         - *x-pg
-        - *x-perseus
         - *x-trex-sql
       REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
-      SERVICE_ENV: |-
-        {
-          "_shared": {
-            "DB_SVC__IDP_SUBJECT_PROP": "sub",
-            "DB_SVC__LOG_LEVEL": "info",
-            "DB_SVC__PATH": "/alpdb",
-            "DISABLE_SSL": "TRUE",
-            "HANA__READ_ROLE": "TENANT_READ_ROLE",
-            "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
-            "PG__READ_ROLE": "postgres_tenant_read_role",
-            "IDP__ALP_SVC__CLIENT_ID": "${LOGTO__ALP_SVC__CLIENT_ID}",
-            "IDP__ALP_SVC__CLIENT_SECRET": "${LOGTO__ALP_SVC__CLIENT_SECRET}",
-            "IDP__SCOPE": "https://alp-default",
-            "IDP_SUBJECT_PROP": "sub",
-            "MINIO__ACCESS_KEY": "${MINIO__ACCESS_KEY:-root}",
-            "MINIO__ENDPOINT": "${MINIO__ENDPOINT:-${PROJECT_NAME:-d2e}-minerva-s3}",
-            "MINIO__PORT": ${MINIO__PORT:-9000},
-            "MINIO__REGION": "${MINIO__REGION:-ap-southeast-1}",
-            "MINIO__SECRET_KEY": "${MINIO__SECRET_KEY}",
-            "MINIO__SSL": "${MINIO__SSL:-false}",
-            "CACHEDB__PORT": 41191,
-            "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
-            "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
-            "NODE_ENV": "${NODE_ENV:-development}",
-            "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
-            "PG__DB_NAME": "alp",
-            "PG__FHIR_DB_NAME": "alp",
-            "PG__DEBUG": "${PG_DEBUG:-1}",
-            "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
-            "PG__SSL": "${PG__SSL:-false}",
-            "PG__MAX_POOL": 10,
-            "PG__MIN_POOL": 0,
-            "PG__PORT": ${PG_PORT:-5432},
-            "PG__IDLE_TIMEOUT_IN_MS": 1000,
-            "PG__DIALECT": "postgresql",
-            "LOCAL_DEBUG": "false",
-            "isHttpTestRun": "${isHttpTestRun}",
-            "SERVICE_ROUTES": {
-              "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-              "bookmark": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/analytics-svc/api/services/bookmark",
-              "cdw": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-              "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
-              "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
-              "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-              "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
-              "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-              "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-              "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
-              "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/dataset",
-              "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
-              "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-              "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
-              "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
-              "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
-              "minio": "",
-              "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
-              "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
-              "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
-              "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
-              "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
-              "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
-              "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
-              "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-              "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
-              "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
-              "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
-              "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
-            }
-          },
-          "analytics-svc": {
-            "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
-            "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
-            "ANALYTICS_SVC__PORT": 41102,
-            "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 600,
-            "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
-            "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
-            "LOCAL_DEBUG": "false",
-            "USE_DUCKDB": "${USE_DUCKDB:-true}",
-            "USE_CACHEDB": "${USE_CACHEDB:-true}",
-            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
-            "USE_EXTENSION_FOR_COHORT_CREATION": "false",
-            "isTestEnv": "${isTestEnv}",
-            "local": "${local}",
-            "TESTSCHEMA": "${TESTSCHEMA}",
-            "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}"
-          },
-          "mri-pg-config": {
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "cdw_config",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
-          },
-          "alp-fhir-svc": {
-            "FHIR__LOG_LEVEL": "debug",
-            "PORT": 41112,
-            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
-            "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
-            "FHIR_SCHEMA_PATH": "/home/docker/fhir",
-            "FHIR_SCHEMA_FILE_NAME": "fhir.schema.json",
-            "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
-            "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
-          },
-          "alp-fhir-init": {
-            "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
-            "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
-            "FHIR__LOG_LEVEL": "debug",
-            "PORT": 41112,
-            "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
-            "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
-            "DUCKDB_PATH": "/home/docker/alp-data-node/app/src/duckdb",
-            "PLUGIN_PATH": "/usr/src/plugins/d2ef/alp-fhir-init",
-            "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
-            "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
-          },
-          "query-gen-svc": {
-            "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
-            "isTestEnv": "${isTestEnv}",
-            "TESTSCHEMA": "${TESTSCHEMA}",
-            "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
-            "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}"
-          },
-          "alp-usermgmt": {
-            "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
-            "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
-            "IDP__ALP_ADMIN__CLIENT_ID": "${LOGTO_API_M2M_CLIENT_ID}",
-            "IDP__ALP_ADMIN__CLIENT_SECRET": "${LOGTO_API_M2M_CLIENT_SECRET}",
-            "IDP__ALP_ADMIN__RESOURCE": "https://default.logto.app/api",
-            "IDP__BASE_URL": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-            "IDP__FETCH_USER_INFO_TYPE": "logto",
-            "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
-            "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
-            "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY}",
-            "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
-            "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG__USER_MGMT__ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG__USER_MGMT__DB_NAME": "${PG_DB_NAME:-alp}",
-            "PG__USER_MGMT__PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG__USER_MGMT__SCHEMA": "usermgmt",
-            "PG__USER_MGMT__USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "USER_MGMT__IDP_SUBJECT_PROP": "sub",
-            "USER_MGMT__LOG_LEVEL": "info",
-            "USER_MGMT__PATH": "/usermgmt/",
-            "USER_MGMT__PORT": 41104
-          },
-          "white-rabbit": {
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "white_rabbit"
-          },
-          "supabase-storage": {
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "storage"
-          },
-          "bookmark-svc": {
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
-          },
-          "mri-pa-config": {
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "cdw_config",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
-          },
-          "cdw-svc": {
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "cdw_config",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PORT": 41114,
-            "isTestEnv": "${isTestEnv}"
-          },
-          "jobplugins-init": {
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "jobplugins",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
-          },
-          "jobplugins": {
-            "PREFECT_API_URL": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
-            "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}"
-          },
-          "dataset": {
-            "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
-          },
-          "alpdb": {
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
-            "PG_PORT": "${PG_PORT:-5432}",
-            "PG_DATABASE": "${PG_DB_NAME:-alp}"
-          },
-          "concept-mapping": {},
-          "portal": {
-            "PG_MANAGE_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_MANAGE_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "portal",
-            "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
-            "PG_PORT": "${PG_PORT:-5432}",
-            "PG_DATABASE": "${PG_DB_NAME:-alp}",
-            "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
-            "APP__TENANT_NAME": "${APP__TENANT_NAME:-Tenant}",
-            "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
-            "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
-            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
-            "DATA_TRANSFORMATION_BUCKET": "data-transformation",
-            "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
-            "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
-            "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
-            "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}"
-          },
-          "files-manager": {
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_SCHEMA": "files_manager"
-          },
-          "terminology-svc": {
-            "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}",
-            "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}"
-          },
-          "perseus": {
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_SCHEMA": "perseus"
-          },
-          "code-suggestion": {
-            "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
-            "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
-            "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
-            "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
-            "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
-            "AI_MODEL": "${AI_MODEL:-null}"
-          },
-          "data-mapping": {
-            "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
-            "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
-            "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
-            "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
-            "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
-            "AI_MODEL": "${AI_MODEL:-null}"
-          },
-          "demo": {
-            "DEMO__DB_CODE": "demo_database",
-            "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-            "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
-            "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
-            "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
-            "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
-          },
-          "d2e-webapi": {},
-          "alp-dataflow-gen-init": {
-            "PREFECT_API_URL": "http://alp-dataflow-gen-${BASE_PORT:-1}:41${BASE_PORT:-1}20/api",
-            "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
-            "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
-            "R_LIBS_USER": "/home/docker/plugins/R/site-library",
-            "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",
-            "CDW_CONFIG_DUCKDB__DATA_FOLDER": "/app/cdw-config/duckdb_data",
-            "FHIR_SCHEMA_JSON_PATH": "/home/docker/fhir",
-            "PYTHON_VERIFY_SSL": "false",
-            "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
-            "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
-            "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
-            "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
-            "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-5}",
-            "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
-            "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
-            "LIQUIBASE_PATH": "",
-            "HANA__DRIVER_CLASS_PATH": "",
-            "POSTGRES__DRIVER_CLASS_PATH": "",
-            "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-            "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-            "DATABASE_CREDENTIALS": "{}",
-            "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
-            "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
-            "WORKPOOL_NAME": "docker-pool",
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-            "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
-            "PG__STUDY_RESULTS_ADMIN_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-            "PG__STUDY_RESULTS_ADMIN_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-            "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-            "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
-            "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
-            "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
-            "DATA_TRANSFORMATION_BUCKET": "data-transformation",
-            "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
-            "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
-            "TREX__SQL__PORT": "${TREX__SQL__PORT:-5432}",
-            "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
-            "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-            "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}",
-            "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
-            "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
-            "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
-            "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json",
-            "PREFECT__LOCAL_DEBUG": ${PREFECT__LOCAL_DEBUG:-false},
-            "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}"
-          },
-          "jupyter-gateway": {},
-          "mlflow": {},
-          "strategus-analysis": {
-            "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-            "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
-            "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
-            "PG_PORT": "${PG_PORT:-5432}",
-            "PG_DATABASE": "${PG_DB_NAME:-alp}",
-            "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
-            "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-            "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
-            "PG_SCHEMA": "strategus",
-            "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-            "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
-          }
-        }
       SERVICE_ROUTES: |-
         {
         "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
@@ -500,9 +113,10 @@ services:
         "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
         "paConfig": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/pa-config-svc",
         "trex": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
-        "d2e-webapi": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/d2e-webapi",
         "queryGen": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
+        "jobplugins": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
         "portalServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal",
+        "dataset": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/dataset",
         "usermgmt": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/usermgmt/api",
         "strategus-analysis": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
         "terminology": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/terminology",
@@ -511,10 +125,12 @@ services:
         "minio": "",
         "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
         "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
+        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
+        "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
+        "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
-        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
         "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
@@ -543,6 +159,10 @@ services:
       IDP__RELYING_PARTY: ${IDP__RELYING_PARTY}
       LOGTO__AUDIENCES: https://alp-default
       LOGTO__CLIENT_ID: ${LOGTO__ALP_APP__CLIENT_ID}
+      LOGTO__ALP_SVC__CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
+      LOGTO__ALP_SVC__CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
+      LOGTO__ALP_DATA__CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
+      LOGTO__ALP_DATA__CLIENT_SECRET: ${LOGTO__ALP_DATA__CLIENT_SECRET}
       LOGTO__CLIENT_SECRET: ${LOGTO__ALP_APP__CLIENT_SECRET}
       LOGTO__ISSUER: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc
       LOGTO__RESOURCE_API: https://alp-default
@@ -550,6 +170,8 @@ services:
       LOGTO__SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
       LOGTO__SVC_CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
       LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
+      LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
+      LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       NODE_ENV: development
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
@@ -568,8 +190,27 @@ services:
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-credentials.json
+      PG_ADMIN_PASSWORD: ${PG_ADMIN_PASSWORD}
+      PG_WRITE_PASSWORD: ${PG_WRITE_PASSWORD}
+      PG_STUDY_RESULTS_READ_PASSWORD: ${PG_STUDY_RESULTS_READ_PASSWORD}
+      PG_STUDY_RESULTS_ADMIN_PASSWORD: ${PG_STUDY_RESULTS_ADMIN_PASSWORD}
+      SUPABASE_STORAGE_JWT_TOKEN: ${SUPABASE_STORAGE_JWT_TOKEN}
+      SUPABASE_STORAGE_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET}
+      PERSEUS__FILES_MANAGER_HOST: trex
+      isHttpTestRun: ${isHttpTestRun:-false}
+      isTestEnv: ${isTestEnv:-false}
+      local: ${local}
+      TESTSCHEMA: ${TESTSCHEMA}
+      REFRESH_TOKEN__ENDPOINT: ${REFRESH_TOKEN__ENDPOINT}
+      REFRESH_TOKEN__CLIENT_ID: ${REFRESH_TOKEN__CLIENT_ID}
+      REFRESH_TOKEN__CLIENT_SECRET: ${REFRESH_TOKEN__CLIENT_SECRET}
+      EXCLUDE_ANALYSIS_IDS: ${EXCLUDE_ANALYSIS_IDS}
+      DC_HANA_READ_ROLE: ${DC_HANA_READ_ROLE}
+      MINIO__SECRET_KEY: ${MINIO__SECRET_KEY}
+      DEMO__DB_PASSWORD: ${DEMO__DB_PASSWORD:-mypass}
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
+      
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
@@ -1064,117 +705,6 @@ services:
       POSTGRES_DB: ${PG_DB_NAME:-alp}
       POSTGRES_PASSWORD: ${PG_SUPER_PASSWORD}
 
-  alp-minerva-s3:
-    command:
-      - server
-      - /data
-      - --console-address
-      - :9090
-    container_name: &c19 ${PROJECT_NAME:-d2e}-minerva-s3
-    healthcheck:
-      interval: 20s
-      retries: 30
-      start_period: 60s
-      test:
-        - CMD
-        - curl
-        - -I
-        - http://${PROJECT_NAME:-d2e}-minerva-s3:9000/minio/health/live
-      timeout: 30s
-    hostname: ${PROJECT_NAME:-d2e}-minerva-s3.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: minio/minio:RELEASE.2023-10-25T06-33-25Z
-    logging:
-      options:
-        tag: *c19
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    volumes:
-      - minio-data-1:/data
-    environment:
-      <<:
-        - *x-tls
-      MINIO_ROOT_PASSWORD: ${MINIO__SECRET_KEY}
-      MINIO_ROOT_USER: ${MINIO__ACCESS_KEY:-root}
-    profiles: [minio]
-
-  alp-minio-post-init:
-    container_name: &c23 ${PROJECT_NAME:-d2e}-minio-post-init
-    depends_on:
-      alp-minerva-s3:
-        condition: service_healthy
-    hostname: ${PROJECT_NAME:-d2e}-minio-post-init.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: minio/mc
-    logging:
-      options:
-        tag: *c23
-    networks:
-      alp:
-        priority: 20
-    entrypoint: |
-      /bin/sh -c " /usr/bin/mc config host add myminio http://${PROJECT_NAME:-d2e}-minerva-s3:9000 ${MINIO__ACCESS_KEY:-root} ${MINIO__SECRET_KEY};
-      /usr/bin/mc mb -p myminio/dataflow-adhoc-flows;
-      /usr/bin/mc mb -p myminio/flows/results;
-      /usr/bin/mc mb -p myminio/dicom-images;
-      /usr/bin/mc policy download myminio/dataflow-adhoc-flows;
-      exit 0;
-      "
-    profiles: [minio]
-
-  alp-cachedb:
-    container_name: &c30 ${PROJECT_NAME:-d2e}-cachedb
-    hostname: ${PROJECT_NAME:-d2e}-cachedb.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-cachedb:${DOCKER_TAG_NAME:-develop}
-    platform: linux/amd64
-    depends_on:
-      trex:
-        condition: service_healthy
-      alp-logto-post-init:
-        condition: service_completed_successfully
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    healthcheck:
-      interval: 20s
-      retries: 5
-      start_period: 120s
-      test: ["CMD", "python", "src/utils/healthcheck.py", "41191"]
-      timeout: 10s
-    logging:
-      options:
-        tag: *c30
-    networks:
-      alp:
-        priority: 20
-      data:
-        priority: 10
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    volumes:
-      - cachedb-data-1:/home/docker/duckdb_data
-      - cdw-config-cachedb-data-1:/home/docker/cdw_svc/duckdb_data # Volume for dynamically generated cdw-config duckdb file (refer to docs/3-configure/9-create-cdw-config-duckdb-file.md for information)
-    environment:
-      <<:
-        - *x-converter
-        - *x-routes
-        - *x-tls
-        - *cachedb
-        - *python-internal-ssl
-      DUCKDB__DATA_FOLDER: /home/docker/duckdb_data
-      CDW_SVC_DUCKDB_DATA_FOLDER: /home/docker/cdw_svc/duckdb_data
-      CDW_SVC_BUILT_IN_DUCKDB_DATA_FOLDER: /home/docker/cdw_svc/built_in_duckdb_data
-      DUCKDB_EXTENSIONS_FOLDER: /home/docker/duckdb_extensions
-      IDP__ALP_DATA_CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
-      LOCAL_DEBUG: "false"
-    deploy:
-      resources:
-        limits:
-          cpus: ${D2E_CPU_LIMIT:-2}
-          memory: ${D2E_MEMORY_LIMIT:-7G}
-    profiles: [cachedb]
-
   demodb:
     image: ohdsi/broadsea-atlasdb:2.2.0
     container_name: ${PROJECT_NAME:-d2e}-demodb
@@ -1449,20 +979,6 @@ services:
         app: "enterprise-gateway"
         component: "enterprise-gateway"
 
-  # fhir-fe-server:
-  #     container_name: &c29 ${PROJECT_NAME:-d2e}-minerva-fhir-fe-server-${BASE_PORT:-1}
-  #     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-fhir-fe-server:${DOCKER_TAG_NAME:-develop}
-  #     platform: linux/amd64
-  #     logging:
-  #       options:
-  #         tag: *c29
-  #     depends_on:
-  #       fhir-server:
-  #         condition: service_started
-  #     networks:
-  #       alp:
-  #     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-  #     profiles: [fhir]
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.0.0
     container_name: &c31 ${PROJECT_NAME:-d2e}-mlflow
