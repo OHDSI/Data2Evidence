@@ -13,7 +13,7 @@ from .types import DqdOptionsType, DqdParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
-from _shared_flow_utils.rutils import set_trex_env_var, py_bool_to_r
+from _shared_flow_utils.rutils import set_trex_env_var
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMode
 
 os.environ["plugin_name"] = "dqd_plugin"
