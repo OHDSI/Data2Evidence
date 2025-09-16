@@ -21,6 +21,17 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
+  // Cleanup if the datasets already exist
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.locator('tr', { hasText: datasetNewSchema }).getByRole('button', { name: 'Select action' }).click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  await page.locator('tr', { hasText: datasetExistingSchema }).getByRole('button', { name: 'Select action' }).click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  await expect(page.locator('tbody')).not.toContainText(datasetNewSchema)
+  await expect(page.locator('tbody')).not.toContainText(datasetExistingSchema)
+
   // Add new dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page.getByRole('button', { name: 'Add dataset' }).click()
@@ -70,6 +81,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill('new_test_dataset_2')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await page.waitForTimeout(1000)
+  await page.reload()
   await expect(page.locator('tbody').getByText(datasetExistingSchema)).toBeVisible({ timeout: 1000 })
 
   // Clean up
