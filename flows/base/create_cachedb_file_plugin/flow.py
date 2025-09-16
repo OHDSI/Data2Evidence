@@ -56,6 +56,7 @@ def create_cache_flow(options: CreateCacheOptions):
 
     if options.use_trex_connection:
         # -------------------- Trex connection to cache --------------------
+        # Todo: Unify with trexdao
         trex_conn = connect(
             host=Variable.get("trex_sql_host"),
             port=Variable.get("trex_sql_port"),
