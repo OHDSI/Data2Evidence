@@ -55,29 +55,84 @@ const props = defineProps<{
 const bookmarksDisplaySorted = computed(() => {
   let filtered = [...props.bookmarksDisplay]
 
-  // Apply search filter
+  // Apply search filter with smart scoring
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(bookmarkDisplay => {
-      const displayName = bookmarkDisplay.displayName?.toLowerCase() || ''
-      const cohortName = bookmarkDisplay.cohortDefinition?.cohortDefinitionName?.toLowerCase() || ''
-      const atlasName = bookmarkDisplay.atlasCohortDefinition?.name?.toLowerCase() || ''
-      const username = bookmarkDisplay.bookmark?.username?.toLowerCase() ||
-                      bookmarkDisplay.atlasCohortDefinition?.username?.toLowerCase() || ''
 
-      return displayName.includes(query) ||
-             cohortName.includes(query) ||
-             atlasName.includes(query) ||
-             username.includes(query)
+    // Score each bookmark for relevance (highest priority wins)
+    const scoredBookmarks = filtered.map(bookmarkDisplay => {
+      let score = 0
+
+      // ID matches (highest priority - score 100)
+      const bookmarkId = bookmarkDisplay.bookmark?.id?.toString() || ''
+      const cohortId = bookmarkDisplay.cohortDefinition?.id?.toString() || ''
+      const atlasId = bookmarkDisplay.atlasCohortDefinition?.id?.toString() || ''
+
+      if (bookmarkId.includes(query) || cohortId.includes(query) || atlasId.includes(query)) {
+        score = 100
+      } else {
+        // Name matches (high priority - score 50)
+        const displayName = bookmarkDisplay.displayName?.toLowerCase() || ''
+        const cohortName = bookmarkDisplay.cohortDefinition?.cohortDefinitionName?.toLowerCase() || ''
+        const atlasName = bookmarkDisplay.atlasCohortDefinition?.name?.toLowerCase() || ''
+
+        if (displayName.includes(query) || cohortName.includes(query) || atlasName.includes(query)) {
+          score = 50
+        } else {
+          // Description matches (medium priority - score 25)
+          const description = bookmarkDisplay.cohortDefinition?.description?.toLowerCase() || ''
+
+          if (description.includes(query)) {
+            score = 25
+          } else {
+            // Username matches (lower priority - score 10)
+            const username =
+              bookmarkDisplay.bookmark?.username?.toLowerCase() ||
+              bookmarkDisplay.atlasCohortDefinition?.username?.toLowerCase() ||
+              ''
+
+            if (username.includes(query)) {
+              score = 10
+            }
+          }
+        }
+      }
+
+      return { bookmarkDisplay, score }
+    })
+
+    // Filter out items with score 0 and sort by score (descending), then by date
+    filtered = scoredBookmarks
+      .filter(item => item.score > 0)
+      .sort((a, b) => {
+        // Primary sort: by score (descending)
+        if (a.score !== b.score) {
+          return b.score - a.score
+        }
+        // Secondary sort: by date (most recent first)
+        const dateA =
+          a.bookmarkDisplay.bookmark?.dateModified ||
+          a.bookmarkDisplay.atlasCohortDefinition?.updatedOn ||
+          a.bookmarkDisplay.cohortDefinition?.createdOn
+        const dateB =
+          b.bookmarkDisplay.bookmark?.dateModified ||
+          b.bookmarkDisplay.atlasCohortDefinition?.updatedOn ||
+          b.bookmarkDisplay.cohortDefinition?.createdOn
+        return new Date(dateB).getTime() - new Date(dateA).getTime()
+      })
+      .map(item => item.bookmarkDisplay)
+  }
+
+  // For items with same search score, sort by date
+  if (!searchQuery.value.trim()) {
+    return filtered.sort((a, b) => {
+      const dateToUseA = a.bookmark?.dateModified || a.atlasCohortDefinition?.updatedOn || a.cohortDefinition.createdOn
+      const dateToUseB = b.bookmark?.dateModified || b.atlasCohortDefinition?.updatedOn || b.cohortDefinition.createdOn
+      return new Date(dateToUseB).getTime() - new Date(dateToUseA).getTime()
     })
   }
 
-  // Sort by date
-  return filtered.sort((a, b) => {
-    const dateToUseA = a.bookmark?.dateModified || a.atlasCohortDefinition?.updatedOn || a.cohortDefinition.createdOn
-    const dateToUseB = b.bookmark?.dateModified || b.atlasCohortDefinition?.updatedOn || b.cohortDefinition.createdOn
-    return new Date(dateToUseB).getTime() - new Date(dateToUseA).getTime()
-  })
+  return filtered
 })
 
 // Pagination state
@@ -563,8 +618,8 @@ onErrorCaptured((err, instance, info) => {
       "
     >
       <!-- Search Bar -->
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="color: #666; font-size: 14px;">Search:</span>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="color: #666; font-size: 14px">Search:</span>
         <input
           v-model="searchQuery"
           type="text"
@@ -582,7 +637,7 @@ onErrorCaptured((err, instance, info) => {
       </div>
 
       <!-- Pagination Controls -->
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px">
         <span style="margin-right: 15px">Items per page:</span>
         <select
           v-model="itemsPerPage"
