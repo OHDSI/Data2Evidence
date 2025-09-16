@@ -142,7 +142,7 @@ const setupWebapiRoutes = app => {
     return res.send()
   })
 
-  app.get('/analytics-svc/api/services/bookmark', async (req, res) => {
+  app.get('/d2e-webapi/cohortdefinition', async (req, res) => {
     const cacheKey = CACHE_KEYS.COHORT_DEFINITIONS
     logRequest(req)
     let data = cache[cacheKey]
@@ -155,29 +155,21 @@ const setupWebapiRoutes = app => {
     for (let i = 0; i < MAX_COHORT_DEFINITIONS; i += 1) {
       const d = data[i]
       mappedData[i] = {
-        id: d.id,
-        name: d.name,
-        username: 'current_user',
-        createdOn: new Date(d.createdDate).toISOString(),
-        updatedOn: new Date(d.createdDate).toISOString(),
+        createdBy: 'current_user',
+        modifiedDate: d.createdDate,
+        ...d,
       }
     }
-    return res.send({
-      atlasCohortDefinitions: [
-        {
-          id: 1,
-          name: 'Atlas Cohort',
-          username: 'current_user',
-          createdOn: '2025-06-19T21:08:09.028Z',
-          updatedOn: '2025-06-19T21:08:09.028Z',
-        },
-        ...mappedData,
-      ],
-      bookmarks: [],
-      // we will not need this for pa-atlas. Info on the generation runs can be found at
-      // https://atlas-demo.ohdsi.org/WebAPI/cohortdefinition/1794229/info
-      materializedCohorts: [],
-    })
+    return res.send([
+      {
+        id: 1,
+        name: 'Atlas Cohort',
+        createdBy: 'current_user',
+        createdDate: 1750334889028,
+        modifiedDate: 1750334889028,
+      },
+      ...mappedData,
+    ])
   })
 
   app.get(
