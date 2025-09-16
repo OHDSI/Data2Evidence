@@ -30,6 +30,7 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
+import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiveIcon.vue'
 import { loadAtlasCohortDefinition } from '../utils/QueryFilterModern/loadAtlasCohortDefinition'
 import * as types from '../../store/mutation-types'
 import { useCriteriaManager } from '../composables/useCriteriaManager'
@@ -70,6 +71,11 @@ const isInvalidName = ref(false)
 const maxLength = 40
 
 const isLoading = ref(false)
+
+// Action bar state
+const selectedDatasetForGeneration = ref('SYNPUF1K')
+const patientCount = ref<number | null>(null)
+const isGeneratingCohort = ref(false)
 
 const tagInputModel = computed<TagInputModel>(() => {
   try {
@@ -145,6 +151,16 @@ const hasExceededLength = computed(() => {
 const debug = computed(() => {
   const portalAPI = getPortalAPI()
   return portalAPI?.debug
+})
+
+// Action bar computed properties
+const displayCohortName = computed(() => {
+  const activeBookmark = store?.getters?.getActiveBookmark
+  return activeBookmark?.bookmarkname || activeBookmark?.name || 'Untitled Cohort'
+})
+
+const displayPatientCount = computed(() => {
+  return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
 })
 
 // Initialize criteria manager composable
@@ -732,6 +748,55 @@ const copyToClipboard = async (text: string, label: string) => {
     console.log(`${label} copied to clipboard (fallback method)`)
   }
 }
+
+// Action bar methods
+const generateCohort = async () => {
+  try {
+    console.log('jer: Starting cohort generation')
+    isGeneratingCohort.value = true
+    patientCount.value = null
+
+    // Get the active bookmark
+    const activeBookmark = store?.getters?.getActiveBookmark
+    if (!activeBookmark?.bmkId) {
+      console.error('jer: No active bookmark found for cohort generation')
+      return
+    }
+
+    const atlasDefinitionId = activeBookmark.bmkId
+    const datasetId = selectedDatasetForGeneration.value
+
+    console.log(`jer: Generating cohort for Atlas definition ID: ${atlasDefinitionId}, Dataset: ${datasetId}`)
+
+    // Call the same API endpoint as AddCohort component
+    const response = await store.dispatch('fireCreateAtlasMaterializedCohortQuery', {
+      url: `/d2e-webapi/cohortdefinition/${atlasDefinitionId}/generate/${datasetId}`,
+    })
+
+    console.log('jer: Cohort generation response:', response)
+
+    // Extract patient count from response if available
+    if (response && response.patientCount !== undefined) {
+      patientCount.value = response.patientCount
+      console.log(`jer: Patient count updated: ${response.patientCount}`)
+    } else if (response && response.count !== undefined) {
+      patientCount.value = response.count
+      console.log(`jer: Patient count updated: ${response.count}`)
+    } else {
+      console.log('jer: No patient count in response, keeping current value')
+    }
+  } catch (error) {
+    console.error('jer: Error generating cohort:', error)
+    patientCount.value = null
+  } finally {
+    isGeneratingCohort.value = false
+    console.log('jer: Cohort generation completed')
+  }
+}
+
+const handleFeedback = () => {
+  console.log('jer: Feedback button clicked')
+}
 </script>
 
 <template>
@@ -742,9 +807,40 @@ const copyToClipboard = async (text: string, label: string) => {
     <!-- Main Query Filter Content Container -->
     <div class="query-filter-main-container">
       <div class="query-filter-header-container">
-        <div class="header-container-right"></div>
-        <div class="header-container-left">
-          <div class="left-button-group">
+        <!-- Left: Cohort Name -->
+        <div class="header-section-left">
+          <div class="cohort-name-display">
+            <span class="cohort-name-label">Cohort Name:</span>
+            <span class="cohort-name-value">{{ displayCohortName }}</span>
+          </div>
+        </div>
+
+        <!-- Middle: Generate Cohort Controls -->
+        <div class="header-section-middle">
+          <div class="generate-cohort-controls">
+            <div class="dataset-selector">
+              <span class="dataset-label">Dataset:</span>
+              <select v-model="selectedDatasetForGeneration" class="dataset-dropdown" :disabled="isGeneratingCohort">
+                <option value="SYNPUF1K">SYNPUF1K</option>
+              </select>
+            </div>
+
+            <button @click="generateCohort" :disabled="isGeneratingCohort" class="btn btn-primary generate-cohort-btn">
+              <GenerateCohortActiveIcon class="btn-icon" />
+              {{ isGeneratingCohort ? 'Generating...' : 'Generate Cohort' }}
+            </button>
+
+            <div class="patient-count-display">
+              <span class="patient-count-label">Patient Count:</span>
+              <span class="patient-count-value">{{ displayPatientCount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Feedback & Save -->
+        <div class="header-section-right">
+          <div class="right-button-group">
+            <button @click="handleFeedback" class="btn btn-outline-primary feedback-btn">Feedback</button>
             <ButtonMaterial @button-click="openSaveDialog">Save</ButtonMaterial>
           </div>
         </div>
