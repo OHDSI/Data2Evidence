@@ -31,9 +31,6 @@ def dqd_plugin(options: DqdOptionsType):
         use_cache_db=options.use_cache_db,
         database_code=options.databaseCode,
     )
-    
-    person_count = dbdao.get_table_row_count(options.schemaName, "person")
-    logger.info(f"Person count in {options.schemaName}.person: {person_count}")
 
     # Todo: Update implementation if Hana uses trex
     use_trex_connection = (
