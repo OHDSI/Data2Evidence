@@ -27,6 +27,7 @@ from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.WebAPI import WebAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects
+from _shared_flow_utils.rutils import set_trex_env_var
 
 os.environ['plugin_name'] = 'strategus_plugin'
 class Node:
@@ -1290,9 +1291,3 @@ def getRCdmExecutionSettings(settings) -> str:
         except Exception as e:
             print('Error: ', e)
             raise RuntimeError('Execution of strategus has failed')
-        
-def set_trex_env_var(use_trex_connection: bool):
-    if use_trex_connection:
-        ro.r("Sys.setenv('trex_connection' = 'true')")
-    else:
-        ro.r("Sys.setenv('trex_connection' = 'false')")
