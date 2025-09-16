@@ -6,16 +6,16 @@ library(CohortGenerator)
 #' @param cohortJson JSON string of the cohort definition
 #' @param schemaName Name of the CDM schema
 #' @param cohortName Name of the cohort
-#' @param cohortId ID of the cohort
+#' @param cohortId int ID of the cohort
 #' @param vocabSchemaName Name of the vocabulary schema
 #' @return None
 
-create_cohort <- function(cohortJson, schemaName, vocabSchemaName, cohortName, cohortId) {
-    cohortJson <- '{cohort_json_expression}'
-    schemaName <- '{schema_name}'
-    vocabSchemaName <- '{vocab_schema_name}'
-    cohortName <- '{cohort_name}'
-    cohortId <- {cohort_definition_id}
+create_cohort <- function(
+    cohortJson, 
+    schemaName, 
+    vocabSchemaName, 
+    cohortName, 
+    cohortId) {
     
     cat("Generating cohort sql from cohort expression from json")
     cohortExpression <- CirceR::cohortExpressionFromJson(cohortJson)
