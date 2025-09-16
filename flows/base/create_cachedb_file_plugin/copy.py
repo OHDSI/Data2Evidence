@@ -6,8 +6,7 @@ from prefect import task
 from prefect.logging import get_run_logger
 
 from .fts import create_fts_index
-from .config import CopyParameters, QueryColumns
-
+from .types import CopyParameters, QueryColumns
 
 from .utils import execute_statement, set_bigquery_global_settings
 from .filter import filter_tables, filter_columns, _CDM_COLUMN_FILTER_MAP

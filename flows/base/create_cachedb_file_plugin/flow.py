@@ -7,8 +7,7 @@ from .fts import create_fts_index
 from .versioninfo import update_dataset_metadata
 
 from .copy import copy_all_schemas, create_schema_tables, create_schema_if_not_exists
-from .config import CreateCacheOptions, CreateCDWValidationConfig, CacheFlowAction, CopyParameters
-
+from .types import CreateCacheOptions, CreateCDWValidationConfig, CacheFlowAction, CopyParameters
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects

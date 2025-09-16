@@ -2,7 +2,7 @@ from prefect import task
 from prefect.logging import get_run_logger
 
 from .utils import get_tables_for_fts, get_document_identifier, execute_statement
-from .config import CopyParameters
+from .types import CopyParameters
 
 @task(log_prints=True, task_run_name="create_fts_index_{copy_params.target_schema}")
 def create_fts_index(

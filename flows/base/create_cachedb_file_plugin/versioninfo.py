@@ -1,7 +1,7 @@
 from prefect import task
 from prefect.logging import get_run_logger
 
-from .config import CreateCacheOptions
+from .types import CreateCacheOptions
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
