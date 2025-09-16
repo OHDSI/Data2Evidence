@@ -46,6 +46,8 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
+const isLocal = computed(() => getPortalAPI()?.isLocal)
+
 const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
   compareCohortsSelectionList: Bookmark[]
@@ -537,6 +539,7 @@ onErrorCaptured((err, instance, info) => {
           "
         >
           <div
+            v-if="!isLocal"
             :class="`icon-button ${
               ['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
@@ -551,6 +554,7 @@ onErrorCaptured((err, instance, info) => {
             />
           </div>
           <div
+            v-if="!isLocal"
             :class="`icon-button ${
               ['D', 'M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
@@ -573,6 +577,7 @@ onErrorCaptured((err, instance, info) => {
           </div>
 
           <div
+            v-if="!isLocal"
             :class="`icon-button ${
               ['M', 'A+M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
