@@ -32,14 +32,25 @@
                 "title": "options"
               }
             },
-            "required": ["options"],
+            "required": [
+              "options"
+            ],
             "definitions": {
               "DataloadOptions": {
                 "properties": {
-                  "database_code": { "title": "Database Code", "type": "string" },
-                  "schema_name": { "title": "Schema Name", "type": "string" }
+                  "database_code": {
+                    "title": "Database Code",
+                    "type": "string"
+                  },
+                  "schema_name": {
+                    "title": "Schema Name",
+                    "type": "string"
+                  }
                 },
-                "required": ["database_code", "schema_name"],
+                "required": [
+                  "database_code",
+                  "schema_name"
+                ],
                 "title": "DataloadOptions",
                 "type": "object"
               }
@@ -69,8 +80,7 @@
             "definitions": {
               "CacheFlowAction": {
                 "enum": [
-                  "create_cache",
-                  "create_datamart",
+                  "create_datamart_cache",
                   "get_version_info"
                 ],
                 "title": "CacheFlowAction",
@@ -149,7 +159,6 @@
                     "anyOf": [
                       {
                         "items": {
-                          "additionalProperties": true,
                           "type": "object"
                         },
                         "type": "array"
@@ -179,7 +188,7 @@
                         "type": "null"
                       }
                     ],
-                    "default": "",
+                    "default": null,
                     "title": "Timestamp"
                   },
                   "tableConfig": {
@@ -194,6 +203,7 @@
                         "type": "null"
                       }
                     ],
+                    "default": null,
                     "title": "Tableconfig"
                   },
                   "patientsToBeCopied": {
@@ -208,6 +218,7 @@
                         "type": "null"
                       }
                     ],
+                    "default": null,
                     "title": "Patientstobecopied"
                   }
                 },
