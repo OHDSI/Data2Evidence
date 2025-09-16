@@ -14,6 +14,8 @@ import {
 import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
 
 export class DataCharacterizationService {
+  private flowRunNamePrefix: string = "DC";
+
   public async getDataCharacterizationResults(
     flowRunId: string,
     sourceKey: string,
@@ -73,7 +75,8 @@ export class DataCharacterizationService {
     const flowRuns = await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
-      PrefectTagNames.DATA_CHARACTERIZATION
+      PrefectTagNames.DATA_CHARACTERIZATION,
+      this.flowRunNamePrefix
     );
 
     if (flowRuns.length === 0) {
@@ -96,7 +99,8 @@ export class DataCharacterizationService {
     const flowRuns = await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
-      PrefectTagNames.DATA_CHARACTERIZATION
+      PrefectTagNames.DATA_CHARACTERIZATION,
+      this.flowRunNamePrefix
     );
     return flowRuns.find(
       (run) => run.parameters.options.releaseId === releaseId.toString()
@@ -141,7 +145,7 @@ export class DataCharacterizationService {
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
 
-    const name = `${databaseCode}.${schemaName}`;
+    const name = `${this.flowRunNamePrefix}_${databaseCode}.${schemaName}`;
     const parameters = {
       options: {
         schemaName,

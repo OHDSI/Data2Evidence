@@ -64,6 +64,11 @@ export enum FLOW_RUN_STATE_TYPES {
   "CANCELLED" = "CANCELLED",
   "FAILED" = "FAILED",
   "CRASHED" = "CRASHED",
+  "LATE" = "LATE",
+  "AWAITING_RETRY" = "AWAITINGRETRY",
+  "RETRYING" = "RETRYING",
+  "SUSPENDED" = "SUSPENDED",
+  "TIMED_OUT" = "TIMEDOUT",
 }
 
 export enum FlowRunState {

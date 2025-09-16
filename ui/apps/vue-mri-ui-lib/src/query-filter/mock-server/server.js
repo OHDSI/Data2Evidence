@@ -2,8 +2,48 @@ const express = require('express')
 const cors = require('cors')
 const path = require('path')
 const setupWebapiRoutes = require('./webapi-routes')
+const setupWebapiDCRoutes = require('./dc-routes')
 const setupMockRoutes = require('./mock-routes')
 const app = express()
+
+// Simple in-memory rate limiter
+const rateLimiter = {
+  requests: new Map(),
+  windowMs: 1 * 60 * 1000, // 1 minute
+  maxRequests: 100,
+
+  isAllowed(ip) {
+    const now = Date.now()
+    const clientData = this.requests.get(ip)
+
+    if (!clientData) {
+      this.requests.set(ip, { count: 1, resetTime: now + this.windowMs })
+      return true
+    }
+
+    if (now > clientData.resetTime) {
+      this.requests.set(ip, { count: 1, resetTime: now + this.windowMs })
+      return true
+    }
+
+    if (clientData.count >= this.maxRequests) {
+      return false
+    }
+
+    clientData.count++
+    return true
+  },
+
+  middleware() {
+    return (req, res, next) => {
+      const ip = req.ip || req.connection.remoteAddress
+      if (!this.isAllowed(ip)) {
+        return res.status(429).json({ error: 'Too many requests from this IP' })
+      }
+      next()
+    }
+  },
+}
 
 // Global error handlers
 process.on('uncaughtException', error => {
@@ -28,20 +68,24 @@ app.use((req, res, next) => {
 // Setup WebAPI routes from external file (customizable)
 setupWebapiRoutes(app)
 
+// Setup WebAPI DC routes
+setupWebapiDCRoutes(app)
+
 // Setup mock routes from external file
 setupMockRoutes(app)
 
 // Serve static files from PA-Atlas build
-app.use('/mri', express.static(path.join(__dirname, 'mri')))
-app.use('/js', express.static(path.join(__dirname, 'mri', 'js')))
-app.use('/css', express.static(path.join(__dirname, 'mri', 'css')))
-app.use('/img', express.static(path.join(__dirname, 'mri', 'img')))
-app.use('/fonts', express.static(path.join(__dirname, 'mri', 'fonts')))
+app.use('/mri', express.static(path.join(__dirname, 'static', 'mri')))
+app.use('/js', express.static(path.join(__dirname, 'static', 'mri', 'js')))
+app.use('/css', express.static(path.join(__dirname, 'static', 'mri', 'css')))
+app.use('/img', express.static(path.join(__dirname, 'static', 'mri', 'img')))
+app.use('/fonts', express.static(path.join(__dirname, 'static', 'mri', 'fonts')))
+app.use('/ui', express.static(path.join(__dirname, 'static', 'ui5', 'resources')))
 
 // Serve authenticate.js with modifications
-app.get('/authenticate.js', (_, res) => {
+app.get('/authenticate.js', rateLimiter.middleware(), (_, res) => {
   const fs = require('fs')
-  const authPath = path.join(__dirname, 'mri', 'authenticate.js')
+  const authPath = path.join(__dirname, 'static', 'mri', 'authenticate.js')
 
   try {
     let jsContent = fs.readFileSync(authPath, 'utf8')
@@ -59,9 +103,9 @@ app.get('/authenticate.js', (_, res) => {
 })
 
 // Catch-all handler: serve index.html for any unmatched route (SPA fallback)
-app.get('*', (_, res) => {
+app.get('*', rateLimiter.middleware(), (_, res) => {
   const fs = require('fs')
-  const indexPath = path.join(__dirname, 'mri', 'index.html')
+  const indexPath = path.join(__dirname, 'static', 'mri', 'index.html')
 
   try {
     let htmlContent = fs.readFileSync(indexPath, 'utf8')
@@ -72,6 +116,9 @@ app.get('*', (_, res) => {
       /float: left; position: absolute; /g,
       'float: left; position: absolute; visibility: hidden;'
     )
+    if (process.env.DEBUG) {
+      htmlContent = htmlContent.replace(/debug: false/g, 'debug: true')
+    }
 
     res.setHeader('Content-Type', 'text/html')
     res.send(htmlContent)
@@ -114,6 +161,10 @@ app.listen(PORT, () => {
   console.log('  🔄 GET /analytics-svc/api/services/bookmark (placeholder)')
   console.log('  🔄 GET /d2e-webapi/cohortdefinition/1/generate/4f05abcf-36d6-4e88-a44d-ad1ee3a0b06e (placeholder)')
   console.log('  🔄 DELETE /d2e-webapi/cohortdefinition/1 (placeholder)')
+
+  console.log(`\nWebAPI proxy endpoints:`)
+  console.log('  🔄 GET /cdmresults/:dataSource/:sourceKey')
+  console.log('  🔄 GET /cdmresults/:dataSource/:sourceKey/:conceptId')
 
   console.log(`Mock server running on port ${PORT}`)
   console.log(`Server URL: ${SERVER_URL}\n`)

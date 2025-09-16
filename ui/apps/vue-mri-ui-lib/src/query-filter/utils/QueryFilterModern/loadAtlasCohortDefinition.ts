@@ -305,7 +305,7 @@ export const loadAtlasCohortDefinition = async (
           `Found existing concept set by name: ${existingConceptSetByName.text} (ID: ${existingConceptSetByName.value})`
         )
         // Set conceptSetId for Atlas conversion mapping
-        atlasConceptSet.conceptSetId = parseInt(existingConceptSetByName.value)
+        atlasConceptSet.conceptSetId = parseInt(existingConceptSetByName.value, 10)
         return existingConceptSetByName
       }
     }
