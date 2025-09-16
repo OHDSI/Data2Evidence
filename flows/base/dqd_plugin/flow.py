@@ -31,13 +31,16 @@ def dqd_plugin(options: DqdOptionsType):
         use_cache_db=options.use_cache_db,
         database_code=options.databaseCode,
     )
+    
+    person_count = dbdao.get_table_row_count(options.schemaName, "person")
+    logger.info(f"Person count in {options.schemaName}.person: {person_count}")
 
     # Todo: Update implementation if Hana uses trex
-    use_trex_connection = (
-        False
-        if dbdao.dialect == SupportedDatabaseDialects.HANA
-        else options.use_trex_connection
-    )
+    # use_trex_connection = (
+    #     False
+    #     if dbdao.dialect == SupportedDatabaseDialects.HANA
+    #     else options.use_trex_connection
+    # )
 
     r_connection_string = dbdao.get_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
@@ -51,7 +54,7 @@ def dqd_plugin(options: DqdOptionsType):
         outputFolder=output_folder,
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
-        use_trex_connection=use_trex_connection,
+        use_trex_connection=options.use_trex_connection,
     )
 
     if (
@@ -64,7 +67,7 @@ def dqd_plugin(options: DqdOptionsType):
         if schema_from_api:
             dqd_parameters.materializedCohortDatabaseSchema = schema_from_api
 
-    execute_dqd(dqd_parameters, flow_run_id)
+    # execute_dqd(dqd_parameters, flow_run_id)
 
 
 @task(log_prints=True, task_run_name="execute_dqd_{dqd_params.schemaName}")

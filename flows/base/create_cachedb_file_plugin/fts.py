@@ -74,7 +74,7 @@ def create_fts_index(
                 ),
             )
             logger.info(
-                f"Auto-increment column '{config_document_identifier}' added to '{target_schema}.{vocab_table}'."
+                f"Auto-increment column '{config_document_identifier}' added to '{target_database}'.'{target_schema}'.'{vocab_table}'."
             )
 
         fts_creation_sql = get_duckdb_fts_creation_sql(
@@ -85,7 +85,7 @@ def create_fts_index(
             columns=existing_columns,
         )
         logger.debug(
-            f"FTS creation SQL for '{target_schema}.{vocab_table}': {fts_creation_sql}"
+            f"FTS creation SQL for '{target_schema}'.'{vocab_table}': {fts_creation_sql}"
         )
 
         fts_creation_time = execute_statement(write_conn, fts_creation_sql)
@@ -110,7 +110,7 @@ def get_duckdb_fts_creation_sql(
             {", ".join(columns)},
             stemmer='english', 
             stopwords='english',
-            ignore='(\\.|[^a-z!@#$%^&*()\-`.+,\\\/"])+', 
+            ignore='(\\.|[^a-z0-9!@#$%^&*()\-`.+,\\\/"])+', 
             strip_accents=1, 
             lower=1, 
             overwrite=1)

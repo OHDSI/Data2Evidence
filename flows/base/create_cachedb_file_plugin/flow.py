@@ -39,9 +39,8 @@ def create_cache_flow(options: CreateCacheOptions):
     check_supported_dialects(dbdao.dialect)
 
     # Load Google service account credentials for BigQuery access.
-    # Todo: check if needed for trex
     if dbdao.dialect == SupportedDatabaseDialects.BIGQUERY.value:
-        load_service_account_credentials()
+       load_service_account_credentials()
 
     copy_params = CopyParameters(
         source_database=f"{options.database_code}__srcdb",
@@ -73,8 +72,8 @@ def create_cache_flow(options: CreateCacheOptions):
         try:
             pg_cursor = trex_conn.cursor()
 
-            # Todo: check if needed for trex
-            load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
+            # Extensions should already be loaded in trex
+            # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
 
             logger.info(
                 f"Creating cache for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
@@ -107,7 +106,7 @@ def create_cache_flow(options: CreateCacheOptions):
             trex_conn.close()
 
     else:
-        # -------------------- Direct connection to cache --------------------
+        # -------------------- Direct file connection to cache --------------------
         duckdb_file_path = resolve_duckdb_file_path(
             options.database_code, Variable.get("duckdb_data_folder")
         )
@@ -150,11 +149,11 @@ def create_cache_flow(options: CreateCacheOptions):
 def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     logger = get_run_logger()
 
-    database_code = options.databaseCode
-    schema_to_copy = options.schemaName
+    database_code = options.database_code
+    schema_to_copy = options.schema_name
     use_cache_db = options.use_cache_db
 
-    duckdb_database_name = "cdw_config_svc_validation_schema"
+    cdw_db = "cdw_config_svc_validation_schema"
 
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
@@ -164,6 +163,18 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
         # Load Google service account credentials for BigQuery access.
         load_service_account_credentials()
 
+    copy_params = CopyParameters(
+        source_database=f"{database_code}__srcdb",
+        target_database=cdw_db,
+        source_schema=schema_to_copy,
+        target_schema=schema_to_copy,
+        table_filter=None,
+        timestamp_filter=None,
+        patient_filter=None,
+        fts_tables=[],
+        limit_statement="LIMIT 0"  # Limit 0 only applied to CDW config
+    )
+
     if options.trex_connection:
         # Connect to cache through Trex Sql Interface assuming duckdb file already exists
         trex_conn = connect(
@@ -171,7 +182,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
             port=Variable.get("trex_sql_port"),
             user=Variable.get("trex_sql_user"),
             password=Secret.load("trex-sql-password").get(),
-            dbname=duckdb_database_name,
+            dbname=cdw_db,
         )
 
         # Turn off transactions
@@ -181,27 +192,26 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
         try:
             pg_cursor = trex_conn.cursor()
 
-            load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
+            # Extensions should already be loaded in trex
+            # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
 
             logger.info(
-                f"Updating schema '{schema_to_copy}' from '{duckdb_database_name}' through Trex Sql Interface..."
+                f"Creating cache for '{schema_to_copy}' schema in '{database_code}' through Trex SQL interface..."
             )
-            create_schema_tables(
-                write_conn=pg_cursor,
-                read_conn=dbdao,
-                schema=schema_to_copy,
-                create_cdw_config=True,
-            )
+
+            create_schema_if_not_exists(pg_cursor, copy_params)
+
+            create_schema_tables(pg_cursor, dbdao, copy_params)
         except Exception as e:
             logger.error(
-                f"Error while updating cached schema '{schema_to_copy}' from '{duckdb_database_name}': {e}"
+                f"Error while creating cache for schema '{schema_to_copy}' for '{database_code}': {e}"
             )
             # trex_conn.rollback()
             raise
         else:
             trex_conn.commit()
             logger.info(
-                f"Cached schema '{schema_to_copy}' successfully updated from '{duckdb_database_name}'."
+                f"Cached schema '{schema_to_copy}' successfully updated from '{cdw_db}'."
             )
         finally:
             if pg_cursor:
@@ -211,19 +221,24 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     else:
         # Direct connection to cache
         duckdb_file_path = resolve_duckdb_file_path(
-            duckdb_database_name, Variable.get("duckdb_data_folder")
+            cdw_db, Variable.get("duckdb_data_folder")
         )
 
         # Creates file at duckdb_file_path if the file does not exist
         with duckdb.connect(duckdb_file_path) as file_conn:
             load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
 
-            create_schema_tables(
-                write_conn=file_conn,
-                read_conn=dbdao,
-                schema=schema_to_copy,
-                create_cdw_config=True,
+            attach_to_source_db(dbdao, file_conn, copy_params.source_database)
+
+            create_schema_if_not_exists(file_conn, copy_params)
+
+            create_schema_tables(file_conn, dbdao, copy_params)
+
+            logger.info(
+                f"Creating FTS index for '{schema_to_copy}' schema in '{cdw_db}' through direct file connection.."
             )
+
+            create_fts_index(file_conn, copy_params)
 
 
 @task(log_prints=True, task_run_name="attach_to_source_db_{read_conn.database_code}")
@@ -283,7 +298,7 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
             case SupportedDatabaseDialects.BIGQUERY.value:
                 logger.debug("Installing and loading BigQuery scan extension.")
                 # Todo: Requires internet connection
-                # write_conn.install_extension("bigquery", repository="community")
+                write_conn.install_extension("bigquery", repository="community")
                 write_conn.load_extension("bigquery")
                 logger.debug("BigQuery scan extension loaded successfully.")
             case _:

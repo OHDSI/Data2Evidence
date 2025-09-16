@@ -169,19 +169,6 @@ def create_schema_tables(
             )
 
 
-def get_source_tables(
-    read_conn, source_schema, snapshot_copy_config, create_cdw_config
-):
-    if snapshot_copy_config and snapshot_copy_config.table_config:
-        table_config_dict = snapshot_copy_config.table_config_to_dict()
-        return table_config_dict.keys(), table_config_dict
-    else:
-        source_tables = read_conn.get_table_names(
-            source_schema, include_views=create_cdw_config
-        )
-        return source_tables, None
-
-
 def copy_table(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, logger) -> int:    
     select_source_statement = create_select_query(copy_params, query_columns)
     
@@ -198,7 +185,7 @@ def copy_table(write_conn: Any, copy_params: CopyParameters, query_columns: Quer
     return rows_copied
 
 
-def copy_indexes(write_conn, read_conn, copy_params: CopyParameters, query_columns: QueryColumns, logger):
+def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, logger):
     table = query_columns.table
     columns_to_copy = query_columns.columns_to_copy
 

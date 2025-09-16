@@ -6,12 +6,16 @@ from .config import CreateCacheOptions
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
-from _shared_flow_utils.update_dataset_metadata import update_metadata_last_fetched_date, OMOP_NON_PERSON_ENTITIES, get_total_entity_count
+from _shared_flow_utils.update_dataset_metadata import (
+    update_entity_value,
+    update_entity_count,
+    update_entity_count_distribution,
+    update_metadata_last_fetched_date,
+    update_total_entity_count)
 
 @task(log_prints=True)
 def update_dataset_metadata(options: CreateCacheOptions):
     logger = get_run_logger()
-
 
     if not options.datasets:
         logger.info("No datasets fetched from portal")
@@ -60,58 +64,77 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
             )
         else:
             error_msg = ""
+            
+            # update last created_date with cdm_release_date or error msg
+            update_entity_value(
+                portal_server_api=portal_server_api,
+                dataset_id=dataset_id,
+                dbdao=dbdao,
+                schema_name=schema_name,
+                table_name="cdm_source",
+                column_name="cdm_release_date",
+                entity_name="created_date",
+                logger=logger
+                )
 
-            # update data model creation date with cdm_release_date or error msg
-            cdm_release_date_query = f"SELECT cdm_release_date FROM {database_code}.{schema_name}.cdm_source LIMIT 1"
-            cdm_release_date = str(dbdao.execute_sql(cdm_release_date_query)[0][0])
-
-            portal_server_api.update_dataset_attributes_table(
-                dataset_id, "created_date", cdm_release_date
-            )
-
-            # update last updated date with cdm_release_date or error msg
-            portal_server_api.update_dataset_attributes_table(
-                dataset_id, "updated_date", cdm_release_date
-            )
+            # update updated_date with cdm_release_date or error msg
+            update_entity_value(
+                portal_server_api=portal_server_api,
+                dataset_id=dataset_id,
+                dbdao=dbdao,
+                schema_name=schema_name,
+                table_name="cdm_source",
+                column_name="cdm_release_date",
+                entity_name="updated_date",
+                logger=logger
+                )
 
             # update patient count or error msg
-            patient_count_query = f"SELECT COUNT(DISTINCT person_id) AS patient_count FROM {database_code}.{schema_name}.person"
-            patient_count = str(dbdao.execute_sql(patient_count_query)[0][0]) 
-            logger.info(f"patient_count: {patient_count}")
-            portal_server_api.update_dataset_attributes_table(
-                dataset_id, "patient_count", patient_count
+            update_entity_count(
+                portal_server_api=portal_server_api,
+                dataset_id=dataset_id,
+                dbdao=dbdao,
+                schema_name=schema_name,
+                table_name="person",
+                column_name="person_id",
+                entity_name="patient_count",
+                logger=logger,
+                distinct_count=False
+                )
+            
+            # update entity_count_distribution or error msg
+            entity_count_distribution = update_entity_count_distribution(
+                portal_server_api=portal_server_api,
+                dataset_id=dataset_id,
+                dbdao=dbdao,
+                schema_name=schema_name,
+                logger=logger,
+                distinct_count=False
             )
-
-            entity_count_distribution = {}
-            for table in OMOP_NON_PERSON_ENTITIES:
-                query = f"SELECT COUNT(*) FROM {database_code}.{schema_name}.{table}"
-                try:
-                    count = str(dbdao.execute_sql(query)[0][0])
-                except Exception as e:
-                    logger.error(f"Error fetching count for {table}: {e}")
-                    count = "0"
-                entity_count_distribution[table] = count
-
-            portal_server_api.update_dataset_attributes_table(
-                dataset_id, "entity_count_distribution", entity_count_distribution
-            )
-
-            total_entity_count = get_total_entity_count(entity_count_distribution, logger)
-
-            portal_server_api.update_dataset_attributes_table(
-                dataset_id, "total_entity_count", total_entity_count
+            
+            # update total_entity_count or error msg
+            update_total_entity_count(
+                portal_server_api=portal_server_api,
+                dataset_id=dataset_id,
+                entity_count_distribution=entity_count_distribution,
+                logger=logger
             )
 
             # update cdm version or error msg
-            cdm_version_query = f"SELECT cdm_version FROM {database_code}.{schema_name}.cdm_source LIMIT 1"
-            cdm_version = str(dbdao.execute_sql(cdm_version_query)[0][0])
-
-            portal_server_api.update_dataset_attributes_table(
-                dataset_id, "version", cdm_version
-            )
-
+            # should come from portal(?)
+            cdm_version = update_entity_value(
+                portal_server_api=portal_server_api,
+                dataset_id=dataset_id,
+                dbdao=dbdao,
+                schema_name=schema_name,
+                table_name="cdm_source",
+                column_name="cdm_version",
+                entity_name="version",
+                logger=logger
+                )
+            
             update_metadata_last_fetched_date(
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
-                logger=logger,
+                logger=logger
             )
