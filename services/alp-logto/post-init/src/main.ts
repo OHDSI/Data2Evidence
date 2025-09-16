@@ -367,6 +367,7 @@ async function main() {
 img[alt="app logo"] { height: 80px; }
 button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
+    unknownSessionRedirectUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal`,
   };
   await update("sign-in-exp", headers, signinExperience);
   console.log(
