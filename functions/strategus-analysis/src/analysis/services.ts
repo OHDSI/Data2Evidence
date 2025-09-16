@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from "uuid";
-import { HttpException } from '@danet/core'
 import { decode, JwtPayload } from "jsonwebtoken";
 import dataSource from "../db/datasource.ts";
 
@@ -64,7 +63,7 @@ export default class StrategusAnalysisService {
         });
 
         if (!existingAnalysis) {
-            throw new HttpException(400, "Study does not exist.")
+            throw new Error("Study does not exist.")
         }
 
         await this.strategusAnalysisRepository.update({id: existingAnalysis.id}, {viewerCode: viewerCode})
