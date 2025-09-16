@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import json
 from prefect import flow, task
 from prefect.logging import get_run_logger
-
+from prefect.variables import Variable
 from .types import DataloadOptions, FileType
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.FhirAPI import FhirAPI
@@ -21,8 +21,9 @@ def data_load_fhir_plugin(options: DataloadOptions):
     use_cache_db = options.use_cache_db
     dataset_token = options.dataset_token
     try:
+        fhir_database_code = Variable.get("fhir_database_code")
         dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code="alp_fhir")
+                  database_code=fhir_database_code)
         fhir_tables_all = set()
         for incoming_file in files:
             if(truncate_tables):
@@ -90,7 +91,7 @@ def load_data(dataset_token, json_file, logger):
                         post_fhir_resource(entry, idx, json_file, fhir_api, logger, dataset_token)
                 else:
                     logger.debug(f"Processing single resource in file '{json_file}'")
-                post_fhir_resource(data, 0, json_file, fhir_api, logger, dataset_token)
+                    post_fhir_resource(data, 0, json_file, fhir_api, logger, dataset_token)
         else:
             logger.error(f"Unsupported file type for '{json_file}'. Only .ndjson and .json are supported.")
             return

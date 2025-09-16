@@ -10,7 +10,7 @@ class FhirAPI(BaseAPI):
         self.logger = get_run_logger()
         self.auth = OpenIdAPI()
     
-    def _get_headers(self):
+    def get_headers(self):
         token = self.auth.getClientCredentialToken()
         return {
             "Authorization": f"Bearer {token}",
@@ -21,7 +21,7 @@ class FhirAPI(BaseAPI):
         url = f"{self.url}project/{studyToken}/{resourceType}"
         result = requests.post(
             url,
-            headers=self._get_headers(),
+            headers=self.get_headers(),
             verify=self.get_verify_value(),
             json=resource
         )
