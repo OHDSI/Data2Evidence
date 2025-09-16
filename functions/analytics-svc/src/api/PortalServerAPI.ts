@@ -1,4 +1,3 @@
-import axios, { AxiosRequestConfig } from "axios";
 import { env } from "../env";
 import { Logger } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
@@ -8,6 +7,7 @@ export default class PortalServerAPI {
     private readonly baseUrl: string;
     private readonly oauthUrl: string;
     private agent: any;
+    private portalapi;
 
     constructor() {
         this.baseUrl = env.SERVICE_ROUTES.portalServer;
@@ -16,10 +16,11 @@ export default class PortalServerAPI {
         if (!this.baseUrl) {
             throw new Error("Portal Server URL is not configured!");
         }
+        this.portalapi = Trex.tokioChannel("d2e-functions/portal");
     }
 
     private async getRequestConfig(token: string) {
-        let options: AxiosRequestConfig = {};
+        let options = {};
         if (token) {
             options = {
                 headers: {
@@ -38,7 +39,7 @@ export default class PortalServerAPI {
             client_secret: env.IDP__ALP_SVC__CLIENT_SECRET,
         };
 
-        const options: AxiosRequestConfig = {
+        const options = {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
@@ -54,19 +55,18 @@ export default class PortalServerAPI {
             )
             .join("&");
 
-        const result = await axios.post(this.oauthUrl, data, options);
-
+        const result = await this.portalapi.post(this.oauthUrl, data, options);
         return `Bearer ${result.data.access_token}`;
     }
 
     async getPublicStudies() {
-        const result = await axios.get(`${this.baseUrl}/dataset/public/list`, {httpAgent: this.agent});
+        const result = await this.portalapi.get(`${this.baseUrl}/dataset/public/list`, {httpAgent: this.agent});
         return result.data;
     }
 
     async getStudy(token: string, datasetId: string) {
         const options = await this.getRequestConfig(token);
-        const result = await axios.get(
+        const result = await this.portalapi.get(
             `${this.baseUrl}/dataset?datasetId=${datasetId}`,
             options
         );
@@ -75,7 +75,8 @@ export default class PortalServerAPI {
 
     async getStudies(token: string) {
         const options = await this.getRequestConfig(token);
-        const result = await axios.get(`${this.baseUrl}/dataset/list/systemadmin`, options);
+        const result = await this.portalapi.get(`${this.baseUrl}/dataset/list/systemadmin`, options);
+        console.log(result);
         return result.data;
     }
 
@@ -87,7 +88,7 @@ export default class PortalServerAPI {
         try {
             const options = await this.getRequestConfig(token);
             const url = `${this.baseUrl}/user-artifact/bookmarks/${encodeURIComponent(bookmarkId)}?datasetId=${encodeURIComponent(datasetId)}`;
-            const result = await axios.get(url, options);
+            const result = await this.portalapi.get(url, options);
             return result.data;
         } catch (error) {
             console.error(error);
@@ -109,7 +110,7 @@ export default class PortalServerAPI {
                 serviceArtifact: bookmark,
             };
             const url = `${this.baseUrl}/user-artifact/bookmarks?datasetId=${datasetId}`;
-            const result = await axios.put(url, updateBookmarkDto, options);
+            const result = await this.portalapi.put(url, updateBookmarkDto, options);
             return result.data;
         } catch (error) {
             console.error(error);

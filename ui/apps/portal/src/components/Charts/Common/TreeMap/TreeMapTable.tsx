@@ -14,7 +14,7 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => 
   const columns = useMemo<MRT_ColumnDef<any>[]>(
     () => [
       {
-        accessorKey: "CONCEPT_ID",
+        accessorKey: "CONCEPTID",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_CONCEPT_ID),
         Cell: ({ cell }) => (
           <div className="concept_id_text" onClick={() => setSelectedConceptId(cell.getValue<string>())}>
@@ -23,11 +23,11 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => 
         ),
       },
       {
-        accessorKey: "CONCEPT_PATH",
+        accessorKey: "CONCEPTPATH",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_CONCEPT_PATH),
       },
       {
-        accessorKey: "NUM_PERSONS",
+        accessorKey: "NUMPERSONS",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_NUM_PERSONS),
         muiTableHeadCellProps: {
           align: "right",
@@ -37,7 +37,7 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => 
         },
       },
       {
-        accessorKey: "PERCENT_PERSONS",
+        accessorKey: "PERCENTPERSONS",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_PERCENT_PERSONS),
         muiTableHeadCellProps: {
           align: "right",
@@ -47,7 +47,7 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => 
         },
       },
       {
-        accessorKey: "RECORDS_PER_PERSON",
+        accessorKey: "RECORDSPERPERSON",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_RECORDS_PER_PERSON),
         muiTableHeadCellProps: {
           align: "right",
