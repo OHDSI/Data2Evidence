@@ -53,7 +53,27 @@ const props = defineProps<{
 }>()
 
 const bookmarksDisplaySorted = computed(() => {
-  return [...props.bookmarksDisplay].sort((a, b) => {
+  let filtered = [...props.bookmarksDisplay]
+
+  // Apply search filter
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(bookmarkDisplay => {
+      const displayName = bookmarkDisplay.displayName?.toLowerCase() || ''
+      const cohortName = bookmarkDisplay.cohortDefinition?.cohortDefinitionName?.toLowerCase() || ''
+      const atlasName = bookmarkDisplay.atlasCohortDefinition?.name?.toLowerCase() || ''
+      const username = bookmarkDisplay.bookmark?.username?.toLowerCase() ||
+                      bookmarkDisplay.atlasCohortDefinition?.username?.toLowerCase() || ''
+
+      return displayName.includes(query) ||
+             cohortName.includes(query) ||
+             atlasName.includes(query) ||
+             username.includes(query)
+    })
+  }
+
+  // Sort by date
+  return filtered.sort((a, b) => {
     const dateToUseA = a.bookmark?.dateModified || a.atlasCohortDefinition?.updatedOn || a.cohortDefinition.createdOn
     const dateToUseB = b.bookmark?.dateModified || b.atlasCohortDefinition?.updatedOn || b.cohortDefinition.createdOn
     return new Date(dateToUseB).getTime() - new Date(dateToUseA).getTime()
@@ -63,6 +83,7 @@ const bookmarksDisplaySorted = computed(() => {
 // Pagination state
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
+const searchQuery = ref('')
 
 // Computed properties for pagination
 const totalPages = computed(() => {
@@ -88,6 +109,14 @@ watch(
 // Watch for changes in items per page and reset to page 1
 watch(
   () => itemsPerPage.value,
+  () => {
+    currentPage.value = 1
+  }
+)
+
+// Watch for changes in search query and reset to page 1
+watch(
+  () => searchQuery.value,
   () => {
     currentPage.value = 1
   }
@@ -513,7 +542,7 @@ onErrorCaptured((err, instance, info) => {
 
     <!-- Pagination Footer -->
     <div
-      v-if="totalPages > 1"
+      v-if="props.bookmarksDisplay.length > 0"
       style="
         position: fixed;
         bottom: 0;
@@ -521,7 +550,7 @@ onErrorCaptured((err, instance, info) => {
         right: 0;
         z-index: 1000;
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
         align-items: center;
         gap: 10px;
         padding: 15px 20px;
@@ -533,71 +562,95 @@ onErrorCaptured((err, instance, info) => {
         color: #666;
       "
     >
-      <span style="margin-right: 15px">Items per page:</span>
-      <select
-        v-model="itemsPerPage"
-        style="
-          padding: 4px 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          background: white;
-          font-size: 14px;
-          cursor: pointer;
-          margin-right: 15px;
-        "
-      >
-        <option value="10">10</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
-        <option value="100">100</option>
-      </select>
+      <!-- Search Bar -->
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="color: #666; font-size: 14px;">Search:</span>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Filter cohorts..."
+          style="
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+            width: 200px;
+            outline: none;
+          "
+        />
+      </div>
 
-      <span style="margin: 0 10px">
-        {{ (currentPage - 1) * Number(itemsPerPage) + 1 }}-{{
-          Math.min(currentPage * Number(itemsPerPage), bookmarksDisplaySorted.length)
-        }}
-        of {{ bookmarksDisplaySorted.length }}
-      </span>
+      <!-- Pagination Controls -->
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="margin-right: 15px">Items per page:</span>
+        <select
+          v-model="itemsPerPage"
+          style="
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 15px;
+          "
+        >
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
 
-      <button
-        @click="goToPreviousPage"
-        :disabled="currentPage === 1"
-        style="
-          width: 32px;
-          height: 32px;
-          border: 1px solid #ddd;
-          background: white;
-          border-radius: 4px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-        "
-        :style="currentPage === 1 ? 'opacity: 0.4; cursor: not-allowed;' : ''"
-      >
-        ‹
-      </button>
+        <span style="margin: 0 10px">
+          {{ (currentPage - 1) * Number(itemsPerPage) + 1 }}-{{
+            Math.min(currentPage * Number(itemsPerPage), bookmarksDisplaySorted.length)
+          }}
+          of {{ bookmarksDisplaySorted.length }}
+        </span>
 
-      <button
-        @click="goToNextPage"
-        :disabled="currentPage === totalPages"
-        style="
-          width: 32px;
-          height: 32px;
-          border: 1px solid #ddd;
-          background: white;
-          border-radius: 4px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-        "
-        :style="currentPage === totalPages ? 'opacity: 0.4; cursor: not-allowed;' : ''"
-      >
-        ›
-      </button>
+        <template v-if="totalPages > 1">
+          <button
+            @click="goToPreviousPage"
+            :disabled="currentPage === 1"
+            style="
+              width: 32px;
+              height: 32px;
+              border: 1px solid #ddd;
+              background: white;
+              border-radius: 4px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+            "
+            :style="currentPage === 1 ? 'opacity: 0.4; cursor: not-allowed;' : ''"
+          >
+            ‹
+          </button>
+
+          <button
+            @click="goToNextPage"
+            :disabled="currentPage === totalPages"
+            style="
+              width: 32px;
+              height: 32px;
+              border: 1px solid #ddd;
+              background: white;
+              border-radius: 4px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 16px;
+            "
+            :style="currentPage === totalPages ? 'opacity: 0.4; cursor: not-allowed;' : ''"
+          >
+            ›
+          </button>
+        </template>
+      </div>
     </div>
   </div>
 </template>
