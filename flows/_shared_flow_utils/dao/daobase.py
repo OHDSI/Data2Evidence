@@ -198,31 +198,31 @@ class DaoBase(ABC):
 
     # --- User methods ---
 
-    @abstractmethod
+    #@abstractmethod
     def check_user_exists(self, user: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def check_role_exists(self, role_name: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_read_role(self, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_user(self, user: str, password: str = None):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_and_assign_role(self, user: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_read_privileges(self, schema: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_cohort_write_privileges(self, schema: str, role_name: str):
         pass
 
