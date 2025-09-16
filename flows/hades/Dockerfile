@@ -89,8 +89,6 @@ RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), repos="https://cran.r-project.org")'
 
 
-RUN Rscript -e 'remotes::install_github("OHDSI/SelfControlledCaseSeries@v6.1.0")' # https://github.com/OHDSI/Andromeda
-
 # HADES Dependencies
 # https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
 RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v1.0.0")' # https://github.com/OHDSI/Andromeda
