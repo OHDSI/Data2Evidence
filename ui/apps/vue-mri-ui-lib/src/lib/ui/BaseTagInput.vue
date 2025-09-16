@@ -375,6 +375,8 @@ export default {
       if (this.searchQuery !== searchQuery) {
         this.searchQuery = searchQuery
         this.$emit('search-change', searchQuery)
+      } else if (searchQuery === '' && this.filteredList.length === 0) {
+        this.$emit('search-change', '')
       }
     },
     getClass(item) {
