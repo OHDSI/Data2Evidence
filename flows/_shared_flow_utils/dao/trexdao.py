@@ -1,29 +1,35 @@
-import psycopg2
+from datetime import datetime
 from pydantic import SecretStr
 from contextlib import contextmanager
 
+import psycopg2
+from psycopg2 import sql as pg_sql
 
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 
 from _shared_flow_utils.types import *
-from _shared_flow_utils.dao.ibisdao import IbisDao
+from _shared_flow_utils.dao.daobase import DaoBase
 from _shared_flow_utils.dao.daobase import DialectDrivers
 
 
-class TrexDao(IbisDao):
+
+class TrexDao(DaoBase):
     def __init__(
         self,
         use_cache_db: bool,
         database_code: str,
+        *,
         user_type: UserType = UserType.ADMIN_USER,
         is_study_results_db: bool = False,
+        is_hana: bool = False
     ):
         super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
+        self.is_hana = is_hana
 
     @property
     def dialect(self):
-        return SupportedDatabaseDialects.TREX.value
+        return SupportedDatabaseDialects.TREX.value if not self.is_hana else SupportedDatabaseDialects.HANA.value
 
     @property
     def tenant_configs(self) -> DBCredentialsType:
@@ -34,7 +40,7 @@ class TrexDao(IbisDao):
             adminPassword=SecretStr(Secret.load("trex-sql-password").get()),
             user=Variable.get("trex_sql_user"),
             password=SecretStr(Secret.load("trex-sql-password").get()),
-            dialect=SupportedDatabaseDialects.TREX.value,
+            dialect=SupportedDatabaseDialects.TREX.value if not self.is_hana else SupportedDatabaseDialects.HANA.value,
             databaseName=self.database_code,
             databaseCode=self.database_code,
             host=Variable.get("trex_sql_host"),
@@ -79,7 +85,8 @@ class TrexDao(IbisDao):
             cur = None
             try:
                 cur = con.cursor()
-                cur.execute(sql)
+                composed_query = sql.as_string(cur) if hasattr(sql, "as_string") else sql
+                cur.execute(composed_query)
                 if fetch:
                     return cur.fetchall()
                 if not con.autocommit:
@@ -91,23 +98,113 @@ class TrexDao(IbisDao):
                 if cur:
                     cur.close()
 
-    def drop_schema(self, schema: str, cascade: bool = True) -> None:
-        sql = f"DROP SCHEMA IF EXISTS {schema} {'CASCADE' if cascade else 'RESTRICT'};"
+
+    # --- Create methods ---
+    def create_schema(self, schema: str) -> None:
+        self.validate_schema_name(schema)
+        sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
+                .format(pg_sql.Identifier(schema))
         self.execute_sql(sql)
+
+
+    def create_table(self, schema: str, table: str, columns: dict) -> None:
+        pass
+
+
+    # --- Read methods ---
 
     def check_schema_exists(self, schema: str) -> bool:
         try:
-            sql = "SELECT schema_name FROM information_schema.schemata;"
+            sql = '''
+                SELECT schema_name FROM information_schema.schemata
+                WHERE catalog_name = current_database();
+            '''
             result = self.execute_sql(sql, fetch=True)
             schemas = {row[0] for row in result}
             return schema in schemas
         except psycopg2.Error as e:
             raise
 
-    def create_schema(self, schema: str) -> None:
-        self.validate_schema_name(schema)
-        sql = f"CREATE SCHEMA IF NOT EXISTS {schema};"
+
+    def check_empty_schema(schema: str) -> bool:
+        pass
+
+
+    def check_table_exists(self, schema: str, table: str) -> bool:
+        pass
+
+
+    def get_table_names(self, schema: str, include_views=False) -> list[str]:
+        pass
+
+
+    def get_columns(self, schema: str, table: str) -> list[str]:
+        pass
+
+
+    def get_table_row_count(self, schema: str, table: str) -> int:
+        sql = pg_sql.SQL("SELECT COUNT(*) FROM {schema}.{table}")\
+            .format(
+                schema=pg_sql.Identifier(schema),
+                table=pg_sql.Identifier(table)
+            )
+        result = self.execute_sql(sql, fetch=True)
+        return result[0][0]
+
+
+    def get_distinct_count(self, schema: str, table: str, column: str) -> int:
+        sql = pg_sql.SQL("SELECT COUNT(DISTINCT {column}) FROM {schema}.{table}")\
+            .format(
+                column=pg_sql.Identifier(column),
+                schema=pg_sql.Identifier(schema),
+                table=pg_sql.Identifier(table)
+            )
+        result = self.execute_sql(sql, fetch=True)
+        return result[0][0]
+
+
+    def get_value(self, schema: str, table: str, column: str) -> str:
+        sql = pg_sql.SQL("SELECT {column} FROM {schema}.{table} LIMIT 1")\
+            .format(
+                column=pg_sql.Identifier(column),
+                schema=pg_sql.Identifier(schema),
+                table=pg_sql.Identifier(table)
+            )
+        result = self.execute_sql(sql, fetch=True)
+        return result[0][0]
+
+    def get_next_record_id(self, schema: str, table: str, id_column: int) -> int:
+        pass
+
+    def get_last_executed_changeset(self, schema: str) -> str:
+        pass
+
+    def get_datamodel_created_date(self, schema: str) -> datetime:
+        pass
+
+
+    def get_datamodel_updated_date(self, schema: str) -> datetime:
+        pass
+
+    # --- Update methods ---
+
+    def update_cdm_version(self, schema: str, cdm_version: str):
+        pass
+
+    def insert_values_into_table(
+        self, schema: str, table: str, column_value_mapping: list[dict]
+    ):
+        pass
+
+
+    # --- Delete methods ---
+    def drop_schema(self, schema: str, cascade: bool = False):
+        sql = f"DROP SCHEMA IF EXISTS {schema} {'CASCADE' if cascade else 'RESTRICT'};"
         self.execute_sql(sql)
+
+
+    def truncate_table(self, schema: str, table: str):
+        pass
 
     def get_database_connector_connection_string(
         self, user_type: UserType = UserType.ADMIN_USER, release_date: str = None

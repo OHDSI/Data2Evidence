@@ -32,26 +32,18 @@ def dqd_plugin(options: DqdOptionsType):
         database_code=options.databaseCode,
     )
 
-    # Todo: Update implementation if Hana uses trex
-    use_trex_connection = (
-        False
-        if dbdao.dialect == SupportedDatabaseDialects.HANA
-        else options.use_trex_connection
-    )
-
     r_connection_string = dbdao.get_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
 
     db_driver_string = dbdao.set_db_driver_env()
 
-    # Todo: Update implementation if Hana uses trex
     dqd_parameters = DqdParams(
         **options.model_dump(),
         outputFolder=output_folder,
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
-        use_trex_connection=use_trex_connection,
+        use_trex_connection=options.use_trex_connection,
     )
 
     if (
