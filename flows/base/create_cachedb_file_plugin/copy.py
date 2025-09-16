@@ -203,7 +203,7 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
         logger.info(f"Found {len(indexes)} indexes for table '{table}'.")
         
         for index in indexes:
-            if index.get("column_names") not in columns_to_copy:
+            if not set(index.get('column_names')).issubset(set(columns_to_copy)):
                 logger.info(
                     f"Skipping index '{index.get('name')}' on columns {index.get('column_names')} as these columns were not copied."
                 )
@@ -238,7 +238,7 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
             f"No primary key index found for table '{table}'. Skipping primary index copy"
         )
 
-    elif pk_index_columns not in columns_to_copy:
+    elif not set(pk_index_columns).issubset(set(columns_to_copy)):
         logger.info(
             f"Skipping primary key index '{pk_index_name}' on columns {pk_index_columns} as these columns were not copied."
         )
