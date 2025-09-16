@@ -62,16 +62,16 @@ const bookmarksDisplaySorted = computed(() => {
 
 // Pagination state
 const currentPage = ref(1)
-const itemsPerPage = ref(25)
+const itemsPerPage = ref(10)
 
 // Computed properties for pagination
 const totalPages = computed(() => {
-  return Math.ceil(bookmarksDisplaySorted.value.length / itemsPerPage.value)
+  return Math.ceil(bookmarksDisplaySorted.value.length / Number(itemsPerPage.value))
 })
 
 const paginatedBookmarks = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value
-  const end = start + itemsPerPage.value
+  const start = (currentPage.value - 1) * Number(itemsPerPage.value)
+  const end = start + Number(itemsPerPage.value)
   return bookmarksDisplaySorted.value.slice(start, end)
 })
 
@@ -82,6 +82,14 @@ watch(
     if (currentPage.value > totalPages.value && totalPages.value > 0) {
       currentPage.value = 1
     }
+  }
+)
+
+// Watch for changes in items per page and reset to page 1
+watch(
+  () => itemsPerPage.value,
+  () => {
+    currentPage.value = 1
   }
 )
 
@@ -525,9 +533,28 @@ onErrorCaptured((err, instance, info) => {
         color: #666;
       "
     >
+      <span style="margin-right: 15px">Items per page:</span>
+      <select
+        v-model="itemsPerPage"
+        style="
+          padding: 4px 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background: white;
+          font-size: 14px;
+          cursor: pointer;
+          margin-right: 15px;
+        "
+      >
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+      </select>
+
       <span style="margin: 0 10px">
-        {{ (currentPage - 1) * itemsPerPage + 1 }}-{{
-          Math.min(currentPage * itemsPerPage, bookmarksDisplaySorted.length)
+        {{ (currentPage - 1) * Number(itemsPerPage) + 1 }}-{{
+          Math.min(currentPage * Number(itemsPerPage), bookmarksDisplaySorted.length)
         }}
         of {{ bookmarksDisplaySorted.length }}
       </span>
