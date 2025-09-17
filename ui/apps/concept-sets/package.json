@@ -20,10 +20,9 @@
     "@vitejs/plugin-react": "^4.3.1",
     "concurrently": "^9.2.1",
     "eslint": "^8.57.0",
-    "express": "^4.18.2",
     "typescript": "^5.2.2",
     "vite": "^5.3.1",
-    "vite-plugin-css-injected-by-js": "^3.3.0"
+    "vite-plugin-css-injected-by-js": "^3.5.1"
   },
   "dependencies": {
     "@d4l/web-components-library": "^3.20.2",
