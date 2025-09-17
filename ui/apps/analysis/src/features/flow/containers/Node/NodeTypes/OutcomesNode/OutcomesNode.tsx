@@ -8,7 +8,6 @@ import { OutcomesDrawer } from "./OutcomesDrawer";
 import "./OutcomesNode.scss";
 
 export interface OutcomesNodeData extends NodeDataState {
-  ncoCohortSetIds: string[];
   outcomeId?: number;
   outcomeOfInterest?: boolean;
   trueEffectSize?: number;
