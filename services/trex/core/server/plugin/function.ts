@@ -318,7 +318,8 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
   }
   app.all(url + postfix, authn, authz, async (c: Context) => {
     const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
-    const BACKEND_WS = `ws://alp-enterprise-gateway:8888`; // just replace http in sevice url with wss
+    const { hostname, port } = new URL(service_url);
+    const BACKEND_WS = `ws://${hostname}:${port}`; // just replace http in sevice url with wss
 
     if (isWs) {
       const req = c.req.raw;
