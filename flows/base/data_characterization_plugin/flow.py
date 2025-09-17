@@ -196,7 +196,6 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         )
 
         r_script_path = os.path.join(os.path.dirname(__file__), "execute_achilles.R")
-        print('zmconnceiont',achilles_params.connectionDetails)
 
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f"""
@@ -271,7 +270,6 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
     set_trex_env_string = set_trex_env_var(achilles_params.use_trex_connection)
 
     r_script_path = os.path.join(os.path.dirname(__file__), "export_to_ares.R")
-    create_results_schema
     try:
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f"""

@@ -22,7 +22,7 @@ create_cohort <- function(
     options <- CirceR::createGenerateOptions(generateStats = FALSE, vocabularySchema = vocabSchemaName);
     cohortSql <- CirceR::buildCohortQuery(cohortExpression, options = options)
     
-    cat("Creating tempoary cohort stats table names")
+    cat("Creating temporary cohort stats table names")
     cohortTableNames <- list()
     cohortTableNames[["cohortTable"]] <- "cohort"
     cohortTableNames[["cohortInclusionTable"]] <- sprintf("cohort_inclusion_%s", cohortId)
@@ -31,7 +31,7 @@ create_cohort <- function(
     cohortTableNames[["cohortSummaryStatsTable"]] <- sprintf("cohort_summary_stats_%s", cohortId)
     cohortTableNames[["cohortCensorStatsTable"]] <- sprintf("cohort_censor_stats_%s", cohortId)
     
-    cat("Creating tempoary cohort stats tables")
+    cat("Creating temporary cohort stats tables")
     CohortGenerator::createCohortTables(connectionDetails = connectionDetails,
                             cohortDatabaseSchema = schemaName,
                             cohortTableNames = cohortTableNames,
