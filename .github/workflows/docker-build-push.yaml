@@ -135,14 +135,14 @@ jobs:
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
 
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
           android: true
           dotnet: true
           haskell: true
-          large-packages: false
+          large-packages: true
           docker-images: true
           swap-storage: true
 
@@ -229,6 +229,11 @@ jobs:
           package-type: "container"
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
+      - name: Prune system
+        if: always()
+        id: prune
+        run: |
+          docker system prune -af
 
   docker-success:
     needs: bld

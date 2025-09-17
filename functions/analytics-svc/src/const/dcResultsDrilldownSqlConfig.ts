@@ -12,7 +12,7 @@ export const CONDITION = {
   prevalenceByMonth: "condition/drilldown/prevalenceByMonth.sql",
 };
 
-export const CONDITION_ERA = {
+export const CONDITIONERA = {
   ageAtFirstOccurrence: "conditionera/drilldown/ageAtFirstOccurrence.sql",
   lengthOfEra: "conditionera/drilldown/lengthOfEra.sql",
   prevalenceByGenderAgeYear:
@@ -40,7 +40,7 @@ export const DRUG = {
   refillsDistribution: "drug/drilldown/refillsDistribution.sql",
 };
 
-export const DRUG_ERA = {
+export const DRUGERA = {
   ageAtFirstOccurrence: "drugera/drilldown/ageAtFirstOccurrence.sql",
   lengthOfEra: "drugera/drilldown/lengthOfEra.sql",
   prevalenceByGenderAgeYear: "drugera/drilldown/prevalenceByGenderAgeYear.sql",

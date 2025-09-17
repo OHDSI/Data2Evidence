@@ -28,9 +28,9 @@ const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelecte
     // Parse data to be more readable
     const parsedData = data.map((obj: any) => ({
       ...obj,
-      RECORDS_PER_PERSON: Number(Number(obj["RECORDS_PER_PERSON"]).toPrecision(3)),
-      LENGTH_OF_ERA: Number(Number(obj["LENGTH_OF_ERA"]).toPrecision(3)),
-      PERCENT_PERSONS: `${Number(Number(obj["PERCENT_PERSONS"]) * 100).toPrecision(3)}%`,
+      RECORDSPERPERSON: Number(Number(obj["RECORDSPERPERSON"]).toPrecision(3)),
+      LENGTH_OF_ERA: Number(Number(obj["LENGTHOFERA"]).toPrecision(3)),
+      PERCENT_PERSONS: `${Number(Number(obj["PERCENTPERSONS"]) * 100).toPrecision(3)}%`,
     }));
     setTreeMapTableData(parsedData);
   }, [data]);
@@ -38,12 +38,12 @@ const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelecte
   useEffect(() => {
     // Parse and format treemap chart data
     const mappedData = treeMapTableData.map((obj: any) => ({
-      name: obj["CONCEPT_PATH"],
+      name: obj["CONCEPTPATH"],
       value: [
-        obj["NUM_PERSONS"],
-        obj["RECORDS_PER_PERSON"] ? obj["RECORDS_PER_PERSON"] : obj["LENGTH_OF_ERA"],
-        obj["PERCENT_PERSONS"],
-        obj["CONCEPT_ID"],
+        obj["NUMPERSONS"],
+        obj["RECORDSPERPERSON"] ? obj["RECORDSPERPERSON"] : obj["LENGTHOFERA"],
+        obj["PERCENTPERSONS"],
+        obj["CONCEPTID"],
       ],
     }));
     setTreeMapChartData(mappedData);

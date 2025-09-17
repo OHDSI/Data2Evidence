@@ -20,10 +20,8 @@ function CDMSummary({ data }: CDMSummaryProps) {
     );
   }
   // Extract source name and number of persons from data
-  const sourceName = data.filter((obj: any) => obj["ATTRIBUTE_NAME"] === "Source name")[0]["ATTRIBUTE_VALUE"];
-  const numberOfPersons = data.filter((obj: any) => obj["ATTRIBUTE_NAME"] === "Number of persons")[0][
-    "ATTRIBUTE_VALUE"
-  ];
+  const sourceName = data.filter((obj: any) => obj["ATTRIBUTENAME"] === "Source name")[0]["ATTRIBUTEVALUE"];
+  const numberOfPersons = data.filter((obj: any) => obj["ATTRIBUTENAME"] === "Number of persons")[0]["ATTRIBUTEVALUE"];
 
   return (
     <ChartContainer title={title} className="cdm-summary">

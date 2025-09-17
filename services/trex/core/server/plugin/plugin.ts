@@ -54,7 +54,7 @@ export class Plugins {
 				try {
 					const pkg = JSON.parse(await Deno.readTextFile(`${env.PLUGINS_DEV_PATH}/${plugin.name}/package.json`));
 					pkg.version = pkg.version+"-dev"
-					await (await Plugins.get()).addPlugin(app, `${env.PLUGINS_DEV_PATH}/${plugin.name}`, pkg, 'dev');
+					await (await Plugins.get()).addPlugin(app, `${env.PLUGINS_DEV_PATH}/${plugin.name}`, pkg, pkg.name.split("/")[1]);
 				} catch(e) {
 					logger.error(`${plugin.name} does not have a package.json`)
 				}
@@ -126,7 +126,7 @@ export class Plugins {
 						addDBPlugin(app, value, dir);
 						break;
 					case "functions":
-						addFunctionPlugin(app, value, dir);
+						addFunctionPlugin(app, value, dir, url);
 						break;
 					case "ui":
 						addUIPlugin(app, value, dir);
