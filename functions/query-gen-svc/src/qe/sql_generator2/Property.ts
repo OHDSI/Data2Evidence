@@ -221,6 +221,28 @@ export class Property extends AstElement {
                         }
                     }
                 }
+
+                //If including descendants, then its a left join between Concept and Concept Ancestor Table with the joining key as CONCEPT.CONCEPT_ID = CONCEPT_ANCESTOR.DESCENDANT_ID. The only Pre-requisite is @REF/Concept must be defined in the Data source expression.
+                if (attrConfig.__config.includeDescendants) {
+                    this.scopeEntityDef.addTableAlias(
+                        { baseEntity: "@TEXT", table: attrConfig.placeholderMap["@TEXT"] },
+                        false
+                    );
+
+                    const textAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@TEXT"]);
+                    const refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+
+                    if(!refAlias) {
+                        throw new Error("@REF undefined in the Data Source (Expression)!")
+                    }
+                    
+                    this.pushOnCondition(
+                        textAliasObj.on,
+                        QueryObject.format("%UNSAFE", 
+                                            `${textAliasObj.alias}.${attrConfig.placeholderMap["@TEXT.INTERACTION_ID"]} 
+                                              = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
+                    )
+                }
             }
         }
     }
