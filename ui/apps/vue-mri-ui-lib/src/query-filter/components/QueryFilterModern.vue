@@ -752,50 +752,40 @@ const copyToClipboard = async (text: string, label: string) => {
 // Action bar methods
 const generateCohort = async () => {
   try {
-    console.log('jer: Starting cohort generation')
     isGeneratingCohort.value = true
     patientCount.value = null
 
     // Get the active bookmark
     const activeBookmark = store?.getters?.getActiveBookmark
     if (!activeBookmark?.bmkId) {
-      console.error('jer: No active bookmark found for cohort generation')
       return
     }
 
     const atlasDefinitionId = activeBookmark.bmkId
     const datasetId = selectedDatasetForGeneration.value
 
-    console.log(`jer: Generating cohort for Atlas definition ID: ${atlasDefinitionId}, Dataset: ${datasetId}`)
-
     // Call the same API endpoint as AddCohort component
     const response = await store.dispatch('fireCreateAtlasMaterializedCohortQuery', {
       url: `/d2e-webapi/cohortdefinition/${atlasDefinitionId}/generate/${datasetId}`,
     })
 
-    console.log('jer: Cohort generation response:', response)
-
     // Extract patient count from response if available
     if (response && response.patientCount !== undefined) {
       patientCount.value = response.patientCount
-      console.log(`jer: Patient count updated: ${response.patientCount}`)
     } else if (response && response.count !== undefined) {
       patientCount.value = response.count
-      console.log(`jer: Patient count updated: ${response.count}`)
-    } else {
-      console.log('jer: No patient count in response, keeping current value')
     }
   } catch (error) {
-    console.error('jer: Error generating cohort:', error)
+    console.error('Error generating cohort:', error)
     patientCount.value = null
   } finally {
     isGeneratingCohort.value = false
-    console.log('jer: Cohort generation completed')
   }
 }
 
 const handleFeedback = () => {
-  console.log('jer: Feedback button clicked')
+  // TODO: open feedback link in new tab
+  console.log('Feedback button clicked')
 }
 </script>
 
