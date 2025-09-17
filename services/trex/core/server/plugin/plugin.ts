@@ -115,7 +115,7 @@ export class Plugins {
 			await pm.install(pkgurl);
 			pkg = JSON.parse(await Deno.readTextFile(`${env.PLUGINS_PATH}/node_modules/@${env.GH_ORG}/${name}/package.json`));
 		}
-		await this.addPlugin(app, `${env.PLUGINS_PATH}/node_modules/@${env.GH_ORG}/${name}/`, pkg, name);
+		await this.addPlugin(app, `${env.PLUGINS_PATH}/node_modules/@${env.GH_ORG}/${name}`, pkg, name);
 	}
 	
 	async addPlugin(app: Hono, dir: string, pkg:any, url:string) {
