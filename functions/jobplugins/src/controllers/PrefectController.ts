@@ -96,10 +96,10 @@ export class PrefectController {
           .status(400)
           .send({ message: "Missing required fields: json_graph or options" });
       }
-      if (options["study_id"] === undefined) {
+      if (options["studyId"] === undefined) {
         return res
           .status(400)
-          .send({ message: "Missing required field: study_id in options" });
+          .send({ message: "Missing required field: studyId in options" });
       }
       // uncomment this line when notebookName is available in jupyter kernel
       // if(options['notebookName'] === undefined) {
@@ -162,8 +162,6 @@ export class PrefectController {
   }
 
   private getToken(req: Request) {
-    return decode(
-      req.headers["authorization"].replace(/bearer /i, "")
-    ) as JwtPayload;
+    return req.headers["authorization"];
   }
 }

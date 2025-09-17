@@ -19,11 +19,17 @@ import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
 export class DqdService {
   private dataQualityOverviewParser = new DataQualityOverviewParser();
 
+  private flowRunNamePrefix: string = "DQD";
+
   public async getDataQualityResult(flowRunId: string, token: string) {
     const prefectApi = new PrefectAPI(token);
+
+    const completedFlowRun = await prefectApi.pollFlowRunCompletion(flowRunId);
+
     const artifacts = await prefectApi.getFlowRunsArtifactsByFlowRunId(
-      flowRunId
+      completedFlowRun.flowRunId
     );
+
     if (artifacts.length === 0) {
       return null;
     }
@@ -34,8 +40,11 @@ export class DqdService {
 
   public async getDataQualityOverview(flowRunId: string, token: string) {
     const prefectApi = new PrefectAPI(token);
+
+    const completedFlowRun = await prefectApi.pollFlowRunCompletion(flowRunId);
+
     const artifacts = await prefectApi.getFlowRunsArtifactsByFlowRunId(
-      flowRunId
+      completedFlowRun.flowRunId
     );
     if (artifacts.length === 0) {
       return null;
@@ -57,7 +66,8 @@ export class DqdService {
     const flowRuns = await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
-      PrefectTagNames.DQD
+      PrefectTagNames.DQD,
+      this.flowRunNamePrefix
     );
 
     return flowRuns.find(
@@ -78,7 +88,8 @@ export class DqdService {
     const flowRuns = await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
-      PrefectTagNames.DQD
+      PrefectTagNames.DQD,
+      this.flowRunNamePrefix
     );
 
     const cohortflowRuns = flowRuns.filter((flowRun) => {
@@ -107,7 +118,8 @@ export class DqdService {
     const flowRuns = await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
-      PrefectTagNames.DQD
+      PrefectTagNames.DQD,
+      this.flowRunNamePrefix
     );
 
     return flowRuns.find(
@@ -142,7 +154,7 @@ export class DqdService {
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
 
-    const name = `${databaseCode}.${schemaName}`;
+    const name = `${this.flowRunNamePrefix}_${databaseCode}.${schemaName}`;
     const parameters = {
       options: {
         schemaName,
@@ -286,7 +298,8 @@ export class DqdService {
       await prefectApi.getFlowRunsByDataset(
         databaseCode,
         schemaName,
-        PrefectTagNames.DATA_CHARACTERIZATION
+        PrefectTagNames.DQD,
+        this.flowRunNamePrefix
       )
     ).filter(
       // filter for completed flowRuns
@@ -334,7 +347,8 @@ export class DqdService {
       await prefectApi.getFlowRunsByDataset(
         databaseCode,
         schemaName,
-        PrefectTagNames.DQD
+        PrefectTagNames.DQD,
+        this.flowRunNamePrefix
       )
     ).filter(
       // filter for completed flowRuns
@@ -350,10 +364,7 @@ export class DqdService {
       .map((r) => r as IDataQualityResult);
   }
 
-  private async getDqdResults(
-    prefectApi: PrefectAPI,
-    flowRunIds: string[]
-  ) {
+  private async getDqdResults(prefectApi: PrefectAPI, flowRunIds: string[]) {
     let dqdResults;
     try {
       dqdResults = await prefectApi.getFlowRunsArtifacts(flowRunIds);

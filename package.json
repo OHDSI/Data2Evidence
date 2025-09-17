@@ -18,6 +18,7 @@
   },
   "scripts": {
     "init": "PROJECT_NAME=alp ENV_TYPE=local ./scripts/cli.sh --version develop --env-file .env.local init",
+    "inithana": "PROJECT_NAME=alp ENV_TYPE=local ./scripts/cli.sh --version develop --env-file .env.local inithana",
     "local": "PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh --version develop --demo --env-file .env.local --fhir --function-path ./functions -p 41100",
     "build": "npm run local -- build",
     "start": "npm run local -- start",
@@ -30,8 +31,8 @@
     "deploy:logs": "ENV_TYPE=remote ./scripts/cli.sh -v develop -e -n .env.remote logs",
     "logs": "npm run local -- logs",
     "create-postgres-cdm-schemas": "bash scripts/create-cdm-schema.sh",
-    "inittestdb": "node internal/build/initdb.js test",
-    "removetestdb": "node internal/build/initdb.js rmonly",
+    "inittestdb": "node tests/backend_integration_tests/build/initdb.js test",
+    "removetestdb": "node tests/backend_integration_tests/build/initdb.js rmonly",
     "internal": "npm run-script --prefix internal"
   },
   "optionalDependencies": {

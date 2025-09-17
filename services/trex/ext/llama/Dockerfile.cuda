@@ -12,12 +12,10 @@ RUN apt-get update && apt-get install -y \
     cmake \
     git \
     wget \
-    curl \
     python3 \
     python3-pip \
     pkg-config \
     libssl-dev \
-    libcurl4-openssl-dev \
     libvulkan1 \
     libvulkan-dev \
     vulkan-tools \

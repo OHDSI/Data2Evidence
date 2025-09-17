@@ -119,6 +119,21 @@ export class CachedbService {
     }
   }
 
+  async getConceptsCount(
+    datasetId: string,
+    searchText = "",
+    filters: Filters
+  ): Promise<number> {
+    try {
+      const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+      const result = await cachedbDao.getConceptsCount(searchText, filters);
+      return result;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
   async getExactConcept(
     conceptName: string | number,
     datasetId: string,

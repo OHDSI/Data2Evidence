@@ -35,6 +35,7 @@ const addRoute = (
 
 /****************** START ROUTES ******************/
 addRoute("get:/concept/filter-options", cc.getConceptFilterOptions);
+addRoute("get:/concept/count", cc.getConceptsCount);
 addRoute("post:/concept/searchByName", cc.searchConceptByName);
 addRoute("post:/concept/searchById", cc.searchConceptById);
 addRoute("post:/concept/searchByCode", cc.searchConceptByCode);
