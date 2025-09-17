@@ -8,14 +8,22 @@ library(CohortGenerator)
 #' @param cohortName Name of the cohort
 #' @param cohortId int ID of the cohort
 #' @param vocabSchemaName Name of the vocabulary schema
+#' @param set_db_driver_env_string R code string to set DB driver environment
+#' @param set_connection_string R code string to set connection details
 #' @return None
 
 create_cohort <- function(
+    set_db_driver_env_string,
+    set_connection_string,
     cohortJson, 
     schemaName, 
     vocabSchemaName, 
     cohortName, 
     cohortId) {
+        
+    # Setup environment and connection details
+    eval(parse(text = set_db_driver_env_string))
+    eval(parse(text = set_connection_string))
     
     cat("Generating cohort sql from cohort expression from json")
     cohortExpression <- CirceR::cohortExpressionFromJson(cohortJson)

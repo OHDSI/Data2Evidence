@@ -198,25 +198,23 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         r_script_path = os.path.join(os.path.dirname(__file__), "execute_achilles.R")
 
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(f"""
-                {set_trex_env_string}
-                {achilles_params.setDBDriverEnv}
-                {achilles_params.connectionDetails}
-                source('{r_script_path}')
-                """)
+            robjects.r(f"source('{r_script_path}')")
             r_execute_achilles = robjects.r['execute_achilles']
             r_execute_achilles(
+                set_trex_env_string=set_trex_env_string,
+                setDBDriverEnv=achilles_params.setDBDriverEnv,
+                connectionDetailsString=achilles_params.connectionDetails,
                 cdmVersion=achilles_params.cdmVersionNumber,
                 cdmDatabaseSchema=achilles_params.schemaName,
                 vocabDatabaseSchema=achilles_params.vocabSchemaName,
+                createTable=achilles_params.createTable,
                 resultsDatabaseSchema=achilles_params.resultsSchema,
                 outputFolder=achilles_params.outputFolder,
-                numThreads=achilles_params.numThreads,
-                createTable=achilles_params.createTable,
                 sqlOnly=achilles_params.sqlOnly,
+                numThreads=achilles_params.numThreads,
                 verboseMode=achilles_params.verboseMode,
-                createIndices=achilles_params.createIndices,
-                excludeAnalysisIds=robjects.StrVector([achilles_params.excludeAnalysisIds]) if achilles_params.excludeAnalysisIds else robjects.NULL                                   
+                excludeAnalysisIds=robjects.StrVector([achilles_params.excludeAnalysisIds]) if achilles_params.excludeAnalysisIds else robjects.NULL,
+                createIndices=achilles_params.createIndices
             )
             
         # Todo: Task will succeed so need to check for error report or analyses
@@ -272,15 +270,13 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
     r_script_path = os.path.join(os.path.dirname(__file__), "export_to_ares.R")
     try:
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(f"""
-                {set_trex_env_string}
-                {achilles_params.setDBDriverEnv}
-                {achilles_params.connectionDetails}
-                source('{r_script_path}')
-            """)
+            robjects.r(f"source('{r_script_path}')")
             
             r_export_to_ares = robjects.r['export_to_ares']
             r_export_to_ares(
+                set_trex_env_string=set_trex_env_string,
+                setDBDriverEnv=achilles_params.setDBDriverEnv,
+                connectionDetailsString=achilles_params.connectionDetails,
                 cdmVersion=achilles_params.cdmVersionNumber,
                 cdmDatabaseSchema=achilles_params.schemaName,
                 vocabDatabaseSchema=achilles_params.vocabSchemaName,

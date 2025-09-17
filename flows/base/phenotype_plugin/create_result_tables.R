@@ -4,15 +4,23 @@ library(DatabaseConnector)
 library(PhenotypeLibrary)
 
 #' Create result tables from cohort data
-#'
 #' @param cohortschemaName Cohort schema name
 #' @param cohorttableName Cohort table name
 #' @param cohortDefinitions R dataframe with cohort definitions
 #' @return Nothing (creates tables in database)
-create_result_tables <- function(cohortschemaName, 
-                                cohorttableName, 
-                                cohortDefinitions) {
-    
+#' @param set_db_driver_env_string R code string to set DB driver environment
+#' @param set_connection_string R code string to set connection details
+
+create_result_tables <- function(
+    set_db_driver_env_string, 
+    set_connection_string, 
+    cohortschemaName, 
+    cohorttableName, 
+    cohortDefinitions) {
+
+    # Setup environment and connection details
+    eval(parse(text = set_db_driver_env_string))
+    eval(parse(text = set_connection_string))
     connection <- DatabaseConnector::connect(connectionDetails)
     
     tryCatch({

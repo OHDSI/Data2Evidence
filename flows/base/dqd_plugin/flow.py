@@ -76,18 +76,14 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
 
     set_trex_env_string = set_trex_env_var(dqd_params.use_trex_connection)
     logger.debug(f"set_trex_env_string is {set_trex_env_string}")
-
+    r_script_path = os.path.join(os.path.dirname(__file__), "execute_dqd.R")
     with robjects.conversion.localconverter(robjects.default_converter):
-        robjects.r(f"""
-            {set_trex_env_string}
-            {dqd_params.setDBDriverEnv}
-            {dqd_params.connectionDetails}
-            source('{os.path.dirname(__file__)}/execute_dqd.R')
-        """)
-        
+        robjects.r(f"source('{r_script_path}')")
         r_execute_dqd = robjects.r['execute_dqd']
-        
         r_execute_dqd(
+            set_trex_env_string=set_trex_env_string,
+            setDBDriverEnv=dqd_params.setDBDriverEnv,
+            connectionDetailsString=dqd_params.connectionDetails,
             cdmDatabaseSchema = dqd_params.schemaName,
             vocabDatabaseSchema = dqd_params.vocabSchemaName,
             resultsDatabaseSchema = dqd_params.schemaName,

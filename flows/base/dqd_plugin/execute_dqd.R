@@ -19,9 +19,15 @@ library(DataQualityDashboard)
 #' @param cdmVersion Version of the CDM
 #' @param cohortDatabaseSchema Name of the cohort schema
 #' @param cohortTableName Name of the cohort table
+#' @param set_trex_env_string R code string to set TREX environment
+#' @param setDBDriverEnv R code string to set DB driver environment
+#' @param connectionDetailsString R code string to set connection details
 #' @return None
 
 execute_dqd <- function(
+        set_trex_env_string,
+        setDBDriverEnv,
+        connectionDetailsString,
         cdmDatabaseSchema,
         vocabDatabaseSchema,
         resultsDatabaseSchema,
@@ -38,6 +44,12 @@ execute_dqd <- function(
         cdmVersion,
         cohortDatabaseSchema,
         cohortTableName) {
+
+    # Set TREX and DB driver environment variables and create connection details
+    eval(parse(text = set_trex_env_string))
+    eval(parse(text = setDBDriverEnv))
+    eval(parse(text = connectionDetailsString))
+    
     # Run executeDqChecks
     DataQualityDashboard::executeDqChecks(
         connectionDetails = connectionDetails,

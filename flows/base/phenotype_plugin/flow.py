@@ -68,11 +68,7 @@ def get_cohort_definitions(cohorts_id: str, vocabschema_name: str, materialize: 
         
         # Source the R script to load the function
         robjects.r(f'source("{r_script_path}")')
-        
-        # Get the R function
         r_get_cohort_definitions = robjects.r['get_cohort_definitions']
-        
-        # Call the function through R
         result = r_get_cohort_definitions(
             cohortsID=cohorts_id,
             vocabschemaName=vocabschema_name,
@@ -158,33 +154,31 @@ def materialize_cohort_definitions(
     with robjects.conversion.localconverter(robjects.default_converter):
         # Source the R scripts to load the functions
         robjects.r(f"""
-            {set_db_driver_env_string}
-            {set_connection_string}
-            source("{materialize_script_path}")
-            source("{result_tables_script_path}")
-            """)
-        
+            source('{materialize_script_path}')
+            source('{result_tables_script_path}')
+        """)
         # Get the R functions
         r_materialize_cohorts = robjects.r['materialize_cohorts']
         r_create_result_tables = robjects.r['create_result_tables']
-        
         # Call materialize_cohorts function
         logger.info("Materializing cohorts to database...")
         r_materialize_cohorts(
+            set_db_driver_env_string=set_db_driver_env_string,
+            set_connection_string=set_connection_string,
             cohortDefinitions=cohort_definitions,
             cdmschemaName=cdmschema_name,
             cohortschemaName=cohortschema_name,
             cohorttableName=cohorttable_name
         )
-        
         # Call create_result_tables function
         logger.info("Creating result tables...")
         r_create_result_tables(
+            set_db_driver_env_string=set_db_driver_env_string,
+            set_connection_string=set_connection_string,
             cohortschemaName=cohortschema_name,
             cohorttableName=cohorttable_name,
             cohortDefinitions=cohort_definitions
         )
-        
         logger.info("Cohort materialization completed successfully.")
 
 

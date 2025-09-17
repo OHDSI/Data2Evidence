@@ -9,12 +9,22 @@ library(DatabaseConnector)
 #' @param cdmschemaName CDM schema name
 #' @param cohortschemaName Cohort schema name  
 #' @param cohorttableName Cohort table name
+#' @param set_db_driver_env_string R code string to set DB driver environment
+#' @param set_connection_string R code string to set connection details
 #' @return List with cohortsGenerated and cohortCounts
-materialize_cohorts <- function(cohortDefinitions, 
-                               cdmschemaName, 
-                               cohortschemaName, 
-                               cohorttableName) {
-    
+
+materialize_cohorts <- function(
+    set_db_driver_env_string,
+    set_connection_string,
+    cohortDefinitions,
+    cdmschemaName,
+    cohortschemaName,
+    cohorttableName
+    ) {
+
+    # Setup environment and connection details
+    eval(parse(text = set_db_driver_env_string))
+    eval(parse(text = set_connection_string))
     connection <- DatabaseConnector::connect(connectionDetails)
 
     create_replica <- function(connection, cohortschema, cohort_table_name) {

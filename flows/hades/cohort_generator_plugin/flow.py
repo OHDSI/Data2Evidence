@@ -76,15 +76,14 @@ def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int
     )
     create_script_path = os.path.join(os.path.dirname(__file__), 'create_cohort.R')
     with robjects.conversion.localconverter(robjects.default_converter):
-        robjects.r(f'''
-            {set_db_driver_env_string}
-            {set_connection_string}
-            source("{create_script_path}")
-        ''')
+        robjects.r(f"source('{create_script_path}')")
         r_create_cohort = robjects.r['create_cohort']
     
-        r_create_cohort(schemaName=schema_name,
-                        cohortId=cohort_definition_id,
-                        cohortJson=cohort_json_expression,
-                        cohortName=cohort_name,
-                        vocabSchemaName=vocab_schema_name)  
+        r_create_cohort(
+            set_db_driver_env_string=set_db_driver_env_string,
+            set_connection_string=set_connection_string,
+            schemaName=schema_name,
+            cohortId=cohort_definition_id,
+            cohortJson=cohort_json_expression,
+            cohortName=cohort_name,
+            vocabSchemaName=vocab_schema_name)

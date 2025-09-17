@@ -13,9 +13,15 @@ library(Achilles)
 #' @param sqlOnly If TRUE, only SQL will be generated, not executed
 #' @param verboseMode If TRUE, verbose mode will be enabled
 #' @param createIndices If TRUE, indices will be created on results tables
+#' @param set_trex_env_string R code string to set TREX environment
+#' @param setDBDriverEnv R code string to set DB driver environment
+#' @param connectionDetailsString R code string to set connection details
 #' @return None
 
 execute_achilles <- function(
+        set_trex_env_string,
+        setDBDriverEnv,
+        connectionDetailsString,
         cdmVersion,
         cdmDatabaseSchema,
         vocabDatabaseSchema,
@@ -27,6 +33,11 @@ execute_achilles <- function(
         verboseMode,
         excludeAnalysisIds, 
         createIndices) {
+            
+    # Set TREX and DB driver environment variables and create connection details
+    eval(parse(text = set_trex_env_string))
+    eval(parse(text = setDBDriverEnv))
+    eval(parse(text = connectionDetailsString))
 
     Achilles::achilles(
         connectionDetail = connectionDetails, 
