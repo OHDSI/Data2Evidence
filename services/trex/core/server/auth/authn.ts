@@ -24,8 +24,9 @@ export async function authn(c: Context, next: Function) {
       token = c.req.header("authorization")?.split(" ")[1] || "";
     }
     // Check for cookie if no token in header and if req url path is /gateway/dashboard/* or /strategus-results/*
-    if (token === "" && 
-        (c.req.path.startsWith("/strategus-results/") || 
+    if (
+      token === "" &&
+      (c.req.path.startsWith("/strategus-results/") ||
         c.req.path.startsWith("/gateway/dashboard/"))
     ) {
       if (c.req.header("cookie")) {
@@ -38,6 +39,14 @@ export async function authn(c: Context, next: Function) {
         }
       }
     }
+
+    if (token === "" && c.req.query("token")) {
+      const urlToken = c.req.query("token");
+      if (urlToken) {
+        token = urlToken;
+      }
+    }
+
     if (token === null || token.length === 0) {
       logger.error("authenticate: no token found");
       return new Response("Unauthorized", { status: 401 });
