@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'grant-user-admin-role'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -27,6 +27,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await page.reload()
   await page.getByRole('button', { name: 'Edit' }).nth(1).click()
+  await expect(page.getByTestId('dialog').getByText('User Admin')).toBeVisible()
   await page.getByTestId('dialog').getByText('User Admin').click()
   await expect(page.getByTestId('dialog').getByText('User Admin')).toBeChecked()
   await page.getByRole('button', { name: 'Save' }).click()
