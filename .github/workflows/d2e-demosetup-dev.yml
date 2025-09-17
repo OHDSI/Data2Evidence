@@ -209,8 +209,9 @@ jobs:
         id: stop
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
-      - name: Clean d2e services
-        if: success() || failure()
-        id: clean
+
+      - name: Prune system
+        if: always()
+        id: prune_system
         run: |
-          echo "y" | ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions clean
+          docker system prune -af
