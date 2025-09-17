@@ -69,6 +69,12 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Prune images
+        if: always()
+        id: prune
+        run: |
+          docker buildx prune -af
       
       - name: Start services
         if: success() || failure()
