@@ -7,6 +7,7 @@ body,
   height: 100%;
   max-width: 100vw !important;
   font-family: $font-family-base;
+  scrollbar-width: thin;
 
   .UiLbl {
     color: $UiLightText;
@@ -23,8 +24,4 @@ body,
   .MriHilite {
     @include mriHiliteStyle;
   }
-}
-
-* {
-  scrollbar-width: thin;
 }
