@@ -169,6 +169,13 @@ sap.ui.define([
 	AttributeController.prototype.onCatalogAttributeSwitched = function () {
 	};
 
+	AttributeController.prototype.onIncludeDescendantsAttributeSwitched = function (oEvent) {
+		var path = this.getView().getBindingContext("configEditorModel").getPath();
+		var model = this.getView().getModel("configEditorModel");
+		var isSelected = oEvent.getParameter("selected");
+		model.setProperty(path + "/includeDescendants/value", isSelected);
+	};
+
 	AttributeController.prototype.onOTSAttributeSwitched = function (oEventData) {
 		var path = this.getView().getObjectBinding(ConfigUtils.models.CONFIG_EDITOR).getPath();
 		var binding = "";

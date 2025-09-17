@@ -167,7 +167,7 @@
                                 tooltip="{configEditorModel>expression/value}" 
                                 change="onAdvancedExpressionChange" 
                                 valueLiveUpdate="true"></Input>
-
+                            <CheckBox text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_INCLUDE_DESCENDANTS}" select="onIncludeDescendantsAttributeSwitched"/>
                         </l:content>
                     </l:VerticalLayout>
 

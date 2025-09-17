@@ -337,6 +337,7 @@ sap.ui.define([
 				from: {},
 				annotations: [],
 				domainFilter: "",
+				includeDescendants: false,
 				standardConceptCodeFilter: "",
 				cohortDefinitionKey: "",
 				conceptIdentifierType: ""
@@ -599,6 +600,10 @@ sap.ui.define([
 
 		domainFilter: function (frontValue, originalContainer, destination) {
 			destination.domainFilter = frontValue.value;
+		},
+
+		includeDescendants: function (frontValue, originalContainer, destination) {
+			destination.includeDescendants = (frontValue.value === true);
 		},
 
 		standardConceptCodeFilter: function (frontValue, originalContainer, destination) {
@@ -1204,6 +1209,17 @@ sap.ui.define([
 				}
 			};
 			destination.domainFilter = frontValue;
+		},
+
+		includeDescendants: function (backValue, destination) {
+			var frontValue = {
+				value: backValue === true,
+				validity: {
+					message: "",
+					status: "valid"
+				}
+			};
+			destination.includeDescendants = frontValue;
 		},
 
 		standardConceptCodeFilter: function (backValue, destination) {
