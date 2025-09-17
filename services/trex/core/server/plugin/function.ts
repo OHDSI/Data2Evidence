@@ -317,6 +317,52 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
     postfix = "/*";
   }
   app.all(url + postfix, authn, authz, async (c: Context) => {
+    const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
+    const BACKEND_WS = `ws://alp-enterprise-gateway:8888`; // just replace http in sevice url with wss
+
+    if (isWs) {
+      const req = c.req.raw;
+      const url = new URL(c.req.url);
+      // WebSocket path: upgrade client and bridge to backend
+      const subprotocol = c.req.header("sec-websocket-protocol") ?? undefined;
+      const backendUrl = `${BACKEND_WS}${url.pathname}${url.search}`;
+      const { socket, response } = Deno.upgradeWebSocket(
+        req,
+        subprotocol ? { protocol: subprotocol } : undefined
+      );
+      const backend = new WebSocket(
+        backendUrl,
+        subprotocol ? [subprotocol] : undefined
+      );
+
+      socket.onmessage = (event) => {
+        if (backend.readyState === WebSocket.OPEN) {
+          backend.send(event.data);
+        }
+      };
+
+      backend.onmessage = (event) => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(event.data);
+        }
+      };
+
+      // Handle closing cleanly
+      socket.onclose = () => {
+        if (backend.readyState === WebSocket.OPEN) {
+          backend.close();
+        }
+      };
+
+      backend.onclose = () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+
+      return response;
+    }
+
     let newHeaders = new Headers(c.req.raw.headers);
     newHeaders.append("x-source-origin", env.GATEWAY_WO_PROTOCOL_FQDN);
     const path = rmsrc
