@@ -318,44 +318,36 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
   }
   app.all(url + postfix, authn, authz, async (c: Context) => {
     const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
-    const { hostname, port } = new URL(service_url);
-    const BACKEND_WS = `ws://${hostname}:${port}`; // just replace http in sevice url with wss
 
     if (isWs) {
       const req = c.req.raw;
       const url = new URL(c.req.url);
-      // WebSocket path: upgrade client and bridge to backend
-      const subprotocol = c.req.header("sec-websocket-protocol") ?? undefined;
-      const backendUrl = `${BACKEND_WS}${url.pathname}${url.search}`;
-      const { socket, response } = Deno.upgradeWebSocket(
-        req,
-        subprotocol ? { protocol: subprotocol } : undefined
-      );
-      const backend = new WebSocket(
-        backendUrl,
-        subprotocol ? [subprotocol] : undefined
-      );
+      const { hostname, port } = new URL(service_url);
+      const serviceUrl = `ws://${hostname}:${port}${url.pathname}${url.search}`;
+
+      const { socket, response } = Deno.upgradeWebSocket(req);
+
+      const serviceWebSocketConnection = new WebSocket(serviceUrl);
 
       socket.onmessage = (event) => {
-        if (backend.readyState === WebSocket.OPEN) {
-          backend.send(event.data);
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.send(event.data);
         }
       };
 
-      backend.onmessage = (event) => {
+      serviceWebSocketConnection.onmessage = (event) => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(event.data);
         }
       };
 
-      // Handle closing cleanly
       socket.onclose = () => {
-        if (backend.readyState === WebSocket.OPEN) {
-          backend.close();
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.close();
         }
       };
 
-      backend.onclose = () => {
+      serviceWebSocketConnection.onclose = () => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.close();
         }
