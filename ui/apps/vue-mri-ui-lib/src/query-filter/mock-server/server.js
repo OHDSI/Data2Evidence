@@ -82,6 +82,11 @@ app.use('/img', express.static(path.join(__dirname, 'static', 'mri', 'img')))
 app.use('/fonts', express.static(path.join(__dirname, 'static', 'mri', 'fonts')))
 app.use('/ui', express.static(path.join(__dirname, 'static', 'ui5', 'resources')))
 
+app.get('/favicon-atlas.ico', (req, res) => {
+  const faviconPath = path.join(__dirname, 'static', 'mri', 'favicon-atlas.ico')
+  res.sendFile(faviconPath)
+})
+
 // Serve authenticate.js with modifications
 app.get('/authenticate.js', rateLimiter.middleware(), (_, res) => {
   const fs = require('fs')
