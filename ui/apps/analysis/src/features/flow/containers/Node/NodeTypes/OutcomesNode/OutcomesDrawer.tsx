@@ -4,8 +4,6 @@ import { NodeProps } from "reactflow";
 import {
   Box,
   TextInput,
-  Autocomplete,
-  TextField,
   Checkbox,
 } from "@portal/components";
 import { useFormData } from "~/features/flow/hooks";
@@ -19,7 +17,6 @@ import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "..";
 import { OutcomesNodeData } from "./OutcomesNode";
-import { CONFIGS_USER_INPUT_ARRAY_STYLES } from "../common";
 
 export interface OutcomesDrawerProps extends Omit<NodeDrawerProps, "children"> {
   node: NodeProps<OutcomesNodeData>;
@@ -31,7 +28,6 @@ interface FormData extends OutcomesNodeData {}
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
-  ncoCohortSetIds: [],
   outcomeOfInterest: false,
   trueEffectSize: 1,
   priorOutcomeLookback: 30,
@@ -53,7 +49,6 @@ export const OutcomesDrawer: FC<OutcomesDrawerProps> = ({
       setFormData({
         name: node.data.name,
         description: node.data.description,
-        ncoCohortSetIds: node.data.ncoCohortSetIds,
         outcomeId: node.data.outcomeId,
         outcomeOfInterest: node.data.outcomeOfInterest,
         trueEffectSize: node.data.trueEffectSize,
@@ -82,14 +77,6 @@ export const OutcomesDrawer: FC<OutcomesDrawerProps> = ({
     typeof onClose === "function" && onClose();
   }, [formData]);
 
-  const handleNCOCohortSetIdsChange = useCallback(
-    (event: any, value: string[]) => {
-      onFormDataChange({ ncoCohortSetIds: value });
-    },
-    []
-  );
-
-  // TODO: implement remaining optional parameters other than the example ones
   return (
     <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
       <Box mb={4}>
@@ -108,23 +95,6 @@ export const OutcomesDrawer: FC<OutcomesDrawerProps> = ({
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             onFormDataChange({ description: e.target.value })
           }
-        />
-      </Box>
-      <Box mb={4}>
-        <Autocomplete
-          multiple
-          sx={CONFIGS_USER_INPUT_ARRAY_STYLES}
-          value={formData.ncoCohortSetIds}
-          onChange={handleNCOCohortSetIdsChange}
-          options={[]}
-          freeSolo
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="NCO Cohort Set Ids"
-              placeholder="Enter NCO Cohort Set ID"
-            />
-          )}
         />
       </Box>
       <Box mb={4}>
