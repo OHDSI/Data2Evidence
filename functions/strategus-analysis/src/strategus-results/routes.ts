@@ -81,12 +81,13 @@ export class StrategusResultsRouter {
 
     this.router.get(
       "/:studyId/websocket/",
+      validateStudyIdMiddleware,
       async (req: Request, res: Response) => {
         const { studyId } = req.params;
-        const strategusStudyUrl = `ws://${studyId}:3838/websocket`;
+        const targetUrl = `ws://${encodeURIComponent(studyId)}:3838/websocket`;
 
         const { socket, response } = Deno.upgradeWebSocket(req);
-        const strategusWebSocketConnection = new WebSocket(strategusStudyUrl);
+        const strategusWebSocketConnection = new WebSocket(targetUrl);
 
         socket.onmessage = (event) => {
           if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
