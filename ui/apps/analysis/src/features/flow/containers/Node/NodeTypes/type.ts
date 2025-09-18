@@ -12,7 +12,6 @@ export type NodeType =
   | "cohort_method_node"
   | "kaplan_meier_node"
   | "kaplan_meier_characterization_node"
-  | "competing_outcome_cohort_stratification_node"
   | "era_covariate_settings_node"
   | "calendar_time_covariate_settings_node"
   | "seasonality_covariate_settings_node"
