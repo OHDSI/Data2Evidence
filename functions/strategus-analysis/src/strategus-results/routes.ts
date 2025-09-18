@@ -79,6 +79,43 @@ export class StrategusResultsRouter {
       }
     );
 
+    this.router.get(
+      "/:studyId/websocket/",
+      async (req: Request, res: Response) => {
+        const { studyId } = req.params;
+        const strategusStudyUrl = `ws://${studyId}:3838/websocket`;
+
+        const { socket, response } = Deno.upgradeWebSocket(req);
+        const strategusWebSocketConnection = new WebSocket(strategusStudyUrl);
+
+        socket.onmessage = (event) => {
+          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
+            strategusWebSocketConnection.send(event.data);
+          }
+        };
+
+        strategusWebSocketConnection.onmessage = (event) => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(event.data);
+          }
+        };
+
+        socket.onclose = () => {
+          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
+            strategusWebSocketConnection.close();
+          }
+        };
+
+        strategusWebSocketConnection.onclose = () => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.close();
+          }
+        };
+
+        return response;
+      }
+    );
+
     this.router.all(
       "/:studyId/*",
       validateStudyIdMiddleware,
