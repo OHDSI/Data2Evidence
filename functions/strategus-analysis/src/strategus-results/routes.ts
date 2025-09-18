@@ -95,21 +95,44 @@ export class StrategusResultsRouter {
           }
         };
 
-        strategusWebSocketConnection.onmessage = (event) => {
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.send(event.data);
-          }
-        };
-
         socket.onclose = () => {
           if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
             strategusWebSocketConnection.close();
           }
         };
 
+        socket.onerror = (event) => {
+          console.error(`WebSocket connection request failed: ${event}`);
+          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
+            strategusWebSocketConnection.close(1011, "Client socket error");
+          }
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.close();
+          }
+        };
+
+        strategusWebSocketConnection.onmessage = (event) => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(event.data);
+          }
+        };
+
         strategusWebSocketConnection.onclose = () => {
           if (socket.readyState === WebSocket.OPEN) {
             socket.close();
+          }
+        };
+
+        strategusWebSocketConnection.onerror = (event) => {
+          console.error(
+            `WebSocket connection to Strategus Study failed: ${event}`
+          );
+
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.close(1011, "Error connecting to Strategus service");
+          }
+          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
+            strategusWebSocketConnection.close();
           }
         };
 

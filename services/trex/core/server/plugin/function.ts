@@ -326,18 +326,11 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
       const serviceUrl = `ws://${hostname}:${port}${url.pathname}${url.search}`;
 
       const { socket, response } = Deno.upgradeWebSocket(req);
-
       const serviceWebSocketConnection = new WebSocket(serviceUrl);
 
       socket.onmessage = (event) => {
         if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
           serviceWebSocketConnection.send(event.data);
-        }
-      };
-
-      serviceWebSocketConnection.onmessage = (event) => {
-        if (socket.readyState === WebSocket.OPEN) {
-          socket.send(event.data);
         }
       };
 
@@ -347,9 +340,35 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
         }
       };
 
+      socket.onerror = (event) => {
+        logger.error(`WebSocket connection request failed: ${event}`);
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.close(1011, "Client socket error");
+        }
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+
       serviceWebSocketConnection.onclose = () => {
         if (socket.readyState === WebSocket.OPEN) {
           socket.close();
+        }
+      };
+
+      serviceWebSocketConnection.onmessage = (event) => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(event.data);
+        }
+      };
+
+      serviceWebSocketConnection.onerror = (event) => {
+        logger.error(`WebSocket connection to service failed: ${event}`);
+        if (
+          socket.readyState === WebSocket.OPEN ||
+          socket.readyState === WebSocket.CONNECTING
+        ) {
+          socket.close(1011, "Service WebSocket connection error");
         }
       };
 
