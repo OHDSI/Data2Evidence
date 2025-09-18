@@ -1,5 +1,6 @@
 import { registerApplication, start, navigateToUrl } from 'single-spa'
 import { getNavigationConfig } from './config'
+import { getPortalAPI } from './PortalUtils'
 
 // Setup all import maps
 function setupImportMaps() {
@@ -43,7 +44,17 @@ function registerNavigationApps() {
         registerApplication({
           name: item.appName,
           app: () => window.System.import(item.appName).then((module: any) => module.default || module),
-          activeWhen: location => location.pathname === item.route,
+          activeWhen: location => item.alwaysActive || location.pathname === item.route,
+          customProps: () => {
+            const portalAPI = getPortalAPI()
+            return {
+              getToken: portalAPI?.getToken,
+              username: portalAPI?.username,
+              datasetId: portalAPI?.studyId,
+              locale: portalAPI?.locale,
+              isActiveRoute: location.pathname === item.route,
+            }
+          },
         })
       }
     })
@@ -67,6 +78,15 @@ function navigateToRoute(route: string, navigationItem?: any) {
   } catch (error) {
     console.error('AppRegistry.ts - Failed to navigate to route:', error)
   }
+
+  // Always dispatch concept-sets route change event
+  setTimeout(() => {
+    window.dispatchEvent(
+      new CustomEvent('route-change', {
+        detail: { activeRoute: route },
+      })
+    )
+  }, 0)
 }
 
 function initializeApps() {
