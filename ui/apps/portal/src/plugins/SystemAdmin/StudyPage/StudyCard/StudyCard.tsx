@@ -1,7 +1,7 @@
 import { ArrowBack, OpenInBrowser, PlayCircleFilled, StopCircle } from "@mui/icons-material";
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
-import { Button, Card, RunStudyIcon, TrashIcon, EditIcon, IconButton } from "@portal/components";
+import { Button, Card, RunStudyIcon, TrashIcon, EditIcon } from "@portal/components";
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
@@ -334,8 +334,13 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               onClick={openStudyTemplateDialog}
               startIcon={<EditIcon className="study-card__action-icon" />}
               text={getText(i18nKeys.STUDY_CARD__EDIT_VIEWER)}
-              disabled={!selectedDatasetId}
+              disabled={!selectedDatasetId || isViewerUp || isViewerFailed}
               variant="text"
+              sx={{
+                "&.Mui-disabled .MuiButton-startIcon path": {
+                  fill: "grey",
+                },
+              }}
             />
 
             {isViewerUp || isViewerFailed ? (
