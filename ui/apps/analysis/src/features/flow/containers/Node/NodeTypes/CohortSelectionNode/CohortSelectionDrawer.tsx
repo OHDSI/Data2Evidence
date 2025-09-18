@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
+import React, { FC, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import {
@@ -22,7 +22,7 @@ import {
 import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { CohortSelectionNodeData } from "./CohortSelectionNode";
-import { Cohort, CohortType } from "./CohortSelectionType";
+import { Cohort } from "./CohortSelectionType";
 export interface CohortSelectionDrawerProps
   extends Omit<NodeDrawerProps, "children"> {
   node: NodeProps<CohortSelectionNodeData>;
@@ -33,7 +33,6 @@ interface FormData extends CohortSelectionNodeData {}
 
 const EMPTY_FORM_DATA: FormData = {
   name: "",
-  type: CohortType.Event,
   cohorts: [],
 };
 
@@ -61,7 +60,6 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
     if (node.data) {
       setFormData({
         name: node.data.name,
-        type: node.data.type,
         cohorts: node.data.cohorts,
       });
     } else {
@@ -83,11 +81,25 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
     typeof onClose === "function" && onClose();
   }, [formData]);
 
+  const handleCancel = useCallback(() => {
+    if (node.data) {
+      setFormData({
+        name: node.data.name,
+        cohorts: node.data.cohorts,
+      });
+    } else {
+      setFormData({
+        ...EMPTY_FORM_DATA,
+        ...NodeChoiceMap["cohort_selection_node"].defaultData,
+      });
+    }
+    typeof onClose === "function" && onClose();
+  }, [node.data]);
+
   const handleAddCohort = useCallback(
     (value: Cohort) => {
       onFormDataChange({
         cohorts: [
-          ...formData.cohorts,
           { cohortId: value.cohortId, cohortName: value.cohortName },
         ],
       });
@@ -121,27 +133,16 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
   );
 
   return (
-    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
-      <Box mb={4}>
-        <InputLabel shrink>Cohort Type</InputLabel>
-        <Select
-          fullWidth
-          value={formData.type}
-          onChange={(e: SelectChangeEvent) =>
-            onFormDataChange({ type: e.target.value as CohortType })
-          }
-          displayEmpty
-        >
-          <MenuItem value={CohortType.Target}>Target</MenuItem>
-          <MenuItem value={CohortType.Event}>Event</MenuItem>
-          <MenuItem value={CohortType.Exit}>Exit</MenuItem>
-          <MenuItem value={CohortType.Outcome}>Outcome</MenuItem>
-          <MenuItem value={CohortType.Comparator}>Comparator</MenuItem>
-        </Select>
-      </Box>
+    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={handleCancel}>
       <Box mb={4}>
         <InputLabel shrink>Cohort Selection</InputLabel>
-        <Select fullWidth value="" onChange={handleSelectChange} displayEmpty>
+        <Select
+          fullWidth
+          value=""
+          onChange={handleSelectChange}
+          displayEmpty
+          disabled={formData.cohorts.length >= 1}
+        >
           <MenuItem value="" disabled>
             Select a cohort to add...
           </MenuItem>
@@ -164,7 +165,8 @@ export const CohortSelectionDrawer: FC<CohortSelectionDrawerProps> = ({
             justifyContent="space-between"
             gap={1}
             marginTop={1}
-            padding={1}
+            padding={2}
+            fontSize={14}
             border="1px solid #ddd"
             borderRadius={1}
           >

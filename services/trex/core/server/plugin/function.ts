@@ -7,6 +7,158 @@ import { proxy } from 'npm:hono/proxy'
 
 import { STATUS_CODE } from 'https://deno.land/std/http/status.ts';
 
+function substituteEnvVars(input: string): string {
+	let result = input;
+	let maxIterations = 10;
+	let iteration = 0;
+	while (iteration < maxIterations) {
+		const beforeSubstitution = result;
+		result = processVariables(result);
+		if (result === beforeSubstitution) {
+			break;
+		}
+		iteration++;
+	}
+	if (iteration >= maxIterations) {
+		console.warn(`Warning: Maximum iterations (${maxIterations}) reached for variable substitution. Possible circular reference in: ${input}`);
+	}
+	return result;
+}
+
+function processVariables(input: string): string {
+	let result = "";
+	let i = 0;
+	
+	while (i < input.length) {
+		if (input[i] === '$' && input[i + 1] === '{') {
+			const varStart = i;
+			const varContentStart = i + 2;
+			let braceCount = 1;
+			let j = varContentStart;
+			
+			while (j < input.length && braceCount > 0) {
+				if (input[j] === '{') {
+					braceCount++;
+				} else if (input[j] === '}') {
+					braceCount--;
+				}
+				j++;
+			}
+			
+			if (braceCount === 0) {
+				const varExpression = input.substring(varContentStart, j - 1);
+				const substituted = substituteVariable(varExpression);
+				result += substituted;
+				i = j;
+			} else {
+				result += input[i];
+				i++;
+			}
+		} else {
+			result += input[i];
+			i++;
+		}
+	}
+	return result;
+}
+
+function substituteVariable(varExpression: string): string {
+	const operatorMatch = varExpression.match(/^([^:?+-]+)([:+-]?[?+-])(.*)$/);
+	
+	if (operatorMatch) {
+		const [, varName, operator, operand] = operatorMatch;
+		const envValue = Deno.env.get(varName);
+		const isSet = envValue !== undefined;
+		const isNonEmpty = isSet && envValue !== "";
+		
+		switch (operator) {
+			case ":-":
+				return isNonEmpty ? envValue : operand;
+			case "-":
+				return isSet ? envValue : operand;
+			case ":?":
+				if (!isNonEmpty) {
+					throw new Error(operand || `${varName}: parameter null or not set`);
+				}
+				return envValue;
+			case "?":
+				if (!isSet) {
+					throw new Error(operand || `${varName}: parameter not set`);
+				}
+				return envValue;
+			case ":+":
+				return isNonEmpty ? operand : "";
+			case "+":
+				return isSet ? operand : "";
+			default:
+				return "${" + varExpression + "}";
+		}
+	} else {
+		const envValue = Deno.env.get(varExpression);
+		if(envValue == undefined ) console.log(`### ENV UNDEFINED ${varExpression}`);
+		return envValue !== undefined ? envValue : "";
+	}
+}
+
+function substituteEnvVarsInObject(obj: any): any {
+	if (typeof obj === 'string') {
+		return substituteEnvVars(obj);
+	} else if (Array.isArray(obj)) {
+		return obj.map(item => substituteEnvVarsInObject(item));
+	} else if (obj !== null && typeof obj === 'object') {
+		const result: any = {};
+		for (const [key, value] of Object.entries(obj)) {
+			result[key] = substituteEnvVarsInObject(value);
+		}
+		return result;
+	}
+	return obj;
+}
+
+const fnmap = {}
+
+Trex.createRequestListener(async (message, respond) => {
+	try {
+
+		if (!message || !message.request) {
+			respond({
+				ok: false,
+				status: 400,
+				statusText: 'Bad Request',
+				headers: { 'Content-Type': 'application/json' },
+				body: { error: 'Invalid message structure' }
+			});
+			return;
+		}
+		
+		const httpRequest = message.request;
+		
+		const httpResponse = await fnmap[message.service]?.(httpRequest);
+		if (httpResponse instanceof Response) {		
+			const responseBody = await httpResponse.text();
+			const responseData = {
+				body: responseBody,
+				status: httpResponse.status,
+				statusText: httpResponse.statusText,
+				ok: httpResponse.ok,
+				headers: Object.fromEntries(httpResponse.headers.entries()),
+				url: httpResponse.url
+			};
+			respond(responseData);
+		} else {
+			respond(httpResponse);
+		}
+	} catch (error) {
+		respond({
+			ok: false,
+			status: 500,
+			statusText: 'Internal Server Error',
+			headers: { 'Content-Type': 'application/json' },
+			body: { error: error.message }
+		});
+	}
+});
+
 const headers = new Headers({
 	'Content-Type': 'application/json',
 });
@@ -15,9 +167,9 @@ const getFullyQualifiedUserFunctionName = (function_name: string) => {
 	return (function_name.toUpperCase().startsWith(env.PROJECT_NAME.toUpperCase()) ? function_name : `${env.PROJECT_NAME}-${function_name}`) // Add Project prefix if not exists
 }
 
-async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: string, dir: string) {
+async function _callInit (servicePath: string, imports: any, fnEnv: any, xenv: any, eszip: string, dir: string) {
 	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fnEnv)
-	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fnEnv], {TREX_FUNCTION_PATH: `/usr/src/${dir}`})
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fnEnv in xenv ? xenv[fnEnv] : {}, {SERVICE_ROUTES: env.SERVICE_ROUTES, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
 	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
@@ -45,9 +197,9 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, eszip: 
 	return;
 }
     
-async function _callWorker (req: any, servicePath: string, imports: any, fncfg: any, dir: string) {
+async function _callWorker (req: any, servicePath: string, imports: any, fncfg: any, dir: string, xenv: any) {
 	const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(fncfg.env);
-	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, env.SERVICE_ENV["_shared"], env.SERVICE_ENV[fncfg.env], {DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
+	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fncfg.env in xenv ? xenv[fncfg.env] : {}, {SERVICE_ROUTES: env.SERVICE_ROUTES, DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv = Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fncfg.env] || false; 
 
@@ -88,8 +240,9 @@ async function _callWorker (req: any, servicePath: string, imports: any, fncfg: 
 	}
 };
 
-function _addFunction(app: Hono, url: string, path: string, imports: any, fncfg: any, dir: string) {
-	app.all(url+"/*", authn, authz, (c: Context) =>  _callWorker(c.req.raw, `${path}`, imports, fncfg, dir));
+function _addFunction(app: Hono, url: string, path: string, imports: any, fncfg: any, dir: string, name: string, xenv: any) {
+	fnmap[`${name}${fncfg.function}`] = (req) => _callWorker(req, `${path}`, imports, fncfg, dir, xenv);
+	app.all(url+"/*", authn, authz, (c: Context) =>  _callWorker(c.req.raw, `${path}`, imports, fncfg, dir, xenv));
 }
 
 function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
@@ -116,13 +269,14 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
 	});
 }
 
-async function _addInit(path: string, imports: any, env: any, eszip: string, dir: string, waitforurl: string) {
+async function _addInit(path: string, imports: any, fnenv: any, xenv: any, eszip: string, dir: string, waitforurl: string) {
 	if(waitforurl)
 		await waitfor(waitforurl);
-	_callInit(`${path}`, imports, env, eszip, dir);
+	_callInit(`${path}`, imports, fnenv, xenv, eszip, dir);
 }
 
-export async function addPlugin(app: Hono, value: any, dir: string) {
+export async function addPlugin(app: Hono, value: any, dir: string, name: string) {
+	const xenv = substituteEnvVarsInObject(value.env || {});
     if(value.init) {
         for(const r of value.init) {
             if(r.function) {
@@ -130,6 +284,7 @@ export async function addPlugin(app: Hono, value: any, dir: string) {
                 _addInit(`${dir}${r.function}`,
                     r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
                     r.env,
+					xenv,
 					r.eszip ? r.eszip : null, dir,
                     r.waitfor ?? (r.waitforEnvVar ? (env[r.waitforEnvVar] ?? Deno.env.get(r.waitforEnvVar)) : "")); //Object.keys(envVarsObj).map((k) => [k, envVarsObj[k]])
                 if (r.delay) await new Promise(resolve => setTimeout(resolve, r.delay));
@@ -164,7 +319,7 @@ export async function addPlugin(app: Hono, value: any, dir: string) {
             logger.log(`add fn ${r.source} @ ${dir}${r.function}`)
             _addFunction(app, r.source, `${dir}${r.function}`, 
             r.imports?  (r.imports.indexOf(":")<0 ? `${dir}${r.imports}` : r.imports) : null,
-            r, dir);
+            r, dir, name, xenv);
         } else if (r.service) {  
             logger.log(`add svc ${r.source} @ ${r.service}`)
             _addService(app, r.source, r.service, r.rmsrc);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../axios/api";
 import { AppError } from "../../types";
+import env from "../../env";
 
 export const useDatasetLatestFlowRun = (
   jobType: string,
@@ -16,7 +17,16 @@ export const useDatasetLatestFlowRun = (
     try {
       setLoading(refetch ? false : true);
       let results;
-      if (releaseId) {
+      // If using public webapi proxy and job type is data-characterization, dont get dataset latest flow run details
+      if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true" && jobType === "data-characterization") {
+        // If flag is true, request is sent directly to public webapi, therefore no need to send request to get latest flow run details
+        results = {
+          id: "dummyid", // Dummy id, not checked against, just need a dummy value to be present
+          state: {
+            type: "COMPLETED",
+          },
+        };
+      } else if (releaseId) {
         results = await api.dataflow.getDatasetReleaseFlowRun(jobType, datasetId, releaseId);
       } else {
         results = await api.dataflow.getDatasetLatestFlowRun(jobType, datasetId);

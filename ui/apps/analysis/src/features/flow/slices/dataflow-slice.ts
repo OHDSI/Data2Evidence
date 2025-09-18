@@ -128,10 +128,18 @@ export const dataflowApiSlice = createApi({
       ],
     }),
     runDataflow: builder.mutation({
-      query: ({ id, datasetId }: { id: string; datasetId: string }) => ({
+      query: ({
+        id,
+        datasetId,
+        uploadResults,
+      }: {
+        id: string;
+        datasetId: string;
+        uploadResults?: boolean;
+      }) => ({
         url: `prefect/analysis-run/${id}`,
         method: "POST",
-        body: { datasetId },
+        body: { datasetId, uploadResults },
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Dataflow", id },
