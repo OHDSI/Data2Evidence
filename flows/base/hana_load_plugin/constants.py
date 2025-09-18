@@ -18,7 +18,7 @@ CREATE_SCRIPT_DIR = BASE_DIR / "create_script"
 # Hana does not support foreign keys, so we skip hana_constraints.sql
 SQL_FILES_ORDER = [
     "hana_ddl.sql",
-    #"hana_primarykey.sql", 
+    # "hana_primarykey.sql", #usage of primary key is skipped due to duplicated primary keys in the dataset
     "hana_indices.sql"
     # "hana_constraints.sql",
 ]
