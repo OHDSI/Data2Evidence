@@ -77,15 +77,6 @@
           "httpMethods": [
             "DELETE"
           ]
-        },
-        {
-          "path": "^/gateway/api/fhir/test",
-          "scopes": [
-            "gateway.fhir.create"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
         }
       ]
     }
