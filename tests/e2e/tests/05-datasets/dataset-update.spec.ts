@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'dataset-update'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
+  test.setTimeout(300 * 1000)
   await page.goto('/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -13,10 +14,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page.getByRole('button', { name: 'Add dataset' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test Study 1')
+  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test_dataset_update')
   await page.getByRole('textbox', { name: 'Dataset summary' }).click()
   await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Test Summary')
   await page.locator('pre').nth(1).click()
@@ -32,32 +34,35 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).click()
-  await page.getByRole('textbox', { name: 'Token dataset code' }).fill('ts')
+  const randomToken = Math.random().toString(36).substring(2, 6)
+  await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomToken)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await expect(page.getByText('Test Study 1')).toBeVisible()
+  await expect(page.getByText('Test_dataset_update').first()).toBeVisible()
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
-  const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_ts_"))').first()
+  const firstEntry = page
+    .locator('.flow-run-list-item')
+    .filter({ has: page.locator('a:text("omop_cdm_plugin")') })
+    .first()
   // Find the closest state badge to this entry (adjust the selector as needed)
-  const stateBadge = firstEntry.locator(
-    'xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]'
-  )
-  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+  const stateBadge = firstEntry.locator('.state-badge')
+  await expect(stateBadge).toHaveText('Completed', { timeout: 120000 })
 
   await test.step('Update dataset summary and description', async () => {
     await page.getByRole('link', { name: 'Datasets' }).click()
     await page
-      .getByRole('row', { name: /Test Study 1/ })
+      .getByRole('row', { name: /Test_dataset_update/ })
+      .filter({ hasText: 'Not Available' })
       .getByRole('button')
       .nth(2)
       .click()
     await page.getByRole('option', { name: 'Update dataset' }).click()
     await page.getByRole('textbox', { name: 'Dataset summary' }).click()
     await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Updated Summary')
-    await page.getByLabel('', { exact: true }).click()
+    await page.locator('[class="metadata-form-component"]').getByRole('button').first().click()
+
     await page.getByRole('option', { name: 'Schema Version', exact: true }).click()
-    await page.getByPlaceholder(' ').click()
-    await page.getByPlaceholder(' ').fill('0')
+    await page.locator('input.input__element.sc-d4l-input').fill('1')
     await page.getByRole('button', { name: 'add metadata' }).click()
     await page.getByLabel('', { exact: true }).nth(1).click()
     await page.getByRole('option', { name: 'Latest Available Schema' }).click()
@@ -70,10 +75,15 @@ test(TEST_NAME, async ({ page }) => {
       .locator('div')
       .filter({ hasText: /^Latest Available Schema VersionValue$/ })
       .getByPlaceholder(' ')
-      .fill('1')
+      .fill('2')
     await page.getByRole('button', { name: 'Save' }).click({ timeout: 30000 })
+    await page.waitForTimeout(1000)
+    await page.reload()
+    await expect(
+      page.locator('tr').filter({ hasText: 'Test_dataset_update' }).getByRole('cell', { name: '1', exact: true })
+    ).toBeVisible()
     await page
-      .getByRole('row', { name: /Test Study 1/ })
+      .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
       .nth(2)
       .click({ timeout: 30000 })
@@ -81,20 +91,21 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Yes, update' }).click({ timeout: 30000 })
     await page.getByRole('link', { name: 'Jobs' }).click()
     // Get the first (top) entry link
-    const firstEntry = page.locator('a:has(span:text("datamodel-update-cdm_ts_"))').first()
+    const firstEntry = page
+      .locator('.flow-run-list-item')
+      .filter({ has: page.locator('a:has(span:text("datamodel-update-cdm"))') })
+      .first()
     // Find the closest state badge to this entry (adjust the selector as needed)
-    const stateBadge = firstEntry.locator(
-      'xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]'
-    )
-    await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+    const stateBadge = firstEntry.locator('.state-badge')
+    await expect(stateBadge).toHaveText('Completed', { timeout: 120000 })
   })
 
   await test.step('Switch to Researcher portal', async () => {
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
     // Scroll to the element before clicking, in case it is not in view
-    const study1 = page.getByText('Test Study 1')
-    await expect(page.getByText('Updated Summary')).toBeVisible()
+    const study1 = page.getByText('Test_dataset_update')
+    await expect(page.getByText('Updated Summary').first()).toBeVisible()
     await study1.scrollIntoViewIfNeeded()
     await study1.click()
     await expect(page.getByText('Test Description')).toBeVisible()
@@ -123,7 +134,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Hide dataset', async () => {
     await page.getByRole('link', { name: 'Datasets' }).click()
     await page
-      .getByRole('row', { name: /Test Study 1/ })
+      .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
       .nth(2)
       .click()
@@ -143,7 +154,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
-    await expect(page.getByText('Test Study 1')).not.toBeVisible()
+    await expect(page.getByText('Test_dataset_update')).not.toBeVisible()
   })
 
   await test.step('Logout as researcher and login as admin', async () => {
@@ -171,15 +182,15 @@ test(TEST_NAME, async ({ page }) => {
   // Cleanup: Delete the datasets created for testing
   await test.step('Delete datasets', async () => {
     await page.getByRole('link', { name: 'Datasets' }).click()
-    //Delete Test Study 1
+    //Delete Test_dataset_update
     await page
-      .getByRole('row', { name: /Test Study 1/ })
+      .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
       .nth(2)
       .click({ timeout: 30000 })
     await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
     await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
     // Wait for the deletion to complete before proceeding
-    await expect(page.getByRole('row', { name: /Test Study 1/ })).not.toBeVisible({ timeout: 20000 })
+    await expect(page.getByRole('row', { name: /Test_dataset_update/ })).not.toBeVisible({ timeout: 20000 })
   })
 })
