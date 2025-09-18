@@ -1,4 +1,4 @@
-import { ArrowBack, OpenInBrowser, PlayCircleFilled } from "@mui/icons-material";
+import { ArrowBack, OpenInBrowser, PlayCircleFilled, StopCircle } from "@mui/icons-material";
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
 import { Button, Card, RunStudyIcon, TrashIcon, EditIcon, IconButton } from "@portal/components";
@@ -333,7 +333,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
             <Button
               onClick={openStudyTemplateDialog}
               startIcon={<EditIcon className="study-card__action-icon" />}
-              text="Edit Viewer"
+              text={getText(i18nKeys.STUDY_CARD__EDIT_VIEWER)}
               disabled={!selectedDatasetId}
               variant="text"
             />
@@ -345,7 +345,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                   isStoppingViewer ? (
                     <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
                   ) : (
-                    <PlayCircleFilled className="study-card__action-icon" />
+                    <StopCircle className="study-card__action-icon" />
                   )
                 }
                 text={
