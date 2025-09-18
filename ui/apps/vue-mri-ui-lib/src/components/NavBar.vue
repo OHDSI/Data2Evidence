@@ -42,6 +42,13 @@ export default {
       navigationItems
     }
   },
+  mounted() {
+    this.updateActiveNavFromRoute();
+    window.addEventListener('single-spa:routing-event', this.updateActiveNavFromRoute);
+  },
+  beforeUnmount() {
+    window.removeEventListener('single-spa:routing-event', this.updateActiveNavFromRoute);
+  },
   methods: {
     handleLogoClick() {
       navigateToRoute('/');
@@ -59,6 +66,13 @@ export default {
       } else {
         navigateToRoute('/');
       }
+    },
+    updateActiveNavFromRoute() {
+      const currentPath = window.location.pathname;
+      
+      this.navigationItems.forEach(item => {
+        item.active = item.route === currentPath;
+      });
     }
   }
 }
@@ -105,7 +119,7 @@ export default {
 
 .nav-bar__nav-link {
   display: inline-block;
-  padding: 18px 18px 19px 18px;
+  padding: 18px;
   color: #000080;
   font-weight: 400;
   text-decoration: none;
