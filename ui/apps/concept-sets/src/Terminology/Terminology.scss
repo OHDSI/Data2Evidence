@@ -1,0 +1,12 @@
+.terminology__container {
+  display: flex;
+  flex-direction: column;
+}
+
+.terminology__search {
+  overflow: auto;
+}
+
+.terminology__details {
+  flex: 1;
+}

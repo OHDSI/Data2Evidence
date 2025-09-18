@@ -2,21 +2,31 @@ var HtmlWebpackPlugin = require('html-webpack-plugin')
 var path = require('path')
 const webpack = require('webpack')
 
+const navigationItems = JSON.parse(process.env.VUE_APP_NAVIGATION_ITEMS || '[]')
+const clientRoutes = navigationItems.map(item => item.route).filter(route => route && route.startsWith('/'))
+
 module.exports = {
   outputDir: path.resolve(__dirname, '../../resources/mri'),
   lintOnSave: true,
   devServer: {
     host: 'localhost',
     port: 8081,
+    historyApiFallback: true,
 
     // add your proxies here. See https://cli.vuejs.org/config/#devserver-proxy
     proxy: {
       '/': {
         target: 'https://localhost:41100',
         ws: false, // This disables proxying of ws so the hot reloader can communicate directly with vue dev server
+        bypass: req => {
+          if (clientRoutes.some(route => req.path.startsWith(route))) {
+            return '/index.html'
+          }
+          return null
+        },
       },
     },
-    server: 'https'
+    server: 'https',
   },
   publicPath: '',
   chainWebpack: config => {
