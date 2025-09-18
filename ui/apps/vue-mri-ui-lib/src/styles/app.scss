@@ -5,9 +5,8 @@ html,
 body,
 #app {
   height: 100%;
-  max-width: 100vw !important;
-  font-family: $font-family-base;
   scrollbar-width: thin;
+  font-family: $font-family-base;
 
   .UiLbl {
     color: $UiLightText;
