@@ -120,15 +120,45 @@ export class DemoService {
     }
 
     const { id: datasetId, vocabSchemaName } = dataset;
-    const result = await jobPluginsAPI.createDqdFlowRun({
+    const dqdFlowRun = await jobPluginsAPI.createDqdFlowRun({
       datasetId,
       releaseId: "",
       vocabSchemaName,
       comment: "Demo setup",
     });
 
-    this.logger.info(`DQD flow-run created: ${JSON.stringify(result.data)}`);
-    return result.flowRunId ? result : result.data;
+    // Normalize result to always be { flowRunId: string }
+    let result: { flowRunId: string };
+    if (dqdFlowRun?.flowRunId) {
+      result = { flowRunId: dqdFlowRun.flowRunId };
+    } else if (dqdFlowRun?.data?.flowRunId) {
+      result = { flowRunId: dqdFlowRun.data.flowRunId };
+    } else {
+      throw new Error(
+        `No flowRunId found in response: ${JSON.stringify(dqdFlowRun)}`
+      );
+    }
+
+    this.logger.info(`DQD flow-run created: ${JSON.stringify(result)}`);
+
+    const flowRunId = result.flowRunId;
+
+    const dqdResults = await jobPluginsAPI.getDqdFlowRunOverviewResults({
+      flowRunId,
+      datasetId,
+    });
+
+    // Assert correctedPassPercentage is 94
+    const correctedPassPercentage =
+      dqdResults?.total?.total?.correctedPassPercentage;
+    if (correctedPassPercentage !== "94%" && correctedPassPercentage !== 94) {
+      throw new Error(
+        `DQD results assertion failed: correctedPassPercentage is ${correctedPassPercentage}, expected 94 or "94%"`
+      );
+    }
+
+    this.logger.info(`DQD flow-run results: ${JSON.stringify(dqdResults)}`);
+    return dqdResults ? dqdResults : dqdResults.data;
   }
 
   public async runDC(token: string, _input: any, progress?: IProgress) {
@@ -174,7 +204,18 @@ export class DemoService {
     const result = await jobPluginsAPI.createCacheFlowRun({ datasetId });
 
     this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
-    return result.flowRunId ? result : result.data;
+    const flowRunId = result.flowRunId ? result : result.data;
+
+    const cacheStatusResponse = await jobPluginsAPI.getCacheFlowRunStatus(
+      flowRunId
+    );
+    this.logger.info(
+      `Cache flow-run status: ${JSON.stringify(cacheStatusResponse)}`
+    );
+
+    return cacheStatusResponse.flowRunId
+      ? cacheStatusResponse
+      : cacheStatusResponse.data;
   }
 
   public async updateDatasetMetadata(

@@ -227,39 +227,35 @@ export const Information: FC = () => {
                         </div>
                       </>
                     )}
-                    {attributes.length > 0 && (
-                      <>
-                        <div className="metadata__content">
-                          <SubTitle>{getText(i18nKeys.INFORMATION__METADATA)}</SubTitle>
-                          <TableContainer className="study-metadata">
-                            <Table>
-                              <colgroup>
-                                <col style={{ width: "40%" }} />
-                                <col style={{ width: "60%" }} />
-                              </colgroup>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>{getText(i18nKeys.INFORMATION__RESOURCE_TYPE)}</TableCell>
-                                  <TableCell>{getText(i18nKeys.INFORMATION__DATASET)}</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                <TableRow>
-                                  <TableCell>Dataset ID</TableCell>
-                                  <TableCell>{activeDatasetId}</TableCell>
-                                </TableRow>
-                                {attributes.map((studyAttribute: StudyAttribute) => (
-                                  <TableRow key={studyAttribute.attributeId}>
-                                    <TableCell>{studyAttribute.attributeConfig.name}</TableCell>
-                                    <TableCell>{studyAttribute.value}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </div>
-                      </>
-                    )}
+                    <div className="metadata__content">
+                      <SubTitle>{getText(i18nKeys.INFORMATION__METADATA)}</SubTitle>
+                      <TableContainer className="study-metadata">
+                        <Table>
+                          <colgroup>
+                            <col style={{ width: "40%" }} />
+                            <col style={{ width: "60%" }} />
+                          </colgroup>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>{getText(i18nKeys.INFORMATION__RESOURCE_TYPE)}</TableCell>
+                              <TableCell>{getText(i18nKeys.INFORMATION__DATASET)}</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell>Dataset ID</TableCell>
+                              <TableCell>{activeDatasetId}</TableCell>
+                            </TableRow>
+                            {attributes.map((studyAttribute: StudyAttribute) => (
+                              <TableRow key={studyAttribute.attributeId}>
+                                <TableCell>{studyAttribute.attributeConfig.name}</TableCell>
+                                <TableCell>{studyAttribute.value}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </div>
                   </div>
                 )}
 
