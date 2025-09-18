@@ -8,6 +8,7 @@ pub struct ServerHandle {
     pub thread_handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>>,
     pub shutdown_tx: oneshot::Sender<()>,
     pub start_time: std::time::SystemTime,
+    pub db_credentials: String,
 }
 
 pub struct ServerRegistry {
@@ -21,18 +22,15 @@ impl ServerRegistry {
         }
     }
 
-    /// Get the global singleton instance
     pub fn instance() -> &'static ServerRegistry {
         static INSTANCE: std::sync::OnceLock<ServerRegistry> = std::sync::OnceLock::new();
         INSTANCE.get_or_init(|| ServerRegistry::new())
     }
 
-    /// Create a server key from host and port
     pub fn server_key(host: &str, port: u16) -> String {
         format!("{}:{}", host, port)
     }
 
-    /// Check if a server is running on the given host:port
     pub fn is_server_running(&self, host: &str, port: u16) -> bool {
         let servers = self.servers.lock().unwrap();
         let key = Self::server_key(host, port);
@@ -56,6 +54,27 @@ impl ServerRegistry {
         Ok(())
     }
 
+    pub fn update_db_credentials(&self, _host: &str, _port: u16, new_credentials: String) -> Result<String, String> {
+        let mut servers = self.servers.lock().unwrap();
+        let count = servers.len();
+        
+        if count == 0 {
+            return Err("No servers are currently running".to_string());
+        }
+        
+        for (_, handle) in servers.iter_mut() {
+            handle.db_credentials = new_credentials.clone();
+        }
+        
+        Ok(format!("Database credentials updated for {} server(s)", count))
+    }
+
+    pub fn get_db_credentials(&self, host: &str, port: u16) -> Option<String> {
+        let servers = self.servers.lock().unwrap();
+        let key = Self::server_key(host, port);
+        servers.get(&key).map(|handle| handle.db_credentials.clone())
+    }
+
     pub fn stop_server(&self, host: &str, port: u16) -> Result<String, String> {
         let mut servers = self.servers.lock().unwrap();
         let key = Self::server_key(host, port);
@@ -68,26 +87,24 @@ impl ServerRegistry {
         }
     }
 
-    pub fn get_status(&self) -> String {
+    pub fn get_servers_info(&self) -> Vec<(String, u16, u64, bool)> {
         let servers = self.servers.lock().unwrap();
-        
-        if servers.is_empty() {
-            return "No pgwire servers currently running".to_string();
-        }
-        
-        let mut status_lines = vec!["Running pgwire servers:".to_string()];
+        let mut server_info = Vec::new();
         
         for (key, handle) in servers.iter() {
-            let uptime = handle.start_time.elapsed()
-                .map(|d| format!("{}s", d.as_secs()))
-                .unwrap_or_else(|_| "unknown".to_string());
-            
-            status_lines.push(format!(
-                "  {} (uptime: {})",
-                key, uptime
-            ));
+            let parts: Vec<&str> = key.split(':').collect();
+            if parts.len() == 2 {
+                let host = parts[0].to_string();
+                let port = parts[1].parse::<u16>().unwrap_or(0);
+                let uptime_secs = handle.start_time.elapsed()
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                let has_credentials = !handle.db_credentials.is_empty();
+                
+                server_info.push((host, port, uptime_secs, has_credentials));
+            }
         }
         
-        status_lines.join("\n")
+        server_info
     }
 }

@@ -67,7 +67,7 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), r
 # https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
 RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v0.6.7")' # https://github.com/OHDSI/Andromeda
 RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
-RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.5.1")' # https://github.com/OHDSI/Cyclops
+RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.6.0")' # https://github.com/OHDSI/Cyclops
 RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.41.0")' # https://github.com/rstudio/reticulate
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.3", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 
@@ -98,7 +98,7 @@ RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@RC-3.2.0", depe
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
 
-COPY --chown=jovyan:user ./flows/_shared_flow_utils/postgresql-42.3.1.jar /app/inst/drivers/postgresql-42.3.1.jar
+COPY --chown=jovyan:user ./flows/drivers /app/inst/drivers
 COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app/rD2E
 
 WORKDIR /app/rD2E

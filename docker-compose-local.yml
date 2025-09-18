@@ -90,11 +90,6 @@ services:
     ports:
       - "15432:5432"
 
-  alp-minerva-s3:
-    ports:
-      # - 9000:9000 #Port for API connectivity, internal communication is good enough. Needs to be uncommented only when testing from outside the alp docker network
-      - 9090:9090
-
   dicom-server:
     # uses 8042 port on the container
     ports:
@@ -119,21 +114,6 @@ services:
   #   ports:
   #     - 9226:9226
 
-  alp-cachedb:
-    build:
-      context: .
-      dockerfile: ./services/cachedb/Dockerfile
-      target: development
-      # To test without Hana
-      # args:
-      #   BUILD_TYPE: OSS
-    volumes:
-      - ./services/cachedb/src:/home/docker/src
-    ports:
-      - 9235:9235
-      - 41191:41191
-    environment:
-      LOCAL_DEBUG: "true"
 
   fhir-server:
     build:

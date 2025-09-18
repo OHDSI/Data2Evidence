@@ -85,7 +85,7 @@ RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), r
 # https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
 RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v1.0.0")' # https://github.com/OHDSI/Andromeda
 RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
-RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.5.1")' # https://github.com/OHDSI/Cyclops
+RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.6.0")' # https://github.com/OHDSI/Cyclops
 RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.41.0")' # https://github.com/rstudio/reticulate
 
 # OHDSI HADES
@@ -123,8 +123,8 @@ FROM base-build AS final-build
 ARG BUILD_TYPE
 WORKDIR /app
 
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
-COPY --chown=docker:docker  ./__init__.py .
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 COPY --chown=docker:docker --chmod=711 ./hades/requirements_hades.txt .
 ENV RUN_TYPE=$BUILD_TYPE
@@ -140,5 +140,7 @@ RUN rm -f .Renviron
 RUN chown -R docker:docker /app
 # Grant docker user read/write access
 RUN chmod -R 755 /app
+
+ENV INSTALL_SQLALCHEMY_HANA=false
 
 # USER docker

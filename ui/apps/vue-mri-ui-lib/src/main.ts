@@ -3,6 +3,7 @@ import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
 
 import App from './App.vue'
+import RootLayout from './RootLayout.vue'
 import clickFocus from './directives/clickFocus'
 import focus from './directives/focus'
 import mouseScroll from './directives/mouseScroll'
@@ -17,8 +18,22 @@ import appVariantRangeVue from './lib/ui/app-variant-range.vue'
 import appSingleSelect from './lib/ui/app-single-select.vue'
 import appTagInputVue from './lib/ui/app-tag-input.vue'
 import store from './store'
+import { getPortalAPI } from './utils/PortalUtils'
+import { initializeApps } from './utils/AppRegistry'
+import { initializeComponents } from './utils/ComponentRegistry'
 
-const app = createApp(App as unknown as Component)
+let app: Component
+const portalAPI = getPortalAPI()
+const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
+if (isLocal) {
+  app = createApp(RootLayout as unknown as Component)
+
+  // Initialize registries
+  initializeApps()
+  initializeComponents()
+} else {
+  app = createApp(App as unknown as Component)
+}
 
 app.use(store)
 app.component('app-label', appLabelVue)

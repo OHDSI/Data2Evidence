@@ -26,7 +26,7 @@ export class PrefectController {
   private async createAnalysisRun(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { datasetId } = req.body;
+      const { datasetId, uploadResults } = req.body;
       const token = this.getToken(req);
 
       if (!datasetId) {
@@ -38,6 +38,7 @@ export class PrefectController {
       const flowrunId = await this.prefectService.createAnalysisFlowRun(
         id,
         datasetId,
+        uploadResults,
         token
       );
       return res.status(200).send(flowrunId);
@@ -96,10 +97,10 @@ export class PrefectController {
           .status(400)
           .send({ message: "Missing required fields: json_graph or options" });
       }
-      if (options["study_id"] === undefined) {
+      if (options["studyId"] === undefined) {
         return res
           .status(400)
-          .send({ message: "Missing required field: study_id in options" });
+          .send({ message: "Missing required field: studyId in options" });
       }
       // uncomment this line when notebookName is available in jupyter kernel
       // if(options['notebookName'] === undefined) {

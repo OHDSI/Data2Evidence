@@ -91,7 +91,7 @@ RUN java -version && R CMD javareconf
 # Install Dependencies
 RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
 RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
-RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
+RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2", upgrade = "never")'
 RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
 RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
 RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.3.3", upgrade="never")'
@@ -121,47 +121,35 @@ RUN useradd docker -u 1001 \
     && adduser docker staff \
     && adduser docker alp
 
-FROM base-build AS dbsvc-build
+FROM base-build AS final-build
 
-# Required for RPostgres R package
-RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
-
-
-ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
-RUN mkdir -p ./liquibase/
-RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-FROM dbsvc-build AS final-build
-
-WORKDIR /app
-
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
-# COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
-
-COPY --chown=docker:docker  ./__init__.py .
-
-# Grant docker ownership to create properties file
-RUN chown -R docker:docker ./liquibase/
-
-RUN mkdir /output
-RUN chown -R docker:docker /output
+RUN rm -rf .Renviron /app/.github/.ssh
 
 # Create folder to store duckdb extensions for offline plugins
 # version must match duckdb in requirements.txt
-ENV duckdb_version 1.2.1
-RUN mkdir -p /app/duckdb_extensions
-WORKDIR /app/duckdb_extensions
-RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \
-    && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/fts.duckdb_extension.gz \
-    && gzip -d postgres_scanner.duckdb_extension.gz \
-    && gzip -d fts.duckdb_extension.gz
+ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
+
+COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
+
+RUN \
+    # Create output for dc, duckdb extension dir, and cache data dir
+    mkdir -p /output /app/duckdb_extensions /app/duckdb_data /app/cdw-config/duckdb_data \
+    && chown -R docker:docker /output /app/duckdb_extensions \
+    && chown -R docker:alp /app/duckdb_data /app/cdw-config/duckdb_data \
+    && chmod -R 755 /app/duckdb_extensions \
+    # Install DuckDB extensions
+    && chmod +x /app/download_duckdb_extensions.sh \
+    && cd /app/duckdb_extensions \
+    && /app/download_duckdb_extensions.sh "$DUCKDB_VERSION" "$DUCKDB_EXTENSIONS" \
+    && rm -f /app/download_duckdb_extensions.sh
+
+
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
+
 
 WORKDIR /app
-
-# Create folder for duckdb database files
-RUN mkdir ./duckdb_data
-RUN chown docker:alp ./duckdb_data
-RUN mkdir -p ./cdw-config/duckdb_data
-RUN chown -R docker:alp ./cdw-config
 
 COPY --chown=docker:docker --chmod=711 ./base/requirements_base.txt .
 
@@ -176,6 +164,6 @@ COPY --chown=docker:docker --chmod=711 ./base flows
 # Grant docker user read/write access
 RUN chmod -R 755 /app
 
-RUN rm -rf .Renviron /app/.github/.ssh
+ENV INSTALL_SQLALCHEMY_HANA=true
 
 # USER docker
