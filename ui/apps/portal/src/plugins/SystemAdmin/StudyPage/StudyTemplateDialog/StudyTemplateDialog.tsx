@@ -6,18 +6,18 @@ import Divider from "@mui/material/Divider";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
 import { api } from "../../../../axios/api";
-import { CloseDialogType, Feedback } from "../../../../types";
+import { CloseDialogType, Feedback, StrategusStudy, StrategusStudyType } from "../../../../types";
 import "./StudyTemplateDialog.scss";
 
 interface StudyTemplateDialogProps {
-  studyId: string;
+  study: StrategusStudy;
   open: boolean;
   onClose?: (type: CloseDialogType) => void;
   code: string;
   onCodeChange: (code: string) => void;
 }
 const SafeEditor = Editor as any;
-const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ studyId, open, onClose, code, onCodeChange }) => {
+const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClose, code, onCodeChange }) => {
   const { getText } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
@@ -35,7 +35,9 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ studyId, open, onCl
     setFeedback({});
     try {
       setLoading(true);
-      await api.strategusAnalysis.saveStategusAnalysisViewerCode(studyId, code);
+      if (study.type === StrategusStudyType.LOCAL) {
+        await api.strategusAnalysis.saveStategusAnalysisViewerCode(study.id, code);
+      }
       setFeedback({
         type: "success",
         message: getText(i18nKeys.STUDY_TEMPLATE_DIALOG__SAVE_SUCCESS),
@@ -43,16 +45,16 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ studyId, open, onCl
       });
     } catch (err: any) {
       console.error(err);
-      setFeedback({ type: "error", message: getText(i18nKeys.STUDY_TEMPLATE_DIALOG__SAVE_ERROR, [studyId]) });
+      setFeedback({ type: "error", message: getText(i18nKeys.STUDY_TEMPLATE_DIALOG__SAVE_ERROR, [study.id]) });
     } finally {
       setLoading(false);
     }
-  }, [code, getText, studyId]);
+  }, [code, getText, study]);
 
   return (
     <Dialog
       className="study-template-dialog"
-      title={getText(i18nKeys.STUDY_TEMPLATE_DIALOG__TITLE, [studyId])}
+      title={getText(i18nKeys.STUDY_TEMPLATE_DIALOG__TITLE, [study.id])}
       closable
       fullWidth
       maxWidth="md"

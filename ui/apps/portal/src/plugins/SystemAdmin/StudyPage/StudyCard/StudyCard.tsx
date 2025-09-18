@@ -429,7 +429,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       )}
 
       <StudyTemplateDialog
-        studyId={study.id}
+        study={study}
         open={showStudyTemplateDialog}
         onClose={closeStudyTemplateDialog}
         code={viewerCode}
