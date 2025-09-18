@@ -35,6 +35,7 @@ const initialState: FlowRootState = {
 
   saveFlowDialog: { visible: false, dataflowId: null },
   isTestMode: false,
+  uploadResults: false,
 
   status: undefined,
   flowRunState: flowRunStatesInitialState,
@@ -66,6 +67,9 @@ const flowSlice = createSlice({
     },
     setIsTestMode: (state, action: PayloadAction<boolean>) => {
       state.isTestMode = action.payload;
+    },
+    setUploadResults: (state, action: PayloadAction<boolean>) => {
+      state.uploadResults = action.payload;
     },
 
     // Flow status
@@ -115,6 +119,7 @@ export const {
   setAddNodeTypeDialog,
   setSaveFlowDialog,
   setIsTestMode,
+  setUploadResults,
 
   // Flow status
   markStatusAsDraft,
