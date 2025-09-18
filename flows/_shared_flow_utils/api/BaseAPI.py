@@ -8,7 +8,7 @@ class BaseAPI:
         self.python_verify_ssl = Variable.get("python_verify_ssl")
         self.tls_internal_ca_cert = Secret.load("tls-internal-ca-cert")
         is_dev_env = Variable.get("is_dev_env")
-        self.is_dev_env = is_dev_env if is_dev_env else False # change to True for local development
+        self.is_dev_env = is_dev_env if is_dev_env else True # change to True for local development
         
         if self.python_verify_ssl == 'true' and self.tls_internal_ca_cert is None:
             raise ValueError("'tls-internal-ca-cert' prefect secret is undefined")
@@ -35,5 +35,5 @@ class BaseAPI:
 
         return {
             "Content-Type": "application/json",
-            "Authorization": bearer_token if bearer_token else "Bearer <token>"
+            "Authorization": bearer_token if bearer_token else "Bearer eyJhbGciOiJFUzM4NCIsInR5cCI6ImF0K2p3dCIsImtpZCI6Il95TFBCM0lHZ1h4RWVMWmthajNsajE1c2g4WEhpWERUVUlsNTVUWlVrVDgifQ.eyJqdGkiOiIwUHJQZDBZdHMwVEw0a0Q3eFB0MjEiLCJzdWIiOiI0OHhmNWhhdHcwanIiLCJpYXQiOjE3NTgwODI3MDcsImV4cCI6MTc1ODA4NjMwNywic2NvcGUiOiIiLCJjbGllbnRfaWQiOiJQbUJWV1M2cXJxS3p0TWkwUGZFeG0iLCJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo0MTEwMC9vaWRjIiwiYXVkIjoiaHR0cHM6Ly9hbHAtZGVmYXVsdCJ9.6fYtchKE74JYHi7BeW_Vcr6B9ALvGZteeDtiWkb7ySt1u39ioXfugEj-XJ83ndOStNWPPgzgWEouvtR4ZDEDumqFRkZzYOBJeVnaLu-DfeU0EHOLS72VWQLvpg4jLvJw"
         }
