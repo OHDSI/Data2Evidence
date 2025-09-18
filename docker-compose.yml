@@ -39,7 +39,7 @@ x-envs:
     PG__SSL: ${PG__SSL:-false}
     PG__FHIR_DB_NAME: alp
   fhir: &x-fhir
-    FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-99f29ec3-bd24-4b01-be07-c64f5176dfdd}
+    FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
   redis: &x-redis
     REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
