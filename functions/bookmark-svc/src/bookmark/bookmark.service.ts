@@ -121,14 +121,8 @@ export async function _loadAllBookmarks(
     const materializedCohorts = await analyticsSvcAPI.getAllCohorts(datasetId)
     let formattedMaterializedCohorts = materializedCohorts.map(cohort => _formatMaterializedCohort(cohort))
 
-    const dialect = await portalAPI.getDatasetDialect(datasetId)
-    if (dialect !== 'hana') {
-      // Filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
-      formattedMaterializedCohorts = _filterUntaggedMaterializedCohorts(
-        formattedBookmarks,
-        formattedMaterializedCohorts
-      )
-    }
+    // Filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
+    formattedMaterializedCohorts = _filterUntaggedMaterializedCohorts(formattedBookmarks, formattedMaterializedCohorts)
 
     const returnValue: IFrontendBookmark = {
       schemaName: connection.schemaName,
