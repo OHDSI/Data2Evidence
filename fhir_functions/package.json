@@ -77,6 +77,15 @@
           "httpMethods": [
             "DELETE"
           ]
+        },
+        {
+          "path": "^/system-portal/dataset/list$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
         }
       ]
     }
