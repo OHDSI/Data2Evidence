@@ -63,12 +63,13 @@ export default {
 
 <style lang="scss" scoped>
 .landing {
-  min-height: calc(100% - 64px);
+  min-height: 100%;
   background-color: #f2f0f1;
   color: #1F425A;
   display: flex;
   padding: 32px;
   font-size: 16px;
+  box-sizing: border-box;
 }
 
 .landing__card {
@@ -110,7 +111,7 @@ export default {
   color: #000080;
   text-decoration: underline;
 
-  :hover {
+  &:hover {
     color: #3a52a8;
   }
 }
