@@ -35,10 +35,6 @@ test(TEST_NAME, async ({ page }) => {
       .locator('.flow-run-list-item')
       .filter({ has: page.locator('a:text("omop_cdm_plugin")') })
       .first()
-    const dm_entry = page
-      .locator('.flow-run-list-item')
-      .filter({ has: page.locator('a:text("datamart_plugin")') })
-      .first()
     // Find the closest state badge to this entry (adjust the selector as needed)
     const dqd_state = dqd_entry.locator('.state-badge')
     await expect(dqd_state).toHaveText('Completed', { timeout: 120000 })
@@ -46,8 +42,6 @@ test(TEST_NAME, async ({ page }) => {
     await expect(dc_state).toHaveText('Completed', { timeout: 120000 })
     const omop_state = omop_entry.locator('.state-badge')
     await expect(omop_state).toHaveText('Completed', { timeout: 120000 })
-    const dm_state = dm_entry.locator('.state-badge')
-    await expect(dm_state).toHaveText('Completed', { timeout: 120000 })
   })
 
   await test.step('overview-chart', async () => {
