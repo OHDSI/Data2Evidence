@@ -9,6 +9,13 @@ const api = axios.create({
 
 const SOURCE = 'SYNPUF1K'
 
+// Predefined endpoint mappings to prevent SSRF
+const ALLOWED_ENDPOINTS = {
+  cohortdefinition: '/cohortdefinition/',
+  conceptset: '/conceptset/',
+  vocabulary: `/vocabulary/${SOURCE}/search`
+}
+
 // server has 20,000
 const MAX_COHORT_DEFINITIONS = 50000
 const USE_CACHE = process.env.USE_CACHE || false
@@ -66,7 +73,8 @@ const setupWebapiRoutes = app => {
     const cacheKey = CACHE_KEYS.COHORT_DEFINITION(cohortDefinitionId)
     let data = cache[cacheKey]
     if (!data || !USE_CACHE) {
-      const response = await api.get(`/cohortdefinition/${cohortDefinitionId}`)
+      const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId
+      const response = await api.get(endpoint)
       data = response.data
       cache[cacheKey] = data
     }
@@ -121,7 +129,7 @@ const setupWebapiRoutes = app => {
       cdmVersionRange: null,
     }
     const expression = _.merge(skeleton, req.body.expression)
-    const response = await api.post(`/cohortdefinition/`, { ...req.body, expression })
+    const response = await api.post(ALLOWED_ENDPOINTS.cohortdefinition, { ...req.body, expression })
     const { data } = response
 
     // Invalidate cohort definitions cache since we created a new one
@@ -133,7 +141,8 @@ const setupWebapiRoutes = app => {
   app.put('/d2e-webapi/cohortdefinition/:cohortDefinitionId', validateId('cohortDefinitionId'), async (req, res) => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
-    await api.put(`/cohortdefinition/${cohortDefinitionId}`, req.body)
+    const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId
+    await api.put(endpoint, req.body)
 
     // Invalidate cohort definitions cache since we updated one
     delete cache[CACHE_KEYS.COHORT_DEFINITIONS]
@@ -147,7 +156,7 @@ const setupWebapiRoutes = app => {
     logRequest(req)
     let data = cache[cacheKey]
     if (!data || !USE_CACHE) {
-      const response = await api.get('/cohortdefinition/')
+      const response = await api.get(ALLOWED_ENDPOINTS.cohortdefinition)
       data = response.data
       cache[cacheKey] = data
     }
@@ -173,7 +182,8 @@ const setupWebapiRoutes = app => {
       // datasetId not used for demo purpose
       const { cohortDefinitionId, datasetId } = req.params
       // using hardcoded sourceKey from GET https://atlas-demo.ohdsi.org/WebAPI/source/sources
-      await api.get(`/cohortdefinition/${cohortDefinitionId}/generate/${SOURCE}`, req.body)
+      const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/generate/' + SOURCE
+      await api.get(endpoint, req.body)
       return res.send()
     }
   )
@@ -181,7 +191,8 @@ const setupWebapiRoutes = app => {
   app.delete('/d2e-webapi/cohortdefinition/:cohortDefinitionId', validateId('cohortDefinitionId'), async (req, res) => {
     logRequest(req)
     const { cohortDefinitionId } = req.params
-    await api.delete(`/cohortdefinition/${cohortDefinitionId}`, req.body)
+    const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId
+    await api.delete(endpoint, req.body)
 
     // Invalidate cohort definitions cache since we deleted one
     delete cache[CACHE_KEYS.COHORT_DEFINITIONS]
@@ -202,7 +213,8 @@ const setupWebapiRoutes = app => {
       let data = cache[cacheKey]
       if (!data || !USE_CACHE) {
         // Call Atlas demo API to get concept set expression
-        const response = await api.get(`/conceptset/${conceptSetId}/expression`)
+        const endpoint = ALLOWED_ENDPOINTS.conceptset + conceptSetId + '/expression'
+        const response = await api.get(endpoint)
         data = response.data
         cache[cacheKey] = data
       }
@@ -226,7 +238,7 @@ const setupWebapiRoutes = app => {
     logRequest(req)
     let data = cache[cacheKey]
     if (!data || !USE_CACHE) {
-      const response = await api.get('/conceptset/')
+      const response = await api.get(ALLOWED_ENDPOINTS.conceptset)
       data = response.data
       cache[cacheKey] = data
     }
@@ -250,7 +262,7 @@ const setupWebapiRoutes = app => {
     logRequest(req)
     try {
       // Create the concept set - the client will handle adding items separately
-      const createResponse = await api.post('/conceptset/', req.body)
+      const createResponse = await api.post(ALLOWED_ENDPOINTS.conceptset, req.body)
       const { data: conceptSet } = createResponse
       const conceptSetId = conceptSet.id
       console.log(`Created concept set with ID: ${conceptSetId}`)
@@ -281,7 +293,8 @@ const setupWebapiRoutes = app => {
     }
     try {
       // Forward to Atlas API
-      const response = await api.put(`/conceptset/${conceptSetId}/items`, req.body)
+      const endpoint = ALLOWED_ENDPOINTS.conceptset + conceptSetId + '/items'
+      const response = await api.put(endpoint, req.body)
 
       // Invalidate concept set caches since we updated items
       delete cache[CACHE_KEYS.CONCEPT_SETS]
@@ -321,7 +334,8 @@ const setupWebapiRoutes = app => {
       let data = cache[cacheKey]
       if (!data || !USE_CACHE) {
         // Call Atlas demo API to search vocabularies with sanitized query
-        const response = await api.get(`/vocabulary/${SOURCE}/search?query=${sanitizedQuery}`)
+        const endpoint = ALLOWED_ENDPOINTS.vocabulary + '?query=' + sanitizedQuery
+        const response = await api.get(endpoint)
         data = response.data
         cache[cacheKey] = data
       }

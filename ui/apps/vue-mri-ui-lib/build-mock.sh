@@ -21,13 +21,17 @@ cp public/authenticate.js src/query-filter/mock-server/static/mri/
 mkdir -p src/query-filter/mock-server/static/@d4l
 cp -r ../../node_modules/@d4l/web-components-library/dist/esm src/query-filter/mock-server/static/@d4l/web-components-library
 
+# Install mock server dependencies
+echo 'Installing mock server dependencies...'
+cd src/query-filter/mock-server
+npm install
+
 # Display completion message
 echo ''
 echo '✅ Build complete!'
 echo ''
 echo 'To start the mock server:'
-echo '  cd mock-server'
-echo '  node server.js'
+echo '  npm run start:mock'
 echo ''
-echo 'Then open http://localhost:3001 in your browser.'
+echo 'Then open http://localhost:3131 in your browser.'
 echo ''

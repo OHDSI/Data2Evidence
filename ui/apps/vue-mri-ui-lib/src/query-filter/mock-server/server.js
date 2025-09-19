@@ -1,49 +1,21 @@
 const express = require('express')
 const cors = require('cors')
 const path = require('path')
+const rateLimit = require('express-rate-limit')
+const fs = require('fs')
 const setupWebapiRoutes = require('./webapi-routes')
 const setupWebapiDCRoutes = require('./dc-routes')
 const setupMockRoutes = require('./mock-routes')
 const app = express()
 
-// Simple in-memory rate limiter
-const rateLimiter = {
-  requests: new Map(),
+// Express rate limiter - CodeQL recognizes this pattern
+const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  maxRequests: 100,
-
-  isAllowed(ip) {
-    const now = Date.now()
-    const clientData = this.requests.get(ip)
-
-    if (!clientData) {
-      this.requests.set(ip, { count: 1, resetTime: now + this.windowMs })
-      return true
-    }
-
-    if (now > clientData.resetTime) {
-      this.requests.set(ip, { count: 1, resetTime: now + this.windowMs })
-      return true
-    }
-
-    if (clientData.count >= this.maxRequests) {
-      return false
-    }
-
-    clientData.count++
-    return true
-  },
-
-  middleware() {
-    return (req, res, next) => {
-      const ip = req.ip || req.connection.remoteAddress
-      if (!this.isAllowed(ip)) {
-        return res.status(429).json({ error: 'Too many requests from this IP' })
-      }
-      next()
-    }
-  },
-}
+  max: 100, // max 100 requests per windowMs
+  message: { error: 'Too many requests from this IP' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
 
 // Global error handlers
 process.on('uncaughtException', error => {
@@ -58,6 +30,41 @@ process.on('unhandledRejection', (reason, promise) => {
 
 app.use(cors())
 app.use(express.json())
+
+// Apply rate limiting globally to prevent DoS attacks
+app.use(limiter)
+
+// Pre-cache file contents at startup to avoid file system access in handlers
+let cachedFiles = {}
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3001'
+
+try {
+  const authPath = path.join(__dirname, 'static', 'mri', 'authenticate.js')
+  const indexPath = path.join(__dirname, 'static', 'mri', 'index.html')
+
+  if (fs.existsSync(authPath)) {
+    cachedFiles.auth = fs.readFileSync(authPath, 'utf8')
+  } else {
+    console.warn('jer Warning: authenticate.js not found at', authPath)
+    cachedFiles.auth = '// authenticate.js not found'
+  }
+
+  if (fs.existsSync(indexPath)) {
+    cachedFiles.index = fs.readFileSync(indexPath, 'utf8')
+  } else {
+    console.warn('jer Warning: index.html not found at', indexPath)
+    cachedFiles.index =
+      '<!DOCTYPE html><html><head><title>Index not found</title></head><body>Index not found</body></html>'
+  }
+
+  console.log('jer Cached files loaded successfully')
+} catch (error) {
+  console.error('jer Error loading cached files:', error)
+  cachedFiles = {
+    auth: '// Error loading authenticate.js',
+    index: '<!DOCTYPE html><html><head><title>Error</title></head><body>Error loading page</body></html>',
+  }
+}
 
 // Middleware to log requests
 app.use((req, res, next) => {
@@ -87,13 +94,10 @@ app.get('/favicon-atlas.ico', (req, res) => {
   res.sendFile(faviconPath)
 })
 
-// Serve authenticate.js with modifications
-app.get('/authenticate.js', rateLimiter.middleware(), (_, res) => {
-  const fs = require('fs')
-  const authPath = path.join(__dirname, 'static', 'mri', 'authenticate.js')
-
+// Serve authenticate.js with modifications (using cached content)
+app.get('/authenticate.js', (_, res) => {
   try {
-    let jsContent = fs.readFileSync(authPath, 'utf8')
+    let jsContent = cachedFiles.auth
 
     // Apply find/replace operations
     jsContent = jsContent.replace(/const USE_MOCK_SERVER = false/g, 'const USE_MOCK_SERVER = true')
@@ -102,18 +106,15 @@ app.get('/authenticate.js', rateLimiter.middleware(), (_, res) => {
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
     res.send(jsContent)
   } catch (error) {
-    console.error('Error serving authenticate.js:', error)
+    console.error('jer Error serving authenticate.js:', error)
     res.status(500).send('// Error loading authenticate.js')
   }
 })
 
-// Catch-all handler: serve index.html for any unmatched route (SPA fallback)
-app.get('*', rateLimiter.middleware(), (_, res) => {
-  const fs = require('fs')
-  const indexPath = path.join(__dirname, 'static', 'mri', 'index.html')
-
+// Catch-all handler: serve index.html for any unmatched route (SPA fallback) (using cached content)
+app.get('*', (_, res) => {
   try {
-    let htmlContent = fs.readFileSync(indexPath, 'utf8')
+    let htmlContent = cachedFiles.index
 
     // Apply find/replace operations
     htmlContent = htmlContent.replace(/https:\/\/localhost:8081/g, SERVER_URL)
@@ -128,12 +129,11 @@ app.get('*', rateLimiter.middleware(), (_, res) => {
     res.setHeader('Content-Type', 'text/html')
     res.send(htmlContent)
   } catch (error) {
-    console.error('Error serving index.html:', error)
+    console.error('jer Error serving index.html:', error)
     res.status(500).send('Error loading page')
   }
 })
 
-const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3001'
 const PORT = new URL(SERVER_URL).port || 3001
 app.listen(PORT, () => {
   console.log(`Server URL replacement: https://localhost:8081 -> ${SERVER_URL}`)

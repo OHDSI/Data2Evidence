@@ -98,6 +98,7 @@ For active development with hot-reload and Vue CLI dev tools:
 4. **Start the mock server** (in a separate terminal):
    ```bash
    cd src/query-filter/mock-server
+   npm install  # Install dependencies first
    npm start
    ```
 
@@ -109,6 +110,7 @@ To run just the mock server for API testing:
 
 ```bash
 cd src/query-filter/mock-server
+npm install  # Install dependencies first
 npm start
 ```
 
