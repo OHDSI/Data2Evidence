@@ -28,7 +28,7 @@ function setupImportMaps() {
     newScript.textContent = JSON.stringify(importMapData, null, 2)
     document.head.appendChild(newScript)
   } catch (error) {
-    console.warn('Failed to setup import maps:', error)
+    console.error('AppRegistry.ts - Failed to setup import maps:', error)
   }
 }
 
@@ -59,20 +59,24 @@ function registerNavigationApps() {
       }
     })
   } catch (error) {
-    console.warn('Failed to register navigation apps:', error)
+    console.error('AppRegistry.ts - Failed to register navigation apps:', error)
   }
 }
 
 function navigateToRoute(route: string, navigationItem?: any) {
-  navigateToUrl(route)
+  try {
+    navigateToUrl(route)
 
-  // If this is a component navigation, emit the custom event
-  if (navigationItem?.type === 'component' && navigationItem?.component) {
-    window.dispatchEvent(
-      new CustomEvent('component-navigation', {
-        detail: { item: navigationItem, route },
-      })
-    )
+    // If this is a component navigation, emit the custom event
+    if (navigationItem?.type === 'component' && navigationItem?.component) {
+      window.dispatchEvent(
+        new CustomEvent('component-navigation', {
+          detail: { item: navigationItem, route },
+        })
+      )
+    }
+  } catch (error) {
+    console.error('AppRegistry.ts - Failed to navigate to route:', error)
   }
 
   // Always dispatch concept-sets route change event
@@ -86,12 +90,16 @@ function navigateToRoute(route: string, navigationItem?: any) {
 }
 
 function initializeApps() {
-  setupImportMaps()
-  registerNavigationApps()
+  try {
+    setupImportMaps()
+    registerNavigationApps()
 
-  start({
-    urlRerouteOnly: true,
-  })
+    start({
+      urlRerouteOnly: true,
+    })
+  } catch (error) {
+    console.error('AppRegistry.ts - Failed to initialize apps:', error)
+  }
 }
 
 export { initializeApps, navigateToRoute }
