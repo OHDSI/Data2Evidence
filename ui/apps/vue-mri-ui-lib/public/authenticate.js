@@ -31,21 +31,23 @@ const getUser = () => {
   return userManager.getUser()
 }
 
-if (code && !USE_MOCK_SERVER) {
-  userManager
-    .signinRedirectCallback()
-    .then(user => {
-      localStorage.setItem('msaltoken', user.access_token)
-      const returnPath = sessionStorage.getItem('returnPath') || '/'
-      sessionStorage.removeItem('returnPath')
-      window.location.replace(window.location.origin + returnPath)
-    })
-    .catch(error => {
-      console.error('Error during login', error)
-      localStorage.removeItem('msaltoken')
-      signinRedirect()
-    })
-} else if (!authToken) {
-  sessionStorage.setItem('returnPath', window.location.pathname)
-  signinRedirect()
+if (!USE_MOCK_SERVER) {
+  if (code) {
+    userManager
+      .signinRedirectCallback()
+      .then(user => {
+        localStorage.setItem('msaltoken', user.access_token)
+        const returnPath = sessionStorage.getItem('returnPath') || '/'
+        sessionStorage.removeItem('returnPath')
+        window.location.replace(window.location.origin + returnPath)
+      })
+      .catch(error => {
+        console.error('Error during login', error)
+        localStorage.removeItem('msaltoken')
+        signinRedirect()
+      })
+  } else if (!authToken) {
+    sessionStorage.setItem('returnPath', window.location.pathname)
+    signinRedirect()
+  }
 }
