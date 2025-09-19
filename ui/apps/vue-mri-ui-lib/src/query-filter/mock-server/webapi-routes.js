@@ -13,12 +13,13 @@ const SOURCE = 'SYNPUF1K'
 const ALLOWED_ENDPOINTS = {
   cohortdefinition: '/cohortdefinition/',
   conceptset: '/conceptset/',
-  vocabulary: `/vocabulary/${SOURCE}/search`
+  vocabulary: `/vocabulary/${SOURCE}/search`,
 }
 
 // server has 20,000
 const MAX_COHORT_DEFINITIONS = 50000
-const USE_CACHE = process.env.USE_CACHE || false
+const USE_CACHE = process.env.USE_CACHE?.toUpperCase() === 'TRUE' || false
+console.log('USE_CACHE: ', USE_CACHE)
 const cache = {}
 
 // Cache keys

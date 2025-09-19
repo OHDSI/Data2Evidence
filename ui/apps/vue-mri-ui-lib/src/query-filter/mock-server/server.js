@@ -45,21 +45,21 @@ try {
   if (fs.existsSync(authPath)) {
     cachedFiles.auth = fs.readFileSync(authPath, 'utf8')
   } else {
-    console.warn('jer Warning: authenticate.js not found at', authPath)
+    console.warn('Warning: authenticate.js not found at', authPath)
     cachedFiles.auth = '// authenticate.js not found'
   }
 
   if (fs.existsSync(indexPath)) {
     cachedFiles.index = fs.readFileSync(indexPath, 'utf8')
   } else {
-    console.warn('jer Warning: index.html not found at', indexPath)
+    console.warn('Warning: index.html not found at', indexPath)
     cachedFiles.index =
       '<!DOCTYPE html><html><head><title>Index not found</title></head><body>Index not found</body></html>'
   }
 
-  console.log('jer Cached files loaded successfully')
+  console.log('Cached files loaded successfully')
 } catch (error) {
-  console.error('jer Error loading cached files:', error)
+  console.error('Error loading cached files:', error)
   cachedFiles = {
     auth: '// Error loading authenticate.js',
     index: '<!DOCTYPE html><html><head><title>Error</title></head><body>Error loading page</body></html>',
@@ -106,7 +106,7 @@ app.get('/authenticate.js', (_, res) => {
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
     res.send(jsContent)
   } catch (error) {
-    console.error('jer Error serving authenticate.js:', error)
+    console.error('Error serving authenticate.js:', error)
     res.status(500).send('// Error loading authenticate.js')
   }
 })
@@ -129,7 +129,7 @@ app.get('*', (_, res) => {
     res.setHeader('Content-Type', 'text/html')
     res.send(htmlContent)
   } catch (error) {
-    console.error('jer Error serving index.html:', error)
+    console.error('Error serving index.html:', error)
     res.status(500).send('Error loading page')
   }
 })

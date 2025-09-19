@@ -112,6 +112,12 @@ To run just the mock server for API testing:
 cd src/query-filter/mock-server
 npm install  # Install dependencies first
 npm start
+
+# With caching enabled for faster development
+USE_CACHE=true npm start
+
+# On a different port
+SERVER_URL=http://localhost:3001 npm start
 ```
 
 The mock server will start on port 3001 and provide mock API endpoints.
@@ -150,11 +156,16 @@ For a production-like bundle that serves both the application and APIs from a si
 
 ### Environment Variables
 
-- **`SERVER_URL`** (default: `https://localhost:3001`)
+- **`SERVER_URL`** (default: `http://localhost:3131`)
 
   - Sets the base URL for the server
   - Automatically extracts the port number for the server
   - Used for URL replacement in mock data and served files
+
+- **`USE_CACHE`** (default: `false`)
+  - Set to `true` to enable API response caching
+  - Improves performance during development by caching external API calls
+  - Example: `USE_CACHE=true npm start`
 
 - **`DEBUG`**
   - default `DEBUG=false`
