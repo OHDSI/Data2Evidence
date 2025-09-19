@@ -32,6 +32,11 @@ def dqd_plugin(options: DqdOptionsType):
         database_code=options.databaseCode,
     )
 
+    is_hana_jwt_auth = dbdao.tenant_configs.authMode == AuthMode.JWT and dbdao.dialect == SupportedDatabaseDialects.HANA
+
+    # Todo: Update implementation if Hana JWT uses trex
+    use_trex_connection = False if is_hana_jwt_auth else options.use_trex_connection
+
     r_connection_string = dbdao.get_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
@@ -43,13 +48,11 @@ def dqd_plugin(options: DqdOptionsType):
         outputFolder=output_folder,
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
-        use_trex_connection=options.use_trex_connection,
+        use_trex_connection=use_trex_connection,
     )
 
     if (
-        options.cohortDefinitionId
-        and dbdao.dialect == SupportedDatabaseDialects.HANA
-        and dbdao.tenant_configs.authMode == AuthMode.JWT
+        options.cohortDefinitionId and is_hana_jwt_auth
     ):
         # For Hana JWT mode, fetch the materialized cohort schema and assign to DQD parameters
         schema_from_api = get_cohort_database_schema(options.datasetId)

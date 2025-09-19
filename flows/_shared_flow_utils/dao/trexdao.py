@@ -19,12 +19,12 @@ class TrexDao(DaoBase):
         self,
         use_cache_db: bool,
         database_code: str,
-        *,
         user_type: UserType = UserType.ADMIN_USER,
         is_study_results_db: bool = False,
-        is_hana: bool = False
+        is_hana: bool = False,
     ):
         super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
+
         self.is_hana = is_hana
 
     @property
@@ -102,7 +102,11 @@ class TrexDao(DaoBase):
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(schema)
-        sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
+        if self.is_hana:
+            sql = '''CREATE SCHEMA {}'''
+        else:
+            sql = '''CREATE SCHEMA IF NOT EXISTS {}'''
+        sql = pg_sql.SQL(sql) \
                 .format(pg_sql.Identifier(schema))
         self.execute_sql(sql)
 
@@ -115,10 +119,13 @@ class TrexDao(DaoBase):
 
     def check_schema_exists(self, schema: str) -> bool:
         try:
-            sql = '''
-                SELECT schema_name FROM information_schema.schemata
-                WHERE catalog_name = current_database();
-            '''
+            if self.is_hana:
+                sql = '''SELECT SCHEMA_NAME FROM SYS.SCHEMAS;'''
+            else:
+                sql = '''
+                    SELECT schema_name FROM information_schema.schemata
+                    WHERE catalog_name = current_database();
+                '''
             result = self.execute_sql(sql, fetch=True)
             schemas = {row[0] for row in result}
             return schema in schemas
@@ -126,7 +133,7 @@ class TrexDao(DaoBase):
             raise
 
 
-    def check_empty_schema(schema: str) -> bool:
+    def check_empty_schema(self, schema: str) -> bool:
         pass
 
 

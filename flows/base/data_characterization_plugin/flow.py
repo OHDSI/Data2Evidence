@@ -15,9 +15,9 @@ from prefect.artifacts import create_markdown_artifact
 from .utils import *
 from .types import DCOptionsType, AchillesParams
 
-from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.dao.DBDao import DBDao, TrexDao
 from _shared_flow_utils.create_dataset_tasks import *
-from _shared_flow_utils.rutils import set_trex_env_var, py_bool_to_r
+from _shared_flow_utils.rutils import set_trex_env_var, py_bool_to_r, get_trex_env_var
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
 
 
@@ -43,9 +43,11 @@ def data_characterization_plugin(options: DCOptionsType):
         database_code=options.databaseCode,
     )
 
-    # Todo: Update implementation if Hana uses trex
+    is_hana_jwt_auth = dbdao.tenant_configs.authMode == AuthMode.JWT and dbdao.dialect == SupportedDatabaseDialects.HANA
+
+    # Todo: Update implementation if Hana JWT uses trex
     # If the actual dialect is HANA, force use_trex_connection to False
-    use_trex_connection = False if dbdao.dialect == SupportedDatabaseDialects.HANA else options.use_trex_connection
+    use_trex_connection = False if is_hana_jwt_auth else options.use_trex_connection
 
     cdm_source = get_cdm_source(
         dbdao,
@@ -59,7 +61,9 @@ def data_characterization_plugin(options: DCOptionsType):
 
     db_driver_string = dbdao.set_db_driver_env()
 
-    # Todo: Update implementation if Hana uses trex
+    trex_env_var = get_trex_env_var(use_trex_connection, isinstance(dbdao, TrexDao) and dbdao.is_hana)
+
+    # Todo: Update implementation if Hana JWT uses trex
     # Create Achilles parameters from DCOptions
     achilles_params = AchillesParams(
         **options.model_dump(),
@@ -68,7 +72,7 @@ def data_characterization_plugin(options: DCOptionsType):
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
         excludeAnalysisIds=exclude_analysis_ids,
-        use_trex_connection=use_trex_connection,
+        useTrexConnectionEnv=trex_env_var,
     )
 
     dc_schema = create_results_schema(
@@ -184,7 +188,7 @@ def create_results_tables(sql_script: str, dbdao):
 def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
     logger = get_run_logger()
 
-    set_trex_env_string = set_trex_env_var(achilles_params.use_trex_connection)
+    set_trex_env_string = set_trex_env_var(achilles_params.useTrexConnectionEnv)
 
     logger.debug(f"set_trex_env_string is {set_trex_env_string}")
 
