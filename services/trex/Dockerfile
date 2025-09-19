@@ -11,7 +11,7 @@ ARG FEATURES=cli/tracing
 ENV ZERO_AR_DATE=1
 ENV DUCKDB_STATIC_BUILD=1
 ENV LLAMA_CUBLAS=1
-ENV duckdb_version=1.3.2
+ENV duckdb_version=1.4.0
 
 RUN echo "Platform: $TARGETPLATFORM"
 
@@ -28,7 +28,7 @@ RUN rustup component add rustfmt
 
 # Download and install DuckDB library
 RUN mkdir -p /usr/local/lib && \
-    wget -O /tmp/libduckdb-linux-amd64.zip https://github.com/duckdb/duckdb/releases/download/v1.3.2/libduckdb-linux-amd64.zip && \
+    wget -O /tmp/libduckdb-linux-amd64.zip https://github.com/duckdb/duckdb/releases/download/v1.4.0/libduckdb-linux-amd64.zip && \
     unzip /tmp/libduckdb-linux-amd64.zip -d /tmp/duckdb && \
     cp /tmp/duckdb/libduckdb.so /usr/local/lib/ && \
     cp /tmp/duckdb/libduckdb_static.a /usr/local/lib/ && \
@@ -73,7 +73,7 @@ RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux $TARGETPLATFORM /root/o
 
 FROM node:20.19.4-trixie-slim AS trex-base
 
-ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_VERSION=1.4.0
 ENV DUCKDB_VERSION=${DUCKDB_VERSION}
 ENV duckdb_version=${DUCKDB_VERSION}
 
