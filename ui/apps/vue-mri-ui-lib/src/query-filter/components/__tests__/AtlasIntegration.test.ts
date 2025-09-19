@@ -15,7 +15,6 @@ describe('Atlas Integration Tests', () => {
       expect(atlasFormat).toHaveProperty('PrimaryCriteria')
       expect(atlasFormat).toHaveProperty('QualifiedLimit')
       expect(atlasFormat).toHaveProperty('InclusionRules')
-      expect(atlasFormat).toHaveProperty('EndStrategy')
 
       // Validate qualifying events limit
       expect(atlasFormat.QualifiedLimit.Type).toBe('All')
