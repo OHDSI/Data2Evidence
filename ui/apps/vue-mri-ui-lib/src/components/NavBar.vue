@@ -140,14 +140,14 @@ export default {
 .nav-bar__nav-link {
   display: inline-block;
   padding: 18px;
-  color: #000080;
+  color: var(--color-primary, #000080);
   font-weight: 400;
   text-decoration: none;
   transition: color 0.15s ease-in-out;
 }
 
 .nav-bar__nav-link:hover {
-  color: #3a52a8;
+  color: var(--color-primary-light, #333399);
 }
 
 .nav-bar__nav-item--active {
@@ -161,7 +161,7 @@ export default {
   left: 0;
   height: 0.5rem;
   width: 100%;
-  background-color: #000080;
+  background-color: var(--color-primary, #000080);
   border-radius: 0.5rem 0.5rem 0 0;
 }
 </style>

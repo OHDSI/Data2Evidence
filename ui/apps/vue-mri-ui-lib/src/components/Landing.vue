@@ -64,8 +64,8 @@ export default {
 <style lang="scss" scoped>
 .landing {
   min-height: 100%;
-  background-color: #f2f0f1;
-  color: #1F425A;
+  background-color: var(--color-neutral-lightest, #f2f0f1);
+  color: var(--color-primary, #1F425A);
   display: flex;
   padding: 32px;
   font-size: 16px;
@@ -108,11 +108,11 @@ export default {
 }
 
 .landing__link {
-  color: #000080;
+  color: var(--color-primary, #000080);
   text-decoration: underline;
 
   &:hover {
-    color: #3a52a8;
+    color: var(--color-primary-light, #333399);
   }
 }
 
@@ -141,7 +141,7 @@ export default {
   font-size: 16px;
   font-weight: 500;
   border-radius: 4px;
-  border: 2px solid #000080;
+  border: 2px solid var(--color-primary, #000080);
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   text-decoration: none;
@@ -150,12 +150,12 @@ export default {
 
   &--outline {
     background-color: transparent;
-    color: #000080;
+    color: var(--color-primary, #000080);
   }
 
   &--secondary {
-    color: #000080;
-    border-color: #EB6622;
+    color: var(--color-primary, #000080);
+    border-color: var(--color-support-orange, #EB6622);
     background-color: white;
   }
 }
