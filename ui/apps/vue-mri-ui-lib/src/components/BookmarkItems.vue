@@ -602,7 +602,7 @@ onErrorCaptured((err, instance, info) => {
 
     <!-- Pagination Footer -->
     <div
-      v-if="props.bookmarksDisplay.length > 0"
+      v-if="isLocal && props.bookmarksDisplay.length > 0"
       style="
         position: fixed;
         bottom: 0;
