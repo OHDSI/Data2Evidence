@@ -30,7 +30,7 @@ RUN rustup component add rustfmt
 RUN mkdir -p /usr/local/lib && \
     wget -O /tmp/libduckdb-linux-amd64.zip https://github.com/duckdb/duckdb/releases/download/v1.4.0/libduckdb-linux-amd64.zip && \
     unzip /tmp/libduckdb-linux-amd64.zip -d /tmp/duckdb && \
-    cp /tmp/duckdb/libduckdb.so /usr/local/lib/ && \
+    cp /tmp/duckdb/libduckdb.so* /usr/local/lib/ && \
     cp /tmp/duckdb/libduckdb_static.a /usr/local/lib/ && \
     cp /tmp/duckdb/duckdb.h /usr/local/include/ && \
     cp /tmp/duckdb/duckdb.hpp /usr/local/include/ && \
@@ -85,8 +85,7 @@ COPY --from=builder /root/trex /usr/src/trex
 #COPY --from=builder /root/trex.debug /usr/src/trex.debug
 
 COPY --from=ort /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
-COPY --from=builder /usr/local/lib/libduckdb.so /usr/lib/
-
+COPY --from=builder /usr/local/lib/libduckdb.so* /usr/lib/
 
 #ENV DUCKDB_EXTENSION_DIR=/usr/lib/duckdb/extensions \
 #    DUCKDB_CIRCE_EXTENSION=/usr/lib/duckdb/extensions/circe/circe.duckdb_extension
