@@ -28,7 +28,7 @@ RUN rustup component add rustfmt
 
 # Download and install DuckDB library
 RUN mkdir -p /usr/local/lib && \
-    wget -O /tmp/libduckdb-linux-amd64.zip https://github.com/duckdb/duckdb/releases/download/v1.4.0/libduckdb-linux-amd64.zip && \
+    wget -O /tmp/libduckdb-linux-amd64.zip https://github.com/duckdb/duckdb/releases/download/v1.3.2/libduckdb-linux-amd64.zip && \
     unzip /tmp/libduckdb-linux-amd64.zip -d /tmp/duckdb && \
     cp /tmp/duckdb/libduckdb.so* /usr/local/lib/ && \
     cp /tmp/duckdb/libduckdb_static.a /usr/local/lib/ && \
