@@ -1867,6 +1867,16 @@
           ]
         },
         {
+          "path": "^/system-portal/log",
+          "scopes": [
+            "portal.log.write"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
           "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
           "scopes": [
             "gateway.dashboardGate.content"
