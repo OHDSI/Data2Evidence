@@ -2,6 +2,7 @@ import React, { FC } from "react";
 
 import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
+import { chartColors } from "./chartColors";
 import "./TrellisChart.scss";
 
 interface TrellisChartProps {
@@ -40,6 +41,7 @@ const TrellisChart: FC<TrellisChartProps> = ({ series, grid, gridTitles, title, 
     xAxis: xAxis,
     yAxis: yAxis,
     series: series,
+    color: chartColors,
   };
 
   return (

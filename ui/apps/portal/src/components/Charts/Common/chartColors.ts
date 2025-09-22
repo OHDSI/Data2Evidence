@@ -1,0 +1,17 @@
+export const chartColors = [
+  "#FDA2A2",
+  "#000E7E",
+  "#A2FDCD",
+  "#FF5E59",
+  "#CCDEF1",
+  "#2599A7",
+  "#FFC4AD",
+  "#999FCB",
+  "#EBF0C8",
+  "#CE7AEB",
+  "#69BBF6",
+  "#FDEEA2",
+  "#9215BC",
+  "#9FC5E8",
+  "#FFD9A5",
+];
