@@ -30,6 +30,7 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
+import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiveIcon.vue'
 import { loadAtlasCohortDefinition } from '../utils/QueryFilterModern/loadAtlasCohortDefinition'
 import * as types from '../../store/mutation-types'
 import { useCriteriaManager } from '../composables/useCriteriaManager'
@@ -70,6 +71,11 @@ const isInvalidName = ref(false)
 const maxLength = 40
 
 const isLoading = ref(false)
+
+// Action bar state
+const selectedDatasetForGeneration = ref('SYNPUF1K')
+const patientCount = ref<number | null>(null)
+const isGeneratingCohort = ref(false)
 
 const tagInputModel = computed<TagInputModel>(() => {
   try {
@@ -142,6 +148,21 @@ const hasExceededLength = computed(() => {
   return cohortName.value.length >= maxLength
 })
 
+const debug = computed(() => {
+  const portalAPI = getPortalAPI()
+  return portalAPI?.debug
+})
+
+// Action bar computed properties
+const displayCohortName = computed(() => {
+  const activeBookmark = store?.getters?.getActiveBookmark
+  return activeBookmark?.bookmarkname || activeBookmark?.name || 'Untitled Cohort'
+})
+
+const displayPatientCount = computed(() => {
+  return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
+})
+
 // Initialize criteria manager composable
 const {
   criteriaManager,
@@ -194,35 +215,6 @@ watch(
 onMounted(() => {
   initializeComponent()
 })
-
-const applyFilters = () => {
-  try {
-    console.log('Applying filters:', getAllFilters())
-    alert('Filters applied! Check console for configuration.')
-  } catch (error: unknown) {
-    console.error('Error in applyFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-    alert('Error applying filters! Check console for details.')
-  }
-}
-
-const exportFilters = () => {
-  try {
-    const config = JSON.stringify(getAllFilters(), null, 2)
-    console.log('Exported configuration:', config)
-  } catch (error: unknown) {
-    console.error('Error in exportFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-  }
-}
 
 watch(
   () => {
@@ -676,7 +668,6 @@ const saveAtlasCohort = async () => {
     const portalAPI = getPortalAPI()
     const username = portalAPI?.username || 'system'
     const currentDatasetId = getDatasetId()
-
     if (!currentDatasetId) {
       return
     }
@@ -740,6 +731,62 @@ const saveAtlasCohort = async () => {
     console.error('Error saving Atlas cohort:', error)
   }
 }
+
+const copyToClipboard = async (text: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    console.log(`${label} copied to clipboard`)
+  } catch (error) {
+    console.error(`Error copying ${label} to clipboard:`, error)
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    console.log(`${label} copied to clipboard (fallback method)`)
+  }
+}
+
+// Action bar methods
+const generateCohort = async () => {
+  try {
+    isGeneratingCohort.value = true
+    patientCount.value = null
+
+    // Get the active bookmark
+    const activeBookmark = store?.getters?.getActiveBookmark
+    if (!activeBookmark?.bmkId) {
+      return
+    }
+
+    const atlasDefinitionId = activeBookmark.bmkId
+    const datasetId = selectedDatasetForGeneration.value
+
+    // Call the same API endpoint as AddCohort component
+    const response = await store.dispatch('fireCreateAtlasMaterializedCohortQuery', {
+      url: `/d2e-webapi/cohortdefinition/${atlasDefinitionId}/generate/${datasetId}`,
+    })
+
+    // Extract patient count from response if available
+    if (response && response.patientCount !== undefined) {
+      patientCount.value = response.patientCount
+    } else if (response && response.count !== undefined) {
+      patientCount.value = response.count
+    }
+  } catch (error) {
+    console.error('Error generating cohort:', error)
+    patientCount.value = null
+  } finally {
+    isGeneratingCohort.value = false
+  }
+}
+
+const handleFeedback = () => {
+  // TODO: open feedback link in new tab
+  console.log('Feedback button clicked')
+}
 </script>
 
 <template>
@@ -750,9 +797,40 @@ const saveAtlasCohort = async () => {
     <!-- Main Query Filter Content Container -->
     <div class="query-filter-main-container">
       <div class="query-filter-header-container">
-        <div class="header-container-right"></div>
-        <div class="header-container-left">
-          <div class="left-button-group">
+        <!-- Left: Cohort Name -->
+        <div class="header-section-left">
+          <div class="cohort-name-display">
+            <span class="cohort-name-label">Cohort Name:</span>
+            <span class="cohort-name-value">{{ displayCohortName }}</span>
+          </div>
+        </div>
+
+        <!-- Middle: Generate Cohort Controls -->
+        <div class="header-section-middle">
+          <div class="generate-cohort-controls">
+            <div class="dataset-selector">
+              <span class="dataset-label">Dataset:</span>
+              <select v-model="selectedDatasetForGeneration" class="dataset-dropdown" :disabled="isGeneratingCohort">
+                <option value="SYNPUF1K">SYNPUF1K</option>
+              </select>
+            </div>
+
+            <button @click="generateCohort" :disabled="isGeneratingCohort" class="btn btn-primary generate-cohort-btn">
+              <GenerateCohortActiveIcon class="btn-icon" />
+              {{ isGeneratingCohort ? 'Generating...' : 'Generate Cohort' }}
+            </button>
+
+            <div class="patient-count-display">
+              <span class="patient-count-label">Patient Count:</span>
+              <span class="patient-count-value">{{ displayPatientCount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Feedback & Save -->
+        <div class="header-section-right">
+          <div class="right-button-group">
+            <button @click="handleFeedback" class="btn btn-outline-primary feedback-btn">Feedback</button>
             <ButtonMaterial @button-click="openSaveDialog">Save</ButtonMaterial>
           </div>
         </div>
@@ -811,7 +889,7 @@ const saveAtlasCohort = async () => {
     </div>
 
     <!-- Debug Toggle -->
-    <div class="debug-toggle-section">
+    <div class="debug-toggle-section" v-if="debug">
       <label class="debug-toggle">
         <input type="checkbox" v-model="showDebug" class="debug-checkbox" />
         <span class="debug-label">Show Debug Information</span>
@@ -879,9 +957,7 @@ const saveAtlasCohort = async () => {
 
     <!-- Action Buttons -->
     <div v-if="showDebug" class="query-filter-actions">
-      <button class="btn btn-primary" @click="applyFilters">Apply Filters</button>
       <button class="btn btn-secondary" @click="clearFilters">Clear All</button>
-      <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
     <!-- Debug Output -->
@@ -889,12 +965,30 @@ const saveAtlasCohort = async () => {
       <h3>Debug Information</h3>
       <div class="debug-columns">
         <div class="debug-column">
-          <h4>Hierarchical Criteria JSON:</h4>
+          <div class="debug-column-header">
+            <h4>Hierarchical Criteria JSON:</h4>
+            <button
+              class="btn btn-sm btn-outline-primary copy-button"
+              @click="copyToClipboard(JSON.stringify(getAllFilters(), null, 2), 'Hierarchical Criteria JSON')"
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+          </div>
           <pre>{{ JSON.stringify(getAllFilters(), null, 2) }}</pre>
         </div>
 
         <div class="debug-column">
-          <h4>Atlas JSON:</h4>
+          <div class="debug-column-header">
+            <h4>Atlas JSON:</h4>
+            <button
+              class="btn btn-sm btn-outline-primary copy-button"
+              @click="copyToClipboard(JSON.stringify(convertToAtlasFormat(), null, 2), 'Atlas JSON')"
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+          </div>
           <pre>{{ JSON.stringify(convertToAtlasFormat(), null, 2) }}</pre>
         </div>
       </div>
