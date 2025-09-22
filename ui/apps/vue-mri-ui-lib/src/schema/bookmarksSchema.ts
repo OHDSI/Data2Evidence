@@ -31,7 +31,7 @@ export const MaterializedCohortSchema = z.object({
   id: z.number(),
   patientCount: z.number(),
   cohortDefinitionName: z.string(),
-  createdOn: z.string(),
+  createdOn: z.number(),
   description: z.string(),
 })
 
