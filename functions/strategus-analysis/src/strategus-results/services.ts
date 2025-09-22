@@ -145,12 +145,12 @@ const getKernelConnection = async (
     const runningKernel = await getKernel(studyId, manager);
 
     if (runningKernel) {
-      console.log(`Kernel found for study ${studyId}:`, runningKernel.id);
+      console.log("Kernel found for study %s:", studyId, runningKernel.id);
       return manager.connectTo({
         model: { name: "r_ohdsi_docker", id: runningKernel.id },
       });
     } else {
-      console.log(`No kernel found for study ${studyId}, creating new kernel`);
+      console.log("No kernel found for study %s, creating new kernel", studyId);
       return await manager.startNew({
         name: "r_ohdsi_docker",
         env: {
