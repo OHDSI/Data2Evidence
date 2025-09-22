@@ -174,7 +174,6 @@ public async getCredentialsEncrypted() {
               auth_provider_x509_cert_url: c.extra.Internal.auth_provider_x509_cert_url,
               client_x509_cert_url: c.extra.Internal.client_x509_cert_url
           }
-          //write to /run/google-credentials.json
           await Deno.writeTextFile(env.GOOGLE_APPLICATION_CREDENTIALS, JSON.stringify(credObj));
         } else {
           throw new Error(`No valid bigquery service account credentials found for database ${c.code || c.id}`);
