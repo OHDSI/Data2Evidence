@@ -34,13 +34,13 @@ def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
 
     dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code)
-    dbCredentials = dbdao.tenant_configs
+    db_credentials = dbdao.tenant_configs
     # Check if dialect is supported for cache/datamart creations
     check_supported_dialects(dbdao.dialect)
 
     # Load Google service account credentials for BigQuery access.
     if dbdao.dialect == SupportedDatabaseDialects.BIGQUERY.value:
-       DaoBase.load_service_account_credentials(dbCredentials)
+       DaoBase.load_service_account_credentials(db_credentials)
 
     copy_params = CopyParameters(
         source_database=f"{options.database_code}__srcdb",
