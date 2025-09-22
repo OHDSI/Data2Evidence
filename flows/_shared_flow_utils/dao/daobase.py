@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from typing import Optional, Tuple
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -261,7 +262,7 @@ class DaoBase(ABC):
         user: str = None,
         password: str = None,
         host: str = None,
-        port: int = None,
+        port: int = None
     ) -> Tuple[str, dict]:
         connect_args = {}
         match dialect:
@@ -272,6 +273,9 @@ class DaoBase(ABC):
                 connect_args = {"user": user, "password": password.get_secret_value()}
             case SupportedDatabaseDialects.BIGQUERY:
                 big_query_key_path = Secret.load("google-service-account-json").get()
+                # Check if file exists
+                if not os.path.isfile(big_query_key_path):
+                    DaoBase.load_service_account_credentials(DaoBase.tenant_configs)
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
@@ -474,3 +478,26 @@ class DaoBase(ABC):
             return obj_name.casefold()
         else:
             return obj_name
+        
+    def load_service_account_credentials(dbcredentials: DBCredentialsType):
+        """
+        Write Google service account credentials to a JSON file and set the environment variable for BigQuery access.
+        """
+        google_service_account_json_path = Secret.load("google-service-account-json").get()
+
+        google_application_credentials = {
+            "type": dbcredentials.type,
+            "project_id": dbcredentials.project_id,
+            "private_key_id": dbcredentials.private_key_id,
+            "private_key": dbcredentials.private_key,
+            "client_email": dbcredentials.client_email,
+            "client_id": dbcredentials.client_id,
+            "auth_uri": dbcredentials.auth_uri,
+            "token_uri": dbcredentials.token_uri,
+            "auth_provider_x509_cert_url": dbcredentials.auth_provider_x509_cert_url,
+            "client_x509_cert_url": dbcredentials.client_x509_cert_url,
+            "universe_domain": dbcredentials.universe_domain
+        }
+        with open(google_service_account_json_path, "w") as f:
+            json.dump(google_application_credentials, f)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_service_account_json_path
