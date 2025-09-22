@@ -6,6 +6,7 @@ export const getPortalAPI = (): {
   username?: string
   locale?: string
   isLocal?: boolean
+  debug?: boolean
   toggleAtlas?(val: boolean, path: string): void
 } => {
   if (document.getElementsByClassName('plugin-container').length === 1) {
