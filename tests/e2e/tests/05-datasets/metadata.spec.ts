@@ -48,6 +48,7 @@ test(TEST_NAME, async ({ page }) => {
       .getByPlaceholder(' ')
       .fill('ALP')
   }
+  await page.waitForTimeout(2000)
   await page.getByRole('combobox', { name: 'Tags' }).click()
   await page.getByRole('option', { name: 'COVID' }).click()
   await expect(page.getByRole('button', { name: 'COVID' })).toBeVisible()
