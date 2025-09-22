@@ -126,11 +126,11 @@ class DaoBase(ABC):
     # --- Read methods ---
 
     @abstractmethod
-    def check_schema_exists(schema: str) -> bool:
+    def check_schema_exists(self, schema: str) -> bool:
         pass
 
     @abstractmethod
-    def check_empty_schema(schema: str) -> bool:
+    def check_empty_schema(self, schema: str) -> bool:
         pass
 
     @abstractmethod
@@ -198,31 +198,31 @@ class DaoBase(ABC):
 
     # --- User methods ---
 
-    @abstractmethod
+    #@abstractmethod
     def check_user_exists(self, user: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def check_role_exists(self, role_name: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_read_role(self, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_user(self, user: str, password: str = None):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_and_assign_role(self, user: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_read_privileges(self, schema: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_cohort_write_privileges(self, schema: str, role_name: str):
         pass
 
@@ -410,6 +410,7 @@ class DaoBase(ABC):
 
         _db = next(filter(lambda x: x["databaseCode"] ==
                    self.database_code, database_credentials_list), None)
+
         if _db is None:
             raise ValueError(
                 f"Database code '{self.database_code}' not found in 'DATABASE_CREDENTIALS' secret"

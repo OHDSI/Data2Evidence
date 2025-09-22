@@ -1,5 +1,6 @@
 import { registerApplication, start, navigateToUrl } from 'single-spa'
 import { getNavigationConfig } from './config'
+import { getPortalAPI } from './PortalUtils'
 
 // Setup all import maps
 function setupImportMaps() {
@@ -27,7 +28,7 @@ function setupImportMaps() {
     newScript.textContent = JSON.stringify(importMapData, null, 2)
     document.head.appendChild(newScript)
   } catch (error) {
-    console.warn('Failed to setup import maps:', error)
+    console.error('AppRegistry.ts - Failed to setup import maps:', error)
   }
 }
 
@@ -43,35 +44,62 @@ function registerNavigationApps() {
         registerApplication({
           name: item.appName,
           app: () => window.System.import(item.appName).then((module: any) => module.default || module),
-          activeWhen: location => location.pathname === item.route,
+          activeWhen: location => item.alwaysActive || location.pathname === item.route,
+          customProps: () => {
+            const portalAPI = getPortalAPI()
+            return {
+              getToken: portalAPI?.getToken,
+              username: portalAPI?.username,
+              datasetId: portalAPI?.studyId,
+              locale: portalAPI?.locale,
+              isActiveRoute: location.pathname === item.route,
+            }
+          },
         })
       }
     })
   } catch (error) {
-    console.warn('Failed to register navigation apps:', error)
+    console.error('AppRegistry.ts - Failed to register navigation apps:', error)
   }
 }
 
 function navigateToRoute(route: string, navigationItem?: any) {
-  navigateToUrl(route)
+  try {
+    navigateToUrl(route)
 
-  // If this is a component navigation, emit the custom event
-  if (navigationItem?.type === 'component' && navigationItem?.component) {
+    // If this is a component navigation, emit the custom event
+    if (navigationItem?.type === 'component' && navigationItem?.component) {
+      window.dispatchEvent(
+        new CustomEvent('component-navigation', {
+          detail: { item: navigationItem, route },
+        })
+      )
+    }
+  } catch (error) {
+    console.error('AppRegistry.ts - Failed to navigate to route:', error)
+  }
+
+  // Always dispatch concept-sets route change event
+  setTimeout(() => {
     window.dispatchEvent(
-      new CustomEvent('component-navigation', {
-        detail: { item: navigationItem, route },
+      new CustomEvent('route-change', {
+        detail: { activeRoute: route },
       })
     )
-  }
+  }, 0)
 }
 
 function initializeApps() {
-  setupImportMaps()
-  registerNavigationApps()
+  try {
+    setupImportMaps()
+    registerNavigationApps()
 
-  start({
-    urlRerouteOnly: true,
-  })
+    start({
+      urlRerouteOnly: true,
+    })
+  } catch (error) {
+    console.error('AppRegistry.ts - Failed to initialize apps:', error)
+  }
 }
 
 export { initializeApps, navigateToRoute }
