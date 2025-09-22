@@ -170,7 +170,24 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
           <label className="database-code-value__label">{db.code}</label>
         </Box>
         {db.dialect === DB_DIALECTS.BIG_QUERY ? (
-          <BigQueryForm data={pick(formData, "host", "name")} onChange={(changes) => handleFormDataChange(changes)} />
+          <>
+            <BigQueryForm
+              data={pick(formData, "host", "name")}
+              onChange={(changes) => handleFormDataChange(changes)}
+            />
+            <Box mb={4}>
+              <Box mb={2}>
+                <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__EXTRA)}</b>
+              </Box>
+              <Box>
+                <TextArea
+                  rows={10}
+                  value={formData.extra}
+                  onChange={(event) => handleFormDataChange({ extra: event.target.value })}
+                />
+              </Box>
+            </Box>
+          </>
         ) : (
           <>
             <Box mb={4}>
