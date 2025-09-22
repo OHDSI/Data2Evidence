@@ -1200,7 +1200,7 @@ export const i18nDefault = {
       "All local changes not synchronized to the remote repository will be permanently lost.",
     GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_PROCESSING: "Processing...",
     GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_CONFIRM: "Overwrite All",
-    STUDY_CARD__EDIT_VIEWER: "Edit Viewer",
+    STUDY_CARD__EDIT_VIEWER: "Edit viewer",
     STUDY_CARD__RUN_STUDY: "Run study",
     STUDY_CARD__RUNNING: "Running...",
     STUDY_CARD__START_VIEWER: "Start viewer",
