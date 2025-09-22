@@ -275,7 +275,7 @@ class DaoBase(ABC):
                 big_query_key_path = Secret.load("google-service-account-json").get()
                 # Check if file exists
                 if not os.path.isfile(big_query_key_path):
-                    DaoBase.load_service_account_credentials(DaoBase.tenant_configs)
+                    DaoBase.create_service_account_credentials_file(DaoBase.tenant_configs)
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
@@ -479,7 +479,7 @@ class DaoBase(ABC):
         else:
             return obj_name
         
-    def load_service_account_credentials(dbcredentials: DBCredentialsType):
+    def create_service_account_credentials_file(dbcredentials: DBCredentialsType):
         """
         Write Google service account credentials to a JSON file and set the environment variable for BigQuery access.
         """
