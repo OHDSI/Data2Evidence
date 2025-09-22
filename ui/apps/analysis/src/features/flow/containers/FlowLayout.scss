@@ -4,9 +4,17 @@
 
   &__header {
     display: flex;
+    align-items: center;
     height: 60px;
     width: 100%;
     padding: 10px;
+
+    .alp-checkbox__container {
+      display: flex;
+      align-items: center;
+      margin: 0;
+      padding: 0;
+    }
   }
 
   &--empty {

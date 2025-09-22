@@ -27,7 +27,7 @@ export class PrefectController {
   private async createAnalysisRun(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { datasetId } = req.body;
+      const { datasetId, uploadResults } = req.body;
       const token = this.getToken(req);
 
       if (!datasetId) {
@@ -39,6 +39,7 @@ export class PrefectController {
       const flowrunId = await this.prefectService.createAnalysisFlowRun(
         id,
         datasetId,
+        uploadResults,
         token
       );
       return res.status(200).send(flowrunId);

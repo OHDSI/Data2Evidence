@@ -1,15 +1,17 @@
 <!-- For local development only -->
 <html>
   <head>
+    <title>Atlas</title>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="favicon-atlas.ico" />
     <script nonce="__NONCE__">
       window.ENV_DATA = __ENV_DATA__
     </script>
     <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
-    <script type="text/javascript" src="authenticate.js"></script>
-    <script type="text/javascript" src="system.min.js"></script>
+    <script type="text/javascript" src="/authenticate.js"></script>
+    <script type="text/javascript" src="/system.min.js"></script>
 
     <% for (key in htmlWebpackPlugin.files.css) { %>
     <link href="<%= htmlWebpackPlugin.files.css[key] %>" rel="stylesheet" />
@@ -23,7 +25,23 @@
     >
       logout
     </button>
-    <div class="vue-main" style="height: 100%"></div>
+
+    <!-- Uncomment the Portal Header when developing without single-spa -->
+    <!-- <div
+      style="
+        width: 100vw;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 0.5px 8px 0 #acaba8;
+      "
+    >
+      <div>PORTAL HEADER</div>
+    </div> -->
+    <div class="vue-main" style="height: calc(100%)"></div>
     <span class="plugin-container"></span>
 
     <script>
@@ -37,6 +55,7 @@
         isLocal: true,
         username: 'admin', // Change to your logto username
         locale: 'en',
+        debug: false,
       }
     </script>
 

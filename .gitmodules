@@ -7,9 +7,6 @@
 [submodule "services/trex/Trex"]
 	path = services/trex/Trex
 	url = https://github.com/OHDSI/Trex.git
-[submodule "services/trex/ext/duckdb"]
-	path = services/trex/ext/duckdb
-	url = https://github.com/duckdb/duckdb
 [submodule "services/trex/ext/extension-ci-tools"]
 	path = services/trex/ext/extension-ci-tools
 	url = https://github.com/duckdb/extension-ci-tools

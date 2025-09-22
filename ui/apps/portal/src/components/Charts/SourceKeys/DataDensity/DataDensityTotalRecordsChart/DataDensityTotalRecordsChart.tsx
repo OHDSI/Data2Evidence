@@ -23,17 +23,16 @@ const DataDensityTotalRecordsChart: FC<DataDensityTotalRecordsChartProps> = ({ d
       </ChartContainer>
     );
   }
-  // Sort data based on X_CALENDAR_MONTH
-  data = data.sort((a: any, b: any) => a["X_CALENDAR_MONTH"] - b["X_CALENDAR_MONTH"]);
-  // Get list of all unique "SERIES_NAME" in dat
-  const seriesList = [...new Set(data.map((obj: any) => obj["SERIES_NAME"]))];
+  // Sort data based on XCALENDARMONTH
+  data = data.sort((a: any, b: any) => a["XCALENDARMONTH"] - b["XCALENDARMONTH"]);
+  // Get list of all unique "SERIESNAME" in dat
+  const seriesList = [...new Set(data.map((obj: any) => obj["SERIESNAME"]))];
 
-  // Parse X_CALENDAR_MONTH from e.g 200910 -> 10/2009
+  // Parse XCALENDARMONTH from e.g 200910 -> 10/2009
   const lineChartXAxisData = [
     ...new Set(
       data.map(
-        (obj: any) =>
-          obj["X_CALENDAR_MONTH"].toString().slice(-2) + "/" + obj["X_CALENDAR_MONTH"].toString().slice(0, 4)
+        (obj: any) => obj["XCALENDARMONTH"].toString().slice(-2) + "/" + obj["XCALENDARMONTH"].toString().slice(0, 4)
       )
     ),
   ];
@@ -48,8 +47,8 @@ const DataDensityTotalRecordsChart: FC<DataDensityTotalRecordsChartProps> = ({ d
         focus: "series",
       },
       data: data.reduce((acc: Array<any>, obj: any) => {
-        if (obj["SERIES_NAME"] === seriesName) {
-          acc.push(Number(obj["Y_RECORD_COUNT"]));
+        if (obj["SERIESNAME"] === seriesName) {
+          acc.push(Number(obj["YRECORDCOUNT"]));
         }
         return acc;
       }, []),

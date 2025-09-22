@@ -169,7 +169,7 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
           )}
           <TreeMapChartTable
             title={getText(i18nKeys.SHARED_DRILLDOWN__TREE_MAP_CHART_TITLE)}
-            data={data.treemap}
+            data={data}
             setSelectedConceptId={setSelectedConceptId}
           />
         </div>
