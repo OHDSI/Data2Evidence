@@ -9,9 +9,9 @@ export class LogController {
   constructor(private readonly logService: LogService) {}
 
   @Post()
-  async logUserAcceptance(@Body() userAcceptanceDto: LogUserAcceptanceDto) {
+  async logUserAcceptance(@Body() logUserAcceptanceDto: LogUserAcceptanceDto) {
     return await this.logService.logUsageAgreementResponse(
-      userAcceptanceDto.response
+      logUserAcceptanceDto.response
     );
   }
 }

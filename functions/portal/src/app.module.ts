@@ -31,7 +31,7 @@ import { LogModule } from "./log/log.module.ts";
     PaConfigModule,
     SupabaseStorageModule,
     GitStudiesModule,
-    LogModule,
+    LogModule
   ],
   injectables: [RequestContextMiddleware],
 })

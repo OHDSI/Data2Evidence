@@ -1,8 +1,7 @@
-import { IsNotEmpty, IsEnum } from "npm:class-validator";
-import { UserAcceptanceResponse } from "../const";
+import { IsNotEmpty, IsString } from "npm:class-validator";
 
 export class LogUserAcceptanceDto {
   @IsNotEmpty()
-  @IsEnum(UserAcceptanceResponse)
-  response: UserAcceptanceResponse;
+  @IsString()
+  response: string;
 }
