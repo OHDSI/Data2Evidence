@@ -97,6 +97,7 @@ export const i18nDefault = {
     ADD_STUDY_DIALOG__USE_SAME_SCHEMA: "Use same CDM schema for vocab schema",
     ADD_STUDY_DIALOG__VISIBILITY_STATUS_GROUP: "visibilityStatusGroup",
     ADD_STUDY_DIALOG__VOCAB_SCHEMA_NAME: "Vocab Schema Name",
+    ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME: "Result Schema Name",
     ADD_TAG_DIALOG__ADD_TAG: "Add Tag",
     ADD_TAG_DIALOG__CANCEL: "Cancel",
     ADD_TAG_DIALOG__SAVE: "Save",

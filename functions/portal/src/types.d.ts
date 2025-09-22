@@ -57,6 +57,7 @@ export interface IDatasetDto {
   databaseCode: string
   schemaName: string
   vocabSchemaName: string
+  resultSchemaName: string
   dataModel: string
   paConfigId: string
   detail: IDatasetDetailBaseDto

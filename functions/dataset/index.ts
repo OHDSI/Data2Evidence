@@ -107,6 +107,7 @@ export class DatasetRouter {
           tenantId,
           schemaOption,
           vocabSchemaValue,
+          resultSchemaValue,
           cleansedSchemaOption,
           dialect,
           databaseCode,
@@ -159,6 +160,7 @@ export class DatasetRouter {
                     schema_name: schemaName,
                     cleansed_schema_option: cleansedSchemaOption,
                     vocab_schema: vocabSchema,
+                    result_schema: resultSchemaValue,
                     plugin: plugin,
                   },
                 };
@@ -210,6 +212,7 @@ export class DatasetRouter {
             databaseCode: databaseCode,
             schemaName,
             vocabSchemaName: vocabSchema,
+            resultSchemaName: resultSchemaValue,
             dataModel,
             plugin,
             tenantId,
