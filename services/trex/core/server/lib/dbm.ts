@@ -69,6 +69,9 @@ export class DatabaseManager {
         v.validate(c, dbSchema);
 
         const params = [c.code || c.id, c.host, c.port, c.name, c.dialect, JSON.stringify(c.credentials), JSON.stringify(c.vocabSchemas) || null, JSON.stringify(c.publications) || null, JSON.stringify(c.extra?.Internal) || null, c.authenticationMode || null ];
+        if(c.dialect === "bigquery") {
+          await this.createBigQueryCredentialsFile(c);
+        }
         const r = await this.pgclient.query(this.insert_query, params);
         const dbCredentials = await this.getCredentialsDecrypted();
         this.trexdbm.setCredentials(dbCredentials);
@@ -154,5 +157,31 @@ public async getCredentialsEncrypted() {
                 });
     }
 
-
+  private async createBigQueryCredentialsFile(c: any) {
+    try {
+      //Create a file with google application credentials if the dialect is bigquery
+      logger.info(`Setting up google application credentials for database ${c.code || c.id}`);
+      if (c.extra && c.extra.Internal && c.extra.Internal.type === "service_account") {
+          const credObj = {
+              type: c.extra.Internal.type,
+              project_id: c.extra.Internal.project_id,
+              private_key_id: c.extra.Internal.private_key_id,
+              private_key: c.extra.Internal.private_key.replace(/\\n/g, "\n"),
+              client_email: c.extra.Internal.client_email,
+              client_id: c.extra.Internal.client_id,
+              auth_uri: c.extra.Internal.auth_uri,
+              token_uri: c.extra.Internal.token_uri,
+              auth_provider_x509_cert_url: c.extra.Internal.auth_provider_x509_cert_url,
+              client_x509_cert_url: c.extra.Internal.client_x509_cert_url
+          }
+          //write to /run/google-credentials.json
+          await Deno.writeTextFile(env.GOOGLE_APPLICATION_CREDENTIALS, JSON.stringify(credObj));
+        } else {
+          throw new Error(`No valid bigquery service account credentials found for database ${c.code || c.id}`);
+        }
+      } catch(e) {
+        logger.error(`Error setting up big query: ${e}`);
+        throw e;
+      }
+  }
 }
