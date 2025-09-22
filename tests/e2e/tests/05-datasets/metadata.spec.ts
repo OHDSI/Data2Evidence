@@ -14,6 +14,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.waitForTimeout(3000)
   await page.getByRole('button', { name: 'Select action' }).first().click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await page.getByRole('textbox', { name: 'Type' }).click()
@@ -48,7 +49,7 @@ test(TEST_NAME, async ({ page }) => {
       .getByPlaceholder(' ')
       .fill('ALP')
   }
-  await page.waitForTimeout(2000)
+  await page.waitForTimeout(5000)
   await page.getByRole('combobox', { name: 'Tags' }).click()
   await page.getByRole('option', { name: 'COVID' }).click()
   await expect(page.getByRole('button', { name: 'COVID' })).toBeVisible()
