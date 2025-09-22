@@ -25,7 +25,15 @@ const { type, size } = defineProps<{
     >
       <g id="D-Icons/Logos/Illustrations" transform="translate(-349, -123)">
         <g id="0.-Icons/Play_Round-Copy-13" transform="translate(349, 123)">
-          <rect id="Rectangle-Copy" fill="#000080" x="1" y="1" :width="`${size}px`" :height="`${size}px`" rx="3" />
+          <rect
+            id="Rectangle-Copy"
+            fill="var(--color-primary, var(--color-primary, #000080))"
+            x="1"
+            y="1"
+            :width="`${size}px`"
+            :height="`${size}px`"
+            rx="3"
+          />
           <g id="Group" transform="translate(6.5, 6.5)" fill="#FFFFFF">
             <path
               d="M9.9,4.4 C10.5075132,4.4 11,4.89248678 11,5.5 C11,6.10751322 10.5075132,6.6 9.9,6.6 L1.1,6.6 C0.492486775,6.6 0,6.10751322 0,5.5 C0,4.89248678 0.492486775,4.4 1.1,4.4 L9.9,4.4 Z"

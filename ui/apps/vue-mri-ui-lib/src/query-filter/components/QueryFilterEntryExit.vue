@@ -454,7 +454,7 @@ const activeTooltipKey = computed(() => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #000080;
+    color: var(--color-primary, #000080);
   }
 
   .events-container {
@@ -465,7 +465,7 @@ const activeTooltipKey = computed(() => {
       align-items: center;
       justify-content: center;
       padding: 12px 6px;
-      background: #000080; // Blue to match other sidebars
+      background: var(--color-primary, #000080); // Blue to match other sidebars
       position: relative;
       border-radius: 0 0 0 8px;
       color: white;
@@ -489,11 +489,11 @@ const activeTooltipKey = computed(() => {
     background: transparent;
     border-radius: 6px;
     &:not(:first-child) {
-      border-left: #000080 2px solid;
+      border-left: var(--color-primary, #000080) 2px solid;
     }
     font-size: 14px;
     font-weight: 600;
-    color: #000080;
+    color: var(--color-primary, #000080);
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -506,7 +506,7 @@ const activeTooltipKey = computed(() => {
     }
 
     &--active {
-      background: #000080;
+      background: var(--color-primary, #000080);
       color: white;
       box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
     }
@@ -552,7 +552,7 @@ const activeTooltipKey = computed(() => {
     align-items: center;
     justify-content: center;
     padding: 12px 6px;
-    background: #000080; // Blue to match other sidebars
+    background: var(--color-primary, #000080); // Blue to match other sidebars
     position: relative;
     border-radius: 8px 0 0 8px; // Round left corners
 
@@ -632,7 +632,7 @@ const activeTooltipKey = computed(() => {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #000080;
+          border-color: var(--color-primary, #000080);
           background: white;
         }
       }
@@ -688,7 +688,7 @@ const activeTooltipKey = computed(() => {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #000080;
+          border-color: var(--color-primary, #000080);
           background: white;
         }
       }

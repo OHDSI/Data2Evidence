@@ -1,4 +1,3 @@
-@import './mri-variables';
 @import './mixins';
 
 html,
@@ -10,7 +9,7 @@ body,
   font-family: $font-family-base;
 
   .UiLbl {
-    color: $UiLightText;
+    color: var(--color-ui-light-text, #595757);
   }
 
   button {

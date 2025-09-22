@@ -69,11 +69,10 @@ const emit = defineEmits<{
 }
 
 input:checked + .slider {
-  background-color: navy;
+  background-color: var(--color-primary, #000080);
 }
 
 input:checked + .slider:before {
   transform: translateX(26px);
 }
 </style>
-

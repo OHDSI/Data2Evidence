@@ -180,7 +180,7 @@ const handleGroupRemove = (groupIndex: number) => {
     align-items: center;
     justify-content: center;
     padding: 12px 6px;
-    background: #000080;
+    background: var(--color-primary, #000080);
     position: relative;
     border-radius: 0 0 0 8px;
     &::after {

@@ -3,7 +3,7 @@
   background: none;
   padding: 6px;
   border-radius: 4px;
-  color: #000080;
+  color: var(--color-primary, var(--color-primary, #000080));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,4 +37,3 @@
   max-height: 1000px;
   overflow: hidden;
 }
-

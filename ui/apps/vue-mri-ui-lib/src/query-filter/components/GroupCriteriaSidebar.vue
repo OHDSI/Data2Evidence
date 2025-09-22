@@ -102,11 +102,11 @@ const getSidebarClass = computed(() => {
   border-radius: 0 0 0 8px; // Round left corners
 
   // Default styling (ALL)
-  background: #000080;
+  background: var(--color-primary, #000080);
 
   // Different colors matching GroupCriteriaMenu
   &--all {
-    background: #000080;
+    background: var(--color-primary, #000080);
   }
 
   &--any {

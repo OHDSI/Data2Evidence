@@ -10,11 +10,11 @@ export default {
 import { computed, defineProps } from 'vue'
 import TrashIcon from '../icons/TrashIcon.vue'
 import { QueryFilterAttribute } from '@/query-filter/types/QueryFilterTypes'
-import DateInput from './DateInput.vue';
-import DateAdjustmentInput from './DateAdjustmentInput.vue';
-import UserDefinedPeriodInput from './UserDefinedPeriodInput.vue';
-import NumericRangeInput from './NumericRangeInput.vue';
-import StringInput from './StringInput.vue';
+import DateInput from './DateInput.vue'
+import DateAdjustmentInput from './DateAdjustmentInput.vue'
+import UserDefinedPeriodInput from './UserDefinedPeriodInput.vue'
+import NumericRangeInput from './NumericRangeInput.vue'
+import StringInput from './StringInput.vue'
 
 const componentMap = {
   dateRange: DateInput,
@@ -40,25 +40,26 @@ const getDescription = (attribute: QueryFilterAttribute) => {
   return ('description' in attribute && attribute.description) || 'No description available'
 }
 
-const getUpdate = (payload) => {  
+const getUpdate = payload => {
   emit('update-attribute', props.attribute.id, payload)
 }
 
 const attributeType = computed(() => {
-  return 'configType' in props.attribute ? props.attribute.configType : 'text'  
+  return 'configType' in props.attribute ? props.attribute.configType : 'text'
 })
-
 </script>
 
 <template>
   <div class="attribute-container">
-    <div class="attribute-title" :class="{ 'attribute-title__max-width': !isBooleanAttribute(attribute) }">{{ getDescription(props.attribute) }}</div>
+    <div class="attribute-title" :class="{ 'attribute-title__max-width': !isBooleanAttribute(attribute) }">
+      {{ getDescription(props.attribute) }}
+    </div>
     <div v-if="!isBooleanAttribute(props.attribute)" class="attribute-input">
-        <component
-          :is="componentMap[attributeType]"
-          @update="getUpdate"
-          :value="props.attribute && 'value' in props.attribute && props.attribute.value"
-        />
+      <component
+        :is="componentMap[attributeType]"
+        @update="getUpdate"
+        :value="props.attribute && 'value' in props.attribute && props.attribute.value"
+      />
     </div>
     <div class="attribute-btn-container">
       <button
@@ -76,18 +77,18 @@ const attributeType = computed(() => {
 .attribute-container {
   display: flex;
   border-radius: 6px;
-  border: 1px solid #000080;
+  border: 1px solid var(--color-primary, #000080);
 
   .attribute-title {
     display: flex;
     padding: 15px;
     flex: 1;
-    color: #000080;
+    color: var(--color-primary, #000080);
     background: #ebf2fa;
     font-size: 15px;
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
-    border-right: 1px solid #000080;
+    border-right: 1px solid var(--color-primary, #000080);
     padding: 15px;
     flex: 2;
 
@@ -100,10 +101,10 @@ const attributeType = computed(() => {
   .attribute-input {
     padding: 15px;
     flex: 2;
-    border-right: 1px solid #000080;
+    border-right: 1px solid var(--color-primary, #000080);
     display: flex;
     align-items: center;
-    color: #000080;
+    color: var(--color-primary, #000080);
   }
 
   .attribute-btn-container {
@@ -120,11 +121,10 @@ const attributeType = computed(() => {
       border-bottom-right-radius: 6px;
 
       &:hover {
-        color: #000080;
+        color: var(--color-primary, #000080);
         background: #f2f0f1;
       }
     }
   }
 }
 </style>
-

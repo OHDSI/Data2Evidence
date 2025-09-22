@@ -21,18 +21,25 @@ import store from './store'
 import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
+import { applyTheme } from './utils/ThemeManager'
+import './styles/themes/_main.scss'
 
 let app: Component
 const portalAPI = getPortalAPI()
 const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
 if (isLocal) {
   app = createApp(RootLayout as unknown as Component)
+  applyTheme('atlas')
+
+  // For local development, uncomment to use D2E theme
+  // applyTheme('d2e')
 
   // Initialize registries
   initializeApps()
   initializeComponents()
 } else {
   app = createApp(App as unknown as Component)
+  applyTheme('d2e')
 }
 
 app.use(store)
@@ -61,3 +68,6 @@ applyPolyfills().then(() => {
 })
 
 app.mount('.vue-main')
+
+
+

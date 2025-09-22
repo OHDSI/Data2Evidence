@@ -526,6 +526,6 @@ export default {
 
 <style scoped>
 .filter-card-badge {
-  color: #000080 !important;
+  color: var(--color-primary, var(--color-primary, var(--color-primary, var(--color-primary, var(--color-primary, var(--color-primary, #000080)))))) !important;
 }
 </style>
