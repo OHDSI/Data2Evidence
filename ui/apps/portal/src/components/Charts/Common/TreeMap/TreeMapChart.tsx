@@ -66,7 +66,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
         visualDimension: 1,
         levels: [
           {
-            color: ["#aaa", "#269f3c"],
+            color: ["#aaa", "#000E7E"],
             colorMappingBy: "value",
             itemStyle: {
               gapWidth: 1,
