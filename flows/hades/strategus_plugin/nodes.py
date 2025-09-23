@@ -341,10 +341,20 @@ class DefaultCovariateSettingsNode(Node):
 # cohortIds - list of cohort IDs
 # cohortType - type of the cohort (e.g., event, target, outcome)
 class CohortDefinitionSharedResource(Node):
-    def __init__(self, node):
+    cohortId: int
+    cohortType: CohortNodeType
+    cohortName: str
+
+    def __init__(self, node: dict):
         super().__init__(node)
-        self.cohortIds = node.get("cohorts", [])
-        self.type = node.get("cohortType", CohortNodeType.EVENT)
+        cohort_info = node["cohorts"][0]
+        self.cohortId = int(cohort_info["cohortId"])
+        cohort_type_val = cohort_info.get("cohortType")
+        if not cohort_type_val:
+            self.cohortType = CohortNodeType.EVENT
+        else:
+            self.cohortType = CohortNodeType(cohort_type_val)
+        self.cohortName = str(cohort_info["cohortName"])
 
     # create cohortdefinition shared resource
     # uses R package CohortGeneratorModule in Strategus 
@@ -361,19 +371,18 @@ class CohortDefinitionSharedResource(Node):
                 rbind = ro.r['rbind']
                 rCohortDefinitionSet = rCohortGenerator.createEmptyCohortDefinitionSet()
                 datasetId = self.flowOptions.get("datasetId", "") # TODO: throw error if not found
-                for c in self.cohortIds:
-                    cohort_definition = webapi.get_cohort_definition(c["cohortId"], datasetId)
-                    cohortDefStr = json.dumps(cohort_definition["expression"])
-                    rcohortExpr = rCirce.cohortExpressionFromJson(cohortDefStr)
-                    rOptions = rCirce.createGenerateOptions(generateStats = convert_py_to_R(False))
-                    rCohortSql = rCirce.buildCohortQuery(rcohortExpr, options = rOptions)
-                    new_row = ro.r['data.frame'](
-                        cohortId = convert_py_to_R(c["cohortId"]),
-                        cohortName = convert_py_to_R(cohort_definition["name"]),
-                        sql = rCohortSql,
-                        json = convert_py_to_R(cohortDefStr)
-                    )
-                    rCohortDefinitionSet = rbind(rCohortDefinitionSet, new_row)
+                cohort_definition = webapi.get_cohort_definition(self.cohortId, datasetId)
+                cohortDefStr = json.dumps(cohort_definition["expression"])
+                rcohortExpr = rCirce.cohortExpressionFromJson(cohortDefStr)
+                rOptions = rCirce.createGenerateOptions(generateStats = convert_py_to_R(False))
+                rCohortSql = rCirce.buildCohortQuery(rcohortExpr, options = rOptions)
+                new_row = ro.r['data.frame'](
+                    cohortId = convert_py_to_R(self.cohortId),
+                    cohortName = convert_py_to_R(cohort_definition["name"]),
+                    sql = rCohortSql,
+                    json = convert_py_to_R(cohortDefStr)
+                )
+                rCohortDefinitionSet = rbind(rCohortDefinitionSet, new_row)
 
                 rStrategus = ro.packages.importr('Strategus')
                 rcgm = rStrategus.CohortGeneratorModule['new']()
@@ -485,7 +494,7 @@ class CMOutcomes(Node):
             try:
                 set_trex_env_var(USE_TREX_CONNECTION)
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
-                self.cohortIds = [cohortDefNode.cohortIds[0] for cohortDefNode in cohortDefNodes]
+                self.cohortIds = [cohortDefNode.cohortId for cohortDefNode in cohortDefNodes]
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rlapply = ro.r['lapply']
                 kwargs = {i[0]: i[1] for i in self.config.items() if (i[1] != "" or i[1] is False)}
@@ -520,17 +529,17 @@ class TargetComparatorOutcomes(Node):
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(_input, CohortDefinitionSharedResource)
                 
-                targetCohortDefNode = next((node for node in cohortDefNodes if node.type == CohortNodeType.TARGET), None)
+                targetCohortDefNode = next((node for node in cohortDefNodes if node.cohortType == CohortNodeType.TARGET), None)
                 if targetCohortDefNode:
-                    self.targetId = targetCohortDefNode.cohortIds[0]
-                comparatorCohortDefNode = next((node for node in cohortDefNodes if node.type == CohortNodeType.COMPARATOR), None)
+                    self.targetId = targetCohortDefNode.cohortId
+                comparatorCohortDefNode = next((node for node in cohortDefNodes if node.cohortType == CohortNodeType.COMPARATOR), None)
                 if comparatorCohortDefNode:
-                    self.comparatorId = comparatorCohortDefNode.cohortIds[0]
+                    self.comparatorId = comparatorCohortDefNode.cohortId
 
                 rOutcomes = get_results_by_class_type(_input, CMOutcomes)
                 cmOutcomesNodes = get_input_nodes_by_class_type_from_results(_input, CMOutcomes)
                 for node in cmOutcomesNodes:
-                    self.outComesCohortIds.append(node.cohortIds[0])
+                    self.outComesCohortIds.append(node.cohortId)
 
                 rCreateTargetComparatorOutcomes = rCohortMethod.createTargetComparatorOutcomes(
                     targetId = convert_py_to_R(self.targetId),
@@ -986,7 +995,7 @@ class TreatmentPatterns(Node):
         # self.name = node["name"]
         # self.description = node["description"]
         self.ageWindow = int(node.get("ageWindow", 5))  # default 5
-        self.splitTime = int(node.get("splitTime", None))  # default 0
+        self.splitTime = int(node.get("splitTime", 0))  # default 0
         self.censorType = node.get("censorType", "minCellCount")  # default "minCellCount"
         self.minCellCount = int(node.get("minCellCount", 1))  # default 1
         self.maxPathLength = int(node.get("maxPathLength", 5))  # default 5
@@ -1008,19 +1017,19 @@ class TreatmentPatterns(Node):
                 rStrategus = ro.packages.importr('Strategus')
                 cohortDefinitionNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
                 for cohortDefinition in cohortDefinitionNodes:
-                    self.cohortIds.append(cohortDefinition.cohortIds)
+                    self.cohortIds.append(cohortDefinition.cohortId)
                 rTreatmentPatternsModule = rStrategus.TreatmentPatternsModule['new']()
                 rCreateTreatmentPatternsModuleSpec = rTreatmentPatternsModule['createModuleSpecifications']
                 cohorts_df = pd.DataFrame.from_records([{
-                    'cohortId': cohortDefinitionNode.cohortIds[0],
-                    'cohortName': "", # TODO: change the cohort name
-                    "type": cohortDefinitionNode.type
+                    'cohortId': cohortDefinitionNode.cohortId,
+                    'cohortName': cohortDefinitionNode.cohortName,
+                    "type": cohortDefinitionNode.cohortType.value
                 } for cohortDefinitionNode in cohortDefinitionNodes])
 
                 rSpec = rCreateTreatmentPatternsModuleSpec(
                     cohorts = convert_py_to_R(cohorts_df),
                     minEraDuration = convert_py_to_R(self.minEraDuration),
-                    splitEventCohorts = convert_py_to_R(self.splitEventCohorts),
+                    splitEventCohorts = convert_py_to_R(self.splitEventCohorts) if self.splitEventCohorts != "" else convert_py_to_R(None),
                     splitTime = convert_py_to_R(self.splitTime),
                     eraCollapseSize = convert_py_to_R(self.eraCollapseSize),
                     combinationWindow = convert_py_to_R(self.combinationWindow),
@@ -1120,7 +1129,7 @@ class StrategusNode(Node):
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
                 dbSettings = { "database_code": self.flowOptions["databaseCode"], "schema_name": self.flowOptions["schemaName"], "dataset_id": self.flowOptions["datasetId"] }
                 dbdao = DBDao(
-                    dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
+                    dialect="postgres",
                     use_cache_db=False,
                     database_code=dbSettings['database_code']
                 )
@@ -1169,7 +1178,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
-                dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
+                dialect="postgres",
                 use_cache_db=False,
                 database_code=database_code
             )
@@ -1205,7 +1214,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
-                dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None, 
+                dialect="postgres", 
                 use_cache_db=False,
                 database_code=database_code, 
                 is_study_results_db = True
@@ -1264,7 +1273,7 @@ def drop_strategus_results_schema(dbSettings):
     database_code = dbSettings['database_code']
     results_schema = f'results_{dbSettings["study_id"]}'
     dbdao = DBDao(
-        dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
+        dialect="postgres",
         use_cache_db=False,
         database_code=database_code, is_study_results_db=True
     )
