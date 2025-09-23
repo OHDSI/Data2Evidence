@@ -10,7 +10,6 @@ from .copy import copy_all_schemas, create_schema_tables, create_schema_if_not_e
 from .types import CreateCacheOptions, CreateCDWValidationConfig, CacheFlowAction, CopyParameters
 
 from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.dao.daobase import DaoBase
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 from prefect import flow, task
@@ -34,7 +33,6 @@ def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
 
     dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code)
-    db_credentials = dbdao.tenant_configs
     # Check if dialect is supported for cache/datamart creations
     check_supported_dialects(dbdao.dialect)
 

@@ -1,6 +1,6 @@
 import os
 import re
-import json
+
 from typing import Optional, Tuple
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -262,7 +262,7 @@ class DaoBase(ABC):
         user: str = None,
         password: str = None,
         host: str = None,
-        port: int = None
+        port: int = None,
     ) -> Tuple[str, dict]:
         connect_args = {}
         match dialect:
@@ -475,3 +475,4 @@ class DaoBase(ABC):
             return obj_name.casefold()
         else:
             return obj_name
+        
