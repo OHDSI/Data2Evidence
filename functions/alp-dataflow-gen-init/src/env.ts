@@ -44,13 +44,18 @@ export const env = {
     trex_sql_port: _env.TREX__SQL__PORT,
     trex_sql_dbname: _env.TREX__SQL__DBNAME,
     trex_sql_user: _env.TREX__SQL__USER,
-    is_dev_env: (_env.PREFECT__LOCAL_DEBUG) === "true" || false, // Default to false if not set
-    logs_debug_enable: (_env.PREFECT__LOGS_DEBUG_ENABLED) === "true" || false, // Default to false if not set
+    is_dev_env: _env.PREFECT__LOCAL_DEBUG === "true" || false, // Default to false if not set
+    logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
+
+    // For LLM_NER
+    azure_openai_api_endpoint: _env.AZURE_OPENAI_API_ENDPOINT,
+    azure_openai_api_deployment_name: _env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+    azure_openai_api_version: _env.AZURE_OPENAI_API_VERSION,
   },
   SECRETS: {
     // Prefect Secrets
@@ -66,7 +71,8 @@ export const env = {
     "refresh-token-endpoint": _env.REFRESH_TOKEN__ENDPOINT,
     "refresh-token-client-id": _env.REFRESH_TOKEN__CLIENT_ID,
     "refresh-token-client-secret": _env.REFRESH_TOKEN__CLIENT_SECRET,
-    "google-service-account-json": _env.GOOGLE_APPLICATION_CREDENTIALS
+    "google-service-account-json": _env.GOOGLE_APPLICATION_CREDENTIALS,
+    "azure-openai-api-key": _env.AZURE_OPENAI_API_KEY,
   },
   PREFECT_API_URL: _env.PREFECT_API_URL,
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
@@ -80,7 +86,6 @@ export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
 export const INSTALL_SQLALCHEMY = env.INSTALL_SQLALCHEMY;
 export const CUSTOM_WORK_POOL_CONFIGURATION =
   env.CUSTOM_WORK_POOL_CONFIGURATION;
-
 
 export function getStudyResultsDbCredentials(): TransformedDBCredentials {
   return {
