@@ -285,5 +285,10 @@
   --color-filtercard-new-state: #115693;
   --color-date-error-text-bg: #ffc0cb;
   --color-hover-border: #427cac;
+
+  --color-form-control-focus: var(--color-primary-light);
+  --color-app-date-highlight: var(--color-primary-lightest);
+  --color-app-date-border: var(--color-primary-lightest);
+  --color-app-date-today: var(--color-secondary-lighter);
 }
 
