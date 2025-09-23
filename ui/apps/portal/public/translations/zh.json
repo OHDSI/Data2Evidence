@@ -862,7 +862,7 @@
   "TERMINOLOGY_LIST__VALIDITY": "有效性",
   "TERMINOLOGY_LIST__VOCABULARY": "代码表",
   "TEST_KEY": "默认",
-  "TREE_MAP_CHART__CHART_LEGEND": "方框大小：患病率，颜色：每人记录（绿色到灰色=从高到低）",
+  "TREE_MAP_CHART__CHART_LEGEND": "箱体大小：患病率，颜色：每人记录数（蓝到灰 = 高到低）",
   "TREE_MAP_CHART__NUMBER_OF_PEOPLE": "人数",
   "TREE_MAP_CHART__PREVALENCE": "患病率",
   "TREE_MAP_CHART__RECORDS_PER_PERSON": "每人记录",
