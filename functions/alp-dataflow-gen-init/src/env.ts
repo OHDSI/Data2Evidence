@@ -51,6 +51,7 @@ export const env = {
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
+    fhir_database_code: _env.FHIR_DATABASE_CODE,
   },
   SECRETS: {
     // Prefect Secrets

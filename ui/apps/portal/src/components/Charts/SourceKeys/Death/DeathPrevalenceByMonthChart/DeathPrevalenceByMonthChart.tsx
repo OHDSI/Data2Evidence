@@ -27,14 +27,14 @@ const DeathPrevalenceByMonthChart: FC<DeathPrevalenceByMonthChartProps> = ({ dat
   }
 
   // Parse and format line chart data
-  // Divide XLENGTHOFOBSERVATION by number of days in a year and round to 1 decimal place
-  const lineChartXAxisData = data.map((obj: any) => (obj["XLENGTHOFOBSERVATION"] / 365.25).toFixed(1));
-  // Convert YPERCENTPERSONS to percentage
+  // Divide XCALENDARMONTH by number of days in a year and round to 1 decimal place
+  const lineChartXAxisData = data.map((obj: any) => (obj["XCALENDARMONTH"] / 365.25).toFixed(1));
+  // Convert YPREVALENCE1000PP to percentage
   const series = [
     {
       type: "line",
       step: "start",
-      data: data.map((obj: any) => (Number(obj["YPERCENTPERSONS"]) * 100).toFixed(0)),
+      data: data.map((obj: any) => (Number(obj["YPREVALENCE1000PP"]) * 100).toFixed(0)),
     },
   ];
 

@@ -11,7 +11,7 @@ interface DrilldownTrellisChartProps {
   trellisXAxisKey?: string;
 }
 
-const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXAxisKey = "Y_PREVALENCE_1000_PP" }) => {
+const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXAxisKey = "YPREVALENCE1000PP" }) => {
   const { getText, i18nKeys } = useTranslation();
   const title = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TITLE);
   const trellisTopLabel = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TRELLIS_TOP_LABEL);
@@ -43,7 +43,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
   }
 
   // Group by trellis name -> parallel line chart
-  const trellisData = groupBy(data, (obj: any) => obj.TRELLIS_NAME);
+  const trellisData = groupBy(data, (obj: any) => obj.TRELLISNAME);
 
   // Calculate width for each grid
   const GRID_WIDTH = 90 / Object.keys(trellisData).length;
@@ -71,11 +71,11 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
       left: `${index * (GRID_WIDTH + GRID_GAP) + GRID_WIDTH / 2 + GRID_LEFT_MARGIN}%`,
     });
 
-    // Sort seriesData based on X_CALENDAR_YEAR
-    seriesData = seriesData.sort((a: any, b: any) => a["X_CALENDAR_YEAR"] - b["X_CALENDAR_YEAR"]);
-    // Get list of all unique "SERIES_NAME" in dat
-    const seriesList = [...new Set(seriesData.map((obj: any) => obj["SERIES_NAME"]))];
-    const lineChartXAxisData = [...new Set(seriesData.map((obj: any) => obj["X_CALENDAR_YEAR"]))];
+    // Sort seriesData based on XCALENDARYEAR
+    seriesData = seriesData.sort((a: any, b: any) => a["XCALENDARYEAR"] - b["XCALENDARYEAR"]);
+    // Get list of all unique "SERIESNAME" in dat
+    const seriesList = [...new Set(seriesData.map((obj: any) => obj["SERIESNAME"]))];
+    const lineChartXAxisData = [...new Set(seriesData.map((obj: any) => obj["XCALENDARYEAR"]))];
 
     for (const seriesName of seriesList) {
       series.push({
@@ -91,7 +91,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
         xAxisIndex: index,
         yAxisIndex: index,
         data: seriesData.reduce((acc: Array<any>, obj: any) => {
-          if (obj["SERIES_NAME"] === seriesName) {
+          if (obj["SERIESNAME"] === seriesName) {
             acc.push(Number(obj[trellisXAxisKey]).toFixed(2));
           }
           return acc;

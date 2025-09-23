@@ -22,7 +22,7 @@ jobs:
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
 
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
@@ -69,6 +69,12 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Prune images
+        if: always()
+        id: prune
+        run: |
+          docker buildx prune -af
       
       - name: Start services
         if: success() || failure()
@@ -139,7 +145,7 @@ jobs:
       - name: UI Setup yarn
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
-        run: npm install -g yarn      
+        run: npm install -g yarn
       - name: UI Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
@@ -149,7 +155,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential curl file git
           yarn
-          yarn build-all 2>/dev/null
+          yarn build-all --verbose 2>&1 | tee build-logs.txt
+      - name: Upload UI Build Logs
+        if: ${{ steps.file_changes.outputs.ui == 'true' && (success() || failure()) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-build-logs
+          path: ui/build-logs.txt
       - name: UI docker-compose-local
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
@@ -203,8 +215,9 @@ jobs:
         id: stop
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
-      - name: Clean d2e services
-        if: success() || failure()
-        id: clean
+
+      - name: Prune system
+        if: always()
+        id: prune_system
         run: |
-          echo "y" | ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions clean
+          docker system prune -af

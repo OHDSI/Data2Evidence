@@ -47,6 +47,7 @@ class SupportedDatabaseDialects(str, Enum):
     POSTGRES = "postgres"
     DUCKDB = "duckdb"
     BIGQUERY = "bigquery"
+    TREX = "trex"
 
 
 class RequestType(str, Enum):
@@ -93,16 +94,15 @@ class AuthToken(RunInput):
     thirdpartytoken: SecretStr
     thirdpartyrefreshtoken: SecretStr
 
+
 class AppTokenPayload(BaseModel):
-  given_name: str
-  family_name: str
-  extension_termsOfUseConsentVersion: str
-  email: str
+    given_name: str
+    family_name: str
+    extension_termsOfUseConsentVersion: str
+    email: str
 
 
 class User(BaseModel):
-  user_id: Optional[str] = ""
-  name: Optional[str] = ""
-  email: Optional[str] = ""
-
-
+    user_id: Optional[str] = ""
+    name: Optional[str] = ""
+    email: Optional[str] = ""
