@@ -1,5 +1,4 @@
-export const RESULT_VIEWER_TEMPLATE = `
-library(OhdsiShinyAppBuilder)
+export const RESULT_VIEWER_TEMPLATE = `library(OhdsiShinyAppBuilder)
 library(OhdsiShinyModules)
 library(shiny)
 library(future)

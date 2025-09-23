@@ -34,7 +34,7 @@ class DqdParams(DqdOptionsType):
     materializedCohortDatabaseSchema: Optional[str] = None
 
     numThreads: int = 1
-    checkLevels: str = "c('TABLE','FIELD','CONCEPT')"
+    checkLevels: list = ['TABLE','FIELD','CONCEPT']
     writeToTable: bool = False
     sqlOnly: bool = False
     verboseMode: bool = True
@@ -42,20 +42,7 @@ class DqdParams(DqdOptionsType):
     @computed_field
     def outputFile(self) -> str:
         return f"{self.schemaName}.json" if self.schemaName else "output.json"
-
-    @computed_field
-    def cohortDefinitionIdR(self) -> str:
-        if self.cohortDefinitionId:
-            return f"c({self.cohortDefinitionId})"
-        return "c()"
-
-    @computed_field
-    def checkNamesR(self) -> str:
-        if self.checkNames:
-            quoted = [f"'{name}'" for name in self.checkNames]
-            return f"c({','.join(quoted)})"
-        return "c()"
-
+    
     @computed_field
     def cohortDatabaseSchemaR(self) -> str:
         # Returns the assigned value if set, otherwise falls back to materializedCohortDatabaseSchema, cohortDatabaseSchema, or schemaName
@@ -75,9 +62,9 @@ class DqdParams(DqdOptionsType):
             "cdmVersionNumber": self.cdmVersionNumber,
             "vocabSchema": self.vocabSchemaName,
             "releaseDate": self.releaseDate,
-            "cohortDefinitionId": self.cohortDefinitionIdR,
+            "cohortDefinitionId": self.cohortDefinitionId,
             "outputFolder": self.outputFolder,
-            "checkNames": self.checkNamesR,
+            "checkNames": self.checkNames,
             "cohortDatabaseSchema": self.cohortDatabaseSchemaR,
             "cohortTableName": self.cohortTableName,
         }
