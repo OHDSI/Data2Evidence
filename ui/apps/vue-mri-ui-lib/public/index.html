@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="importmap-type" content="systemjs-importmap" />
     <link rel="icon" type="image/x-icon" href="favicon-atlas.ico" />
     <script nonce="__NONCE__">
       window.ENV_DATA = __ENV_DATA__
@@ -12,6 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
     <script type="text/javascript" src="/authenticate.js"></script>
     <script type="text/javascript" src="/system.min.js"></script>
+    <script type="text/javascript" src="/import-map-overrides.js"></script>
 
     <% for (key in htmlWebpackPlugin.files.css) { %>
     <link href="<%= htmlWebpackPlugin.files.css[key] %>" rel="stylesheet" />
@@ -80,5 +82,7 @@
         y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
       })(window, document, "clarity", "script", "tc72b4d5f9");
     </script>
+
+    <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
   </body>
 </html>
