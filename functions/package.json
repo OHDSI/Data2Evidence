@@ -546,7 +546,11 @@
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
           "GOOGLE_APPLICATION_CREDENTIALS":"/run/secrets/google-credentials.json",
           "PREFECT__LOCAL_DEBUG": "${PREFECT__LOCAL_DEBUG:-false}",
-          "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}"
+          "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}"
         },
         "jupyter-gateway": {},
         "mlflow": {},
