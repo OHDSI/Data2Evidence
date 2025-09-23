@@ -97,24 +97,6 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
     }
   }
 
-  const filterUntaggedMaterializedCohorts = (
-    atlasCohortDefinitions: ICohortDefinition[],
-    materializedCohorts: IMaterializedCohort[]
-  ) => {
-    const cohortDefinitionIds: number[] = []
-    atlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
-      if (atlasCohortDefinition.cohortDefinitionId) {
-        acc.push(atlasCohortDefinition.cohortDefinitionId)
-      }
-      return acc
-    }, cohortDefinitionIds)
-
-    const filteredMaterializedCohorts = materializedCohorts.filter(materializedCohort => {
-      return cohortDefinitionIds.includes(materializedCohort.id)
-    })
-    return filteredMaterializedCohorts
-  }
-
   const formatRawAtlasCohortDefinition = (acd: ICohortDefinition) => {
     return {
       id: acd.id,
@@ -147,9 +129,5 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
     }
   })
 
-  formattedBookmarks.materializedCohorts = filterUntaggedMaterializedCohorts(
-    formattedBookmarks.atlasCohortDefinitions,
-    formattedBookmarks.materializedCohorts
-  )
   return formattedBookmarks
 }
