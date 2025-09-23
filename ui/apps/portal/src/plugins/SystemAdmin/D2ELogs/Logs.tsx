@@ -1,4 +1,4 @@
-import { FC, useEffect } from "react";
+import React, { FC, useEffect } from "react";
 import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
 import { getAuthToken } from "../../../containers/auth";
 import "./Logs.scss";
