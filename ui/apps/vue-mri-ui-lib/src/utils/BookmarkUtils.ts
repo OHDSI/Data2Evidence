@@ -95,7 +95,6 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
     if (bookmark.paConfigId === paConfigId) {
       return bookmark
     }
-    return null
   }
 
   const filterUntaggedMaterializedCohorts = (
