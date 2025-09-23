@@ -11,7 +11,6 @@ import { CohortIncidentTargetCohortNode } from "./CohortIncidentTargetCohortNode
 import { CohortMethodAnalysisNode } from "./CohortMethodAnalysisNode/CohortMethodAnalysisNode";
 import { CohortMethodNode } from "./CohortMethodNode/CohortMethodNode";
 import { CohortSelectionNode } from "./CohortSelectionNode/CohortSelectionNode";
-import { CompetingOutcomeCohortStratificationNode } from "./CompetingOutcomeCohortStratificationNode/CompetingOutcomeCohortStratificationNode";
 import { DefaultCovariateSettingsNode } from "./DefaultCovariateSettingsNode/DefaultCovariateSettingsNode";
 import { EraCovariateSettingsNode } from "./EraCovariateSettingsNode/EraCovariateSettingsNode";
 import { ExposureNode } from "./ExposureNode/ExposureNode";
@@ -59,8 +58,6 @@ export const NODE_TYPES: {
   cohort_method_node: CohortMethodNode,
   kaplan_meier_node: KaplanMeierNode,
   kaplan_meier_characterization_node: KaplanMeierCharacterizationNode,
-  competing_outcome_cohort_stratification_node:
-    CompetingOutcomeCohortStratificationNode,
   era_covariate_settings_node: EraCovariateSettingsNode,
   calendar_time_covariate_settings_node: CalendarTimeCovariateSettingsNode,
   seasonality_covariate_settings_node: SeasonalityCovariateSettingsNode,
@@ -321,7 +318,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
   kaplan_meier_node: {
     title: "Kaplan-Meier Analysis",
     description: "Run Kaplan-Meier survival analysis code.",
-    tag: NodeTag.Stable,
+    tag: NodeTag.Experimental,
     defaultData: {
       kaplanMeierArgs: {
         // CM Analysis Configuration
@@ -511,7 +508,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     title: "Study Population Settings",
     description:
       "Configure risk windows, time at risk, and analysis-specific population parameters.",
-    tag: NodeTag.Stable,
+    tag: NodeTag.Experimental,
     defaultData: {
       cohortMethodArgs: {
         minDaysAtRisk: 1,
@@ -549,7 +546,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     title: "Outcomes",
     description:
       "Define clinical outcomes and endpoints for the study analysis.",
-    tag: NodeTag.Stable,
+    tag: NodeTag.Experimental,
     defaultData: {
       ncoCohortSetIds: [],
       outcomeOfInterest: false,
@@ -631,7 +628,7 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
     description: "Select cohort for analysis.",
     tag: NodeTag.Stable,
     defaultData: {
-      type: "event",
+      type: "",
       cohorts: [],
     },
     outputs: [
@@ -657,18 +654,6 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
       { label: "Stratification", handleType: HandleIOType.Cohort },
     ],
     outputs: [{ handleType: HandleIOType.CohortMethodAnalysis }],
-  },
-  competing_outcome_cohort_stratification_node: {
-    title: "Competing Outcome / Stratification",
-    description:
-      "Define competing outcome cohorts or stratification cohort for Kaplan-Meier analysis.",
-    tag: NodeTag.Stable,
-    defaultData: {
-      competingOutcomeCohortStratificationArgs: {
-        cohortType: "competing_outcome",
-      },
-    },
-    outputs: [{ handleType: HandleIOType.Cohort }],
   },
 };
 

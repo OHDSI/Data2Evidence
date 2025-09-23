@@ -86,19 +86,19 @@ export enum DQD_RUN_TYPES {
 
 export interface BOXPLOTCHART_DATA_TYPE {
   CATEGORY: string;
-  MIN_VALUE: number;
-  P10_VALUE: number;
-  P25_VALUE: number;
-  MEDIAN_VALUE: number;
-  P75_VALUE: number;
-  P90_VALUE: number;
-  MAX_VALUE: number;
+  MINVALUE: number;
+  P10VALUE: number;
+  P25VALUE: number;
+  MEDIANVALUE: number;
+  P75VALUE: number;
+  P90VALUE: number;
+  MAXVALUE: number;
 }
 
 export interface LINECHART_DATA_TYPE {
-  SERIES_NAME: string;
-  X_CALENDAR_MONTH: string;
-  Y_RECORD_COUNT: string;
+  SERIESNAME: string;
+  XCALENDARMONTH: string;
+  YRECORDCOUNT: string;
 }
 export interface PIECHART_DATA_TYPE {
   CONCEPTID: number;
@@ -118,20 +118,20 @@ export interface BARCHART_STATS_DATA_TYPE {
 }
 
 export interface TREEMAPCHART_DATA_TYPE {
-  CONCEPT_ID: number;
-  CONCEPT_PATH: string;
-  NUM_PERSONS: number;
-  PERCENT_PERSONS: string;
-  RECORDS_PER_PERSON: string;
+  CONCEPTID: number;
+  CONCEPTPATH: string;
+  NUMPERSONS: number;
+  PERCENTPERSONS: string;
+  RECORDSPERPERSON: string;
 }
 
 export interface DASHBOARD_REPORT_TYPE {
-  population: Array<{
-    ATTRIBUTE_NAME: string;
-    ATTRIBUTE_VALUE: string;
+  summary: Array<{
+    ATTRIBUTENAME: string;
+    ATTRIBUTEVALUE: string;
   }>;
   gender: Array<PIECHART_DATA_TYPE>;
-  cumulativeDuration: Array<{
+  cumulativeObservation: Array<{
     SERIESNAME: string;
     XLENGTHOFOBSERVATION: string;
     YPERCENTPERSONS: string;
@@ -141,21 +141,21 @@ export interface DASHBOARD_REPORT_TYPE {
     COUNTVALUE: string;
     PERCENTVALUE: string;
   }>;
-  ageAtFirst: Array<BARCHART_DATA_TYPE>;
+  ageAtFirstObservation: Array<BARCHART_DATA_TYPE>;
 }
 
-export interface DATA_DENSITY_REPORT_TYPE {
+export interface DATADENSITY_REPORT_TYPE {
   conceptsPerPerson: Array<BOXPLOTCHART_DATA_TYPE>;
   recordsPerPerson: Array<LINECHART_DATA_TYPE>;
   totalRecords: Array<LINECHART_DATA_TYPE>;
 }
 
 export interface PERSON_REPORT_TYPE {
-  population: Array<any>;
+  summary: Array<any>;
   gender: Array<PIECHART_DATA_TYPE>;
   race: Array<PIECHART_DATA_TYPE>;
   ethnicity: Array<PIECHART_DATA_TYPE>;
-  yearOfBirthData: Array<BARCHART_DATA_TYPE>;
+  yearOfBirth: Array<BARCHART_DATA_TYPE>;
   yearOfBirthStats: Array<BARCHART_STATS_DATA_TYPE>;
 }
 
@@ -167,7 +167,7 @@ export interface CONDITION_REPORT_TYPE {
   treemap: Array<TREEMAPCHART_DATA_TYPE>;
 }
 
-export interface CONDITION_ERA_REPORT_TYPE {
+export interface CONDITIONERA_REPORT_TYPE {
   treemap: Array<TREEMAPCHART_DATA_TYPE>;
 }
 
@@ -179,7 +179,7 @@ export interface DRUG_REPORT_TYPE {
   treemap: Array<TREEMAPCHART_DATA_TYPE>;
 }
 
-export interface DRUG_ERA_REPORT_TYPE {
+export interface DRUGERA_REPORT_TYPE {
   treemap: Array<TREEMAPCHART_DATA_TYPE>;
 }
 
@@ -191,18 +191,18 @@ export interface OBSERVATION_REPORT_TYPE {
   treemap: Array<TREEMAPCHART_DATA_TYPE>;
 }
 
-export interface OBSERVATION_PERIOD_REPORT_TYPE {
+export interface OBSERVATIONPERIOD_REPORT_TYPE {
   ageAtFirst: Array<BARCHART_DATA_TYPE>;
   ageByGender: Array<BOXPLOTCHART_DATA_TYPE>;
-  cumulativeDuration: Array<any>;
-  observationLengthData: Array<BARCHART_DATA_TYPE>;
+  cumulativeObservation: Array<any>;
+  observationLength: Array<BARCHART_DATA_TYPE>;
   observationLengthStats: Array<BARCHART_STATS_DATA_TYPE>;
-  observationLengthByAge: Array<BOXPLOTCHART_DATA_TYPE>;
-  observationLengthByGender: Array<BOXPLOTCHART_DATA_TYPE>;
+  durationByAgeDecile: Array<BOXPLOTCHART_DATA_TYPE>;
+  durationByGender: Array<BOXPLOTCHART_DATA_TYPE>;
   observedByMonth: Array<any>;
-  observedByYearData: Array<BARCHART_DATA_TYPE>;
-  observedByYearStats: Array<BARCHART_STATS_DATA_TYPE>;
-  periodsPerPerson: Array<PIECHART_DATA_TYPE>;
+  personsWithContinuousObservationsByYear: Array<BARCHART_DATA_TYPE>;
+  personsWithContinuousObservationsByYearStats: Array<BARCHART_STATS_DATA_TYPE>;
+  observationPeriodsPerPerson: Array<PIECHART_DATA_TYPE>;
 }
 
 export interface DEATH_REPORT_TYPE {
@@ -235,17 +235,17 @@ export interface DRILLDOWN_REPORT_BASE_TYPE {
 
 export enum WEBAPI_CDMRESULTS_SOURCE_KEYS {
   DASHBOARD = "dashboard",
-  DATA_DENSITY = "data_density",
+  DATADENSITY = "datadensity",
   PERSON = "person",
   VISIT = "visit",
   CONDITION = "condition",
-  CONDITION_ERA = "condition_era",
+  CONDITIONERA = "conditionera",
   PROCEDURE = "procedure",
   DRUG = "drug",
-  DRUG_ERA = "drug_era",
+  DRUGERA = "drugera",
   MEASUREMENT = "measurement",
   OBSERVATION = "observation",
-  OBSERVATION_PERIOD = "observation_period",
+  OBSERVATIONPERIOD = "observationPeriod",
   DEATH = "death",
 }
 export enum DQD_RUN_STATUS_TYPES {

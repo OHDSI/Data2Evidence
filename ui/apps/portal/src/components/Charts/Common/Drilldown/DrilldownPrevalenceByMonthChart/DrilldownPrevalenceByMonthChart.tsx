@@ -27,15 +27,15 @@ const DrilldownPrevalenceByMonthChart: FC<DrilldownPrevalenceByMonthChartProps> 
   }
 
   // Parse and format line chart data
-  // Parse X_CALENDAR_MONTH from e.g 200910 -> 10/2009
+  // Parse XCALENDARMONTH from e.g 200910 -> 10/2009
   const lineChartXAxisData = data.map(
-    (obj: any) => obj["X_CALENDAR_MONTH"].toString().slice(-2) + "/" + obj["X_CALENDAR_MONTH"].toString().slice(0, 4)
+    (obj: any) => obj["XCALENDARMONTH"].toString().slice(-2) + "/" + obj["XCALENDARMONTH"].toString().slice(0, 4)
   );
 
   const series = [
     {
       type: "line",
-      data: data.map((obj: any) => Number(obj["Y_PREVALENCE_1000_PP"]).toFixed()),
+      data: data.map((obj: any) => Number(obj["YPREVALENCE1000PP"]).toFixed()),
     },
   ];
 

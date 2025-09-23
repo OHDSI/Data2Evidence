@@ -75,6 +75,7 @@ interface Props {
   clearable?: boolean
   autoApply?: boolean
   textInput?: boolean
+  configFormat?: string // Optional date format from MRI config
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -91,6 +92,7 @@ const props = withDefaults(defineProps<Props>(), {
   clearable: true,
   autoApply: true,
   textInput: true,
+  configFormat: undefined,
 })
 
 // Emits
@@ -164,10 +166,13 @@ const defaultConfig = computed(() => ({
   range: false,
 }))
 
-const mergedConfig = computed(() => ({
-  ...defaultConfig.value,
-  ...props.config,
-}))
+const mergedConfig = computed(() => {
+  return {
+    ...defaultConfig.value,
+    ...props.config,
+    format: props.configFormat || 'YYYY-MM-DD',
+  }
+})
 
 const displayFormat = computed(() => {
   const format = mergedConfig.value.format
@@ -217,6 +222,14 @@ const datePickerProps = computed(() => ({
   ui: customUI.value,
   keepActionRow: keepActionRow.value,
   menuClassName: 'app-date-menu',
+  textInput: props.textInput
+    ? {
+        format: mergedConfig.value.format,
+        enterSubmit: true,
+        tabSubmit: true,
+        selectOnFocus: true,
+      }
+    : false,
 }))
 
 // Watch for prop changes

@@ -7,6 +7,8 @@
     "upgrade": "vue-cli-service upgrade",
     "build": "vue-cli-service build",
     "build:local": "VUE_APP_HOST=https://localhost:41000 vue-cli-service build",
+    "build:mock": "bash build-mock.sh",
+    "start:mock": "cd src/query-filter/mock-server && SERVER_URL=${SERVER_URL:-http://localhost:3131} USE_CACHE=${USE_CACHE:-true} npm start",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit",
     "test:ci": "vue-cli-service test:unit --maxWorkers=4 --coverage --reporters=\"jest-junit\""

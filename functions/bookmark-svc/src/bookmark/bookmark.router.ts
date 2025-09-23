@@ -40,7 +40,7 @@ export class BookmarkRouter {
         const token = req.headers['authorization']
 
         req.body.cmd = 'loadAll'
-        req.body.paConfigId = paConfigId
+        req.body.paConfigId = paConfigId || ''
         req.body.datasetId = datasetId
 
         await queryBookmarks(req.body, userName, token, configConnection, (err, data) => {

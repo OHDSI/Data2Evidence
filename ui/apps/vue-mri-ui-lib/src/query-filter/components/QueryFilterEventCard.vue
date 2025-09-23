@@ -672,7 +672,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 0px 12px;
 
     &__left {
       flex: 1;
@@ -809,11 +809,11 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
 
   .event-content {
     flex: 1;
-    padding: 12px;
+    padding: 0px 12px;
   }
 
   .concept-set-section {
-    margin-bottom: 12px;
+    margin-bottom: 0px;
   }
 
   .concept-set-label {

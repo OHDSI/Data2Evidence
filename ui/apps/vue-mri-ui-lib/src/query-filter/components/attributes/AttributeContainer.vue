@@ -99,7 +99,7 @@ const attributeType = computed(() => {
   }
 
   .attribute-input {
-    padding: 15px;
+    padding: 5px 15px;
     flex: 2;
     border-right: 1px solid var(--color-primary, #000080);
     display: flex;
