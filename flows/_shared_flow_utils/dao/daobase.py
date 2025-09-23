@@ -289,7 +289,7 @@ class DaoBase(ABC):
                 token = GetAuthTokens().get_third_party_token()
                 hana_connect_args["password"] = token.get_secret_value()
 
-            elif auth_mode == AuthMode.PASSWORD:
+            else:
                 token = GetAuthTokens().get_auth_token()
                 hana_connect_args.update(
                     {"user": user, "password": password.get_secret_value()}
@@ -363,7 +363,7 @@ class DaoBase(ABC):
                 token = GetAuthTokens().get_third_party_token()
                 user = ""
                 password = token
-            elif database_credentials.authMode == AuthMode.PASSWORD:
+            else:
                 token = GetAuthTokens().get_auth_token()
 
             # Add APPLICATION and APPLICATIONUSER as session variables for Hana
