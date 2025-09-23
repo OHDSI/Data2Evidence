@@ -461,7 +461,7 @@
                         "type": "null"
                       }
                     ],
-                    "default": null,
+                    "default": "cohort",
                     "title": "Cohorttablename"
                   }
                 },

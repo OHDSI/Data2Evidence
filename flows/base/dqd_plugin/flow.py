@@ -99,7 +99,7 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
             cohortDefinitionId = robjects.StrVector(dqd_params.cohortDefinitionId) if dqd_params.cohortDefinitionId else robjects.NULL,
             cdmVersion = dqd_params.cdmVersionNumber,
             cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
-            cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else robjects.NULL,
+            cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",
         )   
         
     # Read the result from the output file
