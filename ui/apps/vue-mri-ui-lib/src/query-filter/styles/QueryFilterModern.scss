@@ -2,6 +2,7 @@
   height: calc(100% - 35px);
   overflow: auto;
   position: relative;
+  background-color: #f2f0f1;
 
   // Overlay styles for SplashScreen
   .splash-overlay {
@@ -46,10 +47,10 @@
   .query-filter-main-container {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 18px;
     justify-content: center;
     align-items: center;
-    background: #ffffff;
+    background: #f2f0f1;
     border: 1px solid #e0e0e0;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -61,6 +62,237 @@
     width: 90%;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    gap: 20px;
+
+    .header-section-left {
+      flex: 1;
+      min-width: 200px;
+
+      .cohort-name-display {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .cohort-name-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .cohort-name-value {
+          font-size: 16px;
+          font-weight: 500;
+          color: #333;
+          word-break: break-word;
+        }
+      }
+    }
+
+    .header-section-middle {
+      flex: 2;
+      display: flex;
+      justify-content: center;
+
+      .generate-cohort-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+
+        .dataset-selector {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .dataset-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #666;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .dataset-dropdown {
+          padding: 6px 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          background: #fff;
+          font-size: 14px;
+          min-width: 120px;
+
+          &:focus {
+            outline: none;
+            border-color: #000080;
+            box-shadow: 0 0 0 2px rgba(0, 0, 128, 0.1);
+          }
+
+          &:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+          }
+        }
+
+        .patient-count-display {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+
+          .patient-count-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .patient-count-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000080;
+          }
+        }
+      }
+    }
+
+    .header-section-right {
+      flex: 1;
+      display: flex;
+      justify-content: flex-end;
+      min-width: 200px;
+
+      .right-button-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+    }
+
+    // Responsive design
+    @media (max-width: 1024px) {
+      flex-direction: column;
+      gap: 16px;
+
+      .header-section-left,
+      .header-section-middle,
+      .header-section-right {
+        flex: none;
+        width: 100%;
+      }
+
+      .header-section-left {
+        .cohort-name-display {
+          align-items: center;
+          text-align: center;
+        }
+      }
+
+      .header-section-right {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .generate-cohort-controls {
+        flex-direction: column;
+        gap: 8px;
+
+        .dataset-dropdown {
+          min-width: 100%;
+        }
+      }
+
+      .right-button-group {
+        flex-direction: column;
+        width: 100%;
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+
+    // Button styles
+    .generate-cohort-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.btn-primary {
+        background-color: #000080;
+        color: #fff;
+
+        &:hover:not(:disabled) {
+          background-color: rgb(0, 0, 89);
+        }
+
+        &:disabled {
+          background-color: #e0e0e0;
+          color: #9e9e9e;
+          cursor: not-allowed;
+        }
+      }
+
+      .btn-icon {
+        width: 16px;
+        height: 16px;
+
+        :deep(svg) {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      &.btn-primary .btn-icon {
+        :deep(svg) {
+          fill: white !important;
+        }
+
+        :deep(path) {
+          fill: white !important;
+        }
+
+        :deep(g) {
+          fill: white !important;
+        }
+      }
+    }
+
+    .feedback-btn {
+      padding: 6px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &.btn-outline-primary {
+        background-color: transparent;
+        color: #000080;
+        border: 1px solid #000080;
+
+        &:hover {
+          background-color: rgba(0, 0, 128, 0.04);
+        }
+      }
+    }
   }
   .query-filter-container {
     width: 90%;
@@ -203,6 +435,26 @@
     }
 
     .debug-column {
+      .debug-column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+
+        h4 {
+          margin: 0;
+          font-size: 14px;
+          color: #666;
+        }
+
+        .copy-button {
+          font-size: 12px;
+          padding: 4px 8px;
+          line-height: 1;
+          white-space: nowrap;
+        }
+      }
+
       h4 {
         margin: 0 0 8px 0;
         font-size: 14px;
@@ -215,9 +467,12 @@
         border-radius: 4px;
         padding: 12px;
         font-size: 11px;
-        overflow-x: auto;
         max-height: 400px;
         overflow-y: auto;
+        max-width: 100%;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
     }
   }

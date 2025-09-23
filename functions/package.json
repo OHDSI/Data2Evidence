@@ -550,7 +550,8 @@
           "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
-          "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}"
+          "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}"
         },
         "jupyter-gateway": {},
         "mlflow": {},

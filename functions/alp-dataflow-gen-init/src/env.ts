@@ -56,6 +56,8 @@ export const env = {
     azure_openai_api_endpoint: _env.AZURE_OPENAI_API_ENDPOINT,
     azure_openai_api_deployment_name: _env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
     azure_openai_api_version: _env.AZURE_OPENAI_API_VERSION,
+
+    fhir_database_code: _env.FHIR_DATABASE_CODE,
   },
   SECRETS: {
     // Prefect Secrets

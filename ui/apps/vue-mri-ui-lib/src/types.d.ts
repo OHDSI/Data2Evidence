@@ -282,3 +282,40 @@ type BookmarkDisplay = {
 }
 
 type BookmarkType = 'A' | 'D' | 'M' | 'A+M' | 'D+M'
+
+interface IBookmark {
+  bmkId: string
+  bookmarkname: string
+  bookmark: string
+  viewname: string | null
+  modified: string
+  version: number | null
+  user_id: string
+  shared: boolean
+  cohortDefinitionId?: number
+  paConfigId?: string
+}
+
+interface ICohortDefinition {
+  id: number
+  name: string
+  description?: string | null
+  createdBy?: string | null
+  createdDate: number | null
+  modifiedBy?: string | null
+  modifiedDate?: number | null
+  hasWriteAccess: boolean
+  hasReadAccess: boolean
+  tags: string[]
+  cohortDefinitionId?: number
+}
+
+interface IMaterializedCohort {
+  id: number
+  patientCount: number
+  cohortDefinitionName: string
+  createdOn: string
+  description: string
+}
+
+type ICombinedCohortDefnitionListItem = IBookmark | ICohortDefinition | IMaterializedCohort
