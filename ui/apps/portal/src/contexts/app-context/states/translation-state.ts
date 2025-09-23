@@ -1047,7 +1047,7 @@ export const i18nDefault = {
     TERMS_OF_USE__TITLE: "Terms of use",
     TERMS_OF_USE__SAVE: "Save",
     TEST_KEY: "default",
-    TREE_MAP_CHART__CHART_LEGEND: "Box Size: Prevalence, Color: Records per person (Green to Grey = High to Low)",
+    TREE_MAP_CHART__CHART_LEGEND: "Box Size: Prevalence, Color: Records per person (Blue to Grey = High to Low)",
     TREE_MAP_CHART__NUMBER_OF_PEOPLE: "Number of people",
     TREE_MAP_CHART__PREVALENCE: "Prevalence",
     TREE_MAP_CHART__RECORDS_PER_PERSON: "Records per person",
