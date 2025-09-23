@@ -1,6 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { getNavigationConfig } from '../utils/config'
 import { getComponents, loadComponentByRoute, loadComponent } from '../utils/ComponentRegistry'
+import Landing from '../components/Landing.vue'
 
 export function useNavigation() {
   const isAppActive = ref(false)
@@ -22,8 +23,14 @@ export function useNavigation() {
     const appRoutes = apps.value.map(app => app.route)
     isAppActive.value = appRoutes.includes(currentPath)
 
+    // Handle root route to show Landing component
+    if (currentPath === '/') {
+      currentComponent.value = Landing
+      return
+    }
+
     currentComponent.value = await loadComponentByRoute(currentPath)
-    if (!currentComponent.value && (currentPath === '/' || !isAppActive.value)) {
+    if (!currentComponent.value && !isAppActive.value) {
       currentComponent.value = null
     }
   }

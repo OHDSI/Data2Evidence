@@ -872,7 +872,7 @@
   "TERMINOLOGY_LIST__VALIDITY": "Gültigkeit",
   "TERMINOLOGY_LIST__VOCABULARY": "Wortschatz",
   "TEST_KEY": "Standard",
-  "TREE_MAP_CHART__CHART_LEGEND": "Boxgröße: Prävalenz, Farbe: Datensätze pro Person (Grün bis Grau = hoch bis niedrig)",
+  "TREE_MAP_CHART__CHART_LEGEND": "Boxgröße: Prävalenz, Farbe: Datensätze pro Person (Blau bis Grau = Hoch bis Niedrig)",
   "TREE_MAP_CHART__NUMBER_OF_PEOPLE": "Anzahl der Personen",
   "TREE_MAP_CHART__PREVALENCE": "Häufigkeit",
   "TREE_MAP_CHART__RECORDS_PER_PERSON": "Datensätze pro Person",
