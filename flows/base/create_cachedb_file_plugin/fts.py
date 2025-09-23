@@ -110,7 +110,7 @@ def get_duckdb_fts_creation_sql(
             {", ".join(columns)},
             stemmer='english', 
             stopwords='english',
-            ignore='(\\.|[^a-z0-9!@#$%^&*()\-`.+,\\\/"])+', 
+            ignore='(\\.|[^a-z!@#$%^&*()\-`.+,\\\/"])+', 
             strip_accents=1, 
             lower=1, 
             overwrite=1)
