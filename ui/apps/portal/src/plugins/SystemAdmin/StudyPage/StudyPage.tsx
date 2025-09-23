@@ -8,6 +8,7 @@ import { useFeedback, useTranslation } from "../../../contexts";
 import { useDatasets } from "../../../hooks";
 import { NetworkStrategusStudy, StrategusStudy, StrategusStudyType } from "../../../types";
 import { StudyCard } from "./StudyCard";
+import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer_template";
 import "./StudyPage.scss";
 
 interface StudyPageProps extends PageProps<SystemAdminPageMetadata> {}
@@ -52,6 +53,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
             id: studyId,
             name: strategusStudy.name || studyId,
             type: StrategusStudyType.NETWORK,
+            viewerCode: RESULT_VIEWER_TEMPLATE,
           })
         );
 
@@ -76,6 +78,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
           name: study.notebookName || study.studyId,
           strategus_json: study.analysisSpec,
           type: StrategusStudyType.LOCAL,
+          viewerCode: study.viewerCode ?? RESULT_VIEWER_TEMPLATE,
         }));
         setStrategusStudies(convertedStudies);
       } catch (error) {
