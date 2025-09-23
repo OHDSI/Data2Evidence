@@ -52,7 +52,7 @@ export const env = {
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
 
-    // For LLM_NER
+    // For PyNer flow
     azure_openai_api_endpoint: _env.AZURE_OPENAI_API_ENDPOINT,
     azure_openai_api_deployment_name: _env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
     azure_openai_api_version: _env.AZURE_OPENAI_API_VERSION,

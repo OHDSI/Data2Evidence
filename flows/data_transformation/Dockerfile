@@ -139,8 +139,6 @@ COPY --chown=docker:docker --chmod=711 ./data_transformation flows
 RUN pip install flows/py_name_entity_recognition.tar.gz
 RUN pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 
-RUN pip install asyncio
-
 # For NLP: download CUItoOHDSIv1.csv
 RUN mkdir -p flows/ner_extract_plugin/external/
 RUN curl -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip https://raw.githubusercontent.com/jmbanda/OHDSIconceptid2cui/refs/heads/master/CUItoOHDSIv1.zip
