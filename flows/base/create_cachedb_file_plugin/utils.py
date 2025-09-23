@@ -4,6 +4,8 @@ from typing import Set
 from pathlib import Path
 from time import time
 
+from prefect.blocks.system import Secret
+
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
@@ -92,6 +94,14 @@ def get_tables_for_fts(tables: list[str], copied_tables: list[str]) -> Set[str]:
     config_tables = set(DUCKDB_FULLTEXT_SEARCH_CONFIG.keys())
     tables_for_fts = user_tables & copied & config_tables
     return tables_for_fts
+
+
+def load_service_account_credentials():
+    """
+    Load Google service account credentials for BigQuery access.
+    """
+    google_service_account_json_path = Secret.load("google-service-account-json").get()
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_service_account_json_path
 
 
 def set_bigquery_global_settings():

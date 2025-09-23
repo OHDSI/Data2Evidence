@@ -40,7 +40,7 @@ def create_cache_flow(options: CreateCacheOptions):
 
     # Load Google service account credentials for BigQuery access.
     if dbdao.dialect == SupportedDatabaseDialects.BIGQUERY.value:
-       DaoBase.create_service_account_credentials_file(db_credentials)
+        load_service_account_credentials()
 
     copy_params = CopyParameters(
         source_database=f"{options.database_code}__srcdb",

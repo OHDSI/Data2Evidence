@@ -46,12 +46,12 @@ export const env = {
     trex_sql_user: _env.TREX__SQL__USER,
     is_dev_env: (_env.PREFECT__LOCAL_DEBUG) === "true" || false, // Default to false if not set
     logs_debug_enable: (_env.PREFECT__LOGS_DEBUG_ENABLED) === "true" || false, // Default to false if not set
+    fhir_database_code: _env.FHIR_DATABASE_CODE,
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
-    postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
-    fhir_database_code: _env.FHIR_DATABASE_CODE,
+    postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH
   },
   SECRETS: {
     // Prefect Secrets
