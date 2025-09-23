@@ -134,7 +134,10 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
 
   data.forEach(item => {
     if (BookmarkSchema.safeParse(item).success) {
-      formattedBookmarks.bookmarks.push(filterBookmarkByConfigId(item as IBookmark, paConfigId))
+      const filtered = filterBookmarkByConfigId(item as IBookmark, paConfigId)
+      if (filtered !== undefined) {
+        formattedBookmarks.bookmarks.push(filtered)
+      }
     }
     if (AtlasCohortDefinitionSchema.safeParse(item).success) {
       formattedBookmarks.atlasCohortDefinitions.push(formatRawAtlasCohortDefinition(item as ICohortDefinition))
@@ -148,6 +151,5 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
     formattedBookmarks.atlasCohortDefinitions,
     formattedBookmarks.materializedCohorts
   )
-
   return formattedBookmarks
 }
