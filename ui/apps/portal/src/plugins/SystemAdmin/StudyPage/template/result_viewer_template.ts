@@ -3,6 +3,7 @@ library(OhdsiShinyModules)
 library(shiny)
 library(future)
 library(TreatmentPatterns)
+library(CohortSurvival)
 
 resultsDatabaseSchema <- "$DATABASE_SCHEMA"
 
@@ -24,22 +25,56 @@ tryCatch({
   cat("Database connection failed:", e$message, "\n")
 })
 
-conn <- DatabaseConnector::connect(resultsConnectionDetails)
-treatmentPathways = DatabaseConnector::querySql(conn, paste0("SELECT pathway, freq, index_year, age, sex FROM ", resultsDatabaseSchema, ".tp_treatment_pathways"))
-colnames(treatmentPathways) <- tolower(colnames(treatmentPathways))
-DatabaseConnector::disconnect(conn)
-
+########### Treatment Patterns module ##############################
 patternsModuleUI <- function(id) {
   ns <- NS(id)  # Namespace for the module
   fluidPage(
-    sunburstR::sunburstOutput(ns("sunburst"))  # Use the namespaced ID
+    # Dropdown to choose a dataset or option
+    selectInput(
+      inputId = ns("dataset"),      # namespaced ID
+      label   = "Choose a dataset", # label shown to user
+      choices = NULL
+    ),
+    # Sunburst diagram output
+    sunburstR::sunburstOutput(ns("sunburst"))
   )
 }
 
 patternsModuleServer <- function(id, resultDatabaseSettings, connectionHandler) {
   moduleServer(id, function(input, output, session) {
+    dataset_choices <- reactive({
+      conn <- connectionHandler$getConnection()
+      res <- DatabaseConnector::querySql(
+        conn,
+        paste0(
+          "SELECT DISTINCT DATABASE_ID
+              FROM ", resultsDatabaseSchema, ".tp_metadata"
+        )
+      )
+      return(res$DATABASE_ID)
+    })
+    observeEvent(dataset_choices(), {
+      updateSelectInput(
+        session,
+        inputId = "dataset",
+        choices = dataset_choices(),
+        selected = dataset_choices()[1]
+      )
+    })
+    
     output$sunburst <- sunburstR::renderSunburst({
-      createSunburstPlot(treatmentPathways)  # Render the sunburst plot
+      req(input$dataset)  # Wait for dataset to be selected
+      conn <- connectionHandler$getConnection()
+      tp_data <- DatabaseConnector::querySql(
+          conn,
+          paste0(
+          "SELECT pathway, freq, index_year, age, sex
+              FROM ", resultsDatabaseSchema, ".tp_treatment_pathways
+              WHERE database_id = '", input$dataset, "'"
+          )
+      )
+      colnames(tp_data) <- tolower(colnames(tp_data))
+      createSunburstPlot(tp_data)
     })
   })
 }
