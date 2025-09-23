@@ -3,7 +3,10 @@ var path = require('path')
 const webpack = require('webpack')
 
 const navigationItems = JSON.parse(process.env.VUE_APP_NAVIGATION_ITEMS || '[]')
-const clientRoutes = navigationItems.map(item => item.route).filter(route => route && route.startsWith('/'))
+const clientRoutes = navigationItems
+  .map(item => item.route)
+  .filter(route => route && route.startsWith('/'))
+  .concat('/cohorts')
 
 module.exports = {
   outputDir: path.resolve(__dirname, '../../resources/mri'),

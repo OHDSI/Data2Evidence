@@ -3,6 +3,7 @@ import React, { FC } from "react";
 import ReactECharts from "echarts-for-react";
 import { LineChartFormatConfig } from "../../../plugins/SystemAdmin/DQD/types";
 import ChartContainer from "./ChartContainer";
+import { chartColors } from "./chartColors";
 import "./LineChart.scss";
 
 interface LineChartProps {
@@ -86,6 +87,7 @@ const LineChart: FC<LineChartProps> = ({
       },
     },
     series: series,
+    color: chartColors,
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 

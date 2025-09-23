@@ -3,6 +3,7 @@ import React, { FC } from "react";
 import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import "./PieChart.scss";
+import { chartColors } from "./chartColors";
 
 interface PieChartProps {
   data: any[];
@@ -54,6 +55,7 @@ const PieChart: FC<PieChartProps> = ({ data, title, extraChartConfigs }) => {
         },
       },
     ],
+    color: chartColors,
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 
