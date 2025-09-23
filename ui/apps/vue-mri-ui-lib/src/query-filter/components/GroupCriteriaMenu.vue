@@ -211,22 +211,22 @@ const getGroupCriteriaCount = () => {
 
       // Background colors as specified
       &--all {
-        background: var(--color-primary, #000080);
+        background: var(--color-cardinality-all);
         color: white;
       }
 
       &--any {
-        background: #e75248;
+        background: var(--color-cardinality-any);
         color: white;
       }
 
       &--at-least {
-        background: #2686eb;
+        background: var(--color-cardinality-at-least);
         color: white;
       }
 
       &--at-most {
-        background: #fa9087;
+        background: var(--color-cardinality-at-most);
         color: white;
       }
 
@@ -253,19 +253,19 @@ const getGroupCriteriaCount = () => {
 
         // Adjust background opacity when selected
         &.segment-button--all {
-          background: rgba(0, 0, 128, 0.9);
+          background: var(--color-cardinality-all)
         }
 
         &.segment-button--any {
-          background: rgba(231, 82, 72, 0.9);
+          background: var(--color-cardinality-any);
         }
 
         &.segment-button--at-least {
-          background: rgba(38, 134, 235, 0.9);
+          background: var(--color-cardinality-at-least);
         }
 
         &.segment-button--at-most {
-          background: rgba(250, 144, 135, 0.9);
+          background: var(--color-cardinality-at-most);
         }
       }
 

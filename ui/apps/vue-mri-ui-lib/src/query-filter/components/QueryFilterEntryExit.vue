@@ -369,7 +369,10 @@ const activeTooltipKey = computed(() => {
     </div>
 
     <div class="events-container">
-      <div class="sidebar">ALL</div>
+      <div class="sidebar">
+        <div class="sidebar-top"></div>
+        <div class="sidebar-label">ALL</div>
+      </div>
       <QueryFilterEventContainer
         :events="eventsData"
         :event-type="type"
@@ -463,13 +466,26 @@ const activeTooltipKey = computed(() => {
       width: 30px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 12px 6px;
-      background: var(--color-primary, #000080); // Blue to match other sidebars
-      position: relative;
       border-radius: 0 0 0 8px;
-      color: white;
-      writing-mode: sideways-lr;
+      border: 1px solid var(--color-primary);
+
+      .sidebar-top {
+        background-color: var(--color-primary);
+        width: 30%;
+        height: 100%;
+        border-radius: 0 0 0 6px;
+      }
+      .sidebar-label {
+        writing-mode: sideways-lr;
+        text-orientation: sideways;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--color-primary);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        user-select: none;
+      }
     }
     .query-filter-event-container {
       flex: 1;

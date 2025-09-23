@@ -103,6 +103,12 @@
   --color-filtercard-new-state: #115693;
   --color-date-error-text-bg: #ffc0cb;
   --color-hover-border: #427cac;
+
+  --color-cardinality-all: var(--color-primary);
+  --color-cardinality-any: #e75248;
+  --color-cardinality-at-least: #2686eb;
+  --color-cardinality-at-most: #fa9087;
+  --color-cardinality-exactly: #000000;
 }
 
 .theme-atlas {
@@ -292,5 +298,11 @@
   --color-app-date-today: var(--color-secondary-lighter);
 
   --color-attributes-dropdown-selected-bg: var(--color-primary-extra-lightest);
+
+  --color-cardinality-all: var(--color-primary);
+  --color-cardinality-any: var(--color-support-orange);
+  --color-cardinality-at-least: var(--color-tertiary);
+  --color-cardinality-at-most: var(--color-secondary);
+  --color-cardinality-exactly: var(--color-black);
 }
 

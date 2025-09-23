@@ -248,17 +248,17 @@ const getCardinalityCount = () => {
 
       // Background colors for cardinality types
       &--exactly {
-        background: #000000; // Black for Exactly
+        background: var(--color-cardinality-exactly);
         color: white;
       }
 
       &--at-least {
-        background: #2686eb; // Blue for At least
+        background: var(--color-cardinality-at-least);
         color: white;
       }
 
       &--at-most {
-        background: #fa9087; // Light red for At most
+        background: var(--color-cardinality-at-most);
         color: white;
       }
 
@@ -285,15 +285,15 @@ const getCardinalityCount = () => {
 
         // Adjust background opacity when selected
         &.segment-button--exactly {
-          background: rgba(0, 0, 0, 0.9);
+          background: var(--color-cardinality-exactly);
         }
 
         &.segment-button--at-least {
-          background: rgba(38, 134, 235, 0.9);
+          background: var(--color-cardinality-at-least);
         }
 
         &.segment-button--at-most {
-          background: rgba(250, 144, 135, 0.9);
+          background: var(--color-cardinality-at-most);
         }
       }
 

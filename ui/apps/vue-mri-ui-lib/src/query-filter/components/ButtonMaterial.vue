@@ -171,7 +171,7 @@ const buttonClasses = computed<string[]>(() => {
 }
 
 .material-button--contained.material-button--primary:hover {
-  background-color: rgb(0, 0, 89);
+  background-color: var(--color-primary-light);
 }
 
 .material-button--contained.material-button--secondary {
