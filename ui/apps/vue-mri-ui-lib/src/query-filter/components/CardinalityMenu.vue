@@ -279,7 +279,7 @@ const getCardinalityCount = () => {
 
       // Selection state with 3px border
       &--selected {
-        border: 3px solid var(--color-primary, var(--color-primary, #000080));
+        border: 3px solid var(--color-primary, #000080);
         font-weight: 600;
         z-index: 2;
 
