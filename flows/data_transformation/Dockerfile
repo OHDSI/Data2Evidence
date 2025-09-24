@@ -135,8 +135,7 @@ COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_transformation flows
 
 # For PyNer
-# RUN pip install https://github.com/OHDSI/py_name_entity_recognition/archive/refs/tags/v1.0.8.tar.gz
-RUN pip install flows/py_name_entity_recognition.tar.gz
+RUN pip install git+https://github.com/data2evidence/py_name_entity_recognition@release-v1.0.8
 RUN pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 
 # For NLP: download CUItoOHDSIv1.csv
