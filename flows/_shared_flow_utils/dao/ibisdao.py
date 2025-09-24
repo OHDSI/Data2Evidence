@@ -53,35 +53,6 @@ class IbisDao(SqlAlchemyDao):
     #                          schema=table_schema,
     #                          database=schema)
 
-    def copy_table_as_dataframe(
-        self,
-        source_schema_name: str,
-        source_table_name: str,
-        columns_to_copy: list[str],
-        filter_conditions: dict = None,
-    ) -> pd.DataFrame:
-        with self.ibis_connect() as con:
-            table_obj = con.table(source_table_name, database=source_schema_name)
-            query = table_obj.select(columns_to_copy)
-
-            if "patient_filter" in filter_conditions:
-                person_id_column = filter_conditions["patient_filter"][
-                    "person_id_column"
-                ]
-                patients_to_filter = filter_conditions["patient_filter"][
-                    "patients_to_filter"
-                ]
-                query = query.filter(
-                    table_obj[person_id_column].isin(patients_to_filter)
-                )
-
-            if "date_filter" in filter_conditions:
-                timestamp_column = filter_conditions["date_filter"]["timestamp_column"]
-                dates_to_filter = filter_conditions["date_filter"]["dates_to_filter"]
-                query = query.filter(dates_to_filter >= table_obj[timestamp_column])
-
-            copied_df = query.execute()
-            return copied_df
 
     # --- Read methods ---
     def check_schema_exists(self, schema: str) -> bool:

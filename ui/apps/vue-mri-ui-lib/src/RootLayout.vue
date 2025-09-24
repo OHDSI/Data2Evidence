@@ -50,15 +50,19 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.root-layout {
+  height: 100%;
+
+  > main {
+    height: calc(100% - 56px);
+  }
+}
+
 .app-container {
-  contain: style paint;
-  display: flow-root;
-  overflow: hidden;
   box-sizing: border-box;
   width: 100%;
+  height: 100%;
   max-width: 100%;
-  min-height: 500px;
-  padding: 1rem;
 }
 
 #default-content, #component-content {

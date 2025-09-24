@@ -1,4 +1,4 @@
-import { Box, Button } from "@portal/components";
+import { Box, Button, Checkbox } from "@portal/components";
 import React, {
   CSSProperties,
   FC,
@@ -8,7 +8,12 @@ import React, {
 } from "react";
 import { useSelector } from "react-redux";
 import { dispatch, RootState } from "../../../store";
-import { replaceEdges, replaceNodes, setAddNodeTypeDialog } from "../reducers";
+import {
+  replaceEdges,
+  replaceNodes,
+  setAddNodeTypeDialog,
+  setUploadResults,
+} from "../reducers";
 import { selectFlowNodes } from "../selectors/select-flow-nodes";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
 import { DeleteFlowButton } from "./Flow/DeleteFlow/DeleteFlowButton";
@@ -28,6 +33,9 @@ interface FlowLayoutProps {
 
 export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
+  const uploadResults = useSelector(
+    (state: RootState) => state.flow.uploadResults
+  );
   const { data: dataflows, isLoading } = useGetDataflowsQuery();
   const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
     skip: !dataflowId,
@@ -84,10 +92,20 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
             <DeleteFlowButton />
           </Box>
         </Box>
-        <Box display="flex" gap={1} alignItems="center">
+        <Box display="flex" gap={1} alignItems="center" height={48}>
           <SaveFlowButton />
           <Button variant="outlined" text="Add node" onClick={handleAddNode} />
-          <Box display="flex" alignItems="center">
+          <Box display="flex" alignItems="center" gap={1}>
+            <Box display="flex" alignItems="center" height={40}>
+              <Checkbox
+                checked={uploadResults}
+                checkbox-id="upload-results"
+                label="Upload results"
+                onChange={(e: any) =>
+                  dispatch(setUploadResults(e.target.checked))
+                }
+              />
+            </Box>
             <FlowSettingsButton />
             <ResultsPolling />
           </Box>

@@ -26,6 +26,9 @@ export const RunFlowButton: FC = () => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
   const isNew = dataflowId == null;
   const isTestMode = useSelector((state: RootState) => state.flow.isTestMode);
+  const uploadResults = useSelector(
+    (state: RootState) => state.flow.uploadResults
+  );
 
   const status = useSelector((state: RootState) => state.flow.status);
   const [runAfterSaved, setRunAfterSaved] = useState(false);
@@ -86,7 +89,7 @@ export const RunFlowButton: FC = () => {
 
   const runFlow = useCallback(async () => {
     if (isTestMode) {
-      const body = { dataflow: { nodes, edges } };
+      const body = { uploadResults, dataflow: { nodes, edges } };
       await runTestDataflow(body);
     } else {
       const datasetId = pluginMetadata?.studyId;
@@ -94,9 +97,9 @@ export const RunFlowButton: FC = () => {
         console.error("No datasetId available from plugin metadata");
         return;
       }
-      await runDataflow({ id: dataflowId, datasetId });
+      await runDataflow({ id: dataflowId, datasetId, uploadResults });
     }
-  }, [dataflowId, isTestMode, nodes, edges]);
+  }, [dataflowId, isTestMode, nodes, edges, uploadResults]);
 
   const handleRun = useCallback(async () => {
     if (status === "draft") {

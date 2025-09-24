@@ -1,19 +1,25 @@
 import { z } from "zod";
 
-import { ICohortDefinition, ICohortGeneratorFlowRun } from "../api/types.ts";
+import {
+  IBookmarks,
+  ICohortDefinition,
+  ICohortGeneratorFlowRun,
+  ICombinedCohortDefnitionListItem,
+} from "../api/types.ts";
 
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   AtlasCohortDefinitionDto,
   CohortDefinitionCreateResponseDto,
   CohortDefinitionCopyResponseDto,
   CohortDefinitionResponseDto,
   IUserArtifactAtlasCohortDefinitionDto,
-  ICohortDefinitionListResponseDto,
   IGenerateCohortResponseDto,
 } from "../dto/cohortdefinition.ts";
+import { BookmarksSchema } from "../api/types.ts";
 import { UserArtifactServiceNames } from "../types.ts";
 
 export const generateCohort = async (
@@ -174,29 +180,45 @@ export const createCohortDefinition = async (
 export const getCohortDefinitionList = async (
   token: string,
   datasetId: string
-) => {
+): Promise<ICombinedCohortDefnitionListItem[]> => {
+  const bookmarksApi = new BookmarksAPI(token);
   const portalServerApi = new PortalServerAPI(token);
+
   const atlasCohortDefinitions =
     await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+  const rawDataFromBookmarks = await bookmarksApi.getAllBookmarks(datasetId);
 
-  // Construct response
-  const result: ICohortDefinitionListResponseDto = atlasCohortDefinitions.map(
-    (atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto) => {
-      return {
-        id: atlasCohortDefinition.id,
-        name: atlasCohortDefinition.name,
-        description: atlasCohortDefinition.description,
-        createdBy: atlasCohortDefinition.createdBy,
-        createdDate: atlasCohortDefinition.createdDate,
-        modifiedBy: atlasCohortDefinition.modifiedBy,
-        modifiedDate: atlasCohortDefinition.modifiedDate,
-        hasWriteAccess: true,
-        hasReadAccess: true,
-        tags: atlasCohortDefinition.tags,
-      };
-    }
-  );
-  return result;
+  const parsedBookmarksData = BookmarksSchema.parse(rawDataFromBookmarks);
+
+  const bookmarks: ICombinedCohortDefnitionListItem[] =
+    parsedBookmarksData.bookmarks.map((b) => ({
+      ...b,
+    }));
+
+  const materializedCohorts: ICombinedCohortDefnitionListItem[] =
+    parsedBookmarksData.materializedCohorts.map((m) => ({
+      ...m,
+    }));
+
+  const cohortDefinitions: ICombinedCohortDefnitionListItem[] =
+    atlasCohortDefinitions.map((atlasCohortDefinition) => ({
+      id: atlasCohortDefinition.id,
+      name: atlasCohortDefinition.name,
+      description: atlasCohortDefinition.description,
+      createdBy: atlasCohortDefinition.createdBy,
+      createdDate: atlasCohortDefinition.createdDate,
+      modifiedBy: atlasCohortDefinition.modifiedBy,
+      modifiedDate: atlasCohortDefinition.modifiedDate,
+      hasWriteAccess: true,
+      hasReadAccess: true,
+      tags: atlasCohortDefinition.tags,
+      cohortDefinitionId: getMaterializedCohortDefinitionId(
+        atlasCohortDefinition,
+        datasetId
+      ),
+    }));
+
+  return [...bookmarks, ...materializedCohorts, ...cohortDefinitions];
 };
 
 export const getCohortDefinition = async (
@@ -356,4 +378,26 @@ export const checkIfAtlasCohortDefinitionExists = async (
   );
   const result = nameUsedInOtherDefinition ? 1 : 0;
   return result;
+};
+
+const getMaterializedCohortDefinitionId = (
+  bookmark: any,
+  datasetId: string
+): number | undefined => {
+  const materializedBookmarkCohortDefinitions: {
+    datasetId: string;
+    cohortDefinitionId: number;
+  }[] = bookmark.materializedCohortDefinitions;
+  if (materializedBookmarkCohortDefinitions === undefined) {
+    return undefined;
+  }
+  const materializedBookmarkCohortDefinition =
+    materializedBookmarkCohortDefinitions.find(
+      (e) => e.datasetId === datasetId
+    );
+  if (materializedBookmarkCohortDefinition === undefined) {
+    return undefined;
+  } else {
+    return materializedBookmarkCohortDefinition.cohortDefinitionId;
+  }
 };

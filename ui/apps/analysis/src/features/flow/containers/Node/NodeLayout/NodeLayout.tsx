@@ -26,6 +26,7 @@ export interface NodeLayoutProps<T> {
   onSettingClick?: () => void;
   className?: string;
   children: React.ReactNode;
+  renderChildren?: boolean;
   node: NodeProps<T>;
 }
 
@@ -36,6 +37,7 @@ export const NodeLayout = <T extends NodeDataState>({
   onSettingClick,
   className,
   children,
+  renderChildren = false,
   node,
 }: NodeLayoutProps<T>) => {
   const classes = classNames("node", className, {
@@ -107,6 +109,9 @@ export const NodeLayout = <T extends NodeDataState>({
             )}
         </Box>
       </div>
+      {renderChildren && (
+        <div className="node__content">{children}</div>
+      )}
       {typeof onResultClick === "function" && (
         <div className="node__footer">
           <Button
