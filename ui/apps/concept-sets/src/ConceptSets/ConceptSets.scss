@@ -22,6 +22,12 @@
   &__tabs {
     display: flex;
     justify-content: center;
+    .MuiTabs-indicator {
+      background-color: var(--color-primary, #000080);
+    }
+    .MuiTab-root.Mui-selected {
+      color: var(--color-primary, #000080);
+    }
   }
 
   &__header {

@@ -234,7 +234,7 @@ const TabSection = ({
   const availableTabs = getAvailableTabs();
 
   return (
-    <div style={{ height: "60px" }}>
+    <div style={{ height: "60px" }} className="tab-section">
       <Tabs
         value={currentTabNo}
         onChange={(_, value) => {
