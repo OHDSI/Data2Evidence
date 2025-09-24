@@ -119,7 +119,9 @@ const NameSection = ({
           "& .MuiTextField-root": { width: "50%" },
         }}
       >
-        <Typography sx={{ color: "var(--color-primary, #000080)" }}>
+        <Typography
+          sx={{ color: "var(--color-primary, #000080)", fontWeight: 500 }}
+        >
           {getText(i18nKeys.TERMINOLOGY__NAME)}:
         </Typography>
         <TextField
@@ -132,7 +134,17 @@ const NameSection = ({
           sx={{
             marginLeft: "5px",
             width: "100%",
-            color: "var(--color-primary)",
+            color: "var(--color-primary, #000080)",
+            "& .MuiInputBase-input": {
+              color: "var(--color-primary, #000080)",
+              fontWeight: 500,
+            },
+            "& .MuiInput-underline:before": {
+              borderBottomColor: "var(--color-primary, #000080)",
+            },
+            "& .MuiInput-underline:after": {
+              borderBottomColor: "var(--color-primary, #000080)",
+            },
           }}
         />
         <Box
@@ -155,10 +167,21 @@ const NameSection = ({
                     setConceptSetShared(event.target.checked);
                   }}
                   disabled={!isUserConceptSet}
-                  sx={{ color: "var(--color-primary, #000080)" }}
+                  sx={{
+                    color: "var(--color-primary, #000080)",
+                    "&.Mui-checked": {
+                      color: "var(--color-primary, #000080)",
+                    },
+                  }}
                 />
               }
               label={getText(i18nKeys.TERMINOLOGY__SHARED)}
+              sx={{
+                color: "var(--color-primary, #000080)",
+                ".MuiFormControlLabel-label": {
+                  color: "var(--color-primary, #000080)",
+                },
+              }}
             />
           </div>
           {isUserConceptSet && (
@@ -171,7 +194,12 @@ const NameSection = ({
               }
               onClick={saveConceptSet}
               disabled={isLoading}
-              sx={{ bgcolor: "var(--color-primary, #000080)" }}
+              sx={{
+                bgcolor: "var(--color-primary, #000080)",
+                "&:hover": {
+                  bgcolor: "var(--color-primary-light, #000060)",
+                },
+              }}
             />
           )}
           <Button
@@ -179,7 +207,13 @@ const NameSection = ({
             text={getText(i18nKeys.TERMINOLOGY__CLOSE)}
             style={{ marginLeft: 10 }}
             onClick={onClickClose}
-            sx={{ color: "var(--color-primary, #000080)" }}
+            sx={{
+              color: "var(--color-primary, #000080)",
+              border: "1px solid var(--color-primary, #000080)",
+              "&:hover": {
+                border: "1px solid var(--color-primary-light, #000060)",
+              },
+            }}
           />
         </Box>
       </Box>

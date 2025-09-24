@@ -13,11 +13,7 @@ import {
   MRT_ColumnDef,
   useMaterialReactTable,
 } from "material-react-table";
-import {
-  TablePaginationActions,
-  AddIcon,
-  RemoveIcon,
-} from "@portal/components";
+import { TablePaginationActions } from "@portal/components";
 import { useFeedback, useTranslation } from "../../../hooks";
 import {
   FilterOptions,
@@ -32,6 +28,8 @@ import SearchBar from "../../../components/SearchBar/SearchBar";
 import { mapd2eWebapiConcept } from "../../utils/d2eWebapiMappers";
 import { i18nKeys } from "../../../context/state";
 import "./TerminologyList.scss";
+import AddIcon from "../../../components/icons/AddIcon";
+import RemoveIcon from "../../../components/icons/RemoveIcon";
 
 interface TerminologyListProps {
   userId?: string;
@@ -101,8 +99,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [terminologiesCount, setTerminologiesCount] = useState(0);
   const [searchText, setSearchText] = useState(initialInput);
-  const [filterOptions, setFilterOptions] =
-    useState<FilterOptions | null>(null);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(
+    null
+  );
   const [allFilterOptionsZeroed, setAllFilterOptionsZeroed] =
     useState<FilterOptions>({
       conceptClassId: {},
@@ -740,23 +739,13 @@ const TerminologyList: FC<TerminologyListProps> = ({
         color: "var(--color-primary, #000080)",
         backgroundColor: "var(--color-table-row-bg, #edf2f7)",
         padding: "6px",
-        // Style the filter select dropdown and chips
-        "& .MuiSelect-select": {
-          fontSize: 12,
-          paddingRight: "0px !important",
-          color: "var(--color-secondary, #336b91)",
-          "& .MuiChip-label": {
-            color: "var(--color-secondary, #336b91)",
-          },
-        },
         // Style the filter chips directly (for multi-select)
         "& .MuiChip-root": {
           color: "var(--color-secondary, #336b91)",
+          background: "var(--color-secondary-extra-lightest, #e2f3f8)",
         },
+        // Style the input underline
         "& .MuiInput-root": {
-          color: "var(--color-secondary, #336b91)",
-        },
-        "& .MuiMenuItem-root": {
           color: "var(--color-secondary, #336b91)",
         },
         "& .MuiInput-root:after": {
