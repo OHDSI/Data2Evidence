@@ -148,7 +148,7 @@ export class Dataflow {
 
   public async getDataCharacterizationResults(flowRunId: string, sourceKey: string, datasetId: string): Promise<any> {
     if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
-      return api.publicWebapiProxyAPI.getDataCharacterizationResults(PUBLIC_WEBAPI_DATASOURCE.SYNPUF5PCT, sourceKey);
+      return api.publicWebapiProxyAPI.getDataCharacterizationResults(PUBLIC_WEBAPI_DATASOURCE.SYNPUF1K, sourceKey);
     } else {
       return request({
         baseURL: JOBPLUGIN_URL,
@@ -167,7 +167,7 @@ export class Dataflow {
   ): Promise<any> {
     if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.getDataCharacterizationResultsDrilldown(
-        PUBLIC_WEBAPI_DATASOURCE.SYNPUF5PCT,
+        PUBLIC_WEBAPI_DATASOURCE.SYNPUF1K,
         sourceKey,
         conceptId
       );

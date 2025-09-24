@@ -125,7 +125,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
               [concepts, conceptsCount] = await api.publicWebapiProxyAPI.getTerminologies(
                 page,
                 rowsPerPage,
-                PUBLIC_WEBAPI_DATASOURCE.SYNPUF5PCT,
+                PUBLIC_WEBAPI_DATASOURCE.SYNPUF1K,
                 searchText.toLowerCase(),
                 conceptClassIdFilters,
                 domainIdFilters,
