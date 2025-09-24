@@ -13,7 +13,6 @@ import { GroupModule } from "./user-artifact/group/group.module.ts";
 import { UserArtifactModule } from "./user-artifact/user-artifact.module.ts";
 import { UserMgmtModule } from "./user-mgmt/user-mgmt.module.ts";
 import { SupabaseStorageModule } from "./supabase-storage/supabase.storage.module.ts";
-import { LogModule } from "./log/log.module.ts";
 
 @Module({
   controllers: [],
@@ -31,7 +30,6 @@ import { LogModule } from "./log/log.module.ts";
     PaConfigModule,
     SupabaseStorageModule,
     GitStudiesModule,
-    LogModule
   ],
   injectables: [RequestContextMiddleware],
 })
