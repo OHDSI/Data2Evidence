@@ -31,6 +31,13 @@ const getUser = () => {
   return userManager.getUser()
 }
 
+const logoutfn = () => {
+  localStorage.removeItem('msaltoken')
+  userManager.signoutRedirect({
+    id_token_hint: userManager.getUser()?.access_token,
+  })
+}
+
 if (!USE_MOCK_SERVER) {
   if (code) {
     userManager
