@@ -164,6 +164,7 @@ const NameSection = ({
               }
               onClick={saveConceptSet}
               disabled={isLoading}
+              sx={{ bgcolor: "var(--color-primary, #000080)" }}
             />
           )}
           <Button

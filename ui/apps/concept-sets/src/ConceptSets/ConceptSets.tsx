@@ -210,6 +210,7 @@ export const ConceptSets: FC<ConceptSetsProps> = () => {
                   variant="contained"
                   onClick={() => handleAddAndEditConceptSet()}
                   text={getText(i18nKeys.CONCEPT_SETS__ADD_CONCEPT_SET)}
+                  sx={{ bgcolor: "var(--color-primary, #000080)" }}
                 />
               </div>
               <TableContainer className="concept-sets__table">
