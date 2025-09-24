@@ -20,6 +20,8 @@ from .constants import (
     SQL_FILES_ORDER
 )
 
+os.environ["plugin_name"] = "hana_load_plugin"
+
 # flows
 @flow(log_prints=True)
 def hana_load_plugin(options: DataloadOptions):

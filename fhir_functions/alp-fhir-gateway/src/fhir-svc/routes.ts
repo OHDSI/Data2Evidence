@@ -4,6 +4,7 @@ import {
   createProject,
   deleteProject,
   forwardRequest,
+  testClientCredentials,
 } from "./services";
 
 import { validateCreateFhirProjectDto, validateDeleteFhirProjectDto, validateProxyDto } from "./middleware";
@@ -169,6 +170,13 @@ export class FhirRouter {
         // }
       }
     );
+    this.router.all("/test", async (req, res) => {
+      const { method } = req;
+      this.logger.info(`Received a '${method}' request for /test`);
+      const token = req.headers.authorization;
+      let result = await testClientCredentials(token)
+      res.status(200).send(result);
+    });
 
     //Endpoint to delete fhir project
     this.router.delete(
@@ -182,7 +190,8 @@ export class FhirRouter {
         }
         const { id } = req.params;
         try {
-          const response = await deleteProject(id);
+          const token = req.headers.authorization;
+          const response = await deleteProject(token, id);
           return res.status(response.status).json(response.data);
         } catch (error) {
           let log_msg = `Failed to delete project in fhir server`;
