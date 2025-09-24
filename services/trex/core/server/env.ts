@@ -10,9 +10,15 @@ export let global = {
       "scopes": [
         "trex"
       ]
+    },{
+      "path": "^/trex/log",
+      "scopes": [
+        "trex.log.write"
+      ]
     }],
     ROLE_SCOPES: {
-      "ALP_SYSTEM_ADMIN": ['trex']
+      "ALP_SYSTEM_ADMIN": ['trex'],
+      "TENANT_VIEWER": ['trex.log.write']
     },
     PLUGINS_JSON: "{}"
 }
