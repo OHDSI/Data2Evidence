@@ -33,6 +33,7 @@
       :preserveSearch="true"
       ref="multiselect"
       :clear-on-select="true"
+      open-direction="bottom"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
@@ -442,4 +443,3 @@ export default {
   },
 }
 </script>
-

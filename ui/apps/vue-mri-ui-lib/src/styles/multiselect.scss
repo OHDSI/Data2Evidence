@@ -50,20 +50,11 @@
     padding-bottom: 20px;
   }
   .multiselect--active {
-    // drop shadow if opened from above
-    &.multiselect--above {
-      .multiselect__content-wrapper {
-        box-shadow: 0 -0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.15);
-        position: relative;
-        z-index: 1060; /* Higher than dropdown to appear above cards */
-      }
-    }
-
-    // drop shadow if opened from below
     .multiselect__content-wrapper {
+      // drop shadow if opened from below
       box-shadow: 0 0.125rem 0.5rem 0 rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.15);
       position: relative;
-      z-index: 1060; /* Higher than dropdown to appear above cards */
+      min-height: 200px;
     }
 
     .icon {
