@@ -11,6 +11,10 @@ from pydantic import ValidationError
 
 import pandas as pd
 from pandas.api.types import is_scalar, is_list_like, is_dict_like
+import pathlib as Path
+import zipfile
+from io import BytesIO
+import shutil
 
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
@@ -326,59 +330,87 @@ class CsvNode(Node):
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
-
 class GenericFileNode(Node):
     """
-    Loads a file or a folder of JSON files into pandas DataFrames or reads single CSV/Excel file.
+    Loads a list of files of any type and stores them in a folder.
 
     Attributes:
-        files (list[str]): List of file to load.
-        file_type (str): File type (csv, json, xlsx, etc.).
-        encoding (str): Optional file encoding.
-        output_folder (str): Folder to store multiple files.
+        files (list[str]): List of file paths to load.
+        file_type (str): Optional file type hint (csv, json, xlsx, etc.).
+        encoding (str): Optional file encoding for text-based files.
+        output_folder (str): Folder to store the files.
     """
 
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        self.files = _node.get("files", [])
-        if isinstance(self.files, str):
-            self.files = [self.files]
-
-        self.file_type = _node.get("file_type", None)
+        self.files = _node["file"]
+        self.file_type = _node.get("file_type", None)  # Optional file type
         self.encoding = _node.get("encoding", "utf8")
-        self.options = _node.get("options", {})
-        self.output_folder = _node.get("output_folder", f"./{self.id}_json_files")
+        
+        self.output_folder = Path(f"./{self.id}_files")
 
-        # Only create folder if JSON files will be saved
-        if self.file_type == "json" and self.files:
-            os.makedirs(self.output_folder, exist_ok=True)
+        # Delete folder if it exists
+        if self.output_folder.exists():
+            shutil.rmtree(self.output_folder)
 
     def _fetch_file(self, file_path):
+        """
+        Fetch file bytes from Supabase or local path.
+        """
         try:
             return SupabaseStorageAPI().get_file(self.id, file_path)
-        except Exception:
-            with open(file_path, "rb") as f:
-                return f.read()
-
-    def _detect_file_type(self, file_path) -> str:
-        if self.file_type:
-            return self.file_type.lower()
-        ext = file_path.split(".")[-1].lower()
-        return ext
+        except Exception as supabase_error:
+            logging.error(f"File '{file_path}' not found locally.")
+            logging.error(f"Supabase error: {supabase_error}")
 
     def _save_files_to_folder(self):
-        os.makedirs(self.output_folder, exist_ok=True)
+        """
+        Save all files to the output folder and return the folder path.
+        """
+        self.output_folder.makedirs(exist_ok=True)
+        raw_data = self._fetch_file(self.file)
+        file_name = Path(self.file).name
+        file_type = self.file_type
+        match file_type:
+            case "zip":
+                self._process_zip_file(raw_data)
+            case "rar":
+                self._process_rar_file(raw_data)
+            case "ndjson":
+                self._process_ndjson_file(raw_data, file_name)
+            case _:
+                # Default: save the file directly
+                save_path = self.output_folder / file_name
+                save_path.write_bytes(raw_data)
+        return str(self.output_folder)
 
-        for file_path in self.files:
-            raw_data = self._fetch_file(file_path)
-            file_name = os.path.basename(file_path)
-            save_path = os.path.join(self.output_folder, file_name)
-            with open(save_path, "wb") as f:
-                f.write(raw_data)
+    def _process_zip_file(self, raw_data: bytes):
+        """
+        Extract a ZIP file into the output folder.
+        """
+        with zipfile.ZipFile(BytesIO(raw_data)) as z:
+            z.extractall(self.output_folder)
+    
+    def _process_rar_file(self, raw_data: bytes):
+        """
+        Extract a RAR file into the output folder.
+        """
+        with BytesIO(raw_data) as rar_bytes:
+            with rarfile.RarFile(rar_bytes) as rf:
+                rf.extractall(self.output_folder)
 
-        # Return the folder path where all files are saved
-        return self.output_folder
-
+    def _process_ndjson_file(self, raw_data: bytes, file_name: str):
+        """
+        Slice NDJSON file into individual JSON files.
+        """
+        ndjson_lines = raw_data.decode(self.encoding).splitlines()
+        for i, line in enumerate(ndjson_lines):
+            data = json.loads(line)
+            json_file_name = f"{os.path.splitext(file_name)[0]}_{i+1}.json"
+            save_path = os.path.join(self.output_folder, json_file_name)
+            with open(save_path, "r", encoding=self.encoding) as f:
+                json.dump(data, f)
+                
     def test(self, task_run_context):
         try:
             return self._save_files_to_folder()

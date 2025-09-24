@@ -25,3 +25,10 @@ class SupabaseStorageAPI(BaseAPI):
         # raise error if status code is >400
         response.raise_for_status()
         return response.text
+    
+    def get_file(self, node_id: str, filename: str) -> bytes:
+        bucket = Variable.get("data_transformation_bucket")
+        request_url = f"{self.url}object/{bucket}/data-transformation/{node_id}/{filename}"
+        response = requests.get(request_url)
+        response.raise_for_status()
+        return response.content  # Use .content to get bytes

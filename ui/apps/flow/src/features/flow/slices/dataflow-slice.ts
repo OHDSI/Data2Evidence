@@ -179,7 +179,7 @@ export const dataflowApiSlice = createApi({
     }),
     uploadNodeCsvFile: builder.mutation<
       { status: string },
-      { nodeId: string; file: File }
+      { nodeId: string; file: File}
     >({
       query: ({ nodeId, file }) => {
         const formData = new FormData();
@@ -199,6 +199,32 @@ export const dataflowApiSlice = createApi({
     >({
       query: ({ nodeId, fileName }) => ({
         url: `dataflow/file/csv?nodeId=${nodeId}&fileName=${fileName}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    uploadNodeFile: builder.mutation<
+      { status: string },
+      { nodeId: string; file: File, file_type?: string}
+    >({
+      query: ({ nodeId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return {
+          url: `dataflow/file?nodeId=${nodeId}`, // Removed /csv
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    deleteNodeFile: builder.mutation<
+      { status: string },
+      { nodeId: string; fileName: string, file_type?: string}
+    >({
+      query: ({ nodeId, fileName }) => ({
+        url: `dataflow/file?nodeId=${nodeId}&fileName=${fileName}`, // Removed /csv
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
@@ -343,6 +369,8 @@ export const {
   useLazyGetFlowRunStateByIdQuery,
   useUploadNodeCsvFileMutation,
   useDeleteNodeCsvFileMutation,
+  useUploadNodeFileMutation,
+  useDeleteNodeFileMutation,
   useCheckRemoteDiffQuery,
   useOverwriteCanvasFromRemoteMutation,
   useGetTemplatesQuery,

@@ -27,10 +27,10 @@ import {
 } from "~/features/flow/reducers";
 import { selectFlowNodes } from "~/features/flow/selectors";
 import {
-  useDeleteNodeCsvFileMutation,
+  useDeleteNodeFileMutation,
   useGetLatestDataflowByIdQuery,
   useSaveDataflowMutation,
-  useUploadNodeCsvFileMutation,
+  useUploadNodeFileMutation,
 } from "~/features/flow/slices/dataflow-slice";
 import { KeyValue, NodeState, SaveDataflowDto } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
@@ -53,7 +53,8 @@ interface FormData extends FileNodeData {}
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
-  file: [],
+  file: "",
+  file_type: "",
   encoding: "utf-8",
 };
 
@@ -62,8 +63,8 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
   const [isUploading, setIsUploading] = useState(false);
   const hiddenFileInput = useRef<HTMLInputElement>(null);
 
-  const [uploadFile] = useUploadNodeCsvFileMutation();
-  const [deleteCsvFile] = useDeleteNodeCsvFileMutation();
+  const [uploadFile] = useUploadNodeFileMutation();
+  const [deleteFile] = useDeleteNodeFileMutation();
   const [saveDataflow] = useSaveDataflowMutation();
 
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
@@ -86,6 +87,7 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
         name: node.data.name,
         description: node.data.description,
         file: node.data.file,
+        file_type: node.data.file_type,
         encoding: node.data.encoding || "utf-8",
       });
     } else {
@@ -104,7 +106,7 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
 
   const handleFileChange = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files || e.target.files.length == 0) return;
+      if (!e.target.files) return;
 
       const file = e.target.files[0];
       setSelectedFile(file);
@@ -113,20 +115,19 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
       try {
         // If there's an existing file, delete it first
         if (formData.file && formData.file.length > 0) {
-          await deleteCsvFile({
+          await deleteFile({
             nodeId: node.id,
-            fileName: formData.file[0], // Assuming single file for deletion
+            fileName: formData.file,
           }).unwrap();
         }
 
         await uploadFile({
           nodeId: node.id,
           file,
+          file_type: formData.file_type,  // include selected file type
         }).unwrap();
 
-        const updatedFormData = { ...formData, 
-          files: [...(formData.file || []), file.name],
-        };
+        const updatedFormData = { ...formData, file : file.name,};
         onFormDataChange({ file: updatedFormData.file });
 
         const updatedNode: NodeState<FileNodeData> = {
@@ -147,7 +148,7 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
             ...dataflow?.flow,
             nodes: updatedNodes,
             edges,
-            comment: "Auto-saved after CSV upload",
+            comment: "Auto-saved after file upload",
           },
         };
 
@@ -165,7 +166,7 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
       formData,
       node.id,
       uploadFile,
-      deleteCsvFile,
+      deleteFile,
       nodeState,
       nodes,
       edges,
@@ -232,22 +233,10 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
       </Box>
       <Box mb={4}>
         <Autocomplete<string, false, undefined, true>
-          options={["csv", "json"]}
-          onChange={(event, value) => onFormDataChange({ file_type: value || "csv" })}
+          options={["json", "ndjson", "zip", "rar", "others"]}
+          onChange={(event, value) => onFormDataChange({ file_type: value || "json" })}
           renderInput={(params) => <TextField {...params} label="File Type" variant="standard" />}
         />
-      </Box>
-      <Box mb={4}>
-        <strong>Uploaded Files:</strong>
-        {formData.file && formData.file.length > 0 ? (
-          <ul>
-            {formData.file.map((f) => (
-              <li key={f}>{f}</li>
-            ))}
-          </ul>
-        ) : (
-          <div>No files uploaded yet.</div>
-        )}
       </Box>
     </NodeDrawer>
   );
