@@ -157,7 +157,7 @@ jobs:
           yarn
           yarn build-all --verbose 2>&1 | tee build-logs.txt
       - name: Upload UI Build Logs
-        if: ${{ steps.file_changes.outputs.ui == 'true' && (success() || failure()) }}
+        if: ${{ steps.file_changes.outputs.ui == 'true' && failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: ui-build-logs
