@@ -2,10 +2,10 @@ import React, { FC, useEffect, useState } from "react";
 import InputBase from "@mui/material/InputBase";
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
-import { ArrowCircleRightIcon } from "@portal/components";
 import { useTranslation } from "../../hooks";
 import { i18nKeys } from "../../context/state";
 import "./SearchBar.scss";
+import ArrowCircleRight from "../icons/ArrowCircleRight";
 
 interface SearchBarProps {
   keyword?: string;
@@ -45,7 +45,7 @@ const SearchBar: FC<SearchBarProps> = ({
         }}
       />
       <InputBase
-        sx={{ width: "100%" }}
+        sx={{ width: "100%", color: "var(--color-primary, #000080)" }}
         placeholder={placeholderText}
         inputProps={{
           "aria-label": getText(i18nKeys.SEARCH_BAR__SEARCH_TERMS),
@@ -72,7 +72,7 @@ const SearchBar: FC<SearchBarProps> = ({
           typeof onEnter === "function" && onEnter(searchString || "")
         }
       >
-        <ArrowCircleRightIcon />
+        <ArrowCircleRight />
       </IconButton>
     </div>
   );
