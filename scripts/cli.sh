@@ -223,7 +223,7 @@ case $cmd in
         database_host=${PROJECT_NAME:-d2e}-demodb
         docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         export PLUGINS_SEED="$(echo $PLUGINS_SEED | sed 's/[]]$/, \"i2b2-flow\"]/')"
-        $node_modules_path/scripts/cli.sh start -n "$ENVFILE"
+        $node_modules_path/scripts/cli.sh start -n "$ENVFILE" -s trex
         ;;
     init)
         CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
