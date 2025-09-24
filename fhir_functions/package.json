@@ -16,58 +16,34 @@
   "trex": {
     "functions": {
       "init": [
-        {
-          "function": "/alp-fhir-init",
-          "imports": "/alp-fhir-init/deno.json",
-          "env": "alp-fhir-init",
-          "waitfor": "http://fhir-server-1:8103/healthcheck"
-        }
       ],
       "api": [
         {
           "source": "/gateway/api/fhir",
-          "function": "/alp-fhir-svc",
-          "env": "alp-fhir-svc",
-          "imports": "/alp-fhir-svc/deno.json"
+          "function": "/alp-fhir-gateway",
+          "env": "alp-fhir-gateway",
+          "imports": "/alp-fhir-gateway/deno.json"
         }
       ],
       "env": { 
         "_shared": {},
-        "alp-fhir-svc": {
+        "alp-fhir-gateway": {
           "FHIR__LOG_LEVEL": "debug",
-          "PORT": 41112,
           "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
           "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
-          "FHIR_SCHEMA_PATH": "/home/docker/fhir",
-          "FHIR_SCHEMA_FILE_NAME": "fhir.schema.json",
-          "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
-          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
           "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
-        },
-        "alp-fhir-init": {
-          "PG_SUPER_PASSWORD": "${PG_SUPER_PASSWORD}",
-          "PG_SUPER_USER": "${PG_SUPER_USER:-postgres}",
-          "FHIR__LOG_LEVEL": "debug",
-          "PORT": 41112,
-          "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
-          "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
-          "DUCKDB_PATH": "/home/docker/alp-data-node/app/src/duckdb",
-          "PLUGIN_PATH": "/usr/src/plugins/d2ef/alp-fhir-init",
-          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
-          "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
-          "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}"
         }
       },
       "roles": {
         "ALP_SYSTEM_ADMIN": [
           "gateway.fhir.create",
-          "gateway.fhir.delete"
+          "gateway.fhir.delete",
+          "gateway.fhir.forward"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
           "gateway.fhir.create",
-          "portal.dataset.read"
+          "portal.dataset.read",
+          "gateway.fhir.forward"
         ]
       },
       "scopes": [
@@ -83,7 +59,7 @@
         {
           "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(?!Project|ProjectMembership|ClientApplication|User|Login|PasswordChangeRequest|JsonWebKey|Bot|AccessPolicy|UserConfiguration|BulkDataExport|SmartAppLaunch|DomainConfiguration|AsyncJob|Agent|IdentityProvider|UserSecurityRequest|ViewDefinition)(.*)",
           "scopes": [
-            "gateway.fhir.create"
+            "gateway.fhir.forward"
           ],
           "httpMethods": [
             "POST",
@@ -100,6 +76,15 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/list$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         }
       ]
