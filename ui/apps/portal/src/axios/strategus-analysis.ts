@@ -18,4 +18,16 @@ export class StrategusAnalysis {
       method: "GET",
     });
   }
+
+  public saveStategusAnalysisViewerCode(studyId: string, code: string) {
+    return request({
+      baseURL: STRATEGUS_ANALYSIS_URL,
+      url: "/code",
+      method: "POST",
+      data: {
+        studyId,
+        viewerCode: code,
+      },
+    });
+  }
 }
