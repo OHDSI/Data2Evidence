@@ -38,7 +38,6 @@ export GIT_BASE_DIR=.
 
 env=.env
 context=""
-fhir=""
 demo=""
 minio=""
 dicom=""
@@ -52,7 +51,6 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         -d|--function-path) function_path="$2"; shift ;;
         -e|--demo) demo=--profile="demodb" ;;
-        -f|--fhir) fhir=--profile="fhir" ;;
         --minio) minio=--profile="minio" ;;
         -i|--dicom) dicom=--profile="dicom" ;;
         -j|--jupyter) jupyter=--profile="jupyter" ;;
@@ -99,7 +97,7 @@ else
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/}
 fi
 
-dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $fhir $dicom $jupyter $mlflow $hana $dev $compose $args"
+dockerbasecmd="docker $context --log-level $DOCKER_LOG_LEVEL compose --file $node_modules_path/docker-compose.yml $demo $dicom $jupyter $mlflow $hana $dev $compose $args"
 
 generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
@@ -351,7 +349,6 @@ Commands:
 Options:
  -d, --function-path [PATH] Development mode. [PATH] is the path to functions
  -e, --demo                 Include demo database
- -f, --fhir                 Include FHIR Server
  -i, --dicom                Include DICOM Server
  -j, --jupyter              Include jupyter
  -m, --mlflow               Include mlflow
