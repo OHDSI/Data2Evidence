@@ -245,7 +245,7 @@ const TabSection = ({
           paddingBottom: 0,
           borderBottom: "1px solid #d4d4d4",
           "& .MuiTab-root": {
-            color: "#000080",
+            color: "var(--color-primary, #000080)",
           },
         }}
       >
@@ -265,7 +265,7 @@ const TabSection = ({
                   {selectedConceptsCount ? (
                     <div
                       style={{
-                        backgroundColor: "#000080",
+                        backgroundColor: "var(--color-primary, #000080)",
                         color: "white",
                         minWidth: "20px",
                         height: "20px",
@@ -672,7 +672,13 @@ export const Terminology: FC<TerminologyProps> = ({
               justifyContent: "space-between",
             }}
           >
-            <div style={{ color: "#000080", marginLeft: 10, fontWeight: 500 }}>
+            <div
+              style={{
+                color: "var(--color-primary, #000080)",
+                marginLeft: 10,
+                fontWeight: 500,
+              }}
+            >
               {isConceptSet
                 ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
                 : isConceptMultiSelect
@@ -681,7 +687,11 @@ export const Terminology: FC<TerminologyProps> = ({
             </div>
 
             <div
-              style={{ color: "#000080", marginRight: 10, cursor: "pointer" }}
+              style={{
+                color: "var(--color-primary, #000080)",
+                marginRight: 10,
+                cursor: "pointer",
+              }}
               onClick={onClickClose}
             >
               x

@@ -29,6 +29,12 @@
   .MuiTableCell-root {
     border-bottom: none;
   }
+  .MuiTableCell-head {
+    color: var(--color-primary, #000080);
+  }
+  .MuiTableCell-body {
+    color: var(--color-primary, #000080);
+  }
   .table-button-container {
     display: flex;
     justify-content: center;

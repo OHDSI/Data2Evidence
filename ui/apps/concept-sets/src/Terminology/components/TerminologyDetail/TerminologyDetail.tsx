@@ -170,7 +170,11 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
                 <Table
                   size="small"
                   stickyHeader
-                  sx={{ "& .MuiTableCell-root": { color: "#000080" } }}
+                  sx={{
+                    "& .MuiTableCell-root": {
+                      color: "var(--color-primary, #000080)",
+                    },
+                  }}
                 >
                   <TableHead>
                     <TableRow>
@@ -229,7 +233,11 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
                 {data && data?.connections.length > 0 && (
                   <Table
                     size="small"
-                    sx={{ "& .MuiTableCell-root": { color: "#000080" } }}
+                    sx={{
+                      "& .MuiTableCell-root": {
+                        color: "var(--color-primary, #000080)",
+                      },
+                    }}
                     stickyHeader
                   >
                     <TableBody

@@ -728,7 +728,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
       sx: {
         whiteSpace: "normal",
         wordWrap: "break-word",
-        color: "#000080",
+        color: "var(--color-primary, #000080)",
         border: "none",
       },
     },
@@ -750,7 +750,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiCircularProgressProps: {
       sx: {
-        color: "#000080",
+        color: "var(--color-primary, #000080)",
       },
     },
     enableTopToolbar: false,

@@ -36,7 +36,7 @@ const SearchBar: FC<SearchBarProps> = ({
     <div className="search-bar" style={{ width, height }}>
       <SearchIcon
         sx={{
-          color: "#000080",
+          color: "var(--color-primary, #000080)",
           p: "8px",
           ml: "8px",
           alignSelf: "center",
@@ -65,7 +65,7 @@ const SearchBar: FC<SearchBarProps> = ({
       <IconButton
         type="button"
         sx={{
-          color: "#000080",
+          color: "var(--color-primary, #000080)",
         }}
         aria-label={getText(i18nKeys.SEARCH_BAR__SEARCH)}
         onClick={() =>
