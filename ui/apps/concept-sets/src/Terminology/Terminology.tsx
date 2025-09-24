@@ -119,15 +119,21 @@ const NameSection = ({
           "& .MuiTextField-root": { width: "50%" },
         }}
       >
-        <Typography>{getText(i18nKeys.TERMINOLOGY__NAME)}:</Typography>
+        <Typography sx={{ color: "var(--color-primary, #000080)" }}>
+          {getText(i18nKeys.TERMINOLOGY__NAME)}:
+        </Typography>
         <TextField
           placeholder={getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME)}
-          sx={{ marginLeft: "5px", width: "100%" }}
           id="standard-basic"
           variant="standard"
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
           disabled={isLoading}
+          sx={{
+            marginLeft: "5px",
+            width: "100%",
+            color: "var(--color-primary)",
+          }}
         />
         <Box
           sx={{
@@ -149,6 +155,7 @@ const NameSection = ({
                     setConceptSetShared(event.target.checked);
                   }}
                   disabled={!isUserConceptSet}
+                  sx={{ color: "var(--color-primary, #000080)" }}
                 />
               }
               label={getText(i18nKeys.TERMINOLOGY__SHARED)}
@@ -172,6 +179,7 @@ const NameSection = ({
             text={getText(i18nKeys.TERMINOLOGY__CLOSE)}
             style={{ marginLeft: 10 }}
             onClick={onClickClose}
+            sx={{ color: "var(--color-primary, #000080)" }}
           />
         </Box>
       </Box>
@@ -667,7 +675,7 @@ export const Terminology: FC<TerminologyProps> = ({
             style={{
               height: "40px",
               width: "100%",
-              backgroundColor: "#edf2f7",
+              backgroundColor: "var(--color-table-row-bg, #edf2f7)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",

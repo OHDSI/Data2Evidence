@@ -737,14 +737,33 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiTableHeadCellProps: {
       sx: {
-        backgroundColor: "#edf2f7",
+        color: "var(--color-primary, #000080)",
+        backgroundColor: "var(--color-table-row-bg, #edf2f7)",
         padding: "6px",
+        // Style the filter select dropdown and chips
         "& .MuiSelect-select": {
           fontSize: 12,
           paddingRight: "0px !important",
+          color: "var(--color-secondary, #336b91)",
           "& .MuiChip-label": {
-            fontSize: 10,
+            color: "var(--color-secondary, #336b91)",
           },
+        },
+        // Style the filter chips directly (for multi-select)
+        "& .MuiChip-root": {
+          color: "var(--color-secondary, #336b91)",
+        },
+        "& .MuiInput-root": {
+          color: "var(--color-secondary, #336b91)",
+        },
+        "& .MuiMenuItem-root": {
+          color: "var(--color-secondary, #336b91)",
+        },
+        "& .MuiInput-root:after": {
+          borderBottom: "var(--color-primary, #000080)",
+        },
+        "& .MuiInput-root:hover:not(.Mui-disabled):before": {
+          borderBottom: "2px solid var(--color-primary, #000080)",
         },
       },
     },
@@ -785,7 +804,21 @@ const TerminologyList: FC<TerminologyListProps> = ({
           sx={{
             overflow: "visible",
             height: "52px",
-            "& .MuiButtonBase-root:not(.Mui-disabled)": { color: "#000080" },
+            "& .MuiButtonBase-root:not(.Mui-disabled)": {
+              color: "var(--color-primary, #000080)",
+            },
+            color: "var(--color-primary, #000080)",
+          }}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: {
+                  "& .MuiMenuItem-root": {
+                    color: "var(--color-primary)",
+                  },
+                },
+              },
+            },
           }}
         />
       ) : null}

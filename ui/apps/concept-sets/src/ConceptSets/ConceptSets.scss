@@ -50,11 +50,9 @@
     }
     .MuiTableCell-root {
       border: none;
-    }
-
-    .MuiTableCell-root {
       line-height: normal;
       padding: 6px;
+      color: var(--color-primary, #000080);
     }
     .MuiTableCell-head {
       color: var(--color-primary, #000080);
