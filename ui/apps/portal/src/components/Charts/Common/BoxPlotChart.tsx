@@ -4,6 +4,7 @@ import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import "./BoxPlotChart.scss";
 import { useTranslation } from "../../../contexts";
+import { chartColors } from "./chartColors";
 
 interface BoxPlotChartProps {
   data: any[];
@@ -92,6 +93,7 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
         },
       },
     ],
+    color: chartColors,
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 

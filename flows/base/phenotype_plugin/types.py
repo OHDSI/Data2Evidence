@@ -4,12 +4,12 @@ from typing import Optional
 class PhenotypeOptionsType(BaseModel):
     cohorts_id: str   # "25,3,4" or 'default'
     materialize: bool = False
+    vocabschema_name: Optional[str] = '@vocab_schema' # cdmvocab
     
     # Database materialization parameters (required when materialize=True)
     database_code: Optional[str] = None  # alpdev_pg
     cdmschema_name: Optional[str] = None   # cdmdefault
     cohortschema_name: Optional[str] = None   # cdmdefault
-    vocabschema_name: Optional[str] = None # cdmvocab
     
     # API creation parameters (required when materialize=False)
     user_name: Optional[str] = None

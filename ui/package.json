@@ -26,7 +26,11 @@
     ],
     "nohoist": [
       "**/@vue",
-      "**/@vue/**"
+      "**/@vue/**",
+      "**/@babel/**",
+      "**/babel-**",
+      "**/webpack-manifest-plugin",
+      "**/webpack-manifest-plugin/**"
     ]
   },
   "devDependencies": {

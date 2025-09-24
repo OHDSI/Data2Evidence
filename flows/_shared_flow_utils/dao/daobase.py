@@ -126,11 +126,11 @@ class DaoBase(ABC):
     # --- Read methods ---
 
     @abstractmethod
-    def check_schema_exists(schema: str) -> bool:
+    def check_schema_exists(self, schema: str) -> bool:
         pass
 
     @abstractmethod
-    def check_empty_schema(schema: str) -> bool:
+    def check_empty_schema(self, schema: str) -> bool:
         pass
 
     @abstractmethod
@@ -198,31 +198,31 @@ class DaoBase(ABC):
 
     # --- User methods ---
 
-    @abstractmethod
+    #@abstractmethod
     def check_user_exists(self, user: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def check_role_exists(self, role_name: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_read_role(self, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_user(self, user: str, password: str = None):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_and_assign_role(self, user: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_read_privileges(self, schema: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_cohort_write_privileges(self, schema: str, role_name: str):
         pass
 
@@ -289,16 +289,17 @@ class DaoBase(ABC):
                 token = GetAuthTokens().get_third_party_token()
                 hana_connect_args["password"] = token.get_secret_value()
 
-                # Add APPLICATION and APPLICATIONUSER as session variables for JWT
-                app_name = f"d2e-{os.environ.get('plugin_name')}"
-                token_user = build_user_from_token(token)
-                base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
-                return base_url, hana_connect_args
-            if auth_mode == AuthMode.PASSWORD:
+            else:
+                token = GetAuthTokens().get_auth_token()
                 hana_connect_args.update(
                     {"user": user, "password": password.get_secret_value()}
                 )
-                return base_url, hana_connect_args
+
+            # Add APPLICATION and APPLICATIONUSER as session variables for Hana
+            app_name = f"d2e-{os.environ.get('plugin_name')}"
+            token_user = build_user_from_token(token)
+            base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
+            return base_url, hana_connect_args
 
         return base_url, connect_args
 
@@ -349,29 +350,29 @@ class DaoBase(ABC):
                 )
                 conn_url += extra_config
 
-        if (
-            database_credentials.authMode == AuthMode.JWT
-            and dialect == SupportedDatabaseDialects.HANA
-        ):
-            user = ""
-            token = GetAuthTokens().get_third_party_token()
-            # Add APPLICATION and APPLICATIONUSER as session variables for JWT
+        match user_type:
+            case UserType.ADMIN_USER:
+                user = database_credentials.adminUser
+                password = database_credentials.adminPassword
+            case UserType.READ_USER:
+                user = database_credentials.readUser
+                password = database_credentials.readPassword
+
+        if dialect == SupportedDatabaseDialects.HANA:
+            if database_credentials.authMode == AuthMode.JWT:
+                token = GetAuthTokens().get_third_party_token()
+                user = ""
+                password = token
+            else:
+                token = GetAuthTokens().get_auth_token()
+
+            # Add APPLICATION and APPLICATIONUSER as session variables for Hana
             app_name = f"d2e-{os.environ.get('plugin_name')}"
             token_user = build_user_from_token(token)
             conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{token.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
-
-        else:
-            match user_type:
-                case UserType.ADMIN_USER:
-                    user = database_credentials.adminUser
-                    password = database_credentials.adminPassword
-                case UserType.READ_USER:
-                    user = database_credentials.readUser
-                    password = database_credentials.readPassword
-
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
+        return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
     @staticmethod
     def set_db_driver_env() -> str:
@@ -410,6 +411,7 @@ class DaoBase(ABC):
 
         _db = next(filter(lambda x: x["databaseCode"] ==
                    self.database_code, database_credentials_list), None)
+
         if _db is None:
             raise ValueError(
                 f"Database code '{self.database_code}' not found in 'DATABASE_CREDENTIALS' secret"
