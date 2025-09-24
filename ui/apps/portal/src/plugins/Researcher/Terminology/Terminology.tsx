@@ -376,7 +376,7 @@ export const Terminology: FC<TerminologyProps> = ({
     setIsConceptSetLoading(true);
     try {
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
+        ? await updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
       setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
