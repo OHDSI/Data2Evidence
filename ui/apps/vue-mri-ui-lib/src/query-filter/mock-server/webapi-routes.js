@@ -30,6 +30,8 @@ const CACHE_KEYS = {
   COHORT_DEFINITION: id => `get_/d2e-webapi/cohortdefinition/${id}`,
   CONCEPT_SET_EXPRESSION: id => `get_/d2e-webapi/conceptset/${id}/expression`,
   VOCABULARY_SEARCH: (datasetId, query) => `get_/d2e-webapi/vocabulary/${datasetId}/search?query=${query}`,
+  VOCABULARY_SEARCH_POST: (datasetId, body) =>
+    `post_/d2e-webapi/vocabulary/${datasetId}/search/${JSON.stringify(body)}`,
 }
 
 const logRequest = req => {
@@ -420,9 +422,17 @@ const setupWebapiRoutes = app => {
     const { dataSource } = req.params
     const body = req.body
     try {
-      const response = await api.post(ALLOWED_ENDPOINTS.vocabulary, body)
-      console.log(response)
-      return res.send(response.data)
+      const cacheKey = CACHE_KEYS.VOCABULARY_SEARCH_POST(SOURCE, req.body)
+      let data = cache[cacheKey]
+
+      if (!data || !USE_CACHE) {
+        // Call Atlas demo API to search vocabularies with body
+        const response = await api.post(ALLOWED_ENDPOINTS.vocabulary, body)
+        data = response.data
+        cache[cacheKey] = data
+      }
+
+      return res.send(data)
     } catch (err) {
       console.error(err)
       return res.status(err.status).send()
