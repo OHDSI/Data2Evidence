@@ -2,6 +2,8 @@ import axios, { AxiosRequestConfig } from "axios";
 import { request } from "./request";
 import env from "../env";
 import {
+  ConceptSet,
+  ConceptSetConcept,
   IWebapiConcept,
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
@@ -108,7 +110,7 @@ export class PublicWebapiProxyAPI {
 
       const result = await request({
         baseURL: this.baseURL,
-        url: `/vocabulary/${dataSource}/search`,
+        url: `d2e-webapi/vocabulary/${dataSource}/search`,
         method: "POST",
         data,
       });
@@ -122,46 +124,61 @@ export class PublicWebapiProxyAPI {
   }
 
   // CONCEPT SETS
-  public async getConceptSets(): Promise<IWebapiConceptSet[]> {
-    const result = await request<IWebapiConceptSet[]>({
+  public getConceptSets(): Promise<IWebapiConceptSet[]> {
+    return request<IWebapiConceptSet[]>({
       baseURL: this.baseURL,
-      url: `/conceptset`,
+      url: `d2e-webapi/conceptset`,
       method: "GET",
       timeout: 60000,
     });
-
-    return result.map(this.mapConceptSet);
   }
 
-  public async getConceptSet(conceptSetId: number): Promise<IWebapiConceptSet> {
-    const result = await request<IWebapiConceptSet>({
+  public getConceptSet(conceptSetId: number): Promise<IWebapiConceptSet> {
+    return request<IWebapiConceptSet>({
       baseURL: this.baseURL,
-      url: `/conceptset/${conceptSetId}`,
+      url: `d2e-webapi/conceptset/${conceptSetId}`,
       method: "GET",
     });
-
-    return this.mapConceptSet(result);
   }
 
   public getConceptSetExpression(conceptSetId: number) {
     return request<IWebapiConceptSetExpression>({
       baseURL: this.baseURL,
-      url: `/conceptset/${conceptSetId}/expression`,
+      url: `d2e-webapi/conceptset/${conceptSetId}/expression`,
       method: "GET",
     });
   }
 
-  private mapConceptSet = (conceptSet: IWebapiConceptSet): IWebapiConceptSet => {
-    // Add values required by portal
-    return {
-      ...conceptSet,
-      shared: true,
-      createdBy: {
-        name: "anonymous",
-      },
-      modifiedBy: {
-        name: "anonymous",
-      },
-    };
-  };
+  public createConceptSet(name: string) {
+    return request<number>({
+      baseURL: this.baseURL,
+      url: `d2e-webapi/conceptset`,
+      method: "POST",
+      data: { name },
+    });
+  }
+
+  public updateConceptSet(conceptSetId: number, conceptSet: Partial<ConceptSet>) {
+    return request<number>({
+      baseURL: this.baseURL,
+      url: `d2e-webapi/conceptset/${conceptSetId}`,
+      method: "PUT",
+      data: conceptSet,
+    });
+  }
+
+  public updateConceptSetItems(conceptSetId: number, conceptSetConcepts: ConceptSetConcept[]) {
+    const data = conceptSetConcepts.map((concept) => ({
+      conceptId: concept.id,
+      isExcluded: concept.isExcluded ? 1 : 0,
+      includeDescendants: concept.useDescendants ? 1 : 0,
+      includeMapped: concept.useMapped ? 1 : 0,
+    }));
+    return request<number>({
+      baseURL: this.baseURL,
+      url: `d2e-webapi/conceptset/${conceptSetId}/items`,
+      method: "PUT",
+      data,
+    });
+  }
 }
