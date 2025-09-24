@@ -45,7 +45,7 @@
   }
 
   .dropdown-scroll {
-    max-height: 400px;
+    max-height: calc(100vh - 200px);
     overflow-y: auto;
   }
 
@@ -86,10 +86,10 @@
         padding-top: 1em;
       }
       .app-checkbox {
-       display: flex;
-       align-items: center;
-       margin-left: 0.8rem;
+        display: flex;
+        align-items: center;
+        margin-left: 0.8rem;
       }
-    } 
+    }
   }
 }
