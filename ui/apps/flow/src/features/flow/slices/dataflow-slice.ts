@@ -179,7 +179,7 @@ export const dataflowApiSlice = createApi({
     }),
     uploadNodeCsvFile: builder.mutation<
       { status: string },
-      { nodeId: string; file: File}
+      { nodeId: string; file: File }
     >({
       query: ({ nodeId, file }) => {
         const formData = new FormData();
