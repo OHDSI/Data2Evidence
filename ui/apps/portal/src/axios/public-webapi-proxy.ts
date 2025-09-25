@@ -14,7 +14,7 @@ export class PublicWebapiProxyAPI {
 
   constructor() {
     this.baseURL = env.REACT_APP_PUBLIC_WEBAPI_PROXY_URL;
-    if (!this.baseURL) {
+    if (!this.baseURL && env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       throw new Error("No url is set for PublicWebapiProxyAPI");
     }
   }
