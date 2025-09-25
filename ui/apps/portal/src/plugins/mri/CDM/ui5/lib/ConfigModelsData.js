@@ -316,6 +316,7 @@ sap.ui.define([
 			annotations: [],
 			domainFilter: { value: "", validity: { status: "valid", message: "" } },
 			includeDescendants: { value: false, validity: { status: "valid", message: "" } },
+			includeDescendantsExpression: { value: "", validity: { status: "valid", message: "" } },
 			standardConceptCodeFilter: { value: "", validity: { status: "valid", message: "" } },
 			cohortDefinitionKey: { value: "", validity: { status: "valid", message: "" } },
 			conceptIdentifierType: { value: "", validity: { status: "valid", message: "" } }

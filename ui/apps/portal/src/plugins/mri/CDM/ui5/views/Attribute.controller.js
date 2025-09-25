@@ -174,6 +174,9 @@ sap.ui.define([
 		var model = this.getView().getModel("configEditorModel");
 		var isSelected = oEvent.getParameter("selected");
 		model.setProperty(path + "/includeDescendants/value", isSelected);
+		if (!isSelected) {
+			model.setProperty(path + "/includeDescendantsExpression/value", "");
+		}
 	};
 
 	AttributeController.prototype.onOTSAttributeSwitched = function (oEventData) {

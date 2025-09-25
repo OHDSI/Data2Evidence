@@ -466,6 +466,11 @@ export function getDefinition(tableMapping: any) {
             mandatory: false,
             type: "boolean",
           },
+          {
+            name: "includeDescendantsExpression",
+            mandatory: false,
+            type: "string",
+          },
         ],
       },
     ],
