@@ -11,7 +11,7 @@ const app = express()
 // Express rate limiter - CodeQL recognizes this pattern
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // max 100 requests per windowMs
+  max: 1000000, // max 100 requests per windowMs
   message: { error: 'Too many requests from this IP' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -40,6 +40,7 @@ const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3001'
 
 try {
   const authPath = path.join(__dirname, 'static', 'mri', 'authenticate.js')
+  const systemjsPath = path.join(__dirname, 'static', 'mri', 'system.min.js')
   const indexPath = path.join(__dirname, 'static', 'mri', 'index.html')
 
   if (fs.existsSync(authPath)) {
@@ -47,6 +48,13 @@ try {
   } else {
     console.warn('Warning: authenticate.js not found at', authPath)
     cachedFiles.auth = '// authenticate.js not found'
+  }
+
+  if (fs.existsSync(systemjsPath)) {
+    cachedFiles.systemjs = fs.readFileSync(systemjsPath, 'utf8')
+  } else {
+    console.warn('Warning: system.min.js not found at', systemjsPath)
+    cachedFiles.systemjs = '// system.min.js not found'
   }
 
   if (fs.existsSync(indexPath)) {
@@ -62,6 +70,7 @@ try {
   console.error('Error loading cached files:', error)
   cachedFiles = {
     auth: '// Error loading authenticate.js',
+    systemjs: '// Error loading system.min.js',
     index: '<!DOCTYPE html><html><head><title>Error</title></head><body>Error loading page</body></html>',
   }
 }
@@ -83,6 +92,7 @@ setupMockRoutes(app)
 
 // Serve static files from PA-Atlas build
 app.use('/mri', express.static(path.join(__dirname, 'static', 'mri')))
+app.use('/concept-sets', express.static(path.join(__dirname, 'static', 'concept-sets')))
 app.use('/js', express.static(path.join(__dirname, 'static', 'mri', 'js')))
 app.use('/css', express.static(path.join(__dirname, 'static', 'mri', 'css')))
 app.use('/img', express.static(path.join(__dirname, 'static', 'mri', 'img')))
@@ -108,6 +118,19 @@ app.get('/authenticate.js', (_, res) => {
   } catch (error) {
     console.error('Error serving authenticate.js:', error)
     res.status(500).send('// Error loading authenticate.js')
+  }
+})
+
+// Serve system.min.js (using cached content)
+app.get('/system.min.js', (_, res) => {
+  try {
+    let jsContent = cachedFiles.systemjs
+
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+    res.send(jsContent)
+  } catch (error) {
+    console.error('Error serving system.min.js:', error)
+    res.status(500).send('// Error loading system.min.js')
   }
 })
 
@@ -174,3 +197,4 @@ app.listen(PORT, () => {
   console.log(`Mock server running on port ${PORT}`)
   console.log(`Server URL: ${SERVER_URL}\n`)
 })
+

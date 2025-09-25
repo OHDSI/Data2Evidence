@@ -7,7 +7,15 @@ cd ..
 
 npm run build-ui5
 
-cd vue-mri-ui-lib
+cd ../libs/portal-components
+
+npm run build
+
+cd ../../apps/concept-sets
+
+npm run build -- --mode=production
+
+cd ../vue-mri-ui-lib
 
 # Create static folder if it doesn't exist
 mkdir -p src/query-filter/mock-server/static
@@ -15,7 +23,9 @@ mkdir -p src/query-filter/mock-server/static
 # Copy resources to mock server
 cp -r ../../resources/mri src/query-filter/mock-server/static/
 cp -r ../../resources/ui5 src/query-filter/mock-server/static/
+cp -r ../../resources/concept-sets src/query-filter/mock-server/static/
 cp public/authenticate.js src/query-filter/mock-server/static/mri/
+cp public/system.min.js src/query-filter/mock-server/static/mri/
 
 # Copy D4L web components library
 mkdir -p src/query-filter/mock-server/static/@d4l
