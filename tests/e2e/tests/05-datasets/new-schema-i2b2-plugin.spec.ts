@@ -41,7 +41,7 @@ test(TEST_NAME, async ({ page }) => {
   // Find the closest state badge to this entry (adjust the selector as needed)
   const stateBadge = firstEntry.locator('xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]');
   await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });  
-  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+  // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page
       .getByRole('row', { name: /Test Study/ })
