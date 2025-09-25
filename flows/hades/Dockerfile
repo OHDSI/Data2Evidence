@@ -163,6 +163,6 @@ RUN chmod -R 755 /app
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV INSTALL_SQLALCHEMY_FLAG=true
+ENV INSTALL_SQLALCHEMY_HANA=true
 
 USER docker
