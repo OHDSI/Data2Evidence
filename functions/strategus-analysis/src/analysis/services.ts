@@ -57,6 +57,20 @@ export default class StrategusAnalysisService {
         return { analysisId, message: "Analysis specification saved successfully." };
     }
 
+    async saveStudyAnalysisViewerCode(studyId: string, viewerCode: string) {
+        const existingAnalysis = await this.strategusAnalysisRepository.findOne({
+            where: { studyId: studyId }
+        });
+
+        if (!existingAnalysis) {
+            throw new Error("Study does not exist.")
+        }
+
+        await this.strategusAnalysisRepository.update({id: existingAnalysis.id}, {viewerCode: viewerCode})
+
+        return { analysisId: existingAnalysis.analysisId, message: "Result viewer code saved successfully." }
+    }
+
     private addOwnerInfo(analysis: any, isNew: boolean = false) {
         const decodedToken = decode(
             this.token.replace(/bearer /i, "")

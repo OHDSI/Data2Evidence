@@ -97,6 +97,7 @@
                       v-focus
                       required
                       maxlength="40"
+                      @keydown.enter="saveBookmark"
                     />
                     <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
                       Please enter another name
