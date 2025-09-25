@@ -119,11 +119,7 @@ const NameSection = ({
           "& .MuiTextField-root": { width: "50%" },
         }}
       >
-        <Typography
-          sx={{ color: "var(--color-primary, #000080)", fontWeight: 500 }}
-        >
-          {getText(i18nKeys.TERMINOLOGY__NAME)}:
-        </Typography>
+        <Typography>{getText(i18nKeys.TERMINOLOGY__NAME)}:</Typography>
         <TextField
           placeholder={getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME)}
           id="standard-basic"
@@ -134,17 +130,6 @@ const NameSection = ({
           sx={{
             marginLeft: "5px",
             width: "100%",
-            color: "var(--color-primary, #000080)",
-            "& .MuiInputBase-input": {
-              color: "var(--color-primary, #000080)",
-              fontWeight: 500,
-            },
-            "& .MuiInput-underline:before": {
-              borderBottomColor: "var(--color-primary, #000080)",
-            },
-            "& .MuiInput-underline:after": {
-              borderBottomColor: "var(--color-primary, #000080)",
-            },
           }}
         />
         <Box
@@ -167,21 +152,9 @@ const NameSection = ({
                     setConceptSetShared(event.target.checked);
                   }}
                   disabled={!isUserConceptSet}
-                  sx={{
-                    color: "var(--color-primary, #000080)",
-                    "&.Mui-checked": {
-                      color: "var(--color-primary, #000080)",
-                    },
-                  }}
                 />
               }
               label={getText(i18nKeys.TERMINOLOGY__SHARED)}
-              sx={{
-                color: "var(--color-primary, #000080)",
-                ".MuiFormControlLabel-label": {
-                  color: "var(--color-primary, #000080)",
-                },
-              }}
             />
           </div>
           {isUserConceptSet && (
@@ -194,12 +167,6 @@ const NameSection = ({
               }
               onClick={saveConceptSet}
               disabled={isLoading}
-              sx={{
-                bgcolor: "var(--color-primary, #000080)",
-                "&:hover": {
-                  bgcolor: "var(--color-primary-light, #000060)",
-                },
-              }}
             />
           )}
           <Button
@@ -207,13 +174,6 @@ const NameSection = ({
             text={getText(i18nKeys.TERMINOLOGY__CLOSE)}
             style={{ marginLeft: 10 }}
             onClick={onClickClose}
-            sx={{
-              color: "var(--color-primary, #000080)",
-              border: "1px solid var(--color-primary, #000080)",
-              "&:hover": {
-                border: "1px solid var(--color-primary-light, #000060)",
-              },
-            }}
           />
         </Box>
       </Box>
@@ -277,7 +237,7 @@ const TabSection = ({
   const availableTabs = getAvailableTabs();
 
   return (
-    <div style={{ height: "60px" }} className="tab-section">
+    <div style={{ height: "60px" }}>
       <Tabs
         value={currentTabNo}
         onChange={(_, value) => {
@@ -287,9 +247,6 @@ const TabSection = ({
         sx={{
           paddingBottom: 0,
           borderBottom: "1px solid #d4d4d4",
-          "& .MuiTab-root": {
-            color: "var(--color-primary, #000080)",
-          },
         }}
       >
         {availableTabs.map((tab) => (

@@ -26,23 +26,7 @@
   .MuiTableHead-root .MuiTableCell-root {
     background-color: var(--color-table-row-bg, #edf2f7);
   }
-  .MuiTableCell-root {
-    border-bottom: none;
-    color: var(--color-primary, #000080);
-  }
-  .MuiTableCell-head {
-    color: var(--color-primary, #000080);
-  }
-  .MuiTableCell-body {
-    color: var(--color-primary, #000080);
-  }
-
-  .MuiPaper-root-MuiPopover-paper {
-    color: var(--color-primary, #000080);
-  }
-  .MuiMenuItem-root {
-    color: var(--color-primary, #000080);
-  }
+  
   .table-button-container {
     display: flex;
     justify-content: center;

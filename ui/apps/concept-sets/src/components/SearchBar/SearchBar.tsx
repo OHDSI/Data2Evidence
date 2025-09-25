@@ -45,7 +45,7 @@ const SearchBar: FC<SearchBarProps> = ({
         }}
       />
       <InputBase
-        sx={{ width: "100%", color: "var(--color-primary, #000080)" }}
+        sx={{ width: "100%" }}
         placeholder={placeholderText}
         inputProps={{
           "aria-label": getText(i18nKeys.SEARCH_BAR__SEARCH_TERMS),
@@ -64,9 +64,6 @@ const SearchBar: FC<SearchBarProps> = ({
       />
       <IconButton
         type="button"
-        sx={{
-          color: "var(--color-primary, #000080)",
-        }}
         aria-label={getText(i18nKeys.SEARCH_BAR__SEARCH)}
         onClick={() =>
           typeof onEnter === "function" && onEnter(searchString || "")

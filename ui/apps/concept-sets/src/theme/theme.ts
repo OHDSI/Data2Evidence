@@ -76,6 +76,13 @@ export const theme_d2e = createTheme({
         },
       },
     },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: "#000080",
+        },
+      },
+    },
   },
 });
 
@@ -152,6 +159,13 @@ export const theme_atlas = createTheme({
           "&:hover": {
             boxShadow: "none",
           },
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: "#1f425a",
         },
       },
     },

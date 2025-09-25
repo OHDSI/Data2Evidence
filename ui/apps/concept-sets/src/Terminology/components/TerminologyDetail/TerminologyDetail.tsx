@@ -167,15 +167,7 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
               }}
             >
               <div className="terminology_detail__table-connections">
-                <Table
-                  size="small"
-                  stickyHeader
-                  sx={{
-                    "& .MuiTableCell-root": {
-                      color: "var(--color-primary, #000080)",
-                    },
-                  }}
-                >
+                <Table size="small" stickyHeader>
                   <TableHead>
                     <TableRow>
                       <TableCell width="20%">
@@ -231,15 +223,7 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
             <div style={{ flex: 1, overflow: "auto" }}>
               <div className="terminology_detail__table-details">
                 {data && data?.connections.length > 0 && (
-                  <Table
-                    size="small"
-                    sx={{
-                      "& .MuiTableCell-root": {
-                        color: "var(--color-primary, #000080)",
-                      },
-                    }}
-                    stickyHeader
-                  >
+                  <Table size="small" stickyHeader>
                     <TableBody
                       sx={{
                         "& .MuiTableRow-root:nth-of-type(even)": {

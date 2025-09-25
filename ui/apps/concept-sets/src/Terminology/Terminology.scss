@@ -10,12 +10,3 @@
 .terminology__details {
   flex: 1;
 }
-
-.tab-section {
-  .MuiTabs-indicator {
-    background-color: var(--color-primary, #000080);
-  }
-  .MuiTab-root.Mui-selected {
-    color: var(--color-primary, #000080);
-  }
-}

@@ -727,7 +727,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
       sx: {
         whiteSpace: "normal",
         wordWrap: "break-word",
-        color: "var(--color-primary, #000080)",
         border: "none",
       },
     },
@@ -736,24 +735,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiTableHeadCellProps: {
       sx: {
-        color: "var(--color-primary, #000080)",
-        backgroundColor: "var(--color-table-row-bg, #edf2f7)",
         padding: "6px",
-        // Style the filter chips directly (for multi-select)
-        "& .MuiChip-root": {
-          color: "var(--color-secondary, #336b91)",
-          background: "var(--color-secondary-extra-lightest, #e2f3f8)",
-        },
-        // Style the input underline
-        "& .MuiInput-root": {
-          color: "var(--color-secondary, #336b91)",
-        },
-        "& .MuiInput-root:after": {
-          borderBottom: "var(--color-primary, #000080)",
-        },
-        "& .MuiInput-root:hover:not(.Mui-disabled):before": {
-          borderBottom: "2px solid var(--color-primary, #000080)",
-        },
       },
     },
     muiCircularProgressProps: {
@@ -793,21 +775,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
           sx={{
             overflow: "visible",
             height: "52px",
-            "& .MuiButtonBase-root:not(.Mui-disabled)": {
-              color: "var(--color-primary, #000080)",
-            },
-            color: "var(--color-primary, #000080)",
-          }}
-          SelectProps={{
-            MenuProps: {
-              PaperProps: {
-                sx: {
-                  "& .MuiMenuItem-root": {
-                    color: "var(--color-primary)",
-                  },
-                },
-              },
-            },
           }}
         />
       ) : null}
