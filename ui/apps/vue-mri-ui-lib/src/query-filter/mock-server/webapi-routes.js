@@ -315,18 +315,16 @@ const setupWebapiRoutes = app => {
     }
   })
 
-  // GET endpoint for vocabulary search (matches d2e-webapi pattern)
-  app.get('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, async (req, res) => {
+  // d2e-webapi seems to support 2 types of search api. sharing the logic here
+  const searchVocab = async (req, res, datasetId, query) => {
     logRequest(req)
-    const { datasetId } = req.params
-    const { query: QUERY } = req.query
-    if (!QUERY) {
+    if (!query && query !== '') {
       return res.status(400).json({ error: 'query parameter is required' })
     }
 
     // Sanitize the query parameter
-    const sanitizedQuery = sanitizeQuery(QUERY)
-    if (!sanitizedQuery) {
+    const sanitizedQuery = sanitizeQuery(query)
+    if (!sanitizedQuery && sanitizedQuery !== '') {
       return res.status(400).json({ error: 'Invalid query parameter' })
     }
 
@@ -336,6 +334,7 @@ const setupWebapiRoutes = app => {
       if (!data || !USE_CACHE) {
         // Call Atlas demo API to search vocabularies with sanitized query
         const endpoint = ALLOWED_ENDPOINTS.vocabulary + '?query=' + sanitizedQuery
+        console.log('jer', endpoint)
         const response = await api.get(endpoint)
         data = response.data
         cache[cacheKey] = data
@@ -368,7 +367,20 @@ const setupWebapiRoutes = app => {
         timestamp: new Date().toISOString(),
       })
     }
+  }
+  // GET endpoint for vocabulary search (matches d2e-webapi pattern)
+  app.get('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, (req, res) => {
+    const { datasetId } = req.params
+    const { query } = req.query
+    searchVocab(req, res, datasetId, query)
+  })
+  // GET endpoint for vocabulary search (matches d2e-webapi pattern)
+  app.post('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, (req, res) => {
+    const { datasetId } = req.params
+    const query = req.body.QUERY
+    searchVocab(req, res, datasetId, query)
   })
 }
 
 module.exports = setupWebapiRoutes
+
