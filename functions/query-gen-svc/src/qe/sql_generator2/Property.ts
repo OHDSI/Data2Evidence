@@ -236,12 +236,27 @@ export class Property extends AstElement {
                     if(!refAlias) {
                         throw new Error("@REF undefined in the Data Source (Expression)!")
                     }
-                    
+
                     this.pushOnCondition(
                         textAliasObj.on,
                         QueryObject.format("%UNSAFE", 
-                                            `${textAliasObj.alias}.${attrConfig.placeholderMap["@TEXT.INTERACTION_ID"]} 
+                                            `${textAliasObj.alias}.ANCESTOR_CONCEPT_ID 
                                               = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
+                    )
+                    
+                    let descendantsFilterExpression = attrConfig.__config.includeDescendantsExpression;
+                    if(!descendantsFilterExpression) {
+                        throw new Error("Expression undefined in the descendantsFilterExpression!")
+                    }
+                    const descendantsPlaceholder = descendantsFilterExpression.match(/@[^.^\s]+/g)[0];
+                    const descendantsAlias = this.scopeEntityDef.getTableAliasByBaseEntity(descendantsPlaceholder);
+                    descendantsFilterExpression = descendantsFilterExpression.replace(descendantsPlaceholder, descendantsAlias);
+
+                    this.pushOnCondition(
+                        textAliasObj.on,
+                        QueryObject.format("%UNSAFE", 
+                                            `${textAliasObj.alias}.DESCENDANT_CONCEPT_ID 
+                                             = ${descendantsFilterExpression}`)
                     )
                 }
             }
