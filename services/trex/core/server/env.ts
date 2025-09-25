@@ -39,7 +39,8 @@ export const publicURLs = [
     '^/consent$',
     '^/callback$',
     '^/prefect/docs$',
-    '^/openapi.json$'
+    '^/openapi.json$',
+    '^/fhir-server/healthcheck$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([
@@ -105,5 +106,6 @@ export const env = {
 
     USE_PUBLIC_WEBAPI_PROXY: _env.USE_PUBLIC_WEBAPI_PROXY,
     PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
-    PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE
+    PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE,
+    REDIS_PASSWORD: _env.REDIS_PASSWORD
 }

@@ -1,60 +1,30 @@
 import https from "https";
 import { Buffer } from "buffer";
 import axios, { AxiosRequestConfig } from "axios";
-import { MedplumClient } from "@medplum/core";
 
 import { env, services } from "../env.ts";
-import { ClientCredentials, HTTPMethod, Headers } from "../utils/types";
+import { ClientCredentials, HTTPMethod, Headers } from "../utils/types.ts";
 
 export class FhirAPI {
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly baseUrl: string;
   private readonly logger = console;
-  private medplumClient: MedplumClient;
   private readonly tokenUrl: string;
+  private adminAccessToken: string;
+  private browserToken: string
 
-  constructor() {
+  constructor(token) {
     if (env.FHIR__CLIENT_ID && env.FHIR__CLIENT_SECRET) {
       this.clientId = env.FHIR__CLIENT_ID;
       this.clientSecret = env.FHIR__CLIENT_SECRET;
       this.baseUrl = services.fhir;
       this.tokenUrl = services.fhirTokenUrl;
+      this.browserToken = token;
     } else {
       this.logger.error("No client credentials are set for Fhir service!");
       throw new Error("No client credentials are set for Fhir service!");
     }
-    this.medplumClient = new MedplumClient({
-      baseUrl: this.baseUrl.replace("/fhir/R4", "/"),
-      clientId: this.clientId,
-      clientSecret: this.clientSecret,
-    });
-  }
-
-  // for medplum client
-  async clientCredentialsLogin(clientId?: string, clientSecret?: string) {
-    try {
-      // authenticate with superadmin credentials if no proj credentials provided
-      return await this.medplumClient.startClientLogin(
-        clientId ? clientId : this.clientId,
-        clientSecret ? clientSecret : this.clientSecret
-      );
-    } catch (error) {
-      let error_msg = "Client credentials authentication failed";
-      this.logger.error(error_msg);
-      this.logger.error(JSON.stringify(error));
-      throw new Error(error_msg);
-    }
-  }
-
-  // for medplum client
-  async post(resourceType, body, contentType?, options?) {
-    return await this.medplumClient.post(
-      this.baseUrl + "/" + resourceType,
-      body,
-      contentType,
-      options
-    );
   }
 
   async forwardRequest(
@@ -63,21 +33,19 @@ export class FhirAPI {
     httpMethod: HTTPMethod,
     queryParams: any,
     resourceDetails: any,
-    fhirHeaders?: Headers
+    fhirHeaders?: Headers,
   ) {
-    const resourceUrl = `${this.baseUrl}/${encodeURIComponent(resourcePath)}`;
+    const resourceUrl = `${this.baseUrl}/${resourcePath}`;
     const log_msg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
-
     try {
-      const options = await this.getRequestConfig(clientCredentials);
+      let options = await this.getRequestConfig(clientCredentials);
+      if (!options || typeof options !== 'object') {
+        options = {};
+      }
       if (queryParams && Object.keys(queryParams).length > 0) {
         options.params = queryParams;
       }
-
-      if (fhirHeaders && Object.keys(fhirHeaders).length > 0) {
-        options.headers = { ...options.headers, ...fhirHeaders };
-      }
-
+      options.headers = { ...(options.headers || {}), ...(fhirHeaders || {}) };
       let response;
       if (httpMethod === HTTPMethod.GET) {
         response = await axios.get(resourceUrl, options);
@@ -90,8 +58,14 @@ export class FhirAPI {
       } else if (httpMethod === HTTPMethod.DELETE) {
         response = await axios.delete(resourceUrl, options);
       }
-
-      if (response.status === undefined && response.response) {
+      if (response && response.status !== undefined) {
+        this.logger.info(`[${response.status}] ${log_msg}`);
+        return {
+          status: response.status,
+          headers: response.headers,
+          data: response.data,
+        };
+      } else if (response && response.response) {
         // errors occur in response.response when posting a resource
         this.logger.error(`[${response.response.status}] ${log_msg}`);
         return {
@@ -99,50 +73,35 @@ export class FhirAPI {
           headers: response.response.headers,
           data: response.response.data,
         };
-      } else {
-        this.logger.info(`[${response.status}] ${log_msg}`);
-        return {
-          status: response.status,
-          headers: response.headers,
-          data: response.data,
-        };
       }
     } catch (error) {
       if (error.response) {
-        // If there is a returned error.response
-        this.logger.error(`[${error.response.status}] ${log_msg}`);
+        this.logger.error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
         return {
           status: error.response.status,
           headers: error.response.headers,
           data: error.response.data,
         };
       } else {
-        // Other types of errors
-        this.logger.error(`[500] ${log_msg}`);
+        this.logger.error(`[500] ${log_msg}: ${error.message}`);
         return {
           status: 500,
           data: {
-            error: `An error occurred while forwarding the ${httpMethod} request`,
+            error: `An error occurred while forwarding the ${httpMethod} request: ${error.message}`,
           },
         };
       }
     }
   }
 
-  async getOneResource(searchResource: string, query: string) {
-    return await this.medplumClient.searchOne(searchResource, query);
+  async testConnection() {
+    await this.startMedplumClientLogin()
+    console.log(this.adminAccessToken)
   }
 
-  async getResourceById(searchResource: string, id: string) {
-    return await this.medplumClient.readResource(searchResource, id);
-  }
-
-  async updateResource(options) {
-    return await this.medplumClient.updateResource(options);
-  }
-
-  async searchResource(searchResource: string, query: string) {
-    return await this.medplumClient.search(searchResource, query);
+  async startMedplumClientLogin(){
+    this.adminAccessToken = await this.getAccessToken(this.getAdminCredentials());
+    return;
   }
 
   private async getAccessToken(
@@ -153,7 +112,7 @@ export class FhirAPI {
       scope: "openid",
     };
 
-    const options = await this.getTokenRequestConfig(clientCredentials);
+    const options = this.getTokenRequestConfig(clientCredentials);
     try {
       const response = await axios.post(
         this.tokenUrl,
@@ -176,31 +135,32 @@ export class FhirAPI {
     options = {
       headers: {
         Authorization: `Bearer ${token}`,
-        httpsAgent: new https.Agent({
-          rejectUnauthorized: true,
-          //ca: ca_crt
-        }),
+        "cookie": `fhirtoken=${this.browserToken}`
       },
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: true,
+      }),
     };
     return options;
   }
-
-  private async getTokenRequestConfig(clientCredentials: ClientCredentials) {
+  
+  private getTokenRequestConfig(clientCredentials: ClientCredentials) {
     let options: AxiosRequestConfig = {};
+    const basicAuth = this.getBasicAuthHeader(clientCredentials);
     options = {
       headers: {
-        Authorization: await this.getBasicAuthHeader(clientCredentials),
-        httpsAgent: new https.Agent({ rejectUnauthorized: true }),
+        Authorization: basicAuth,
         "Content-Type": "application/x-www-form-urlencoded",
+        "cookie": `fhirtoken=${this.browserToken}`
       },
+      httpsAgent: new https.Agent({ rejectUnauthorized: true }),
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
     };
-    this.logger.info(`Successfully retrieved token!`);
     return options;
   }
 
-  private async getBasicAuthHeader(clientCredentials: ClientCredentials) {
+  private getBasicAuthHeader(clientCredentials: ClientCredentials) {
     const temp = `${clientCredentials.clientId}:${clientCredentials.clientSecret}`;
     return `Basic ${Buffer.from(temp).toString("base64")}`;
   }
@@ -213,11 +173,12 @@ export class FhirAPI {
   }
 }
 
-// intercept and log the url sent in axios request
-axios.interceptors.request.use((request) => {
-  const fullUrl = `${request.baseUrl || ""}${request.url}?${new URLSearchParams(
-    request.params
-  ).toString()}`;
-  console.log(`[axios intercept]`, fullUrl);
-  return request;
-});
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error(`${error?.config?.method} ${error?.config?.url} ${error}`);
+    return error.response;
+  }
+);
