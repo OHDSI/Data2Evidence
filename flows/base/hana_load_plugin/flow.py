@@ -1,9 +1,9 @@
 import pandas as pd
 from sqlalchemy import text
-import sqlalchemy_hana
 from zipfile import ZipFile
 import requests
 from pathlib import Path
+from shutil import rmtree
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from prefect import flow, task, get_run_logger
@@ -117,6 +117,8 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
         table_name = csv_file.stem.lower()
         logger.info(f"Loading {csv_file.name} -> {schema}.{table_name}")
         df = pd.read_csv(csv_file)
+        if (table_name == 'vocabulary' or table_name == 'concept'):
+            df['VOCABULARY_ID'] = df['VOCABULARY_ID'].fillna('None')
         df.to_sql(
             table_name,
             dbdao.engine,
@@ -124,3 +126,4 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
             if_exists="append",
             index=False
         )
+    rmtree(DATA_DIR)
