@@ -24,9 +24,9 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('dialog').locator('div').filter({ hasText: 'CDM Schema Option' }).nth(4).click();
     await page.getByRole('option', { name: 'Create new schema', exact: true }).click();
     await page.locator('#mui-component-select-databaseOption').click();
-    await page.getByRole('option', { name: 'alpdev_pg-postgres' }).click();
+    await page.getByRole('option', { name: 'demo_database-postgres' }).click();
     await page.locator('#mui-component-select-vocabSchemaOption').click();
-    await page.getByRole('option', { name: 'cdmvocab' }).click();
+    await page.getByRole('option', { name: 'demo_cdm' }).click();
     await page.locator('#mui-component-select-dataModelOption').click();
     await page.getByRole('option', { name: 'medical-imaging [data_management_plugin]' }).click();
     await page.locator('#mui-component-select-paConfigOption').click();
