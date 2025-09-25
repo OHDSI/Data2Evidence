@@ -68,9 +68,9 @@
   --color-mri-card-header-border: #d9e6f0;
   --color-mri-header-text-dark: var(--color-primary, #1f425a);
   --color-mri-header-text-light: #4d6f8c;
-  --color-mri-nav-tab: #1f425a;
+  --color-mri-nav-tab: var(--color-primary, #000080);
   --color-mri-footer-bg: var(--color-primary, #1f425a);
-  --color-mri-header-bg: #2f3c48;
+  --color-mri-header-bg: #ccdef1;
   --color-mri-footer-container-bg: #edf2fa;
   --color-footer-button-text-light: #ffffff;
   --color-footer-hover-button-background-color: var(--color-primary, #000080);
