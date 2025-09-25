@@ -2,7 +2,7 @@
   <header class="nav-bar">
     <div class="nav-bar__container">
       <div class="nav-bar__logo" @click="handleLogoClick" role="button" tabindex="0">
-        <img :src="logoSrc" alt="Data2Evidence" height="40px" />
+        <img :src="logoSrc" alt="ATLAS" height="20px" />
       </div>
       <nav class="nav-bar__nav">
         <ul class="nav-bar__nav-list">
@@ -23,12 +23,16 @@
           </template>
         </ul>
       </nav>
+      <div class="nav-bar__right" @click="handleOhdsiClick" role="button" tabindex="0">
+        <img :src="logoOhdsiSrc" alt="OHDSI" height="30px" />
+      </div>
     </div>
   </header>
 </template>
 
 <script>
-import logoSvg from '@/assets/d2e.svg'
+import logoSvg from '@/assets/atlas-text.svg'
+import logoOhdsiSvg from '@/assets/ohdsi.png'
 import { getNavigationItems } from '../utils/config'
 import { navigateToRoute } from '../utils/AppRegistry'
 
@@ -39,6 +43,7 @@ export default {
 
     return {
       logoSrc: logoSvg,
+      logoOhdsiSrc: logoOhdsiSvg,
       navigationItems
     }
   },
@@ -51,7 +56,10 @@ export default {
   },
   methods: {
     handleLogoClick() {
-      navigateToRoute('/');
+      navigateToRoute('/', { type: 'component', component: 'Landing' });
+    },
+    handleOhdsiClick() {
+      window.open('https://ohdsi.org', '_blank');
     },
     handleNavClick(item) {
       this.navigationItems.forEach(navItem => {
@@ -63,6 +71,8 @@ export default {
       } else if (item.type === 'component' && item.component) {
         const route = item.route || '/';
         navigateToRoute(route, item);
+      } else if (item.route) {
+        navigateToRoute(item.route);
       } else {
         navigateToRoute('/');
       }
@@ -89,7 +99,6 @@ export default {
 .nav-bar__container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
 }
 
 .nav-bar__logo {
@@ -99,8 +108,19 @@ export default {
   cursor: pointer;
 }
 
-.nav-bar__nav {
+.nav-bar__right {
+  flex: 1;
+  text-align: right;
   padding-right: 2rem;
+
+  > img {
+    padding: 0.5rem 0;
+    cursor: pointer;
+  }
+}
+
+.nav-bar__nav {
+  padding-left: 2rem;
 }
 
 .nav-bar__nav-list {
@@ -120,14 +140,14 @@ export default {
 .nav-bar__nav-link {
   display: inline-block;
   padding: 18px;
-  color: #000080;
+  color: var(--color-primary, #000080);
   font-weight: 400;
   text-decoration: none;
   transition: color 0.15s ease-in-out;
 }
 
 .nav-bar__nav-link:hover {
-  color: #3a52a8;
+  color: var(--color-primary-light, #333399);
 }
 
 .nav-bar__nav-item--active {
@@ -141,7 +161,7 @@ export default {
   left: 0;
   height: 0.5rem;
   width: 100%;
-  background-color: #000080;
+  background-color: var(--color-primary, #000080);
   border-radius: 0.5rem 0.5rem 0 0;
 }
 </style>

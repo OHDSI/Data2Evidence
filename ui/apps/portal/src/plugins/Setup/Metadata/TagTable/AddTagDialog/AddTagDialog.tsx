@@ -1,6 +1,6 @@
 import Divider from "@mui/material/Divider";
 import { Box, Button, Dialog, TextField } from "@portal/components";
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, FormEvent, useCallback, useState } from "react";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { CloseDialogType } from "../../../../../types";
@@ -38,29 +38,33 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
     [onClose]
   );
 
-  const handleSave = useCallback(async () => {
-    try {
-      setSaving(true);
-      await api.systemPortal.addDatasetTagConfig(formData);
-      setFeedback({
-        type: "success",
-        message: getText(i18nKeys.ADD_TAG_DIALOG__SUCCESS),
-        autoClose: 6000,
-      });
-      setRefetch((refetch) => refetch + 1);
-      setFormData(EMPTY_FORM_DATA);
-      handleClose("success");
-    } catch (err: any) {
-      setFeedback({
-        type: "error",
-        message: err.data?.error || err.message || "An error occurred",
-        description: err.data?.message || "",
-        autoClose: 6000,
-      });
-    } finally {
-      setSaving(false);
-    }
-  }, [handleClose, formData, setRefetch, setFeedback, getText]);
+  const handleSave = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      try {
+        setSaving(true);
+        await api.systemPortal.addDatasetTagConfig(formData);
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.ADD_TAG_DIALOG__SUCCESS),
+          autoClose: 6000,
+        });
+        setRefetch((refetch) => refetch + 1);
+        setFormData(EMPTY_FORM_DATA);
+        handleClose("success");
+      } catch (err: any) {
+        setFeedback({
+          type: "error",
+          message: err.data?.error || err.message || "An error occurred",
+          description: err.data?.message || "",
+          autoClose: 6000,
+        });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [handleClose, formData, setRefetch, setFeedback, getText]
+  );
 
   return (
     <Dialog
@@ -71,7 +75,7 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
       onClose={() => handleClose("cancelled")}
     >
       <Divider />
-      <>
+      <form onSubmit={handleSave}>
         <div className="add-tag-dialog__content">
           <Box mb={4}>
             <TextField
@@ -90,10 +94,10 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
               variant="outlined"
               onClick={() => handleClose("cancelled")}
             />
-            <Button text={getText(i18nKeys.ADD_TAG_DIALOG__SAVE)} onClick={handleSave} loading={saving} />
+            <Button type="submit" text={getText(i18nKeys.ADD_TAG_DIALOG__SAVE)} loading={saving} />
           </Box>
         </div>
-      </>
+      </form>
     </Dialog>
   );
 };

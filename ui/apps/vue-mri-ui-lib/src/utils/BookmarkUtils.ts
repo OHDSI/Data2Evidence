@@ -95,25 +95,6 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
     if (bookmark.paConfigId === paConfigId) {
       return bookmark
     }
-    return null
-  }
-
-  const filterUntaggedMaterializedCohorts = (
-    atlasCohortDefinitions: ICohortDefinition[],
-    materializedCohorts: IMaterializedCohort[]
-  ) => {
-    const cohortDefinitionIds: number[] = []
-    atlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
-      if (atlasCohortDefinition.cohortDefinitionId) {
-        acc.push(atlasCohortDefinition.cohortDefinitionId)
-      }
-      return acc
-    }, cohortDefinitionIds)
-
-    const filteredMaterializedCohorts = materializedCohorts.filter(materializedCohort => {
-      return cohortDefinitionIds.includes(materializedCohort.id)
-    })
-    return filteredMaterializedCohorts
   }
 
   const formatRawAtlasCohortDefinition = (acd: ICohortDefinition) => {
@@ -135,7 +116,10 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
 
   data.forEach(item => {
     if (BookmarkSchema.safeParse(item).success) {
-      formattedBookmarks.bookmarks.push(filterBookmarkByConfigId(item as IBookmark, paConfigId))
+      const filtered = filterBookmarkByConfigId(item as IBookmark, paConfigId)
+      if (filtered !== undefined) {
+        formattedBookmarks.bookmarks.push(filtered)
+      }
     }
     if (AtlasCohortDefinitionSchema.safeParse(item).success) {
       formattedBookmarks.atlasCohortDefinitions.push(formatRawAtlasCohortDefinition(item as ICohortDefinition))
@@ -144,11 +128,6 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
       formattedBookmarks.materializedCohorts.push(item as IMaterializedCohort)
     }
   })
-
-  formattedBookmarks.materializedCohorts = filterUntaggedMaterializedCohorts(
-    formattedBookmarks.atlasCohortDefinitions,
-    formattedBookmarks.materializedCohorts
-  )
 
   return formattedBookmarks
 }
