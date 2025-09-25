@@ -222,11 +222,12 @@ export class Property extends AstElement {
                     }
                 }
 
-                //If including descendants, then its a left join between Concept and Concept Ancestor Table with the joining key as CONCEPT.CONCEPT_ID = CONCEPT_ANCESTOR.DESCENDANT_ID. The only Pre-requisite is @REF/Concept must be defined in the Data source expression.
+                //If including descendants, then its an inner join between Concept and Concept Ancestor Table with the joining key as CONCEPT.CONCEPT_ID = CONCEPT_ANCESTOR.ANCESTOR_CONCEPT_ID. The only Pre-requisite is @REF/Concept must be defined in the Data source expression.
                 if (attrConfig.__config.includeDescendants) {
                     this.scopeEntityDef.addTableAlias(
                         { baseEntity: "@TEXT", table: attrConfig.placeholderMap["@TEXT"] },
-                        false
+                        false,
+                        "INNER JOIN"
                     );
 
                     const textAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@TEXT"]);
