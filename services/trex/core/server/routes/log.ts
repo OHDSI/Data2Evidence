@@ -11,9 +11,9 @@ export function addRoutes(app: Hono) {
     const { response } = body;
 
     if (!response) {
-      throw new HTTPException(403, {
+      throw new HTTPException(400, {
         res: new Response("Log response is missing in the request body", {
-          status: 403,
+          status: 400,
         }),
       });
     }

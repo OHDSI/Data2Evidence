@@ -32,11 +32,11 @@ export const DisclaimerDialog: FC = () => {
   const handleAccept = useCallback(async () => {
     setFeedback({});
     setIsDisclaimerAccepted(true);
-    logUserResponse(LogResponseType.ACCEPTED);
+    await logUserResponse(LogResponseType.ACCEPTED);
   }, [setIsDisclaimerAccepted]);
 
   const handleLogout = useCallback(async () => {
-    logUserResponse(LogResponseType.DECLINED);
+    await logUserResponse(LogResponseType.DECLINED);
     navigate(config.ROUTES.logout);
   }, [navigate]);
 
