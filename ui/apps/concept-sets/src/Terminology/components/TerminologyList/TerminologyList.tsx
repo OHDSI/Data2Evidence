@@ -174,7 +174,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 await api.publicWebapiProxyAPI.getTerminologies(
                   page,
                   rowsPerPage,
-                  "SYNPUF1K",
+                  getPortalAPI()?.REACT_APP_PUBLIC_WEBAPI_DATASOURCE as string,
                   searchText.toLowerCase(),
                   conceptClassIdFilters,
                   domainIdFilters,

@@ -104,5 +104,6 @@ export const env = {
     PLUGINS_INFORMATION_URL: _env.PLUGINS_INFORMATION_URL || 'https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true',
 
     USE_PUBLIC_WEBAPI_PROXY: _env.USE_PUBLIC_WEBAPI_PROXY,
-    PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL
+    PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
+    PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE
 }

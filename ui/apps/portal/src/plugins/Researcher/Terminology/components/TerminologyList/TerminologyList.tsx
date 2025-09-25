@@ -11,7 +11,6 @@ import { tabNames } from "../../utils/constants";
 import SearchBar from "../../../../../components/SearchBar/SearchBar";
 import "./TerminologyList.scss";
 import { mapd2eWebapiConcept } from "../../utils/d2eWebapiMappers";
-import { PUBLIC_WEBAPI_DATASOURCE } from "../../../../../components/Charts/util";
 import env from "../../../../../env";
 
 interface TerminologyListProps {
@@ -125,7 +124,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
               [concepts, conceptsCount] = await api.publicWebapiProxyAPI.getTerminologies(
                 page,
                 rowsPerPage,
-                PUBLIC_WEBAPI_DATASOURCE.SYNPUF1K,
+                env.REACT_APP_PUBLIC_WEBAPI_DATASOURCE,
                 searchText.toLowerCase(),
                 conceptClassIdFilters,
                 domainIdFilters,

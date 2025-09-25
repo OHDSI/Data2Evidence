@@ -210,7 +210,8 @@ services:
       DEMO__DB_PASSWORD: ${DEMO__DB_PASSWORD:-mypass}
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
-      
+      PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
+
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
