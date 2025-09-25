@@ -172,8 +172,8 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, xenv: a
 	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fnEnv in xenv ? xenv[fnEnv] : {}, {SERVICE_ROUTES: env.SERVICE_ROUTES, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
-	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
-		workerTimeoutMs: 1 * 60 * 1000, noModuleCache: false,
+	const options: any = {servicePath: servicePath, memoryLimitMb: 1000,
+		workerTimeoutMs: 1 * 60 * 3000, noModuleCache: false,
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 100000, cpuTimeHardLimitMs: 200000,
@@ -326,5 +326,5 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
         } else {
             logger.error("unknown  route type");
         }
-    }); 
+    });
 }

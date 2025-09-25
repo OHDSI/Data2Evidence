@@ -179,7 +179,8 @@ export const createCohortDefinition = async (
 
 export const getCohortDefinitionList = async (
   token: string,
-  datasetId: string
+  datasetId: string,
+  isAtlas: boolean
 ): Promise<ICombinedCohortDefnitionListItem[]> => {
   const bookmarksApi = new BookmarksAPI(token);
   const portalServerApi = new PortalServerAPI(token);
@@ -200,8 +201,8 @@ export const getCohortDefinitionList = async (
       ...m,
     }));
 
-  const cohortDefinitions: ICombinedCohortDefnitionListItem[] =
-    atlasCohortDefinitions.map((atlasCohortDefinition) => ({
+  const baseCohortDefinitions = atlasCohortDefinitions.map(
+    (atlasCohortDefinition) => ({
       id: atlasCohortDefinition.id,
       name: atlasCohortDefinition.name,
       description: atlasCohortDefinition.description,
@@ -212,13 +213,21 @@ export const getCohortDefinitionList = async (
       hasWriteAccess: true,
       hasReadAccess: true,
       tags: atlasCohortDefinition.tags,
+    })
+  );
+
+  if (isAtlas) {
+    return baseCohortDefinitions;
+  } else {
+    const cohortDefinitionsWithId = baseCohortDefinitions.map((def, i) => ({
+      ...def,
       cohortDefinitionId: getMaterializedCohortDefinitionId(
-        atlasCohortDefinition,
+        atlasCohortDefinitions[i],
         datasetId
       ),
     }));
-
-  return [...bookmarks, ...materializedCohorts, ...cohortDefinitions];
+    return [...bookmarks, ...materializedCohorts, ...cohortDefinitionsWithId];
+  }
 };
 
 export const getCohortDefinition = async (
