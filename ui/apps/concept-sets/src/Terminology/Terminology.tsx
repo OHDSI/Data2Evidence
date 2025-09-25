@@ -122,15 +122,12 @@ const NameSection = ({
         <Typography>{getText(i18nKeys.TERMINOLOGY__NAME)}:</Typography>
         <TextField
           placeholder={getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME)}
+          sx={{ marginLeft: "5px", width: "100%" }}
           id="standard-basic"
           variant="standard"
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
           disabled={isLoading}
-          sx={{
-            marginLeft: "5px",
-            width: "100%",
-          }}
         />
         <Box
           sx={{

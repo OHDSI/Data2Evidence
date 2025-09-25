@@ -736,6 +736,13 @@ const TerminologyList: FC<TerminologyListProps> = ({
     muiTableHeadCellProps: {
       sx: {
         padding: "6px",
+        "& .MuiSelect-select": {
+          fontSize: 12,
+          paddingRight: "0px !important",
+          "& .MuiChip-label": {
+            fontSize: 10,
+          },
+        },
       },
     },
     muiCircularProgressProps: {
