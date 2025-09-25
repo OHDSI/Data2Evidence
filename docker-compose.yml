@@ -210,6 +210,7 @@ services:
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SQL_RETURN_ON: ${SQL_RETURN_ON:-false}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
