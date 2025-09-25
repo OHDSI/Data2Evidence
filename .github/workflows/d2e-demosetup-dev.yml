@@ -11,7 +11,7 @@ on:
 
 env:
   VERSION: develop
-
+  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
 
 jobs:
   demosetup:
@@ -56,6 +56,8 @@ jobs:
               - "flows/base/**"
             flow_i2b2:
               - "flows/i2b2/**"
+            flow_data_management:
+              - "flows/data_management/**"
             ui: 
               - "ui/**"
 
@@ -70,6 +72,12 @@ jobs:
         id: build_i2b2_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./flows
+
+      - name: Build data management docker image
+        if: steps.file_changes.outputs.flow_data_management == 'true'
+        id: build_dm_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
 
       - name: Build docker images
         if: success() || failure()
