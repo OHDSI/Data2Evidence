@@ -79,6 +79,15 @@
           ]
         },
         {
+          "path": "^/gateway/api/fhir/bulkImport/project/(.*)",
+          "scopes": [
+            "gateway.fhir.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset/list$",
           "scopes": [
             "portal.dataset.read"

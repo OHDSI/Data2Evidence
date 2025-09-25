@@ -4,7 +4,6 @@ import axios, { AxiosRequestConfig } from "axios";
 
 import { env, services } from "../env.ts";
 import { ClientCredentials, HTTPMethod, Headers } from "../utils/types.ts";
-
 export class FhirAPI {
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -12,6 +11,7 @@ export class FhirAPI {
   private readonly logger = console;
   private readonly tokenUrl: string;
   private adminAccessToken: string;
+  private projectAccessToken: string
   private browserToken: string
 
   constructor(token) {
@@ -33,12 +33,13 @@ export class FhirAPI {
     httpMethod: HTTPMethod,
     queryParams: any,
     resourceDetails: any,
-    fhirHeaders?: Headers,
+    isAdminRequest: boolean,
+    fhirHeaders?: Headers
   ) {
     const resourceUrl = `${this.baseUrl}/${resourcePath}`;
     const log_msg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
     try {
-      let options = await this.getRequestConfig(clientCredentials);
+      let options = await this.getRequestConfig(clientCredentials, isAdminRequest);
       if (!options || typeof options !== 'object') {
         options = {};
       }
@@ -94,24 +95,19 @@ export class FhirAPI {
     }
   }
 
-  async testConnection() {
-    await this.startMedplumClientLogin()
-    console.log(this.adminAccessToken)
-  }
-
-  async startMedplumClientLogin(){
-    this.adminAccessToken = await this.getAccessToken(this.getAdminCredentials());
-    return;
-  }
-
   private async getAccessToken(
-    clientCredentials: ClientCredentials
+    clientCredentials: ClientCredentials,
+    isAdminRequest: boolean = true
   ): Promise<string> {
     const data = {
       grant_type: "client_credentials",
       scope: "openid",
     };
-
+    if(isAdminRequest && this.adminAccessToken){
+        return this.adminAccessToken;
+    }else if(!isAdminRequest && this.projectAccessToken){
+        return this.projectAccessToken;
+    }
     const options = this.getTokenRequestConfig(clientCredentials);
     try {
       const response = await axios.post(
@@ -119,6 +115,10 @@ export class FhirAPI {
         new URLSearchParams(data).toString(),
         options
       );
+      if(isAdminRequest)
+        this.adminAccessToken = response.data.access_token;
+      else
+        this.projectAccessToken = response.data.access_token;
       return response.data.access_token;
     } catch (error) {
       this.logger.error(
@@ -129,9 +129,9 @@ export class FhirAPI {
     }
   }
 
-  private async getRequestConfig(clientCredentials: ClientCredentials) {
+  private async getRequestConfig(clientCredentials: ClientCredentials, isAdminRequest: boolean) {
     let options: AxiosRequestConfig = {};
-    const token = await this.getAccessToken(clientCredentials);
+    const token = await this.getAccessToken(clientCredentials, isAdminRequest);
     options = {
       headers: {
         Authorization: `Bearer ${token}`,

@@ -7,7 +7,7 @@ import {
   HTTPMethod,
   Headers,
 } from "../utils/types";
-
+import {createLogger} from '../logger'
 const getDatasetId = async (
   token: string,
   studyCode: string
@@ -29,7 +29,7 @@ const checkProjectNameExists = async (
   adminCredentials: ClientCredentials
 ): Promise<boolean> => {
   const existingProject = await fhirApi.forwardRequest(
-    `Project?name=${projectName}`, adminCredentials, HTTPMethod.GET, '', '');
+    `Project?name=${projectName}`, adminCredentials, HTTPMethod.GET, '', '', true);
   return existingProject?.data?.entry && existingProject.data.entry.length > 0 && existingProject.data.entry[0].resource.resourceType === "Project";
 };
 
@@ -38,7 +38,7 @@ const getProjectCredentials = async (
   projectName: string,
   adminCredentials: ClientCredentials
 ): Promise<ClientCredentials> => {
-  const searchResult = await fhirApi.forwardRequest(`ClientApplication?name=${projectName}`, adminCredentials, HTTPMethod.GET, '', '');
+  const searchResult = await fhirApi.forwardRequest(`ClientApplication?name=${projectName}`, adminCredentials, HTTPMethod.GET, '', '', true);
   if (searchResult?.data) {
     const entry = searchResult.data.entry || [];
     if(entry.length == 0){
@@ -76,7 +76,7 @@ export const createProject = async (token: string, id: string, description: stri
     strictMode: true, // whether this project uses strict FHIR validation
     description: description,
   };
-  const projectResult = await fhirApi.forwardRequest("Project", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectDetails);
+  const projectResult = await fhirApi.forwardRequest("Project", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectDetails, true);
   if(projectResult == undefined)
     throw new Error("Error creating fhir project!");
   const projectId = projectResult?.data.id;
@@ -98,7 +98,7 @@ export const createProject = async (token: string, id: string, description: stri
     },
     secret: clientSecret,
   };
-  const clientApplicationResult = await fhirApi.forwardRequest("ClientApplication", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', clientApplicationDetails);
+  const clientApplicationResult = await fhirApi.forwardRequest("ClientApplication", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', clientApplicationDetails, true);
   if(clientApplicationResult == undefined)
     throw new Error("Error creating client application for fhir project!");
   const clientId = clientApplicationResult?.data.id;
@@ -126,7 +126,7 @@ export const createProject = async (token: string, id: string, description: stri
       display: id,
     },
   };
-  await fhirApi.forwardRequest("ProjectMembership", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectMembershipDetails);
+  await fhirApi.forwardRequest("ProjectMembership", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectMembershipDetails, true);
   //Update dataset information
   const portalAPI = new PortalAPI(token);
   const dataset: Dataset = await portalAPI.getDatasetById(id);
@@ -144,38 +144,42 @@ export const deleteProject = async(token, id: string) =>{
     fhirApi.getAdminCredentials(),
     HTTPMethod.POST,
     '',
-    ''
+    '',
+    true
   );
-}
+};
 
-export const forwardRequest = async (
-  token: string,
-  httpMethod: HTTPMethod,
-  projectName: string,
-  resourcePath: string,
-  queryParams: any,
-  body: any,
-  fhirHeaders: Headers
-) => {
-  // await fhirApi.clientCredentialsLogin();
-
-  //Get datasetId for incoming token study code
-  const datasetId = await getDatasetId(token, projectName);
+const validateAndGetProjectNameFromToken = async (fhirApi, browserToken: string, datasetToken: string, adminCredentials)=> {
+  //Get datasetId for incoming token dataset code
+  const datasetId = await getDatasetId(browserToken, datasetToken);
   if(datasetId == null){
-    throw new Error(`No dataset id found for project '${projectName}'`);
+    throw new Error(`No dataset id found for dataset token '${datasetToken}'`);
   }
   //DatasetId is the Fhir project name
-  projectName = datasetId;
+  const projectName = datasetId;
   
-  //Authenticate with superadmin credentials
-  let fhirApi = new FhirAPI(token);
-  let adminCredentials = fhirApi.getAdminCredentials();
-
   //Check fhir project exists which has unique name
   const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
   if (projectExists !==undefined && projectExists === false) {
     throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
   }
+  return projectName;
+}
+
+export const forwardRequest = async (
+  browserToken: string,
+  httpMethod: HTTPMethod,
+  datasetToken: string,
+  resourcePath: string,
+  queryParams: any,
+  body: any,
+  fhirHeaders: Headers
+) => {
+  let fhirApi = new FhirAPI(browserToken);
+  //Authenticate with superadmin credentials
+  let adminCredentials = fhirApi.getAdminCredentials();
+  //Get datasetId for incoming token study code
+  const projectName = await validateAndGetProjectNameFromToken(fhirApi, browserToken, datasetToken, adminCredentials);
 
   //Get client ID and secret for project
   const projClientCredentials = await getProjectCredentials(
@@ -190,7 +194,7 @@ export const forwardRequest = async (
     author: {
       reference: `ClientApplication/${projClientCredentials.clientId}`,
     },
-    id: datasetId,
+    id: projectName,
   };
   resourceDetails.meta = metaInfo;
 
@@ -200,12 +204,56 @@ export const forwardRequest = async (
     httpMethod,
     queryParams,
     resourceDetails,
+    false,
     fhirHeaders
   );
 };
 
-export const testClientCredentials = async (token: string): Promise<boolean> => {
-  let fhirApi = new FhirAPI(token);
-  await fhirApi.testConnection();
-  return true;
-};
+export const processNDJson = async (inputBody: string, dataset_token: string, browserToken: string, httpMethod: HTTPMethod, fhirHeaders: Headers
+) => {
+  console.log("Processing NDJSON body for bulk data import");
+  const logger = createLogger()
+  let fhirApi = new FhirAPI(browserToken);
+  //Authenticate with superadmin credentials
+  let adminCredentials = fhirApi.getAdminCredentials();
+  //Get datasetId for incoming token dataset code
+  const projectName = await validateAndGetProjectNameFromToken(fhirApi, browserToken, dataset_token, adminCredentials);
+  //Get client ID and secret for project
+  const projClientCredentials = await getProjectCredentials(
+    fhirApi,
+    projectName,
+    adminCredentials
+  );
+  const ndjsonLines = inputBody.split("\n");
+  for (let idx = 0; idx < ndjsonLines.length; idx++) {
+    const line = ndjsonLines[idx].trim();
+    if (!line) continue;
+    try {
+      const resourceData = JSON.parse(line);
+      console.log(`Processing line ${idx} in NDJSON body`);
+      //Add dataset metadata to req body
+      let resourceDetails = resourceData;
+      const metaInfo = {
+        author: {
+          reference: `ClientApplication/${projClientCredentials.clientId}`,
+        },
+        id: projectName,
+      };
+      resourceDetails.meta = metaInfo;
+      console.log("Posting resource of type "+resourceDetails.resourceType);
+      console.log(JSON.stringify(resourceDetails));
+      await fhirApi.forwardRequest(
+          resourceDetails.resourceType,
+          projClientCredentials,
+          httpMethod,
+          '',
+          resourceDetails,
+          false,
+          fhirHeaders
+        );
+    } catch (err) {
+      console.error(`Error processing line ${idx}: ${err.message}`);
+    }
+  }
+  return { status: 200, headers: {}, data: { message: "NDJSON processing completed" } };
+}

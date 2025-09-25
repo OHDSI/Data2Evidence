@@ -1,15 +1,17 @@
 import express from "express";
 import { validationResult } from "express-validator";
+import bodyParser from "body-parser";
 import {
   createProject,
   deleteProject,
   forwardRequest,
-  testClientCredentials,
+  processNDJson
 } from "./services";
 
+import { Buffer } from "buffer";
 import { validateCreateFhirProjectDto, validateDeleteFhirProjectDto, validateProxyDto } from "./middleware";
 
-import { filterHeaders, HTTPMethod } from "../utils/types";
+import { filterHeaders } from "../utils/types";
 
 export class FhirRouter {
   public router = express.Router();
@@ -20,6 +22,7 @@ export class FhirRouter {
   }
 
   private registerRoutes() {
+    this.router.use(bodyParser.json());
     //Endpoint to create a new project for the incoming dataset id in FHIR server
     this.router.post(
       "/createProject",
@@ -43,7 +46,7 @@ export class FhirRouter {
     );
 
     this.router.all(
-      "/project/:projectName/*",
+      "/project/:datasetToken/*",
       validateProxyDto(),
       async (req, res) => {
         // Examples
@@ -74,50 +77,41 @@ export class FhirRouter {
         }
 
         try {
-          const { "0": resourcePath, projectName } = req.params;
+          const { "0": resourcePath, datasetToken } = req.params;
           const token = req.headers.authorization;
           const httpMethod = req.method;
 
           const queryParams = req.query ? req.query : {};
           const body = req.body ? req.body : {};
 
-          // check if incoming request is for Binary resource type
-          let resource;
-          resource = resourcePath ? resourcePath.split("/")[0] : "";
-          const isBinaryReq = resource === "Binary" ? true : false;
-
           const headers = req.headers
-            ? filterHeaders(req.headers, isBinaryReq, httpMethod)
+            ? filterHeaders(req.headers, false, httpMethod)
             : {};
 
           this.logger.info(
-            `Received a '${httpMethod}' request for project named '${projectName}'`
+            `Received a '${httpMethod}' request for project named '${datasetToken}'`
           );
 
           // Forward request
           const fhirResponse = await forwardRequest(
             token,
             httpMethod,
-            projectName,
+            datasetToken,
             resourcePath,
             queryParams,
             body,
             headers
           );
 
-          if (isBinaryReq === true && httpMethod === HTTPMethod.GET) {
-            res.set("Content-Type", fhirResponse.headers);
-            res
-              .status(fhirResponse.status)
-              .set("Content-Type", fhirResponse.headers["content-type"])
-              .set("Content-Disposition", "inline")
-              .send(fhirResponse.data);
-          } else {
-            res
-              .status(fhirResponse.status)
-              .set(fhirResponse.headers)
-              .send(fhirResponse.data);
+          if (!fhirResponse) {
+            res.status(502).send("No response from FHIR backend");
+            return;
           }
+
+          res
+            .status(fhirResponse.status)
+            .set(fhirResponse.headers)
+            .send(fhirResponse.data);
         } catch (error) {
           let log_msg = `Failed to forward ${req.method} request - ${error.message}!`;
           this.logger.error(log_msg);
@@ -170,13 +164,6 @@ export class FhirRouter {
         // }
       }
     );
-    this.router.all("/test", async (req, res) => {
-      const { method } = req;
-      this.logger.info(`Received a '${method}' request for /test`);
-      const token = req.headers.authorization;
-      let result = await testClientCredentials(token)
-      res.status(200).send(result);
-    });
 
     //Endpoint to delete fhir project
     this.router.delete(
@@ -192,6 +179,9 @@ export class FhirRouter {
         try {
           const token = req.headers.authorization;
           const response = await deleteProject(token, id);
+          if (!response) {
+            return res.status(502).send("No response from FHIR backend");
+          }
           return res.status(response.status).json(response.data);
         } catch (error) {
           let log_msg = `Failed to delete project in fhir server`;
@@ -200,5 +190,64 @@ export class FhirRouter {
         }
       }
     );
+    //Expect as NDJSON body for bulk data import
+    this.router.all(
+      "/bulkImport/project/:datasetToken",
+      bodyParser.text({ type: "application/ndjson" }),
+      async (req, res) => {
+        // Debug logging for NDJSON upload
+        this.logger.info(
+          `NDJSON upload: content-type='${req.headers["content-type"]}', typeof req.body='${typeof req.body}', isBuffer='${Buffer.isBuffer(req.body)}'`
+        );
+        if (Buffer.isBuffer(req.body)) {
+          this.logger.warn("NDJSON body is a Buffer. Converting to string.");
+          req.body = req.body.toString("utf8");
+        }
+        try {
+          const { datasetToken } = req.params;
+          const token = req.headers.authorization;
+          const httpMethod = req.method;
+          const ndjsonText = req.body;
+          const headers = req.headers
+            ? filterHeaders(req.headers, false, httpMethod)
+            : {};
+
+          this.logger.info(
+            `Received a '${httpMethod}' request for project named '${datasetToken}'`
+          );
+          if(datasetToken === undefined || datasetToken.trim() === "") {
+            res.status(400).send("Invalid dataset token");
+            return;
+          }
+          if(ndjsonText === undefined || ndjsonText.trim() === "") {
+            res.status(400).send("Empty NDJSON body");
+            return;
+          }
+          // Forward request
+          const fhirResponse = await processNDJson(
+            ndjsonText,
+            datasetToken,
+            token,
+            httpMethod,
+            headers
+          ) as { status: number; headers: any; data: any } | undefined;
+
+          if (!fhirResponse || typeof fhirResponse !== "object" || !("status" in fhirResponse)) {
+            res.status(502).send("No response from FHIR backend");
+            return;
+          }
+
+          res
+            .status(fhirResponse.status)
+            .set(fhirResponse.headers)
+            .send(fhirResponse.data);
+        } catch (error) {
+          let log_msg = `Failed to forward ${req.method} request - ${error.message}!`;
+          this.logger.error(log_msg);
+          res.status(500).send(log_msg);
+        }
+      }
+    );
   }
 }
+

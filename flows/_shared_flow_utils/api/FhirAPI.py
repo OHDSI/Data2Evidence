@@ -30,3 +30,19 @@ class FhirAPI(BaseAPI):
                 f"[{result.status_code}] FhirAPI - Failed to post FHIR resource")
         else:
             return True
+
+    def post_ndjson(self, studyToken: str, resource):
+        url = f"{self.url}bulkImport/project/{studyToken}"
+        headers = self.get_headers()
+        headers["Content-Type"] = "application/ndjson"
+        result = requests.post(
+            url,
+            headers=headers,
+            verify=self.get_verify_value(),
+            data=resource
+        )
+        if ((result.status_code >= 400) and (result.status_code < 600)):
+            raise Exception(
+                f"[{result.status_code}] FhirAPI - Failed to post FHIR resource")
+        else:
+            return True

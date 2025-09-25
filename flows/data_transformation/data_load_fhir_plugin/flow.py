@@ -69,13 +69,8 @@ def load_data(dataset_token, json_file, logger):
     try:
         if json_file.path.endswith('.ndjson'):
             with open(json_file.path, "r") as f:
-                for idx, line in enumerate(f):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    resource_data = json.loads(line)
-                    logger.debug(f"Processing line {idx} in file '{json_file}'")
-                    post_fhir_resource(resource_data, idx, json_file, fhir_api, logger, dataset_token)
+                post_ndjson = f.read()
+                response = fhir_api.post_ndjson(studyToken=dataset_token, resource=post_ndjson)
         elif json_file.path.endswith('.json'):
             with open(json_file.path, "r") as f:
                 logger.debug(f"Processing JSON file '{json_file}'")

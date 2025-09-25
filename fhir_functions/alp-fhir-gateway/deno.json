@@ -13,6 +13,7 @@
     "@medplum/core": "npm:@medplum/core@4.3.6",
     "express": "npm:express@^4.19.2",
     "express-validator": "npm:express-validator@^7.2.0",
+    "body-parser": "npm:body-parser@1.16.0",
     "typedi": "npm:typedi@^0.10.0",
     "uuid": "npm:uuid@^10.0.0",
     "winston": "npm:winston@^3.13.1",
