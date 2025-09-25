@@ -116,6 +116,27 @@ RUN chown docker:alp ./duckdb_data
 RUN mkdir -p ./cdw-config/duckdb_data
 RUN chown -R docker:alp ./cdw-config
 
+WORKDIR /app
+# Install FHIR Anonymizer
+RUN mkdir -p /app/data_transformation/fhir-anonymizer
+
+# Download and install .NET 6 runtime
+RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
+    && chmod +x dotnet-install.sh \
+    && ./dotnet-install.sh --channel 6.0 --runtime dotnet \
+    && rm dotnet-install.sh
+
+# Set environment variables so dotnet is globally available
+ENV DOTNET_ROOT=/usr/share/dotnet
+ENV PATH=$PATH:/usr/share/dotnet:/usr/share/dotnet/tools
+# Download FHIR Anonymizer command line tool
+WORKDIR /app/data_transformation/fhir-anonymizer
+RUN curl -L -o fhir-anonymizer.zip https://github.com/microsoft/Tools-for-Health-Data-Anonymization/releases/download/v4.2.2/Microsoft.Health.Fhir.Anonymizer.R4.CommandLineTool.zip \
+    && unzip fhir-anonymizer.zip -d /app/data_transformation/fhir-anonymizer \
+    && rm fhir-anonymizer.zip
+
+WORKDIR /app
+
 # For NLP: downgrade "pip" for downloading "en_core_med7_trf model", and upgrade it afterwards.
 RUN python -m pip install --upgrade "pip<24"
 RUN pip install --no-deps https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl
