@@ -378,6 +378,7 @@
             "nameI18nKey": "UI_PLUGIN_LOGS",
             "pluginPath": "plugins/SystemAdmin/D2ELogs/module",
             "enabled": true,
+            "featureFlag": "d2eLogs",
             "route": "docker-logs"
           }
         ]
