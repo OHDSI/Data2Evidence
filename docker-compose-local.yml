@@ -22,15 +22,14 @@ services:
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
         {
           "analytics-svc": false,
           "mri-pg-config": false,
-          "alp-fhir-svc": false,
-          "alp-fhir-init": false,
+          "alp-fhir-gateway": false,
           "alp-dataflow-gen-init": false,
           "query-gen-svc": false,
           "alp-usermgmt": false,
@@ -90,11 +89,6 @@ services:
     ports:
       - "15432:5432"
 
-  alp-minerva-s3:
-    ports:
-      # - 9000:9000 #Port for API connectivity, internal communication is good enough. Needs to be uncommented only when testing from outside the alp docker network
-      - 9090:9090
-
   dicom-server:
     # uses 8042 port on the container
     ports:
@@ -119,35 +113,6 @@ services:
   #   ports:
   #     - 9226:9226
 
-  alp-cachedb:
-    build:
-      context: .
-      dockerfile: ./services/cachedb/Dockerfile
-      target: development
-      # To test without Hana
-      # args:
-      #   BUILD_TYPE: OSS
-    volumes:
-      - ./services/cachedb/src:/home/docker/src
-    ports:
-      - 9235:9235
-      - 41191:41191
-    environment:
-      LOCAL_DEBUG: "true"
-
-  fhir-server:
-    build:
-      context: ./services/alp-fhir
-      dockerfile: Dockerfile
-
-  # fhir-fe-server:
-  #   build:
-  #     context: ./services/alp-fhir/
-  #     dockerfile: Dockerfile.frontend
-  #   volumes:
-  #     - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
-  #   ports:
-  #     - 41130:3000
 
   enterprise-gateway:
     build:

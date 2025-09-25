@@ -168,6 +168,73 @@
           },
           "type": "data_load"
         },
+         {
+          "name": "data_load_fhir_plugin",
+          "entrypoint": "flows.data_load_fhir_plugin.flow.data_load_fhir_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/DataloadOptions",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "DataloadOptions": {
+                "properties": {
+                  "files": {
+                    "items": {
+                      "$ref": "#/definitions/FileType"
+                    },
+                    "title": "Files",
+                    "type": "array"
+                  },
+                  "dataset_token": {
+                    "title": "Dataset Token",
+                    "type": "string"
+                  },
+                  "truncate_tables": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": false,
+                    "title": "Truncate Tables"
+                  }
+                },
+                "required": [
+                  "files",
+                  "dataset_token"
+                ],
+                "title": "DataloadOptions",
+                "type": "object"
+              },
+              "FileType": {
+                "properties": {
+                  "path": {
+                    "title": "Path",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ],
+                "title": "FileType",
+                "type": "object"
+              }
+            }
+          },
+          "type": "data_load"
+        },
         {
           "name": "dataflow_ui_plugin",
           "entrypoint": "flows.dataflow_ui_plugin.flow.dataflow_ui_plugin",

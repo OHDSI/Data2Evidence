@@ -115,12 +115,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-fhir-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
-          - AZ_REG_REPOSITORY: d2e-fhir-fe-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile.frontend
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
           - AZ_REG_REPOSITORY: d2e-cachedb
             DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
@@ -141,14 +135,14 @@ jobs:
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
 
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
           android: true
           dotnet: true
           haskell: true
-          large-packages: false
+          large-packages: true
           docker-images: true
           swap-storage: true
 
@@ -235,6 +229,11 @@ jobs:
           package-type: "container"
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
+      - name: Prune system
+        if: always()
+        id: prune
+        run: |
+          docker system prune -af
 
   docker-success:
     needs: bld

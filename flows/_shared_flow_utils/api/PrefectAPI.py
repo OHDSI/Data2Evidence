@@ -101,7 +101,8 @@ class GetAuthTokens:
 
 def build_user_from_token(token: SecretStr) -> User:
     if token:
-        decoded_token = decode(token.get_secret_value(), options={"verify_signature": False})
+        raw_token = token.get_secret_value().replace("Bearer ", "")
+        decoded_token = decode(raw_token, options={"verify_signature": False})
         user = {
             "user_id": decoded_token.get("oid", decoded_token.get("sub", "")),
             "name": decoded_token.get("name", ""),
