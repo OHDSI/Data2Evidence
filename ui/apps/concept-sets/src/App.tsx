@@ -89,10 +89,26 @@ function AppContent(props: PortalProps) {
 }
 
 export default function App(props: PortalProps) {
+  const mockGetToken = async () => {
+    // Mock JWT token with sub: 'testuser'
+    const mockPayload = { sub: "testuser" };
+    const mockToken = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.${btoa(
+      JSON.stringify(mockPayload)
+    )}.mock_signature`;
+    return mockToken;
+  };
+
+  const propsWithMock = {
+    ...props,
+    // getToken: props.getToken || mockGetToken,
+    // Using mock getToken for now for no-auth
+    getToken: mockGetToken,
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <ConceptSetsProvider>
-        <AppContent {...props} />
+        <AppContent {...propsWithMock} />
       </ConceptSetsProvider>
     </ThemeProvider>
   );
