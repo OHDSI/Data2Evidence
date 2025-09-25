@@ -240,7 +240,7 @@
         color: #fff;
 
         &:hover:not(:disabled) {
-          background-color: rgb(0, 0, 89);
+          background-color: var(--color-primary-light);
         }
 
         &:disabled {
