@@ -15,7 +15,7 @@ CREATE OR REPLACE VIEW "VIEW::OMOP.CONCEPT" AS
           valid_start_date as "VALID_START_DATE",
           valid_end_date as "VALID_END_DATE",
           invalid_reason as "INVALID_REASON"
-      FROM "cdmvocab".concept
+      FROM ${VOCAB_SCHEMA}.concept
   );
 
 
