@@ -314,7 +314,7 @@ class DaoBase(ABC):
         base_url = f"postgresql://{user}:{password}@{host}:{port}/{database_name}"
         return base_url
 
-    def get_database_connector_connection_string(
+    def get_r_database_connector_connection_string(
         self,
         user_type: UserType = UserType.READ_USER,
         release_date: str = None,

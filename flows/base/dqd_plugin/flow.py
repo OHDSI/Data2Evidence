@@ -39,7 +39,7 @@ def dqd_plugin(options: DqdOptionsType):
         else options.use_trex_connection
     )
 
-    r_connection_string = dbdao.get_database_connector_connection_string(
+    r_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
 

@@ -190,7 +190,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
             dispatch(
               setNode({
                 ...cohortNode,
-                data: { ...cohortNode.data, type: nextType },
+                data: { ...cohortNode.data, cohortType: nextType },
               })
             );
           }
@@ -216,7 +216,7 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         dispatch(
           setNode({
             ...cohortNode,
-            data: { ...cohortNode.data, type: nextType },
+            data: { ...cohortNode.data, cohortType: nextType },
           })
         );
       }
