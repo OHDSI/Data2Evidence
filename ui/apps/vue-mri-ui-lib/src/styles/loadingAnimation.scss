@@ -1,11 +1,10 @@
-@import './mri-variables';
 .loading-animation-component {
   position: absolute;
   top: 0;
   bottom: 0;
   right: 0;
   left: 0;
-  background-color: transparentize($UiExtraLightBG, 0.1);
+  background-color: rgba(247, 247, 247, 0.9);
   z-index: 9;
   .animation-wrapper {
     position: absolute;

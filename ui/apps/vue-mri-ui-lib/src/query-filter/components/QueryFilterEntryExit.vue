@@ -369,7 +369,10 @@ const activeTooltipKey = computed(() => {
     </div>
 
     <div class="events-container">
-      <div class="sidebar">ALL</div>
+      <div class="sidebar">
+        <div class="sidebar-top"></div>
+        <div class="sidebar-label">ALL</div>
+      </div>
       <QueryFilterEventContainer
         :events="eventsData"
         :event-type="type"
@@ -454,7 +457,7 @@ const activeTooltipKey = computed(() => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #000080;
+    color: var(--color-primary, #000080);
   }
 
   .events-container {
@@ -463,13 +466,26 @@ const activeTooltipKey = computed(() => {
       width: 30px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 12px 6px;
-      background: #000080; // Blue to match other sidebars
-      position: relative;
       border-radius: 0 0 0 8px;
-      color: white;
-      writing-mode: sideways-lr;
+      border: 1px solid var(--color-primary);
+
+      .sidebar-top {
+        background-color: var(--color-primary);
+        width: 30%;
+        height: 100%;
+        border-radius: 0 0 0 6px;
+      }
+      .sidebar-label {
+        writing-mode: sideways-lr;
+        text-orientation: sideways;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--color-primary);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        user-select: none;
+      }
     }
     .query-filter-event-container {
       flex: 1;
@@ -489,11 +505,11 @@ const activeTooltipKey = computed(() => {
     background: transparent;
     border-radius: 6px;
     &:not(:first-child) {
-      border-left: #000080 2px solid;
+      border-left: var(--color-primary, #000080) 2px solid;
     }
     font-size: 14px;
     font-weight: 600;
-    color: #000080;
+    color: var(--color-primary, #000080);
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -506,7 +522,7 @@ const activeTooltipKey = computed(() => {
     }
 
     &--active {
-      background: #000080;
+      background: var(--color-primary, #000080);
       color: white;
       box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
     }
@@ -552,7 +568,7 @@ const activeTooltipKey = computed(() => {
     align-items: center;
     justify-content: center;
     padding: 12px 6px;
-    background: #000080; // Blue to match other sidebars
+    background: var(--color-primary, #000080); // Blue to match other sidebars
     position: relative;
     border-radius: 8px 0 0 8px; // Round left corners
 
@@ -632,7 +648,7 @@ const activeTooltipKey = computed(() => {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #000080;
+          border-color: var(--color-primary, #000080);
           background: white;
         }
       }
@@ -688,7 +704,7 @@ const activeTooltipKey = computed(() => {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #000080;
+          border-color: var(--color-primary, #000080);
           background: white;
         }
       }
