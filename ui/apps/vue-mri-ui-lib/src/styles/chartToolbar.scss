@@ -1,11 +1,11 @@
-@import './mri-variables';
+@import './screen';
 @import './mixins';
 
 .chartToolbar-main-container,
 .filters-toolbar {
   align-items: center;
   display: flex;
-  border-bottom: 1px solid $UiMediumBorder;
+  border-bottom: 1px solid var(--color-ui-medium-border);
   height: 40px;
   width: 100%;
   .spacer {
@@ -16,7 +16,7 @@
   }
   .actionButton {
     @include mriActionButtonHoverable;
-    color: $MriHeaderTextDark;
+    color: var(--color-mri-header-text-dark);
     outline: none;
     background: none;
     border: none;
@@ -27,7 +27,7 @@
     cursor: pointer;
   }
   .actionButton.actionButtonDisabled {
-    color: $MriDisabledText;
+    color: var(--color-mri-disabled-text);
     background: none;
     cursor: default;
   }
@@ -37,7 +37,7 @@
   .actionButton.actionButtonDisabled:hover {
     outline: none;
     background: none;
-    color: $MriDisabledText;
+    color: var(--color-mri-disabled-text);
     cursor: default;
   }
   .actionButton {
@@ -69,9 +69,9 @@
     }
     text-align: left;
     font-style: italic;
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
     padding-top: 10px;
-    border-top: 2px solid $UiMediumBorder;
+    border-top: 2px solid var(--color-ui-medium-border);
     font-size: 12px;
     vertical-align: middle;
     line-height: 18px;
@@ -82,18 +82,18 @@
   min-width: map-get($mriScreen, min-chart-width);
   justify-content: space-between;
   top: 0px;
-  
+
   .vertical-spacer {
     width: 2px;
     height: 28px;
     margin: 0 20px;
     border-radius: 1px;
-    background-color: $MriBrand;
+    background-color: var(--color-mri-brand);
   }
 
   .toolbarButton {
     @include mriActionButtonHoverable;
-    color: $MriHeaderTextDark;
+    color: var(--color-mri-header-text-dark);
     outline: none;
     background: none;
     border: none;
@@ -110,7 +110,7 @@
   }
 
   .toolbarButton.toolbarButtonDisabled {
-    color: $MriDisabledText;
+    color: var(--color-mri-disabled-text);
     background: none;
     cursor: default;
     opacity: 0.6;

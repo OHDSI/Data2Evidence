@@ -1,6 +1,5 @@
-@import './mri-variables';
 .chart-error-placeholder {
-  color: $UiLightText;
+  color: var(--color-ui-light-text);
   font-size: 12px;
   height: 100%;
   display: flex;
@@ -12,8 +11,8 @@
   right: 0;
   left: 0;
   .error-wrapper {
-    background-color: $UiLightestBG;
-    border-top: 1px solid $UiExtraLightBorder;
+    background-color: var(--color-ui-lightest-bg);
+    border-top: 1px solid var(--color-ui-extra-light-border);
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3);
     padding: 6px;
   }
