@@ -16,24 +16,30 @@ export class CohortEndpoint {
     private constructor(
         public connection: ConnectionInterface,
         public schemaName: string,
-        public dialect: string,
+        public dialect: string
     ) {}
 
     public static async createCohortEndpoint(
         connection: ConnectionInterface,
         schemaName: string,
         dialect: string,
-        authMode: string,
-    ) : CohortEndpoint {
-
+        authMode: string
+    ): Promise<CohortEndpoint> {
+        let cohortResultsSchemaName;
         if (dialect === ANALYTICS_DB_DIALECTS.HANA && authMode === "JWT") {
-            const checkCohortTablesExist = QueryObject.format(`SELECT TABLE_NAME FROM TABLES WHERE 
+            const checkCohortTablesExist =
+                QueryObject.format(`SELECT TABLE_NAME FROM TABLES WHERE 
                                                     SCHEMA_NAME='${connection.cohortSchemaName}' AND 
                                                     TABLE_NAME IN ('COHORT','COHORT_DEFINITION');`);
-            const tables = await checkCohortTablesExist.executeQuery(connection);
-            
-            if(!tables.data.some(table => table["TABLE_NAME"] === "COHORT")) {
-                const createCohortQuery = QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT  (
+            const tables = await checkCohortTablesExist.executeQuery(
+                connection
+            );
+
+            if (
+                !tables.data.some((table) => table["TABLE_NAME"] === "COHORT")
+            ) {
+                const createCohortQuery =
+                    QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT  (
                                             cohort_definition_id integer NOT NULL,
                                             subject_id integer NOT NULL,
                                             cohort_start_date date NOT NULL,
@@ -41,8 +47,13 @@ export class CohortEndpoint {
                 await createCohortQuery.executeUpdate(connection);
             }
 
-            if(!tables.data.some(table => table["TABLE_NAME"] === "COHORT_DEFINITION")) {
-                const createCohortDefinitionQuery = QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT_DEFINITION (
+            if (
+                !tables.data.some(
+                    (table) => table["TABLE_NAME"] === "COHORT_DEFINITION"
+                )
+            ) {
+                const createCohortDefinitionQuery =
+                    QueryObject.format(`CREATE TABLE "${connection.cohortSchemaName}".COHORT_DEFINITION (
                             cohort_definition_id                INTEGER            NOT NULL,
                             cohort_definition_name            VARCHAR(255)    NOT NULL,
                             cohort_definition_description        TEXT    NULL,
@@ -53,64 +64,64 @@ export class CohortEndpoint {
                             );`);
                 await createCohortDefinitionQuery.executeUpdate(connection);
             }
+
+            // For hana if auth mode is JWT, override schemaName to use researcher schema instead of results schema.
+            cohortResultsSchemaName = connection.cohortSchemaName;
+        } else {
+            cohortResultsSchemaName = schemaName;
         }
 
-        return new CohortEndpoint(
-            connection,
-            schemaName,
-            dialect,
-        )
-    }
-
-    private getInsertSyntaxQuery(): string {
-        return `JOIN
-        (SELECT DISTINCT * FROM 
-        (SELECT TO_NVARCHAR(COHORT_DEFINITION_SYNTAX) AS syntax FROM $$SCHEMA$$.COHORT_DEFINITION cd) as cd_syntax
-        WHERE syntax LIKE %s AND syntax LIKE %s) as cdd
-        ON syntax=TO_NVARCHAR(COHORT_DEFINITION_SYNTAX)`;
+        return new CohortEndpoint(connection, cohortResultsSchemaName, dialect);
     }
 
     private createCohortQuery(
         selectQueryString: string,
-        queryParams: Object,
-        offset?: number,
-        limit?: number
-    ) {
-        let queryValues = [];
+        queryParams: Object
+    ): [string, (string | number)[]] {
+        let queryValues: (string | number)[] = [];
 
         for (const key in queryParams) {
             switch (key.toUpperCase()) {
                 case "ID":
-                    selectQueryString += `WHERE COHORT_DEFINITION_ID = %s`;
+                    selectQueryString += `WHERE cd.COHORT_DEFINITION_ID = %s`;
                     queryValues.push(queryParams[key]);
                     break;
                 case "DATE":
-                    selectQueryString += `WHERE TO_DATE(COHORT_INITIATION_DATE) = TO_DATE(%s)`;
+                    selectQueryString += `WHERE TO_DATE(cd.COHORT_INITIATION_DATE) = TO_DATE(%s)`;
                     queryValues.push(queryParams[key]);
                     break;
                 case "SYNTAX":
-                    // query by bookmark id
                     // COHORT_DEFINITION_SYNTAX column type text, has to be converted to NVARCHAR.
-                    selectQueryString += this.getInsertSyntaxQuery();
-                    queryValues.push(`%${queryParams[key].datasetId}%`);
-                    queryValues.push(`%${queryParams[key].bookmarkId}%`);
+                    const filterableKeys = [
+                        "datasetId",
+                        "bookmarkId",
+                        "atlasCohortDefinitionId",
+                    ];
+                    let syntaxFilterSql = "";
+                    const syntaxFilter =
+                        "TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) LIKE %s";
+                    for (const filterKey of filterableKeys) {
+                        if (queryParams[key][filterKey]) {
+                            if (syntaxFilterSql === "") {
+                                // First occurence, add WHERE clause
+                                syntaxFilterSql += `WHERE ${syntaxFilter}`;
+                            } else {
+                                // Else not first occurence, add AND operator
+                                syntaxFilterSql += ` AND ${syntaxFilter}`;
+                            }
+                            queryValues.push(
+                                `%${queryParams[key][filterKey]}%`
+                            );
+                        }
+                    }
+                    selectQueryString += syntaxFilterSql;
                     break;
                 default:
                     break;
             }
         }
 
-        // Add limit and/or offset keyword if is it included
-        if (limit) {
-            queryValues.push(limit);
-            selectQueryString += `LIMIT %l`;
-            if (offset) {
-                queryValues.push(offset);
-                selectQueryString += `OFFSET %l`;
-            }
-        }
-
-        return QueryObject.format(selectQueryString, ...queryValues);
+        return [selectQueryString, queryValues];
     }
 
     // Helper function to execute cohort queries
@@ -125,13 +136,26 @@ export class CohortEndpoint {
         }
     }
 
+    private replaceSchemaAliasWithCohortSchema(sql: string) {
+        sql = sql.replace(
+            /\$\$SCHEMA\$\$.COHORT/g,
+            `${this.schemaName}.COHORT`
+        );
+        sql = sql.replace(
+            /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
+            `${this.schemaName}.COHORT_DEFINITION`
+        );
+
+        return sql;
+    }
+
     public async queryCohorts(
         queryParams: Object,
         offset?: number,
         limit?: number,
         excludePatientIds?: boolean
     ) {
-        const selectQueryString = `
+        const baseQueryString = `
             SELECT 
                 cd.COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
                 cd.COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
@@ -139,25 +163,40 @@ export class CohortEndpoint {
                 cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
                 COUNT(c.COHORT_DEFINITION_ID) AS "count"
-            FROM $$SCHEMA$$.COHORT_DEFINITION cd
-            LEFT JOIN $$SCHEMA$$.COHORT c 
+            FROM ${this.schemaName}.COHORT_DEFINITION cd
+            LEFT JOIN ${this.schemaName}.COHORT c 
                 ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
+        `;
+
+        let cohortArray = [];
+
+        try {
+            let [selectQueryString, queryParameters] = this.createCohortQuery(
+                baseQueryString,
+                queryParams
+            );
+            selectQueryString += `
             GROUP BY 
                 cd.COHORT_DEFINITION_ID,
                 cd.COHORT_DEFINITION_NAME,
                 TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION),
                 cd.COHORT_INITIATION_DATE,
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX)
-        `;
+                `;
 
-        let cohortArray = [];
+            // Add limit and/or offset keyword if is it included
+            if (limit) {
+                queryParameters.push(limit);
+                selectQueryString += ` LIMIT %l`;
+                if (offset) {
+                    queryParameters.push(offset);
+                    selectQueryString += ` OFFSET %l`;
+                }
+            }
 
-        try {
-            const selectQuery = this.createCohortQuery(
+            const selectQuery = QueryObject.format(
                 selectQueryString,
-                queryParams,
-                offset,
-                limit
+                ...queryParameters
             );
 
             const selectQueryResult = await this.executeCohortQuery(
@@ -227,13 +266,17 @@ export class CohortEndpoint {
 
     // Get count of cohort definitions
     public async queryCohortDefinitionCount(queryParams: Object) {
-        let selectQueryString = `SELECT COUNT(*) as count FROM $$SCHEMA$$.COHORT_DEFINITION
+        let baseQueryString = `SELECT COUNT(*) as count FROM ${this.schemaName}.COHORT_DEFINITION cd
         `;
 
         try {
-            const selectQuery = this.createCohortQuery(
-                selectQueryString,
+            const [selectQueryString, queryParameters] = this.createCohortQuery(
+                baseQueryString,
                 queryParams
+            );
+            const selectQuery = QueryObject.format(
+                selectQueryString,
+                ...queryParameters
             );
 
             const selectQueryResult = await this.executeCohortQuery(
@@ -258,7 +301,7 @@ export class CohortEndpoint {
             SUBJECT_CONCEPT_ID,
             COHORT_INITIATION_DATE
         FROM
-            $$SCHEMA$$.COHORT_DEFINITION
+            ${this.schemaName}.COHORT_DEFINITION
         WHERE
             COHORT_DEFINITION_ID = %s;
         `;
@@ -280,7 +323,7 @@ export class CohortEndpoint {
         cohortDefinition: CohortDefinitionTableType
     ) {
         let queryString = `
-        INSERT INTO $$SCHEMA$$.COHORT_DEFINITION (
+        INSERT INTO ${this.schemaName}.COHORT_DEFINITION (
             COHORT_DEFINITION_ID,
             COHORT_DEFINITION_NAME,
             COHORT_DEFINITION_DESCRIPTION,
@@ -290,7 +333,7 @@ export class CohortEndpoint {
             SUBJECT_CONCEPT_ID
             )
         VALUES (
-            (SELECT COALESCE(MAX(COHORT_DEFINITION_ID),0)+1 FROM $$SCHEMA$$.COHORT_DEFINITION),
+            (SELECT COALESCE(MAX(COHORT_DEFINITION_ID),0)+1 FROM ${this.schemaName}.COHORT_DEFINITION),
             %s, %s, %s, %s, %s, %s
             )`;
 
@@ -319,7 +362,7 @@ export class CohortEndpoint {
         cohortDefinition: CohortDefinitionTableType
     ) {
         const queryString = `
-        UPDATE $$SCHEMA$$.COHORT_DEFINITION SET (
+        UPDATE ${this.schemaName}.COHORT_DEFINITION SET (
             COHORT_DEFINITION_NAME,
             COHORT_DEFINITION_DESCRIPTION,
             COHORT_INITIATION_DATE,
@@ -357,7 +400,7 @@ export class CohortEndpoint {
         name: string
     ) {
         let queryString = `
-        UPDATE $$SCHEMA$$.COHORT_DEFINITION SET (
+        UPDATE ${this.schemaName}.COHORT_DEFINITION SET (
             COHORT_DEFINITION_NAME
             )
         = (%s)
@@ -389,7 +432,9 @@ export class CohortEndpoint {
                 { cohortDefinitionId }
             );
             const insertQuery = new QueryObject(
-                partialInsertQuery.queryString,
+                this.replaceSchemaAliasWithCohortSchema(
+                    partialInsertQuery.queryString
+                ),
                 [
                     ...queryObject.parameterPlaceholders,
                     ...partialInsertQuery.parameterPlaceholders,
@@ -410,7 +455,7 @@ export class CohortEndpoint {
 
     public async deleteCohortDefinitionFromDb(cohortId: number) {
         // Delete from cohort definition table
-        let queryString = `DELETE FROM $$SCHEMA$$.COHORT_DEFINITION WHERE COHORT_DEFINITION_ID = %s`;
+        let queryString = `DELETE FROM ${this.schemaName}.COHORT_DEFINITION WHERE COHORT_DEFINITION_ID = %s`;
 
         try {
             const query = QueryObject.format(queryString, cohortId);
@@ -424,7 +469,7 @@ export class CohortEndpoint {
 
     public async deleteCohortFromDb(cohortId: number) {
         // Delete from cohort table
-        let queryString = `DELETE FROM $$SCHEMA$$.COHORT WHERE COHORT_DEFINITION_ID = %s`;
+        let queryString = `DELETE FROM ${this.schemaName}.COHORT WHERE COHORT_DEFINITION_ID = %s`;
 
         try {
             const query = QueryObject.format(queryString, cohortId);
@@ -438,7 +483,7 @@ export class CohortEndpoint {
 
     // Get patient list based on cohort definition ID
     async queryPatientIds(cohortDefinitionId: string): Promise<string[]> {
-        let selectQueryString = `SELECT SUBJECT_ID FROM $$SCHEMA$$.COHORT
+        let selectQueryString = `SELECT SUBJECT_ID FROM ${this.schemaName}.COHORT
         WHERE COHORT_DEFINITION_ID=%s
         `;
         try {
@@ -474,7 +519,7 @@ export class CohortEndpoint {
     public async queryCohortDefinitionId(
         cohortDefinition: CohortDefinitionTableType
     ): Promise<number> {
-        let selectQueryString = `SELECT COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID" FROM $$SCHEMA$$.COHORT_DEFINITION 
+        let selectQueryString = `SELECT COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID" FROM ${this.schemaName}.COHORT_DEFINITION 
         WHERE COHORT_DEFINITION_NAME=%s AND 
         TO_DATE(COHORT_INITIATION_DATE)=TO_DATE(%s) AND 
         TO_NVARCHAR(COHORT_DEFINITION_SYNTAX)=%s
