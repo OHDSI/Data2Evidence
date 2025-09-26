@@ -1,4 +1,3 @@
-@import './mri-variables';
 div.app-segmented-button {
   .app-segmented-list {
     padding-left: 0px;
@@ -14,10 +13,10 @@ div.app-segmented-button {
     padding-right: 1rem;
     text-align: center;
     text-shadow: none;
-    color: $SegmentedButtonText;
+    color: var(--color-segmented-button-text);
     border: 1px solid #dedede;
     border-right: 0;
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     list-style: none;
     text-overflow: ellipsis;
     display: inline-block;
@@ -26,14 +25,14 @@ div.app-segmented-button {
     border-right: 1px solid #dedede;
   }
   .app-segmented-listItem:hover {
-    background-color: fade_in($color: $MriLightHoverBG, $amount: 0.5);
+    background-color: var(--color-mri-light-hover-bg);
   }
   .app-segmented-listItem.app-segmented-listItemSelected {
-    background: $MriInfoColor;
-    color: $SegmentedButtonSelectedText;
+    background: var(--color-mri-info);
+    color: var(--color-segmented-button-select-text);
     border-color: #006ca7;
   }
   .app-segmented-listItem.app-segmented-listItemSelected:hover {
-    background-color: opacify($color: $MriInfoColor, $amount: 0.5);
+    background-color: var(--color-mri-info);
   }
 }

@@ -1,7 +1,6 @@
-@import './mri-variables';
 .filters-footer {
   height: 4rem;
-  background-color: $MriFooterContainerBG;
+  background-color: var(--color-mri-footer-container-bg);
   border-top: 1px solid lightgray;
   bottom: 0px;
   position: absolute;
@@ -27,18 +26,18 @@
   .appButton {
     margin-left: 1px;
     margin-right: 1px;
-    color: $FooterButtonTextLight;
+    color: var(--color-footer-button-text-light);
     height: 2rem;
     div.buttonContent {
       font-size: 0.75rem;
     }
     div.buttonInner:hover {
-      background-color: $FooterHoverButtonBackgroundColor !important;
+      background-color: var(--color-footer-hover-button-background-color) !important;
       border-radius: 0.2rem;
     }
     div.buttonInner:active {
-      background-color: $FooterActiveButtonBackgroundColor !important;
-      color: $FooterActiveButtonTextColor;
+      background-color: var(--color-footer-active-button-background-color) !important;
+      color: var(--color-footer-active-button-text-color);
       text-shadow: none;
       border-radius: 0.2rem;
     }
@@ -53,10 +52,10 @@
     box-sizing: border-box;
 
     .label-error {
-      color: $MriTokenInvalidBG;
+      color: var(--color-mri-token-invalid-bg);
     }
     label {
-      color: $UiLightText;
+      color: var(--color-ui-light-text);
       font-size: 0.875rem;
       font-weight: normal;
     }
@@ -68,9 +67,9 @@
       min-height: 20px;
     }
     .input-container input {
-      color: $UiDarkText;
-      background: $UiLightestBG;
-      border: 1px solid $UiMediumBorder;
+      color: var(--color-ui-dark-text);
+      background: var(--color-ui-lightest-bg);
+      border: 1px solid var(--color-ui-medium-border);
       font-size: 0.875rem;
       line-height: normal;
       height: 2.5rem;
