@@ -282,7 +282,11 @@ export class CohortEndpoint {
             const selectQueryResult = await this.executeCohortQuery(
                 selectQuery
             );
-            return selectQueryResult.data[0].COUNT;
+            if (selectQueryResult.data[0]) {
+                return selectQueryResult.data[0].COUNT;
+            } else {
+                return 0;
+            }
         } catch (err) {
             logger.error(`Failed to query cohort definition counts`);
             throw err;
