@@ -88,8 +88,8 @@ RUN apt-get update && \
     software-properties-common \
     vim-tiny \
     wget \
-    && apt-get clean --yes
-    # && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
+    && apt-get clean --yes \
+    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
 
 # Set environment variables
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
@@ -120,7 +120,7 @@ RUN \
     && chown -R docker:docker /output \
     # Create directory for DuckDB extensions
     && mkdir -p /app/duckdb_extensions \
-    && chmod -R 755 /app/duckdb_extensions \
+    && chmod -R 711 /app/duckdb_extensions \
     # Make the download script executable
     && chmod +x /app/download_duckdb_extensions.sh \
     # Install DuckDB extensions in the duckdb_extensions directory
@@ -161,15 +161,13 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
 
 
 # Copy the Python virtual environment and uv binary from the build stage
-COPY --from=python-dependencies-build --chown=docker:docker /bin/uv /usr/local/bin/uv
-COPY --from=python-dependencies-build --chown=docker:docker /app/python /app/python
-COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /bin/uv /usr/local/bin/uv
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/python /app/python
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.venv /app/.venv
 
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./base /app/flows/
-
-RUN chmod -R 755 /app
 
 WORKDIR /app
 
