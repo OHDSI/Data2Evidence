@@ -1,4 +1,3 @@
-@import './mri-variables';
 div.app-dropdown.disabled {
   opacity: 0.5;
   cursor: default;
@@ -13,8 +12,8 @@ div.app-dropdown {
   cursor: pointer;
   height: 2.5rem;
   margin: 0.25rem 0 0.25rem 0;
-  border: 1px solid $MriDropDownBorderLight;
-  background: $UiLightestBG;
+  border: 1px solid var(--color-mri-dropdown-border-light);
+  background: var(--color-ui-lightest-bg);
   position: relative;
   vertical-align: top;
   outline: none;
@@ -28,7 +27,7 @@ div.app-dropdown {
     }
   }
   .app-dropdown-container.dropdown-active {
-    border-color: $MriInfoColor;
+    border-color: var(--color-mri-info);
   }
   .app-dropdown-container:focus {
     border: none;
@@ -45,18 +44,18 @@ div.app-dropdown {
     top: 0;
     height: 100%;
     display: inline-block;
-    background: $UiLightestBG;
-    color: $UiLightText;
+    background: var(--color-ui-lightest-bg);
+    color: var(--color-ui-light-text);
     outline: none;
     border: none;
     cursor: pointer;
   }
   .app-dropdown-arrow:hover {
-    background: $MriSelectListItemHoverableLight;
+    background: var(--color-mri-select-list-item-hoverable-light);
   }
   .app-dropdown-arrow.dropdown-active {
-    background: $MriInfoColor;
-    color: $MriLightestText;
+    background: var(--color-mri-info);
+    color: var(--color-mri-lightest-text);
   }
   .app-dropdown-arrow:before {
     font-family: 'app-icons';
@@ -65,7 +64,7 @@ div.app-dropdown {
   .app-dropdown-label {
     width: 100%;
     line-height: 2.375rem;
-    color: $UiDarkestText;
+    color: var(--color-ui-darkest-text);
     font-size: 0.875rem;
     padding: 0 3rem 0 0.625rem;
   }
@@ -73,8 +72,8 @@ div.app-dropdown {
     font-style: italic;
   }
   .app-dropdown-list {
-    border: 0.0625rem solid $MriDropDownBorderLight;
-    background: $UiLightestBG;
+    border: 0.0625rem solid var(--color-mri-dropdown-border-light);
+    background: var(--color-ui-lightest-bg);
     margin: 0;
     padding: 0;
     outline: none;
@@ -92,13 +91,13 @@ div.app-dropdown {
       text-overflow: ellipsis;
     }
     .app-dropdown-listItem.hover-select {
-      background: $MriSelectListItemHoverableLight;
+      background: var(--color-mri-select-list-item-hoverable-light);
     }
     .app-dropdown-listItem.app-dropdown-listItemSelected {
-      background: $MriDropDownListItemSelected;
+      background: var(--color-mri-dropdown-list-item-selected);
     }
     .app-dropdown-listItem.app-dropdown-listItemSelected:hover {
-      background: $MriSelectListItemHoverableLight;
+      background: var(--color-mri-select-list-item-hoverable-light);
     }
   }
 }
