@@ -13,11 +13,7 @@ import {
   MRT_ColumnDef,
   useMaterialReactTable,
 } from "material-react-table";
-import {
-  TablePaginationActions,
-  AddIcon,
-  RemoveIcon,
-} from "@portal/components";
+import { TablePaginationActions } from "@portal/components";
 import { useFeedback, useTranslation } from "../../../hooks";
 import {
   FilterOptions,
@@ -34,6 +30,8 @@ import { i18nKeys } from "../../../context/state";
 import { getPortalAPI } from "../../../utils/PortalUtils";
 
 import "./TerminologyList.scss";
+import AddIcon from "../../../components/icons/AddIcon";
+import RemoveIcon from "../../../components/icons/RemoveIcon";
 
 interface TerminologyListProps {
   userId?: string;
@@ -747,7 +745,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
       sx: {
         whiteSpace: "normal",
         wordWrap: "break-word",
-        color: "#000080",
         border: "none",
       },
     },
@@ -756,7 +753,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiTableHeadCellProps: {
       sx: {
-        backgroundColor: "#edf2f7",
         padding: "6px",
         "& .MuiSelect-select": {
           fontSize: 12,
@@ -769,7 +765,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiCircularProgressProps: {
       sx: {
-        color: "#000080",
+        color: "var(--color-primary, #000080)",
       },
     },
     enableTopToolbar: false,
@@ -804,7 +800,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
           sx={{
             overflow: "visible",
             height: "52px",
-            "& .MuiButtonBase-root:not(.Mui-disabled)": { color: "#000080" },
           }}
         />
       ) : null}

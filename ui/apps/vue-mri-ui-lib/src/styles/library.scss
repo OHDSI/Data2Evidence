@@ -1,4 +1,3 @@
-@import './mri-variables';
 @import './mixins';
 
 .mri-focusable {
@@ -7,7 +6,7 @@
 
 .mri-link-text {
   cursor: pointer;
-  color: $LinkText;
+  color: var(--color-link-text);
 }
 
 .mri-link-text:hover {

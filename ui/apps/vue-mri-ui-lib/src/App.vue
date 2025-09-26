@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="UiTheme_d4l mri-app-vue-container">
+  <div id="app" class="mri-app-vue-container">
     <NotificationStack />
     <!-- <ui5adaptor /> -->
     <splashScreen v-if="getInitialLoad" />

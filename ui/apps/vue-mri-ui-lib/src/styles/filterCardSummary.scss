@@ -1,15 +1,14 @@
-@import './mri-variables';
 .filtercard-summary {
   margin-left: 5px;
-  box-shadow: -2px -0px 5px 0px transparentize($MriBoxShadow, $MriBoxShadowGlow);
+  box-shadow: -2px -0px 5px 0px rgba(0, 0, 0, 0.15);
   width: 20%;
   height: 100%;
   right: 0px;
   position: relative;
   .header {
     height: 40px;
-    background-color: $MriChartButtonHover;
-    color: $UiDarkText;
+    background-color: var(--color-mri-chart-button-hover);
+    color: var(--color-ui-dark-text);
     font-weight: bold;
 
     .summary-title {
@@ -17,7 +16,7 @@
     }
     .btn {
       padding-right: 15px;
-      color: $UiDarkText;
+      color: var(--color-ui-dark-text);
       background-color: transparent;
     }
   }
@@ -45,18 +44,18 @@
     }
     .summary-desc {
       margin-bottom: 5px;
-      color: $UiDarkText;
+      color: var(--color-ui-dark-text);
     }
     .bookmark-filter-container {
       border-radius: 2px;
-      border: 1px solid $UiExtraLightBorder;
+      border: 1px solid var(--color-ui-extra-light-border);
       padding: 7px;
     }
     .bookmark-headelement {
       font-size: 13px;
       line-height: 19px;
       font-weight: bold;
-      color: $MriHeaderTextDark;
+      color: var(--color-mri-header-text-dark);
     }
     .bookmark-filtercard {
       .bookmark-attribute {
@@ -66,10 +65,10 @@
       }
       .bookmark-element {
         padding-right: 5px;
-        color: $UiLightText;
+        color: var(--color-ui-light-text);
       }
       .bookmark-constraint {
-        color: $MriHeaderTextLight;
+        color: var(--color-mri-header-text-light);
         font-weight: normal;
       }
     }
@@ -84,14 +83,14 @@
       border-radius: 4px;
       margin-top: 7px;
       margin-bottom: 7px;
-      color: $MriLightestText;
+      color: var(--color-mri-lightest-text);
     }
     .and-label {
-      background-color: $ToggleButtonDarkBG;
+      background-color: var(--color-toggle-button-dark-bg);
     }
     .or-label {
-      background-color: $ToggleButtonLightBG;
-      color: $UiDarkestText;
+      background-color: var(--color-toggle-button-light-bg);
+      color: var(--color-ui-darkest-text);
     }
   }
 }
