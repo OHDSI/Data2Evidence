@@ -22,6 +22,7 @@ import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
 import { applyTheme } from './utils/ThemeManager'
+import 'import-map-overrides'
 
 let app: Component
 const portalAPI = getPortalAPI()
