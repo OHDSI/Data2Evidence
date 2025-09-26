@@ -1,4 +1,3 @@
-@import './mri-variables';
 div.app-checkbox {
   box-sizing: border-box;
   cursor: pointer;
@@ -18,7 +17,7 @@ div.app-checkbox {
   align-items: center;
   gap: 8px;
   div.app-checkbox-container {
-    border: 2px solid $Checkbox;
+    border: 2px solid var(--color-checkbox);
     border-radius: 5px;
     cursor: pointer;
     display: block;
@@ -74,12 +73,12 @@ div.app-checkbox {
     }
   }
   div.app-checkbox-container:focus {
-    outline: 1px dotted $UiFocus;
+    outline: 1px dotted var(--color-focus);
   }
   .app-checkbox-checked:before {
     content: '\e05b';
     font-family: 'app-icons';
-    color: $Checkbox;
+    color: var(--color-checkbox);
     font-size: 20px;
     margin-top: 2px;
     display: flex;

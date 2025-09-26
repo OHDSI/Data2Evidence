@@ -1,9 +1,8 @@
-@import './mri-variables';
 @import './mixins';
 
 @mixin card-header {
-  background-color: $MRICardHeaderBG;
-  color: $MriBrand;
+  background-color: var(--color-mri-card-header-bg);
+  color: var(--color-mri-brand);
   padding: 0.25rem 0;
   font-weight: 500;
   font-size: 15px;
@@ -18,10 +17,10 @@
   .btn-filtercard-menu {
     .btn-link {
       padding: 0 !important;
-      color: $MRICardHeaderBG;
+      color: var(--color-mri-card-header-bg);
     }
     .app-icon {
-      color: $MriHeaderTextDark;
+      color: var(--color-mri-header-text-dark);
       font-size: large;
     }
   }
@@ -29,13 +28,13 @@
   .btn-collapse {
     @include mriActionButtonHoverable;
     .app-icon {
-      color: $MriHeaderTextDark;
+      color: var(--color-mri-header-text-dark);
     }
     width: 25px;
   }
 
   .MriPaFilterCardDisabled {
-    background-color: $TableHeaderRowBG !important;
+    background-color: var(--color-table-header-row-bg) !important;
   }
 
   .card {
@@ -96,13 +95,13 @@
     z-index: 0;
     margin-top: -10px !important;
     margin-left: 10px;
-    background-color: $ToggleButtonLightBG;
-    color: $UiDarkestText;
+    background-color: var(--color-toggle-button-light-bg);
+    color: var(--color-ui-darkest-text);
     // margin: 10px 10px;
     font-size: 10px;
     .app-icon {
       margin-left: 8px;
-      color: $UiDarkestText;
+      color: var(--color-ui-darkest-text);
     }
   }
 
@@ -141,8 +140,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    border-top: 11px solid $FiltercardNewState;
-    border-right: 11px solid $MRICardHeaderBG;
+    border-top: 11px solid var(--color-filtercard-new-state);
+    border-right: 11px solid var(--color-mri-card-header-bg);
     width: 0;
     //margin: 4px 0;
   }

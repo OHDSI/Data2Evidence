@@ -1,6 +1,5 @@
-@import './mri-variables';
 .km-legend-container {
-  color: $MriHeaderTextDark;
+  color: var(--color-mri-header-text-dark);
   margin-top: 45px;
   width: 100%;
   height: calc(100% - 45px);
@@ -27,8 +26,8 @@
     overflow: auto;
     padding: 0;
     list-style: none;
-    border-top: 2px solid $UiLightBorder;
-    border-bottom: 2px solid $UiLightBorder;
+    border-top: 2px solid var(--color-ui-light-border);
+    border-bottom: 2px solid var(--color-ui-light-border);
     .km-legend-entry {
       padding-right: 1rem;
       white-space: nowrap;
@@ -43,7 +42,7 @@
       }
       .km-legend-entry-text {
         font-size: 0.875rem;
-        color: $UiDarkestText;
+        color: var(--color-ui-darkest-text);
         vertical-align: middle;
       }
     }

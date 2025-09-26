@@ -1,6 +1,5 @@
-@import './mri-variables';
 .message-box {
-  color: $UiDarkestText;
+  color: var(--color-ui-darkest-text);
   position: fixed;
   z-index: 999;
   width: 100%;
@@ -24,7 +23,7 @@
     height: 100%;
   }
   .modal-container {
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.33);
     position: absolute;
@@ -48,7 +47,7 @@
     font-weight: bold;
   }
   .modal-body {
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     font-size: 0.875rem;
     min-height: 50px;
     max-height: calc(100vh - 320px);
@@ -56,23 +55,23 @@
   }
   .modal-footer {
     button .buttonInner {
-      color: $MriHeaderTextDark;
+      color: var(--color-mri-header-text-dark);
       border-radius: 2px;
     }
     button .buttonInner:focus {
       outline: none;
     }
     button .buttonInner:hover {
-      color: $MriLightestText;
-      background-color: $MriButtonHover;
+      color: var(--color-mri-lightest-text);
+      background-color: var(--color-mri-button-hover);
     }
     button .buttonInner:active {
-      outline: 1px solid $UiMediumBorder;
+      outline: 1px solid var(--color-ui-medium-border);
     }
     // height: 41px;
     align-items: center;
     display: flex;
-    border-top: 1px solid $FooterBorder;
+    border-top: 1px solid var(--color-footer-border);
   }
   .modal-default-button {
     float: right;
@@ -103,35 +102,35 @@
   }
   div.message-box-information {
     header {
-      box-shadow: $MriInfoColor 0px -1px 0px 0px inset;
+      box-shadow: var(--color-mri-info) 0px -1px 0px 0px inset;
       padding: 0.5rem;
     }
     .modal-header-icon {
-      color: $MriInfoColor;
+      color: var(--color-mri-info);
     }
   }
   div.message-box-error {
     header {
-      box-shadow: $MriErrorColor 0px -1px 0px 0px inset;
+      box-shadow: var(--color-mri-error) 0px -1px 0px 0px inset;
       padding: 0.5rem;
     }
     .modal-header-icon {
-      color: $MriErrorColor;
+      color: var(--color-mri-error);
     }
   }
   div.message-box-warning {
     header {
-      box-shadow: $MriWarningColor 0px -1px 0px 0px inset;
+      box-shadow: var(--color-mri-warning) 0px -1px 0px 0px inset;
       padding: 0.5rem;
     }
     .modal-header-icon {
-      color: $MriWarningColor;
+      color: var(--color-mri-warning);
     }
   }
   div.message-box-custom {
     header {
-      background-color: $UiExtraLightBG;
-      box-shadow: $UiDarkBorder 0px -1px 0px 0px inset;
+      background-color: var(--color-ui-extra-light-bg);
+      box-shadow: var(--color-ui-dark-border) 0px -1px 0px 0px inset;
       padding: 0.5rem;
     }
     .modal-header-icon {
@@ -139,31 +138,31 @@
     }
     footer {
       button .buttonInner {
-        color: $DialogBoxFooterBtnTextLight;
+        color: var(--color-dialog-box-footer-btn-text-light);
         border-radius: 3px;
         height: 26px;
         background-color: transparent;
         border: 1px solid transparent;
-        text-shadow: 0 0 0.125rem $UiDarkestText;
+        text-shadow: 0 0 0.125rem var(--color-ui-darkest-text);
         border-color: transparent;
       }
       button .buttonInner:focus {
         outline: none;
       }
       button .buttonInner:hover {
-        color: $DialogBoxFooterBtnTextLight;
-        background-color: $MriButtonHover;
+        color: var(--color-dialog-box-footer-btn-text-light);
+        background-color: var(--color-mri-button-hover);
       }
       button .buttonInner:active {
-        background-color: $FooterActiveButtonBackgroundColor;
-        border-color: $FooterActiveButtonBackgroundColor;
-        color: $FooterActiveButtonTextColor;
+        background-color: var(--color-footer-active-button-background-color);
+        border-color: var(--color-footer-active-button-background-color);
+        color: var(--color-footer-active-button-text-color);
       }
       // height: 41px;
       align-items: center;
       display: flex;
-      border-top: 1px solid $FooterBorder;
-      background-color: $DialogBoxFooterBG;
+      border-top: 1px solid var(--color-footer-border);
+      background-color: var(--color-dialog-box-footer-bg);
     }
   }
 }
