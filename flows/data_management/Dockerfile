@@ -69,21 +69,22 @@ ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.
 RUN mkdir -p ./liquibase/ \
     && tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/ \
     && rm liquibase-4.5.0.tar.gz \
-    && chown -R docker:docker ./liquibase/
+    && chown -R docker:docker ./liquibase/ \
+    && chmod -R 711 ./liquibase/
+
 
 WORKDIR /app
 COPY --chown=docker:docker  ./__init__.py /app/
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 # Copy the Python virtual environment and uv binary from the build stage
-COPY --from=python-dependencies-build --chown=docker:docker /bin/uv /usr/local/bin/uv
-COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /bin/uv /usr/local/bin/uv
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.venv /app/.venv
 
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_management/data_management_plugin /app/flows/data_management_plugin
 
-RUN chmod -R 755 /app
 
 WORKDIR /app
 
