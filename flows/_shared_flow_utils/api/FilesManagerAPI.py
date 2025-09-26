@@ -51,12 +51,12 @@ class FilesManagerAPI(BaseAPI):
                 )
             }
 
-            data = {
-                'username': username,
-                'dataKey': dataKey
-            }
-            result = requests.post(url, headers=headers,
-                                   data=data, files=files)
+        data = {
+            'username': username,
+            'dataKey': dataKey
+        }
+        result = requests.post(url, headers=headers,
+                               data=data, files=files)
 
         if ((result.status_code >= 400) and (result.status_code < 600)):
             raise Exception(
