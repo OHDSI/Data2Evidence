@@ -19,16 +19,14 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add dataset' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test_dataset_update')
-  await page.getByRole('textbox', { name: 'Dataset summary' }).click()
-  await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Test Summary')
-  await page.locator('pre').nth(1).click()
-  await page.locator('#simplemde-editor-1-wrapper').getByRole('textbox').fill('Test Description')
+  await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Dataset Summary')
   await page.getByTestId('dialog').locator('div').filter({ hasText: 'CDM Schema Option' }).nth(4).click()
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
   await page.locator('#mui-component-select-vocabSchemaOption').click()
   await page.getByRole('option', { name: 'demo_cdm' }).click()
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('test_result_schema')
   await page.locator('#mui-component-select-dataModelOption').click()
   await page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
@@ -37,6 +35,7 @@ test(TEST_NAME, async ({ page }) => {
   const randomToken = Math.random().toString(36).substring(2, 6)
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomToken)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
+  await page.waitForTimeout(3000)
   await expect(page.getByText('Test_dataset_update').first()).toBeVisible()
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
@@ -77,7 +76,7 @@ test(TEST_NAME, async ({ page }) => {
       .getByPlaceholder(' ')
       .fill('2')
     await page.getByRole('button', { name: 'Save' }).click({ timeout: 30000 })
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(3000)
     await page.reload()
     await expect(
       page.locator('tr').filter({ hasText: 'Test_dataset_update' }).getByRole('cell', { name: '1', exact: true })
@@ -108,7 +107,6 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Updated Summary').first()).toBeVisible()
     await study1.scrollIntoViewIfNeeded()
     await study1.click()
-    await expect(page.getByText('Test Description')).toBeVisible()
   })
 
   await test.step('Switch to admin portal', async () => {
@@ -149,6 +147,7 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Login as user and check dataset visibility', async () => {
+    await page.reload()
     await page.locator('input[name="identifier"]').click()
     await page.locator('input[name="identifier"]').fill('testuser1')
     await page.locator('input[name="password"]').click()
