@@ -82,8 +82,6 @@ export default async (req: IMRIRequest, res, next) => {
         // TODO: Update to use studyMetadata.resultSchemaName after task has been completed to add resultSchema as a dataset column
         // For now it is using studyMetadata.schemaName as a placeholder
         const studyResultSchemaName: string = studyMetadata.schemaName;
-        // TODO: REMOVE
-        // const studyResultSchemaName: string = "0BRAN_TEST";
 
         log.info(`studyDatabaseName ${studyDatabaseName}`);
 
