@@ -1,5 +1,6 @@
 import requests
 from prefect.logging import get_run_logger
+from pathlib import Path
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
@@ -28,11 +29,17 @@ class FilesManagerAPI(BaseAPI):
 
         return response.content
 
-    def save_file(self, username: str, dataKey="scan-report", file_path: str = "./ScanReport.xlsx"):
+    def save_file(self, username: str, dataKey="scan-report", file_path: str = "ScanReport.xlsx"):
         url = f"{self.url}/"
         headers = self._get_headers()
         # Remove Content-Type header - requests will set it automatically with the correct boundary
         headers.pop('Content-Type', None)
+
+        scanreportfile_path = Path(file_path).resolve()
+
+        if not scanreportfile_path.exists():
+            raise FileNotFoundError(
+                f"file {scanreportfile_path} does not exist.")
 
         with open(file_path, 'rb') as file:
 
