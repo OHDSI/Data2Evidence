@@ -6,6 +6,7 @@ from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 class FilesManagerAPI(BaseAPI):
     def __init__(self):
+        super().__init__()
         self.url = self.get_service_route("filesManager")
         self.logger = get_run_logger()
         self.auth = OpenIdAPI()
