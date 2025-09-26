@@ -1,6 +1,9 @@
 declare global {
   interface Window {
     System: System
+    importMapOverrides?: {
+      getOverrideMap: () => { imports: Record<string, string>; scopes: Record<string, any> }
+    }
   }
 
   const process: {
@@ -12,4 +15,3 @@ declare global {
 }
 
 export {}
-
