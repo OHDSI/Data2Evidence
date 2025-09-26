@@ -1,8 +1,7 @@
-@import './mri-variables';
 $km-slider-height: 40px;
 
 .km-container {
-  background-color: $UiLightestBG;
+  background-color: var(--color-ui-lightest-bg);
   width: 100%;
   height: 100%;
   margin: 0px;
@@ -10,11 +9,11 @@ $km-slider-height: 40px;
 
   .kmPopover {
     font-size: 0.865rem;
-    color: $UiMediumText;
-    background-color: $UiLightestBG;
+    color: var(--color-ui-medium-text);
+    background-color: var(--color-ui-lightest-bg);
     padding: 10px;
     .kmPopoverContentDimensions {
-      border-bottom: $UiDarkestBorder 1px solid;
+      border-bottom: var(--color-ui-darkest-border) 1px solid;
       padding-bottom: 8px;
       margin-bottom: 8px;
     }
@@ -74,11 +73,11 @@ $km-slider-height: 40px;
       border: none;
       visibility: hidden;
       .icon {
-        color: $MriExtraLightText;
+        color: var(--color-ui-extra-light-text);
       }
     }
     .km-help:hover .icon {
-      color: $UiLightText;
+      color: var(--color-ui-light-text);
     }
     .km-help.visible {
       visibility: visible;
@@ -88,7 +87,7 @@ $km-slider-height: 40px;
     }
   }
   .km-label {
-    color: $MriHeaderTextDark;
+    color: var(--color-mri-header-text-dark);
     font-size: 13px;
     font-weight: normal;
     display: inline-block;
@@ -127,18 +126,18 @@ $km-slider-height: 40px;
     -webkit-appearance: none;
   }
   .checkboxflex > input:hover {
-    border-color: $UiLightBorder;
+    border-color: var(--color-ui-light-border);
   }
   .km-logRankPValue {
     text-align: center;
-    border: 1px solid $UiLighterBorder;
+    border: 1px solid var(--color-ui-lighter-border);
     border-radius: 2px;
     display: inline-block;
     font-size: 12px;
     width: 100%;
     height: 33px;
     line-height: 2.5;
-    color: $MriHeaderTextDark;
+    color: var(--color-mri-header-text-dark);
   }
   .km-slider-row {
     padding-left: 20px;
@@ -243,7 +242,7 @@ $km-slider-height: 40px;
   .km-chart > svg > .axis > path.domain {
     fill: none;
     shape-rendering: crispEdges;
-    stroke: $UiDarkestBorder;
+    stroke: var(--color-ui-darkest-border);
     vector-effect: non-scaling-stroke;
   }
 
@@ -264,9 +263,9 @@ $km-slider-height: 40px;
     text-overflow: ellipsis;
     position: relative;
     width: 100%;
-    background-color: $UiExtraLightBG;
-    border: 1px solid $UiLighterBorder;
-    color: $MriHeaderTextDark;
+    background-color: var(--color-ui-extra-light-bg);
+    border: 1px solid var(--color-ui-lighter-border);
+    color: var(--color-mri-header-text-dark);
     border-radius: 2px;
     font-size: 11px;
     // overflow: hidden;
@@ -318,7 +317,7 @@ $km-slider-height: 40px;
     margin-top: 20px;
   }
   .km-logrank-help-popover {
-    color: $MriBrand;
+    color: var(--color-mri-brand);
     font-size: 16px;
     font-weight: bold;
     margin-right: 6px;
@@ -328,12 +327,12 @@ $km-slider-height: 40px;
   .km-logrank-help-popover-header {
     line-height: 40px;
     font-size: 14px;
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
   }
   .km-logrank-help-popover-content {
     padding: 1rem;
     font-size: 14px;
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
   }
   .km-logrank-help-popover-content-container {
     vertical-align: middle;
@@ -356,14 +355,14 @@ $km-slider-height: 40px;
     position: absolute;
     left: 35px;
     font-size: 13px;
-    color: $MriHeaderTextDark;
+    color: var(--color-mri-header-text-dark);
   }
   .kmInfo {
     width: 133px;
     margin-left: 32px;
     .km-label {
       font-size: 13px;
-      color: $MriHeaderTextDark;
+      color: var(--color-mri-header-text-dark);
     }
     .flexItem {
       margin-top: 10px;
@@ -371,7 +370,7 @@ $km-slider-height: 40px;
         margin-left: -6px;
       }
       div.app-checkbox .app-label {
-        color: $MriHeaderTextDark;
+        color: var(--color-mri-header-text-dark);
       }
     }
   }
@@ -390,9 +389,9 @@ $km-slider-height: 40px;
       .kmInteractionButton {
         position: relative;
         width: 133px;
-        background-color: $UiExtraLightBG;
-        border: 1px solid $UiLighterBorder;
-        color: $MriHeaderTextDark;
+        background-color: var(--color-ui-extra-light-bg);
+        border: 1px solid var(--color-ui-lighter-border);
+        color: var(--color-mri-header-text-dark);
         border-radius: 2px;
         font-size: 11px;
         overflow: hidden;
@@ -418,7 +417,7 @@ $km-slider-height: 40px;
           display: inline-block;
           height: auto;
           white-space: nowrap;
-          color: $MriHeaderTextDark;
+          color: var(--color-mri-header-text-dark);
         }
         .kmMenuSubtext {
           width: 120px;
@@ -429,7 +428,7 @@ $km-slider-height: 40px;
           display: inline-block;
           height: auto;
           white-space: nowrap;
-          color: $MriHeaderTextDark;
+          color: var(--color-mri-header-text-dark);
           font-weight: bold;
           grid-row: 2;
           grid-column: 1;
@@ -454,8 +453,8 @@ $km-slider-height: 40px;
   }
   .censoringInteractionListitem {
     height: 2rem;
-    border-bottom: 1px solid $UiExtraLightBorder;
-    background-color: $UiLightestBG;
+    border-bottom: 1px solid var(--color-ui-extra-light-border);
+    background-color: var(--color-ui-lightest-bg);
     padding: 0 1rem 0 1rem;
     box-sizing: border-box;
     align-items: center;
@@ -463,7 +462,7 @@ $km-slider-height: 40px;
   }
   .censoringInteractionListText {
     font-size: 0.875rem;
-    color: $UiDarkText;
+    color: var(--color-ui-dark-text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

@@ -142,18 +142,15 @@ const getCardinalityCount = () => {
                     At most
                   </button>
                 </div>
-                
+
                 <!-- Count Dropdown - Always reserve space -->
                 <div class="count-dropdown-container">
-                  <div 
-                    class="count-dropdown" 
-                    ref="countDropdownRef"
-                  >
+                  <div class="count-dropdown" ref="countDropdownRef">
                     {{ getCardinalityCount() }}
                   </div>
                 </div>
               </div>
-              
+
               <!-- Occurrence Count Column Options -->
               <div class="occurrence-column-container">
                 <GroupButtons
@@ -194,7 +191,7 @@ const getCardinalityCount = () => {
 .cardinality-menu-popper.popper {
   z-index: 1000;
   background-color: transparent;
-  
+
   .popover-content {
     overflow-y: visible !important; // Override Popper's inline style to prevent shadow clipping
   }
@@ -210,7 +207,7 @@ const getCardinalityCount = () => {
   border: 1px solid #e5e7eb;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 300px;
-  padding: 16px;  
+  padding: 16px;
 
   .body {
     width: 100%;
@@ -248,58 +245,58 @@ const getCardinalityCount = () => {
       transition: all 0.2s ease;
       position: relative;
       box-sizing: border-box; // Ensure border is included in width calculation
-      
+
       // Background colors for cardinality types
       &--exactly {
-        background: #000000; // Black for Exactly
+        background: var(--color-cardinality-exactly);
         color: white;
       }
-      
+
       &--at-least {
-        background: #2686EB; // Blue for At least
+        background: var(--color-cardinality-at-least);
         color: white;
       }
-      
+
       &--at-most {
-        background: #FA9087; // Light red for At most
+        background: var(--color-cardinality-at-most);
         color: white;
       }
-      
+
       // Remove gaps between buttons
       &:first-child {
         border-top-left-radius: 6px;
         border-bottom-left-radius: 6px;
       }
-      
+
       &--last {
         border-top-right-radius: 6px;
         border-bottom-right-radius: 6px;
       }
-      
+
       &:not(:first-child) {
         margin-left: -3px; // Overlap by border width to connect buttons
       }
-      
+
       // Selection state with 3px border
       &--selected {
-        border: 3px solid #000080;
+        border: 3px solid var(--color-primary, #000080);
         font-weight: 600;
         z-index: 2;
-        
+
         // Adjust background opacity when selected
         &.segment-button--exactly {
-          background: rgba(0, 0, 0, 0.9);
+          background: var(--color-cardinality-exactly);
         }
-        
+
         &.segment-button--at-least {
-          background: rgba(38, 134, 235, 0.9);
+          background: var(--color-cardinality-at-least);
         }
-        
+
         &.segment-button--at-most {
-          background: rgba(250, 144, 135, 0.9);
+          background: var(--color-cardinality-at-most);
         }
       }
-      
+
       &:hover:not(.segment-button--selected) {
         opacity: 0.8;
       }
@@ -319,14 +316,14 @@ const getCardinalityCount = () => {
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid #000080;
+      border: 1px solid var(--color-primary, #000080);
       border-radius: 4px;
       background: #fff;
-      color: #000080;
+      color: var(--color-primary, #000080);
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
-      
+
       &:hover {
         background: #f8f9fa;
       }

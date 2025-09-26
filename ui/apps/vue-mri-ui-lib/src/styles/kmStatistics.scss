@@ -1,19 +1,18 @@
-@import './mri-variables';
 .km-statistics-table-container {
   .km-curveAnalysis-table {
-    border: thin solid $UiMediumBorder;
+    border: thin solid var(--color-ui-medium-border);
     border-collapse: collapse;
   }
   .km-curveAnalysis-th {
-    background-color: $UiExtraLightBG;
-    color: $UiLightText;
+    background-color: var(--color-ui-extra-light-bg);
+    color: var(--color-ui-light-text);
     text-align: center;
     font-weight: bold;
     font-size: 0.875rem;
     width: 200px;
     height: 25px;
     line-height: 20px;
-    border: thin solid $UiMediumBorder;
+    border: thin solid var(--color-ui-medium-border);
     border-collapse: collapse;
   }
   .km-curveAnalysis-td {
@@ -22,11 +21,11 @@
     width: 200px;
     height: 25px;
     line-height: 20px;
-    border: thin solid $UiMediumBorder;
+    border: thin solid var(--color-ui-medium-border);
     border-collapse: collapse;
   }
   .km-curveAnalysis-td-label {
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
     font-size: 0.875rem;
 
     font-weight: normal;

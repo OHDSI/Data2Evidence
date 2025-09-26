@@ -1,4 +1,3 @@
-@import './mri-variables';
 @import './mixins';
 
 .chartController {
@@ -18,7 +17,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     z-index: 10;
   }
   .chartControllerHeader {
@@ -28,7 +27,7 @@
     text-align: right;
     padding-bottom: 10px;
     padding-top: 10px;
-    
+
     .separator {
       width: 5px;
     }
@@ -55,7 +54,7 @@
       left: 40px;
       direction: inherit;
       text-align: left;
-      color: $MriHeaderTextDark;
+      color: var(--color-mri-header-text-dark);
       font-size: 12px;
     }
   }
@@ -66,19 +65,19 @@
     text-align: left;
 
     .sapMPageBgSolid {
-      background-color: $UiLightestBG;
+      background-color: var(--color-ui-lightest-bg);
     }
   }
   .error-placeholder {
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
     font-size: 12px;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     .error-wrapper {
-      background-color: $MriLightestText;
-      border-top: 1px solid $UiExtraLightBorder;
+      background-color: var(--color-mri-lightest-text);
+      border-top: 1px solid var(--color-ui-extra-light-border);
       box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3);
       padding: 6px;
     }
