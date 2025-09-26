@@ -1,5 +1,3 @@
-@import './mri-variables';
-
 @mixin filter-base {
   .filters-content {
     position: absolute;
@@ -13,21 +11,21 @@
   .nav-bool {
     display: flex;
     align-items: flex-end;
-    background-color: $UiLightestBG;
-    border-bottom: 1px solid $MriNavTab;
+    background-color: var(--color-ui-lightest-bg);
+    border-bottom: 1px solid var(--color-mri-nav-tab);
 
     .nav-item {
       margin: 0 8px;
       a {
         padding: 1rem 0;
-        color: $MriHeaderTextLight;
+        color: var(--color-mri-header-text-light);
         font-size: small;
       }
 
       .active {
         padding-bottom: 1rem;
-        border-bottom: 2px solid $MriNavTab;
-        color: $MriHeaderTextDark;
+        border-bottom: 2px solid var(--color-mri-nav-tab);
+        color: var(--color-mri-header-text-dark);
         font-weight: 500;
         text-transform: uppercase;
       }
@@ -35,7 +33,7 @@
   }
 
   :focus-visible {
-    outline: $MriHeaderBG auto 1px;
+    outline: var(--color-mri-header-bg) auto 1px;
   }
 }
 

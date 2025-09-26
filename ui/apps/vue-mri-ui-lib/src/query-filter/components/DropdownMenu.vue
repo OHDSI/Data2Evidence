@@ -70,7 +70,7 @@ const emitOption = (option: string): void => {
   padding: 4px;
   cursor: pointer;
   font-size: 14px;
-  color: #000080;
+  color: var(--color-primary, #000080);
   display: flex;
   align-items: center;
   justify-content: center;

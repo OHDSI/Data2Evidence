@@ -1,4 +1,3 @@
-@import './mri-variables';
 .dropdownmenuitem-container {
   height: 32px;
   line-height: 32px;
@@ -35,12 +34,12 @@
 }
 
 .dropdownmenuitem-container.selected {
-  color: $UiDarkestText;
-  background-color: $MriDropDownListItemSelected;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-mri-dropdown-list-item-selected);
 }
 
 .dropdownmenuitem-container.disabled {
-  color: $MriDisabledText;
+  color: var(--color-mri-disabled-text);
 }
 
 .dropdownmenuitem-container.menuTitle {
@@ -48,21 +47,21 @@
 }
 
 .hover-select.dropdownmenuitem-container:not(.noHover) {
-  color: $UiDarkestText;
-  background-color: $UiHighlight;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-ui-highlight);
 }
 
 .hover-select.dropdownmenuitem-container:not(.noHover):hover {
-  color: $UiDarkestText;
-  background-color: $MriDropDownListItemSelected;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-mri-dropdown-list-item-selected);
 }
 
 .hover-open.hover-select.dropdownmenuitem-container:not(.noHover) {
-  color: $UiDarkestText;
-  background-color: $MriDropDownListItemSelected;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-mri-dropdown-list-item-selected);
 }
 
 .hover-select.dropdownmenuitem-container:not(.noHover).hasNoSubMenu {
-  color: $UiDarkestText;
-  background-color: $UiHighlight;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-ui-highlight);
 }

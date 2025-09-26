@@ -1,4 +1,3 @@
-@import './mri-variables';
 .boxplot-container {
   height: 100%;
   width: 100%;
@@ -17,23 +16,23 @@
     cursor: default;
   }
   .appMriPaBoxplotChartBackground {
-    fill: $UiLightestBG;
+    fill: var(--color-ui-lightest-bg);
   }
   .appMriPaBoxplotChartxAxis line,
   .appMriPaBoxplotChartyAxis line {
-    stroke: $MriDarkerBorder;
+    stroke: var(--color-mri-darker-border);
   }
   .appMriPaBoxplotChartLabelBackground {
     fill: transparent;
   }
   .appMriPaBoxplotChartLabel:hover .appMriPaBoxplotChartLabelBackground {
-    fill: $UiExtraLightBG;
+    fill: var(--color-ui-extra-light-bg);
   }
   .appMriPaBoxplotChartLabel:hover text {
     display: block;
   }
   .appMriPaBoxplotChartLabel text {
-    fill: $UiDarkText;
+    fill: var(--color-ui-dark-text);
     font-size: 12px;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -47,17 +46,17 @@
     display: none;
   }
   .appMriPaBoxplotChartyAxis .appMriPaBoxplotChartGridline {
-    stroke: $UiExtraLightBorder;
+    stroke: var(--color-ui-extra-light-border);
   }
   .appMriPaBoxplotChartyAxis text {
-    fill: $UiDarkText;
+    fill: var(--color-ui-dark-text);
     font-size: 12px;
   }
   .appMriPaBoxplotChartWhisker {
-    stroke: $UiExtraDarkBorder;
+    stroke: var(--color-ui-extra-dark-border);
   }
   .appMriPaBoxplotChartMedian {
-    stroke: $MriLightestText;
+    stroke: var(--color-mri-lightest-text);
   }
   .appMriPaBoxplotChartBox {
     fill: #eb7300;
