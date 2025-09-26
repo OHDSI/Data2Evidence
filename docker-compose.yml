@@ -14,7 +14,6 @@ volumes:
   trex:
   demodb-data:
   dicom-sqlite-storage:
-  fhir-binary-1:
   supabase-storage-data:
   hana-data:
 
@@ -760,7 +759,6 @@ services:
       alp:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    profiles: [fhir]
 
   supabase-storage:
     container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
