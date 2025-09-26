@@ -1,6 +1,6 @@
 import {env, global, logger} from "../env.ts"
 import {waitfor} from "./utils.ts"
-import { createLogtoRole } from '../api/LogtoAPI.ts'
+import * as LogtoAPI from '../api/LogtoAPI.ts'
 import { authn } from "../auth/authn.ts"
 import { authz } from "../auth/authz.ts";
 import { Hono, Context } from "npm:hono";
@@ -310,9 +310,11 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
 				const roleName = _name
 				// Create the Logto role when the role doesn't exist
 				try {
-					const result = await createLogtoRole(roleName);
+					const result = await LogtoAPI.createLogtoRole(roleName);
 					if (result.status === 200) {
 						logger.info(`Created Logto role: ${roleName}`);
+					} else if (result.status === 422) {
+						logger.info(`Logto role '${roleName}' exists`);
 					} else {
 						logger.info(`Logto role creation for '${roleName}' returned status ${result.status}: ${JSON.stringify(result.data)}`);
 					}
@@ -323,7 +325,12 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
 		}
     }
     if(value.scopes) {
-        global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes)
+        global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes);
+		try {
+			const result = await LogtoAPI.createLogtoApisAndScopes(value.scopes);
+		} catch (error) {
+			logger.error(`Failed to create Logto APIs and scopes: ${error}`);
+		}
     }
     
     if(value.api)
