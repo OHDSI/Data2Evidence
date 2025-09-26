@@ -120,6 +120,34 @@ export async function seed(knex: Knex): Promise<void> {
         Modifier: "ALICE",
         Modified: "2024-07-26 00:00:00",
       },
+      {
+        Id: "5f84444b-4b1c-43a1-b099-d233a6844bb0",
+        Version: "A",
+        Status: "",
+        Name: "FHIR_JSON",
+        Type: "HC/MRI/PA",
+        Data: pajsonfhirConfigDuckdb,
+        ParentId: "f5g08d4b-669e-485b-89c6-bb684020bfd1",
+        ParentVersion: "1",
+        Creator: "ALICE",
+        Created: "2024-07-26 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2024-07-26 00:00:00",
+      },
+      {
+        Id: "f5g08d4b-669e-485b-89c6-bb684020bfd1",
+        Version: "1",
+        Status: "A",
+        Name: "FHIR_JSON_DM",
+        Type: "HC/HPH/CDW",
+        Data: cdwjsonfhirConfigDuckdb,
+        ParentId: "",
+        ParentVersion: "",
+        Creator: "ALICE",
+        Created: "2024-07-26 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2024-07-26 00:00:00",
+      },
     ])
     .onConflict(["Id", "Version"])
     .ignore();
@@ -28115,4 +28143,1013 @@ const paI2b2ConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
   },
+};
+
+const cdwjsonfhirConfigDuckdb = {
+    "patient": {
+        "conditions": {},
+        "interactions": {
+            "condition": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Condition"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "de",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "fr",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "es",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "pt",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "zh",
+                        "value": "",
+                        "visible": true
+                    }
+                ],
+                "defaultFilter": "1=1",
+                "defaultPlaceholder": "@COND",
+                "order": 1,
+                "parentInteraction": [
+                    "patient.interactions.encounter"
+                ],
+                "parentInteractionLabel": "Encounter Parent",
+                "cohortDefinitionKey": "Condition",
+                "conceptIdentifierType": "",
+                "attributes": {
+                     "enddate": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Condition End Date"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "time",
+                        "expression": "json_extract_string(@COND.content, '$.onsetPeriod')",
+                        "order": 4,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "OccurrenceEndDate",
+                        "conceptIdentifierType": ""
+                    },
+                    "startdate": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Condition Start Date"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "time",
+                        "expression": "json_extract_string(@COND.content, '$.onsetDateTime')",
+                        "order": 5,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "OccurrenceStartDate",
+                        "conceptIdentifierType": ""
+                    },
+                    "pid": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Patient id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "regexp_extract(@COND.patient, '[^/]+$', 0)",
+                        "order": 1,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "conditioncodedisplay":{
+                      "name": [
+                            {
+                                "lang": "",
+                                "value": "Condition code display"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "json_extract_string(@COND.content, '$.code.coding[0].display')",
+                        "order": 2,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "conditionid": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Condition Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@COND.\"id\"",
+                        "order": 3,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    }
+                }
+            }
+        },
+        "attributes": {
+            "pid": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Patient id"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": ""
+                    },
+                    {
+                        "lang": "de",
+                        "value": ""
+                    },
+                    {
+                        "lang": "fr",
+                        "value": ""
+                    },
+                    {
+                        "lang": "es",
+                        "value": ""
+                    },
+                    {
+                        "lang": "pt",
+                        "value": ""
+                    },
+                    {
+                        "lang": "zh",
+                        "value": ""
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.\"id\"",
+                "order": 0,
+                "annotations": [
+                    "patient_id"
+                ],
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": ""
+            },
+            "pcount": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Patient Count"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": ""
+                    },
+                    {
+                        "lang": "de",
+                        "value": ""
+                    },
+                    {
+                        "lang": "fr",
+                        "value": ""
+                    },
+                    {
+                        "lang": "es",
+                        "value": ""
+                    },
+                    {
+                        "lang": "pt",
+                        "value": ""
+                    },
+                    {
+                        "lang": "zh",
+                        "value": ""
+                    }
+                ],
+                "type": "num",
+                "measureExpression": "COUNT(DISTINCT(@PATIENT.\"id\"))",
+                "order": 1,
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": ""
+            },
+            "monthOfBirth": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Month of Birth"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": ""
+                    },
+                    {
+                        "lang": "de",
+                        "value": ""
+                    },
+                    {
+                        "lang": "fr",
+                        "value": ""
+                    },
+                    {
+                        "lang": "es",
+                        "value": ""
+                    },
+                    {
+                        "lang": "pt",
+                        "value": ""
+                    },
+                    {
+                        "lang": "zh",
+                        "value": ""
+                    }
+                ],
+                "type": "num",
+                "expression": "month(CAST(strptime(json_extract_string(@PATIENT.content, '$.birthDate'), '%Y-%m-%d') as Date))",
+                "order": 2,
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": ""
+            },
+            "yearOfBirth": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Year of Birth"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": ""
+                    },
+                    {
+                        "lang": "de",
+                        "value": ""
+                    },
+                    {
+                        "lang": "fr",
+                        "value": ""
+                    },
+                    {
+                        "lang": "es",
+                        "value": ""
+                    },
+                    {
+                        "lang": "pt",
+                        "value": ""
+                    },
+                    {
+                        "lang": "zh",
+                        "value": ""
+                    }
+                ],
+                "type": "num",
+                "expression": "year(CAST(strptime(json_extract_string(@PATIENT.content, '$.birthDate'), '%Y-%m-%d') as Date))",
+                "order": 3,
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": ""
+            },
+            "dateOfBirth": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Birth Datetime"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": ""
+                    },
+                    {
+                        "lang": "de",
+                        "value": ""
+                    },
+                    {
+                        "lang": "fr",
+                        "value": ""
+                    },
+                    {
+                        "lang": "es",
+                        "value": ""
+                    },
+                    {
+                        "lang": "pt",
+                        "value": ""
+                    },
+                    {
+                        "lang": "zh",
+                        "value": ""
+                    }
+                ],
+                "type": "datetime",
+                "expression": "json_extract_string(@PATIENT.content, '$.birthDate')",
+                "order": 4,
+                "annotations": [
+                    "birth_datetime"
+                ],
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": ""
+            },
+            "gender": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Gender source value"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "de",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "fr",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "es",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "pt",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "zh",
+                        "value": "",
+                        "visible": true
+                    }
+                ],
+                "type": "text",
+                "expression": "@PATIENT.\"gender\"",
+                // "referenceFilter": "@REF.DOMAIN_ID = 'Gender' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_CODE AS VARCHAR), '@SEARCH_QUERY') >= 0.85",
+                // "referenceExpression": "@REF.CONCEPT_CODE",
+                "order": 5,
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": "",
+                "useRefValue": false,
+                "useRefText": false
+            },
+            "Age": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Age"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "de",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "fr",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "es",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "pt",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "zh",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "en",
+                        "value": ""
+                    }
+                ],
+                "type": "num",
+                "expression": "YEAR(CURRENT_DATE) - @PATIENT.\"birthDate\"",
+                "order": 6,
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "Age",
+                "conceptIdentifierType": ""
+            }
+        }
+    },
+    "censor": {},
+    "advancedSettings": {
+        "tableTypePlaceholderMap": {
+            "factTable": {
+                "placeholder": "@PATIENT",
+                "attributeTables": []
+            },
+            "dimTables": [
+                {
+                    "placeholder": "@COND",
+                    "attributeTables": [],
+                    "hierarchy": true,
+                    "time": true,
+                    "oneToN": false,
+                    "condition": false
+                }
+            ]
+        },
+        "tableMapping": {
+            "@COND": "$$SCHEMA$$.\"condition\"",
+            "@COND.PATIENT_ID": "\"patient\"",
+            "@COND.INTERACTION_ID": "\"id\"",
+            "@COND.CONDITION_ID": "\"id\"",
+            "@COND.PARENT_INTERACT_ID": "\"encounter\"",
+            "@COND.START": "\"onsetDateTime\"",
+            "@COND.END": "\"onsetPeriod\"",
+            "@COND.INTERACTION_TYPE": "\"id\"",
+            "@PATIENT": "$$SCHEMA$$.\"patient\"",
+            "@PATIENT.PATIENT_ID": "\"id\"",
+            "@PATIENT.DOD": "\"$.birthDate\"",
+            "@PATIENT.DOB": "\"json_extract_string(@PATIENT.content, '$.birthDate')\""
+        },
+        "guardedTableMapping": {
+            "@PATIENT": "$$SCHEMA$$.\"patient\""
+        },
+        "language": [
+            "en",
+            "de",
+            "fr",
+            "es",
+            "pt",
+            "zh"
+        ],
+        "others": {},
+        "settings": {
+            "fuzziness": 0.7,
+            "maxResultSize": 5000,
+            "sqlReturnOn": false,
+            "errorDetailsReturnOn": false,
+            "errorStackTraceReturnOn": false,
+            "enableFreeText": true,
+            "vbEnabled": true,
+            "dateFormat": "YYYY-MM-dd",
+            "timeFormat": "HH:mm:ss",
+            "otsTableMap": {
+                "@CODE": "$$VOCAB_SCHEMA$$.\"concept\""
+            },
+            "datasetId": "DEFAULT"
+        },
+        "shared": {},
+        "schemaVersion": "3"
+    }
+};
+
+const pajsonfhirConfigDuckdb = {
+    "filtercards": [
+        {
+            "source": "patient",
+            "visible": true,
+            "order": 1,
+            "initial": true,
+            "attributes": [
+                {
+                    "source": "patient.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient id"
+                },
+                {
+                    "source": "patient.attributes.pcount",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": false,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": false,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": false,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Count"
+                },
+                {
+                    "source": "patient.attributes.monthOfBirth",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Month of Birth"
+                },
+                {
+                    "source": "patient.attributes.yearOfBirth",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Year of Birth"
+                },
+                {
+                    "source": "patient.attributes.dateOfBirth",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Birth Datetime"
+                },
+                {
+                    "source": "patient.attributes.gender",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Gender"
+                },
+                {
+                    "source": "patient.attributes.Age",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Age"
+                }
+            ],
+            "initialPatientlistColumn": true,
+            "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
+        },
+        {
+            "source": "patient.interactions.condition",
+            "visible": true,
+            "order": 2,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.condition.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition End Date"
+                },
+                {
+                    "source": "patient.interactions.condition.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition Start Date"
+                },
+                {
+                    "source": "patient.interactions.condition.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient id"
+                },
+                {
+                    "source": "patient.interactions.condition.attributes.conditionid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition Id"
+                },
+                {
+                    "source": "patient.interactions.condition.attributes.conditioncodedisplay",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition code display"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Condition Occurrence"
+        }
+    ],
+    "chartOptions": {
+        "initialAttributes": {
+            "measures": [
+                "patient.attributes.pcount"
+            ],
+            "categories": []
+        },
+        "initialChart": "stacked",
+        "stacked": {
+            "visible": true,
+            "pdfDownloadEnabled": true,
+            "downloadEnabled": true,
+            "imageDownloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "fillMissingValuesEnabled": true
+        },
+        "boxplot": {
+            "visible": true,
+            "pdfDownloadEnabled": true,
+            "downloadEnabled": true,
+            "imageDownloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "fillMissingValuesEnabled": true
+        },
+        "km": {
+            "visible": true,
+            "pdfDownloadEnabled": true,
+            "downloadEnabled": true,
+            "imageDownloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "confidenceInterval": 1.95996398454,
+            "filters": [],
+            "selectedInteractions": [],
+            "selectedEndInteractions": []
+        },
+        "list": {
+            "visible": true,
+            "zipDownloadEnabled": true,
+            "downloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "pageSize": 20
+        },
+        "vb": {
+            "visible": true,
+            "referenceName": "GRCh37",
+            "enabled": false
+        },
+        "custom": {
+            "visible": true,
+            "customCharts": []
+        },
+        "sac": {
+            "visible": false,
+            "sacCharts": [],
+            "enabled": false
+        },
+        "shared": {
+            "enabled": false,
+            "systemName": "MRI"
+        },
+        "minCohortSize": 1
+    },
+    "configInformations": {
+        "note": ""
+    },
+    "panelOptions": {
+        "addToCohorts": true,
+        "domainValuesLimit": 5000,
+        "calcViewAccessPoint": true,
+        "externalAccessPoints": true,
+        "cohortEntryExit": false,
+        "atlasCohortDefinition": true,
+        "usePaAtlas": true
+    }
 };
