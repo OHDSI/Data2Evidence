@@ -3,6 +3,7 @@
 -- preconditions onFail:MARK_RAN 
 -- precondition-sql-check expectedResult:1 select COUNT(*) from information_schema.tables where table_schema = 'cdmvocab' and table_name = 'CONCEPT'
 -- comment: /* Checks if cdmvocab is created in upper case or lower case. Marks as ran if cdmvocab is in lower case. */
+--validCheckSum: 8:bddd2589655882b13389c7438cac4eef
 
 -- Drop all views
 DROP VIEW IF EXISTS "VIEW::OMOP.OBS";

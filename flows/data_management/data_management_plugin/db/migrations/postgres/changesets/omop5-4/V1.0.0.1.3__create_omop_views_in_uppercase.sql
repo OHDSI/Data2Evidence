@@ -1,6 +1,6 @@
 --liquibase formatted sql
 --changeset alp:V1.0.0.1.3__create_omop_views_in_uppercase
-
+--validCheckSum: 8:bddd2589655882b13389c7438cac4fff
 
 CREATE OR REPLACE VIEW "VIEW::OMOP.CONCEPT" AS 
   (

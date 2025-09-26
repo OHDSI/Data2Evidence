@@ -1,6 +1,6 @@
 --liquibase formatted sql
 --changeset alp:V1.0.0.1.4__extend_concept_name_col
-
+--validCheckSum: 8:bddd2589655882b13389c7438cac4ggg
 
 DROP VIEW IF EXISTS "VIEW::OMOP.CONCEPT" CASCADE;
 
