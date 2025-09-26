@@ -158,8 +158,6 @@ COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_ut
 COPY --chown=docker:docker --chmod=711 ./hades /app/flows/
 
 
-RUN chmod -R 755 /app
-
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
