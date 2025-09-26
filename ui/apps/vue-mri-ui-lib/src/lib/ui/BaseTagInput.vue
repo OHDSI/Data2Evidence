@@ -329,6 +329,9 @@ export default {
 
       this.currentPlaceholder = this.texts.enterSearchTerm
       this.handleSearchChange(this.searchQuery)
+
+      // Adjust dropdown height based on available space. For cases where dropdown is at bottom of filter card section
+      this.adjustDropdownHeight()
     },
     close() {
       if (this.selectedValues.length) {
@@ -417,6 +420,23 @@ export default {
     },
     removeFromNewTags(value) {
       this.newTags = this.newTags.filter(item => item.value !== value)
+    },
+    adjustDropdownHeight() {
+      const trigger = this.$refs.multiselect?.$el
+      const dropdown = trigger?.querySelector('.multiselect__content-wrapper')
+
+      if (trigger && dropdown) {
+        const rect = trigger.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const spaceBelow = viewportHeight - rect.bottom
+
+        // Only apply min-height if there's limited space below
+        if (spaceBelow < 300) {
+          dropdown.style.minHeight = '200px'
+        } else {
+          dropdown.style.minHeight = 'auto'
+        }
+      }
     },
     tagKeyUpHandler(props) {
       const prevItemIndex =
