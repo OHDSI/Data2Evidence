@@ -64,6 +64,7 @@ class SqlAlchemyDao(DaoBase):
             host=configs.host,
             port=configs.port,
             database_name=database_name,
+            db_credentials=configs
         )
         return sql.create_engine(connection_string, connect_args=connect_args)
 
