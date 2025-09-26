@@ -166,21 +166,21 @@ const buttonClasses = computed<string[]>(() => {
 
 /* Colors - Contained */
 .material-button--contained.material-button--primary {
-  background-color: #000080;
+  background-color: var(--color-primary, #000080);
   color: #fff;
 }
 
 .material-button--contained.material-button--primary:hover {
-  background-color: rgb(0, 0, 89);
+  background-color: var(--color-primary-light);
 }
 
 .material-button--contained.material-button--secondary {
   background-color: #ffa19d;
-  color: #000080;
+  color: var(--color-primary, #000080);
 }
 
 .material-button--contained.material-button--secondary:hover {
-  background-color: #ff5e59;
+  background-color: var(--color-secondary, #ff5e59);
 }
 
 .material-button--contained.material-button--error {
@@ -282,7 +282,7 @@ const buttonClasses = computed<string[]>(() => {
 
 /* Colors - Text */
 .material-button--text.material-button--primary {
-  color: #000080;
+  color: var(--color-primary, #000080);
 }
 
 .material-button--text.material-button--primary:hover {

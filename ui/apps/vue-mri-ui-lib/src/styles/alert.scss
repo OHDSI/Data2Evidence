@@ -1,24 +1,23 @@
-@import './mri-variables';
 .alert {
   position: absolute;
   z-index: 999;
   width: 100%;
 
   &-info {
-    color: $MriLightestText;
-    background-color: $MriContrast;
-    border-color: $MriLightestText;
+    color: var(--color-mri-lightest-text);
+    background-color: var(--color-mri-contrast);
+    border-color: var(--color-mri-lightest-text);
   }
 
   &-error {
-    background-color: $MriErrorColor;
+    background-color: var(--color-mri-error);
   }
 
   &-information {
-    background-color: $MriInfoColor;
+    background-color: var(--color-mri-info);
   }
 
   &-warning {
-    background-color: $MriWarningColor;
+    background-color: var(--color-mri-warning);
   }
 }

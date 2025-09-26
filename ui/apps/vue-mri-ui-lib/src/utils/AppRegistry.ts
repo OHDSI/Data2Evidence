@@ -53,6 +53,7 @@ function registerNavigationApps() {
               datasetId: portalAPI?.studyId,
               locale: portalAPI?.locale,
               isActiveRoute: location.pathname === item.route,
+              isAtlas: portalAPI?.isLocal || false,
             }
           },
         })

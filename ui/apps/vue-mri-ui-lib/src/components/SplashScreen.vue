@@ -18,7 +18,6 @@ export default {
 </script>
 
 <style scoped lang="scss">
-@import '../styles/_mri-variables.scss';
 .splash-container {
   z-index: 8;
   display: flex;

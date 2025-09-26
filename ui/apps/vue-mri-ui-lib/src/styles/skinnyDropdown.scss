@@ -1,4 +1,3 @@
-@import './mri-variables';
 div.app-skinny-dropdown.disabled {
   opacity: 0.5;
   cursor: default;
@@ -14,8 +13,8 @@ div.app-skinny-dropdown {
   height: 1.625rem;
   width: 100%;
   margin: 0.25rem 0 0.25rem 0;
-  border: 1px solid $MriDropDownBorderLight;
-  background: $UiLightestBG;
+  border: 1px solid var(--color-mri-dropdown-border-light);
+  background: var(--color-ui-lightest-bg);
   position: relative;
   vertical-align: top;
   outline: none;
@@ -30,12 +29,12 @@ div.app-skinny-dropdown {
     }
   }
   .app-skinny-dropdown-container.dropdown-active {
-    border-color: $MriInfoColor;
+    border-color: var(--color-mri-info);
   }
   .app-skinny-dropdown-container:focus {
     border: none;
     .app-dropdown-arrow {
-      border: 1px solid $UiFocus;
+      border: 1px solid var(--color-focus);
     }
   }
   .app-skinny-dropdown-arrow {
@@ -47,18 +46,18 @@ div.app-skinny-dropdown {
     top: 0;
     height: 100%;
     display: inline-block;
-    background: $UiLightestBG;
-    color: $UiLightText;
+    background: var(--color-ui-lightest-bg);
+    color: var(--color-ui-light-text);
     outline: none;
     border: none;
     cursor: pointer;
   }
   .app-skinny-dropdown-arrow:hover {
-    background: $MriSelectListItemHoverableLight;
+    background: var(--color-mri-select-list-item-hoverable-light);
   }
   .app-skinny-dropdown-arrow.dropdown-active {
-    background: $MriInfoColor;
-    color: $MriLightestText;
+    background: var(--color-mri-info);
+    color: var(--color-mri-lightest-text);
   }
   .app-skinny-dropdown-arrow:before {
     font-family: 'app-icons';
@@ -67,7 +66,7 @@ div.app-skinny-dropdown {
   .app-skinny-dropdown-label {
     width: 100%;
     line-height: 1.375rem;
-    color: $MriDropDownLabelDarkText;
+    color: var(--color-mri-dropdown-label-dark-text);
     font-size: 0.875rem;
     padding: 0 3rem 0 0.625rem;
   }
@@ -75,8 +74,8 @@ div.app-skinny-dropdown {
     font-style: italic;
   }
   .app-skinny-dropdown-list {
-    border: 0.0625rem solid $MriDropDownBorderLight;
-    background: $UiLightestBG;
+    border: 0.0625rem solid var(--color-mri-dropdown-border-light);
+    background: var(--color-ui-lightest-bg);
     margin: 0;
     padding: 0;
     outline: none;
@@ -94,13 +93,13 @@ div.app-skinny-dropdown {
       text-overflow: ellipsis;
     }
     .app-dropdown-listItem.hover-select {
-      background: $MriSelectListItemHoverableLight;
+      background: var(--color-mri-select-list-item-hoverable-light);
     }
     .app-skinny-dropdown-listItem.app-skinny-dropdown-listItemSelected {
-      background: $MriDropDownListItemSelected;
+      background: var(--color-mri-dropdown-list-item-selected);
     }
     .app-skinny-dropdown-listItem.app-skinny-dropdown-listItemSelected:hover {
-      background: $MriSelectListItemHoverableLight;
+      background: var(--color-mri-select-list-item-hoverable-light);
     }
   }
 }

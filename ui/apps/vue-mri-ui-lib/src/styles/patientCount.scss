@@ -1,8 +1,7 @@
-@import './mri-variables';
 .patientcount-wrapper {
   //   padding: 5px;
   .patientCount {
-    color: $MriHeaderTextDark;
+    color: var(--color-mri-header-text-dark);
     font-size: 16px;
     display: inline-block;
     text-align: center;
@@ -18,7 +17,7 @@
   }
   .patientCountHeader {
     font-size: 17px;
-    color: $MriHeaderTextDark;
+    color: var(--color-mri-header-text-dark);
     font-weight: bold;
   }
   .patientCountContent {
@@ -26,7 +25,7 @@
     height: 150px;
     padding-left: 1rem;
     font-size: 14px;
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
   }
   .patientCountContent-container {
     vertical-align: middle;
@@ -43,9 +42,9 @@
     }
     text-align: left;
     font-style: italic;
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
     padding-top: 10px;
-    border-top: 2px solid $UiMediumBorder;
+    border-top: 2px solid var(--color-ui-medium-border);
     font-size: 12px;
     vertical-align: middle;
     line-height: 18px;
