@@ -109,6 +109,7 @@ RUN uv pip install --upgrade "pip<24" \
     && uv pip install spacy==3.8.2 \
     && uv pip install spacy-transformers==1.3.9 \
     && uv pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz \
+    && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings \
     && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl" \
     && python -c "import spacy; med7 = spacy.load('en_core_med7_trf')"
 
