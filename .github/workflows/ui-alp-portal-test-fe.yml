@@ -1,5 +1,8 @@
 name: d2e-ui/portal tests
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]

@@ -1,5 +1,8 @@
 name: d2e/demosetup-dev
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch: # Allow manual triggering
   pull_request:
