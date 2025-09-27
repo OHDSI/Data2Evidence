@@ -87,7 +87,6 @@ jobs:
 
   build:
     needs: [pick_runner, check_file_changes]
-    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
 
     strategy:
@@ -109,9 +108,13 @@ jobs:
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
           - PKGPATH: ./services/trex/ext/circe
+            RUNNER: ubuntu-24.04
           - PKGPATH: ./services/trex/ext/hana
           - PKGPATH: ./services/trex/ext/llama
+            RUNNER: ubuntu-24.04
           - PKGPATH: ./services/trex/ext/pgwire
+
+    runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
 
     steps:
       - name: Free Disk Space (Ubuntu)
