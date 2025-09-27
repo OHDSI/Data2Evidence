@@ -46,7 +46,7 @@ jobs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
       - id: shuffle
-        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   check_file_changes:
     environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}

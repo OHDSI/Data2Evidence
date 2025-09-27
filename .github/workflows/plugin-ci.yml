@@ -83,7 +83,7 @@ jobs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
       - id: shuffle
-        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: [pick_runner, check_file_changes]
@@ -112,7 +112,6 @@ jobs:
           - PKGPATH: ./services/trex/ext/hana
           - PKGPATH: ./services/trex/ext/llama
           - PKGPATH: ./services/trex/ext/pgwire
-
 
     steps:
       - uses: actions/checkout@v4
@@ -173,8 +172,8 @@ jobs:
         run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
       - name: DEST
         working-directory: ${{ matrix.PKGPATH }}
-        if:  ${{ matrix.DESTPATH }}
-        run: | 
+        if: ${{ matrix.DESTPATH }}
+        run: |
           cp package.json package.org.json
           sudo mkdir -p ${{ matrix.DESTPATH }}
           sudo chown runner:docker ${{ matrix.DESTPATH }}

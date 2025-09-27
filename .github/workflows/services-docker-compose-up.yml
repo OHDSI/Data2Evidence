@@ -31,7 +31,7 @@ jobs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
       - id: shuffle
-        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   docker-compose-up:
     needs: [pick_runner]

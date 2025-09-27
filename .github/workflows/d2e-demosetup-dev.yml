@@ -12,7 +12,6 @@ on:
 env:
   VERSION: develop
 
-
 jobs:
   pick_runner:
     runs-on: ubuntu-latest
@@ -20,7 +19,7 @@ jobs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
       - id: shuffle
-        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   demosetup:
     needs: [pick_runner]
@@ -41,7 +40,7 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: true
-      
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -49,7 +48,7 @@ jobs:
       - name: npm install
         if: success() || failure()
         run: |
-          npm install 
+          npm install
 
       - name: Initialise d2e
         if: success() || failure()
@@ -84,7 +83,7 @@ jobs:
         id: prune
         run: |
           docker buildx prune -af
-      
+
       - name: Start services
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -100,7 +99,7 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-      
+
       - name: Log status
         if: success() || failure()
         run: |
@@ -110,8 +109,8 @@ jobs:
           echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
           DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
           echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
-      
-      - name: Logs 
+
+      - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -131,8 +130,8 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-  
-      - name: Logs 
+
+      - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -175,13 +174,13 @@ jobs:
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
           sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
-      
+
       - name: Restart d2e services
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions start
-      
+
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
@@ -201,13 +200,13 @@ jobs:
           npm test
 
       - name: Upload Error Context
-        if: always()  # Always run, even if the previous step fails
+        if: always() # Always run, even if the previous step fails
         uses: actions/upload-artifact@v4
         with:
           name: error-context
           path: tests/e2e/test-results/**/*
 
-      - name: Logs 
+      - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -216,9 +215,9 @@ jobs:
         if: always()
         uses: ctrf-io/github-test-reporter@v1
         with:
-          report-path: './tests/e2e/ctrf/*.json'
+          report-path: "./tests/e2e/ctrf/*.json"
           file-report: true
-        
+
       - name: Stop d2e services
         if: success() || failure()
         id: stop

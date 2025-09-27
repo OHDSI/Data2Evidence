@@ -15,7 +15,7 @@ jobs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
       - id: shuffle
-        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   test-alp-portal-frontend:
     needs: [pick_runner]
@@ -25,46 +25,46 @@ jobs:
         working-directory: ./ui
 
     steps:
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@main
-      with:
-        # this might remove tools that are actually needed,
-        # if set to "true" but frees about 6 GB
-        tool-cache: true
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
 
-        # all of these default to true, but feel free to set to
-        # "false" if necessary for your workflow
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: true
-        docker-images: true
-        swap-storage: true
-    - uses: actions/checkout@v4
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+      - uses: actions/checkout@v4
 
-    - uses: dorny/paths-filter@v3
-      id: check_file_changed
-      with:
-        filters: |
-          portal_fe_changed:
-            - 'apps/portal/**'
-            - '.github/workflows/ui-alp-portal-test-fe.yml'
+      - uses: dorny/paths-filter@v3
+        id: check_file_changed
+        with:
+          filters: |
+            portal_fe_changed:
+              - 'apps/portal/**'
+              - '.github/workflows/ui-alp-portal-test-fe.yml'
 
-    - name: Setup node if files have changed
-      uses: actions/setup-node@v4
-      if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
-      with:
-        node-version: '18.14.0'
+      - name: Setup node if files have changed
+        uses: actions/setup-node@v4
+        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
+        with:
+          node-version: "18.14.0"
 
-    # Run the step only with "portal_fe_changed" equals "True"
-    - name: Run unit tests if files have changed
-      if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
-      run: |
-        cd libs/portal-plugin
-        yarn --prefer-offline
-        cd ../portal-components
-        yarn --prefer-offline
-        yarn build
-        cd ../../apps/portal
-        yarn --prefer-offline
-        yarn test
+      # Run the step only with "portal_fe_changed" equals "True"
+      - name: Run unit tests if files have changed
+        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
+        run: |
+          cd libs/portal-plugin
+          yarn --prefer-offline
+          cd ../portal-components
+          yarn --prefer-offline
+          yarn build
+          cd ../../apps/portal
+          yarn --prefer-offline
+          yarn test
