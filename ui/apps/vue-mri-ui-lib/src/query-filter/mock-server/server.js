@@ -92,7 +92,7 @@ setupMockRoutes(app)
 
 // Serve static files from PA-Atlas build
 app.use('/mri', express.static(path.join(__dirname, 'static', 'mri')))
-app.use('/concept-sets', express.static(path.join(__dirname, 'static', 'concept-sets')))
+app.use('/resources/concept-sets', express.static(path.join(__dirname, 'static', 'concept-sets')))
 app.use('/js', express.static(path.join(__dirname, 'static', 'mri', 'js')))
 app.use('/css', express.static(path.join(__dirname, 'static', 'mri', 'css')))
 app.use('/img', express.static(path.join(__dirname, 'static', 'mri', 'img')))
