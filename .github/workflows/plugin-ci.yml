@@ -114,12 +114,6 @@ jobs:
           - PKGPATH: ./services/trex/ext/pgwire
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.GIT_BRANCH_NAME }}
-          repository: ${{ env.GIT_REPO_FULL_NAME }}
-          submodules: recursive
-          fetch-depth: 0
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -135,6 +129,12 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: true
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GIT_BRANCH_NAME }}
+          repository: ${{ env.GIT_REPO_FULL_NAME }}
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Use Node.js
         uses: actions/setup-node@v4
