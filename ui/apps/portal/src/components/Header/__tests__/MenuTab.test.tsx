@@ -5,6 +5,12 @@ import "@testing-library/jest-dom/extend-expect";
 import MenuTab from "../MenuTab/MenuTab";
 import { NavLink } from "../../../types";
 
+// Mock the environment
+jest.mock("../../../env", () => ({
+  REACT_APP_IDP_NAME_PROP: "name",
+  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: "http://localhost:3001",
+}));
+
 it("renders correctly", () => {
   const link: NavLink = {
     id: "1",
