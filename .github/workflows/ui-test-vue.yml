@@ -42,6 +42,23 @@ jobs:
       with:
         node-version: '18.14.0'
 
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: true
+
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
     - name: Get yarn cache directory path
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       id: yarn-cache-dir-path
