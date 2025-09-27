@@ -62,6 +62,8 @@ jobs:
       # Run the step only with "portal_fe_changed" equals "True"
       - name: Run unit tests if files have changed
         if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
+        env:
+          REACT_APP_PUBLIC_WEBAPI_PROXY_URL: http://localhost:3001
         run: |
           cd libs/portal-plugin
           yarn --prefer-offline
