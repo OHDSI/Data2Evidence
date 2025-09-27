@@ -124,7 +124,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     const listData =
       tab === tabNames.SELECTED || tab === tabNames.RELATED
         ? fullListData.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-        : fullListData;
+        : fullListData.slice(0, rowsPerPage);
     return listData;
   }, [tab, conceptsResult, page, rowsPerPage, selectedConcepts]);
 
