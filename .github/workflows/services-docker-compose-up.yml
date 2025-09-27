@@ -25,8 +25,17 @@ concurrency:
   cancel-in-progress: true # Cancel in progress jobs of the workflow of the branch
 
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
+
   docker-compose-up:
-    runs-on: ubuntu-latest # Custom runner 4 cpus & 14gb ram
+    needs: [pick_runner]
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     steps:
       - name: Free Disk Space (Ubuntu)

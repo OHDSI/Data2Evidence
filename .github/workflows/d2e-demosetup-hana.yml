@@ -14,8 +14,17 @@ env:
 
 
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
+
   demosetup:
-    runs-on: ubuntu-24.04
+    needs: [pick_runner]
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main

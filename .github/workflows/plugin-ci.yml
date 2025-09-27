@@ -57,21 +57,6 @@ jobs:
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -91,10 +76,18 @@ jobs:
               - "services/trex/ext/**"
               - ".github/workflows/plugin-ci.yml"
               - ".github/workflows/flows-plugin-ci.yml"
+  pick_runner:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=${shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1}" >> "$GITHUB_OUTPUT"
 
   build:
-    runs-on: ubuntu-24.04
-    needs: [check_file_changes]
+    needs: [pick_runner, check_file_changes]
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
 
     strategy:
