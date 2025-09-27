@@ -15,7 +15,7 @@ env:
 
 jobs:
   demosetup:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ shuf -e "ubuntu-22.04" "ubuntu-24.04" | head -n 1 }}
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
