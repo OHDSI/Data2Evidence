@@ -303,3 +303,68 @@ The module is configured through `config/cohort-criteria-config.json`. This file
 - Attribute options
 - UI labels and descriptions
 - Icon mappings
+
+## Mock Server
+
+The Query Filter module includes a mock server for development and testing purposes. The mock server proxies WebAPI requests to an external OHDSI Atlas instance and provides mock responses for testing cohort definitions and concept sets.
+
+### Running the Mock Server
+
+To start the mock server, use the npm script from the vue-mri-ui-lib directory:
+
+```bash
+npm run start:mock
+```
+
+### Environment Variables
+
+The mock server can be configured using the following environment variables:
+
+| Variable     | Description                                           | Default Value                                                 |
+| ------------ | ----------------------------------------------------- | ------------------------------------------------------------- |
+| `WEBAPI_URL` | The base URL of the external OHDSI WebAPI instance    | `http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI` |
+| `SOURCE`     | The vocabulary source key to use for concept searches | `vocab`                                                       |
+| `USE_CACHE`  | Enable/disable response caching (true/false)          | `true`                                                        |
+| `SERVER_URL` | The URL where the mock server will run                | `http://localhost:3131`                                       |
+
+### Usage Examples
+
+**Using a different WebAPI instance:**
+
+```bash
+WEBAPI_URL='https://atlas-demo.ohdsi.org/WebAPI' npm run start:mock
+```
+
+**Using a different vocabulary source:**
+
+```bash
+SOURCE='SYNPUF1K' npm run start:mock
+```
+
+**Combining multiple environment variables:**
+
+```bash
+WEBAPI_URL='https://atlas-demo.ohdsi.org/WebAPI' SOURCE='SYNPUF1K' USE_CACHE='false' npm run start:mock
+```
+
+**Running without cache for development:**
+
+```bash
+USE_CACHE='false' npm run start:mock
+```
+
+### Mock Server Features
+
+- **WebAPI Proxy**: Forwards cohort definition and concept set requests to external Atlas instances
+- **Response Caching**: Improves performance by caching API responses
+- **Request Validation**: Validates input parameters to prevent SSRF attacks
+- **Concept Search**: Supports vocabulary concept search with filtering
+- **Atlas Format Mapping**: Converts between internal and Atlas API formats
+
+The mock server is particularly useful for:
+
+- Development when working offline or with limited connectivity
+- Testing different Atlas instances and vocabulary sources
+- Performance testing with cached responses
+- Integration testing without affecting production Atlas instances
+

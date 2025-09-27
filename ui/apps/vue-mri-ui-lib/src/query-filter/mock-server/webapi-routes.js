@@ -4,10 +4,13 @@ const { default: axios } = require('axios')
 const _ = require('lodash')
 
 const api = axios.create({
-  baseURL: 'https://atlas-demo.ohdsi.org/WebAPI',
+  baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
 })
 
-const SOURCE = 'SYNPUF1K'
+const SOURCE = process.env.SOURCE || 'vocab'
+
+console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI')
+console.log('SOURCE:', SOURCE)
 
 // Predefined endpoint mappings to prevent SSRF
 const ALLOWED_ENDPOINTS = {
