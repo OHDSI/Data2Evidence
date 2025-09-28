@@ -163,7 +163,7 @@ async function createApiResourceScope(resourceId: string, scope: string) {
     if (response.status === 201) {
       logger.info(`Scope '${scope}' created`);
     } else if (response.status === 422) {
-      logger.error(`Scope '${scope}' already exists for resource '${resourceId}'`);
+      logger.info(`Scope '${scope}' already exists for resource '${resourceId}'`);
     } else {
       logger.error(`Error creating scope '${scope}' for resource '${resourceId}': ${response.statusText}`);
     }
