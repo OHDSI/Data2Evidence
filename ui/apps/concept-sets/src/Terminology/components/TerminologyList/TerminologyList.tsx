@@ -61,6 +61,7 @@ interface TerminologyListProps {
     | "CONCEPT_SET"
     | "CONCEPT_SEARCH"
     | "CONCEPT_MULTI_SELECT";
+  isAtlas: boolean;
 }
 
 const mapFilterOptions = (options: {
@@ -92,6 +93,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   isDrawer,
   defaultFilters,
   mode = "CONCEPT_SEARCH",
+  isAtlas,
 }) => {
   const { getText } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -703,11 +705,14 @@ const TerminologyList: FC<TerminologyListProps> = ({
     enablePagination: false, // Use TablePagination instead of built in
     muiTableBodyRowProps: ({ row, staticRowIndex }) => ({
       onClick: () => {
+        if (isAtlas) {
+          return;
+        }
         const terminology = row.original;
         onConceptClick(terminology.conceptId);
       },
       sx: {
-        cursor: "pointer", //you might want to change the cursor too when adding an onClick
+        cursor: isAtlas ? "auto" : "pointer", //you might want to change the cursor too when adding an onClick
         "&.MuiTableRow-root": {
           backgroundColor:
             selectedConceptId === row.original.conceptId
@@ -716,7 +721,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
               ? "#fafafa  !important"
               : "white !important",
           cursor:
-            selectedConceptId === row.original.conceptId ? "auto" : "pointer",
+            selectedConceptId === row.original.conceptId || isAtlas
+              ? "auto"
+              : "pointer",
         },
         "&.MuiTableRow-root:hover": {
           backgroundColor: "#f2f0f1 !important",

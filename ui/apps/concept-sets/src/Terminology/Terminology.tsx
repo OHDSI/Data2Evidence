@@ -54,6 +54,7 @@ export interface TerminologyProps {
     value: string[];
   }[];
   initialSelectedConcepts?: FhirValueSetExpansionContainsWithExt[];
+  isAtlas: boolean;
 }
 
 const WithDrawer = ({
@@ -185,11 +186,13 @@ const TabSection = ({
   changeTab,
   selectedConceptsCount,
   mode,
+  isAtlas,
 }: {
   currentTabNo: TabName;
   changeTab(tabName: TabName): void;
   selectedConceptsCount: number;
   mode?: string;
+  isAtlas: boolean;
 }) => {
   const { getText } = useTranslation();
   const tabWidthPx = 220;
@@ -205,8 +208,23 @@ const TabSection = ({
       ];
     }
     if (mode === "CONCEPT_SET") {
+      if (isAtlas) {
+        return [
+          {
+            name: tabNames.SEARCH,
+            label: getText(i18nKeys.TERMINOLOGY__SEARCH),
+          },
+          {
+            name: tabNames.SELECTED,
+            label: getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS),
+          },
+        ];
+      }
       return [
-        { name: tabNames.SEARCH, label: getText(i18nKeys.TERMINOLOGY__SEARCH) },
+        {
+          name: tabNames.SEARCH,
+          label: getText(i18nKeys.TERMINOLOGY__SEARCH),
+        },
         {
           name: tabNames.SELECTED,
           label: getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS),
@@ -302,6 +320,7 @@ export const Terminology: FC<TerminologyProps> = ({
   selectedDatasetId,
   defaultFilters,
   initialSelectedConcepts,
+  isAtlas,
 }: TerminologyProps) => {
   const { getText } = useTranslation();
   const [conceptId, setConceptId] = useState<null | number>(null);
@@ -315,8 +334,9 @@ export const Terminology: FC<TerminologyProps> = ({
   const [conceptSetShared, setConceptSetShared] = useState(false);
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
-  const [currentConceptSet, setCurrentConceptSet] =
-    useState<ConceptSet | null>(null);
+  const [currentConceptSet, setCurrentConceptSet] = useState<ConceptSet | null>(
+    null
+  );
   const [conceptsResult, setConceptsResult] =
     useState<TerminologyResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -725,6 +745,7 @@ export const Terminology: FC<TerminologyProps> = ({
               changeTab={changeTab}
               selectedConceptsCount={selectedConcepts.length}
               mode={mode}
+              isAtlas={isAtlas}
             />
           ) : null}
           {getDomainContextMessage() && (
@@ -767,6 +788,7 @@ export const Terminology: FC<TerminologyProps> = ({
                   isDrawer={isDrawer}
                   defaultFilters={defaultFilters}
                   mode={mode}
+                  isAtlas={isAtlas}
                 />
               )}
             </div>

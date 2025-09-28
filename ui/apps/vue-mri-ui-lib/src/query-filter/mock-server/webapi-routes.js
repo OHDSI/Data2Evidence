@@ -7,7 +7,7 @@ const api = axios.create({
   baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
 })
 
-const SOURCE = process.env.SOURCE || 'vocab'
+const SOURCE = process.env.SOURCE || 'EUNOMIA'
 
 console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI')
 console.log('SOURCE:', SOURCE)
