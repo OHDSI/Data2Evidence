@@ -424,6 +424,7 @@ export default {
     adjustDropdownHeight() {
       const trigger = this.$refs.multiselect?.$el
       const dropdown = trigger?.querySelector('.multiselect__content-wrapper')
+      const content = dropdown?.querySelector('.multiselect__content')
 
       if (trigger && dropdown) {
         const rect = trigger.getBoundingClientRect()
@@ -432,7 +433,16 @@ export default {
 
         // Only apply min-height if there's limited space below
         if (spaceBelow < 300) {
+          if (content) {
+            // Get the actual content height
+            const contentHeight = content.scrollHeight
+
+            // Use the smaller of actual content height or 200px
+            const minHeight = Math.min(contentHeight, 200)
+            dropdown.style.minHeight = `${minHeight}px`
+          } else {
           dropdown.style.minHeight = '200px'
+          }
         } else {
           dropdown.style.minHeight = 'auto'
         }
