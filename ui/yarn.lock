@@ -14283,6 +14283,11 @@ cookie@^0.4.2:
   resolved "https://registry.npmjs.org/cookie/-/cookie-0.4.2.tgz"
   integrity sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==
 
+cookie@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/cookie/-/cookie-1.0.2.tgz#27360701532116bd3f1f9416929d176afe1e4610"
+  integrity sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA==
+
 copy-anything@^2.0.1:
   version "2.0.6"
   resolved "https://registry.npmjs.org/copy-anything/-/copy-anything-2.0.6.tgz"
@@ -20077,6 +20082,13 @@ import-local@^3.0.2, import-local@^3.1.0:
   dependencies:
     pkg-dir "^4.2.0"
     resolve-cwd "^3.0.0"
+
+import-map-overrides@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/import-map-overrides/-/import-map-overrides-6.1.0.tgz#8de4f85e9136f059053590f91d73a6cad991e658"
+  integrity sha512-RgrnojVe/aEMW9SauUQizSbjt80Xf5clkmbFo0p6h/0igAI6WAb25d3OhHGDJNdppUHEeHpPEimYP1liDSZn+A==
+  dependencies:
+    cookie "^1.0.2"
 
 imurmurhash@^0.1.4:
   version "0.1.4"

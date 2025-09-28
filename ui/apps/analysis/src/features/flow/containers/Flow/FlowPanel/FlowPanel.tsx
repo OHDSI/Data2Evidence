@@ -381,17 +381,10 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const targetType = getHandleType(connection.targetHandle);
       const isValidType = sourceType === targetType;
 
-      // Restrict cohort_node to only one outgoing connection
-      const sourceNode = nodes.find((n) => n.id === source);
-      const hasExistingOutgoing = edges.some((e) => e.source === source);
-      const cohortHasSingleConnection =
-        sourceNode?.type === "cohort_node" ? !hasExistingOutgoing : true;
-
       return (
         isDifferentNode &&
         !isCircular(routes, source, target) &&
-        isValidType &&
-        cohortHasSingleConnection
+        isValidType
       );
     },
     [edges, nodes]

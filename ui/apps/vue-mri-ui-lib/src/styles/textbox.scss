@@ -1,11 +1,10 @@
-@import './mri-variables';
 @mixin placeholderStyle {
-  color: $UiLightText;
+  color: var(--color-ui-light-text);
   font-style: italic;
 }
 
 @mixin placeholderStyleDisabled {
-  color: $MriDisabledText;
+  color: var(--color-mri-disabled-text);
   font-style: italic;
 }
 

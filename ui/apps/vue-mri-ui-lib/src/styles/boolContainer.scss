@@ -1,8 +1,7 @@
-@import './mri-variables';
 .boolContainer {
   .btn-boolean-toggle {
-    background-color: $ToggleButtonDarkBG;
-    color: $MriLightestText;
+    background-color: var(--color-toggle-button-dark-bg);
+    color: var(--color-mri-lightest-text);
     margin: 0 10px;
     font-size: 10px;
     .app-icon {

@@ -236,11 +236,11 @@
       transition: all 0.2s ease;
 
       &.btn-primary {
-        background-color: #000080;
+        background-color: var(--color-primary);
         color: #fff;
 
         &:hover:not(:disabled) {
-          background-color: rgb(0, 0, 89);
+          background-color: var(--color-primary-light);
         }
 
         &:disabled {
@@ -285,8 +285,8 @@
 
       &.btn-outline-primary {
         background-color: transparent;
-        color: #000080;
-        border: 1px solid #000080;
+        color: var(--color-primary);
+        border: 1px solid var(--color-primary);
 
         &:hover {
           background-color: rgba(0, 0, 128, 0.04);
