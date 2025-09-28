@@ -1,6 +1,24 @@
 import { post, get } from './request-util.ts';
 import { env, logger } from '../env.ts';
 
+
+interface Scope {
+  "tenantId": "string",
+  "id": "string",
+  "resourceId": "string",
+  "name": "string",
+  "description": "string",
+}
+
+
+interface ResourceType {
+  id: string;
+  name: string;
+  type: string;
+  scopes: Scope[];
+}
+
+let cachedResources: ResourceType[] | null = null;
 /**
  * Create a role in Logto via POST /api/roles
  * @param roleName The name of the role to create
@@ -21,18 +39,14 @@ export async function createLogtoRole(roleName: string) {
   const url = `${logtoBaseUrl}/api/roles`;
   const headers = await getHeaders();
 
-  const existingRoles = await get(url, { headers });
-  // logger.info(`Fetched roles: ${JSON.stringify(existingRoles.data)}`);
+  const existingRoles = await get(url, { headers, timeout: 30000 });
   const role = existingRoles.data.find(role => role.name === roleName);
   if(role) {
-    logger.info(`Role '${roleName}' already exists`);
-    return { status: 200, data: { id: role.id } };
+    return { status: 422, data: { id: role.id } };
   }
 
-  // logger.error(JSON.stringify(headers));
-  // logger.error(JSON.stringify(url));
   try {
-    const response = await post(url, payload, { headers });
+    const response = await post(url, payload, { headers, timeout: 30000 });
     return response;
   } catch (err) {
     logger.error(`Error calling Logto API for role '${roleName}': ${err}`);
@@ -48,72 +62,95 @@ interface ScopeConfig {
 }
 export async function createLogtoApisAndScopes(scopes: ScopeConfig[]) {
   // remove start ^ and end $ from each scope
-  const cleanedScopes = scopes.map(scope => ({
+  let cleanedScopes = scopes.map(scope => ({
     ...scope,
     path: scope.path.replace(/^\^/, '').replace(/\$$/, '')
   }));
 
+  // cleanedScopes = cleanedScopes.slice(0, 10);
   // Call Logto API to create each scope
-  const results = await Promise.all(cleanedScopes.map(async scope => {
+  cleanedScopes.forEach(async scope => {
     try {
-      const apiResource: ({ id, name, scopes } | null) = await getApiResource(scope.path)
+      const url = `${env.LOGTO__ADMIN_SERVER__FQDN_URL}/api/resources`;
+      const headers = await getHeaders();
+
+      const payload = {
+        name: scope.path, // API resource name
+        indicator: `https://D2E__DUMMY_URL${scope.path}`
+      };
+
+      // Check if resource already exists
+      let apiResource = await getApiResource(scope.path);
       if (!apiResource) {
-        const url = `${env.LOGTO__ADMIN_SERVER__FQDN_URL}/api/resources`;
-        const headers = await getHeaders();
-
-        const payload = {
-          name: scope.path, // API resource name
-          indicator: `https://D2E__DUMMY_URL${scope.path}`
-        };
-
         // create resource
-        const response = await post(url, payload, { headers });
+        let response = await post(url, payload, { headers, timeout: 30000 });
+        if (response.status != 201) {
+          logger.error(`Error creating resource '${scope.path}': ${response.statusText}`);
+          return null;
+        } 
         logger.info(`Created resource '${scope.path}': ${response.statusText}`);
-
-        // create scopes
-        logger.info(`Created resource '${scope.path}': ${response.statusText}`);
-        const { id: resourceId } = await response.data;
-        const scopeUrl = `${env.LOGTO__ADMIN_SERVER__FQDN_URL}/api/resources/${resourceId}/scopes`;
-        // Await all child scope creations
-        return await Promise.all(scope.scopes.map(async (s) => await createApiResourceScope(resourceId, s)));
+        apiResource = response.data;
       }
 
       // check API scopes in apiResource.scopes and scope.scopes
-      const apiScopes = apiResource.scopes;
-      const missingScopes = scope.scopes.filter(s => !(apiScopes.findIndex(apiScope => apiScope.name === s) >= 0));
-      logger.info(`Missing scopes for API resource '${apiResource.id}': ${missingScopes.join(', ')}`);
+      const existingScopes = apiResource?.scopes || [];
+      logger.debug(`Existing scopes for API resource '${apiResource?.name}': ${JSON.stringify(existingScopes)}`);
+      const missingScopes = scope.scopes.filter(s => !(existingScopes.findIndex(apiScope => apiScope.name === s) >= 0));
+      logger.debug(`Missing scopes for API resource '${apiResource?.name}': ${missingScopes.join(', ')}`);
 
       // create missing scopes
-      return await Promise.all(missingScopes.map(async (s) => await createApiResourceScope(apiResource.id, s)));
+      await Promise.all(missingScopes.map(async (s) => await createApiResourceScope(apiResource?.id || "", s)));
+      return apiResource?.id;
     } catch (error) {
       logger.error(`Error creating API resource '${scope.path}': ${error}`);
       return null;
     }
-  }));
-  // Flatten results if needed
-  return results.flat();
+  });
 }
 
 async function getApiResource(name: string) {
-  const headers = await getHeaders();
-  const pageSize = 100;
-  const url = `${env.LOGTO__ADMIN_SERVER__FQDN_URL}/api/resources?includeScopes=true&page_size=${pageSize}`;
-  // logger.error(JSON.stringify(headers));
-  // logger.error(JSON.stringify(url));
-  const response = await get(url, { headers });
-  if (response.status != 200 ) throw new Error('Failed to fetch resources');
-  const data = response.data;
-  // logger.info(`Fetched resources: ${JSON.stringify(data)}`);
 
-  const found = data.find(r => r.name === name);
-  logger.info(`API resource lookup for '${name}': ${found ? 'found' : 'not found'}`);
-  if (found) return found;
+  if (cachedResources) {
+    const foundIndex = cachedResources.findIndex(r => r.name === name);
+    if (foundIndex !== -1) return cachedResources[foundIndex];
+  }
+
+  // Fetch all resources (pagination logic as previously planned)
+  cachedResources = await fetchAllResourcesFromApi();
+
+  const foundIndex = cachedResources.findIndex(r => r.name === name);
+  logger.debug(`Total API Resources: ${cachedResources.length}`)
+  logger.info(`API resource lookup for '${name}': ${foundIndex !== -1 ? 'found' : 'not found'}`);
+  if (foundIndex !== -1) return cachedResources[foundIndex];
 
   return null;
 }
 
+async function fetchAllResourcesFromApi(): Promise<ResourceType[]> {
+  const headers = await getHeaders();
+  const pageSize = 100;
+  let page = 1;
+  let url = `${env.LOGTO__ADMIN_SERVER__FQDN_URL}/api/resources?includeScopes=true&page_size=${pageSize}&page=${page}`;
+  let response = await get(url, { headers, timeout: 30000 });
+  if (response.status != 200 ) throw new Error('Failed to fetch resources');
+  let data = response.data;
+  const totalNumber = parseInt(response.headers.get('total-number') || '0');
+  const numPages = Math.ceil(totalNumber / pageSize);
+
+  // Fetch remaining pages if needed
+  for (page = 2; page <= numPages; page++) {
+    url = `${env.LOGTO__ADMIN_SERVER__FQDN_URL}/api/resources?includeScopes=true&page_size=${pageSize}&page=${page}`;
+    const r = await get(url, { headers, timeout: 30000 });
+    if (r.status != 200) throw new Error('Failed to fetch resources');
+    const pageData = r.data;
+    data = data.concat(pageData);
+  }
+  
+  return data;
+}
+
 async function createApiResourceScope(resourceId: string, scope: string) {
-  logger.info(`Creating scope '${scope}' for resource '${resourceId}'`);
+  if(resourceId == "") return;
   const scopeUrl = `${env.LOGTO__ADMIN_SERVER__FQDN_URL}/api/resources/${resourceId}/scopes`;
   const scopePayload = {
     name: scope,
@@ -122,12 +159,10 @@ async function createApiResourceScope(resourceId: string, scope: string) {
   const headers = await getHeaders();
 
   try {
-    const response = await post(scopeUrl, scopePayload, { headers });
-    logger.info(`Response creating scope '${scope}' for resource '${resourceId}': ${response.status} ${response.statusText}`);
-    if (response.status ) {
-      logger.info(`Scope '${scope}' created: scope is '${JSON.stringify(response.data)}'`);
-    }
-    if (response.status == 422) {
+    const response = await post(scopeUrl, scopePayload, { headers, timeout: 30000 });
+    if (response.status === 201) {
+      logger.info(`Scope '${scope}' created`);
+    } else if (response.status === 422) {
       logger.error(`Scope '${scope}' already exists for resource '${resourceId}'`);
     } else {
       logger.error(`Error creating scope '${scope}' for resource '${resourceId}': ${response.statusText}`);

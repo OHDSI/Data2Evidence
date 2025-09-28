@@ -295,7 +295,7 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
         }
     }
     if(value.roles) {
-        for(const [name, cfg] of Object.entries(value.roles)) {
+		Object.entries(value.roles).forEach(async ([name, cfg]) => {
 			let _name;
 			if(name === "IDP_ALP_SVC_CLIENT_ID")
 				_name = env.IDP_ALP_SVC_CLIENT_ID;
@@ -322,7 +322,7 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
 					logger.error(`Failed to create Logto role '${roleName}': ${err}`);
 				}
 			}
-		}
+		});
     }
     if(value.scopes) {
         global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes);
