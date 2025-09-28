@@ -327,7 +327,7 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
     if(value.scopes) {
         global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes);
 		try {
-			const result = await LogtoAPI.createLogtoApisAndScopes(value.scopes);
+			await LogtoAPI.createLogtoApisAndScopes(value.scopes);
 		} catch (error) {
 			logger.error(`Failed to create Logto APIs and scopes: ${error}`);
 		}
