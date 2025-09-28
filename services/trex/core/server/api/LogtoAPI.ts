@@ -3,11 +3,11 @@ import { env, logger } from '../env.ts';
 
 
 interface Scope {
-  "tenantId": "string",
-  "id": "string",
-  "resourceId": "string",
-  "name": "string",
-  "description": "string",
+  tenantId: string;
+  id: string;
+  resourceId: string;
+  name: string;
+  description: string;
 }
 
 
