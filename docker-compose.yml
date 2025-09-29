@@ -14,7 +14,6 @@ volumes:
   trex:
   demodb-data:
   dicom-sqlite-storage:
-  fhir-binary-1:
   supabase-storage-data:
   hana-data:
 
@@ -83,10 +82,6 @@ services:
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated # Volume for dynamically generated cdw-config duckdb file
-      # GOOGLE_APPLICATION_CREDENTIALS can be set in your .env file
-      # If not present, the credentials volume/secret will not be mounted
-      # Ensure that 'BigQuery Read Session User' role is assigned to the service account
-      - ${GOOGLE_APPLICATION_CREDENTIALS:-/dev/null}:/run/secrets/google-credentials.json:ro
     healthcheck:
       interval: 60s
       retries: 30
@@ -189,7 +184,7 @@ services:
       NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
-      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-credentials.json
+      GOOGLE_APPLICATION_CREDENTIALS: /usr/src/data/google-credentials.json
       PG_ADMIN_PASSWORD: ${PG_ADMIN_PASSWORD}
       PG_WRITE_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_STUDY_RESULTS_READ_PASSWORD: ${PG_STUDY_RESULTS_READ_PASSWORD}
@@ -764,7 +759,6 @@ services:
       alp:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    profiles: [fhir]
 
   supabase-storage:
     container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}

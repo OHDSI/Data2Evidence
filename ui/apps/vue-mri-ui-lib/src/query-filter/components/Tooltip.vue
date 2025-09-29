@@ -113,7 +113,7 @@ const handleMouseLeave = () => {
       display: block;
       
       &:hover {
-        color: #000080;
+        color: var(--color-primary, #000080);
       }
     }
   }

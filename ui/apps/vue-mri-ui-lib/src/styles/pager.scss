@@ -30,14 +30,14 @@
     background-position-x: -100px;
   }
   button.pager-nav:not(.pager-disabled):hover {
-    background-color: $MriButtonHover;
+    background-color: var(--color-mri-button-hover);
     background-position-y: -20px;
   }
   button.current-page-button {
-    background-color: $MriDropDownListItemSelected;
+    background-color: var(--color-mri-dropdown-list-item-selected);
   }
   button.page-button:hover {
-    color: $MriLightestText;
-    background-color: $MriButtonHover;
+    color: var(--color-mri-lightest-text);
+    background-color: var(--color-mri-button-hover);
   }
 }

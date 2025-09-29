@@ -108,7 +108,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 }
 .select-trigger:focus,
 .select-trigger:hover {
-  border-color: #1976d2;
+  border-color: var(--color-primary-light, #1976d2);
 }
 
 /* Placeholder */
