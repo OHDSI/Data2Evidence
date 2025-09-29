@@ -48,7 +48,8 @@ import { CreateUserArtifactTable1729863090719 } from "./migrations/1729863090719
 import { CreateUserArtifactGroupTable1730946830529 } from "./migrations/1730946830529-create-user-artifact-group-table.ts";
 import { CreateUserArtifactSequence1739779063184 } from "./migrations/1739779063184-create-user-artifact-sequence.ts";
 import { SplitUserArtifact1749110029676 } from "./migrations/1749110029676-split-user-artifact.ts";
-import { SplitUserArtifactIntoIndividualRows1753341753010 } from './migrations/1753341753010-split-user-artifact-into-individual-rows.ts';
+import { SplitUserArtifactIntoIndividualRows1753341753010 } from "./migrations/1753341753010-split-user-artifact-into-individual-rows.ts";
+import { AddUniqueNameIndexToConceptSets1759126097000 } from "./migrations/1759126097000-add-unique-name-index-to-concept-sets.ts";
 
 const _env = Deno.env.toObject();
 
@@ -123,7 +124,8 @@ const migrationDataSourceOptions: DataSourceOptions = {
     UpdateDatasetSplitDatamodelColumn17211757718562,
     CreateUserArtifactSequence1739779063184,
     SplitUserArtifact1749110029676,
-    SplitUserArtifactIntoIndividualRows1753341753010
+    SplitUserArtifactIntoIndividualRows1753341753010,
+    AddUniqueNameIndexToConceptSets1759126097000,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);
