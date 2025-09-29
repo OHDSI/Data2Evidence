@@ -12,13 +12,6 @@ class WhiteRabbitAPI(BaseAPI):
         self.logger = get_run_logger()
         self.headers = self.get_options()
 
-    def _get_headers(self):
-        token = self.auth.getClientCredentialToken()
-        return {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
-
     def save_conversion(self, flow_run_id: UUID, file_name: str, file_id: int):
         url = f"{self.url}scan-report/conversion"
 
