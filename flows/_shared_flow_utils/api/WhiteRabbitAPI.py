@@ -10,6 +10,7 @@ class WhiteRabbitAPI(BaseAPI):
         super().__init__()
         self.url = self.get_service_route("whiteRabbit")
         self.logger = get_run_logger()
+        self.auth = OpenIdAPI()
 
     def _get_headers(self):
         token = self.auth.getClientCredentialToken()
