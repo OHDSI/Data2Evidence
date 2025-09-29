@@ -10,7 +10,7 @@ class WhiteRabbitAPI(BaseAPI):
         super().__init__()
         self.url = self.get_service_route("whiteRabbit")
         self.logger = get_run_logger()
-        self.auth = OpenIdAPI()
+        self.headers = self.get_options()
 
     def _get_headers(self):
         token = self.auth.getClientCredentialToken()
@@ -21,10 +21,10 @@ class WhiteRabbitAPI(BaseAPI):
 
     def save_conversion(self, flow_run_id: UUID, file_name: str, file_id: int):
         url = f"{self.url}scan-report/conversion"
-        headers = self._get_headers()
 
         result = requests.post(url,
-                               headers=headers,
+                               headers=self.headers,
+                               verify=self.get_verify_value(),
                                json={'flow_run_id': flow_run_id,
                                      'file_name': file_name,
                                      'file_id': file_id}
