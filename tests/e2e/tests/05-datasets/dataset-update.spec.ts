@@ -19,6 +19,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add dataset' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test_dataset_update')
+  await page.getByTestId('add-study-mde').getByRole('textbox').fill('Test Description')
   await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Dataset Summary')
   await page.getByTestId('dialog').locator('div').filter({ hasText: 'CDM Schema Option' }).nth(4).click()
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()

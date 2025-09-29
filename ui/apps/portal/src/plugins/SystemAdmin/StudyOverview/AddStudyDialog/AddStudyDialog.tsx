@@ -619,6 +619,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         </Box>
         <div>{getText(i18nKeys.ADD_STUDY_DIALOG__DESCRIPTION)}</div>
         <SimpleMDE
+          data-testid="add-study-mde"
           value={formData.description}
           onChange={(value) => handleFormDataChange({ description: value })}
           options={mdeOptions}
