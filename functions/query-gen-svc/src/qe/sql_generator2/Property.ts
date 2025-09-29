@@ -261,6 +261,18 @@ export class Property extends AstElement {
                                             `${textAliasObj.alias}.DESCENDANT_CONCEPT_ID 
                                              = ${descendantsFilterExpression}`)
                     )
+
+                    //Detect if its on the x1 or x2
+                    //If yes, append RIGHT JOIN
+                    //Modify group by to point to the new reference
+                    const groupByNode = queryNode.node.groupBy?.find((groupBy) => groupBy.path === this.node.path);
+                    if(groupByNode) {
+                        this.scopeEntityDef.addTableAlias(
+                        { baseEntity: "@REF", table: attrConfig.placeholderMap["@REF"] },
+                        false,
+                        "RIGHT JOIN"
+                        );
+                    }
                 }
             }
         }
