@@ -150,9 +150,8 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
 RUN rm -f .Renviron
 
 # Copy the Python virtual environment and uv binary from the build stage
-COPY --from=python-dependencies-build --chown=docker:docker /bin/uv /usr/local/bin/uv
-COPY --from=python-dependencies-build --chown=docker:docker /app/python /app/python
-COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/python /app/python
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.venv /app/.venv
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./hades /app/flows/
