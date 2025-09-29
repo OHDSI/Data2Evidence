@@ -1,6 +1,5 @@
-@import './mri-variables';
 label.app-label {
-  color: $UiLightText;
+  color: var(--color-ui-light-text);
 }
 
 label.bookmark {
@@ -12,7 +11,7 @@ label.bookmark {
 }
 
 label.bookmark_list {
-  color: #000080 !important;
+  color: var(--color-primary, #000080) !important;
   font-size: 16px;
   font-weight: 500;
 }

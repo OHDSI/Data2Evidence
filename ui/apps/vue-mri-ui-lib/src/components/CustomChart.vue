@@ -155,7 +155,7 @@ export default {
 }
 
 .error-wrapper {
-  background-color: $MriLightestText;
+  background-color: var(--color-mri-lightest-text);
   border-top: 1px solid #e5e5e5;
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3);
   padding: 6px;

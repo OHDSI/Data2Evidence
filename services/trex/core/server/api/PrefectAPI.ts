@@ -44,6 +44,39 @@ export function transformDBCredentials(
         ? dbCredentials.db_extra.readRole
         : "",
       authMode: dbCredentials.authentication_mode,
+      type: dbCredentials.db_extra.type 
+        ? dbCredentials.db_extra.type 
+        : "",
+      project_id: dbCredentials.db_extra.project_id 
+        ? dbCredentials.db_extra.project_id 
+        : "",
+      private_key_id: dbCredentials.db_extra.private_key_id 
+        ? dbCredentials.db_extra.private_key_id 
+        : "",
+      private_key: dbCredentials.db_extra.private_key 
+        ? dbCredentials.db_extra.private_key 
+        : "",
+      client_email: dbCredentials.db_extra.client_email 
+        ? dbCredentials.db_extra.client_email 
+        : "",
+      client_id: dbCredentials.db_extra.client_id 
+        ? dbCredentials.db_extra.client_id 
+        : "",
+      auth_uri: dbCredentials.db_extra.auth_uri 
+        ? dbCredentials.db_extra.auth_uri 
+        : "",
+      token_uri: dbCredentials.db_extra.token_uri 
+        ? dbCredentials.db_extra.token_uri 
+        : "",
+      auth_provider_x509_cert_url: dbCredentials.db_extra.auth_provider_x509_cert_url 
+        ? dbCredentials.db_extra.auth_provider_x509_cert_url 
+        : "",
+      client_x509_cert_url: dbCredentials.db_extra.client_x509_cert_url 
+        ? dbCredentials.db_extra.client_x509_cert_url 
+        : "",
+      universe_domain: dbCredentials.db_extra.universe_domain 
+        ? dbCredentials.db_extra.universe_domain 
+        : "",
     };
     return transformedCredentials;
   });

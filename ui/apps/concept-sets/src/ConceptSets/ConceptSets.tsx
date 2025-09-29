@@ -280,7 +280,7 @@ export const ConceptSets: FC<ConceptSetsProps> = () => {
                     overflow: "visible",
                     height: "52px",
                     "& .MuiButtonBase-root:not(.Mui-disabled)": {
-                      color: "#000080",
+                      color: "var(--color-primary, #000080)",
                     },
                   }}
                 />

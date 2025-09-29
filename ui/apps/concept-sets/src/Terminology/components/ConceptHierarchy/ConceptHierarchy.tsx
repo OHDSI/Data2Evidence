@@ -140,7 +140,7 @@ const ConceptHierarchy: FC<ConceptHierarchyProps> = ({
           sx={{
             minWidth: "50px",
             borderRadius: "6px",
-            backgroundColor: "#000080",
+            backgroundColor: "var(--color-primary, #000080)",
             color: "white",
             ".MuiSelect-select": {
               padding: "8px 14px",
