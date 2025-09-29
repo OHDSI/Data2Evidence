@@ -195,7 +195,7 @@ class OutcomeDef(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortIncidence = ro.packages.importr('CohortIncidence')
                 rOutcomeDef = rCohortIncidence.createOutcomeDef(
                     id = convert_py_to_R(self.defId), 
@@ -220,7 +220,7 @@ class TimeAtRiskNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortIncidence = ro.packages.importr('CohortIncidence')
                 rTimeAtRisk = rCohortIncidence.createTimeAtRiskDef(
                     id = convert_py_to_R(self.id),
@@ -246,7 +246,7 @@ class CohortIncidenceModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rCohortIncidence = ro.packages.importr('CohortIncidence')
                 rCohortIncidenceModule = rStrategus.CohortIncidenceModule['new']()
@@ -299,7 +299,7 @@ class CharacterizationModuleSpecNode(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rcm = rStrategus.CharacterizationModule['new']()
                 rcmCreateModuleSpec = rcm['createModuleSpecifications']
@@ -329,7 +329,7 @@ class DefaultCovariateSettingsNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rFeatureExtraction = ro.packages.importr('FeatureExtraction')
                 rCovariateSettings = rFeatureExtraction.createDefaultCovariateSettings()
                 return Result(False,  rCovariateSettings, self, task_run_context)
@@ -355,7 +355,7 @@ class CohortDefinitionSharedResource(Node):
 
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortGenerator = ro.packages.importr('CohortGenerator')
                 rCirce = ro.packages.importr('CirceR')
                 rbind = ro.r['rbind']
@@ -396,7 +396,7 @@ class NegativeControlOutcomeCohortSharedResource(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rNcoCohortSet = get_results_by_class_type(_input, NegativeControlCohortSet)
                 rStrategus = ro.packages.importr('Strategus')
                 rcgm = rStrategus.CohortGeneratorModule['new']()
@@ -420,7 +420,7 @@ class CohortGeneratorSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try: 
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = importr('Strategus')
                 rcgModule = rStrategus.CohortGeneratorModule['new']()
                 rCreateModuleSpecifications = rcgModule['createModuleSpecifications']
@@ -450,7 +450,7 @@ class CohortDiagnosticsModuleSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rcdm = rStrategus.CohortDiagnosticsModule['new']()
                 rCreateCohortDiagnosticsModuleSpecifications = rcdm['createModuleSpecifications']
@@ -483,7 +483,7 @@ class CMOutcomes(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
                 self.cohortIds = [cohortDefNode.cohortIds[0] for cohortDefNode in cohortDefNodes]
                 rCohortMethod = ro.packages.importr('CohortMethod')
@@ -515,7 +515,7 @@ class TargetComparatorOutcomes(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rappend = ro.r['append']
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(_input, CohortDefinitionSharedResource)
@@ -557,7 +557,7 @@ class CohortMethodAnalysis(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
@@ -613,7 +613,7 @@ class CohortMethodModuleSpecNode(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCmAnalysisList = []
                 rStrategus = ro.packages.importr('Strategus')
                 rCohortMethodModule = rStrategus.CohortMethodModule['new']()
@@ -664,7 +664,7 @@ class EraCovariateSettings(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateEraCovariateSettings = rSelfControlledCaseSeries.createEraCovariateSettings
                 rCovarPreExp = rCreateEraCovariateSettings(
@@ -696,7 +696,7 @@ class CalendarCovariateSettingsNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateCalendarTimeCovariateSettings = rSelfControlledCaseSeries.createCalendarTimeCovariateSettings
                 rCalendarTimeSettings = rCreateCalendarTimeCovariateSettings(
@@ -719,7 +719,7 @@ class SeasonalityCovariateSettingsNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateSeasonalityCovariateSettings = rSelfControlledCaseSeries.createSeasonalityCovariateSettings
                 rSeasonalitySettings = rCreateSeasonalityCovariateSettings(
@@ -742,7 +742,7 @@ class StudyPopulationArgs(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 data = {}
                 if(self.sccsArgs):
                     rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
@@ -793,7 +793,7 @@ class NegativeControlCohortSet(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortGenerator = ro.packages.importr('CohortGenerator')
                 rSystemFile = ro.r['system.file']
                 rReadCsv = rCohortGenerator.readCsv
@@ -816,7 +816,7 @@ class SCCSAnalysis(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateSccsAnalysis = rSelfControlledCaseSeries.createSccsAnalysis
 
@@ -877,7 +877,7 @@ class SCCSModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rSccsModule = rStrategus.SelfControlledCaseSeriesModule['new']()
                 rCreatSelfControlledCaseSeriesModuleSpecifications = rSccsModule['createModuleSpecifications']
@@ -918,7 +918,7 @@ class PLPModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 studyPopulationResults = get_results_by_class_type(input, StudyPopulationArgs)
                 # filter patientLevelPredictionArgs from StudyPopulationResults (as it contains other args)
                 rPlpPopulationSettings = [r["patientLevelPredictionArgs"] for r in studyPopulationResults if r["patientLevelPredictionArgs"] != None]
@@ -955,7 +955,7 @@ class ExposuresOutcome(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rExposuresOutcomeList = []
                 rCreateExposuresOutcome = rSelfControlledCaseSeries.createExposuresOutcome
@@ -1002,7 +1002,7 @@ class TreatmentPatterns(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 cohortDefinitionNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
                 for cohortDefinition in cohortDefinitionNodes:
@@ -1048,7 +1048,7 @@ class KaplanMeierCMAnalysis(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
@@ -1093,7 +1093,7 @@ class StrategusNode(Node):
     def task(self, nodes, results, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 print('Executing Strategus')
                 rStrategus = ro.packages.importr('Strategus')
                 rParallelLogger = importr('ParallelLogger')
@@ -1157,7 +1157,7 @@ def get_strategus_node(options):
 def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
     with ro.default_converter.context():
         try:
-            set_trex_env_var(USE_TREX_CONNECTION)
+            ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
@@ -1180,8 +1180,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
 
             rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
-
-            print('Strategus execution started...')
             rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
         except Exception as e:
             print('Error: ', e)
@@ -1192,7 +1190,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
 def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
-            set_trex_env_var(USE_TREX_CONNECTION)
+            ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
             results_schema = f'results_{dbSettings["study_id"]}'
             rStrategus = importr('Strategus')
@@ -1253,7 +1251,7 @@ def serialize_result_to_json(result: Result):
     return serialize_to_json(result.data)
 
 def construct_jdbc_url(db_credentials):
-    return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}'
+    return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}?preferQueryMode=simple&autocommit=true'
 
 @flow(name="drop-strategus-results-schema", log_prints=True)
 def drop_strategus_results_schema(dbSettings):
@@ -1273,7 +1271,7 @@ def drop_strategus_results_schema(dbSettings):
 def getRCdmExecutionSettings(settings) -> str:
     with ro.default_converter.context():
         try:
-            set_trex_env_var(USE_TREX_CONNECTION)
+            ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rCohortGenerator = importr('CohortGenerator')
@@ -1285,7 +1283,7 @@ def getRCdmExecutionSettings(settings) -> str:
                 workFolder = settings['workFolder'],
                 resultsFolder = settings['resultsFolder'],
                 minCellCount = 5,
-                maxCores = 8
+                maxCores = 1
             )
             return convert_R_to_py(rParallelLogger.convertSettingsToJson(rExecutionSettings))
         except Exception as e:
