@@ -15,6 +15,12 @@ jest.mock("../../../../../../contexts", () => ({
   }),
 }));
 
+// Mock the environment
+jest.mock("../../../../../../env", () => ({
+  REACT_APP_IDP_NAME_PROP: "name",
+  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: "http://localhost:3001",
+}));
+
 // Mock the terminology API
 jest.mock("../../../../../../axios/terminology", () => {
   const mockGetTerminologies = jest.fn().mockImplementation(() =>

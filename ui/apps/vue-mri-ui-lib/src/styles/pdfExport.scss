@@ -1,9 +1,8 @@
-@import './mri-variables';
 .pdf-dialog {
   padding: 1rem;
   box-sizing: border-box;
   label.app-label {
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
     font-size: 0.875rem;
 
     font-weight: normal;
@@ -18,7 +17,7 @@
     text-align: left;
     padding: 0 0 0 3rem;
     div.app-checkbox-container {
-      background-color: $UiLightestBG;
+      background-color: var(--color-ui-lightest-bg);
       position: absolute;
       left: 0.8125rem;
       top: 0.8125rem;
@@ -27,7 +26,7 @@
       line-height: 1.125rem;
       padding: 0;
       text-align: center;
-      border: solid 0.125rem $MriDropDownBorderLight;
+      border: solid 0.125rem var(--color-mri-dropdown-border-light);
       border-top-left-radius: 0.125rem;
       border-top-right-radius: 0.125rem;
       border-bottom-right-radius: 0.125rem;
@@ -46,9 +45,9 @@
     width: 100%;
   }
   .input-container > input {
-    color: $UiDarkestText;
-    background: $UiLightestBG;
-    border: 1px solid $MriDropDownBorderLight;
+    color: var(--color-ui-darkest-text);
+    background: var(--color-ui-lightest-bg);
+    border: 1px solid var(--color-mri-dropdown-border-light);
     font-size: 0.875rem;
 
     line-height: normal;

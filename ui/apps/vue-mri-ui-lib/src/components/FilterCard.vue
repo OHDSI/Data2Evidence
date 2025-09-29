@@ -54,7 +54,15 @@
           </div>
           <div>
             <!-- filter card context menu -->
-            <bs-dropdown variant="link" size="sm" class="btn-filtercard-menu" no-caret align="right">
+            <bs-dropdown
+              ref="contextMenuDropdown"
+              variant="link"
+              size="sm"
+              class="btn-filtercard-menu"
+              no-caret
+              align="right"
+              @show="onDropdownShow"
+            >
               <template v-slot:button-content>
                 <appIcon
                   icon="menu"
@@ -223,15 +231,7 @@ export default {
     },
     getSplitterWidth: {
       handler(width) {
-        this.dropdownScrollStyle = {
-          width: `${width - 25}px`,
-          maxWidth: '400px',
-          overflowX: 'hidden',
-        }
-        this.dropdownItemStyle = {
-          width: `${width - 25}px`,
-          whiteSpace: 'normal',
-        }
+        this.updateDropdownStyles(width)
       },
       immediate: true,
     },
@@ -503,6 +503,63 @@ export default {
         text: this.getText('MRI_PA_DISABLED_FC_HELP_TEXT'),
       }
     },
+    updateDropdownStyles(width) {
+      const maxHeight = this.calculateDropdownMaxHeight()
+
+      this.dropdownScrollStyle = {
+        width: `${width - 25}px`,
+        maxWidth: '400px',
+        maxHeight: `${maxHeight}px`,
+      }
+      this.dropdownItemStyle = {
+        width: `${width - 25}px`,
+        whiteSpace: 'normal',
+      }
+    },
+    calculateDropdownMaxHeight() {
+      if (!this.$el) {
+        return 400 // fallback
+      }
+
+      // Find the hamburger button (dropdown trigger) instead of using the whole card
+      const dropdownButton = this.$el.querySelector('.btn-filtercard-menu .bs-dropdown__trigger')
+      if (!dropdownButton) {
+        return 400 // fallback if button not found
+      }
+
+      // Find the filters container instead of using viewport
+      const filtersContainer = this.$el.closest('.filters-content')
+      if (!filtersContainer) {
+        return 400 // fallback if container not found
+      }
+
+      const buttonRect = dropdownButton.getBoundingClientRect()
+      const containerRect = filtersContainer.getBoundingClientRect()
+      const padding = 20 // Some padding
+
+      // Replicate bs-dropdown's checkFlipNeeded logic
+      const dropdownRef = this.$refs.contextMenuDropdown?.$el
+      if (!dropdownRef) {
+        return 400 // fallback if dropdown ref not found
+      }
+
+      const triggerRect = dropdownRef.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      const spaceBelow = viewportHeight - triggerRect.bottom
+      const spaceAbove = triggerRect.top
+      const estimatedDropdownHeight = 300
+      const willFlipUp = spaceBelow < estimatedDropdownHeight && spaceAbove > estimatedDropdownHeight
+
+      const availableHeight = willFlipUp
+        ? buttonRect.top - containerRect.top - padding
+        : containerRect.bottom - buttonRect.bottom - padding
+
+      // Ensure minimum height and don't exceed reasonable maximum
+      return Math.max(150, Math.min(availableHeight, 500))
+    },
+    onDropdownShow() {
+      this.updateDropdownStyles(this.getSplitterWidth)
+    },
   },
   components: {
     messageBox,
@@ -526,6 +583,6 @@ export default {
 
 <style scoped>
 .filter-card-badge {
-  color: #000080 !important;
+  color: var(--color-primary, #000080)!important;
 }
 </style>

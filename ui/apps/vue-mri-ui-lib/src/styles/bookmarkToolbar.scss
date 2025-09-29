@@ -1,4 +1,3 @@
-@import './mri-variables';
 .bookmarkToolbar-main-container {
   .div-reset-text {
     margin: 24px 24px 24px 24px;
@@ -6,8 +5,8 @@
   .toolbar {
     display: flex;
     align-items: center;
-    background-color: $UiLightBG;
-    border-bottom: 2px solid $UiMediumBorder;
+    background-color: var(--color-ui-light-bg);
+    border-bottom: 2px solid var(--color-ui-medium-border);
     height: 33px;
     .spacer {
       flex-basis: auto;
@@ -16,7 +15,7 @@
     }
   }
   .actionButton {
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
     outline: none;
     background: none;
     border: none;
@@ -31,7 +30,7 @@
     cursor: default;
   }
   .actionButton:hover {
-    background-color: $MriBrandHover;
+    background-color: var(--color-mri-brand-hover);
     color: #ffffff;
   }
   .actionButton.actionButtonDisabled:hover {
@@ -71,7 +70,7 @@
     flex-shrink: 1;
   }
   button.actionButton:focus {
-    outline: 1px dotted $UiFocus;
+    outline: 1px dotted var(--color-focus);
   }
   button.actionButton:disabled:focus {
     outline: none;

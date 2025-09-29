@@ -1,4 +1,3 @@
-@import './mri-variables';
 div.app-tab-button {
   .app-list {
     padding-left: 0px;
@@ -15,9 +14,9 @@ div.app-tab-button {
     padding-right: 1rem;
     text-align: center;
     text-shadow: none;
-    color: $SegmentedButtonText;
+    color: var(--color-segmented-button-text);
     border-bottom: 1px solid #dedede;
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     list-style: none;
     text-overflow: ellipsis;
     display: inline-block;
@@ -25,11 +24,11 @@ div.app-tab-button {
 
   .app-listItem.app-listItemSelected {
     border: none;
-    border-bottom: 5px solid $MriButtonHover;
+    border-bottom: 5px solid var(--color-mri-button-hover);
   }
 
   .app-listItem.disabled {
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
   }
 }
 
