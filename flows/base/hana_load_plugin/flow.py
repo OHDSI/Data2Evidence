@@ -1,14 +1,15 @@
-import pandas as pd
-from sqlalchemy import text
-from zipfile import ZipFile
 import requests
+import pandas as pd
 from pathlib import Path
 from shutil import rmtree
+from sqlalchemy import text
+from zipfile import ZipFile
+from functools import partial
+
+from prefect import flow, task, get_run_logger
+
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-from prefect import flow, task, get_run_logger
-from time import sleep
-from functools import partial
 
 from .types import DataloadOptions
 from .constants import (
@@ -29,6 +30,7 @@ def hana_load_plugin(options: DataloadOptions):
     database_code = options.database_code
     use_cache_db = options.use_cache_db
     schema = options.schema_name
+    results_schema = options.results_schema
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
     # Download dataset if zip is missing
@@ -54,6 +56,8 @@ def hana_load_plugin(options: DataloadOptions):
         )]
     )
     create_datamodel_wo(schema, dbdao, folder)
+
+    create_results_tables_parent_task(dbdao, results_schema, schema)
 
 #task
 @task(log_prints=True)

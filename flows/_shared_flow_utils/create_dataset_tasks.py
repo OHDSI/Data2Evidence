@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import os
+from re import match
+from sqlalchemy import text
+from string import Template
 from typing import TYPE_CHECKING
 
 from prefect import task
@@ -129,3 +132,52 @@ def drop_schema_hook(task, task_run, state, dbdao: DaoBase, schema: str):
         raise
     else:
         logger.info(f"Successfully dropped schema '{dbdao.database_code}.{schema}'")
+
+
+@task(log_prints=True,
+      task_run_name="create_results_tables_parent_task-{results_schema_name}")
+def create_results_tables_parent_task(dbdao: DaoBase, results_schema_name: str, vocab_schema_name: str):
+    logger = get_run_logger()
+    logger.info(f"Creating results schema '{results_schema_name}'..")
+    schema_params = {
+        "RESULTS_SCHEMA": results_schema_name,
+        "VOCAB_SCHEMA": vocab_schema_name,
+    }
+
+    for k, v in schema_params.items():
+        if not is_safe_schema_name(v):
+            raise ValueError(f"Unsafe schema name: {v}")
+
+    migration_script_filepath = f"_shared_flow_utils/sql_scripts/{dbdao.dialect}/results_schema.sql"
+
+    with open(migration_script_filepath, "r") as f:
+        sql_template = Template(f.read())
+
+    # Use safe_substitute because of 'US$' in sql script
+    sql_script = sql_template.safe_substitute(schema_params)
+
+    create_results_tables(sql_script, dbdao)
+    
+    logger.info(f"Successfully created results schema tables for '{results_schema_name}'!")
+    
+    # Todo: Update roles assignment for hana
+    if dbdao.dialect == SupportedDatabaseDialects.POSTGRES:
+        create_and_assign_roles_task(dbdao, results_schema_name)
+
+
+@task(log_prints=True)
+def create_results_tables(sql_script: str, dbdao):
+    if dbdao.dialect == SupportedDatabaseDialects.TREX:
+        dbdao.execute_sql(sql_script)
+    else:
+        with dbdao.engine.begin() as conn:
+            try:
+                for statement in sql_script.strip().split(";"):
+                    if statement.strip():
+                        conn.execute(text(statement))
+            finally:
+                conn.commit()
+                conn.close()
+
+def is_safe_schema_name(schema: str) -> bool:
+    return match(r"^[a-zA-Z][a-zA-Z0-9_]*$", schema) is not None

@@ -25,6 +25,7 @@ class OmopCDMPluginOptions(BaseModel):
     database_code: str
     data_model: Optional[str] = None # omop5-3, omop5-4
     schema_name: Optional[str] = None
+    results_schema: Optional[str] = None
     vocab_schema: Optional[str] = None
     datasets: Optional[List] = None
 

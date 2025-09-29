@@ -45,11 +45,16 @@
                   "schema_name": {
                     "title": "Schema Name",
                     "type": "string"
+                  },
+                  "results_schema": {
+                    "title": "Results Schema",
+                    "type": "string"
                   }
                 },
                 "required": [
                   "database_code",
-                  "schema_name"
+                  "schema_name",
+                  "results_schema"
                 ],
                 "title": "DataloadOptions",
                 "type": "object"
@@ -409,6 +414,10 @@
                     "title": "Vocabschemaname",
                     "type": "string"
                   },
+                  "resultsSchemaName": {
+                    "title": "Resultsschemaname",
+                    "type": "string"
+                  },
                   "releaseDate": {
                     "title": "Releasedate",
                     "type": "string"
@@ -471,6 +480,7 @@
                   "databaseCode",
                   "cdmVersionNumber",
                   "vocabSchemaName",
+                  "resultsSchemaName",
                   "releaseDate"
                 ],
                 "title": "DqdOptionsType",
@@ -542,6 +552,18 @@
                     ],
                     "default": null,
                     "title": "Schema Name"
+                  },
+                  "results_schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Results Schema"
                   },
                   "vocab_schema": {
                     "anyOf": [
