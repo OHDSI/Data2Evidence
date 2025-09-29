@@ -115,11 +115,11 @@ async function getApiResource(name: string) {
     if (foundIndex !== -1) return cachedResources[foundIndex];
   }
 
-  // Fetch all resources (pagination logic as previously planned)
+  // Fetch all resources
   cachedResources = await fetchAllResourcesFromApi();
 
   const foundIndex = cachedResources.findIndex(r => r.name === name);
-  logger.debug(`Total API Resources: ${cachedResources.length}`)
+  // logger.debug(`Total API Resources: ${cachedResources.length}`)
   logger.info(`API resource lookup for '${name}': ${foundIndex !== -1 ? 'found' : 'not found'}`);
   if (foundIndex !== -1) return cachedResources[foundIndex];
 
