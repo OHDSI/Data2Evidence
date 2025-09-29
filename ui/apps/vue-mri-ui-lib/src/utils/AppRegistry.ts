@@ -7,6 +7,15 @@ function setupImportMaps() {
   try {
     const { apps } = getNavigationConfig()
 
+    let overrides = {}
+    if (window.importMapOverrides) {
+      try {
+        overrides = window.importMapOverrides.getOverrideMap().imports || {}
+      } catch (e) {
+        console.log('No existing overrides found')
+      }
+    }
+
     const existingImportMap = document.querySelector('script[type="systemjs-importmap"]')
     const importMapData = existingImportMap
       ? JSON.parse(existingImportMap.textContent || '{"imports":{}}')
@@ -15,7 +24,7 @@ function setupImportMaps() {
     apps.forEach((item: any) => {
       if (item.appName && item.importUrl) {
         console.log(`Adding ${item.appName} to import map`)
-        importMapData.imports[item.appName] = item.importUrl
+        importMapData.imports[item.appName] = overrides[item.appName] || item.importUrl
       }
     })
 
