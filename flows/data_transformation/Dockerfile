@@ -86,6 +86,7 @@ COPY --chown=docker:docker ./drivers /app/inst/drivers/
 # Create folders and set ownership
 RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
     && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop \
+    && chmod 711 -R /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
     && chown docker:alp /app/duckdb_data
 
 
@@ -110,8 +111,7 @@ RUN uv pip install --upgrade "pip<24" \
     && uv pip install spacy-transformers==1.3.9 \
     && uv pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz \
     && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings \
-    && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl" \
-    && python -c "import spacy; med7 = spacy.load('en_core_med7_trf')"
+    && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl"
 
 
 WORKDIR /app
