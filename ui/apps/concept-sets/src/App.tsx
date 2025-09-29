@@ -10,7 +10,7 @@ import { parseJwtToken } from "./utils/jwt";
 import { ConceptSets } from "./ConceptSets/ConceptSets";
 import { TerminologyWithEventListener } from "./Terminology/TerminologyWithEventListener";
 import { setTokenGetter } from "./axios/request";
-import { theme } from "./theme/theme";
+import { theme_d2e, theme_atlas } from "./theme/theme";
 import "./webcomponents/registerWebComponents";
 
 function AppContent(props: PortalProps) {
@@ -89,6 +89,7 @@ function AppContent(props: PortalProps) {
 }
 
 export default function App(props: PortalProps) {
+  const theme = props.isAtlas ? theme_atlas : theme_d2e;
   return (
     <ThemeProvider theme={theme}>
       <ConceptSetsProvider>

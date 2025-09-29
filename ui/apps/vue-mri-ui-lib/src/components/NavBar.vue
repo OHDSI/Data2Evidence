@@ -7,16 +7,8 @@
       <nav class="nav-bar__nav">
         <ul class="nav-bar__nav-list">
           <template v-for="item in navigationItems" :key="item.id">
-            <li
-              v-if="item.visible"
-              class="nav-bar__nav-item"
-              :class="{ 'nav-bar__nav-item--active': item.active }"
-            >
-              <a
-                href="#"
-                class="nav-bar__nav-link"
-                @click.prevent="handleNavClick(item)"
-              >
+            <li v-if="item.visible" class="nav-bar__nav-item" :class="{ 'nav-bar__nav-item--active': item.active }">
+              <a href="#" class="nav-bar__nav-link" @click.prevent="handleNavClick(item)">
                 {{ item.title }}
               </a>
             </li>
@@ -39,52 +31,52 @@ import { navigateToRoute } from '../utils/AppRegistry'
 export default {
   name: 'NavBar',
   data() {
-    const navigationItems = getNavigationItems();
+    const navigationItems = getNavigationItems()
 
     return {
       logoSrc: logoSvg,
       logoOhdsiSrc: logoOhdsiSvg,
-      navigationItems
+      navigationItems,
     }
   },
   mounted() {
-    this.updateActiveNavFromRoute();
-    window.addEventListener('single-spa:routing-event', this.updateActiveNavFromRoute);
+    this.updateActiveNavFromRoute()
+    window.addEventListener('single-spa:routing-event', this.updateActiveNavFromRoute)
   },
   beforeUnmount() {
-    window.removeEventListener('single-spa:routing-event', this.updateActiveNavFromRoute);
+    window.removeEventListener('single-spa:routing-event', this.updateActiveNavFromRoute)
   },
   methods: {
     handleLogoClick() {
-      navigateToRoute('/', { type: 'component', component: 'Landing' });
+      navigateToRoute('/', { type: 'component', component: 'Landing' })
     },
     handleOhdsiClick() {
-      window.open('https://ohdsi.org', '_blank');
+      window.open('https://ohdsi.org', '_blank')
     },
     handleNavClick(item) {
       this.navigationItems.forEach(navItem => {
-        navItem.active = navItem.id === item.id;
-      });
-      
+        navItem.active = navItem.id === item.id
+      })
+
       if (item.type === 'app' && item.route) {
-        navigateToRoute(item.route);
+        navigateToRoute(item.route)
       } else if (item.type === 'component' && item.component) {
-        const route = item.route || '/';
-        navigateToRoute(route, item);
+        const route = item.route || '/'
+        navigateToRoute(route, item)
       } else if (item.route) {
-        navigateToRoute(item.route);
+        navigateToRoute(item.route)
       } else {
-        navigateToRoute('/');
+        navigateToRoute('/')
       }
     },
     updateActiveNavFromRoute() {
-      const currentPath = window.location.pathname;
-      
+      const currentPath = window.location.pathname
+
       this.navigationItems.forEach(item => {
-        item.active = item.route === currentPath;
-      });
-    }
-  }
+        item.active = item.route === currentPath
+      })
+    },
+  },
 }
 </script>
 
@@ -155,7 +147,7 @@ export default {
 }
 
 .nav-bar__nav-item--active::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 0;
   left: 0;

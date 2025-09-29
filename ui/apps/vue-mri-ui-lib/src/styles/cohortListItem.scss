@@ -1,28 +1,26 @@
-@import '../styles/mri-variables';
-
 .cohort-item-container {
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    background-color: $UiLightestBG;
-    border: 1px solid $UiMediumBorder;
-    border-radius: 3px;
-    padding: 5px;
-    overflow-wrap: anywhere;
-    margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background-color: var(--color-ui-lightest-bg);
+  border: 1px solid var(--color-ui-medium-border);
+  border-radius: 3px;
+  padding: 5px;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
 }
 
 .cohort-item-content {
-    font-size: 14;
+  font-size: 14;
 }
 
 .cohort-item-footer {
-    margin-top: 10px;
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
 }
 
 .cohort-item-footer__job_status {
-    font-size: 20px;
+  font-size: 20px;
 }
