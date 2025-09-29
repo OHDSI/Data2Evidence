@@ -28194,11 +28194,10 @@ const cdwjsonfhirConfigDuckdb = {
                 "parentInteraction": [
                     "patient.interactions.encounter"
                 ],
-                "parentInteractionLabel": "Encounter Parent",
-                "cohortDefinitionKey": "Condition",
+                "parentInteractionLabel": "parent",
                 "conceptIdentifierType": "",
                 "attributes": {
-                     "enddate": {
+                    "enddate": {
                         "name": [
                             {
                                 "lang": "",
@@ -28290,53 +28289,6 @@ const cdwjsonfhirConfigDuckdb = {
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
-                        "conceptIdentifierType": ""
-                    },
-                    "pid": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Patient id"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "regexp_extract(@COND.patient, '[^/]+$', 0)",
-                        "order": 1,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
                     },
                     "conditioncodedisplay":{
@@ -28556,7 +28508,7 @@ const cdwjsonfhirConfigDuckdb = {
                     }
                 ],
                 "type": "num",
-                "expression": "month(CAST(strptime(json_extract_string(@PATIENT.content, '$.birthDate'), '%Y-%m-%d') as Date))",
+                "expression": "month(CAST(strptime(@PATIENT.birthDate), '%Y-%m-%d') as Date))",
                 "order": 2,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -28597,7 +28549,7 @@ const cdwjsonfhirConfigDuckdb = {
                     }
                 ],
                 "type": "num",
-                "expression": "year(CAST(strptime(json_extract_string(@PATIENT.content, '$.birthDate'), '%Y-%m-%d') as Date))",
+                "expression": "year(CAST(strptime(@PATIENT.birthDate, '%Y-%m-%d') as Date))",
                 "order": 3,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -28638,7 +28590,7 @@ const cdwjsonfhirConfigDuckdb = {
                     }
                 ],
                 "type": "datetime",
-                "expression": "json_extract_string(@PATIENT.content, '$.birthDate')",
+                "expression": "CAST(@PATIENT.birthDate as Date)",
                 "order": 4,
                 "annotations": [
                     "birth_datetime"
@@ -28738,7 +28690,8 @@ const cdwjsonfhirConfigDuckdb = {
                     }
                 ],
                 "type": "num",
-                "expression": "YEAR(CURRENT_DATE) - @PATIENT.\"birthDate\"",
+                
+                "expression": "YEAR(CURRENT_DATE) - YEAR(@PATIENT.birthDate::DATE)",
                 "order": 6,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -28767,7 +28720,7 @@ const cdwjsonfhirConfigDuckdb = {
         },
         "tableMapping": {
             "@COND": "$$SCHEMA$$.\"condition\"",
-            "@COND.PATIENT_ID": "\"patient\"",
+            "@COND.PATIENT_ID": "source[-36:]", // Take last 36 characters which is an UUID
             "@COND.INTERACTION_ID": "\"id\"",
             "@COND.CONDITION_ID": "\"id\"",
             "@COND.PARENT_INTERACT_ID": "\"encounter\"",
@@ -28776,8 +28729,8 @@ const cdwjsonfhirConfigDuckdb = {
             "@COND.INTERACTION_TYPE": "\"id\"",
             "@PATIENT": "$$SCHEMA$$.\"patient\"",
             "@PATIENT.PATIENT_ID": "\"id\"",
-            "@PATIENT.DOD": "\"$.birthDate\"",
-            "@PATIENT.DOB": "\"json_extract_string(@PATIENT.content, '$.birthDate')\""
+            "@PATIENT.DOD": "deathDate",
+            "@PATIENT.DOB": "birthDate",
         },
         "guardedTableMapping": {
             "@PATIENT": "$$SCHEMA$$.\"patient\""
