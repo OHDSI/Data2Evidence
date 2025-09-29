@@ -1251,7 +1251,10 @@ def serialize_result_to_json(result: Result):
     return serialize_to_json(result.data)
 
 def construct_jdbc_url(db_credentials):
-    return f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}?preferQueryMode=simple&autocommit=true'
+    connection_string = f'{getattr(DialectDrivers.jdbc, db_credentials.dialect)}://{db_credentials.host}:{db_credentials.port}/{db_credentials.databaseName}'
+    if USE_TREX_CONNECTION:
+        connection_string += '?preferQueryMode=simple&autocommit=true'
+    return connection_string
 
 @flow(name="drop-strategus-results-schema", log_prints=True)
 def drop_strategus_results_schema(dbSettings):
