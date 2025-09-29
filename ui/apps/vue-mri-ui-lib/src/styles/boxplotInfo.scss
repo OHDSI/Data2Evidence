@@ -1,9 +1,8 @@
-@import './mri-variables';
 .appMriPaChartPopoverBoxplot {
   font-size: 12px;
   .appMriPaChartPopoverContentDimensions {
     margin: 8px 16px 8px;
-    border-bottom: solid 1px $UiLightBorder;
+    border-bottom: solid 1px var(--color-ui-light-border);
     padding-bottom: 8px;
   }
   .appMriPaChartPopoverContentDimension {
@@ -33,7 +32,7 @@
   .appMriPaChartPopoverContentMeasures {
     font-size: 12px;
     margin: 0px 16px 8px 16px;
-    border-bottom: solid 1px $UiLightBorder;
+    border-bottom: solid 1px var(--color-ui-light-border);
     padding-bottom: 8px;
     white-space: normal;
   }

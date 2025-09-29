@@ -1,10 +1,9 @@
-@import './mri-variables';
 div.patientlist-control {
   $cellpadding: 17px;
 
   .divColResizeGripper {
     position: absolute;
-    outline: 1px solid $TableColGripHover;
+    outline: 1px solid var(--color-table-col-grip-hover);
     top: 0px;
     width: 1px;
     height: 100%;
@@ -17,14 +16,14 @@ div.patientlist-control {
     border-collapse: collapse;
 
     .leftborder {
-      border-left: 1px solid $TableRowBorder;
+      border-left: 1px solid var(--color-table-row-border);
     }
     .rightborder {
-      border-right: 1px solid $TableRowBorder;
+      border-right: 1px solid var(--color-table-row-border);
     }
 
     div.cellContainer:nth-child(even) {
-      border-top: 1px solid $TableRowBorder;
+      border-top: 1px solid var(--color-table-row-border);
     }
     div.cellContainer {
       min-height: 32px;
@@ -40,7 +39,7 @@ div.patientlist-control {
     }
     thead {
       font-size: 12px;
-      color: $UiDarkText;
+      color: var(--color-ui-dark-text);
       .app-icon {
         font-size: 8px;
         font-weight: bold;
@@ -48,11 +47,11 @@ div.patientlist-control {
       }
       tr {
         th {
-          background-color: $TableHeaderRowBG;
+          background-color: var(--color-table-header-row-bg);
           height: 32px;
-          border-top: 1px solid $TableRowBorder;
-          border-bottom: 1px solid $TableRowBorder;
-          border-right: 1px solid $TableRowBorder;
+          border-top: 1px solid var(--color-table-row-border);
+          border-bottom: 1px solid var(--color-table-row-border);
+          border-right: 1px solid var(--color-table-row-border);
           box-sizing: border-box;
           font-weight: normal;
 
@@ -105,12 +104,12 @@ div.patientlist-control {
     }
     tbody {
       font-size: 12px;
-      color: $TableBodyColor;
+      color: var(--color-table-body-color);
       tr {
-        background-color: $UiLightestBG;
+        background-color: var(--color-ui-lightest-bg);
       }
       tr:nth-child(odd) {
-        background-color: $TableRowBG;
+        background-color: var(--color-table-row-bg);
       }
       td {
         box-sizing: border-box;
@@ -118,7 +117,7 @@ div.patientlist-control {
           padding-left: $cellpadding;
           padding-right: $cellpadding;
         }
-        border-bottom: 1px solid $TableRowBorder;
+        border-bottom: 1px solid var(--color-table-row-border);
       }
     }
   }

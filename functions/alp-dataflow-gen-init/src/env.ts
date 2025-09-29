@@ -46,18 +46,12 @@ export const env = {
     trex_sql_user: _env.TREX__SQL__USER,
     is_dev_env: _env.PREFECT__LOCAL_DEBUG === "true" || false, // Default to false if not set
     logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
+    fhir_database_code: _env.FHIR_DATABASE_CODE,
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
-
-    // For PyNer flow
-    azure_openai_api_endpoint: _env.AZURE_OPENAI_API_ENDPOINT,
-    azure_openai_api_deployment_name: _env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
-    azure_openai_api_version: _env.AZURE_OPENAI_API_VERSION,
-
-    fhir_database_code: _env.FHIR_DATABASE_CODE,
   },
   SECRETS: {
     // Prefect Secrets

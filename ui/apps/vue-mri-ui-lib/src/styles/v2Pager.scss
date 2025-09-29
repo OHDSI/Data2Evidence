@@ -1,5 +1,5 @@
 .v2-pager-container {
-  color: $UiLightText;
+  color: var(--color-ui-light-text);
   text-align: center;
   button {
     margin: 0 0.3rem;
@@ -12,20 +12,20 @@
     outline: none !important;
   }
   button.pager-disabled {
-    color: $MriExtraLightText;
+    color: var(--color-ui-extra-light-text);
   }
   button.pager-nav {
     padding: 0 8px;
   }
   button.pager-nav:not(.pager-disabled):hover {
-    color: $MriLightestText;
-    background-color: $MriButtonHover;
+    color: var(--color-mri-lightest-text);
+    background-color: var(--color-mri-button-hover);
   }
   button.current-page-button {
     border-bottom: 1px solid;
   }
   button.page-button:hover {
-    color: $MriLightestText;
-    background-color: $MriButtonHover;
+    color: var(--color-mri-lightest-text);
+    background-color: var(--color-mri-button-hover);
   }
 }

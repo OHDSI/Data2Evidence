@@ -3,6 +3,8 @@ library(OhdsiShinyModules)
 library(shiny)
 library(future)
 library(TreatmentPatterns)
+library(CohortSurvival)
+library(readr)
 
 resultsDatabaseSchema <- "$DATABASE_SCHEMA"
 
@@ -24,22 +26,114 @@ tryCatch({
   cat("Database connection failed:", e$message, "\n")
 })
 
-conn <- DatabaseConnector::connect(resultsConnectionDetails)
-treatmentPathways = DatabaseConnector::querySql(conn, paste0("SELECT pathway, freq, index_year, age, sex FROM ", resultsDatabaseSchema, ".tp_treatment_pathways"))
-colnames(treatmentPathways) <- tolower(colnames(treatmentPathways))
-DatabaseConnector::disconnect(conn)
-
+########### Treatment Patterns module ##############################
 patternsModuleUI <- function(id) {
   ns <- NS(id)  # Namespace for the module
   fluidPage(
-    sunburstR::sunburstOutput(ns("sunburst"))  # Use the namespaced ID
+    # Dropdown to choose a dataset or option
+    selectInput(
+      inputId = ns("dataset"),      # namespaced ID
+      label   = "Choose a dataset", # label shown to user
+      choices = NULL
+    ),
+    # Sunburst diagram output
+    sunburstR::sunburstOutput(ns("sunburst"))
   )
 }
 
 patternsModuleServer <- function(id, resultDatabaseSettings, connectionHandler) {
   moduleServer(id, function(input, output, session) {
+    dataset_choices <- reactive({
+      conn <- connectionHandler$getConnection()
+      res <- DatabaseConnector::querySql(
+        conn,
+        paste0(
+          "SELECT DISTINCT DATABASE_ID
+              FROM ", resultsDatabaseSchema, ".tp_metadata"
+        )
+      )
+      return(res$DATABASE_ID)
+    })
+    observeEvent(dataset_choices(), {
+      updateSelectInput(
+        session,
+        inputId = "dataset",
+        choices = dataset_choices(),
+        selected = dataset_choices()[1]
+      )
+    })
+    
     output$sunburst <- sunburstR::renderSunburst({
-      createSunburstPlot(treatmentPathways)  # Render the sunburst plot
+      req(input$dataset)  # Wait for dataset to be selected
+      conn <- connectionHandler$getConnection()
+      tp_data <- DatabaseConnector::querySql(
+          conn,
+          paste0(
+          "SELECT pathway, freq, index_year, age, sex
+              FROM ", resultsDatabaseSchema, ".tp_treatment_pathways
+              WHERE database_id = '", input$dataset, "'"
+          )
+      )
+      colnames(tp_data) <- tolower(colnames(tp_data))
+      createSunburstPlot(tp_data)
+    })
+  })
+}
+
+########### Survival Analysis module ##############################
+survivalModuleUI <- function(id) {
+  ns <- NS(id)  # Namespace for the module
+  fluidPage(
+    # Dropdown to choose a dataset or option
+    selectInput(
+      inputId = ns("dataset"),      # namespaced ID
+      label   = "Choose a dataset", # label shown to user
+      choices = NULL
+    ),
+    # Survival plot output
+    plotOutput(ns("km_plot"))
+  )
+}
+survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) {
+  moduleServer(id, function(input, output, session) {
+    dataset_choices <- reactive({
+      conn <- connectionHandler$getConnection()
+      res <- DatabaseConnector::querySql(
+        conn,
+        paste0(
+          "SELECT DISTINCT DATABASE_ID
+              FROM ", resultsDatabaseSchema, ".cs_survival_results"
+        )
+      )
+      return(res$DATABASE_ID)
+    })
+    observeEvent(dataset_choices(), {
+      updateSelectInput(
+        session,
+        inputId = "dataset",
+        choices = dataset_choices(),
+        selected = dataset_choices()[1]
+      )
+    })
+    output$km_plot <- renderPlot({
+      req(input$dataset)  # Wait for dataset to be selected
+      conn <- connectionHandler$getConnection()
+      cs_data <- DatabaseConnector::querySql(
+        conn,
+        paste0(
+          "SELECT *
+             FROM ", resultsDatabaseSchema, ".cs_survival_results
+            WHERE DATABASE_ID = '", input$dataset, "'"
+        )
+      )
+      colnames(cs_data) <- tolower(colnames(cs_data))
+      # Write to temporary CSV file
+      temp_file <- tempfile(fileext = ".csv")
+      on.exit(unlink(temp_file), add = TRUE)  # Clean up when function exits
+      write_file(cs_data$surv_results, temp_file)
+      # Import using omopgenerics function
+      cs_data <- importSummarisedResult(path = temp_file)
+      plotSurvival(cs_data)
     })
   })
 }
@@ -75,6 +169,20 @@ shinyConfig <- initializeModuleConfig() |>
       shinyModulePackageVersion = NULL,
       moduleUiFunction = patternsModuleUI,
       moduleServerFunction = patternsModuleServer,
+      moduleInfoBoxFile = function(){},
+      moduleIcon = "info",
+      installSource = "CRAN",
+      gitHubRepo = NULL
+    )
+  ) |>
+  addModuleConfig(
+    createModuleConfig(
+      moduleId = 'survival',
+      tabName = "SurvivalAnalysis",
+      shinyModulePackage = NULL,
+      shinyModulePackageVersion = NULL,
+      moduleUiFunction = survivalModuleUI,
+      moduleServerFunction = survivalModuleServer,
       moduleInfoBoxFile = function(){},
       moduleIcon = "info",
       installSource = "CRAN",
