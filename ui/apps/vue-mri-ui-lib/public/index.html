@@ -1,15 +1,18 @@
 <!-- For local development only -->
 <html>
   <head>
+    <title>Atlas</title>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="importmap-type" content="systemjs-importmap" />
+    <link rel="icon" type="image/x-icon" href="favicon-atlas.ico" />
     <script nonce="__NONCE__">
       window.ENV_DATA = __ENV_DATA__
     </script>
     <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
-    <script type="text/javascript" src="authenticate.js"></script>
-    <script type="text/javascript" src="system.min.js"></script>
+    <script type="text/javascript" src="/authenticate.js"></script>
+    <script type="text/javascript" src="/system.min.js"></script>
 
     <% for (key in htmlWebpackPlugin.files.css) { %>
     <link href="<%= htmlWebpackPlugin.files.css[key] %>" rel="stylesheet" />
@@ -23,7 +26,23 @@
     >
       logout
     </button>
-    <div class="vue-main" style="height: 100%"></div>
+
+    <!-- Uncomment the Portal Header when developing without single-spa -->
+    <!-- <div
+      style="
+        width: 100vw;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 0.5px 8px 0 #acaba8;
+      "
+    >
+      <div>PORTAL HEADER</div>
+    </div> -->
+    <div class="vue-main" style="height: calc(100%)"></div>
     <span class="plugin-container"></span>
 
     <script>
@@ -37,6 +56,12 @@
         isLocal: true,
         username: 'admin', // Change to your logto username
         locale: 'en',
+        debug: false,
+
+        // DEMO
+        REACT_APP_PUBLIC_WEBAPI_PROXY_URL: 'http://localhost:3001',
+        REACT_APP_USE_PUBLIC_WEBAPI_PROXY: 'true',
+        REACT_APP_PUBLIC_WEBAPI_DATASOURCE: 'SYNPUF1K',
       }
     </script>
 
@@ -53,5 +78,22 @@
     <% for (key in htmlWebpackPlugin.files.js) { %>
     <script type="text/javascript" src="<%= htmlWebpackPlugin.files.js[key] %>"></script>
     <% } %>
+
+    <script type="text/javascript">
+      ;(function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            ;(c[a].q = c[a].q || []).push(arguments)
+          }
+        t = l.createElement(r)
+        t.async = 1
+        t.src = 'https://www.clarity.ms/tag/' + i
+        y = l.getElementsByTagName(r)[0]
+        y.parentNode.insertBefore(t, y)
+      })(window, document, 'clarity', 'script', 'tc72b4d5f9')
+    </script>
+
+    <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
   </body>
 </html>

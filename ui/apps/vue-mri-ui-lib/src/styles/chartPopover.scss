@@ -1,21 +1,20 @@
-@import './mri-variables';
 .chartPopover {
   position: fixed;
   z-index: 950;
   display: block;
   overflow: visible;
-  background-color: $UiLightestBG;
+  background-color: var(--color-ui-lightest-bg);
   border-radius: 2px;
-  box-shadow: 0 2px 8px transparentize($MriBoxShadow, $MriBoxShadowGlow);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   font-family: Helvetica, Arial, sans-serif;
   width: 190px;
-  border: 1px solid $UiMediumBorder;
+  border: 1px solid var(--color-ui-medium-border);
   .popover-header-container {
     padding: 4px;
     box-sizing: border-box;
     width: 100%;
     box-sizing: border-box;
-    background-color: $UiExtraLightBG;
+    background-color: var(--color-ui-extra-light-bg);
     filter: none;
     background-image: none;
   }

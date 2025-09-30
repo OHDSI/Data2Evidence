@@ -148,13 +148,17 @@
     }
 
     &.is-selected {
-      background: #f0f9ff;
+      background: var(--color-attributes-dropdown-selected-bg, #f0f9ff);
     }
   }
 
   &__checkbox {
     margin: 0;
     cursor: pointer;
+    &:checked {
+      accent-color: var(--color-primary-light);
+      border-color: var(--color-primary);
+    }
   }
 
   &__attribute-content {
@@ -191,7 +195,7 @@
   }
 
   &__close-btn {
-    background: #3b82f6;
+    background: var(--color-primary);
     color: white;
     border: none;
     border-radius: 4px;
@@ -202,7 +206,7 @@
     width: 100%;
 
     &:hover {
-      background: #2563eb;
+      background: var(--color-primary-light);
     }
   }
 }
