@@ -14,9 +14,7 @@ export class PublicWebapiProxyAPI {
 
   constructor() {
     this.baseURL = getPortalAPI()?.REACT_APP_PUBLIC_WEBAPI_PROXY_URL as string;
-    if (!this.baseURL) {
-      throw new Error("No url is set for PublicWebapiProxyAPI");
-    }
+    // Origin url will be used automatically if REACT_APP_PUBLIC_WEBAPI_PROXY_URL is not present
   }
 
   private async getRequestConfig() {

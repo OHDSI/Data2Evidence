@@ -389,20 +389,8 @@ const setupWebapiRoutes = app => {
         cache[cacheKey] = data
       }
       // Map from Atlas API format to the expected format
-      const mappedData = data.map(item => ({
-        concept_class_id: item.CONCEPT_CLASS_ID,
-        concept_code: item.CONCEPT_CODE,
-        concept_id: item.CONCEPT_ID,
-        concept_name: item.CONCEPT_NAME,
-        domain_id: item.DOMAIN_ID,
-        invalid_reason: item.INVALID_REASON,
-        standard_concept: item.STANDARD_CONCEPT,
-        vocabulary_id: item.VOCABULARY_ID,
-        valid_start_date: item.VALID_START_DATE ? new Date(item.VALID_START_DATE).toISOString().split('T')[0] : null,
-        valid_end_date: item.VALID_END_DATE ? new Date(item.VALID_END_DATE).toISOString().split('T')[0] : null,
-      }))
 
-      return res.json(mappedData)
+      return res.json(data)
     } catch (error) {
       console.error('Error searching vocabulary in Atlas API:', error.message)
 
