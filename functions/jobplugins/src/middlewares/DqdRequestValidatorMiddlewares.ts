@@ -4,6 +4,10 @@ import { body, query } from "express-validator";
 export const validateDataQualityFlowRunDto = () => [
   body("datasetId").isUUID().withMessage("datasetId must be a valid UUID"),
   body("comment").optional().isString().withMessage("comment must be a string"),
+  body("resultsSchemaName")
+    .optional()
+    .isString()
+    .withMessage("resultsSchemaName must be a string"),
   body("vocabSchemaName")
     .optional()
     .isString()
