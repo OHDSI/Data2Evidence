@@ -28,10 +28,13 @@ const cache = {}
 // Cache keys
 const CACHE_KEYS = {
   COHORT_DEFINITIONS: 'get_/WebAPI/cohortdefinition/',
+  CONCEPT_SET: id => `get_/d2e-webapi/conceptset/${id}`,
   CONCEPT_SETS: 'get_/d2e-webapi/conceptset',
   COHORT_DEFINITION: id => `get_/d2e-webapi/cohortdefinition/${id}`,
   CONCEPT_SET_EXPRESSION: id => `get_/d2e-webapi/conceptset/${id}/expression`,
   VOCABULARY_SEARCH: (datasetId, query) => `get_/d2e-webapi/vocabulary/${datasetId}/search?query=${query}`,
+  VOCABULARY_SEARCH_POST: (datasetId, body) =>
+    `post_/d2e-webapi/vocabulary/${datasetId}/search/${JSON.stringify(body)}`,
 }
 
 const logRequest = req => {
@@ -248,16 +251,28 @@ const setupWebapiRoutes = app => {
     }
 
     // Map Atlas API format to d2e-webapi format
-    const mappedData = data.map(item => ({
-      id: item.id,
-      name: item.name,
-      createdDate: item.createdDate ? new Date(item.createdDate).toISOString() : undefined,
-      modifiedDate: item.modifiedDate ? new Date(item.modifiedDate).toISOString() : undefined,
-      createdBy: 'admin',
-      modifiedBy: 'admin',
-      shared: item.hasWriteAccess || false,
-      userName: 'current_user',
-    }))
+    const mappedData = data.map(_mapConceptSet)
+    return res.json(mappedData)
+  })
+
+  app.get('/d2e-webapi/conceptset/:conceptSetId', async (req, res) => {
+    const { conceptSetId } = req.params
+    if (!conceptSetId) {
+      return res.status(400).json({ error: 'conceptSetId is required' })
+    }
+
+    const cacheKey = CACHE_KEYS.CONCEPT_SET(conceptSetId)
+    logRequest(req)
+    let data = cache[cacheKey]
+    if (!data || !USE_CACHE) {
+      const endpoint = ALLOWED_ENDPOINTS.conceptset + conceptSetId
+      const response = await api.get(endpoint)
+      data = response.data
+      cache[cacheKey] = data
+    }
+
+    // Map Atlas API format to d2e-webapi format
+    const mappedData = _mapConceptSet(data)
 
     return res.json(mappedData)
   })
@@ -283,6 +298,37 @@ const setupWebapiRoutes = app => {
       const status = error.response?.status || 500
       return res.status(status).json({
         error: 'Failed to create concept set in Atlas API',
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
+
+  app.put('/d2e-webapi/conceptset/:conceptSetId', async (req, res) => {
+    logRequest(req)
+    const { conceptSetId } = req.params
+    if (!conceptSetId) {
+      return res.status(400).json({ error: 'conceptSetId is required' })
+    }
+    try {
+      const cacheKey = CACHE_KEYS.CONCEPT_SET(conceptSetId)
+      // update the concept set - the client will handle adding items separately
+      const endpoint = ALLOWED_ENDPOINTS.conceptset + conceptSetId
+      await api.put(endpoint, req.body)
+      console.log(`Updated concept set with ID: ${conceptSetId}`)
+
+      // Invalidate concept set cache since we updated the concept set
+      delete cache[cacheKey]
+
+      // Return the concept set ID as expected by our client code
+      return res.json(conceptSetId)
+    } catch (error) {
+      console.error('Error updating concept set in Atlas API:', error.message)
+
+      // Forward the error status instead of sending mock data
+      const status = error.response?.status || 500
+      return res.status(status).json({
+        error: 'Failed to update concept set in Atlas API',
         message: error.message,
         timestamp: new Date().toISOString(),
       })
@@ -383,7 +429,42 @@ const setupWebapiRoutes = app => {
     const query = req.body.QUERY
     searchVocab(req, res, datasetId, query)
   })
+
+  // POST /vocabulary/:dataSource/search
+  app.post('/d2e-webapi/vocabulary/:dataSource/search', async (req, res) => {
+    logRequest(req)
+    const { dataSource } = req.params
+    const body = req.body
+    try {
+      const cacheKey = CACHE_KEYS.VOCABULARY_SEARCH_POST(SOURCE, req.body)
+      let data = cache[cacheKey]
+
+      if (!data || !USE_CACHE) {
+        // Call Atlas demo API to search vocabularies with body
+        const response = await api.post(ALLOWED_ENDPOINTS.vocabulary, body)
+        data = response.data
+        cache[cacheKey] = data
+      }
+
+      return res.send(data)
+    } catch (err) {
+      console.error(err)
+      return res.status(err.status).send()
+    }
+  })
 }
 
 module.exports = setupWebapiRoutes
 
+const _mapConceptSet = conceptSet => {
+  return {
+    id: conceptSet.id,
+    name: conceptSet.name,
+    createdDate: conceptSet.createdDate ? new Date(conceptSet.createdDate).toISOString() : undefined,
+    modifiedDate: conceptSet.modifiedDate ? new Date(conceptSet.modifiedDate).toISOString() : undefined,
+    createdBy: { name: 'admin' },
+    modifiedBy: { name: 'admin' },
+    shared: true,
+    userName: 'admin',
+  }
+}

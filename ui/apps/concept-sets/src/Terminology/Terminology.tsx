@@ -417,7 +417,7 @@ export const Terminology: FC<TerminologyProps> = ({
     datasetId: string
   ): Promise<number> => {
     // Update concept set
-    await api.d2eWebapi.updateConceptSet(conceptSetId, conceptSet, datasetId);
+    await api.d2eWebapi.updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, datasetId);
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
@@ -445,7 +445,7 @@ export const Terminology: FC<TerminologyProps> = ({
     setIsConceptSetLoading(true);
     try {
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
+        ? await updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
       setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
