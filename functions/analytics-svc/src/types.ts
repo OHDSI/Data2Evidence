@@ -370,6 +370,7 @@ export interface StudyAnalyticsCredential {
     encrypt: boolean;
     probeSchema: string;
     vocabSchema: string;
+    resultSchema: string;
     dialect: string;
     schema: string;
     max?: number;
