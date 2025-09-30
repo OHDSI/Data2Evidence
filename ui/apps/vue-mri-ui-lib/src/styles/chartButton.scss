@@ -1,6 +1,5 @@
-@import './mri-variables';
 .chartButton {
-  color: $MriHeaderTextDark;
+  color: var(--color-mri-header-text-dark);
   outline: none;
   background: none;
   border: none;
@@ -9,8 +8,8 @@
 }
 
 .chartButton:hover {
-  background-color: $MriButtonHoverDark;
-  color: $MriLightestText;
+  background-color: var(--color-mri-button-hover-dark);
+  color: var(--color-mri-lightest-text);
   height: 30px;
   width: 33px;
   border-radius: 3.1px;
@@ -37,9 +36,9 @@
 
 .chartButtonContainer :hover {
   outline: none;
-  background-color: $MriButtonHoverDark;
+  background-color: var(--color-mri-button-hover-dark);
   .icon {
-    color: $MriLightestText;
+    color: var(--color-mri-lightest-text);
   }
 }
 
@@ -57,9 +56,9 @@
 }
 
 .chartButton.active {
-  background-color: $MriButtonHoverDark;
+  background-color: var(--color-mri-button-hover-dark);
   border-radius: 3.1px;
   .icon {
-    color: $MriLightestText;
+    color: var(--color-mri-lightest-text);
   }
 }

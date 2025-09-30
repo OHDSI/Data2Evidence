@@ -244,9 +244,6 @@ const TabSection = ({
         sx={{
           paddingBottom: 0,
           borderBottom: "1px solid #d4d4d4",
-          "& .MuiTab-root": {
-            color: "#000080",
-          },
         }}
       >
         {availableTabs.map((tab) => (
@@ -265,7 +262,7 @@ const TabSection = ({
                   {selectedConceptsCount ? (
                     <div
                       style={{
-                        backgroundColor: "#000080",
+                        backgroundColor: "var(--color-primary, #000080)",
                         color: "white",
                         minWidth: "20px",
                         height: "20px",
@@ -400,7 +397,7 @@ export const Terminology: FC<TerminologyProps> = ({
     datasetId: string
   ): Promise<number> => {
     // Update concept set
-    await api.d2eWebapi.updateConceptSet(conceptSetId, conceptSet, datasetId);
+    await api.d2eWebapi.updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, datasetId);
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
@@ -428,7 +425,7 @@ export const Terminology: FC<TerminologyProps> = ({
     setIsConceptSetLoading(true);
     try {
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
+        ? await updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
       setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
@@ -666,13 +663,19 @@ export const Terminology: FC<TerminologyProps> = ({
             style={{
               height: "40px",
               width: "100%",
-              backgroundColor: "#edf2f7",
+              backgroundColor: "var(--color-table-row-bg, #edf2f7)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
             }}
           >
-            <div style={{ color: "#000080", marginLeft: 10, fontWeight: 500 }}>
+            <div
+              style={{
+                color: "var(--color-primary, #000080)",
+                marginLeft: 10,
+                fontWeight: 500,
+              }}
+            >
               {isConceptSet
                 ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
                 : isConceptMultiSelect
@@ -681,7 +684,11 @@ export const Terminology: FC<TerminologyProps> = ({
             </div>
 
             <div
-              style={{ color: "#000080", marginRight: 10, cursor: "pointer" }}
+              style={{
+                color: "var(--color-primary, #000080)",
+                marginRight: 10,
+                cursor: "pointer",
+              }}
               onClick={onClickClose}
             >
               x

@@ -59,7 +59,6 @@ const currentQualifyingLimit = computed(() => {
   return currentCriteriaData.value.criteriaType || 'ALL'
 })
 
-
 const addNewGroup = () => {
   const staticCount = currentCriteriaData.value.criteria.length + 1
   const newGroup = {
@@ -106,14 +105,14 @@ const handleGroupRemove = (groupIndex: number) => {
     <div class="criteria-groups-layout">
       <!-- Criteria Groups Sidebar -->
       <div class="criteria-groups-sidebar">
-        <span class="criteria-sidebar-label">ALL</span>
+        <div class="criteria-sidebar-top"></div>
+        <div><span class="criteria-sidebar-label">ALL</span></div>
       </div>
 
       <!-- Criteria Groups Only -->
       <div class="criteria-groups-content">
         <!-- Add Group Button (Outside the sidebar layout) -->
         <div v-if="!readonly" class="add-group-container">
-
           <ButtonMaterial variant="text" color="primary" @button-click="addNewGroup">
             <template #startIcon>
               <AddIcon />
@@ -178,19 +177,13 @@ const handleGroupRemove = (groupIndex: number) => {
     width: 30px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 12px 6px;
-    background: #000080;
-    position: relative;
     border-radius: 0 0 0 8px;
-    &::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--color-primary);
+    .criteria-sidebar-top {
+      background-color: var(--color-primary);
+      width: 30%;
+      height: 100%;
+      border-radius: 0 0 0 6px;
     }
   }
 
@@ -199,7 +192,7 @@ const handleGroupRemove = (groupIndex: number) => {
     text-orientation: sideways;
     font-size: 13px;
     font-weight: 700;
-    color: white;
+    color: var(--color-primary);
     text-transform: uppercase;
     letter-spacing: 1.5px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);

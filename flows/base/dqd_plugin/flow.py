@@ -13,7 +13,7 @@ from .types import DqdOptionsType, DqdParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
-from _shared_flow_utils.rutils import set_trex_env_var, py_bool_to_r
+from _shared_flow_utils.rutils import set_trex_env_var
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMode
 
 os.environ["plugin_name"] = "dqd_plugin"
@@ -76,56 +76,32 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
 
     set_trex_env_string = set_trex_env_var(dqd_params.use_trex_connection)
     logger.debug(f"set_trex_env_string is {set_trex_env_string}")
-
-    r_script = f"""
-        library(DataQualityDashboard)
-
-        {set_trex_env_string}
-        {dqd_params.setDBDriverEnv}
-        {dqd_params.connectionDetails}
-        
-        cdmDatabaseSchema <- '{dqd_params.schemaName}'
-        vocabDatabaseSchema <- '${dqd_params.vocabSchemaName}'
-        resultsDatabaseSchema <- '{dqd_params.schemaName}'
-        cdmSourceName <- '{dqd_params.schemaName}'
-        numThreads <- {dqd_params.numThreads}
-        sqlOnly <- {py_bool_to_r(dqd_params.sqlOnly)}
-        outputFolder <- '{dqd_params.outputFolder}'
-        outputFile <- '{dqd_params.outputFile}'
-        writeToTable <- {py_bool_to_r(dqd_params.writeToTable)}
-        verboseMode <- {py_bool_to_r(dqd_params.verboseMode)}
-        checkLevels <- {dqd_params.checkLevels}
-
-        checkNames <- {dqd_params.checkNamesR}
-        cohortDefinitionId <- {dqd_params.cohortDefinitionIdR}
-        cdmVersion <- '{dqd_params.cdmVersionNumber}'
-        cohortDatabaseSchema <- '{dqd_params.cohortDatabaseSchemaR}'
-        cohortTableName <- '{dqd_params.cohortTableName}'
-
-        # Run executeDqChecks
-        DataQualityDashboard::executeDqChecks(
-            connectionDetails = connectionDetails,
-            cdmDatabaseSchema = cdmDatabaseSchema,
-            resultsDatabaseSchema = resultsDatabaseSchema,
-            cdmSourceName = cdmSourceName,
-            numThreads = numThreads,
-            sqlOnly = sqlOnly,
-            outputFolder = outputFolder,
-            outputFile = outputFile,
-            verboseMode = verboseMode,
-            writeToTable = writeToTable,
-            checkLevels = checkLevels,
-            checkNames = checkNames,
-            cdmVersion = cdmVersion,
-            cohortDefinitionId = cohortDefinitionId,
-            cohortDatabaseSchema = cohortDatabaseSchema,
-            cohortTableName = cohortTableName
-        )
-    """
-
+    r_script_path = os.path.join(os.path.dirname(__file__), "execute_dqd.R")
     with robjects.conversion.localconverter(robjects.default_converter):
-        robjects.r(r_script)
-
+        robjects.r(f"source('{r_script_path}')")
+        r_execute_dqd = robjects.r['execute_dqd']
+        r_execute_dqd(
+            set_trex_env_string=set_trex_env_string,
+            setDBDriverEnv=dqd_params.setDBDriverEnv,
+            connectionDetailsString=dqd_params.connectionDetails,
+            cdmDatabaseSchema = dqd_params.schemaName,
+            vocabDatabaseSchema = dqd_params.vocabSchemaName,
+            resultsDatabaseSchema = dqd_params.schemaName,
+            cdmSourceName = dqd_params.schemaName,
+            numThreads = dqd_params.numThreads,
+            sqlOnly = dqd_params.sqlOnly,
+            outputFolder = dqd_params.outputFolder,
+            outputFile = dqd_params.outputFile,
+            writeToTable = dqd_params.writeToTable,
+            verboseMode = dqd_params.verboseMode,
+            checkLevels = robjects.StrVector(dqd_params.checkLevels),
+            checkNames = robjects.StrVector(dqd_params.checkNames) if dqd_params.checkNames else robjects.NULL,
+            cohortDefinitionId = robjects.StrVector(dqd_params.cohortDefinitionId) if dqd_params.cohortDefinitionId else robjects.NULL,
+            cdmVersion = dqd_params.cdmVersionNumber,
+            cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
+            cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",
+        )   
+        
     # Read the result from the output file
     with open(f"{dqd_params.outputFolder}/{dqd_params.outputFile}", "rt") as f:
         result_data = json.loads(f.read())

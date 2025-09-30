@@ -13,11 +13,7 @@ import {
   MRT_ColumnDef,
   useMaterialReactTable,
 } from "material-react-table";
-import {
-  TablePaginationActions,
-  AddIcon,
-  RemoveIcon,
-} from "@portal/components";
+import { TablePaginationActions } from "@portal/components";
 import { useFeedback, useTranslation } from "../../../hooks";
 import {
   FilterOptions,
@@ -31,7 +27,11 @@ import { tabNames } from "../../utils/constants";
 import SearchBar from "../../../components/SearchBar/SearchBar";
 import { mapd2eWebapiConcept } from "../../utils/d2eWebapiMappers";
 import { i18nKeys } from "../../../context/state";
+import { getPortalAPI } from "../../../utils/PortalUtils";
+
 import "./TerminologyList.scss";
+import AddIcon from "../../../components/icons/AddIcon";
+import RemoveIcon from "../../../components/icons/RemoveIcon";
 
 interface TerminologyListProps {
   userId?: string;
@@ -101,8 +101,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [terminologiesCount, setTerminologiesCount] = useState(0);
   const [searchText, setSearchText] = useState(initialInput);
-  const [filterOptions, setFilterOptions] =
-    useState<FilterOptions | null>(null);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(
+    null
+  );
   const [allFilterOptionsZeroed, setAllFilterOptionsZeroed] =
     useState<FilterOptions>({
       conceptClassId: {},
@@ -165,28 +166,44 @@ const TerminologyList: FC<TerminologyListProps> = ({
             Array.isArray(vocabularyIdFilters) &&
             Array.isArray(standardConceptFilters)
           ) {
-            const [concepts, conceptsCount] = await Promise.all([
-              api.d2eWebapi.getTerminologies(
-                page,
-                rowsPerPage,
-                datasetId,
-                searchText.toLowerCase(),
-                conceptClassIdFilters,
-                domainIdFilters,
-                vocabularyIdFilters,
-                standardConceptFilters,
-                validityFilters
-              ),
-              api.terminology.getConceptsCount(
-                datasetId,
-                searchText.toLowerCase(),
-                conceptClassIdFilters,
-                domainIdFilters,
-                vocabularyIdFilters,
-                standardConceptFilters,
-                validityFilters
-              ),
-            ]);
+            let concepts, conceptsCount;
+            if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+              [concepts, conceptsCount] =
+                await api.publicWebapiProxyAPI.getTerminologies(
+                  page,
+                  rowsPerPage,
+                  getPortalAPI()?.REACT_APP_PUBLIC_WEBAPI_DATASOURCE as string,
+                  searchText.toLowerCase(),
+                  conceptClassIdFilters,
+                  domainIdFilters,
+                  vocabularyIdFilters,
+                  standardConceptFilters,
+                  validityFilters
+                );
+            } else {
+              [concepts, conceptsCount] = await Promise.all([
+                api.d2eWebapi.getTerminologies(
+                  page,
+                  rowsPerPage,
+                  datasetId,
+                  searchText.toLowerCase(),
+                  conceptClassIdFilters,
+                  domainIdFilters,
+                  vocabularyIdFilters,
+                  standardConceptFilters,
+                  validityFilters
+                ),
+                api.terminology.getConceptsCount(
+                  datasetId,
+                  searchText.toLowerCase(),
+                  conceptClassIdFilters,
+                  domainIdFilters,
+                  vocabularyIdFilters,
+                  standardConceptFilters,
+                  validityFilters
+                ),
+              ]);
+            }
             const response = {
               count: conceptsCount,
               data: concepts.map(mapd2eWebapiConcept),
@@ -728,7 +745,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
       sx: {
         whiteSpace: "normal",
         wordWrap: "break-word",
-        color: "#000080",
         border: "none",
       },
     },
@@ -737,7 +753,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiTableHeadCellProps: {
       sx: {
-        backgroundColor: "#edf2f7",
         padding: "6px",
         "& .MuiSelect-select": {
           fontSize: 12,
@@ -750,7 +765,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiCircularProgressProps: {
       sx: {
-        color: "#000080",
+        color: "var(--color-primary, #000080)",
       },
     },
     enableTopToolbar: false,
@@ -785,7 +800,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
           sx={{
             overflow: "visible",
             height: "52px",
-            "& .MuiButtonBase-root:not(.Mui-disabled)": { color: "#000080" },
           }}
         />
       ) : null}

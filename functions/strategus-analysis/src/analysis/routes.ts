@@ -14,6 +14,7 @@ export default class StrategusAnalysisRouter {
     this.router.put("/", this.createStrategusAnalysis.bind(this));
     this.router.get("/:studyId", this.getStrategusAnalysis.bind(this));
     this.router.get("/", this.getAllStrategusAnalysis.bind(this));
+    this.router.post("/code", this.saveStudyAnalysisViewerCode.bind(this));
   }
 
   private async getAllStrategusAnalysis(req: Request, res: Response) {
@@ -70,6 +71,34 @@ export default class StrategusAnalysisRouter {
         analysisSpec,
         mode
       );
+
+      res.status(200).json({
+        message: result.message,
+        analysisId: result.analysisId,
+      });
+    } catch (error) {
+      console.error("Error saving strategus analysis specification:", error);
+      res.status(500).json({
+        message: `An error occurred while saving the analysis specification: ${error.message}`,
+      });
+    }
+  }
+
+  private async saveStudyAnalysisViewerCode(req: Request, res: Response) {
+    try {
+      const { studyId, viewerCode } = req.body;
+
+      if (!studyId || !viewerCode) {
+        return res.status(400).json({
+          message: "Missing required fields: studyId, or viewerCode",
+        });
+      }
+
+      const result =
+        await this.strategusAnalysisService.saveStudyAnalysisViewerCode(
+          studyId,
+          viewerCode
+        );
 
       res.status(200).json({
         message: result.message,
