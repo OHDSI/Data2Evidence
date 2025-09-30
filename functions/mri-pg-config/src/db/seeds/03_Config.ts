@@ -30202,6 +30202,14 @@ const cdwjsonfhirConfigDuckdb = {
                     "time": true,
                     "oneToN": false,
                     "condition": false
+                },
+                {
+                    "placeholder": "@PROC",
+                    "attributeTables": [],
+                    "hierarchy": true,
+                    "time": true,
+                    "oneToN": false,
+                    "condition": false
                 }
             ]
         },
