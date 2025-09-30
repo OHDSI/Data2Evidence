@@ -26,8 +26,22 @@ def create_cachedb_file_plugin(options: CreateCacheOptions):
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
             create_cache_flow(options)
+            if options.results_schema_name:
+                create_results_cache_flow(options)
+
         case CacheFlowAction.GET_VERSION_INFO:
             update_dataset_metadata(options)
+
+
+def update_parameters(options: CreateCacheOptions, 
+                      field: str, new_value: str) -> CreateCacheOptions:
+    # Create a copy of the model with the updated field
+    return options.model_copy(update={field: new_value})
+
+
+def create_results_cache_flow(options: CreateCacheOptions):
+    new_options = update_parameters(options, 'schema_name', options.results_schema_name)
+    create_cache_flow(new_options)
 
 
 def create_cache_flow(options: CreateCacheOptions):
