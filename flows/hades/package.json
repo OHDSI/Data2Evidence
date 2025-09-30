@@ -71,6 +71,10 @@
                     "title": "Schemaname",
                     "type": "string"
                   },
+                  "resultsSchemaName": {
+                    "title": "ResultsSchemaName",
+                    "type": "string"
+                  },
                   "vocabSchemaName": {
                     "title": "Vocabschemaname",
                     "type": "string"
@@ -102,6 +106,7 @@
                 "required": [
                   "databaseCode",
                   "schemaName",
+                  "resultsSchemaName",
                   "vocabSchemaName",
                   "cohortJson",
                   "datasetId",
