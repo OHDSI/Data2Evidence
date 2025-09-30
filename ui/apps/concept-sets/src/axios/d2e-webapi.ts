@@ -6,6 +6,8 @@ import {
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
 } from "../types/terminology";
+import { api } from "./api";
+import { getPortalAPI } from "../utils/PortalUtils";
 
 const D2E_WEBAPI_BASE_URL = "d2e-webapi";
 
@@ -44,45 +46,64 @@ export class D2eWebapi {
 
   // CONCEPT SETS
   public getConceptSets(datasetId: string) {
-    return request<IWebapiConceptSet[]>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset`,
-      method: "GET",
-      headers: { datasetid: datasetId },
-    });
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.getConceptSets();
+    } else {
+      return request<IWebapiConceptSet[]>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset`,
+        method: "GET",
+        headers: { datasetid: datasetId },
+      });
+    }
   }
 
   public getConceptSet(conceptSetId: number, datasetId: string) {
-    return request<IWebapiConceptSet>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}`,
-      method: "GET",
-      headers: { datasetid: datasetId },
-    });
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.getConceptSet(conceptSetId);
+    } else {
+      return request<IWebapiConceptSet>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}`,
+        method: "GET",
+        headers: { datasetid: datasetId },
+      });
+    }
   }
 
   public getConceptSetExpression(conceptSetId: number, datasetId: string) {
-    return request<IWebapiConceptSetExpression>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}/expression?datasetId=${datasetId}`,
-      method: "GET",
-      headers: { datasetid: datasetId },
-    });
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.getConceptSetExpression(conceptSetId);
+    } else {
+      return request<IWebapiConceptSetExpression>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}/expression?datasetId=${datasetId}`,
+        method: "GET",
+        headers: { datasetid: datasetId },
+      });
+    }
   }
 
   public async createConceptSet(
     name: string,
     datasetId: string
   ): Promise<number> {
-    const conceptSet = await request({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset`,
-      method: "POST",
-      headers: { datasetid: datasetId },
-      data: { name },
-    });
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      const conceptSetId = await api.publicWebapiProxyAPI.createConceptSet(
+        name
+      );
+      return conceptSetId;
+    } else {
+      const conceptSet = await request({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset`,
+        method: "POST",
+        headers: { datasetid: datasetId },
+        data: { name },
+      });
 
-    return conceptSet.id;
+      return conceptSet.id;
+    }
   }
 
   public updateConceptSet(
@@ -90,13 +111,20 @@ export class D2eWebapi {
     conceptSet: Partial<ConceptSet>,
     datasetId: string
   ) {
-    return request<number | { statusCode: number }>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}`,
-      method: "PUT",
-      headers: { datasetid: datasetId },
-      data: conceptSet,
-    });
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.updateConceptSet(
+        conceptSetId,
+        conceptSet
+      );
+    } else {
+      return request<number | { statusCode: number }>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}`,
+        method: "PUT",
+        headers: { datasetid: datasetId },
+        data: conceptSet,
+      });
+    }
   }
 
   public updateConceptSetItems(
@@ -104,19 +132,26 @@ export class D2eWebapi {
     conceptSetConcepts: ConceptSetConcept[],
     datasetId: string
   ) {
-    const data = conceptSetConcepts.map((concept) => ({
-      conceptId: concept.id,
-      isExcluded: concept.isExcluded,
-      includeDescendants: concept.useDescendants,
-      includeMapped: concept.useMapped,
-    }));
-    return request<number | { statusCode: number }>({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}/items`,
-      method: "PUT",
-      headers: { datasetid: datasetId },
-      data,
-    });
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.updateConceptSetItems(
+        conceptSetId,
+        conceptSetConcepts
+      );
+    } else {
+      const data = conceptSetConcepts.map((concept) => ({
+        conceptId: concept.id,
+        isExcluded: concept.isExcluded,
+        includeDescendants: concept.useDescendants,
+        includeMapped: concept.useMapped,
+      }));
+      return request<number | { statusCode: number }>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}/items`,
+        method: "PUT",
+        headers: { datasetid: datasetId },
+        data,
+      });
+    }
   }
 }
 
