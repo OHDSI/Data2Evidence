@@ -120,6 +120,18 @@
                     "default": null,
                     "title": "Schemaname"
                   },
+                  "resultsSchemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Ressultsschemaname"
+                  },
                   "tablesToCreateDuckdbFtsIndex": {
                     "anyOf": [
                       {
