@@ -1,20 +1,20 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { request } from "./request";
-import env from "../env";
 import {
   ConceptSet,
   ConceptSetConcept,
   IWebapiConcept,
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
-} from "../plugins/Researcher/Terminology/utils/types";
+} from "../Terminology/utils/types";
+import { getPortalAPI } from "../utils/PortalUtils";
 
 export class PublicWebapiProxyAPI {
   private readonly baseURL: string;
 
   constructor() {
-    this.baseURL = env.REACT_APP_PUBLIC_WEBAPI_PROXY_URL;
-    if (!this.baseURL && env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+    this.baseURL = getPortalAPI()?.REACT_APP_PUBLIC_WEBAPI_PROXY_URL as string;
+    if (!this.baseURL) {
       throw new Error("No url is set for PublicWebapiProxyAPI");
     }
   }
@@ -27,11 +27,16 @@ export class PublicWebapiProxyAPI {
   // Function to map key to uppercase
   mapDcResultKeysToUppercase = (data: unknown[]) => {
     return data.map((obj: any) => {
-      return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k.toUpperCase(), v]));
+      return Object.fromEntries(
+        Object.entries(obj).map(([k, v]) => [k.toUpperCase(), v])
+      );
     });
   };
 
-  async getDataCharacterizationResults(dataSource: string, sourceKey: string): Promise<any> {
+  async getDataCharacterizationResults(
+    dataSource: string,
+    sourceKey: string
+  ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cdmresults/${dataSource}/${sourceKey}`;
@@ -44,14 +49,19 @@ export class PublicWebapiProxyAPI {
       } else {
         const dcResultsKeys = Object.keys(result.data);
         dcResults = Object.fromEntries(
-          dcResultsKeys.map((key) => [key, this.mapDcResultKeysToUppercase(result.data[key] as [])])
+          dcResultsKeys.map((key) => [
+            key,
+            this.mapDcResultKeysToUppercase(result.data[key] as []),
+          ])
         );
       }
 
       return dcResults;
     } catch (error) {
       console.error(error);
-      throw new Error(`Error while getting data characterization results from public webapi`);
+      throw new Error(
+        `Error while getting data characterization results from public webapi`
+      );
     }
   }
 
@@ -72,14 +82,19 @@ export class PublicWebapiProxyAPI {
       } else {
         const dcResultsKeys = Object.keys(result.data);
         dcResults = Object.fromEntries(
-          dcResultsKeys.map((key) => [key, this.mapDcResultKeysToUppercase(result.data[key] as [])])
+          dcResultsKeys.map((key) => [
+            key,
+            this.mapDcResultKeysToUppercase(result.data[key] as []),
+          ])
         );
       }
 
       return dcResults;
     } catch (error) {
       console.error(error);
-      throw new Error(`Error while getting data characterization drilldown results from public webapi`);
+      throw new Error(
+        `Error while getting data characterization drilldown results from public webapi`
+      );
     }
   }
 
@@ -116,7 +131,10 @@ export class PublicWebapiProxyAPI {
       });
 
       // Truncate results based on pagination parameters
-      return [result.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage), result.length];
+      return [
+        result.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+        result.length,
+      ];
     } catch (error) {
       console.error(error);
       throw new Error(`Error while getting concepts from public webapi`);
@@ -158,7 +176,10 @@ export class PublicWebapiProxyAPI {
     });
   }
 
-  public updateConceptSet(conceptSetId: number, conceptSet: Partial<ConceptSet>) {
+  public updateConceptSet(
+    conceptSetId: number,
+    conceptSet: Partial<ConceptSet>
+  ) {
     return request<number>({
       baseURL: this.baseURL,
       url: `d2e-webapi/conceptset/${conceptSetId}`,
@@ -167,7 +188,10 @@ export class PublicWebapiProxyAPI {
     });
   }
 
-  public updateConceptSetItems(conceptSetId: number, conceptSetConcepts: ConceptSetConcept[]) {
+  public updateConceptSetItems(
+    conceptSetId: number,
+    conceptSetConcepts: ConceptSetConcept[]
+  ) {
     const data = conceptSetConcepts.map((concept) => ({
       conceptId: concept.id,
       isExcluded: concept.isExcluded ? 1 : 0,
