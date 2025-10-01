@@ -4,6 +4,20 @@ This mock server provides a development environment for PA-Atlas (query-filter) 
 
 ## Quick Start
 
+### Using Docker (Recommended)
+
+```bash
+# Build the Docker image from repo root
+docker build -f Dockerfile -t pa-atlas:latest .
+
+# Run the container
+docker run -e SERVER_URL=http://localhost:3132 -p 3132:3132 pa-atlas:latest
+```
+
+Then open `http://localhost:3132` in your browser.
+
+### Using NPM
+
 ```bash
 # Install dependencies from ui folder
 yarn
@@ -163,6 +177,7 @@ For a production-like bundle that serves both the application and APIs from a si
   - Used for URL replacement in mock data and served files
 
 - **`USE_CACHE`** (default: `false`)
+
   - Set to `true` to enable API response caching
   - Improves performance during development by caching external API calls
   - Example: `USE_CACHE=true npm start`
