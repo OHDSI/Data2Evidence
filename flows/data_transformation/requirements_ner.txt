@@ -1,0 +1,4 @@
+scispacy==0.5.5
+scipy==1.16.0
+# For CPU-only PyTorch
+https://download.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl

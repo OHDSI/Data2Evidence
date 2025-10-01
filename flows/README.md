@@ -60,6 +60,13 @@
 ### Tests
 
 ## Local Development Setup for R
+Creating a new `renv.lock` file
+```
+renv::init()
+renv::install('repo/package@v1.0.0', lock=TRUE)
+renv::install('giturl@branch', lock=TRUE)
+```
+
 Capture all installed packages
 ```
 renv::settings$snapshot.type("all")
