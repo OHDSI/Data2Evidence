@@ -18,6 +18,7 @@ import type {
   ConceptSetAction,
   SelectedConcept,
   StoredConceptItem,
+  IWebapiSource,
 } from '../types/ConceptSetTypes'
 import type { AtlasBookmark } from '../types/AtlasTypes'
 import { getTagInputTexts } from '../utils/ConceptSetHelpers'
@@ -34,6 +35,7 @@ import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiv
 import { loadAtlasCohortDefinition } from '../utils/QueryFilterModern/loadAtlasCohortDefinition'
 import * as types from '../../store/mutation-types'
 import { useCriteriaManager } from '../composables/useCriteriaManager'
+import { d2eWebapiService } from '../services/D2eWebapiService'
 
 // Interface for close callback values from terminology modal
 interface TerminologyCloseValues {
@@ -73,9 +75,29 @@ const maxLength = 40
 const isLoading = ref(false)
 
 // Action bar state
-const selectedDatasetForGeneration = ref('SYNPUF1K')
+const selectedDatasetForGeneration = ref('')
+const availableSources = ref<IWebapiSource[]>([])
 const patientCount = ref<number | null>(null)
 const isGeneratingCohort = ref(false)
+
+// Check if running in Atlas mode (standalone mode)
+const isAtlas = computed(() => {
+  const portalAPI = getPortalAPI()
+  return portalAPI?.isLocal === true
+})
+
+// Initialize selectedDatasetForGeneration based on mode
+const initializeDatasetSelection = () => {
+  if (isAtlas.value) {
+    // In Atlas mode, will be set when sources are fetched
+    if (availableSources.value.length > 0) {
+      selectedDatasetForGeneration.value = availableSources.value[0].sourceKey
+    }
+  } else {
+    // In portal mode, use the datasetId from portal context
+    selectedDatasetForGeneration.value = getDatasetId()
+  }
+}
 
 const tagInputModel = computed<TagInputModel>(() => {
   try {
@@ -212,8 +234,23 @@ watch(
   { deep: true }
 )
 
-onMounted(() => {
+onMounted(async () => {
   initializeComponent()
+
+  // Fetch sources when in Atlas mode
+  if (isAtlas.value) {
+    try {
+      const sources = await d2eWebapiService.getSources()
+      availableSources.value = sources
+      // Initialize dataset selection after sources are fetched
+      initializeDatasetSelection()
+    } catch (error) {
+      console.error('jer Error fetching sources:', error)
+    }
+  } else {
+    // Initialize with portal datasetId
+    initializeDatasetSelection()
+  }
 })
 
 watch(
@@ -762,7 +799,8 @@ const generateCohort = async () => {
     }
 
     const atlasDefinitionId = activeBookmark.bmkId
-    const datasetId = selectedDatasetForGeneration.value
+    // Use selected source in Atlas mode, or portal datasetId in portal mode
+    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
 
     // Call the same API endpoint as AddCohort component
     const response = await store.dispatch('fireCreateAtlasMaterializedCohortQuery', {
@@ -803,10 +841,12 @@ const generateCohort = async () => {
         <!-- Middle: Generate Cohort Controls -->
         <div class="header-section-middle">
           <div class="generate-cohort-controls">
-            <div class="dataset-selector">
+            <div v-if="isAtlas" class="dataset-selector">
               <span class="dataset-label">Dataset:</span>
               <select v-model="selectedDatasetForGeneration" class="dataset-dropdown" :disabled="isGeneratingCohort">
-                <option value="SYNPUF1K">SYNPUF1K</option>
+                <option v-for="source in availableSources" :key="source.sourceKey" :value="source.sourceKey">
+                  {{ source.sourceName }}
+                </option>
               </select>
             </div>
 

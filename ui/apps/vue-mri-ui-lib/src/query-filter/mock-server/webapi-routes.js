@@ -440,6 +440,21 @@ const setupWebapiRoutes = app => {
       return res.status(err.status).send()
     }
   })
+
+  // GET /source/sources - Returns available data sources
+  app.get('/d2e-webapi/source/sources', async (req, res) => {
+    logRequest(req)
+    try {
+      // Forward to external WebAPI
+      const response = await api.get('/source/sources')
+      return res.json(response.data)
+    } catch (err) {
+      console.error('jer Error fetching sources from WebAPI:', err)
+      const status =
+        err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
+      return res.status(status).send()
+    }
+  })
 }
 
 module.exports = setupWebapiRoutes

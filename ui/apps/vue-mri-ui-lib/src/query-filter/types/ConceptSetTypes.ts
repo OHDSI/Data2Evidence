@@ -2,6 +2,21 @@
  * TypeScript interfaces for concept set functionality
  */
 
+export interface IWebapiSourceDaimon {
+  sourceDaimonId: number
+  daimonType: string
+  tableQualifier: string
+  priority: number
+}
+
+export interface IWebapiSource {
+  sourceId: number
+  sourceName: string
+  sourceDialect: string
+  sourceKey: string
+  daimons: IWebapiSourceDaimon[]
+}
+
 export interface ConceptSetItemDisplay {
   value: string
   text?: string

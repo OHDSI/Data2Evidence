@@ -4,6 +4,7 @@ import type {
   ConceptSetExpression,
   CreateConceptSetRequest,
   ConceptDetail,
+  IWebapiSource,
 } from '../types/ConceptSetTypes'
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
@@ -87,6 +88,15 @@ export class D2eWebapiService {
       url: `/vocabulary/${datasetId}/search?query=${encodeURIComponent(conceptId.toString())}`,
       method: 'GET',
       headers: { datasetid: datasetId },
+    })
+    return response.data
+  }
+
+  public async getSources(): Promise<IWebapiSource[]> {
+    const response = await client({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/source/sources`,
+      method: 'GET',
     })
     return response.data
   }
