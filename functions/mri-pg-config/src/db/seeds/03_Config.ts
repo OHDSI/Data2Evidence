@@ -30014,7 +30014,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Status"
+                                "value": "Status"
                             }
                         ],
                         "disabledLangName": [
@@ -30060,7 +30060,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Class"
+                                "value": "Class"
                             }
                         ],
                         "disabledLangName": [
@@ -30106,7 +30106,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Priority"
+                                "value": "Priority"
                             }
                         ],
                         "disabledLangName": [
@@ -30152,7 +30152,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Type"
+                                "value": "Type"
                             }
                         ],
                         "disabledLangName": [
@@ -30198,7 +30198,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Subject Status"
+                                "value": "Subject Status"
                             }
                         ],
                         "disabledLangName": [
@@ -30244,7 +30244,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Episode Of Care"
+                                "value": "Episode Of Care"
                             }
                         ],
                         "disabledLangName": [
@@ -30474,7 +30474,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Participant Type"
+                                "value": "Participant Type"
                             }
                         ],
                         "disabledLangName": [
@@ -30566,7 +30566,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Start"
+                                "value": "Period Start"
                             }
                         ],
                         "disabledLangName": [
@@ -30601,7 +30601,7 @@ const cdwjsonfhirConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "text",
+                        "type": "time",
                         "expression": "json_extract_string(@ENCOUNTER.content, '$.content.period.start')",
                         "order": 16,
                         "domainFilter": "",
@@ -30612,7 +30612,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter End"
+                                "value": "Period End"
                             }
                         ],
                         "disabledLangName": [
@@ -30647,7 +30647,7 @@ const cdwjsonfhirConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "text",
+                        "type": "time",
                         "expression": "json_extract_string(@ENCOUNTER.content, '$.content.period.end')",
                         "order": 17,
                         "domainFilter": "",
@@ -30658,7 +30658,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Participant Period End"
+                                "value": "Participant Period End"
                             }
                         ],
                         "disabledLangName": [
@@ -30704,7 +30704,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Reason Code"
+                                "value": "Reason Code"
                             }
                         ],
                         "disabledLangName": [
@@ -30750,7 +30750,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Location"
+                                "value": "Location"
                             }
                         ],
                         "disabledLangName": [
@@ -30842,7 +30842,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter lasted for"
+                                "value": "Length"
                             }
                         ],
                         "disabledLangName": [
@@ -30888,7 +30888,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Discharge Disposition"
+                                "value": "Discharge Disposition"
                             }
                         ],
                         "disabledLangName": [
@@ -30926,6 +30926,652 @@ const cdwjsonfhirConfigDuckdb = {
                         "type": "text",
                         "expression": "@ENCOUNTER.__dischargeDispositionText",
                         "order": 23,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    }
+                }
+            },
+            "observation":{
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Observation"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "de",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "fr",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "es",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "pt",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "zh",
+                        "value": "",
+                        "visible": true
+                    }
+                ],
+                "defaultFilter": "1=1",
+                "defaultPlaceholder": "@OBS",
+                "order": 4,
+                "parentInteraction": ["patient.interactions.encounter"],
+                "parentInteractionLabel": "parent",
+                "conceptIdentifierType": "",
+                "attributes": {
+                    "pid": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Patient Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.patient[-36:]",
+                        "order": 1,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "observationId": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Encounter Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.id",
+                        "order": 2,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "status": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Status"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.status",
+                        "order": 3,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "category": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Category"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.__categoryText",
+                        "order": 4,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "code": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Code"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.__codeText",
+                        "order": 5,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "encounter": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Encounter Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.__encounterIdentifierSort",
+                        "order": 6,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "effectiveDateTime": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Effective Date Time"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "time",
+                        "expression": "@OBS.date",
+                        "order": 8,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "issued": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Issued"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "json_extract_string(@OBS.content, '$.issued')",
+                        "order": 9,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "valueCodeableConcept": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Value Concept"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@ENCOUNTER.__comboCodeText",
+                        "order": 10,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "dataAbsentReason": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Data Absent Reason"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.__comboDataAbsentReasonText",
+                        "order": 11,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "performer": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Performer"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.__performerIdentifierText",
+                        "order": 12,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "device": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Device"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.device",
+                        "order": 13,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "specimen": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Specimen"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.__specimenIdentifierSort",
+                        "order": 14,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
@@ -31276,6 +31922,14 @@ const cdwjsonfhirConfigDuckdb = {
                     "time": true,
                     "oneToN": false,
                     "condition": false
+                },
+                {
+                    "placeholder": "@OBS",
+                    "attributeTables": [],
+                    "hierarchy": true,
+                    "time": true,
+                    "oneToN": false,
+                    "condition": false
                 }
             ]
         },
@@ -31299,6 +31953,11 @@ const cdwjsonfhirConfigDuckdb = {
             "@ENCOUNTER.INTERACTION_ID": "\"id\"",
             "@ENCOUNTER.CONDITION_ID": "\"id\"",
             "@ENCOUNTER.INTERACTION_TYPE": "\"id\"",
+            "@OBS": "$$SCHEMA$$.\"observation\"",
+            "@OBS.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
+            "@OBS.INTERACTION_ID": "\"id\"",
+            "@OBS.CONDITION_ID": "\"id\"",
+            "@OBS.INTERACTION_TYPE": "\"id\"",
         },
         "guardedTableMapping": {
             "@PATIENT": "$$SCHEMA$$.\"patient\""
@@ -32244,7 +32903,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Patient Id"
+                    "modelName": "Patient Id"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.encounterId",
@@ -32284,7 +32943,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Status"
+                    "modelName": "Status"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.class",
@@ -32304,7 +32963,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Class"
+                    "modelName": "Class"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.priority",
@@ -32324,7 +32983,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Priority"
+                    "modelName": "Priority"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.type",
@@ -32344,7 +33003,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Type"
+                    "modelName": "Type"
                 },
                 // {
                 //     "source": "patient.interactions.encounter.attributes.subject",
@@ -32382,7 +33041,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Subject Status"
+                    "modelName": "Subject Status"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.episodeOfCare",
@@ -32402,7 +33061,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Episode Of Care"
+                    "modelName": "Episode Of Care"
                 },
                 // {
                 //     "source": "patient.interactions.encounter.attributes.basedOn",
@@ -32502,7 +33161,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Participant Type"
+                    "modelName": "Participant Type"
                 },
                 // {
                 //     "source": "patient.interactions.encounter.attributes.appointment",
@@ -32542,7 +33201,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Period Start"
+                    "modelName": "Period Start"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.periodEnd",
@@ -32562,7 +33221,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Period End"
+                    "modelName": "Period End"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.participantPeriodEnd",
@@ -32582,7 +33241,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Participant Period End"
+                    "modelName": "Participant Period End"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.reasonCode",
@@ -32602,7 +33261,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Reason Code"
+                    "modelName": "Reason Code"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.location",
@@ -32622,7 +33281,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Location"
+                    "modelName": "Location"
                 },
                 // {
                 //     "source": "patient.interactions.encounter.attributes.diagnosis",
@@ -32662,7 +33321,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Lasted For"
+                    "modelName": "Length"
                 },
                 {
                     "source": "patient.interactions.encounter.attributes.dischargeDisposition",
@@ -32682,7 +33341,275 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Discharge Disposition"
+                    "modelName": "Discharge Disposition"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Encounter"
+        },
+        {
+            "source": "patient.interactions.observation",
+            "visible": true,
+            "order": 4,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.observation.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.observationId",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation Id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.status",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Status"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.category",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Category"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.code",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Code"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.encounter",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.effectiveDateTime",
+                    "ordered": false,
+                    "cached": true,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Effective DateTime"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.issued",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Issued"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.valueCodeableConcept",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 14
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value Codeable Concept"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.dataAbsentReason",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 16
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Data Absent Reason"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.performer",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 17
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Performer"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.device",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 18
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Device"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.specimen",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 19
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Specimen"
                 }
             ],
             "initialPatientlistColumn": false,
