@@ -479,6 +479,22 @@ const setupWebapiRoutes = app => {
       }
     }
   )
+
+  // GET /notifications - Returns job notifications (cohort generation status)
+  app.get('/d2e-webapi/notifications', async (req, res) => {
+    logRequest(req)
+    try {
+      // Forward to external WebAPI
+      const params = req.query.hide_statuses ? { hide_statuses: req.query.hide_statuses } : {}
+      const response = await api.get('/notifications', { params })
+      return res.json(response.data)
+    } catch (err) {
+      console.error('Error fetching notifications from WebAPI:', err)
+      const status =
+        err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
+      return res.status(status).json([])
+    }
+  })
 }
 
 module.exports = setupWebapiRoutes

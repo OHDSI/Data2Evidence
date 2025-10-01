@@ -6,6 +6,7 @@ import type {
   ConceptDetail,
   IWebapiSource,
   CohortInfoResponse,
+  NotificationsResponse,
 } from '../types/ConceptSetTypes'
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
@@ -107,6 +108,16 @@ export class D2eWebapiService {
       baseURL: D2E_WEBAPI_BASE_URL,
       url: `/cohortdefinition/${cohortDefinitionId}/info`,
       method: 'GET',
+    })
+    return response.data
+  }
+
+  public async getNotifications(hideStatuses?: string): Promise<NotificationsResponse> {
+    const response = await client({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/notifications`,
+      method: 'GET',
+      params: hideStatuses ? { hide_statuses: hideStatuses } : undefined,
     })
     return response.data
   }

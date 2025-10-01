@@ -37,6 +37,31 @@ export interface CohortGenerationInfo {
 
 export interface CohortInfoResponse extends Array<CohortGenerationInfo> {}
 
+export interface NotificationJobInstance {
+  instanceId: number
+  name: string
+}
+
+export interface NotificationJobParameters {
+  jobName: string
+  jobAuthor: string
+  cohort_definition_id: string
+  source_id: string
+}
+
+export interface Notification {
+  status: 'STARTED' | 'COMPLETED' | string // Using string union for known values, but allowing others
+  startDate: number
+  endDate: number | null
+  exitStatus: string
+  executionId: number
+  jobInstance: NotificationJobInstance
+  jobParameters: NotificationJobParameters
+  ownerType: string
+}
+
+export type NotificationsResponse = Notification[]
+
 export interface ConceptSetItemDisplay {
   value: string
   text?: string

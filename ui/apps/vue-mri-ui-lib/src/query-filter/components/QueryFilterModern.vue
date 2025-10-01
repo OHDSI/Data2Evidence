@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { loadConceptSets } from '../utils/QueryFilterModern/loadConceptSets'
@@ -20,6 +20,7 @@ import type {
   StoredConceptItem,
   IWebapiSource,
   CohortInfoResponse,
+  Notification,
 } from '../types/ConceptSetTypes'
 import type { AtlasBookmark } from '../types/AtlasTypes'
 import { getTagInputTexts } from '../utils/ConceptSetHelpers'
@@ -82,6 +83,9 @@ const patientCount = ref<number | null>(null)
 const isGeneratingCohort = ref(false)
 const cohortInfo = ref<CohortInfoResponse>([])
 const isLoadingCohortInfo = ref(false)
+const generationStatus = ref<'idle' | 'pending' | 'complete' | 'failed'>('idle')
+let pollingInterval: ReturnType<typeof setInterval> | null = null
+const POLLING_INTERVAL_MS = 2000
 
 // Check if running in Atlas mode (standalone mode)
 const isAtlas = computed(() => {
@@ -185,6 +189,12 @@ const displayCohortName = computed(() => {
 })
 
 const displayPatientCount = computed(() => {
+  if (generationStatus.value === 'pending') {
+    return 'Pending'
+  }
+  if (generationStatus.value === 'failed') {
+    return 'Failed'
+  }
   return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
 })
 
@@ -832,6 +842,7 @@ const updatePatientCountFromInfo = () => {
 
   if (!selectedSource) {
     patientCount.value = null
+    generationStatus.value = 'idle'
     return
   }
 
@@ -840,17 +851,87 @@ const updatePatientCountFromInfo = () => {
 
   if (infoForSource && infoForSource.status === 'COMPLETE') {
     patientCount.value = infoForSource.personCount
+    generationStatus.value = 'complete'
     console.log('Found patient count from cohort info:', infoForSource.personCount)
   } else {
     patientCount.value = null
+    generationStatus.value = 'idle'
   }
 }
+
+// Start polling for generation status
+const startPolling = (cohortDefinitionId: number, sourceId: number) => {
+  console.log('Starting polling for cohort generation', { cohortDefinitionId, sourceId })
+  generationStatus.value = 'pending'
+
+  // Clear any existing polling interval
+  stopPolling()
+
+  // Start new polling interval
+  pollingInterval = setInterval(async () => {
+    try {
+      const notifications = await d2eWebapiService.getNotifications()
+      console.log('Polling notifications:', notifications)
+
+      // Find notification for this cohort and source
+      const relevantNotification = notifications.find(
+        (n: Notification) =>
+          n.jobParameters.cohort_definition_id === cohortDefinitionId.toString() &&
+          n.jobParameters.source_id === sourceId.toString() &&
+          n.jobInstance.name === 'generateCohort'
+      )
+
+      if (relevantNotification) {
+        console.log('Found relevant notification:', relevantNotification)
+
+        if (relevantNotification.status === 'COMPLETED') {
+          console.log('Generation completed, fetching cohort info')
+          generationStatus.value = 'complete'
+
+          // Fetch updated cohort info to get patient count
+          await fetchCohortInfo(cohortDefinitionId)
+
+          // Stop polling
+          stopPolling()
+          isGeneratingCohort.value = false
+        } else if (relevantNotification.status === 'STARTED') {
+          console.log('Generation still in progress')
+          generationStatus.value = 'pending'
+        } else {
+          // Unknown status - treat as potentially failed
+          console.log('Unknown generation status:', relevantNotification.status)
+          generationStatus.value = 'failed'
+          patientCount.value = null
+          stopPolling()
+          isGeneratingCohort.value = false
+        }
+      }
+    } catch (error) {
+      console.error('Error polling notifications:', error)
+    }
+  }, POLLING_INTERVAL_MS)
+}
+
+// Stop polling
+const stopPolling = () => {
+  if (pollingInterval) {
+    console.log('Stopping polling')
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+}
+
+// Cleanup on component unmount
+onBeforeUnmount(() => {
+  stopPolling()
+})
 
 // Action bar methods
 const generateCohort = async () => {
   try {
     isGeneratingCohort.value = true
     patientCount.value = null
+    generationStatus.value = 'pending'
 
     // Get the active bookmark
     const activeBookmark = store?.getters?.getActiveBookmark
@@ -858,28 +939,28 @@ const generateCohort = async () => {
       return
     }
 
-    const atlasDefinitionId = activeBookmark.bmkId
+    const atlasDefinitionId = parseInt(activeBookmark.bmkId)
     // Use selected source in Atlas mode, or portal datasetId in portal mode
     const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
 
+    // Get the sourceId for polling
+    const selectedSource = availableSources.value.find(source => source.sourceKey === datasetId)
+    if (!selectedSource) {
+      console.error('Could not find source for dataset:', datasetId)
+      return
+    }
+
     // Call the same API endpoint as AddCohort component
-    const response = await store.dispatch('fireCreateAtlasMaterializedCohortQuery', {
+    await store.dispatch('fireCreateAtlasMaterializedCohortQuery', {
       url: `/d2e-webapi/cohortdefinition/${atlasDefinitionId}/generate/${datasetId}`,
     })
 
-    // Extract patient count from response if available
-    if (response && response.patientCount !== undefined) {
-      patientCount.value = response.patientCount
-    } else if (response && response.count !== undefined) {
-      patientCount.value = response.count
-    }
-
-    // Refresh cohort info after generation
-    await fetchCohortInfo(parseInt(atlasDefinitionId))
+    // Start polling to track generation progress
+    startPolling(atlasDefinitionId, selectedSource.sourceId)
   } catch (error) {
     console.error('Error generating cohort:', error)
     patientCount.value = null
-  } finally {
+    generationStatus.value = 'failed'
     isGeneratingCohort.value = false
   }
 }
