@@ -14,6 +14,7 @@ interface CreateDatasetInput {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
+  resultSchemaName: string;
   dataModel: string;
   visibilityStatus: string;
   detail: {
@@ -68,7 +69,7 @@ export class PortalAPI {
     options = {
       headers: {
         Authorization: this.token,
-      }
+      },
     };
 
     return options;
