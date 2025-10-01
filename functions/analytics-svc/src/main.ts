@@ -761,24 +761,24 @@ const getDBConnections = async ({
             delete analyticsCredentials.pfx;
         }
 
-        if (
-            analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA &&
-            analyticsCredentials.authentication_mode === "JWT"
-        ) {
-            delete analyticsCredentials.user;
-            delete analyticsCredentials.password;
-            if (userObj.thirdPartyToken) {
-                analyticsCredentials["token"] = userObj.thirdPartyToken;
-            } else {
-                throw new Error(
-                    "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
-                );
-            }
+        if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
             analyticsCredentials[
                 "SESSIONVARIABLE:APPLICATION"
             ] = `${env.PROJECT_NAME}-cohorts`;
             analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
                 userObj.getUser();
+
+            if (analyticsCredentials.authentication_mode === "JWT") {
+                delete analyticsCredentials.user;
+                delete analyticsCredentials.password;
+                if (userObj.thirdPartyToken) {
+                    analyticsCredentials["token"] = userObj.thirdPartyToken;
+                } else {
+                    throw new Error(
+                        "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+                    );
+                }
+            }
         }
 
         analyticsConnectionPromise =
