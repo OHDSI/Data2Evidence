@@ -130,8 +130,10 @@ def save_scan_report_conversion(username: str) -> FileSaveResponse:
     logger = get_run_logger()
     logger.info("saving scan report conversion to files manager")
 
-    if not os.path.exists("ScanReport.xlsx"):
-        raise FileNotFoundError("Scan report does not exist")
+    scanReportPath = Path("ScanReport.xlsx").resolve()
+
+    if not scanReportPath.exists():
+        raise FileNotFoundError(f"file {scanReportPath} does not exist.")
 
     try:
         fileSaveResponse: FileSaveResponse = FilesManagerAPI().save_file(username=username)
