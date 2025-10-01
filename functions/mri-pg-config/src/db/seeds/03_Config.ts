@@ -31028,7 +31028,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Encounter Id"
+                                "value": "Observation Id"
                             }
                         ],
                         "disabledLangName": [
@@ -31577,6 +31577,468 @@ const cdwjsonfhirConfigDuckdb = {
                         "conceptIdentifierType": ""
                     }
                 }
+            },
+            "medication":{
+                 "name": [
+                    {
+                        "lang": "",
+                        "value": "Medication"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "de",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "fr",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "es",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "pt",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "zh",
+                        "value": "",
+                        "visible": true
+                    }
+                ],
+                "defaultFilter": "1=1",
+                "defaultPlaceholder": "@MEDICATION",
+                "order": 5,
+                "parentInteraction": [],
+                "parentInteractionLabel": "parent",
+                "conceptIdentifierType": "",
+                "attributes": {
+                    "pid": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Patient Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@OBS.patient[-36:]",
+                        "order": 1,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "medicationId": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Medication Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDICATION.id",
+                        "order": 2,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "status": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Status"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDICATION.status",
+                        "order": 3,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "lotNumber": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Lot Number"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDICATION.lotNumber",
+                        "order": 4,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "manufacturer": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Manufacturer"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDICATION.__manufacturerIdentifierSort",
+                        "order": 5,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "ingredient": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Ingredient"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDICATION.__ingredientCodeText",
+                        "order": 6,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "expirationDate": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Expiration Date"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "time",
+                        "expression": "@MEDICATION.expirationDate",
+                        "order": 8,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "doseForm": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Dose Form"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDICATION.__formText",
+                        "order": 9,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "code": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Code"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDICATION.__codeText",
+                        "order": 10,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    }
+                }
             }
         },
         "attributes": {
@@ -31930,6 +32392,14 @@ const cdwjsonfhirConfigDuckdb = {
                     "time": true,
                     "oneToN": false,
                     "condition": false
+                },
+                {
+                    "placeholder": "@MEDICATION",
+                    "attributeTables": [],
+                    "hierarchy": true,
+                    "time": true,
+                    "oneToN": false,
+                    "condition": false
                 }
             ]
         },
@@ -31958,6 +32428,11 @@ const cdwjsonfhirConfigDuckdb = {
             "@OBS.INTERACTION_ID": "\"id\"",
             "@OBS.CONDITION_ID": "\"id\"",
             "@OBS.INTERACTION_TYPE": "\"id\"",
+            "@MEDICATION": "$$SCHEMA$$.\"medication\"",
+            "@MEDICATION.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
+            "@MEDICATION.INTERACTION_ID": "\"id\"",
+            "@MEDICATION.CONDITION_ID": "\"id\"",
+            "@MEDICATION.INTERACTION_TYPE": "\"id\"",
         },
         "guardedTableMapping": {
             "@PATIENT": "$$SCHEMA$$.\"patient\""
@@ -32880,13 +33355,13 @@ const pajsonfhirConfigDuckdb = {
             "modelName": "Procedure"
         },
         {
-            "source": "patient.interactions.encounter",
+            "source": "patient.interactions.medication",
             "visible": true,
-            "order": 3,
+            "order": 4,
             "initial": false,
             "attributes": [
                 {
-                    "source": "patient.interactions.encounter.attributes.pid",
+                    "source": "patient.interactions.medication.attributes.pid",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -32906,7 +33381,7 @@ const pajsonfhirConfigDuckdb = {
                     "modelName": "Patient Id"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.encounterId",
+                    "source": "patient.interactions.medication.attributes.medicationId",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -32923,10 +33398,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Encounter Id"
+                    "modelName": "MedicationId Id"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.status",
+                    "source": "patient.interactions.medication.attributes.status",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -32946,7 +33421,7 @@ const pajsonfhirConfigDuckdb = {
                     "modelName": "Status"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.class",
+                    "source": "patient.interactions.medication.attributes.lotNumber",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -32963,10 +33438,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Class"
+                    "modelName": "Lot Number"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.priority",
+                    "source": "patient.interactions.medication.attributes.manufacturer",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -32983,10 +33458,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Priority"
+                    "modelName": "Manufacturer"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.type",
+                    "source": "patient.interactions.medication.attributes.ingredient",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -33003,30 +33478,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Type"
+                    "modelName": "Ingredient"
                 },
-                // {
-                //     "source": "patient.interactions.encounter.attributes.subject",
-                //     "ordered": false,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": true,
-                //     "measure": false,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "order": 7
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Encounter Subject"
-                // },
                 {
-                    "source": "patient.interactions.encounter.attributes.subjectStatus",
+                    "source": "patient.interactions.medication.attributes.expirationDate",
                     "ordered": false,
                     "cached": true,
                     "category": false,
@@ -33041,10 +33496,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Subject Status"
+                    "modelName": "Expiration Date"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.episodeOfCare",
+                    "source": "patient.interactions.medication.attributes.doseForm",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -33061,90 +33516,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Episode Of Care"
+                    "modelName": "Dose Form"
                 },
-                // {
-                //     "source": "patient.interactions.encounter.attributes.basedOn",
-                //     "ordered": false,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": true,
-                //     "measure": false,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "order": 10
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Encounter Based On"
-                // },
-                // {
-                //     "source": "patient.interactions.encounter.attributes.partOf",
-                //     "ordered": false,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": true,
-                //     "measure": false,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "order": 11
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Encounter Part Of"
-                // },
-                // {
-                //     "source": "patient.interactions.encounter.attributes.serviceProvider",
-                //     "ordered": false,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": true,
-                //     "measure": false,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "order": 12
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Encounter Service Provider"
-                // },
-                // {
-                //     "source": "patient.interactions.encounter.attributes.participant",
-                //     "ordered": false,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": true,
-                //     "measure": false,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "order": 13
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Encounter Participant"
-                // },
                 {
-                    "source": "patient.interactions.encounter.attributes.participantType",
+                    "source": "patient.interactions.medication.attributes.code",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -33161,30 +33536,198 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Participant Type"
-                },
-                // {
-                //     "source": "patient.interactions.encounter.attributes.appointment",
-                //     "ordered": false,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": true,
-                //     "measure": false,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "order": 15
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Encounter Appointment"
-                // },
+                    "modelName": "Code"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Medication"
+        },
+        {
+            "source": "patient.interactions.observation",
+            "visible": true,
+            "order": 4,
+            "initial": false,
+            "attributes": [
                 {
-                    "source": "patient.interactions.encounter.attributes.periodStart",
+                    "source": "patient.interactions.observation.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.observationId",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Observation Id"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.status",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Status"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.category",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Category"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.code",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Code"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.encounter",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.effectiveDateTime",
+                    "ordered": false,
+                    "cached": true,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Effective DateTime"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.issued",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Issued"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.valueCodeableConcept",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 14
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Value Codeable Concept"
+                },
+                {
+                    "source": "patient.interactions.observation.attributes.dataAbsentReason",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -33201,10 +33744,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Period Start"
+                    "modelName": "Data Absent Reason"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.periodEnd",
+                    "source": "patient.interactions.observation.attributes.performer",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -33221,10 +33764,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Period End"
+                    "modelName": "Performer"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.participantPeriodEnd",
+                    "source": "patient.interactions.observation.attributes.device",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -33241,10 +33784,10 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Participant Period End"
+                    "modelName": "Device"
                 },
                 {
-                    "source": "patient.interactions.encounter.attributes.reasonCode",
+                    "source": "patient.interactions.observation.attributes.specimen",
                     "ordered": false,
                     "cached": true,
                     "useRefText": false,
@@ -33261,87 +33804,7 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Reason Code"
-                },
-                {
-                    "source": "patient.interactions.encounter.attributes.location",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 20
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Location"
-                },
-                // {
-                //     "source": "patient.interactions.encounter.attributes.diagnosis",
-                //     "ordered": false,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": true,
-                //     "measure": false,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "order": 21
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": true,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Encounter Diagnosis"
-                // },
-                {
-                    "source": "patient.interactions.encounter.attributes.length",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 22
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Length"
-                },
-                {
-                    "source": "patient.interactions.encounter.attributes.dischargeDisposition",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 23
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Discharge Disposition"
+                    "modelName": "Specimen"
                 }
             ],
             "initialPatientlistColumn": false,
