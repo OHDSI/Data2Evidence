@@ -121,7 +121,15 @@ export class DatasetRouter {
           attributes,
           tags,
           fhirProjectId,
+          cacheDatasetName,
+          cacheDatasetType,
         } = req.body;
+
+        const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
+        const parsedNewCacheSchemaName = this.schemaCase(
+          newCacheSchemaName,
+          dialect as DbDialect
+        );
 
         // Token study code validation
         const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
@@ -158,6 +166,7 @@ export class DatasetRouter {
                     database_code: databaseCode,
                     data_model: dataModel,
                     schema_name: schemaName,
+                    cache_schema_name: parsedNewCacheSchemaName,
                     cleansed_schema_option: cleansedSchemaOption,
                     vocab_schema: vocabSchema,
                     result_schema: resultSchemaValue,
@@ -224,10 +233,26 @@ export class DatasetRouter {
             tags,
             fhir_project_id: fhirProjectId,
           };
+
           const newDataset = await portalAPI.createDataset(newDatasetInput);
+
           if (newDataset.error) {
             return res.status(400).json(newDataset);
           }
+
+          this.logger.info("Creating cache dataset in Portal");
+
+          const snapshotRequest = {
+            id: uuidv4(),
+            sourceDatasetId: id,
+            newDatasetName: cacheDatasetName,
+            schemaName: parsedNewCacheSchemaName,
+            timestamp: new Date(),
+            type: cacheDatasetType,
+          };
+
+          await portalAPI.copyDataset(snapshotRequest);
+
           return res.status(200).json(newDataset);
         } catch (error) {
           this.logger.error(

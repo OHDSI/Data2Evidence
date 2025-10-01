@@ -68,12 +68,7 @@ interface FormData {
   visibilityStatus: string;
 
   cacheDatasetName: string;
-  cacheDatasetSummary: string;
-  cacheDatasetDescription: string;
-  cacheDatasetShowRequestAccess: boolean;
-  cacheDatasetTokenStudyCode: string;
   cacheDatasetType: CacheDatasetType;
-  cacheDatasetPaConfigId: string;
 }
 
 interface FormError {
@@ -118,13 +113,6 @@ interface FormError {
   cacheDatasetType: {
     required: boolean;
   };
-  cacheDatasetPaConfigId: {
-    required: boolean;
-  };
-  cacheDatasetTokenStudyCode: {
-    required: boolean;
-    valid: boolean;
-  };
 }
 
 const EMPTY_FORM_ERROR: FormError = {
@@ -141,8 +129,6 @@ const EMPTY_FORM_ERROR: FormError = {
   name: { required: false },
   cacheDatasetName: { required: false },
   cacheDatasetType: { required: false },
-  cacheDatasetPaConfigId: { required: false },
-  cacheDatasetTokenStudyCode: { required: false, valid: false },
 };
 
 const EMPTY_FORM_DATA: FormData = {
@@ -167,12 +153,7 @@ const EMPTY_FORM_DATA: FormData = {
   visibilityStatus: "HIDDEN",
 
   cacheDatasetName: "",
-  cacheDatasetSummary: "",
-  cacheDatasetDescription: "",
-  cacheDatasetShowRequestAccess: false,
-  cacheDatasetTokenStudyCode: "",
   cacheDatasetType: CacheDatasetType.OMOP,
-  cacheDatasetPaConfigId: "",
 };
 
 /**
@@ -380,8 +361,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
       cacheDatasetName,
       cacheDatasetType,
-      cacheDatasetPaConfigId,
-      cacheDatasetTokenStudyCode,
     } = formData;
 
     let formError: FormError | {} = {};
@@ -449,18 +428,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, cacheDatasetType: { required: true } };
     }
 
-    if (!cacheDatasetPaConfigId) {
-      formError = { ...formError, cacheDatasetPaConfigId: { required: true } };
-    }
-
-    if (!cacheDatasetTokenStudyCode) {
-      formError = { ...formError, cacheDatasetTokenStudyCode: { required: true } };
-    }
-
-    if (cacheDatasetTokenStudyCode && !tokenIsValid(cacheDatasetTokenStudyCode)) {
-      formError = { ...formError, cacheDatasetTokenStudyCode: { valid: true } };
-    }
-
     if (Object.keys(formError).length > 0) {
       setFormError({ ...EMPTY_FORM_ERROR, ...(formError as FormError) });
       return true;
@@ -504,11 +471,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       visibilityStatus,
 
       cacheDatasetName,
-      cacheDatasetSummary,
-      cacheDatasetDescription,
-      cacheDatasetShowRequestAccess,
       cacheDatasetType,
-      cacheDatasetPaConfigId,
     } = formData;
 
     const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
@@ -543,6 +506,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       attributes: [],
       tags: [],
       dashboards: [],
+      cacheDatasetName,
+      cacheDatasetType,
     };
 
     try {
@@ -565,22 +530,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         }
       }
 
-      const datamartInput: CopyStudyInput = {
-        newStudyName: cacheDatasetName,
-        sourceStudyId: dataset.id,
-        snapshotLocation: "DB",
-        dataModel: parsedDataModel,
-        type: cacheDatasetType,
-        paConfigId: cacheDatasetPaConfigId,
-        detail: {
-          name: cacheDatasetName,
-          summary: cacheDatasetSummary,
-          description: cacheDatasetDescription,
-          showRequestAccess: cacheDatasetShowRequestAccess,
-        },
-      };
-
-      await api.gateway.copyDataset(datamartInput);
       handleClose("success");
     } catch (err: any) {
       setFeedback({
@@ -1021,6 +970,24 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </Box>
 
+        <Box mt={4} fontWeight="bold">
+          Cache dataset configuration
+        </Box>
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="Cache Dataset Name"
+            value={formData.cacheDatasetName}
+            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+            error={formError.cacheDatasetName.required}
+          />
+          {formError.cacheDatasetName.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+        </Box>
+
         <Box mb={4}>
           <FormControl
             sx={styles}
@@ -1051,106 +1018,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
-        </Box>
-
-        <Box mt={4} fontWeight="bold">
-          Cache dataset configuration
-        </Box>
-
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label="Cache Dataset Name"
-            value={formData.cacheDatasetName}
-            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
-            error={formError.cacheDatasetName.required}
-          />
-          {formError.cacheDatasetName.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-        </Box>
-
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label="Cache Dataset Summary"
-            value={formData.cacheDatasetSummary}
-            onChange={(event) => handleFormDataChange({ cacheDatasetSummary: event.target.value })}
-          />
-        </Box>
-        <div>Cache Dataset Description</div>
-        <SimpleMDE
-          value={formData.cacheDatasetDescription}
-          onChange={(value) => handleFormDataChange({ cacheDatasetDescription: value })}
-          options={mdeOptions}
-          style={{ marginTop: "11px" }}
-        />
-
-        <Box mb={4}>
-          <Checkbox
-            checked={formData.cacheDatasetShowRequestAccess}
-            checkbox-id="request-access"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              handleFormDataChange({ cacheDatasetShowRequestAccess: event.target.checked });
-            }}
-          />
-        </Box>
-
-        <Box mb={4}>
-          <FormControl
-            sx={styles}
-            className="select"
-            variant="standard"
-            fullWidth
-            {...(formError.cacheDatasetPaConfigId.required ? { error: true } : {})}
-          >
-            <InputLabel htmlFor="pa-config-option">{getText(i18nKeys.ADD_STUDY_DIALOG__PA_CONFIG)}</InputLabel>
-            <Select
-              sx={styles}
-              value={formData.cacheDatasetPaConfigId}
-              onChange={(event: SelectChangeEvent<string>) =>
-                handleFormDataChange({ cacheDatasetPaConfigId: event.target.value })
-              }
-              inputProps={{
-                name: "paConfigOption",
-                id: "pa-config-option",
-              }}
-            >
-              <MenuItem sx={styles} value="">
-                &nbsp;
-              </MenuItem>
-              {paConfigs?.map((config) => (
-                <MenuItem sx={styles} key={config.configId} value={config.configId}>
-                  {config.configName}
-                </MenuItem>
-              ))}
-            </Select>
-            {formError.cacheDatasetPaConfigId.required && (
-              <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-            )}
-          </FormControl>
-        </Box>
-
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__TOKEN_DATASET_CODE)}
-            value={formData.cacheDatasetTokenStudyCode}
-            onChange={(event) => handleFormDataChange({ cacheDatasetTokenStudyCode: event.target.value })}
-            inputProps={{ maxLength: 48 }}
-            error={formError.cacheDatasetTokenStudyCode.required || formError.cacheDatasetTokenStudyCode.valid}
-          />
-          {formError.cacheDatasetTokenStudyCode.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-          {formError.cacheDatasetTokenStudyCode.valid && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
-          )}
-          <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </Box>
       </div>
       <Divider />
