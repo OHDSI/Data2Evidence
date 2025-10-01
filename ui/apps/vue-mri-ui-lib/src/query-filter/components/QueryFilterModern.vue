@@ -782,11 +782,6 @@ const generateCohort = async () => {
     isGeneratingCohort.value = false
   }
 }
-
-const handleFeedback = () => {
-  // TODO: open feedback link in new tab
-  console.log('Feedback button clicked')
-}
 </script>
 
 <template>
@@ -827,10 +822,9 @@ const handleFeedback = () => {
           </div>
         </div>
 
-        <!-- Right: Feedback & Save -->
+        <!-- Right: Save -->
         <div class="header-section-right">
           <div class="right-button-group">
-            <button @click="handleFeedback" class="btn btn-outline-primary feedback-btn">Feedback</button>
             <ButtonMaterial @button-click="openSaveDialog">Save</ButtonMaterial>
           </div>
         </div>
