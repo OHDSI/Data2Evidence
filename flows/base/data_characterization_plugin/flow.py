@@ -71,7 +71,6 @@ def data_characterization_plugin(options: DCOptionsType):
         use_trex_connection=use_trex_connection,
     )
 
-    # Todo: Merge with results schema task
     dc_schema = create_results_schema(
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
     )
