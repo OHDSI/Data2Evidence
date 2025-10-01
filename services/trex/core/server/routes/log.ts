@@ -24,7 +24,7 @@ export function addRoutes(app: Hono) {
     const idpUserId = token["oid"] || sub;
 
     logger.info(
-      `[AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
+      `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
     );
     return c.json({ message: "success" });
   });
