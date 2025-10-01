@@ -21,7 +21,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Create' }).click({ timeout: 2000 })
   await expect(page.getByText('Created notebook "Test Notebook"')).toBeVisible()
   await page.getByTestId('snackbar-close').locator('svg').click()
-
+  await page.reload()
+  await page.getByRole('link', { name: 'Notebooks' }).click()
   //Rename notebook
   await page.locator('.notebook-header__content_title button').click() 
   await page.getByRole('textbox', { name: 'Notebook Title' }).click()
