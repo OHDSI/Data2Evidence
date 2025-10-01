@@ -29130,9 +29130,7 @@ const cdwjsonfhirConfigDuckdb = {
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@PROC",
                 "order": 2,
-                "parentInteraction": [
-                    "patient.interactions.encounter"
-                ],
+                "parentInteraction": [],
                 "parentInteractionLabel": "parent",
                 "conceptIdentifierType": "",
                 "attributes": {
@@ -29966,7 +29964,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "encounter": {
+                    "encounterId": {
                         "name": [
                             {
                                 "lang": "",
@@ -30196,52 +30194,6 @@ const cdwjsonfhirConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "subject": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Encounter Subject"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@ENCOUNTER.subject",
-                        "order": 7,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
                     "subjectStatus": {
                         "name": [
                             {
@@ -30334,190 +30286,190 @@ const cdwjsonfhirConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "basedOn": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Encounter  Based ON"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@ENCOUNTER.__basedOnIdentifierSort",
-                        "order": 10,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
-                    "partOf": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Encounter Part Of"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@ENCOUNTER.__partOfIdentifierSort",
-                        "order": 11,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
-                    "serviceProvider": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Encounter Service Provider"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@ENCOUNTER.serviceProvider",
-                        "order": 12,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
-                    "participant": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Encounter Participants"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@ENCOUNTER.participant",
-                        "order": 13,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
+                    // "basedOn": {
+                    //     "name": [
+                    //         {
+                    //             "lang": "",
+                    //             "value": "Encounter  Based ON"
+                    //         }
+                    //     ],
+                    //     "disabledLangName": [
+                    //         {
+                    //             "lang": "en",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "de",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "fr",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "es",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "pt",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "zh",
+                    //             "value": "",
+                    //             "visible": true
+                    //         }
+                    //     ],
+                    //     "type": "text",
+                    //     "expression": "@ENCOUNTER.__basedOnIdentifierSort",
+                    //     "order": 10,
+                    //     "domainFilter": "",
+                    //     "standardConceptCodeFilter": "",
+                    //     "conceptIdentifierType": ""
+                    // },
+                    // "partOf": {
+                    //     "name": [
+                    //         {
+                    //             "lang": "",
+                    //             "value": "Encounter Part Of"
+                    //         }
+                    //     ],
+                    //     "disabledLangName": [
+                    //         {
+                    //             "lang": "en",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "de",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "fr",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "es",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "pt",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "zh",
+                    //             "value": "",
+                    //             "visible": true
+                    //         }
+                    //     ],
+                    //     "type": "text",
+                    //     "expression": "@ENCOUNTER.__partOfIdentifierSort",
+                    //     "order": 11,
+                    //     "domainFilter": "",
+                    //     "standardConceptCodeFilter": "",
+                    //     "conceptIdentifierType": ""
+                    // },
+                    // "serviceProvider": {
+                    //     "name": [
+                    //         {
+                    //             "lang": "",
+                    //             "value": "Encounter Service Provider"
+                    //         }
+                    //     ],
+                    //     "disabledLangName": [
+                    //         {
+                    //             "lang": "en",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "de",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "fr",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "es",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "pt",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "zh",
+                    //             "value": "",
+                    //             "visible": true
+                    //         }
+                    //     ],
+                    //     "type": "text",
+                    //     "expression": "@ENCOUNTER.serviceProvider",
+                    //     "order": 12,
+                    //     "domainFilter": "",
+                    //     "standardConceptCodeFilter": "",
+                    //     "conceptIdentifierType": ""
+                    // },
+                    // "participant": {
+                    //     "name": [
+                    //         {
+                    //             "lang": "",
+                    //             "value": "Encounter Participants"
+                    //         }
+                    //     ],
+                    //     "disabledLangName": [
+                    //         {
+                    //             "lang": "en",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "de",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "fr",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "es",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "pt",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "zh",
+                    //             "value": "",
+                    //             "visible": true
+                    //         }
+                    //     ],
+                    //     "type": "text",
+                    //     "expression": "@ENCOUNTER.participant",
+                    //     "order": 13,
+                    //     "domainFilter": "",
+                    //     "standardConceptCodeFilter": "",
+                    //     "conceptIdentifierType": ""
+                    // },
                     "participantType": {
                         "name": [
                             {
@@ -30564,52 +30516,52 @@ const cdwjsonfhirConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "appointment": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Encounter Appointment"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@ENCOUNTER.appointment",
-                        "order": 15,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
+                    // "appointment": {
+                    //     "name": [
+                    //         {
+                    //             "lang": "",
+                    //             "value": "Encounter Appointment"
+                    //         }
+                    //     ],
+                    //     "disabledLangName": [
+                    //         {
+                    //             "lang": "en",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "de",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "fr",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "es",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "pt",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "zh",
+                    //             "value": "",
+                    //             "visible": true
+                    //         }
+                    //     ],
+                    //     "type": "text",
+                    //     "expression": "@ENCOUNTER.appointment",
+                    //     "order": 15,
+                    //     "domainFilter": "",
+                    //     "standardConceptCodeFilter": "",
+                    //     "conceptIdentifierType": ""
+                    // },
                     "periodStart": {
                         "name": [
                             {
@@ -30788,7 +30740,7 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@ENCOUNTER.__reasonCodeText",
+                        "expression": "json_extract_string(cast(@ENCOUNTER.__participantTypeText as json), '$[0]')",
                         "order": 19,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -30834,13 +30786,150 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@ENCOUNTER.location",
+                        "expression": "json_extract_string(cast(@ENCOUNTER.location as json), '$[0]')",
                         "order": 20,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-
+                    // "diagnosis": {
+                    //     "name": [
+                    //         {
+                    //             "lang": "",
+                    //             "value": "Encounter Diagnosis"
+                    //         }
+                    //     ],
+                    //     "disabledLangName": [
+                    //         {
+                    //             "lang": "en",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "de",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "fr",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "es",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "pt",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "zh",
+                    //             "value": "",
+                    //             "visible": true
+                    //         }
+                    //     ],
+                    //     "type": "text",
+                    //     "expression": "@ENCOUNTER.diagnosis",
+                    //     "order": 21,
+                    //     "domainFilter": "",
+                    //     "standardConceptCodeFilter": "",
+                    //     "conceptIdentifierType": ""
+                    // },
+                    "length": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Encounter lasted for"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@ENCOUNTER.length",
+                        "order": 22,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "dischargeDisposition": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Encounter Discharge Disposition"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@ENCOUNTER.__dischargeDispositionText",
+                        "order": 23,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    }
                 }
             }
         },
@@ -31181,7 +31270,7 @@ const cdwjsonfhirConfigDuckdb = {
                     "condition": false
                 },
                 {
-                     "placeholder": "@ENCOUNTER",
+                    "placeholder": "@ENCOUNTER",
                     "attributeTables": [],
                     "hierarchy": true,
                     "time": true,
@@ -31801,7 +31890,7 @@ const pajsonfhirConfigDuckdb = {
                 },
             ],
             "initialPatientlistColumn": false,
-            "modelName": "Condition Occurrence"
+            "modelName": "Condition"
         },
         {
             "source": "patient.interactions.procedure",
@@ -32129,7 +32218,475 @@ const pajsonfhirConfigDuckdb = {
                 }
             ],
             "initialPatientlistColumn": false,
-            "modelName": "Condition Occurrence"
+            "modelName": "Procedure"
+        },
+        {
+            "source": "patient.interactions.encounter",
+            "visible": true,
+            "order": 3,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.encounter.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Patient Id"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.encounterId",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Id"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.status",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Status"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.class",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Class"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.priority",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Priority"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.type",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Type"
+                },
+                // {
+                //     "source": "patient.interactions.encounter.attributes.subject",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 7
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Encounter Subject"
+                // },
+                {
+                    "source": "patient.interactions.encounter.attributes.subjectStatus",
+                    "ordered": false,
+                    "cached": true,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Subject Status"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.episodeOfCare",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Episode Of Care"
+                },
+                // {
+                //     "source": "patient.interactions.encounter.attributes.basedOn",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 10
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Encounter Based On"
+                // },
+                // {
+                //     "source": "patient.interactions.encounter.attributes.partOf",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 11
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Encounter Part Of"
+                // },
+                // {
+                //     "source": "patient.interactions.encounter.attributes.serviceProvider",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 12
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Encounter Service Provider"
+                // },
+                // {
+                //     "source": "patient.interactions.encounter.attributes.participant",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 13
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Encounter Participant"
+                // },
+                {
+                    "source": "patient.interactions.encounter.attributes.participantType",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 14
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Participant Type"
+                },
+                // {
+                //     "source": "patient.interactions.encounter.attributes.appointment",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 15
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Encounter Appointment"
+                // },
+                {
+                    "source": "patient.interactions.encounter.attributes.periodStart",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 16
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Period Start"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.periodEnd",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 17
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Period End"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.participantPeriodEnd",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 18
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Participant Period End"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.reasonCode",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 19
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Reason Code"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.location",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 20
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Location"
+                },
+                // {
+                //     "source": "patient.interactions.encounter.attributes.diagnosis",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 21
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Encounter Diagnosis"
+                // },
+                {
+                    "source": "patient.interactions.encounter.attributes.length",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 22
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Lasted For"
+                },
+                {
+                    "source": "patient.interactions.encounter.attributes.dischargeDisposition",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 23
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Discharge Disposition"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Encounter"
         }
     ],
     "chartOptions": {
