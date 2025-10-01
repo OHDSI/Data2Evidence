@@ -136,12 +136,11 @@ def drop_schema_hook(task, task_run, state, dbdao: DaoBase, schema: str):
 
 @task(log_prints=True,
       task_run_name="create_results_tables_parent_task-{results_schema_name}")
-def create_results_tables_parent_task(dbdao: DaoBase, results_schema_name: str, vocab_schema_name: str):
+def create_results_tables_parent_task(dbdao: DaoBase, results_schema_name: str):
     logger = get_run_logger()
     logger.info(f"Creating results schema '{results_schema_name}'..")
     schema_params = {
-        "RESULTS_SCHEMA": results_schema_name,
-        "VOCAB_SCHEMA": vocab_schema_name,
+        "RESULTS_SCHEMA": results_schema_name
     }
 
     for k, v in schema_params.items():
