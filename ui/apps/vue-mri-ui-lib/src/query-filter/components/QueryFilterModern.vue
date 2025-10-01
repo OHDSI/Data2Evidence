@@ -19,6 +19,7 @@ import type {
   SelectedConcept,
   StoredConceptItem,
   IWebapiSource,
+  CohortInfoResponse,
 } from '../types/ConceptSetTypes'
 import type { AtlasBookmark } from '../types/AtlasTypes'
 import { getTagInputTexts } from '../utils/ConceptSetHelpers'
@@ -79,6 +80,8 @@ const selectedDatasetForGeneration = ref('')
 const availableSources = ref<IWebapiSource[]>([])
 const patientCount = ref<number | null>(null)
 const isGeneratingCohort = ref(false)
+const cohortInfo = ref<CohortInfoResponse>([])
+const isLoadingCohortInfo = ref(false)
 
 // Check if running in Atlas mode (standalone mode)
 const isAtlas = computed(() => {
@@ -245,7 +248,7 @@ onMounted(async () => {
       // Initialize dataset selection after sources are fetched
       initializeDatasetSelection()
     } catch (error) {
-      console.error('jer Error fetching sources:', error)
+      console.error('Error fetching sources:', error)
     }
   } else {
     // Initialize with portal datasetId
@@ -268,6 +271,10 @@ watch(
       await loadConceptSets(getDatasetId, allConceptSets, conceptSetDomainValues)
 
       isLoading.value = false
+
+      // Clear cohort info for new cohort
+      cohortInfo.value = []
+      patientCount.value = null
     } else if (newAtlasData) {
       // Load existing Atlas cohort
       await loadAtlasCohortDefinition(
@@ -281,10 +288,22 @@ watch(
         nextTick,
         selectedConceptSets
       )
+
+      // Fetch cohort info after loading cohort definition
+      if (newAtlasData.id) {
+        await fetchCohortInfo(newAtlasData.id)
+      }
     }
   },
   { immediate: true }
 )
+
+// Watch for dataset selection changes and update patient count
+watch(selectedDatasetForGeneration, () => {
+  if (cohortInfo.value.length > 0) {
+    updatePatientCountFromInfo()
+  }
+})
 
 // Function to get existing concepts from an attribute for pre-populating the modal
 const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeId: string): SelectedConcept[] => {
@@ -786,6 +805,47 @@ const copyToClipboard = async (text: string, label: string) => {
   }
 }
 
+// Fetch cohort generation info from WebAPI
+const fetchCohortInfo = async (cohortDefinitionId: number) => {
+  try {
+    isLoadingCohortInfo.value = true
+    console.log('Fetching cohort info for cohort definition ID:', cohortDefinitionId)
+    const info = await d2eWebapiService.getCohortInfo(cohortDefinitionId)
+    cohortInfo.value = info
+    console.log('Fetched cohort info:', info)
+
+    // Update patient count based on selected dataset
+    updatePatientCountFromInfo()
+  } catch (error) {
+    console.error('Error fetching cohort info:', error)
+    cohortInfo.value = []
+    patientCount.value = null
+  } finally {
+    isLoadingCohortInfo.value = false
+  }
+}
+
+// Update patient count based on selected dataset and available cohort info
+const updatePatientCountFromInfo = () => {
+  // Get the sourceId for the selected dataset
+  const selectedSource = availableSources.value.find(source => source.sourceKey === selectedDatasetForGeneration.value)
+
+  if (!selectedSource) {
+    patientCount.value = null
+    return
+  }
+
+  // Find cohort info for this source
+  const infoForSource = cohortInfo.value.find(info => info.id.sourceId === selectedSource.sourceId)
+
+  if (infoForSource && infoForSource.status === 'COMPLETE') {
+    patientCount.value = infoForSource.personCount
+    console.log('Found patient count from cohort info:', infoForSource.personCount)
+  } else {
+    patientCount.value = null
+  }
+}
+
 // Action bar methods
 const generateCohort = async () => {
   try {
@@ -813,6 +873,9 @@ const generateCohort = async () => {
     } else if (response && response.count !== undefined) {
       patientCount.value = response.count
     }
+
+    // Refresh cohort info after generation
+    await fetchCohortInfo(parseInt(atlasDefinitionId))
   } catch (error) {
     console.error('Error generating cohort:', error)
     patientCount.value = null

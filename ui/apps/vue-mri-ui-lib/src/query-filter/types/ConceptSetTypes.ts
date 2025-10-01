@@ -17,6 +17,26 @@ export interface IWebapiSource {
   daimons: IWebapiSourceDaimon[]
 }
 
+export interface CohortGenerationInfo {
+  id: {
+    cohortDefinitionId: number
+    sourceId: number
+  }
+  startTime: number
+  executionDuration: number
+  status: string
+  isValid: boolean
+  isCanceled: boolean
+  failMessage: string | null
+  personCount: number
+  recordCount: number
+  createdBy: string | null
+  ccGenerateId: number
+  isDemographic: boolean
+}
+
+export interface CohortInfoResponse extends Array<CohortGenerationInfo> {}
+
 export interface ConceptSetItemDisplay {
   value: string
   text?: string

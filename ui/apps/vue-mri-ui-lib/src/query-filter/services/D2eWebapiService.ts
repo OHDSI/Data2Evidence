@@ -5,6 +5,7 @@ import type {
   CreateConceptSetRequest,
   ConceptDetail,
   IWebapiSource,
+  CohortInfoResponse,
 } from '../types/ConceptSetTypes'
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
@@ -96,6 +97,15 @@ export class D2eWebapiService {
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
       url: `/source/sources`,
+      method: 'GET',
+    })
+    return response.data
+  }
+
+  public async getCohortInfo(cohortDefinitionId: number): Promise<CohortInfoResponse> {
+    const response = await client({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/cohortdefinition/${cohortDefinitionId}/info`,
       method: 'GET',
     })
     return response.data

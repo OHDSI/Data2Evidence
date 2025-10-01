@@ -383,7 +383,6 @@ const setupWebapiRoutes = app => {
       if (!data || !USE_CACHE) {
         // Call Atlas demo API to search vocabularies with sanitized query
         const endpoint = ALLOWED_ENDPOINTS.vocabulary + '?query=' + sanitizedQuery
-        console.log('jer', endpoint)
         const response = await api.get(endpoint)
         data = response.data
         cache[cacheKey] = data
@@ -449,12 +448,37 @@ const setupWebapiRoutes = app => {
       const response = await api.get('/source/sources')
       return res.json(response.data)
     } catch (err) {
-      console.error('jer Error fetching sources from WebAPI:', err)
+      console.error('Error fetching sources from WebAPI:', err)
       const status =
         err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
       return res.status(status).send()
     }
   })
+
+  // GET /cohortdefinition/:cohortDefinitionId/info - Returns cohort generation info across all sources
+  app.get(
+    '/d2e-webapi/cohortdefinition/:cohortDefinitionId/info',
+    validateId('cohortDefinitionId'),
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId } = req.params
+      try {
+        // Forward to external WebAPI
+        const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/info'
+        const response = await api.get(endpoint)
+        return res.json(response.data)
+      } catch (err) {
+        console.error('Error fetching cohort info from WebAPI:', err)
+        const status =
+          err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
+        // Return empty array if cohort hasn't been generated yet (404)
+        if (status === 404) {
+          return res.json([])
+        }
+        return res.status(status).send()
+      }
+    }
+  )
 }
 
 module.exports = setupWebapiRoutes
