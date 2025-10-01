@@ -36,8 +36,19 @@
               "options"
             ],
             "definitions": {
+              "FlowActionType": {
+                "enum": [
+                  "create_datamodel",
+                  "get_version_info"
+                ],
+                "title": "FlowActionType",
+                "type": "string"
+              },
               "DataloadOptions": {
                 "properties": {
+                  "flow_action_type": {
+                    "$ref": "#/definitions/FlowActionType"
+                  },
                   "database_code": {
                     "title": "Database Code",
                     "type": "string"
@@ -46,14 +57,20 @@
                     "title": "Schema Name",
                     "type": "string"
                   },
+                  "vocab_schema": {
+                    "title": "Vocabulary Schema",
+                    "type": "string"
+                  },
                   "results_schema": {
                     "title": "Results Schema",
                     "type": "string"
                   }
                 },
                 "required": [
+                  "flow_action_type",
                   "database_code",
                   "schema_name",
+                  "vocab_schema",
                   "results_schema"
                 ],
                 "title": "DataloadOptions",
