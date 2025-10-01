@@ -193,6 +193,77 @@ export class DataTransformationController {
     }
   }
 
+  // Upload any type of file
+  private async uploadFile(req: Request, res: Response) {
+    try {
+      const { nodeId } = req.query;
+      const authHeader = req.headers["authorization"];
+
+      if (!authHeader) {
+        return res.status(401).json({ message: "Authorization header is required" });
+      }
+
+      if (!nodeId) {
+        return res.status(400).json({ message: "nodeId query parameter is required" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file provided" });
+      }
+
+      const file = new File([req.file.buffer], req.file.originalname, {
+        type: req.file.mimetype || "application/octet-stream",
+      });
+
+      const portalAPI = new PortalServerAPI(authHeader);
+      const result = await portalAPI.uploadFile(nodeId as string, file); // new API method
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("Error in uploadFile: ", error);
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Delete any type of file
+  private async deleteFile(req: Request, res: Response) {
+    try {
+      const { nodeId, fileName } = req.query;
+      const authHeader = req.headers["authorization"];
+
+      if (!authHeader) {
+        return res.status(401).json({ message: "Authorization header is required" });
+      }
+
+      if (!nodeId || !fileName) {
+        return res.status(400).json({
+          message: "nodeId and fileName query parameters are required",
+        });
+      }
+
+      const portalAPI = new PortalServerAPI(authHeader);
+      const result = await portalAPI.deleteFile(nodeId as string, fileName as string); // new API method
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("Error in deleteFile: ", error);
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
+  // --- in registerRoutes(), add these routes ---
+  private registerRoutes() {
+    // ...existing routes
+
+    // new endpoints for any file type
+    this.router.post(
+      "/file",
+      uploadAny.single("file"),
+      this.uploadFile.bind(this)
+    );
+    this.router.delete("/file", this.deleteFile.bind(this));
+  }
+
   private async overwriteCanvasFromRemote(req: Request, res: Response) {
     try {
       const { id } = req.params;

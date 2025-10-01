@@ -50,4 +50,29 @@ export class SupabaseStorageController {
 
     return await this.storageClient.delete(nodeId, fileName, "data-transformation", "data-transformation");
   }
+
+  async uploadFile(nodeId: string, file: File): Promise<FileOperationResponse> {
+  const url = `${this.baseURL}/supabase-storage/upload/file`;
+  const formData = new FormData();
+  formData.append("file", file, file.name);
+
+  const options = {
+    method: "POST",
+    headers: { Authorization: this.token },
+    body: formData,
+  };
+
+  const result = await fetch(`${url}?nodeId=${nodeId}`, options);
+  if (!result.ok) throw new Error(await result.text());
+  return await result.json();
+}
+
+async deleteFile(nodeId: string, fileName: string): Promise<FileOperationResponse> {
+  const url = `${this.baseURL}/supabase-storage/delete/file`;
+  const options = this.createOptions("DELETE");
+  const result = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, options);
+  if (!result.ok) throw new Error(await result.text());
+  return await result.json();
+}
+
 }

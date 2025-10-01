@@ -9,8 +9,7 @@ import "./FileNode.scss";
 
 export interface FileNodeData extends NodeDataState {
   file: string;
-  hasheader: boolean;
-  columns: string[];
+  file_type: string;
   encoding?: string;
 }
 
@@ -34,7 +33,7 @@ export const FileNode = (node: NodeProps<FileNodeData>) => {
       </NodeLayout>
       <FileDrawer
         node={node}
-        title="Configure CSV"
+        title="Configure File Node"
         className="file-drawer"
         open={settingVisible}
         onClose={closeSetting}

@@ -43,11 +43,6 @@ export interface FileDrawerProps extends Omit<NodeDrawerProps, "children"> {
   onClose: () => void;
 }
 
-const DelimiterOptions: KeyValue[] = [
-  { key: ",", value: "Comma" },
-  { key: "/t", value: "Tab" },
-];
-
 interface FormData extends FileNodeData {}
 
 const EMPTY_FORM_DATA: FormData = {
