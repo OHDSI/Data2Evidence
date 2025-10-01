@@ -62,10 +62,3 @@ export const parseBarChartData = (
     labels: barChartLabels,
   };
 };
-
-export enum PUBLIC_WEBAPI_DATASOURCE {
-  SYNPUF1K = "SYNPUF1K",
-  SYNPUF5PCT = "SYNPUF5PCT",
-  OHDSIEVIDNET = "OHDSIEVIDNET",
-  ATLASPROD = "ATLASPROD",
-}
