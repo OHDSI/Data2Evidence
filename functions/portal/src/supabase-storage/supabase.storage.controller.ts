@@ -51,7 +51,7 @@ export class SupabaseStorageController {
     return await this.storageClient.delete(nodeId, fileName, "data-transformation", "data-transformation");
   }
   
-  @Post("upload")
+  @Post("upload/file")
   async uploadAnyFile(
     @Query("nodeId") nodeId: string,
     @Req() request: Request
@@ -76,7 +76,7 @@ export class SupabaseStorageController {
     return await this.storageClient.upload(nodeId, uploadedFile, "data-transformation", "data-transformation");
   }
 
-  @Delete("delete")
+  @Delete("delete/file")
   async deleteAnyFile(
     @Query("nodeId") nodeId: string,
     @Query("fileName") fileName: string
