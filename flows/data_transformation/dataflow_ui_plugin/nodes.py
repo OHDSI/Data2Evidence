@@ -326,7 +326,70 @@ class CsvNode(Node):
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
+class GenericFileNode(Node):
+    """
+    Loads a file or a folder of JSON files into pandas DataFrames or reads single CSV/Excel file.
+    Attributes:
+        files (list[str]): List of file to load.
+        file_type (str): File type (csv, json, xlsx, etc.).
+        encoding (str): Optional file encoding.
+        output_folder (str): Folder to store multiple files.
+    """
 
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.files = _node.get("files", [])
+        if isinstance(self.files, str):
+            self.files = [self.files]
+
+        self.file_type = _node.get("file_type", None)
+        self.encoding = _node.get("encoding", "utf8")
+        self.options = _node.get("options", {})
+        self.output_folder = _node.get("output_folder", f"./{self.id}_json_files")
+
+        # Only create folder if JSON files will be saved
+        if self.file_type == "json" and self.files:
+            os.makedirs(self.output_folder, exist_ok=True)
+
+    def _fetch_file(self, file_path):
+        try:
+            return SupabaseStorageAPI().get_file(self.id, file_path)
+        except Exception:
+            with open(file_path, "rb") as f:
+                return f.read()
+
+    def _detect_file_type(self, file_path) -> str:
+        if self.file_type:
+            return self.file_type.lower()
+        ext = file_path.split(".")[-1].lower()
+        return ext
+
+    def _save_files_to_folder(self):
+        os.makedirs(self.output_folder, exist_ok=True)
+
+        for file_path in self.files:
+            raw_data = self._fetch_file(file_path)
+            file_name = os.path.basename(file_path)
+            save_path = os.path.join(self.output_folder, file_name)
+            with open(save_path, "wb") as f:
+                f.write(raw_data)
+
+        # Return the folder path where all files are saved
+        return self.output_folder
+
+    def test(self, task_run_context):
+        try:
+            return self._save_files_to_folder()
+        except Exception:
+            raise
+
+    def task(self, task_run_context):
+        try:
+            folder_path = self._save_files_to_folder()
+            return Result(False, folder_path, self, task_run_context)
+        except Exception:
+            return Result(True, tb.format_exc(), self, task_run_context)
+        
 class DbWriter(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
@@ -620,6 +683,8 @@ def generate_node_task(nodename, node, nodetype):
     match nodetype:
         case NodeType.CSV:
             nodeobj = CsvNode(nodename, node)
+        case NodeType.FILE:
+            nodeobj = FileNode(nodename, node)
         case NodeType.SQL:
             nodeobj = SqlNode(nodename, node)
         case NodeType.PYTHON:
