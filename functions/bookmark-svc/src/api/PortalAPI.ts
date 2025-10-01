@@ -12,6 +12,7 @@ export class PortalAPI {
   private readonly token: string
   private readonly logger = console
   private readonly httpAgent: http.Agent
+  private portalApi
 
   constructor(token: string) {
     this.token = token
@@ -20,10 +21,12 @@ export class PortalAPI {
     }
     if (env.SERVICE_ROUTES.portalServer) {
       this.baseURL = env.SERVICE_ROUTES.portalServer
-      this.httpAgent = new http.Agent({keepAlive: true})
+      this.httpAgent = new http.Agent({ keepAlive: true })
     } else {
       throw new Error('No url is set for PortalAPI')
     }
+
+    this.portalApi = Trex.tokioChannel('d2e-functions/portal')
   }
 
   private async getRequestConfig() {
@@ -39,7 +42,7 @@ export class PortalAPI {
 
   async getBookmarks(datasetId: string): Promise<any> {
     try {
-      const timestamp = (new Date()).valueOf();
+      const timestamp = new Date().valueOf()
       console.time(`time-bookmarks-svc-main-getBookmarks-${timestamp}`)
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks/list?datasetId=${datasetId}`
@@ -55,7 +58,7 @@ export class PortalAPI {
 
   async getBookmarkById(bookmarkId: string, datasetId: string): Promise<any> {
     try {
-      const timestamp = (new Date()).valueOf();
+      const timestamp = new Date().valueOf()
       console.time(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/user-artifact/bookmarks/${encodeURIComponent(
@@ -146,6 +149,24 @@ export class PortalAPI {
       console.error(error)
       this.logger.error(`Error while dialect from datasetId:${datasetId}`)
       throw new Error(`Error while dialect from datasetId:${datasetId}`)
+    }
+  }
+
+  async getDatasetViaSystemAdmin(datasetId: string) {
+    try {
+      const options = await this.getRequestConfig()
+      const url = `${this.baseURL}/dataset/list/systemadmin`
+      const result = await this.portalApi.get(url, options)
+      const dataset = result.data.find(e => e.id === datasetId)
+
+      if (!dataset) {
+        throw new Error(`Unable to find dataset with datasetId:${datasetId}`)
+      }
+      return dataset
+    } catch (error) {
+      console.error(error)
+      this.logger.error(`Error getting dataset with datasetId:${datasetId}`)
+      throw new Error(`Error getting dataset with datasetId:${datasetId}`)
     }
   }
 }
