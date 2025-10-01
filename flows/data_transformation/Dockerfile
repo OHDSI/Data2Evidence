@@ -1,6 +1,56 @@
+ARG PYTHON_VERSION=3.12
+ARG R_VERSION=4.4.3
+
 FROM ghcr.io/data2evidence/whiterabbit:master AS base
 
-FROM rocker/r-ver:4.4 AS base-build
+FROM alpine AS nlp_external_files
+
+RUN apk add --no-cache curl unzip && \
+    mkdir -p /external && \
+    curl -o /external/CUItoOHDSIv1.zip https://raw.githubusercontent.com/jmbanda/OHDSIconceptid2cui/refs/heads/master/CUItoOHDSIv1.zip && \
+    unzip -o /external/CUItoOHDSIv1.zip -d /external && \
+    rm /external/CUItoOHDSIv1.zip
+
+
+FROM rocker/r-ver:${R_VERSION} AS python-dependencies-build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    cmake \
+    gcc \
+    g++ \
+    software-properties-common \
+    # To build psycopg2-binary
+    libpq-dev \
+    # To build rpy2
+    liblzma-dev \
+    libdeflate-dev \
+    libcairo2-dev \
+    libssl-dev \
+    libxml2-dev \
+    && apt-get clean --yes \
+    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
+
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    # UV_PYTHON_DOWNLOADS=manual
+    # Install managed python which will be copied over to runtime build
+    UV_PYTHON_INSTALL_DIR=/app/python \
+    UV_PYTHON_PREFERENCE=only-managed
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /uvx /bin/
+RUN uv python install ${PYTHON_VERSION}
+
+WORKDIR /app
+
+# Install dependencies with uv into a venv
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=./data_transformation/uv.lock,target=uv.lock \
+    --mount=type=bind,source=./data_transformation/pyproject.toml,target=pyproject.toml \
+    uv sync --all-extras --frozen --no-install-project --no-dev --no-editable
+
+
+FROM rocker/r-ver:${R_VERSION} AS runtime
+
 
 RUN mkdir -p /app
 WORKDIR /app
@@ -20,93 +70,49 @@ ENV DISPLAY=:1
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    libpq5 \
-    libpq-dev \
-    curl \
-    gcc \
-    g++ \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-venv \
-    software-properties-common \
-    sqlite3 \
-    vim-tiny \
-    wget \
-    unzip \
-    openjdk-17-jdk \
-    xvfb \
-    libbz2-dev \
-    libcairo2-dev \
-    libcurl4-gnutls-dev \
-    libfontconfig1-dev \
-    libfreetype6-dev \
-    libfribidi-dev \
-    libgit2-dev \
-    libharfbuzz-dev \
-    libicu-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libprotobuf-dev \
-    libsodium23 libsodium-dev libsecret-tools \
-    libssh2-1-dev \
-    libssl-dev \
-    libtiff-dev \
-    libxml2-dev \
-    libxt-dev \
-    locales \
-    openssh-client \
-    protobuf-compiler \
     git \
+    curl \
+    wget \
+    libpq5 \
+    python3-pip \
+    openjdk-17-jdk \
     && apt-get clean
 
-# Python Library Setup
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 20
-RUN python3 -m venv /usr/src/app
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-ENV PATH="/usr/src/app/bin:$PATH:JAVA_HOME/bin"
-# ENV PATH="$JAVA_HOME/bin:$PATH"
-
-# Verify the installation
-RUN java -version && R CMD javareconf
-
-# Install Dependencies
-RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
-RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
-
-WORKDIR /app
-
-COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
-COPY --chown=docker:docker  ./__init__.py .
 
-# Create folder to store synpuf1k CSVs
-RUN mkdir -p /app/synpuf1k
-RUN chown -R docker:docker /app/synpuf1k
+# Create folders and set ownership
+RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
+    && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop \
+    && chmod 711 -R /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
+    && chown docker:alp /app/duckdb_data
 
-# Create folder to store vocab CSVs
-RUN mkdir -p /app/vocab
-RUN chown -R docker:docker /app/vocab
 
-# Create folder to store data load CSVs
-RUN mkdir -p /app/data_load
-RUN chown -R docker:docker /app/data_load
+# Verify the Java installation
+RUN java -version && R CMD javareconf
 
-# Create folder for mimic database files
-RUN mkdir -p /app/mimic_omop
-RUN chown -R docker:docker /app/mimic_omop
 
-# Create folder to store duckdb extensions for offline plugins
-# version must match duckdb in requirements.txt
-ENV duckdb_version 1.2.1
-RUN mkdir -p /app/duckdb_extensions
-WORKDIR /app/duckdb_extensions
-RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \
-    && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/fts.duckdb_extension.gz \
-    && gzip -d postgres_scanner.duckdb_extension.gz \
-    && gzip -d fts.duckdb_extension.gz
+# Copy the Python virtual environment and uv binary from the build stage
+COPY --from=python-dependencies-build --chown=docker:docker /bin/uv /usr/local/bin/uv
+COPY --from=python-dependencies-build --chown=docker:docker /app/python /app/python
+COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
+COPY ./data_transformation/requirements_ner.txt /app/requirements_ner.txt
+
+
+WORKDIR /app
+ENV PATH="/app/.venv/bin:$PATH"
+
+# For ner_extract_plugin which cannot be pinned down in uv.lock due to version conflicts
+RUN uv pip install --upgrade "pip<24" \
+    && uv pip install -r requirements_ner.txt \
+    && uv pip install spacy==3.8.2 \
+    && uv pip install spacy-transformers==1.3.9 \
+    && uv pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz \
+    && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings \
+    && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl"
+
 
 WORKDIR /app
 
@@ -155,15 +161,13 @@ RUN pip install spacy-transformers==1.3.9
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_transformation flows
 
-# For NLP: download CUItoOHDSIv1.csv
-RUN mkdir -p flows/ner_extract_plugin/external/
-RUN curl -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip https://raw.githubusercontent.com/jmbanda/OHDSIconceptid2cui/refs/heads/master/CUItoOHDSIv1.zip
-RUN unzip -o flows/ner_extract_plugin/external/CUItoOHDSIv1.zip -d flows/ner_extract_plugin/external
-RUN rm flows/ner_extract_plugin/external/CUItoOHDSIv1.zip
 
-#White rabbit need to run as root user
-#USER docker
+RUN chmod -R 755 /app
+
+# Copy NLP external files to the target directory
+COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract_plugin/CUItoOHDSIv1.csv
 
 ENV INSTALL_SQLALCHEMY_HANA=false
+ENV PATH="/app/.venv/bin:$PATH"
 
 ENTRYPOINT []
