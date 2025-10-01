@@ -59,7 +59,6 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
                         vocab_schema=options.vocab_schema)
     
     # Create results schema
-    
     create_schema_task(dbdao, results_schema)
     
 
@@ -70,7 +69,7 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
         )]
     )
 
-    create_results_tables(dbdao, results_schema, vocab_schema)
+    create_results_tables(dbdao, results_schema)
     
 
 def create_seed_schemas_flow(options: OmopCDMPluginOptions):
