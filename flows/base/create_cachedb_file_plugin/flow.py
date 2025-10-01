@@ -26,7 +26,7 @@ def create_cachedb_file_plugin(options: CreateCacheOptions):
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
             create_cache_flow(options)
-            if options.results_schema_name:
+            if options.results_schema_name and options.schema_name != options.results_schema_name:
                 create_results_cache_flow(options)
 
         case CacheFlowAction.GET_VERSION_INFO:
