@@ -3,6 +3,11 @@ import axios, { AxiosRequestConfig } from 'axios'
 import { IMaterializedCohort } from '../types'
 import { env } from '../env'
 
+interface IFilterValue {
+  datasetId?: string
+  bookmarkId?: string
+}
+
 export class AnalyticsSvcAPI {
   private readonly baseURL: string
   // private readonly httpsAgent: any
@@ -43,6 +48,26 @@ export class AnalyticsSvcAPI {
       params.append('excludePatientIds', 'true')
       const result = await axios.get(url, { ...options, params })
       return result.data.data
+    } catch (error) {
+      console.error(`Error while getting all cohorts: ${error}`)
+      throw error
+    }
+  }
+
+  async getFilteredCohorts(datasetId: string, filterValue: IFilterValue): Promise<IMaterializedCohort[]> {
+    try {
+      const url = `${this.baseURL}/cohort/SYNTAX/${encodeURIComponent(JSON.stringify(filterValue))}`
+      console.log(`Calling ${url} to get filtered cohorts`)
+      const options = this.getRequestConfig()
+      const params = new URLSearchParams()
+      params.append('datasetId', datasetId)
+      params.append('excludePatientIds', 'true')
+      const result = await axios.get(url, { ...options, params })
+      if (result.data) {
+        return result.data.data
+      } else {
+        return []
+      }
     } catch (error) {
       console.error(`Error while getting all cohorts: ${error}`)
       throw error
