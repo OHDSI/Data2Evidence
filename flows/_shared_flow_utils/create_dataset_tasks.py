@@ -174,8 +174,12 @@ def create_results_tables(sql_script: str, dbdao):
                 for statement in sql_script.strip().split(";"):
                     if statement.strip():
                         conn.execute(text(statement))
-            finally:
+            except Exception as e:
+                raise
+            else:
                 conn.commit()
+            finally:
+                
                 conn.close()
 
 def is_safe_schema_name(schema: str) -> bool:
