@@ -29,6 +29,7 @@ def hana_load_plugin(options: DataloadOptions):
     match options.flow_action_type:
         case FlowActionType.CREATE_DATA_MODEL:
             create_datamodel(options)
+        # Todo: implement get get_version_info for hana
         case FlowActionType.GET_VERSION_INFO:
             get_version_info(options)
 
