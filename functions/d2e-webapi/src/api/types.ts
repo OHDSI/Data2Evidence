@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CohortExpression } from "../types.ts";
 
 export interface ICohortDefinitionSyntax {
+  atlasCohortDefinitionId: number;
   datasetId: string;
   expressionType: string;
   expression: z.infer<typeof CohortExpression>;
@@ -176,7 +177,7 @@ export interface PortalUserArtifacts {
   artifacts: unknown;
 }
 
-export const CohortDefinitionSchema = z.object({
+export const AtlasCohortDefinitionSchema = z.object({
   id: z.number(),
   name: z.string(),
   description: z.string().nullable(),
@@ -189,6 +190,9 @@ export const CohortDefinitionSchema = z.object({
   tags: z.array(z.string()),
   cohortDefinitionId: z.number().optional(),
 });
+export type IAtlasCohortDefinition = z.infer<
+  typeof AtlasCohortDefinitionSchema
+>;
 
 export const BookmarkSchema = z.object({
   bmkId: z.string(),
@@ -202,6 +206,7 @@ export const BookmarkSchema = z.object({
   cohortDefinitionId: z.number().optional(),
   paConfigId: z.string().optional(),
 });
+export type IBookmark = z.infer<typeof BookmarkSchema>;
 
 export const MaterializedCohortSchema = z.object({
   id: z.number(),
@@ -210,16 +215,16 @@ export const MaterializedCohortSchema = z.object({
   createdOn: z.union([z.number(), z.string()]),
   description: z.string(),
 });
+export type IMaterializedCohort = z.infer<typeof MaterializedCohortSchema>;
 
 export const BookmarksSchema = z.object({
   bookmarks: z.array(BookmarkSchema),
-  materializedCohorts: z.array(MaterializedCohortSchema),
   schemaName: z.string(),
 });
 
 export const CombinedCohortDefinitionListSchema = z.union([
   BookmarkSchema,
-  CohortDefinitionSchema,
+  AtlasCohortDefinitionSchema,
   MaterializedCohortSchema,
 ]);
 
@@ -259,4 +264,19 @@ export interface IDataset {
     summary: string;
     showRequestAccess: boolean;
   };
+}
+
+export interface IFilterValue {
+  datasetId?: string;
+  bookmarkId?: string;
+  atlasCohortDefinitionId?: number;
+}
+
+export interface IBaseMaterializedCohort {
+  id: number;
+  name: string;
+  description: string;
+  creationTimestamp: string;
+  syntax: string;
+  patientCount: number;
 }
