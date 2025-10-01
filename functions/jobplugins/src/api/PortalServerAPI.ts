@@ -1,6 +1,6 @@
 import { services } from "../env.ts";
 import { OpenIDAPI } from "./OpenIDAPI.ts";
-import { CsvFileOperationResponse } from "../types.ts";
+import { CsvFileOperationResponse, FileOperationResponse } from "../types.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
@@ -130,6 +130,35 @@ export class PortalServerAPI {
       throw error;
     }
   }
+
+  async uploadCsvFile(nodeId: string, file: File): Promise<CsvFileOperationResponse> {
+    const url = `${this.baseURL}/supabase-storage/upload/csv`;
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    const options = {
+      method: "POST",
+      headers: { Authorization: this.token },
+      body: formData,
+    };
+
+    const result = await fetch(`${url}?nodeId=${nodeId}`, options);
+    if (!result.ok) {
+      throw new Error(`Error while uploading CSV file: ${result.status}`);
+    }
+    return await result.json();
+}
+
+async deleteCsvFile(nodeId: string, fileName: string): Promise<CsvFileOperationResponse> {
+  const url = `${this.baseURL}/supabase-storage/delete/csv`;
+  const options = this.createOptions("DELETE");
+  const result = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, options);
+  if (!result.ok) {
+    throw new Error(`Error while deleting CSV file: ${result.status}`);
+  }
+  return await result.json();
+}
+
 
   private createOptions(method: string, token = this.token): RequestInit {
     return {
