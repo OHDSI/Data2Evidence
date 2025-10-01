@@ -39,7 +39,8 @@ export const publicURLs = [
     '^/consent$',
     '^/callback$',
     '^/prefect/docs$',
-    '^/openapi.json$'
+    '^/openapi.json$',
+    '^/fhir-server/healthcheck$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([
@@ -101,5 +102,11 @@ export const env = {
     PLUGINS_PULL_POLICY: _env.PLUGINS_PULL_POLICY || 'IfNotPresent',
     PLUGINS_IMAGE_TAG: _env.PLUGINS_IMAGE_TAG || 'develop',
     PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: _env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG ? JSON.parse(_env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG) : {},
-    PLUGINS_INFORMATION_URL: _env.PLUGINS_INFORMATION_URL || 'https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true'
+    PLUGINS_INFORMATION_URL: _env.PLUGINS_INFORMATION_URL || 'https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true',
+
+    USE_PUBLIC_WEBAPI_PROXY: _env.USE_PUBLIC_WEBAPI_PROXY,
+    PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
+    PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE,
+    GOOGLE_APPLICATION_CREDENTIALS: _env.GOOGLE_APPLICATION_CREDENTIALS,
+    REDIS_PASSWORD: _env.REDIS_PASSWORD
 }

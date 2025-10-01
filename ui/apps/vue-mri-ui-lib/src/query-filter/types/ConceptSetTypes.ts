@@ -90,15 +90,30 @@ export interface ConceptSetDetails {
 }
 
 export interface CreateConceptSetRequest {
-  concepts: Array<{
-    id: number
-    useDescendants: boolean
-    useMapped: boolean
-    isExcluded: boolean
-  }>
+  id: 0
   name: string
-  shared: boolean
-  userName: string
+  description?: string | null
+  expression: {
+    items: Array<{
+      concept: {
+        CONCEPT_CLASS_ID: string
+        CONCEPT_CODE: string
+        CONCEPT_ID: number
+        CONCEPT_NAME: string
+        DOMAIN_ID: string
+        INVALID_REASON: string
+        INVALID_REASON_CAPTION: string
+        STANDARD_CONCEPT: string
+        STANDARD_CONCEPT_CAPTION: string
+        VOCABULARY_ID: string
+        VALID_START_DATE?: string
+        VALID_END_DATE?: string
+      }
+      isExcluded: boolean
+      includeDescendants: boolean
+      includeMapped: boolean
+    }>
+  }
 }
 
 // Types moved from QueryFilterModel.ts
@@ -197,4 +212,43 @@ export interface SelectedConcept {
   score?: number | undefined
   // Backward compatibility field (our custom addition)
   conceptName?: string | undefined
+}
+
+// Interfaces for concept set expression API response
+export interface ConceptSetExpressionConcept {
+  CONCEPT_ID: number
+  CONCEPT_NAME: string
+  STANDARD_CONCEPT: string
+  STANDARD_CONCEPT_CAPTION: string
+  INVALID_REASON: string
+  INVALID_REASON_CAPTION: string
+  CONCEPT_CODE: string
+  DOMAIN_ID: string
+  VOCABULARY_ID: string
+  CONCEPT_CLASS_ID: string
+  VALID_START_DATE: number
+  VALID_END_DATE: number
+}
+
+export interface ConceptSetExpressionItem {
+  concept: ConceptSetExpressionConcept
+  isExcluded: boolean
+  includeDescendants: boolean
+  includeMapped: boolean
+}
+
+export interface ConceptSetExpression {
+  items: ConceptSetExpressionItem[]
+}
+
+// WebAPI interface for d2e-webapi endpoints (matching portal's format)
+export interface IWebapiConceptSet {
+  id: number
+  name: string
+  createdDate?: string
+  modifiedDate?: string
+  createdBy?: string
+  modifiedBy?: string
+  shared?: boolean
+  userName?: string
 }

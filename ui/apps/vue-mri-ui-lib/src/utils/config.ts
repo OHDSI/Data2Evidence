@@ -3,7 +3,7 @@ import { NavigationConfig, NavigationItem } from '@/types/navigation'
 const MAIN_NAV_ITEM: NavigationItem = {
   id: 'cohorts',
   title: 'Cohorts',
-  route: '/',
+  route: '/cohorts',
   visible: true,
   active: true,
 }
@@ -20,7 +20,7 @@ export const getNavigationItems = (): NavigationItem[] => {
       ? JSON.parse(process.env.VUE_APP_NAVIGATION_ITEMS)
       : []
 
-    const items: NavigationItem[] = [MAIN_NAV_ITEM, ...envItems]
+    const items: NavigationItem[] = [...envItems, MAIN_NAV_ITEM]
 
     const validItems: NavigationItem[] = items
       .filter(item => {

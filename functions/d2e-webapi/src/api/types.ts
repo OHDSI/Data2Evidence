@@ -2,6 +2,7 @@ import { z } from "zod";
 import { CohortExpression } from "../types.ts";
 
 export interface ICohortDefinitionSyntax {
+  atlasCohortDefinitionId: number;
   datasetId: string;
   expressionType: string;
   expression: z.infer<typeof CohortExpression>;
@@ -176,6 +177,63 @@ export interface PortalUserArtifacts {
   artifacts: unknown;
 }
 
+export const AtlasCohortDefinitionSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().nullable(),
+  createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+  createdDate: z.number().nullable(),
+  modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
+  modifiedDate: z.number().nullable(),
+  hasWriteAccess: z.boolean(),
+  hasReadAccess: z.boolean(),
+  tags: z.array(z.string()),
+  cohortDefinitionId: z.number().optional(),
+});
+export type IAtlasCohortDefinition = z.infer<
+  typeof AtlasCohortDefinitionSchema
+>;
+
+export const BookmarkSchema = z.object({
+  bmkId: z.string(),
+  bookmarkname: z.string(),
+  bookmark: z.string(),
+  viewname: z.string().nullable(),
+  modified: z.string(),
+  version: z.number().nullable(),
+  user_id: z.string(),
+  shared: z.boolean(),
+  cohortDefinitionId: z.number().optional(),
+  paConfigId: z.string().optional(),
+});
+export type IBookmark = z.infer<typeof BookmarkSchema>;
+
+export const MaterializedCohortSchema = z.object({
+  id: z.number(),
+  patientCount: z.number(),
+  cohortDefinitionName: z.string(),
+  createdOn: z.union([z.number(), z.string()]),
+  description: z.string(),
+});
+export type IMaterializedCohort = z.infer<typeof MaterializedCohortSchema>;
+
+export const BookmarksSchema = z.object({
+  bookmarks: z.array(BookmarkSchema),
+  schemaName: z.string(),
+});
+
+export const CombinedCohortDefinitionListSchema = z.union([
+  BookmarkSchema,
+  AtlasCohortDefinitionSchema,
+  MaterializedCohortSchema,
+]);
+
+export type ICombinedCohortDefnitionListItem = z.infer<
+  typeof CombinedCohortDefinitionListSchema
+>;
+
+export type IBookmarks = z.infer<typeof BookmarksSchema>;
+
 export interface IUserMe {
   id: string;
   username: string;
@@ -206,4 +264,19 @@ export interface IDataset {
     summary: string;
     showRequestAccess: boolean;
   };
+}
+
+export interface IFilterValue {
+  datasetId?: string;
+  bookmarkId?: string;
+  atlasCohortDefinitionId?: number;
+}
+
+export interface IBaseMaterializedCohort {
+  id: number;
+  name: string;
+  description: string;
+  creationTimestamp: string;
+  syntax: string;
+  patientCount: number;
 }

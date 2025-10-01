@@ -1,27 +1,26 @@
-@import './mri-variables';
 .apptextInput {
   div[role='messagetab'] {
     display: block;
-    color: $UiDarkestText;
+    color: var(--color-ui-darkest-text);
     font-style: italic;
     padding: 8px;
   }
 
   &.control-error-state {
     input {
-      border: 1px solid $MriErrorColor;
+      border: 1px solid var(--color-mri-error);
     }
     div[role='messagetab'] {
-      background-color: lighten($MriErrorColor, 60%);
+      background-color: #ff9999;
     }
   }
 
   &.control-warning-state {
     input {
-      border: 1px solid $MriWarningColor;
+      border: 1px solid var(--color-mri-warning);
     }
     div[role='messagetab'] {
-      background-color: lighten($MriWarningColor, 60%);
+      background-color: #ffe9d0;
     }
   }
 }

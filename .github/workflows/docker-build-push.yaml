@@ -40,6 +40,14 @@ env:
   GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
 
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
   check_file_changes:
     environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
@@ -67,9 +75,9 @@ jobs:
               - ".github/workflows/docker-build-push.yaml"
 
   bld:
-    needs: [check_file_changes]
+    needs: [pick_runner, check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ubuntu-latest
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
       DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}
@@ -115,12 +123,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-fhir-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
-          - AZ_REG_REPOSITORY: d2e-fhir-fe-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile.frontend
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
           - AZ_REG_REPOSITORY: d2e-cachedb
             DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
@@ -141,14 +143,14 @@ jobs:
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
 
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
           android: true
           dotnet: true
           haskell: true
-          large-packages: false
+          large-packages: true
           docker-images: true
           swap-storage: true
 
@@ -235,6 +237,11 @@ jobs:
           package-type: "container"
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
+      - name: Prune system
+        if: always()
+        id: prune
+        run: |
+          docker system prune -af
 
   docker-success:
     needs: bld

@@ -28,7 +28,10 @@ export function addRoutes(app: Hono) {
       REACT_APP_DB_CREDENTIALS_PUBLIC_KEYS: certEscapeNewLine(env.DB_CREDENTIALS_PUBLIC_KEYS || "").replace('}\\n', '}'),
       REACT_APP_PLUGINS: global.PLUGINS_JSON,
       REACT_APP_MRI_CONFIG_NAME: 'OMOP_GDM_PA_CONF', // Currently supporting static configs
-      REACT_APP_LOG_DISCLAIMER: env.PORTAL__LOG_DISCLAIMER
+      REACT_APP_LOG_DISCLAIMER: env.PORTAL__LOG_DISCLAIMER,
+      REACT_APP_USE_PUBLIC_WEBAPI_PROXY: env.USE_PUBLIC_WEBAPI_PROXY,
+      REACT_APP_PUBLIC_WEBAPI_PROXY_URL: env.PUBLIC_WEBAPI_PROXY_URL,
+      REACT_APP_PUBLIC_WEBAPI_DATASOURCE: env.PUBLIC_WEBAPI_DATASOURCE
     }
     c.header('Content-Type', 'application/javascript')
     

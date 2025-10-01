@@ -1,7 +1,6 @@
-@import './mri-variables';
 .pa-splitter {
   #pane-left {
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     position: relative;
     width: 100%;
   }
@@ -9,12 +8,12 @@
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
   }
   .gutter-horizontal {
     font-family: 'app-icons';
     cursor: col-resize;
-    background-color: $UiExtraLightBG;
+    background-color: var(--color-ui-extra-light-bg);
     background-repeat: no-repeat;
     color: rgb(51, 51, 51);
     display: inline-block;
@@ -34,12 +33,12 @@
     }
   }
   .gutter-horizontal:hover {
-    color: $UiExtraLightBG;
-    background-color: $UiDarkBG;
+    color: var(--color-ui-extra-light-bg);
+    background-color: var(--color-ui-dark-bg);
   }
   .gutter-horizontal:active {
-    color: $UiExtraLightBG;
-    background-color: $MriBrandHover;
+    color: var(--color-ui-extra-light-bg);
+    background-color: var(--color-mri-brand-hover);
   }
   .split,
   .gutter-horizontal {
