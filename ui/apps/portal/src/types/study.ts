@@ -64,6 +64,7 @@ export interface NewStudyInput {
   schemaOption: string;
   cdmSchemaValue: string;
   vocabSchemaValue?: string;
+  resultSchemaValue: string;
   cleansedSchemaOption: boolean;
   tenantName?: string;
   dataModel?: string;

@@ -107,6 +107,7 @@ export class DatasetRouter {
           tenantId,
           schemaOption,
           vocabSchemaValue,
+          resultSchemaValue,
           cleansedSchemaOption,
           dialect,
           databaseCode,
@@ -159,6 +160,7 @@ export class DatasetRouter {
                     schema_name: schemaName,
                     cleansed_schema_option: cleansedSchemaOption,
                     vocab_schema: vocabSchema,
+                    result_schema: resultSchemaValue,
                     plugin: plugin,
                   },
                 };
@@ -210,6 +212,7 @@ export class DatasetRouter {
             databaseCode: databaseCode,
             schemaName,
             vocabSchemaName: vocabSchema,
+            resultSchemaName: resultSchemaValue,
             dataModel,
             plugin,
             tenantId,
@@ -248,9 +251,8 @@ export class DatasetRouter {
         dataModel,
         type,
       } = req.body;
-      const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
-        sourceStudyId
-      );
+      const { dialect, databaseCode, schemaName, resultSchemaName } =
+        await portalAPI.getDataset(sourceStudyId);
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
@@ -290,6 +292,7 @@ export class DatasetRouter {
                 database_code: databaseCode,
                 schema_name: parsedNewSchemaName,
                 source_schema: schemaName,
+                result_schema: resultSchemaName,
                 dialect: dialect,
                 snapshot_copy_config: snapshotCopyConfig,
               },

@@ -53,6 +53,7 @@ interface FormData {
   cdmSchemaValue: string;
   isSameCdmSchemaForVocab: boolean;
   vocabSchemaValue: string;
+  resultSchemaValue: string;
   name: string;
   summary: string;
   showRequestAccess: boolean;
@@ -86,6 +87,9 @@ interface FormError {
     required: boolean;
   };
   vocabSchemaValue: {
+    required: boolean;
+  };
+  resultSchemaValue: {
     required: boolean;
   };
   tokenStudyCode: {
@@ -129,6 +133,7 @@ const EMPTY_FORM_ERROR: FormError = {
   schemaOption: { required: false },
   cdmSchemaValue: { required: false },
   vocabSchemaValue: { required: false },
+  resultSchemaValue: { required: false },
   dataModel: { required: false },
   dataModelCustom: { required: false },
   databaseCode: { required: false },
@@ -147,6 +152,7 @@ const EMPTY_FORM_DATA: FormData = {
   cdmSchemaValue: "", //Optional
   isSameCdmSchemaForVocab: true,
   vocabSchemaValue: "", //Optional
+  resultSchemaValue: "",
   name: "",
   summary: "",
   showRequestAccess: false,
@@ -365,6 +371,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       isSameCdmSchemaForVocab,
       vocabSchemaValue,
+      resultSchemaValue,
       dataModel,
       dataModelCustom,
       databaseCode,
@@ -420,6 +427,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     if (schemaOption === SchemaTypes.ExistingCDM && !vocabSchemaValue) {
       formError = { ...formError, vocabSchemaValue: { required: true } };
+    }
+
+    if (!resultSchemaValue) {
+      formError = { ...formError, resultSchemaValue: { required: true } };
     }
 
     if (!paConfigId) {
@@ -479,6 +490,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       schemaOption,
       cdmSchemaValue,
       vocabSchemaValue,
+      resultSchemaValue,
       cleansedSchemaOption,
       name,
       summary,
@@ -519,6 +531,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       schemaOption,
       cdmSchemaValue,
       vocabSchemaValue,
+      resultSchemaValue,
       cleansedSchemaOption,
       dataModel: parsedDataModel,
       plugin: dataModelDetails.plugin,
@@ -609,7 +622,23 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
         </Box>
-
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_SUMMARY)}
+            value={formData.summary}
+            onChange={(event) => handleFormDataChange({ summary: event.target.value })}
+          />
+        </Box>
+        <div>{getText(i18nKeys.ADD_STUDY_DIALOG__DESCRIPTION)}</div>
+        <SimpleMDE
+          data-testid="add-study-mde"
+          value={formData.description}
+          onChange={(value) => handleFormDataChange({ description: value })}
+          options={mdeOptions}
+          style={{ marginTop: "11px" }}
+        />
         {/* Schema Options */}
         <Box mb={4}>
           <FormControl
@@ -868,6 +897,20 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             </Box>
           )
         )}
+
+        <Box mb={4}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label={getText(i18nKeys.ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME)}
+            value={formData.resultSchemaValue}
+            onChange={(event) => handleFormDataChange({ resultSchemaValue: event.target.value })}
+            error={formError.resultSchemaValue.required}
+          />
+          {formError.resultSchemaValue.required && (
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+          )}
+        </Box>
 
         {/* Data Model Options */}
         {displayDataModels && (
