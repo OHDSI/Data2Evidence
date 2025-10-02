@@ -315,30 +315,19 @@ const TerminologyList: FC<TerminologyListProps> = ({
   }, [columnFilters.length, defaultFilters]);
 
   useEffect(() => {
-    if (
-      useDefaultFilters &&
-      defaultFilters &&
-      filterOptions &&
-      listData.length
-    ) {
-      // Only include valid filters
+    if (useDefaultFilters && defaultFilters) {
+      // Trust defaultFilters from parent component (PA-Atlas)
+      // Apply them immediately without waiting for filterOptions to load
       const filters = JSON.parse(
         JSON.stringify(defaultFilters)
       ) as typeof defaultFilters;
-      const validFilters = filters
-        .map((f) => {
-          const valueKeys = filterOptions[f.id as keyof typeof filterOptions];
-          const valueKeysArr = Object.keys(valueKeys);
-          const value = f.value.filter((v) => valueKeysArr.includes(v));
-          return { ...f, value };
-        })
-        .filter((f) => {
-          // Empty value arrays should be removed as it is not compatible with the react table
-          return Object.keys(filterOptions).includes(f.id) && f.value.length;
-        });
+
+      // Only keep filters with non-empty values
+      const validFilters = filters.filter((f) => f.value.length > 0);
+
       setColumnFilters(validFilters);
     }
-  }, [defaultFilters, filterOptions, listData, useDefaultFilters]);
+  }, [defaultFilters, useDefaultFilters]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
@@ -709,7 +698,11 @@ const TerminologyList: FC<TerminologyListProps> = ({
     layoutMode: "grid",
     columns,
     data: listData,
-    initialState: { density: "compact", showColumnFilters: true },
+    initialState: {
+      density: "compact",
+      // Hide column filters for Atlas when filterOptions are empty
+      showColumnFilters: isAtlas ? false : true,
+    },
     defaultColumn: {
       enableGlobalFilter: false,
       enableHiding: false,

@@ -364,9 +364,12 @@ const setupWebapiRoutes = app => {
     }
   })
 
-  // d2e-webapi seems to support 2 types of search api. sharing the logic here
-  const searchVocab = async (req, res, datasetId, query) => {
+  // GET endpoint for vocabulary search (matches d2e-webapi pattern)
+  app.get('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, async (req, res) => {
     logRequest(req)
+    const { datasetId } = req.params
+    const { query } = req.query
+
     if (!query && query !== '') {
       return res.status(400).json({ error: 'query parameter is required' })
     }
@@ -387,7 +390,6 @@ const setupWebapiRoutes = app => {
         data = response.data
         cache[cacheKey] = data
       }
-      // Map from Atlas API format to the expected format
 
       return res.json(data)
     } catch (error) {
@@ -403,40 +405,39 @@ const setupWebapiRoutes = app => {
         timestamp: new Date().toISOString(),
       })
     }
-  }
-  // GET endpoint for vocabulary search (matches d2e-webapi pattern)
-  app.get('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, (req, res) => {
-    const { datasetId } = req.params
-    const { query } = req.query
-    searchVocab(req, res, datasetId, query)
-  })
-  // GET endpoint for vocabulary search (matches d2e-webapi pattern)
-  app.post('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, (req, res) => {
-    const { datasetId } = req.params
-    const query = req.body.QUERY
-    searchVocab(req, res, datasetId, query)
   })
 
-  // POST /vocabulary/:dataSource/search
-  app.post('/d2e-webapi/vocabulary/:dataSource/search', async (req, res) => {
+  // POST endpoint for vocabulary search - forwards body payload to WebAPI
+  app.post('/d2e-webapi/vocabulary/:datasetId/search', validateDatasetId, async (req, res) => {
     logRequest(req)
-    const { dataSource } = req.params
+    const { datasetId } = req.params
     const body = req.body
+
     try {
-      const cacheKey = CACHE_KEYS.VOCABULARY_SEARCH_POST(SOURCE, req.body)
+      const cacheKey = CACHE_KEYS.VOCABULARY_SEARCH_POST(datasetId, body)
       let data = cache[cacheKey]
 
       if (!data || !USE_CACHE) {
-        // Call Atlas demo API to search vocabularies with body
+        // Call Atlas demo API to search vocabularies with body payload
+        // WebAPI expects body like: { "QUERY": "", "DOMAIN_ID": ["Gender"], ... }
         const response = await api.post(ALLOWED_ENDPOINTS.vocabulary, body)
         data = response.data
         cache[cacheKey] = data
       }
 
-      return res.send(data)
-    } catch (err) {
-      console.error(err)
-      return res.status(err.status).send()
+      return res.json(data)
+    } catch (error) {
+      console.error('Error searching vocabulary in Atlas API:', error.message)
+
+      // Forward the error status instead of sending mock data
+      const status = error.response?.status || 500
+      return res.status(status).json({
+        error: 'Failed to search vocabulary in Atlas API',
+        message: error.message,
+        body: body,
+        datasetId: datasetId,
+        timestamp: new Date().toISOString(),
+      })
     }
   })
 

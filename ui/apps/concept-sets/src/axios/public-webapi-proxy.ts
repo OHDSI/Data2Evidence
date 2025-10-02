@@ -107,7 +107,8 @@ export class PublicWebapiProxyAPI {
     standardConcept: string[],
     validity: string[]
   ): Promise<[IWebapiConcept[], number]> {
-    if (searchText === "") {
+    // Allow search if there are domain filters, even with empty search text
+    if (searchText === "" && (!domainId || domainId.length === 0)) {
       return [[], 0];
     }
 
