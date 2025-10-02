@@ -246,6 +246,7 @@ export interface CustomEra {
   DrugCodesetId: number
   GapDays: number
   Offset: number
+  DaysSupplyOverride?: number
 }
 
 export interface EndStrategy {

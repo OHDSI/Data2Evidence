@@ -103,9 +103,9 @@ export class QueryFilterCriteriaManager {
   }
 
   // Criteria management
-  getCriteria(): QueryFilterCriteria {
+  getCriteria(): InclusionCriteria {
     return {
-      id: this.generateId(),
+      qualifyingEventsLimit: this.inclusionCriteria.qualifyingEventsLimit || 'ALL',
       criteria: this.inclusionCriteria.criteria || [],
     }
   }
@@ -338,14 +338,15 @@ export class QueryFilterCriteriaManager {
           PostDays: this.entryEvents.postDays || 0,
         },
         PrimaryCriteriaLimit: {
-          Type: mapCriteriaTypeToAtlas(this.entryEvents.primaryCriteriaLimit || 'ALL'),
+          Type: mapCriteriaTypeToAtlas(this.entryEvents.primaryCriteriaLimit),
         },
       },
       QualifiedLimit: {
-        Type: mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
+        // This is for 'Restrict initial events to'
+        Type: 'First',
       },
       ExpressionLimit: {
-        Type: mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit || 'ALL'),
+        Type: mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit),
       },
       InclusionRules: (this.inclusionCriteria.criteria || []).map((group: QueryFilterGroup) => {
         return {

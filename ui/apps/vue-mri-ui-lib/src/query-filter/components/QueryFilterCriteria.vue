@@ -26,7 +26,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  criteriaData: () => ({ criteriaType: 'ALL', criteria: [] }),
+  criteriaData: () => ({ qualifyingEventsLimit: 'ALL', criteria: [] }),
   conceptSets: () => [],
   readonly: false,
 })
@@ -56,7 +56,7 @@ const qualifyingEventsOptions = [
 ]
 
 const currentQualifyingLimit = computed(() => {
-  return currentCriteriaData.value.criteriaType || 'ALL'
+  return currentCriteriaData.value.qualifyingEventsLimit || 'ALL'
 })
 
 const addNewGroup = () => {

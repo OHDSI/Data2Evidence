@@ -72,7 +72,6 @@ export function useCriteriaManager(
 
   const handleUpdateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
     criteriaManager.updateQualifyingEventsLimit(limit)
-    console.log('Qualifying limit updated:', limit)
   }
 
   const handleUpdatePrimaryCriteriaLimit = (
@@ -80,14 +79,12 @@ export function useCriteriaManager(
   ) => {
     if (limit === 'ALL' || limit === 'EARLIEST' || limit === 'LATEST') {
       criteriaManager.updatePrimaryCriteriaLimit(limit)
-      console.log('Primary criteria limit updated:', limit)
     }
   }
 
   const handleUpdateExitStrategy = (limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
     if (limit === 'CONT_OBS' || limit === 'FIXED' || limit === 'CONT_DRUG') {
       criteriaManager.updateEndStrategy(limit)
-      console.log('Exit strategy updated:', limit)
     }
   }
 

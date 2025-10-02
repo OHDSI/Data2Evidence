@@ -461,8 +461,20 @@ export const convertAtlasToFilters = (
 
     // Create the main inclusionCriteria structure
     const inclusionCriteria: InclusionCriteria = {
-      qualifyingEventsLimit: 'ALL' as const,
+      qualifyingEventsLimit: 'ALL' as 'ALL' | 'EARLIEST' | 'LATEST',
       criteria: [],
+    }
+
+    // Read ExpressionLimit from Atlas JSON (for Inclusion Criteria)
+    const expressionLimitType = cohortDefinition.ExpressionLimit?.Type
+    if (expressionLimitType) {
+      if (expressionLimitType === 'First') {
+        inclusionCriteria.qualifyingEventsLimit = 'EARLIEST'
+      } else if (expressionLimitType === 'Last') {
+        inclusionCriteria.qualifyingEventsLimit = 'LATEST'
+      } else if (expressionLimitType === 'All') {
+        inclusionCriteria.qualifyingEventsLimit = 'ALL'
+      }
     }
 
     if (cohortDefinition.InclusionRules && Array.isArray(cohortDefinition.InclusionRules)) {
@@ -531,9 +543,44 @@ export const convertAtlasToFilters = (
     }
 
     // Process CensoringCriteria for exitEvents
-    const exitEvents = {
-      endStrategy: 'CONT_OBS' as const,
-      censoringCriteria: [] as QueryFilterEvent[],
+    const exitEvents: {
+      endStrategy: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
+      censoringCriteria: QueryFilterEvent[]
+      fixedDuration?: {
+        dateField: 'StartDate' | 'EndDate'
+        offset: number
+      }
+      contDrugSettings?: {
+        conceptSetId: string
+        gapDays: number
+        offset: number
+        daysSupplyOverride: number
+      }
+    } = {
+      endStrategy: 'CONT_OBS',
+      censoringCriteria: [],
+    }
+
+    // Read EndStrategy from Atlas JSON
+    if (cohortDefinition.EndStrategy) {
+      if ('DateOffset' in cohortDefinition.EndStrategy) {
+        // Fixed duration strategy
+        exitEvents.endStrategy = 'FIXED'
+        exitEvents.fixedDuration = {
+          dateField: cohortDefinition.EndStrategy.DateOffset.DateField as 'StartDate' | 'EndDate',
+          offset: cohortDefinition.EndStrategy.DateOffset.Offset,
+        }
+      } else if ('CustomEra' in cohortDefinition.EndStrategy) {
+        // Continuous drug strategy
+        exitEvents.endStrategy = 'CONT_DRUG'
+        exitEvents.contDrugSettings = {
+          conceptSetId: cohortDefinition.EndStrategy.CustomEra.DrugCodesetId?.toString() || '',
+          gapDays: cohortDefinition.EndStrategy.CustomEra.GapDays,
+          offset: cohortDefinition.EndStrategy.CustomEra.Offset,
+          daysSupplyOverride: cohortDefinition.EndStrategy.CustomEra.DaysSupplyOverride,
+        }
+      }
+      // If neither, it stays as 'CONT_OBS' (default)
     }
 
     if (cohortDefinition.CensoringCriteria && Array.isArray(cohortDefinition.CensoringCriteria)) {
@@ -542,7 +589,7 @@ export const convertAtlasToFilters = (
 
     // Process PrimaryCriteria for entryEvents
     const entryEvents = {
-      primaryCriteriaLimit: 'ALL' as const,
+      primaryCriteriaLimit: 'ALL' as 'ALL' | 'EARLIEST' | 'LATEST',
       events: [] as QueryFilterEvent[],
       priorDays: 0,
       postDays: 0,
@@ -555,6 +602,22 @@ export const convertAtlasToFilters = (
       if (cohortDefinition.PrimaryCriteria.ObservationWindow) {
         entryEvents.priorDays = cohortDefinition.PrimaryCriteria.ObservationWindow.PriorDays || 0
         entryEvents.postDays = cohortDefinition.PrimaryCriteria.ObservationWindow.PostDays || 0
+      }
+
+      // Read PrimaryCriteriaLimit and QualifiedLimit from Atlas JSON (both for Entry Events)
+      // Prefer PrimaryCriteriaLimit, fallback to QualifiedLimit
+      const primaryLimitType = cohortDefinition.PrimaryCriteria.PrimaryCriteriaLimit?.Type
+      const qualifiedLimitType = cohortDefinition.QualifiedLimit?.Type
+
+      const limitType = primaryLimitType || qualifiedLimitType
+      if (limitType) {
+        if (limitType === 'First') {
+          entryEvents.primaryCriteriaLimit = 'EARLIEST'
+        } else if (limitType === 'Last') {
+          entryEvents.primaryCriteriaLimit = 'LATEST'
+        } else if (limitType === 'All') {
+          entryEvents.primaryCriteriaLimit = 'ALL'
+        }
       }
     }
 
