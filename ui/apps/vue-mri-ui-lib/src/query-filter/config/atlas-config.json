@@ -123,12 +123,6 @@
       "descriptions": {
         "group": "Add a nested group to combine criteria using and/or relationships."
       }
-    },
-    "fromReusable": {
-      "name": "From Reusable",
-      "descriptions": {
-        "all": "Add criteria from list of reusables."
-      }
     }
   },
   "sections": {
