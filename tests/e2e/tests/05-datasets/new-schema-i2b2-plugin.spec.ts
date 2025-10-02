@@ -27,6 +27,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'demo_database-postgres' }).click();
   await page.locator('#mui-component-select-vocabSchemaOption').click();
   await page.getByRole('option', { name: 'demo_cdm' }).click();
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('result_schema')
   await page.locator('#mui-component-select-dataModelOption').click();
   await page.getByRole('option', { name: 'v1.8.1 [i2b2_plugin]' }).click();
   await page.locator('#mui-component-select-paConfigOption').click();
