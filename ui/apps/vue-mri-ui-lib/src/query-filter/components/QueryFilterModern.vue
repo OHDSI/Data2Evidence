@@ -72,7 +72,6 @@ const showSaveDialog = ref(false)
 const cohortName = ref('')
 const shareBookmark = ref(false)
 const isInvalidName = ref(false)
-const maxLength = 40
 
 const isLoading = ref(false)
 
@@ -91,6 +90,11 @@ const POLLING_INTERVAL_MS = 2000
 const isAtlas = computed(() => {
   const portalAPI = getPortalAPI()
   return portalAPI?.isLocal === true
+})
+
+// Max length for cohort names - no limit in Atlas mode, 40 chars in D2E Portal mode
+const maxLength = computed(() => {
+  return isAtlas.value ? undefined : 40
 })
 
 // Initialize selectedDatasetForGeneration based on mode
@@ -175,7 +179,11 @@ const getText = (key: string, ...args: (string | number)[]) => {
 }
 
 const hasExceededLength = computed(() => {
-  return cohortName.value.length >= maxLength
+  // No length limit in Atlas mode
+  if (maxLength.value === undefined) {
+    return false
+  }
+  return cohortName.value.length >= maxLength.value
 })
 
 const debug = computed(() => {
@@ -1282,12 +1290,16 @@ const generateCohort = async () => {
                       v-model="cohortName"
                       tabindex="0"
                       required
-                      :maxlength="maxLength"
+                      v-bind="maxLength !== undefined ? { maxlength: maxLength } : {}"
                     />
                     <div class="invalid-feedback" :style="isInvalidName ? 'display: block' : ''">
                       Please enter a valid name
                     </div>
-                    <div class="invalid-feedback" :style="hasExceededLength ? 'display: block' : ''">
+                    <div
+                      v-if="maxLength !== undefined"
+                      class="invalid-feedback"
+                      :style="hasExceededLength ? 'display: block' : ''"
+                    >
                       Cohort name must not exceed {{ maxLength }} characters
                     </div>
                   </div>

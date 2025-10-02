@@ -1427,12 +1427,19 @@ QueryFilterModern.vue:generateCohort()
 
 **Trigger:** User clicks "Save" button
 
+**Cohort Name Validation:**
+
+- **PA-Atlas Mode (isAtlas: true):** No character limit for cohort names
+- **D2E Portal Mode:** 40-character limit enforced for legacy compatibility
+
 **Complete Flow:**
 
 ```
 QueryFilterModern.vue:saveAtlasCohort()
 │
 ├─ Validate cohort name
+│  - Check for empty name
+│  - Check character limit (only in D2E Portal mode)
 │
 ├─ Call: criteriaManager.convertToAtlasFormat()
 │  QueryFilterModel.ts:convertToAtlasFormat()
