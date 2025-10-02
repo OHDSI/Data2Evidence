@@ -7,6 +7,7 @@ from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 class WhiteRabbitAPI(BaseAPI):
     def __init__(self):
+        super().__init__()
         self.url = self.get_service_route("whiteRabbit")
         self.logger = get_run_logger()
         self.headers = self.get_options()
@@ -16,6 +17,7 @@ class WhiteRabbitAPI(BaseAPI):
 
         result = requests.post(url,
                                headers=self.headers,
+                               verify=self.get_verify_value(),
                                json={'flow_run_id': flow_run_id,
                                      'file_name': file_name,
                                      'file_id': file_id}

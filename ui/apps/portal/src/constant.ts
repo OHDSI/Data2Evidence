@@ -79,3 +79,8 @@ export const ResearcherFeatureMap: Record<DatasetType, typeof ResearcherFeatures
   hana__omop: ["Cohorts", "Concepts"],
   hana__non_omop: ["Cohorts", "Concepts"],
 };
+
+export enum LogResponseType {
+  ACCEPTED = "ACCEPTED",
+  DECLINED = "DECLINED",
+}
