@@ -131,34 +131,37 @@ export class PortalServerAPI {
     }
   }
 
-  async uploadCsvFile(nodeId: string, file: File): Promise<CsvFileOperationResponse> {
-    const url = `${this.baseURL}/supabase-storage/upload/csv`;
+  async uploadFile(nodeId: string, file: File) {
+    const url = `${this.baseURL}/supabase-storage/upload/file`; // make sure endpoint exists
     const formData = new FormData();
     formData.append("file", file, file.name);
 
-    const options = {
+    const res = await fetch(`${url}?nodeId=${nodeId}`, {
       method: "POST",
       headers: { Authorization: this.token },
       body: formData,
-    };
+    });
 
-    const result = await fetch(`${url}?nodeId=${nodeId}`, options);
-    if (!result.ok) {
-      throw new Error(`Error while uploading CSV file: ${result.status}`);
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Upload failed: ${res.status} - ${err}`);
     }
-    return await result.json();
-}
-
-async deleteCsvFile(nodeId: string, fileName: string): Promise<CsvFileOperationResponse> {
-  const url = `${this.baseURL}/supabase-storage/delete/csv`;
-  const options = this.createOptions("DELETE");
-  const result = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, options);
-  if (!result.ok) {
-    throw new Error(`Error while deleting CSV file: ${result.status}`);
+    return await res.json();
   }
-  return await result.json();
-}
 
+  async deleteFile(nodeId: string, fileName: string) {
+    const url = `${this.baseURL}/supabase-storage/delete/file`; // make sure endpoint exists
+    const res = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, {
+      method: "DELETE",
+      headers: { Authorization: this.token },
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Delete failed: ${res.status} - ${err}`);
+    }
+    return await res.json();
+  }
 
   private createOptions(method: string, token = this.token): RequestInit {
     return {
