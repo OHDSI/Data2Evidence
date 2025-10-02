@@ -684,7 +684,7 @@ def generate_node_task(nodename, node, nodetype):
         case NodeType.CSV:
             nodeobj = CsvNode(nodename, node)
         case NodeType.FILE:
-            nodeobj = FileNode(nodename, node)
+            nodeobj = GenericFileNode(nodename, node)
         case NodeType.SQL:
             nodeobj = SqlNode(nodename, node)
         case NodeType.PYTHON:
