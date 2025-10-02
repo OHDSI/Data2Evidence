@@ -13,6 +13,7 @@ export interface CriteriaType {
   id: string
   name: string
   class: string
+  requiresConceptSet?: boolean
   groupOnly?: boolean
   descriptions: {
     initial?: string
@@ -142,6 +143,7 @@ export interface CriteriaConfig {
 // Config interfaces
 export interface ConfigCriteriaType {
   name: string
+  requiresConceptSet?: boolean
   groupOnly?: boolean
   descriptions: {
     initial?: string
@@ -210,6 +212,7 @@ export class ConfigLoader {
         id,
         name: configType.name,
         class: this.capitalizeFirst(id), // e.g., conditionOccurrence -> ConditionOccurrence
+        requiresConceptSet: configType.requiresConceptSet ?? true, // Default to true if not specified
         groupOnly: configType.groupOnly,
         descriptions: {
           initial: configType.descriptions.initial || configType.descriptions.all || '',
@@ -634,6 +637,20 @@ export class ConfigLoader {
    */
   getOccurrenceCountOperators(): OccurrenceOperator[] {
     return this.occurrenceCount.operators
+  }
+
+  /**
+   * Check if a criteria type requires a concept set selection
+   * @param criteriaTypeId - The criteria type identifier (e.g., 'demographic', 'conditionOccurrence')
+   * @returns true if the criteria type requires a concept set, false otherwise
+   */
+  requiresConceptSet(criteriaTypeId: string): boolean {
+    const criteriaType = this.criteriaTypes[criteriaTypeId]
+    if (!criteriaType) {
+      // Default to true for unknown types to maintain backward compatibility
+      return true
+    }
+    return criteriaType.requiresConceptSet ?? true
   }
 
   /**

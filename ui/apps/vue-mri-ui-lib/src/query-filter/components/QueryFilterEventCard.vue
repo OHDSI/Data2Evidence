@@ -20,6 +20,7 @@ import type {
   SelectedConceptSet,
 } from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/ConfigLoader'
+import { configLoader } from '../utils/ConfigLoader'
 import CardinalitySidebar from './CardinalitySidebar.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
@@ -68,6 +69,14 @@ const eventData = computed({
 // Check if event has nested attributes
 const hasNestedAttributes = computed(() => {
   return eventData.value.attributes?.some(attr => attr.attributeType === 'nested')
+})
+
+// Check if event type needs concept set selection based on configuration
+// Some criteria types (like demographic) don't require a concept set as they only have attributes
+const needsConceptSet = computed(() => {
+  const eventType = eventData.value.eventType || eventData.value.criteriaType
+  if (!eventType) return true // Default to true if no type specified
+  return configLoader.requiresConceptSet(eventType)
 })
 
 // Handle cardinality changes
@@ -494,8 +503,8 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
         <div v-show="isExpanded" class="event-body">
           <!-- Event Content -->
           <div class="event-content">
-            <!-- Concept Set Selection -->
-            <div class="concept-set-section">
+            <!-- Concept Set Selection (not shown for demographic criteria) -->
+            <div v-if="needsConceptSet" class="concept-set-section">
               <label class="concept-set-label">Event Concept Set:</label>
               <QueryFilterTagInputAdapter
                 v-if="!readonly"

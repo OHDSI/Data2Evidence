@@ -104,6 +104,7 @@
     },
     "demographic": {
       "name": "Demographic",
+      "requiresConceptSet": false,
       "descriptions": {
         "initial": "Find patients based on demographic criteria.",
         "censoring": "Exit cohort based on demographic criteria.",
