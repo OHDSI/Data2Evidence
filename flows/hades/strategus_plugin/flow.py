@@ -35,6 +35,7 @@ def strategus_plugin(json_graph, options):
     testmode = _options["test_mode"]
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
+    upload_results = _options.get('uploadResults', False)
 
     generate_nodes_flow_wo = generate_nodes_flow.with_options(
         on_completion=[
@@ -63,11 +64,20 @@ def strategus_plugin(json_graph, options):
             nodes_out[k] = n[k].serialize_result()
 
     try:
-        study_analysis_result = execute_strategus_node(generated_nodes, n, options)
+        execute_strategus_node_wo = execute_strategus_node.with_options()
+        study_analysis_result = execute_strategus_node_wo(generated_nodes, n, options)
         logger.debug(f"Study analysis result: {study_analysis_result}")
         root_flow_run_context = FlowRunContext.get().flow_run.dict()
         flow_run_id = str(root_flow_run_context.get("id"))
         log_file_path = f"/tmp/{flow_run_id}/results/strategus-log.txt"
+
+        if(upload_results):
+            result_db_settings = {
+                'database_code': get_study_results_db_code(),
+                "dataset_id": options.get('datasetId', None),
+                "study_id": options.get('studyId', None)
+            }
+            upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
 
         # Create an artifact to store the nodes output
         create_markdown_artifact(
@@ -88,7 +98,7 @@ def strategus_plugin(json_graph, options):
         study_id = options.get("studyId", "")
         strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)
 
-@task(name="execute-strategus-task")
+@flow(name="execute-strategus-flow")
 def execute_strategus_node(generated_nodes, results, options):
     task_run_context = TaskRunContext.get().task_run.model_dump()
     strategus_node = get_strategus_node(options)
@@ -218,14 +228,14 @@ def runStrategus(json_graph, options):
     if isinstance(analysisSpec, str):
         analysisSpec = json.loads(analysisSpec)
     
-    try:
-        for resourceIndex in range(len(analysisSpec['sharedResources'])):
-            for cohortDefIndex in range(len(analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'])):
-                cohortDef = analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex]
-                analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex] = json.loads(cohortDef["cohortDefinition"])
-    except Exception as e:
-        logger.error(f"Error converting cohortDefinitions to JSON: {e}")
-        raise e
+    # try:
+    #     for resourceIndex in range(len(analysisSpec['sharedResources'])):
+    #         for cohortDefIndex in range(len(analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'])):
+    #             cohortDef = analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex]
+    #             analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex] = json.loads(cohortDef["cohortDefinition"])
+    # except Exception as e:
+    #     logger.error(f"Error converting cohortDefinitions to JSON: {e}")
+    #     raise e
 
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
@@ -271,6 +281,7 @@ def get_study_results_db_code():
 # Following __main__ is meant for development purposes
 # Enables to run the flow as a simple method, and not a prefect flow 
 if __name__ == "__main__":
+    # analysis-flow options
     options = {
         "test_mode":False,
         "trace_config":{"trace_db":"alp","trace_mode":True}, 

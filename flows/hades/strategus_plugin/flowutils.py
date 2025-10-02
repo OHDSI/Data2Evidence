@@ -21,7 +21,7 @@ def get_node_list(graph):
                 nodes[edge["target"]].add(edge["source"])
         except KeyError:
             logger = Logger()
-            logger.debug(f"No target for the edge {edge["source"]}")
+            logger.debug(f"No target for the edge {edge['source']}")
     while nodes:
         for node in nodes.keys():
             if not nodes[node]:
