@@ -24,10 +24,13 @@ test(TEST_NAME, async ({ page }) => {
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('tr', { hasText: 'Demo dataset'})).toBeVisible({ timeout: 1000 })
+  await expect(page.locator('tr', { hasText: 'Demo dataset' })).toBeVisible({ timeout: 1000 })
   for (const dataset of [datasetNewSchema, datasetExistingSchema]) {
     if (await page.locator('tr', { hasText: `${dataset}` }).isVisible({ timeout: 1000 })) {
-      await page.locator('tr', { hasText: `${dataset}` }).getByRole('button', { name: 'Select action' }).click()
+      await page
+        .locator('tr', { hasText: `${dataset}` })
+        .getByRole('button', { name: 'Select action' })
+        .click()
       await page.getByRole('option', { name: 'Delete dataset' }).click()
       await page.getByRole('button', { name: 'Yes, delete' }).click()
       await page.reload()
@@ -36,15 +39,15 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   async function createComplete() {
-      // Wait for schema to be created in the database
-      await page.getByRole('link', { name: 'Jobs' }).click()
-      const entry = page
-        .locator('.flow-run-list-item')
-        .filter({ has: page.locator('a:text("omop_cdm_plugin")') })
-        .first()
-      const stateBadge = entry.locator('.state-badge')
-      await expect(stateBadge).toHaveText('Completed', { timeout: 120000 })
-      await page.getByRole('link', { name: 'Datasets' }).click()
+    // Wait for schema to be created in the database
+    await page.getByRole('link', { name: 'Jobs' }).click()
+    const entry = page
+      .locator('.flow-run-list-item')
+      .filter({ has: page.locator('a:text("omop_cdm_plugin")') })
+      .first()
+    const stateBadge = entry.locator('.state-badge')
+    await expect(stateBadge).toHaveText('Completed', { timeout: 120000 })
+    await page.getByRole('link', { name: 'Datasets' }).click()
   }
 
   // Add new dataset
@@ -58,6 +61,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
   await page.locator('#mui-component-select-vocabSchemaOption').click()
   await page.getByRole('option', { name: vocabSchemaName }).click()
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('new_test_result_schema')
   await page.locator('#mui-component-select-dataModelOption').click()
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
@@ -88,6 +92,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
   await page.getByRole('textbox', { name: 'Schema name', exact: true }).fill(schemaName)
   await page.getByRole('textbox', { name: 'Vocab Schema Name' }).fill('demo_cdm')
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('new_test_result_existing_schema')
   await page.locator('#mui-component-select-dataModelOption').click()
   await expect(page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' })).toBeVisible({ timeout: 1000 })
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
