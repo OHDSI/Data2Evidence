@@ -130,7 +130,7 @@ export class With extends AstElement {
                     this.node.joinUsingConditionId;
             }
             if (this.getBaseTableAlias()) {
-                if (tableObj.baseEntity === "@REF" || tableObj.baseEntity === "@TEXT") {
+                if (tableObj.baseEntity.startsWith("@REF") || tableObj.baseEntity === "@TEXT") {
                     // For @REF - This is a special case where there is no explicit base join condition between @REF and other base entity. Its usually 1=1. Because @REF is not a standard interaction entity rather a special entity for vocab lookup. The additional join condition between @REF & base entity would be configured in the attribute config as part of the defaultFilter / Filter expression in the UI.
 
                     // For @TEXT - Its for Including descendant concepts and the joining key is added in property.ts

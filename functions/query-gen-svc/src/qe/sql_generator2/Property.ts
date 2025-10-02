@@ -253,7 +253,7 @@ export class Property extends AstElement {
                     }
                     const descendantsPlaceholder = descendantsFilterExpression.match(/@[^.^\s]+/g)[0];
                     const descendantsAlias = this.scopeEntityDef.getTableAliasByBaseEntity(descendantsPlaceholder);
-                    descendantsFilterExpression = descendantsFilterExpression.replace(descendantsPlaceholder, descendantsAlias);
+                    descendantsFilterExpression = descendantsFilterExpression.replaceAll(descendantsPlaceholder, descendantsAlias);
 
                     this.pushOnCondition(
                         textAliasObj.on,
@@ -263,15 +263,40 @@ export class Property extends AstElement {
                     )
 
                     //Detect if its on the x1 or x2
-                    //If yes, append RIGHT JOIN
-                    //Modify group by to point to the new reference
+                    //If yes, append Inner JOIN
+                    //Modify group by and its attribute config to point to the new reference @REFX placeholder
                     const groupByNode = queryNode.node.groupBy?.find((groupBy) => groupBy.path === this.node.path);
                     if(groupByNode) {
+                        const newRefPlaceholder = this.getNewMaxPlaceholderRefPlaceholder(attrConfig.placeholderMap);
+                        attrConfig.placeholderMap[newRefPlaceholder] = attrConfig.placeholderMap["@REF"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.CODE`] = attrConfig.placeholderMap["@REF.CODE"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.TEXT`] = attrConfig.placeholderMap["@REF.TEXT"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.VOCABULARY_ID`] = attrConfig.placeholderMap["@REF.VOCABULARY_ID"];
+                        if(!groupByNode.attrConfig) {
+                            groupByNode.attrConfig = JSON.parse(JSON.stringify(attrConfig))
+                        }
+                        groupByNode.attrConfig.baseEntity = newRefPlaceholder;
+
+                        groupByNode.attrConfig.__config.expression = groupByNode.attrConfig.__config.expression.replaceAll("@REF", newRefPlaceholder);
+
+                        groupByNode.attrConfig.__config.defaultFilter = groupByNode.attrConfig.__config.defaultFilter.replaceAll("@REF", newRefPlaceholder);
+                        
                         this.scopeEntityDef.addTableAlias(
-                        { baseEntity: "@REF", table: attrConfig.placeholderMap["@REF"] },
+                        { baseEntity: newRefPlaceholder, table: attrConfig.placeholderMap[newRefPlaceholder] },
                         false,
-                        "RIGHT JOIN"
+                        "INNER JOIN"
                         );
+
+                        //Add the ON condition
+                        const maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
+                        const maxRefAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[newRefPlaceholder]);
+                        maxRefAliasObj.on = [textAliasObj.on[0]]; //TEMP
+                        this.pushOnCondition(
+                        maxRefAliasObj.on,
+                        QueryObject.format("%UNSAFE", 
+                                            `${maxRefAliasObj.alias}.CONCEPT_ID 
+                                             = ${descendantsFilterExpression}`)
+                        )
                     }
                 }
             }
@@ -285,6 +310,17 @@ export class Property extends AstElement {
             }
         }
         onArray.push(onStatement);
+    }
+
+    private getNewMaxPlaceholderRefPlaceholder(placeholderMap) {
+        const sortedArray = Object.keys(placeholderMap).filter((x) => x.startsWith("@REF")).map(x => x.match(/@[^.^\s]+/g)[0]).sort();
+        if (sortedArray[sortedArray.length - 1] === "@REF") {
+            return "@REF2";
+        } else {
+            const maxRef = sortedArray[sortedArray.length - 1];
+            const refNumber = parseInt(maxRef.replace("@REF", ""));
+            return "@REF" + (refNumber + 1);
+        }
     }
 
     public getSQLWithAlias(): QueryObject {
@@ -359,6 +395,9 @@ export class Property extends AstElement {
             let tmp;
             sqlArr = attrConfig.getMeasureExpressionWithReplacedPlaceholder(
                 (x) => {
+                    // if (attrConfig.baseEntity === "@REF2") {
+                    //     x = "@TEXT";
+                    // }
                     if (this.scopeEntityDef instanceof With) {
                         tmp = this.scopeEntityDef.getTableAlias(x);
                     } else {
