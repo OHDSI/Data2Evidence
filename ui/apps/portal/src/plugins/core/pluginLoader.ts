@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import * as ReactRouterDOM from "react-router-dom";
+import * as EmotionReact from "@emotion/react";
 import builtInPlugins from "../builtInPlugins";
 
 //@ts-ignore
@@ -15,6 +16,7 @@ function exposeToPlugin(name: string, component: any) {
 exposeToPlugin("react", React);
 exposeToPlugin("react-dom", ReactDOM);
 exposeToPlugin("react-router-dom", ReactRouterDOM);
+exposeToPlugin("@emotion/react", EmotionReact);
 
 const moduleCache: { [key: string]: any } = {};
 

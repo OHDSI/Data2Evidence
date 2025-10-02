@@ -10,6 +10,7 @@ import {
   FEATURE_DATASET_SEARCH,
   FEATURE_FHIR_SERVER,
   FEATURE_MAPPING_SUGGESTION,
+  FEATURE_DOCKER_LOGS,
 } from "../../../config";
 
 interface FormData {
@@ -55,6 +56,9 @@ export const Feature: FC = () => {
       },
       [FEATURE_MAPPING_SUGGESTION]: {
         name: getText(i18nKeys.FEATURE__DATA_MAPPING_SUGGESTION),
+      },
+      [FEATURE_DOCKER_LOGS]: {
+        name: getText(i18nKeys.FEATURE__DOCKER_LOGS),
       },
     }),
     [getText]
