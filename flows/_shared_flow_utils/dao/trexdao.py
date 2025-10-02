@@ -105,8 +105,18 @@ class TrexDao(DaoBase):
 
 
     def create_table(self, schema: str, table: str, columns: dict) -> None:
-        pass
-
+        columns_with_types = [
+            pg_sql.SQL("{col_name} {col_type}").format(
+                col_name = pg_sql.Identifier(col_name),
+                col_type = pg_sql.SQL(col_type)
+            ) for col_name, col_type in columns.items()
+        ]
+        create_table_query = pg_sql.SQL("CREATE TABLE IF NOT EXISTS {schema}.{table} ({columns_with_types});").format(
+            schema = pg_sql.Identifier(schema),
+            table = pg_sql.Identifier(table),
+            columns_with_types = pg_sql.SQL(", ").join(columns_with_types)
+        )
+        self.execute_sql(create_table_query)
 
     # --- Read methods ---
 
@@ -128,7 +138,20 @@ class TrexDao(DaoBase):
 
 
     def check_table_exists(self, schema: str, table: str) -> bool:
-        pass
+        try:
+            sql_query = pg_sql.SQL("""
+                                    SELECT table_name FROM information_schema.tables
+                                    WHERE table_schema = {schema} AND table_name = {table};""")\
+                                .format(
+                                    schema = pg_sql.Literal(schema),
+                                    table = pg_sql.Literal(table)
+                                )
+                
+            result = self.execute_sql(sql_query, fetch=True)
+            tables = {row[0] for row in result}
+            return table in tables
+        except psycopg2.Error as e:
+            raise
 
 
     def get_table_names(self, schema: str, include_views=False) -> list[str]:
@@ -136,7 +159,17 @@ class TrexDao(DaoBase):
 
 
     def get_columns(self, schema: str, table: str) -> list[str]:
-        pass
+        columns_query = pg_sql.SQL("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = {schema} AND table_name = {table}
+            ORDER BY ordinal_position;
+        """).format(
+            schema=pg_sql.Literal(schema),
+            table=pg_sql.Literal(table)
+        )
+        result = self.execute_sql(columns_query, fetch=True)
+        return [row[0] for row in result]   
 
 
     def get_table_row_count(self, schema: str, table: str) -> int:
@@ -193,14 +226,48 @@ class TrexDao(DaoBase):
     ):
         pass
 
+    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple]):
+        """
+        Insert a pandas DataFrame into a specified table in one operation
+        
+        Args:
+            schema_name: Schema containing the target table
+            table_name: Target table name
+            df: DataFrame to insert
+        """
+        columns_str = ", ".join(columns)
+        placeholders = ", ".join(["%s"] * len(columns))
+        query = f"INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES ({placeholders})"
+        with self._get_connection() as con:
+            cur = None
+            try:
+                cur = con.cursor()
+                cur.executemany(query, values)
+                if not con.autocommit:
+                    con.commit()
+            except Exception:
+                # Re-raise the original exception with preserved stack trace
+                raise
+            finally:
+                if cur:
+                    cur.close()
+
 
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):
         sql = f"DROP SCHEMA IF EXISTS {schema} {'CASCADE' if cascade else 'RESTRICT'};"
         self.execute_sql(sql)
 
+    def drop_table(self, schema: str, table: str):
+        drop_query = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table};").format(
+            schema=pg_sql.Identifier(schema), 
+            table=pg_sql.Identifier(table))
+        self.execute_sql(drop_query)
 
     def truncate_table(self, schema: str, table: str):
+        sql = pg_sql.SQL("TRUNCATE TABLE {schema}.{table};") \
+                .format(schema=pg_sql.Identifier(schema), table=pg_sql.Identifier(table))
+        self.execute_sql(sql)
         pass
 
     def get_database_connector_connection_string(

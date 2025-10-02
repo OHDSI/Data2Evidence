@@ -1,6 +1,5 @@
 import torch.nn.functional as F
 from torch import Tensor
-from transformers import AutoTokenizer, AutoModel
 
 DUCKDB_EXTENSIONS_FILEPATH = "/app/duckdb_extensions"
 
@@ -12,16 +11,17 @@ def average_pool(last_hidden_states: Tensor,
 def embedding_concept_table(concept_name_list,tokenizer, model):
     # Tokenize the input texts
     batch_dict = tokenizer(concept_name_list, max_length=512, padding=True, truncation=True, return_tensors='pt')
-
     outputs = model(**batch_dict)
     embeddings = average_pool(outputs.last_hidden_state, batch_dict['attention_mask'])
-
     # (Optionally) normalize embeddings
     embeddings = F.normalize(embeddings, p=2, dim=1)
     return embeddings
 
-def check_duckdb_column_exists(conn, table_name, column):
-    rst = conn.execute(f'PRAGMA table_info({table_name});').fetchall()
-    columns = [row[1] for row in rst]
-    return any(col.lower() == column.lower() for col in columns)
+def create_tmp_gte_table(trexdao, schema_name, gte_tmp_table, gte_tmp_cols):
+    if trexdao.check_table_exists(schema_name, gte_tmp_table):
+        if list(gte_tmp_cols.keys()) == trexdao.get_columns(schema_name, gte_tmp_table):
+            trexdao.truncate_table(schema_name, gte_tmp_table)
+        else: trexdao.drop_table(schema_name, gte_tmp_table)
+    else:
+        trexdao.create_table(schema_name, gte_tmp_table, gte_tmp_cols)
 
