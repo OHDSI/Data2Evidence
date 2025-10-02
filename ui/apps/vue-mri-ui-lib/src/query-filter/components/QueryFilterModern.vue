@@ -149,6 +149,7 @@ const {
   allConceptSets,
   conceptSetDomainValues,
   selectedConceptSetValues,
+  loadingConceptDetails,
   loadConceptSetDetails,
   handleConceptSetUpdate,
   handleSearchChange,
@@ -196,6 +197,91 @@ const displayPatientCount = computed(() => {
     return 'Failed'
   }
   return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
+})
+
+// Check if all concept details are loaded and ready to save
+const isReadyToSave = computed(() => {
+  // Don't allow save if main component or concept details are loading
+  if (isLoading.value || loadingConceptDetails.value) {
+    return false
+  }
+
+  // Check if all events with concept sets have their details loaded
+  const criteria = criteriaManager.getCriteria()
+
+  // Check entry events
+  if (primaryEventsData.value?.events) {
+    for (const event of primaryEventsData.value.events) {
+      if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
+        console.log('Entry event missing concept details:', event.id, event.conceptSet)
+        return false
+      }
+      if (event.conceptSetLoading) {
+        return false
+      }
+    }
+  }
+
+  // Check inclusion criteria groups
+  for (const group of criteria.criteria) {
+    for (const event of group.events) {
+      if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
+        console.log('Inclusion event missing concept details:', event.id, event.conceptSet)
+        return false
+      }
+      if (event.conceptSetLoading) {
+        return false
+      }
+    }
+  }
+
+  // Check exit events
+  if (exitCriteriaData.value?.censoringCriteria) {
+    for (const event of exitCriteriaData.value.censoringCriteria) {
+      if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
+        console.log('Exit event missing concept details:', event.id, event.conceptSet)
+        return false
+      }
+      if (event.conceptSetLoading) {
+        return false
+      }
+    }
+  }
+
+  return true
+})
+
+// Get message explaining why save is disabled
+const saveDisabledReason = computed(() => {
+  if (isLoading.value) {
+    return 'Loading cohort definition...'
+  }
+  if (loadingConceptDetails.value) {
+    return 'Loading concept details...'
+  }
+
+  // Check for events still loading
+  const criteria = criteriaManager.getCriteria()
+  const allEvents = [
+    ...(primaryEventsData.value?.events || []),
+    ...criteria.criteria.flatMap(g => g.events),
+    ...(exitCriteriaData.value?.censoringCriteria || []),
+  ]
+
+  const loadingEvent = allEvents.find(e => e.conceptSetLoading)
+  if (loadingEvent) {
+    return `Loading concepts for ${loadingEvent.conceptSet || 'event'}...`
+  }
+
+  // Check for events with concept sets but no details
+  const incompleteEvent = allEvents.find(
+    e => e.conceptSetId && (!e.conceptSetDetails || e.conceptSetDetails.length === 0)
+  )
+  if (incompleteEvent) {
+    return `Missing concept details for ${incompleteEvent.conceptSet || 'event'}`
+  }
+
+  return ''
 })
 
 // Initialize criteria manager composable
@@ -1009,7 +1095,9 @@ const generateCohort = async () => {
         <!-- Right: Save -->
         <div class="header-section-right">
           <div class="right-button-group">
-            <ButtonMaterial @button-click="openSaveDialog">Save</ButtonMaterial>
+            <ButtonMaterial @button-click="openSaveDialog" :disabled="!isReadyToSave">
+              {{ isReadyToSave ? 'Save' : 'Loading...' }}
+            </ButtonMaterial>
           </div>
         </div>
       </div>
@@ -1222,8 +1310,8 @@ const generateCohort = async () => {
         <appButton
           :click="saveAtlasCohort"
           :text="getText('MRI_PA_BUTTON_SAVE') || 'Save'"
-          :tooltip="getText('MRI_PA_BUTTON_SAVE') || 'Save'"
-          :disabled="hasExceededLength || !cohortName.trim()"
+          :tooltip="!isReadyToSave ? saveDisabledReason : getText('MRI_PA_BUTTON_SAVE') || 'Save'"
+          :disabled="hasExceededLength || !cohortName.trim() || !isReadyToSave"
         ></appButton>
         <appButton
           :click="closeSaveDialog"

@@ -253,7 +253,7 @@ export function useCriteriaManager(
       if (primaryEvent) {
         primaryEvent.conceptSetDetails = conceptSetDetails
         primaryEvent.conceptSetLoading = false
-        primaryEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+        primaryEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
       } else {
         // Also check nested events within primary events
         let foundInPrimary = false
@@ -268,7 +268,7 @@ export function useCriteriaManager(
                     nestedEvent.conceptSetLoading = false
                     // Only update conceptSet name if the event actually has a conceptSetId
                     if (nestedEvent.conceptSetId) {
-                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
                     }
                     foundInPrimary = true
                     break
@@ -291,7 +291,7 @@ export function useCriteriaManager(
             if (regularEvent) {
               regularEvent.conceptSetDetails = conceptSetDetails
               regularEvent.conceptSetLoading = false
-              regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+              regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
               found = true
               break
             }
@@ -305,7 +305,7 @@ export function useCriteriaManager(
                     if (nestedEvent) {
                       nestedEvent.conceptSetDetails = conceptSetDetails
                       nestedEvent.conceptSetLoading = false
-                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
                       found = true
                       break
                     }
@@ -372,7 +372,7 @@ export function useCriteriaManager(
                   createdDate: new Date().toISOString(),
                   modifiedDate: new Date().toISOString(),
                 }
-                nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || ''
+                nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
 
                 // Load concept set details for Atlas conversion
                 loadConceptSetDetailsForEvent(nestedEvent, conceptSet)

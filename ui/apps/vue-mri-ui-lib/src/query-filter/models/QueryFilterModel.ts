@@ -193,30 +193,37 @@ export class QueryFilterCriteriaManager {
     const conceptSets: ConceptSet[] = []
     const usedConceptSetIds = new Set<string>()
     const systemIdToAtlasId = new Map<string, number>() // System ID → Atlas sequential ID
+    const missingConceptDetails: string[] = [] // Track events missing concept details
 
     this.inclusionCriteria.criteria.forEach((group: QueryFilterGroup) => {
       // Collect all events including nested ones
       const allGroupEvents = collectAllEvents(group.events)
       allGroupEvents.forEach(event => {
-        if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
-          const systemConceptSetId = event.conceptSetId
-          if (!usedConceptSetIds.has(systemConceptSetId)) {
-            usedConceptSetIds.add(systemConceptSetId)
-            const atlasSequentialId = conceptSets.length // Use sequential ID starting from 0
-            systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+        if (event.conceptSetId) {
+          if (event.conceptSetDetails && event.conceptSetDetails.length > 0) {
+            const systemConceptSetId = event.conceptSetId
+            if (!usedConceptSetIds.has(systemConceptSetId)) {
+              usedConceptSetIds.add(systemConceptSetId)
+              const atlasSequentialId = conceptSets.length // Use sequential ID starting from 0
+              systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
 
-            const conceptSetDef: ConceptSet = {
-              id: atlasSequentialId, // Sequential ID for Atlas JSON
-              name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
-              expression: {
-                items: event.conceptSetDetails,
-              },
+              const conceptSetDef: ConceptSet = {
+                id: atlasSequentialId, // Sequential ID for Atlas JSON
+                name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
+                expression: {
+                  items: event.conceptSetDetails,
+                },
+              }
+
+              // Add conceptSetId field with system database ID
+              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+
+              conceptSets.push(conceptSetDef)
             }
-
-            // Add conceptSetId field with system database ID
-            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
-
-            conceptSets.push(conceptSetDef)
+          } else {
+            // Event has concept set but missing details
+            const eventName = event.conceptSet || event.id
+            missingConceptDetails.push(`Inclusion criteria event: ${eventName} (ID: ${event.conceptSetId})`)
           }
         }
       })
@@ -225,25 +232,31 @@ export class QueryFilterCriteriaManager {
     // Also collect concept sets from entryEvents.events
     if (this.entryEvents?.events) {
       this.entryEvents.events.forEach(event => {
-        if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
-          const systemConceptSetId = event.conceptSetId
-          if (!usedConceptSetIds.has(systemConceptSetId)) {
-            usedConceptSetIds.add(systemConceptSetId)
-            const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
-            systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+        if (event.conceptSetId) {
+          if (event.conceptSetDetails && event.conceptSetDetails.length > 0) {
+            const systemConceptSetId = event.conceptSetId
+            if (!usedConceptSetIds.has(systemConceptSetId)) {
+              usedConceptSetIds.add(systemConceptSetId)
+              const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
+              systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
 
-            const conceptSetDef: ConceptSet = {
-              id: atlasSequentialId, // Sequential ID for Atlas JSON
-              name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
-              expression: {
-                items: event.conceptSetDetails,
-              },
+              const conceptSetDef: ConceptSet = {
+                id: atlasSequentialId, // Sequential ID for Atlas JSON
+                name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
+                expression: {
+                  items: event.conceptSetDetails,
+                },
+              }
+
+              // Add conceptSetId field with system database ID
+              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+
+              conceptSets.push(conceptSetDef)
             }
-
-            // Add conceptSetId field with system database ID
-            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
-
-            conceptSets.push(conceptSetDef)
+          } else {
+            // Event has concept set but missing details
+            const eventName = event.conceptSet || event.id
+            missingConceptDetails.push(`Entry event: ${eventName} (ID: ${event.conceptSetId})`)
           }
         }
       })
@@ -262,33 +275,38 @@ export class QueryFilterCriteriaManager {
           hasDetails: !!event.conceptSetDetails?.length,
           detailsCount: event.conceptSetDetails?.length || 0,
         })
-        if (event.conceptSetDetails && event.conceptSetDetails.length > 0 && event.conceptSetId) {
-          const systemConceptSetId = event.conceptSetId
-          if (!usedConceptSetIds.has(systemConceptSetId)) {
-            usedConceptSetIds.add(systemConceptSetId)
-            const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
-            systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+        if (event.conceptSetId) {
+          if (event.conceptSetDetails && event.conceptSetDetails.length > 0) {
+            const systemConceptSetId = event.conceptSetId
+            if (!usedConceptSetIds.has(systemConceptSetId)) {
+              usedConceptSetIds.add(systemConceptSetId)
+              const atlasSequentialId = conceptSets.length // Use sequential ID starting from current length
+              systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
 
-            const conceptSetDef: ConceptSet = {
-              id: atlasSequentialId, // Sequential ID for Atlas JSON
-              name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
-              expression: {
-                items: event.conceptSetDetails,
-              },
+              const conceptSetDef: ConceptSet = {
+                id: atlasSequentialId, // Sequential ID for Atlas JSON
+                name: event.conceptSet || `Concept Set ${systemConceptSetId}`,
+                expression: {
+                  items: event.conceptSetDetails,
+                },
+              }
+
+              // Add conceptSetId field with system database ID
+              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+
+              conceptSets.push(conceptSetDef)
+              console.log(
+                `🔧 Added censoring concept set:`,
+                conceptSetDef.name,
+                `(Atlas ID: ${atlasSequentialId}, System ID: ${systemConceptSetId})`
+              )
             }
-
-            // Add conceptSetId field with system database ID
-            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
-
-            conceptSets.push(conceptSetDef)
-            console.log(
-              `🔧 Added censoring concept set:`,
-              conceptSetDef.name,
-              `(Atlas ID: ${atlasSequentialId}, System ID: ${systemConceptSetId})`
-            )
+          } else {
+            // Event has concept set but missing details
+            const eventName = event.conceptSet || event.id
+            missingConceptDetails.push(`Exit event: ${eventName} (ID: ${event.conceptSetId})`)
+            console.log(`🔧 Skipping censoring event ${index}: missing concept details`)
           }
-        } else {
-          console.log(`🔧 Skipping censoring event ${index}: missing details or already processed`)
         }
       })
     }
@@ -719,6 +737,17 @@ export class QueryFilterCriteriaManager {
       })
       ruleIndex++
     })
+
+    // Log warnings for any events missing concept details
+    if (missingConceptDetails.length > 0) {
+      console.warn(
+        '⚠️ WARNING: Atlas JSON conversion incomplete. The following events are missing concept details:',
+        missingConceptDetails
+      )
+      console.warn(
+        '⚠️ This will result in incomplete ConceptSets array in the Atlas JSON. Please wait for all concept details to load before saving.'
+      )
+    }
 
     return atlasDef
   }
