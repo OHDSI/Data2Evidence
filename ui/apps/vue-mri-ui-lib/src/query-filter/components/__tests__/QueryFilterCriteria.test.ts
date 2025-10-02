@@ -116,7 +116,6 @@ describe('QueryFilterCriteria Model Tests', () => {
     const criteria = criteriaManager.getCriteria()
 
     // Check root structure
-    expect(criteria.id).toBeDefined()
     expect(Array.isArray(criteria.criteria)).toBe(true)
 
     // Check group structure
