@@ -27,12 +27,14 @@ interface Props {
   datasetId?: string | null
   readonly?: boolean
   hideHeader?: boolean
+  readonlyTitle?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   conceptSets: () => [],
   readonly: false,
   hideHeader: false,
+  readonlyTitle: false,
 })
 
 const emit = defineEmits<{
@@ -84,7 +86,8 @@ const handleGroupRemove = () => {
       :concept-set-texts="conceptSetTexts || {}"
       :dataset-id="datasetId || null"
       :readonly="readonly"
-      :hide-header="true"
+      :hide-header="hideHeader"
+      :readonly-title="readonlyTitle"
       @update-group="handleGroupUpdate"
       @remove-group="handleGroupRemove"
       @concept-set-action="action => $emit('concept-set-action', action)"

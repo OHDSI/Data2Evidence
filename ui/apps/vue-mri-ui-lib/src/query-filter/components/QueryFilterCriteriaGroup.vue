@@ -25,12 +25,14 @@ interface Props {
   datasetId?: string | null
   readonly?: boolean
   hideHeader?: boolean
+  readonlyTitle?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   conceptSets: () => [],
   readonly: false,
   hideHeader: false,
+  readonlyTitle: false,
 })
 
 const emit = defineEmits<{
@@ -154,8 +156,12 @@ const toggleExpanded = () => {
       <div v-if="!hideHeader" class="group-header">
         <div class="group-header__left">
           <div class="group-title-container">
+            <!-- Non-editable Group Label -->
+            <div v-if="readonlyTitle" class="title-edit-wrapper">
+              <h4 class="group-title-display group-title-readonly">Group</h4>
+            </div>
             <!-- Editable Title with Pencil Button -->
-            <div class="title-edit-wrapper">
+            <div v-else class="title-edit-wrapper">
               <input
                 v-if="isEditingTitle && !readonly"
                 ref="titleInputRef"
@@ -313,6 +319,15 @@ const toggleExpanded = () => {
 
     &:hover {
       background-color: rgba(0, 0, 0, 0.04);
+    }
+
+    &.group-title-readonly {
+      cursor: default;
+      color: #666;
+
+      &:hover {
+        background-color: transparent;
+      }
     }
   }
 

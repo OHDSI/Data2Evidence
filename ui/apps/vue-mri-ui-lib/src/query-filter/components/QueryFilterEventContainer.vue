@@ -225,6 +225,8 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           :dataset-id="datasetId || null"
           :readonly="readonly"
           :hide-header="false"
+          :readonly-title="true"
+          @remove-nested="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
           @update:nested-criteria="criteria => updateEventNestedCriteria(event.id, criteria)"
           @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
         />
