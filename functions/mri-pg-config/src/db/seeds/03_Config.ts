@@ -28201,7 +28201,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Condition Onset Date"
+                                "value": "Onset Date"
                             }
                         ],
                         "disabledLangName": [
@@ -28247,7 +28247,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Condition Onset Period"
+                                "value": "Onset Period"
                             }
                         ],
                         "disabledLangName": [
@@ -28293,7 +28293,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Condition Onset Age"
+                                "value": "Onset Age"
                             }
                         ],
                         "disabledLangName": [
@@ -28328,7 +28328,7 @@ const cdwjsonfhirConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "time",
+                        "type": "text",
                         "expression": "@COND.onsetAge",
                         "order": 3,
                         "domainFilter": "",
@@ -28339,7 +28339,7 @@ const cdwjsonfhirConfigDuckdb = {
                          "name": [
                             {
                                 "lang": "",
-                                "value": "Condition Onset String"
+                                "value": "Onset String"
                             }
                         ],
                         "disabledLangName": [
@@ -28374,7 +28374,7 @@ const cdwjsonfhirConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "time",
+                        "type": "text",
                         "expression": "json_extract_string(@COND.content, '$.onsetDateTime')",
                         "order": 4,
                         "domainFilter": "",
@@ -28573,7 +28573,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                                 {
                                     "lang": "",
-                                    "value": "Condition Category"
+                                    "value": "Category"
                                 }
                             ],
                         "disabledLangName": [
@@ -28620,7 +28620,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                                 {
                                     "lang": "",
-                                    "value": "Condition Severity"
+                                    "value": "Severity"
                                 }
                             ],
                          "disabledLangName": [
@@ -28949,7 +28949,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                                 {
                                     "lang": "",
-                                    "value": "Condition Asserter"
+                                    "value": "Asserter"
                                 }
                             ],
                         "disabledLangName": [
@@ -29130,7 +29130,9 @@ const cdwjsonfhirConfigDuckdb = {
                 "defaultFilter": "1=1",
                 "defaultPlaceholder": "@PROC",
                 "order": 2,
-                "parentInteraction": [],
+                "parentInteraction": [
+                    "patient.interactions.encounter"
+                ],
                 "parentInteractionLabel": "parent",
                 "conceptIdentifierType": "",
                 "attributes": {
@@ -29230,7 +29232,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Procedure Based On"
+                                "value": "Based On"
                             }
                         ],
                         "disabledLangName": [
@@ -29276,7 +29278,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Procedure part Of"
+                                "value": "Part Of"
                             }
                         ],
                         "disabledLangName": [
@@ -29322,7 +29324,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Procedure Status"
+                                "value": "Status"
                             }
                         ],
                         "disabledLangName": [
@@ -29360,52 +29362,6 @@ const cdwjsonfhirConfigDuckdb = {
                         "type": "text",
                         "expression": "@PROC.status",
                         "order": 5,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
-                    "statusReason": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Procedure Status Reason"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@PROC.__reasonCodeSort",
-                        "order": 6,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
@@ -29496,58 +29452,58 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PROC.__codeSort",
+                        "expression": "@PROC.__codeText",
                         "order": 8,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "subject": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Procedure Subject"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@PROC.__subjectIdentifierSort",
-                        "order": 9,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
+                    // "subject": {
+                    //     "name": [
+                    //         {
+                    //             "lang": "",
+                    //             "value": "Procedure Subject"
+                    //         }
+                    //     ],
+                    //     "disabledLangName": [
+                    //         {
+                    //             "lang": "en",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "de",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "fr",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "es",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "pt",
+                    //             "value": "",
+                    //             "visible": true
+                    //         },
+                    //         {
+                    //             "lang": "zh",
+                    //             "value": "",
+                    //             "visible": true
+                    //         }
+                    //     ],
+                    //     "type": "text",
+                    //     "expression": "@PROC.__subjectIdentifierSort",
+                    //     "order": 9,
+                    //     "domainFilter": "",
+                    //     "standardConceptCodeFilter": "",
+                    //     "conceptIdentifierType": ""
+                    // },
                     "location": {
                         "name": [
                             {
@@ -29680,7 +29636,7 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PROC.__reasonCodeText",
+                        "expression": "json_extract_string(cast(@PROC.__reasonCodeText as json), '$[0]')",
                         "order": 12,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -31156,7 +31112,7 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@OBS.__categoryText",
+                        "expression": "json_extract_string(cast(@OBS.__categoryText as json), '$[0]')",
                         "order": 4,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -31202,7 +31158,7 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@OBS.__codeText",
+                        "expression": "json_extract_string(cast(@OBS.__codeText as json), '$[0]')",
                         "order": 5,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -31385,8 +31341,7 @@ const cdwjsonfhirConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "text",
-                        "expression": "@ENCOUNTER.__comboCodeText",
+                        "expression": "json_extract_string(cast(@OBS.__comboCodeText as json), '$[0]')",
                         "order": 10,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -31578,7 +31533,7 @@ const cdwjsonfhirConfigDuckdb = {
                     }
                 }
             },
-            "medication":{
+            "medicationRequest":{
                  "name": [
                     {
                         "lang": "",
@@ -31670,7 +31625,7 @@ const cdwjsonfhirConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "medicationId": {
+                    "medicationRequestId": {
                         "name": [
                             {
                                 "lang": "",
@@ -32408,7 +32363,7 @@ const cdwjsonfhirConfigDuckdb = {
             "@COND.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
             "@COND.INTERACTION_ID": "\"id\"",
             "@COND.CONDITION_ID": "\"id\"",
-            "@COND.INTERACTION_TYPE": "\"id\"",
+            "@COND.PARENT_INTERACT_ID": "\"encounter[-36:]\"",
             "@PATIENT": "$$SCHEMA$$.\"patient\"",
             "@PATIENT.PATIENT_ID": "\"__identifierSort\"",
             "@PATIENT.DOD": "deathDate",
@@ -32418,16 +32373,19 @@ const cdwjsonfhirConfigDuckdb = {
             "@PROC.INTERACTION_ID": "\"id\"",
             "@PROC.CONDITION_ID": "\"id\"",
             "@PROC.INTERACTION_TYPE": "\"id\"",
+            "@PROC.PARENT_INTERACT_ID": "\"encounter[-36:]\"",
             "@ENCOUNTER": "$$SCHEMA$$.\"encounter\"",
             "@ENCOUNTER.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
             "@ENCOUNTER.INTERACTION_ID": "\"id\"",
             "@ENCOUNTER.CONDITION_ID": "\"id\"",
             "@ENCOUNTER.INTERACTION_TYPE": "\"id\"",
+            "@ENCOUNTER.PARENT_INTERACT_ID": "\"id\"",
             "@OBS": "$$SCHEMA$$.\"observation\"",
             "@OBS.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
             "@OBS.INTERACTION_ID": "\"id\"",
             "@OBS.CONDITION_ID": "\"id\"",
             "@OBS.INTERACTION_TYPE": "\"id\"",
+            "@OBS.PARENT_INTERACT_ID": "\"encounter[-36:]\"",
             "@MEDICATION": "$$SCHEMA$$.\"medication\"",
             "@MEDICATION.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
             "@MEDICATION.INTERACTION_ID": "\"id\"",
@@ -33133,26 +33091,6 @@ const pajsonfhirConfigDuckdb = {
                     "modelName": "Procedure Status"
                 },
                 {
-                    "source": "patient.interactions.procedure.attributes.statusReason",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Status Reason"
-                },
-                {
                     "source": "patient.interactions.procedure.attributes.category",
                     "ordered": false,
                     "cached": true,
@@ -33188,28 +33126,28 @@ const pajsonfhirConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Procedure Code"
+                    "modelName": "Code"
                 },
-                {
-                    "source": "patient.interactions.procedure.attributes.subject",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Subject"
-                },
+                // {
+                //     "source": "patient.interactions.procedure.attributes.subject",
+                //     "ordered": false,
+                //     "cached": true,
+                //     "useRefText": false,
+                //     "useRefValue": false,
+                //     "category": true,
+                //     "measure": false,
+                //     "filtercard": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "order": 9
+                //     },
+                //     "patientlist": {
+                //         "initial": false,
+                //         "visible": true,
+                //         "linkColumn": false
+                //     },
+                //     "modelName": "Procedure Subject"
+                // },
                 {
                     "source": "patient.interactions.procedure.attributes.location",
                     "ordered": false,
