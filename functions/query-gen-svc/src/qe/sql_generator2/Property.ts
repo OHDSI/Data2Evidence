@@ -263,7 +263,7 @@ export class Property extends AstElement {
                     )
 
                     //Detect if its on the x1 or x2
-                    //If yes, append Inner JOIN
+                    //If yes, append Inner JOIN referring to another Vocabulary concept table
                     //Modify group by and its attribute config to point to the new reference @REFX placeholder
                     const groupByNode = queryNode.node.groupBy?.find((groupBy) => groupBy.path === this.node.path);
                     if(groupByNode) {
@@ -287,10 +287,10 @@ export class Property extends AstElement {
                         "INNER JOIN"
                         );
 
-                        //Add the ON condition
+                        //Add the ON condition between additional concept table and the descendant expression
                         const maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
                         const maxRefAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[newRefPlaceholder]);
-                        maxRefAliasObj.on = [textAliasObj.on[0]]; //TEMP
+                        maxRefAliasObj.on = QueryObject.format("1=1"); //initialize
                         this.pushOnCondition(
                         maxRefAliasObj.on,
                         QueryObject.format("%UNSAFE", 
