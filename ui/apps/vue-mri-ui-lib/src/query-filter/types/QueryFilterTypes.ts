@@ -51,6 +51,7 @@ export type QueryFilterAttribute =
   | (
       | {
           id: string
+          attributeId: string
           attributeType: 'nested'
           nestedCriteria: QueryFilterNestedCriteria
         }

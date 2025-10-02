@@ -33,8 +33,10 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
         const configType = 'configType' in attr ? attr.configType : 'conceptSet'
         if (attributeType === 'nested' && attr.nestedCriteria) {
           // Keep nested criteria in the attributes format, just process the events
+          const attrId = attr.id
           const processedAttr: QueryFilterAttribute = {
-            id: attr.id,
+            id: attrId,
+            attributeId: 'attributeId' in attr && attr.attributeId ? attr.attributeId : attrId, // Preserve or set attributeId
             attributeType: 'nested',
             nestedCriteria: {
               ...attr.nestedCriteria,
@@ -120,8 +122,10 @@ export const transformNestedEvents = (events: QueryFilterEvent[], parentId: stri
         const attributeType = attr.attributeType
 
         if (attributeType === 'nested' && attr.nestedCriteria) {
+          const attrId = attr.id
           return {
-            id: attr.id,
+            id: attrId,
+            attributeId: 'attributeId' in attr && attr.attributeId ? attr.attributeId : attrId, // Preserve or set attributeId
             attributeType: 'nested',
             nestedCriteria: {
               ...attr.nestedCriteria,

@@ -416,6 +416,7 @@ export const convertAtlasToFilters = (
 
           const nestedAttribute = {
             id: `attribute_${Math.random().toString(36).substring(2)}`,
+            attributeId: 'nested', // Config ID for nested attributes
             attributeType: 'nested' as const,
             nestedCriteria: {
               id: `criteria_${Math.random().toString(36).substring(2)}`,

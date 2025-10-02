@@ -204,6 +204,7 @@ const handleAttributeSelected = (attribute: AttributeOption) => {
   if (attribute.type === 'nested') {
     newAttribute = {
       id: attribute.id,
+      attributeId: attribute.id, // Add attributeId to make nested consistent with other attributes
       attributeType: 'nested',
       nestedCriteria: {
         id: `nested_${Date.now()}`,
