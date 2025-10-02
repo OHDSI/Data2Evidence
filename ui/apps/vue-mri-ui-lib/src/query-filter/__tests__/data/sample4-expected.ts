@@ -11,7 +11,7 @@ export default {
     },
   },
   QualifiedLimit: {
-    Type: 'All',
+    Type: 'First',
   },
   ExpressionLimit: {
     Type: 'All',

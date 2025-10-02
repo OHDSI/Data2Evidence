@@ -173,7 +173,7 @@ describe('QueryFilterCriteria Model Tests', () => {
     expect(atlasFormat).toHaveProperty('QualifiedLimit')
     expect(atlasFormat).toHaveProperty('InclusionRules')
 
-    expect(atlasFormat.QualifiedLimit.Type).toBe('All')
+    expect(atlasFormat.QualifiedLimit.Type).toBe('First')
     expect(atlasFormat.InclusionRules).toHaveLength(1)
     expect(atlasFormat.InclusionRules[0].name).toBe('Test Criteria 1')
     expect(atlasFormat.InclusionRules[0].description).toBe('Test description')
