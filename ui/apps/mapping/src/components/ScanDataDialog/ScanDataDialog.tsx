@@ -265,7 +265,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
 
   return (
     <Dialog className="scan-data-dialog" title="Scan Data" open={open} maxWidth="md" fullWidth>
-      <DialogTitle>Scan Data dialog</DialogTitle>
+      <DialogTitle>Scan Data</DialogTitle>
       <Divider />
       <div className="scan-data-dialog__content">
         <div className="scan-data-dialog__container">

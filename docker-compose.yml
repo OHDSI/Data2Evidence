@@ -129,7 +129,8 @@ services:
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
         "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
-        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
+        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
+        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -914,5 +915,5 @@ services:
       alp:
     environment:
       - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
-      - DOZZLE_BASE=/logs
+      - DOZZLE_BASE=/dockerlogs
       - DOZZLE_NO_ANALYTICS=true
