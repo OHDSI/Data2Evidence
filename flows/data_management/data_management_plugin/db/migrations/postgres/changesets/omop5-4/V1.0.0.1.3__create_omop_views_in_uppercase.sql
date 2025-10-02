@@ -1,6 +1,6 @@
 --liquibase formatted sql
 --changeset alp:V1.0.0.1.3__create_omop_views_in_uppercase
-
+--validCheckSum: 8:bddd2589655882b13389c7438cac4fff
 
 CREATE OR REPLACE VIEW "VIEW::OMOP.CONCEPT" AS 
   (
@@ -15,7 +15,7 @@ CREATE OR REPLACE VIEW "VIEW::OMOP.CONCEPT" AS
           valid_start_date as "VALID_START_DATE",
           valid_end_date as "VALID_END_DATE",
           invalid_reason as "INVALID_REASON"
-      FROM "cdmvocab".concept
+      FROM ${VOCAB_SCHEMA}.concept
   );
 
 
