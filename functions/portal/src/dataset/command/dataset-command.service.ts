@@ -135,7 +135,7 @@ export class DatasetCommandService {
         throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
       }
 
-      const { type, tenantId, databaseCode, vocabSchemaName, tokenDatasetCode, paConfigId, dataModel, plugin } = sourceDataset
+      const { type, tenantId, databaseCode, vocabSchemaName, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, plugin } = sourceDataset
       // Copy dataset with new schema name
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
@@ -144,6 +144,7 @@ export class DatasetCommandService {
         databaseCode,
         schemaName,
         vocabSchemaName,
+        resultSchemaName,
         tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim()}`,
         paConfigId,
         dataModel,

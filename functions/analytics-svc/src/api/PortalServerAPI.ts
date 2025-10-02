@@ -76,7 +76,6 @@ export default class PortalServerAPI {
     async getStudies(token: string) {
         const options = await this.getRequestConfig(token);
         const result = await this.portalapi.get(`${this.baseUrl}/dataset/list/systemadmin`, options);
-        console.log(result);
         return result.data;
     }
 

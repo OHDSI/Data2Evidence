@@ -57,5 +57,6 @@ export const FEATURE_DATASET_FILTER = "datasetFilter";
 export const FEATURE_DATASET_SEARCH = "datasetSearch";
 export const FEATURE_FHIR_SERVER = "fhirServer";
 export const FEATURE_MAPPING_SUGGESTION = "mappingSuggestion";
+export const FEATURE_DOCKER_LOGS = "d2eLogs";
 
 export * from "./FeatureGate";
