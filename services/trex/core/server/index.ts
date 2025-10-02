@@ -8,6 +8,7 @@ import { addRoutes as addBaseRoutes } from "./routes/base.ts"
 import { addRoutes as addDBMRoutes } from "./routes/dbm.ts"
 import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
+import { addRoutes as addLogRoutes } from "./routes/log.ts"
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -24,6 +25,7 @@ export async function initTrex() {
     addDBMRoutes(app);
     addPluginRoutes(app);
     addPortalRoutes(app);
+    addLogRoutes(app);
 
     await Plugins.initPlugins(app);
     logger.log("Added plugins");

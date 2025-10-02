@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test'
-import dotenv from 'dotenv';
+import dotenv from 'dotenv'
 
-dotenv.config();
+dotenv.config()
 
 export default defineConfig({
   testDir: 'tests',

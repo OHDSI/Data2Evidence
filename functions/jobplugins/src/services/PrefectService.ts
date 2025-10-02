@@ -2,7 +2,6 @@ import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { StrategusAnalysisApi } from "../api/StrategusAnalysis.ts";
 import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
-import { Canvas } from "../entities/canvas.ts";
 import {
   PrefectAnalysisParamsTransformer,
   PrefectParamsTransformer,
@@ -46,6 +45,7 @@ export class PrefectService {
   public async createAnalysisFlowRun(
     id: string,
     datasetId: string,
+    uploadResults: boolean | undefined,
     token: string
   ) {
     const revision = await this.analysisflowService.getLastAnalysisflowRevision(
@@ -77,7 +77,8 @@ export class PrefectService {
           schemaName,
           databaseCode,
           studyName,
-          studyId
+          studyId,
+          ...(uploadResults !== undefined ? { uploadResults } : {}),
         },
       }
     );
@@ -98,7 +99,7 @@ export class PrefectService {
 
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
     await this.strategusAnalysisApi.saveAnalysis(
-      options["study_id"],
+      options["studyId"],
       options["notebookName"],
       json_graph["analysisSpecification"]
     );

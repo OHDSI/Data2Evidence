@@ -1,16 +1,14 @@
-@import './mri-variables';
 @import './mixins';
 
 html,
 body,
 #app {
   height: 100%;
-  max-width: 100vw !important;
   scrollbar-width: thin;
   font-family: $font-family-base;
 
   .UiLbl {
-    color: $UiLightText;
+    color: var(--color-ui-light-text, #595757);
   }
 
   button {

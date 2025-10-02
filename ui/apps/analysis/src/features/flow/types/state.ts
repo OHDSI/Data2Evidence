@@ -1,8 +1,8 @@
 import { EntityState } from "@reduxjs/toolkit";
-import { EdgeState } from "./edge.state";
-import { AddNodeTypeDialogState, NodeState } from "./node.state";
 import { FlowStatus, SaveFlowDialogState } from "./dataflow.state";
+import { EdgeState } from "./edge.state";
 import { FlowRunState } from "./flow-run.state";
+import { AddNodeTypeDialogState, NodeState } from "./node.state";
 
 export interface FlowRootState {
   dataflowId: string;
@@ -10,6 +10,7 @@ export interface FlowRootState {
   addNodeTypeDialog: AddNodeTypeDialogState;
   saveFlowDialog: SaveFlowDialogState;
   isTestMode: boolean;
+  uploadResults: boolean;
 
   status: FlowStatus | undefined;
   flowRunState: EntityState<FlowRunState>;

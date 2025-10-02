@@ -65,6 +65,35 @@ const getHandleType = (handleId: string) => {
   return arr[arr.length - 1];
 };
 
+const getCohortTypeFromLabel = (
+  label?: string
+): "event" | "target" | "exit" | "comparator" | "outcome" | "" => {
+  if (!label) return "";
+  const normalized = label.toLowerCase().replace(/_/g, " ");
+  if (normalized.includes("event")) return "event";
+  if (normalized.includes("target")) return "target";
+  if (normalized.includes("exit")) return "exit";
+  if (normalized.includes("comparator")) return "comparator";
+  if (normalized.includes("outcome")) return "outcome";
+  return "";
+};
+
+const getCohortTypeFromTargetHandle = (
+  targetHandle?: string
+): "event" | "target" | "exit" | "comparator" | "outcome" | "" => {
+  if (!targetHandle) return "";
+  const parts = targetHandle.split("_");
+  // Pattern: <nodeId>_<direction>_<label...>_<handleIOType>
+  const labelTokens = parts.slice(2, -1);
+  const handleLabel = labelTokens.join("_").toLowerCase().replace(/_/g, " ");
+  if (handleLabel.includes("event")) return "event";
+  if (handleLabel.includes("target")) return "target";
+  if (handleLabel.includes("exit")) return "exit";
+  if (handleLabel.includes("comparator")) return "comparator";
+  if (handleLabel.includes("outcome")) return "outcome";
+  return "";
+};
+
 export const FlowPanel: FC<FlowPanelProps> = () => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
   const { data: dataflow } = useGetLatestDataflowByIdQuery(dataflowId, {
@@ -148,8 +177,26 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
     (changes: EdgeChange[]) => {
       const updates = applyEdgeChanges(changes, edges);
       dispatch(replaceEdges(updates));
+
+      nodes
+        .filter((n) => n.type === "cohort_node")
+        .forEach((cohortNode) => {
+          const outgoing = updates.find((e) => e.source === cohortNode.id);
+          const nextType = outgoing
+            ? getCohortTypeFromTargetHandle(outgoing.targetHandle as string)
+            : "";
+          const currType = (cohortNode.data as any)?.type || "";
+          if (nextType !== currType) {
+            dispatch(
+              setNode({
+                ...cohortNode,
+                data: { ...cohortNode.data, type: nextType },
+              })
+            );
+          }
+        });
     },
-    [edges]
+    [edges, nodes]
   );
 
   const handleConnect = useCallback(
@@ -157,8 +204,24 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const updates = addEdge(params, edges);
       dispatch(replaceEdges(updates));
       dispatch(markStatusAsDraft());
+
+      // If source is a cohort node, set its type based on target handle
+      const cohortNode = nodes.find(
+        (n) => n.id === params.source && n.type === "cohort_node"
+      );
+      if (cohortNode) {
+        const nextType = getCohortTypeFromTargetHandle(
+          params.targetHandle as string
+        );
+        dispatch(
+          setNode({
+            ...cohortNode,
+            data: { ...cohortNode.data, type: nextType },
+          })
+        );
+      }
     },
-    [edges]
+    [edges, nodes]
   );
 
   const handleConnectStart = useCallback(
@@ -243,13 +306,11 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         replaceNodes(nodes.map((node) => ({ ...node, selected: false })))
       );
 
-      const newNode = createNode(type, nodePosition);
-      dispatch(setNode(newNode));
+      let newNode = createNode(type, nodePosition);
 
-      let edge: EdgeState | undefined;
-
+      let newEdge: EdgeState | undefined;
       if (addNodeTypeDialog.selectedNodeId) {
-        edge = {
+        newEdge = {
           id: uuidv4(),
           source: newNode.id,
           target: addNodeTypeDialog.selectedNodeId,
@@ -258,8 +319,23 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
         };
       }
 
-      if (edge) {
-        dispatch(setEdge(edge));
+      if (newEdge) {
+        // If adding a cohort node via a handle, set its type based on the handle label
+        if (newNode.type === "cohort_node") {
+          const inferredType = getCohortTypeFromLabel(
+            addNodeTypeDialog.nodeHandleLabel
+          );
+          newNode = {
+            ...newNode,
+            data: { ...newNode.data, type: inferredType },
+          } as NodeState;
+        }
+        // Upsert node with possibly updated type before creating edge
+        dispatch(setNode(newNode));
+        dispatch(setEdge(newEdge));
+      } else {
+        // No edge created; just upsert node
+        dispatch(setNode(newNode));
       }
       const { zoom } = getViewport();
       setCenter(
@@ -306,7 +382,9 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const isValidType = sourceType === targetType;
 
       return (
-        isDifferentNode && !isCircular(routes, source, target) && isValidType
+        isDifferentNode &&
+        !isCircular(routes, source, target) &&
+        isValidType
       );
     },
     [edges, nodes]

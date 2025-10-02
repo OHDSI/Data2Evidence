@@ -56,8 +56,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(50000);
   await page.getByRole('link', { name: 'dqd_demo' }).first().click();
   await page.waitForTimeout(5000);
-  await page.getByText('Logs', { exact: true }).waitFor({ state: 'visible' });
-  await page.getByText('Logs', { exact: true }).click();
+  await page.locator('li#logs.p-tab.p-tab__active').waitFor({ state: 'visible' });
+  await page.locator('li#logs.p-tab.p-tab__active').click();
   const logsPage = await page.locator('pre');
   await logsPage.scrollIntoViewIfNeeded();
   await expect(page.getByText('Worker \'prefect-docker-worker')).toBeVisible();

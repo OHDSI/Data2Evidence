@@ -2,7 +2,7 @@ import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import { Box, Button, Dialog, FormControl, InputLabel, TextField } from "@portal/components";
-import React, { FC, useCallback, useEffect, useState } from "react";
+import React, { FC, FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { CloseDialogType, DatasetAttributeConfig } from "../../../../../types";
@@ -59,33 +59,37 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
     [onClose]
   );
 
-  const handleSave = useCallback(async () => {
-    try {
-      setSaving(true);
-      if (isEditMode) {
-        await api.systemPortal.updateDatasetAttributeConfig(formData);
-      } else {
-        await api.systemPortal.addDatasetAttributeConfig(formData);
+  const handleSave = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      try {
+        setSaving(true);
+        if (isEditMode) {
+          await api.systemPortal.updateDatasetAttributeConfig(formData);
+        } else {
+          await api.systemPortal.addDatasetAttributeConfig(formData);
+        }
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SUCCESS),
+          autoClose: 6000,
+        });
+        setRefetch((refetch) => refetch + 1);
+        setFormData(EMPTY_FORM_DATA);
+        handleClose("success");
+      } catch (err: any) {
+        setFeedback({
+          type: "error",
+          message: err.data?.error || err.message || "An error occurred",
+          description: err.data?.message || "",
+          autoClose: 6000,
+        });
+      } finally {
+        setSaving(false);
       }
-      setFeedback({
-        type: "success",
-        message: getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SUCCESS),
-        autoClose: 6000,
-      });
-      setRefetch((refetch) => refetch + 1);
-      setFormData(EMPTY_FORM_DATA);
-      handleClose("success");
-    } catch (err: any) {
-      setFeedback({
-        type: "error",
-        message: err.data?.error || err.message || "An error occurred",
-        description: err.data?.message || "",
-        autoClose: 6000,
-      });
-    } finally {
-      setSaving(false);
-    }
-  }, [handleClose, formData, setRefetch, setFeedback, isEditMode, getText]);
+    },
+    [handleClose, formData, setRefetch, setFeedback, isEditMode, getText]
+  );
 
   return (
     <Dialog
@@ -96,7 +100,7 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
       onClose={() => handleClose("cancelled")}
     >
       <Divider />
-      <>
+      <form onSubmit={handleSave}>
         <div className="save-attribute-dialog__content">
           <Box mb={4}>
             <TextField
@@ -161,10 +165,10 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
               variant="outlined"
               onClick={() => handleClose("cancelled")}
             />
-            <Button text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SAVE)} onClick={handleSave} loading={saving} />
+            <Button type="submit" text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SAVE)} loading={saving} />
           </Box>
         </div>
-      </>
+      </form>
     </Dialog>
   );
 };

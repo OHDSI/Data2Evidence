@@ -332,6 +332,7 @@ interface IGetVersionInfoFlowRunOptions {
 }
 
 export interface ICreateCachedbFileFlowRunDto {
+  flowActionType: string;
   databaseCode: string;
   schemaName: string;
 }

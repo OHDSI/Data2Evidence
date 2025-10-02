@@ -1,3 +1,4 @@
+const USE_MOCK_SERVER = false
 const REDIRECT_URL = 'https://localhost:8081'
 
 const config = {
@@ -30,25 +31,30 @@ const getUser = () => {
   return userManager.getUser()
 }
 
-if (!authToken) {
-  signinRedirect()
-}
-
-if (code) {
-  userManager
-    .signinRedirectCallback()
-    .then(user => {
-      localStorage.setItem('msaltoken', user.access_token)
-      window.location.replace(window.location.origin)
-    })
-    .catch(error => {
-      console.error('Error during login', error)
-    })
-}
-
 const logoutfn = () => {
   localStorage.removeItem('msaltoken')
   userManager.signoutRedirect({
     id_token_hint: userManager.getUser()?.access_token,
   })
+}
+
+if (!USE_MOCK_SERVER) {
+  if (code) {
+    userManager
+      .signinRedirectCallback()
+      .then(user => {
+        localStorage.setItem('msaltoken', user.access_token)
+        const returnPath = sessionStorage.getItem('returnPath') || '/'
+        sessionStorage.removeItem('returnPath')
+        window.location.replace(window.location.origin + returnPath)
+      })
+      .catch(error => {
+        console.error('Error during login', error)
+        localStorage.removeItem('msaltoken')
+        signinRedirect()
+      })
+  } else if (!authToken) {
+    sessionStorage.setItem('returnPath', window.location.pathname)
+    signinRedirect()
+  }
 }

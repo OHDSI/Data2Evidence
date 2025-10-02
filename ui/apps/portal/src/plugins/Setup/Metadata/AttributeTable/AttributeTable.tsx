@@ -6,8 +6,8 @@ import { Button, EditIcon, IconButton, Loader, TableCell, TableRow, TrashIcon } 
 import { SaveAttributeDialog } from "./SaveAttributeDialog/SaveAttributeDialog";
 import { DeleteAttributeDialog } from "./DeleteAttributeDialog/DeleteAttributeDialog";
 import { DatasetAttributeConfig } from "../../../../types";
-import "./AttributeTable.scss";
 import { useTranslation } from "../../../../contexts";
+import "./AttributeTable.scss";
 
 const AttributeTable: FC = () => {
   const { getText, i18nKeys } = useTranslation();

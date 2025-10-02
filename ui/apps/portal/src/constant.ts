@@ -27,3 +27,8 @@ export enum ConfigTypes {
 }
 
 export const PUB_SLOT_NAME = "data2evidence";
+
+export enum LogResponseType {
+  ACCEPTED = "ACCEPTED",
+  DECLINED = "DECLINED",
+}

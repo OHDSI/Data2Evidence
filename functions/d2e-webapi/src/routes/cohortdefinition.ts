@@ -45,7 +45,13 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       },
     },
     async (req, res) => {
-      const result = await getCohortDefinitionList(req.token, req.datasetId);
+      const referer = req.headers.referer;
+      const isAtlas = referer?.includes("/atlas");
+      const result = await getCohortDefinitionList(
+        req.token,
+        req.datasetId,
+        isAtlas
+      );
       res.send(result);
     }
   );
