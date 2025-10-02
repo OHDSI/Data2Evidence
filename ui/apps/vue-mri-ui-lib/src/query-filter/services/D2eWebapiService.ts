@@ -11,6 +11,10 @@ import type {
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
 
+// Cache and in-flight tracking for vocabulary search
+const vocabularySearchCache: Map<string, ConceptDetail[]> = new Map()
+const vocabularySearchInflight: Map<string, Promise<ConceptDetail[]>> = new Map()
+
 export class D2eWebapiService {
   public async getConceptSets(datasetId: string): Promise<IWebapiConceptSet[]> {
     const response = await client({
@@ -85,13 +89,50 @@ export class D2eWebapiService {
   }
 
   public async getConceptById(conceptId: number, datasetId: string): Promise<ConceptDetail[]> {
-    const response = await client({
-      baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/vocabulary/${datasetId}/search?query=${encodeURIComponent(conceptId.toString())}`,
-      method: 'GET',
-      headers: { datasetid: datasetId },
-    })
-    return response.data
+    // Create cache key: datasetId + query
+    const cacheKey = `${datasetId}:GET:${conceptId}`
+
+    // Check cache first
+    const cachedResult = vocabularySearchCache.get(cacheKey)
+    if (cachedResult) {
+      console.log(`[VocabularySearch] Using cached result for concept ID ${conceptId}`)
+      return cachedResult
+    }
+
+    // Check if request is already in-flight
+    const inflightRequest = vocabularySearchInflight.get(cacheKey)
+    if (inflightRequest) {
+      console.log(`[VocabularySearch] Waiting for in-flight request for concept ID ${conceptId}`)
+      return await inflightRequest
+    }
+
+    // Create new request and track it
+    console.log(`[VocabularySearch] Fetching concept ID ${conceptId} from API`)
+    const requestPromise = (async () => {
+      try {
+        const response = await client({
+          baseURL: D2E_WEBAPI_BASE_URL,
+          url: `/vocabulary/${datasetId}/search?query=${encodeURIComponent(conceptId.toString())}`,
+          method: 'GET',
+          headers: { datasetid: datasetId },
+        })
+
+        const result = response.data
+
+        // Cache the result
+        vocabularySearchCache.set(cacheKey, result)
+
+        return result
+      } finally {
+        // Remove from in-flight tracking when complete
+        vocabularySearchInflight.delete(cacheKey)
+      }
+    })()
+
+    // Store the promise in in-flight tracking
+    vocabularySearchInflight.set(cacheKey, requestPromise)
+
+    return await requestPromise
   }
 
   public async getSources(): Promise<IWebapiSource[]> {

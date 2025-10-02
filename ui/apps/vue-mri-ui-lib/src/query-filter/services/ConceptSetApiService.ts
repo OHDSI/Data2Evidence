@@ -69,18 +69,9 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
   }
 }
 
-const cachedConcepts: { [key: number]: ConceptDetail } = {}
-
 export const fetchConceptById = async (datasetId: string, conceptId: number): Promise<ConceptDetail | null> => {
   try {
-    if (cachedConcepts[conceptId]) {
-      return cachedConcepts[conceptId]
-    }
-
     const data = await d2eWebapiService.getConceptById(conceptId, datasetId)
-    if (data[0]) {
-      cachedConcepts[conceptId] = data[0]
-    }
     return Array.isArray(data) && data.length > 0 ? data[0] : null
   } catch (error) {
     console.error(`Error fetching concept by ID ${conceptId}:`, error)
