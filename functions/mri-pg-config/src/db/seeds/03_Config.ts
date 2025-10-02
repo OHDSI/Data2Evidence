@@ -31802,7 +31802,7 @@ const cdwjsonfhirConfigDuckdb = {
                                 "visible": true
                             }
                         ],
-                        "type": "time",
+                        "type": "text",
                         "expression": "cast(@MEDREQ.authoredon as DATE)",
                         "order": 5,
                         "domainFilter": "",
