@@ -1080,7 +1080,6 @@ const generateCohort = async () => {
         <div class="header-section-middle">
           <div class="generate-cohort-controls">
             <div v-if="isAtlas" class="dataset-selector">
-              <span class="dataset-label">Dataset:</span>
               <select v-model="selectedDatasetForGeneration" class="dataset-dropdown" :disabled="isGeneratingCohort">
                 <option v-for="source in availableSources" :key="source.sourceKey" :value="source.sourceKey">
                   {{ source.sourceName }}
