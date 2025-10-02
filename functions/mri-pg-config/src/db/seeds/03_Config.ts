@@ -96,7 +96,7 @@ export async function seed(knex: Knex): Promise<void> {
         Id: "5f83344b-4b1c-43a1-b099-d233a6844bb0",
         Version: "A",
         Status: "",
-        Name: "FHIR",
+        Name: "FHIR_QR",
         Type: "HC/MRI/PA",
         Data: paFHIRConfigDuckdb,
         ParentId: "f5f08d4b-669e-485b-89c6-bb684020bfd1",
@@ -110,7 +110,7 @@ export async function seed(knex: Knex): Promise<void> {
         Id: "f5f08d4b-669e-485b-89c6-bb684020bfd1",
         Version: "1",
         Status: "A",
-        Name: "FHIR_DM",
+        Name: "FHIR_QR_DM",
         Type: "HC/HPH/CDW",
         Data: cdwFHIRConfigDuckdb,
         ParentId: "",
@@ -124,7 +124,7 @@ export async function seed(knex: Knex): Promise<void> {
         Id: "5f84444b-4b1c-43a1-b099-d233a6844bb0",
         Version: "A",
         Status: "",
-        Name: "FHIR_JSON",
+        Name: "FHIR",
         Type: "HC/MRI/PA",
         Data: pajsonfhirConfigDuckdb,
         ParentId: "f5g08d4b-669e-485b-89c6-bb684020bfd1",
@@ -138,7 +138,7 @@ export async function seed(knex: Knex): Promise<void> {
         Id: "f5g08d4b-669e-485b-89c6-bb684020bfd1",
         Version: "1",
         Status: "A",
-        Name: "FHIR_JSON_DM",
+        Name: "FHIR_DM",
         Type: "HC/HPH/CDW",
         Data: cdwjsonfhirConfigDuckdb,
         ParentId: "",
@@ -31537,7 +31537,7 @@ const cdwjsonfhirConfigDuckdb = {
                  "name": [
                     {
                         "lang": "",
-                        "value": "Medication"
+                        "value": "Medication Request"
                     }
                 ],
                 "disabledLangName": [
@@ -31573,9 +31573,9 @@ const cdwjsonfhirConfigDuckdb = {
                     }
                 ],
                 "defaultFilter": "1=1",
-                "defaultPlaceholder": "@MEDICATION",
+                "defaultPlaceholder": "@MEDREQ",
                 "order": 5,
-                "parentInteraction": [],
+                "parentInteraction": ["patient.interactions.encounter"],
                 "parentInteractionLabel": "parent",
                 "conceptIdentifierType": "",
                 "attributes": {
@@ -31671,6 +31671,52 @@ const cdwjsonfhirConfigDuckdb = {
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
+                    "medication": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Medication Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDREQ.__medicationIdentifierSort",
+                        "order": 3,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
                     "status": {
                         "name": [
                             {
@@ -31711,155 +31757,17 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@MEDICATION.status",
-                        "order": 3,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
-                    "lotNumber": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Lot Number"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@MEDICATION.lotNumber",
+                        "expression": "@MEDREQ.status",
                         "order": 4,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "manufacturer": {
+                    "authoredOn": {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Manufacturer"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@MEDICATION.__manufacturerIdentifierSort",
-                        "order": 5,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
-                    "ingredient": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Ingredient"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "text",
-                        "expression": "@MEDICATION.__ingredientCodeText",
-                        "order": 6,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "conceptIdentifierType": ""
-                    },
-                    "expirationDate": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Expiration Date"
+                                "value": "Authored On"
                             }
                         ],
                         "disabledLangName": [
@@ -31895,17 +31803,17 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "time",
-                        "expression": "@MEDICATION.expirationDate",
-                        "order": 8,
+                        "expression": "cast(@MEDREQ.authoredon as DATE)",
+                        "order": 5,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
                     },
-                    "doseForm": {
+                    "intent": {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Dose Form"
+                                "value": "Intent"
                             }
                         ],
                         "disabledLangName": [
@@ -31941,8 +31849,146 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@MEDICATION.__formText",
+                        "expression": "@MEDREQ.intent",
+                        "order": 6,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "category": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Category"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "time",
+                        "expression": "json_extract_string(cast(@MEDREQ.__categoryText as json), '$[0]')",
+                        "order": 8,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "priority": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Priority"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDREQ.priority",
                         "order": 9,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "requester": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Requester"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDREQ.__requesterIdentifierSort",
+                        "order": 10,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
@@ -31987,8 +32033,54 @@ const cdwjsonfhirConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@MEDICATION.__codeText",
-                        "order": 10,
+                        "expression": "json_extract_string(cast(@MEDREQ.__codeText as json), '$[0]')",
+                        "order": 12,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "encounter": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Encounter Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@MEDREQ.__encounterIdentifierSort",
+                        "order": 13,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "conceptIdentifierType": ""
@@ -32349,7 +32441,7 @@ const cdwjsonfhirConfigDuckdb = {
                     "condition": false
                 },
                 {
-                    "placeholder": "@MEDICATION",
+                    "placeholder": "@MEDREQ",
                     "attributeTables": [],
                     "hierarchy": true,
                     "time": true,
@@ -32386,11 +32478,12 @@ const cdwjsonfhirConfigDuckdb = {
             "@OBS.CONDITION_ID": "\"id\"",
             "@OBS.INTERACTION_TYPE": "\"id\"",
             "@OBS.PARENT_INTERACT_ID": "\"encounter[-36:]\"",
-            "@MEDICATION": "$$SCHEMA$$.\"medication\"",
-            "@MEDICATION.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
-            "@MEDICATION.INTERACTION_ID": "\"id\"",
-            "@MEDICATION.CONDITION_ID": "\"id\"",
-            "@MEDICATION.INTERACTION_TYPE": "\"id\"",
+            "@MEDREQ": "$$SCHEMA$$.\"medicationrequest\"",
+            "@MEDREQ.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
+            "@MEDREQ.INTERACTION_ID": "\"id\"",
+            "@MEDREQ.CONDITION_ID": "\"id\"",
+            "@MEDREQ.INTERACTION_TYPE": "\"id\"",
+            "@MEDREQ.PARENT_INTERACT_ID": "\"encounter[-36:]\"",
         },
         "guardedTableMapping": {
             "@PATIENT": "$$SCHEMA$$.\"patient\""
@@ -33293,194 +33386,6 @@ const pajsonfhirConfigDuckdb = {
             "modelName": "Procedure"
         },
         {
-            "source": "patient.interactions.medication",
-            "visible": true,
-            "order": 4,
-            "initial": false,
-            "attributes": [
-                {
-                    "source": "patient.interactions.medication.attributes.pid",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Patient Id"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.medicationId",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "MedicationId Id"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.status",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Status"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.lotNumber",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 4
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Lot Number"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.manufacturer",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Manufacturer"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.ingredient",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Ingredient"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.expirationDate",
-                    "ordered": false,
-                    "cached": true,
-                    "category": false,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": true,
-                        "visible": true,
-                        "order": 8
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Expiration Date"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.doseForm",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Dose Form"
-                },
-                {
-                    "source": "patient.interactions.medication.attributes.code",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 14
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Code"
-                }
-            ],
-            "initialPatientlistColumn": false,
-            "modelName": "Medication"
-        },
-        {
             "source": "patient.interactions.observation",
             "visible": true,
             "order": 4,
@@ -34015,6 +33920,234 @@ const pajsonfhirConfigDuckdb = {
             ],
             "initialPatientlistColumn": false,
             "modelName": "Encounter"
+        },
+        {
+            "source": "patient.interactions.medicationRequest",
+            "visible": true,
+            "order": 5,
+            "initial": false,
+            "attributes": [
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Id"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.medicationRequestId",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Medication Request Id"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.medication",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 3
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Medication Id"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.status",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Status"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.authoredOn",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Authored On"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.intent",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Intent"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.category",
+                    "ordered": false,
+                    "cached": true,
+                    "category": false,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Category"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.priority",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Priority"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.requester",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Requester"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.code",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Code"
+                },
+                {
+                    "source": "patient.interactions.medicationRequest.attributes.encounter",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Encounter Id"
+                }
+            ],
+            "initialPatientlistColumn": false,
+            "modelName": "Medication Request"
         }
     ],
     "chartOptions": {
