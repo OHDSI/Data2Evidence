@@ -253,6 +253,64 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
 	}
 	app.all(url+postfix, authn, authz, async (c: Context) => {
 
+    const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
+
+    if (isWs) {
+      const req = c.req.raw;
+      const url = new URL(c.req.url);
+      const { hostname, port } = new URL(service_url);
+      const serviceUrl = `ws://${hostname}:${port}${url.pathname}${url.search}`;
+
+      const { socket, response } = Deno.upgradeWebSocket(req);
+      const serviceWebSocketConnection = new WebSocket(serviceUrl);
+
+      socket.onmessage = (event) => {
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.send(event.data);
+        }
+      };
+
+      socket.onclose = () => {
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.close();
+        }
+      };
+
+      socket.onerror = (event) => {
+        logger.error(`WebSocket connection request failed: ${event}`);
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.close(1011, "Client socket error");
+        }
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+
+      serviceWebSocketConnection.onclose = () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+
+      serviceWebSocketConnection.onmessage = (event) => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(event.data);
+        }
+      };
+
+      serviceWebSocketConnection.onerror = (event) => {
+        logger.error(`WebSocket connection to service failed: ${event}`);
+        if (
+          socket.readyState === WebSocket.OPEN ||
+          socket.readyState === WebSocket.CONNECTING
+        ) {
+          socket.close(1011, "Service WebSocket connection error");
+        }
+      };
+
+      return response;
+    }
+
 		let newHeaders = new Headers(c.req.raw.headers)
 		newHeaders.append('x-source-origin', env.GATEWAY_WO_PROTOCOL_FQDN)
 		const path = rmsrc? c.req.raw.url.replace(/^[^#]*?:\/\/.*?\//,'/').replace(url,'') : c.req.raw.url.replace(/^[^#]*?:\/\/.*?\//,'/');
