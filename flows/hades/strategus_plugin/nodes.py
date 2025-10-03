@@ -350,7 +350,7 @@ class CohortDefinitionSharedResource(Node):
         super().__init__(node)
         cohort_info = node["cohorts"][0]
         self.cohortId = int(cohort_info["cohortId"])
-        cohort_type_val = cohort_info.get("cohortType")
+        cohort_type_val = node.get("cohortType")
         if not cohort_type_val:
             self.cohortType = CohortNodeType.EVENT
         else:

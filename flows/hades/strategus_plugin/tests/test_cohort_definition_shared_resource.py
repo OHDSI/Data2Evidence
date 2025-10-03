@@ -20,10 +20,10 @@ def test_cohort_definition_shared_resource_task_returns_expected_classes(mock_ge
         "cohorts": [
             {
                 "cohortId": 1,
-                "cohortType": "target",
                 "cohortName": "Test Cohort"
             }
-        ]
+        ],
+        "cohortType": "target"
     }
     obj = CohortDefinitionSharedResource(node)
     assert isinstance(obj, CohortDefinitionSharedResource)
