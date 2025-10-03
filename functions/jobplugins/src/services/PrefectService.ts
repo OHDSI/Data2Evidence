@@ -52,7 +52,7 @@ export class PrefectService {
       id
     );
     const studyName = revision.canvas.name;
-    const studyId = revision.canvas.id;
+    const studyId = revision.canvas.name;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow
     );

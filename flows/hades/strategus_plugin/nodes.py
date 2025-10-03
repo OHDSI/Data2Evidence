@@ -1163,9 +1163,10 @@ class StrategusNode(Node):
                     "resultsFolder": path_to_results
                 })
                 rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
+                analysisSpecJson = convert_R_to_py(rParallelLogger.convertSettingsToJson(rSpec))
 
                 rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
-                return Result(False, rSpec.r_repr(), self, task_run_context)
+                return Result(False, analysisSpecJson, self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
                 return Result(True, tb.format_exc(), self, task_run_context)

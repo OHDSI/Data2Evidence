@@ -379,6 +379,45 @@ class DaoBase(ABC):
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
+    def get_database_connector_connection_string(self) -> str:
+        """
+        Generate JDBC connection string for PostgreSQL database.
+        """
+        database_credentials = self.tenant_configs
+        database_connector_dialect = getattr(
+            DialectDrivers.database_connector, database_credentials.dialect
+        )
+        host = self.tenant_configs.host
+        port = self.tenant_configs.port
+        database_name = database_credentials.databaseName
+        dialect = database_credentials.dialect
+        release_date = None
+
+        match dialect:
+            case SupportedDatabaseDialects.POSTGRES:
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
+            case SupportedDatabaseDialects.HANA:
+                encrypt = database_credentials.encrypt or "TRUE"
+                validateCertificate = (
+                    database_credentials.validateCertificate or "FALSE"
+                )
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}&encrypt={encrypt}&validateCertificate={validateCertificate}"
+                extra_config = (
+                    f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}"
+                    if release_date
+                    else None
+                )
+                conn_url += extra_config
+        # return f"{database_connector_dialect}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
+        return conn_url
+
+    def get_database_connector_dbms_val(self) -> str:
+        database_credentials = self.tenant_configs
+        database_connector_dialect = getattr(
+            DialectDrivers.database_connector, database_credentials.dialect
+        )
+        return database_connector_dialect
+
     @staticmethod
     def set_db_driver_env() -> str:
         """

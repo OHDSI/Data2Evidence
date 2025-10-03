@@ -1,3 +1,4 @@
+import os
 import re
 import traceback
 from functools import partial
@@ -65,7 +66,7 @@ def strategus_plugin(json_graph, options):
         logger.debug(f"Study analysis result: {study_analysis_result}")
         root_flow_run_context = FlowRunContext.get().flow_run.dict()
         flow_run_id = str(root_flow_run_context.get("id"))
-        log_file_path = f"/tmp/{flow_run_id}/results/strategus-log.txt"
+        log_file_path = f"/app/errorReportSql.txt"
 
         if(upload_results):
             result_db_settings = {
@@ -80,12 +81,14 @@ def strategus_plugin(json_graph, options):
             key="strategus-analysis-specification",
             markdown=study_analysis_result.data
         )
-        with open(log_file_path, "r") as f:
-            file_contents = f.read()
-            create_markdown_artifact(
-                key="strategus-analysis-logs",
-                markdown=file_contents
-            )
+        # if file exists, create an artifact to store the error logs
+        if os.path.exists(log_file_path):
+            with open(log_file_path, "r") as f:
+                file_contents = f.read()
+                create_markdown_artifact(
+                    key="strategus-analysis-error-logs",
+                    markdown=file_contents
+                )
     except Exception as e:
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
     finally:
