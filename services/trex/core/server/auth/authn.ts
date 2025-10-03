@@ -40,6 +40,14 @@ export async function authn(c: Context, next: Function) {
         }
       }
     }
+
+    if (token === "" && c.req.query("token")) {
+      const urlToken = c.req.query("token");
+      if (urlToken) {
+        token = urlToken;
+      }
+    }
+
     if (token === null || token.length === 0) {
       logger.error("authenticate: no token found");
       return new Response("Unauthorized", { status: 401 });
