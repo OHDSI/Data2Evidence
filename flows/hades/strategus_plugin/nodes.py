@@ -1286,7 +1286,8 @@ def getRCdmExecutionSettings(settings) -> str:
                 workFolder = settings['workFolder'],
                 resultsFolder = settings['resultsFolder'],
                 minCellCount = 5,
-                maxCores = 1
+                # Todo: Update cores for trex 
+                maxCores = 1 if USE_TREX_CONNECTION else 8
             )
             return convert_R_to_py(rParallelLogger.convertSettingsToJson(rExecutionSettings))
         except Exception as e:
