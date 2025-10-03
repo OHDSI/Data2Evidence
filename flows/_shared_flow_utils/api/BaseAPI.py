@@ -34,5 +34,5 @@ class BaseAPI:
             bearer_token = GetAuthTokens().get_auth_token(flow_run_id).get_secret_value()
         return {
             "Content-Type": "application/json",
-            "Authorization": bearer_token if bearer_token else ""
+            "Authorization": bearer_token if bearer_token else "Bearer <token>"
         }

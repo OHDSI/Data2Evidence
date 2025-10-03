@@ -408,7 +408,6 @@ class DaoBase(ABC):
                     else None
                 )
                 conn_url += extra_config
-        # return f"{database_connector_dialect}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
         return conn_url
 
     def get_database_connector_dbms_val(self) -> str:

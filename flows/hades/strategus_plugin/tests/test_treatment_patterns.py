@@ -9,7 +9,6 @@ def test_treatment_patterns_constructor_and_task():
     obj = TreatmentPatterns(node)
     assert isinstance(obj, TreatmentPatterns)
 
-    # Construct a minimal valid CohortDefinitionSharedResource node
     cohort_node_dict = {
         "id": "cohort1",
         "type": "cohort_node",
