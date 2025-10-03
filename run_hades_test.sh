@@ -9,4 +9,4 @@ SERVICE_NAME="app"
 
 # Run the test inside the container
 docker compose -f flows/hades/strategus_plugin/dc-local.yml exec $SERVICE_NAME \
-  sh -c "pip install pytest && PYTHONPATH=/app pytest /app/flows/hades/strategus_plugin/tests/"
+  /app/.venv/bin/python -m pytest /app/flows/hades/strategus_plugin/tests/

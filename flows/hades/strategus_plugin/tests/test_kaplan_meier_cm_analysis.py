@@ -1,7 +1,6 @@
 import pytest
 from flows.hades.strategus_plugin.nodes import KaplanMeierCMAnalysis, Result
 
-
 def test_kaplan_meier_cm_analysis_task_returns_cmAnalysis():
     node = {
         "id": "42617632-4b59-4a32-b9ce-6e1fc9d66907",

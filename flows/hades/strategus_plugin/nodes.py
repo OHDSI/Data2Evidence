@@ -1075,8 +1075,8 @@ class KaplanMeierCMAnalysis(Node):
                 covarSettingsNode = DefaultCovariateSettingsNode({ "type": "default_covariate_settings_node", "id": str(uuid.uuid4()), "flowOptions": self.flowOptions })
                 covarSettingsResult = covarSettingsNode.task(task_run_context)
                 rGetDbCmDataArgs = rCreateGetDbCohortMethodDataArgs(
-                    studyStartDate = convert_py_to_R(self.dbCohortMethodDataArgs["studyStartDate"]),
-                    studyEndDate = convert_py_to_R(self.dbCohortMethodDataArgs["studyEndDate"]),
+                    studyStartDate = convert_py_to_R(self.dbCohortMethodDataArgs.get("studyStartDate", "")),
+                    studyEndDate = convert_py_to_R(self.dbCohortMethodDataArgs.get("studyEndDate", "")),
                     covariateSettings = covarSettingsResult.data
                 )
                 rCreateCreateStudyPopulationArgs = rCohortMethod.createCreateStudyPopulationArgs
