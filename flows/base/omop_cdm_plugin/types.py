@@ -1,6 +1,9 @@
 from enum import Enum
-from pydantic import BaseModel
+
 from typing import Optional, List
+from typing_extensions import Self
+
+from pydantic import BaseModel, model_validator
 
 # Todo: call github api to get latest release
 RELEASE_VERSION_MAPPING = {
@@ -25,6 +28,7 @@ class OmopCDMPluginOptions(BaseModel):
     database_code: str
     data_model: Optional[str] = None # omop5-3, omop5-4
     schema_name: Optional[str] = None
+    results_schema: Optional[str] = None
     vocab_schema: Optional[str] = None
     datasets: Optional[List] = None
 
@@ -43,3 +47,29 @@ class OmopCDMPluginOptions(BaseModel):
         if self.cdm_version:
             return RELEASE_VERSION_MAPPING.get(self.cdm_version)
         return None
+
+
+    @model_validator(mode="after")
+    def check_required_fields(self) -> Self:
+        # Mapping of required fields for each flow action type
+        required_fields_map = {
+            FlowActionType.CREATE_DATA_MODEL: [
+                "database_code",
+                "data_model",
+                "schema_name",
+                "results_schema",
+                "vocab_schema"
+            ],
+            FlowActionType.GET_VERSION_INFO: ["datasets"],
+        }
+
+        required_fields = required_fields_map.get(self.flow_action_type, [])
+
+        # Check for missing required fields
+        missing = [field for field in required_fields if getattr(self, field) is None]
+
+        if missing:
+            raise ValueError(
+                f"Missing required fields for {self.flow_action_type}: {', '.join(missing)}"
+            )
+        return self

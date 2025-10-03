@@ -93,12 +93,14 @@ export interface CohortGeneratorFlowRunDto {
 interface CohortGeneratorFlowRunOptions {
   databaseCode: string;
   schemaName: string;
+  resultsSchemaName: string;
   stringvocabSchemaName: string;
   cohortJson: CohortJson;
   datasetId: string;
   description: string;
   owner: string;
 }
+
 interface CohortJson {
   id: number;
   name: string;
@@ -315,6 +317,7 @@ interface ICreateDatamodelFlowRunOptions {
     data_model: string;
     schema_name: string;
     cleansed_schema_option: string;
+    results_schema: string;
     vocab_schema: string;
     plugin: string;
   };
@@ -335,6 +338,7 @@ export interface ICreateCachedbFileFlowRunDto {
   flowActionType: string;
   databaseCode: string;
   schemaName: string;
+  resultsSchemaName?: string;
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {
