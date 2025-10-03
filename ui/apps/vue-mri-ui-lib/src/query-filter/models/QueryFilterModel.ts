@@ -48,14 +48,14 @@ export class QueryFilterCriteriaManager {
     try {
       if (data.entryEvents) {
         this.entryEvents = {
-          primaryCriteriaLimit: data.entryEvents.primaryCriteriaLimit || 'ALL',
+          primaryCriteriaLimit: data.entryEvents.primaryCriteriaLimit || 'EARLIEST',
           events: transformEvents(data.entryEvents.events || []),
           priorDays: data.entryEvents.priorDays || 0,
           postDays: data.entryEvents.postDays || 0,
         }
       } else {
         this.entryEvents = {
-          primaryCriteriaLimit: 'ALL',
+          primaryCriteriaLimit: 'EARLIEST',
           events: [],
           priorDays: 0,
           postDays: 0,
@@ -76,7 +76,7 @@ export class QueryFilterCriteriaManager {
 
       if (data.inclusionCriteria) {
         this.inclusionCriteria = {
-          qualifyingEventsLimit: data.inclusionCriteria.qualifyingEventsLimit || 'ALL',
+          qualifyingEventsLimit: data.inclusionCriteria.qualifyingEventsLimit || 'EARLIEST',
           criteria:
             data.inclusionCriteria.criteria.map(criteria => ({
               id: criteria.id,
@@ -88,7 +88,7 @@ export class QueryFilterCriteriaManager {
         }
       } else {
         this.inclusionCriteria = {
-          qualifyingEventsLimit: 'ALL',
+          qualifyingEventsLimit: 'EARLIEST',
           criteria: [],
         }
       }
@@ -854,9 +854,27 @@ export class QueryFilterCriteriaManager {
     }
   }
 
-  // Clear all criteria
+  // Clear all criteria and reset to default state
   clearAllCriteria() {
-    this.inclusionCriteria.criteria = []
+    // Reset inclusion criteria to defaults
+    this.inclusionCriteria = {
+      qualifyingEventsLimit: 'EARLIEST',
+      criteria: [],
+    }
+
+    // Reset entry/primary events to defaults
+    this.entryEvents = {
+      primaryCriteriaLimit: 'EARLIEST',
+      events: [],
+      priorDays: 0,
+      postDays: 0,
+    }
+
+    // Reset exit events to defaults
+    this.exitEvents = {
+      endStrategy: 'CONT_OBS',
+      censoringCriteria: [],
+    }
   }
 
   // Set criteria (for Atlas loading)

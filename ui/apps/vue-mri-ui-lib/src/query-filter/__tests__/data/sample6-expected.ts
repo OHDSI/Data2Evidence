@@ -7,7 +7,7 @@ export default {
       PostDays: 0,
     },
     PrimaryCriteriaLimit: {
-      Type: 'All' as const,
+      Type: 'First' as const,
     },
   },
   QualifiedLimit: {
