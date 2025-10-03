@@ -4,7 +4,7 @@ const TEST_NAME = 'dataset-new-schema-omop-cdm-plugin-53'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-const randomString = 'ts4' + Math.random().toString(36).substring(2, 10)
+const randomString = 'omop53' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/portal')
