@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import * as ReactRouterDOM from "react-router-dom";
 import * as EmotionReact from "@emotion/react";
+import * as D2EStarboardWrap from "@data2evidence/d2e-starboard-wrap";
 import builtInPlugins from "../builtInPlugins";
 
 //@ts-ignore
@@ -17,6 +18,7 @@ exposeToPlugin("react", React);
 exposeToPlugin("react-dom", ReactDOM);
 exposeToPlugin("react-router-dom", ReactRouterDOM);
 exposeToPlugin("@emotion/react", EmotionReact);
+exposeToPlugin("@data2evidence/d2e-starboard-wrap", D2EStarboardWrap);
 
 const moduleCache: { [key: string]: any } = {};
 
