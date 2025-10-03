@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 from torch import Tensor
 from prefect.logging import get_run_logger
+from psycopg2 import sql as pg_sql
 
 DUCKDB_EXTENSIONS_FILEPATH = "/app/duckdb_extensions"
 
@@ -30,4 +31,38 @@ def create_tmp_gte_table(trexdao, schema_name, gte_tmp_table, gte_tmp_cols):
             trexdao.create_table(schema_name, gte_tmp_table, gte_tmp_cols)
     else:
         trexdao.create_table(schema_name, gte_tmp_table, gte_tmp_cols)
+
+def add_embedding_column(dbdao, schema_name, embedding_col):
+    sql = pg_sql.SQL("ALTER TABLE {schema_name}.concept ADD COLUMN {column_name} FLOAT[384];").format(
+    schema_name=pg_sql.Identifier(schema_name),
+    column_name=pg_sql.Identifier(embedding_col)
+    )
+    dbdao.execute_sql(sql)
+    
+def drop_gte_index(dbdao, schema_name):
+    sql = pg_sql.SQL("DROP INDEX IF EXISTS {schema_name}.gte_cos_idx;").format(
+        schema_name=pg_sql.Identifier(schema_name)
+        )
+    dbdao.execute_sql(sql)
+    
+def update_concept_embedding(dbdao, schema_name, gte_tmp_table, embedding_col):
+    sql = pg_sql.SQL("""
+                    UPDATE {schema_name}.concept AS c
+                    SET {embedding_col} = g.vec
+                    FROM {schema_name}.{gte_tmp_table} AS g
+                    WHERE c.concept_id = g.concept_id;
+                    """).format(
+        schema_name=pg_sql.Identifier(schema_name),
+        embedding_col=pg_sql.Identifier(embedding_col),
+        gte_tmp_table=pg_sql.Identifier(gte_tmp_table)
+        )
+    dbdao.execute_sql(sql)
+    
+def create_gte_index(dbdao, schema_name, embedding_col):
+    dbdao.execute_sql("SET hnsw_enable_experimental_persistence=TRUE;")
+    sql = pg_sql.SQL("CREATE INDEX gte_cos_idx ON {schema_name}.concept USING HNSW ({embedding_col}) WITH (metric = 'cosine')").format(
+        schema_name=pg_sql.Identifier(schema_name),
+        embedding_col=pg_sql.Identifier(embedding_col)
+        )   
+    dbdao.execute_sql(sql)
 
