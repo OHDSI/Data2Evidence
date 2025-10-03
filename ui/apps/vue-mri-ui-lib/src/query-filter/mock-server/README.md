@@ -11,10 +11,20 @@ This mock server provides a development environment for PA-Atlas (query-filter) 
 docker build -f Dockerfile -t pa-atlas:latest .
 
 # Run the container
-docker run -e SERVER_URL=http://localhost:3132 -p 3132:3132 pa-atlas:latest
+docker run -e SERVER_URL="http://localhost:3132" -e WEBAPI_URL="https://atlas-demo.ohdsi.org/WebAPI" -e SOURCE="SYNPUF1K" -e USE_CACHE="true" -p 3132:3132 pa-atlas:latest
 ```
 
 Then open `http://localhost:3132` in your browser.
+
+### Environment Variables
+
+| Variable     | Description                    | Default                                                       |
+| ------------ | ------------------------------ | ------------------------------------------------------------- |
+| `SERVER_URL` | Mock server URL and port       | `http://localhost:3131`                                       |
+| `WEBAPI_URL` | External Atlas WebAPI to proxy | `http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI` |
+| `SOURCE`     | Vocabulary source key          | `vocab`                                                       |
+| `USE_CACHE`  | Enable response caching        | `true`                                                        |
+| `DEBUG`      | Show debug info in UI          | `false`                                                       |
 
 ### Using NPM
 

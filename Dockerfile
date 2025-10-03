@@ -6,18 +6,11 @@ WORKDIR /app
 
 RUN yarn -v
 
-# Copy package files for dependency installation (better caching)
-COPY ./ui/package.json ./ui/yarn.lock ./
-
-# Copy workspace package.json files
-COPY ./ui/libs/*/package.json ./libs/
-COPY ./ui/apps/*/package.json ./apps/
-
-# Install dependencies (cached unless package files change)
-RUN yarn install
-
-# Copy the rest of the application
+# Copy the entire application (node_modules excluded via .dockerignore)
 COPY ./ui .
+
+# Install dependencies
+RUN yarn install
 
 WORKDIR /app/apps/vue-mri-ui-lib
 
