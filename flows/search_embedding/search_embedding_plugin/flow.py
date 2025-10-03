@@ -19,7 +19,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         database_code=database_code,
         use_cache_db=options.use_cache_db)
     
-    trexdao.execute_sql("INSTALL vss;")
+    ## Vss extension is installed by default in trex, just need to load it
     trexdao.execute_sql(f"LOAD vss")
     create_embeddings(trexdao, schema_name)
 

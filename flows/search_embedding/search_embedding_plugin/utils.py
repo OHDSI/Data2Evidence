@@ -1,5 +1,6 @@
 import torch.nn.functional as F
 from torch import Tensor
+from prefect.logging import get_run_logger
 
 DUCKDB_EXTENSIONS_FILEPATH = "/app/duckdb_extensions"
 
@@ -18,11 +19,14 @@ def embedding_concept_table(concept_name_list,tokenizer, model):
     return embeddings
 
 def create_tmp_gte_table(trexdao, schema_name, gte_tmp_table, gte_tmp_cols):
+    logger = get_run_logger()
     if trexdao.check_table_exists(schema_name, gte_tmp_table):
         if set(gte_tmp_cols.keys()) == set(trexdao.get_columns(schema_name, gte_tmp_table)):
+            logger.info(f'Intermediate table {schema_name}.{gte_tmp_table} already exists, will truncate it.')
             trexdao.truncate_table(schema_name, gte_tmp_table)
         else: 
-            trexdao.drop_table(schema_name, gte_tmp_table, casecade=True)
+            logger.info(f'Intermediate table {schema_name}.{gte_tmp_table} exists but with different structure, will recreate it.')
+            trexdao.drop_table(schema_name, gte_tmp_table, cascade=True)
             trexdao.create_table(schema_name, gte_tmp_table, gte_tmp_cols)
     else:
         trexdao.create_table(schema_name, gte_tmp_table, gte_tmp_cols)

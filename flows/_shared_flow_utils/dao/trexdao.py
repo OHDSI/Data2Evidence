@@ -159,7 +159,7 @@ class TrexDao(DaoBase):
 
 
     def get_columns(self, schema: str, table: str) -> list[str]:
-        columns_query = pg_sql.SQL("""
+        sql = pg_sql.SQL("""
             SELECT column_name
             FROM information_schema.columns
             WHERE table_schema = {schema} AND table_name = {table}
@@ -168,7 +168,7 @@ class TrexDao(DaoBase):
             schema=pg_sql.Literal(schema),
             table=pg_sql.Literal(table)
         )
-        result = self.execute_sql(columns_query, fetch=True)
+        result = self.execute_sql(sql, fetch=True)
         return [row[0] for row in result]   
 
 
@@ -238,12 +238,17 @@ class TrexDao(DaoBase):
         """
         columns_str = ", ".join(columns)
         placeholders = ", ".join(["%s"] * len(columns))
-        query = f"INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES ({placeholders})"
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES ({placeholders})").format(
+            schema_name=pg_sql.Identifier(schema_name),
+            table_name=pg_sql.Identifier(table_name),
+            columns_str=pg_sql.SQL(columns_str),
+            placeholders=pg_sql.SQL(placeholders)
+        )
         with self._get_connection() as con:
             cur = None
             try:
                 cur = con.cursor()
-                cur.executemany(query, values)
+                cur.executemany(sql, values)
                 if not con.autocommit:
                     con.commit()
             except Exception:
@@ -256,18 +261,26 @@ class TrexDao(DaoBase):
 
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):
-        sql = f"DROP SCHEMA IF EXISTS {schema} {'CASCADE' if cascade else 'RESTRICT'};"
+        sql = pg_sql.SQL("DROP SCHEMA IF EXISTS {schema} {cond};").format(
+            schema=pg_sql.Identifier(schema),
+            cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
+        )
         self.execute_sql(sql)
 
     def drop_table(self, schema: str, table: str, cascade: bool = False):
-        drop_query = f"DROP TABLE IF EXISTS {schema}.{table} {'CASCADE' if {cascade} else 'RESTRICT'};"
-        self.execute_sql(drop_query)
+        sql = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table} {cond};").format(
+            schema=pg_sql.Identifier(schema),
+            table=pg_sql.Identifier(table),
+            cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
+        )
+        self.execute_sql(sql)
 
     def truncate_table(self, schema: str, table: str):
-        sql = pg_sql.SQL("TRUNCATE TABLE {schema}.{table};") \
-                .format(schema=pg_sql.Identifier(schema), table=pg_sql.Identifier(table))
+        sql = pg_sql.SQL("TRUNCATE TABLE {schema}.{table};").format(
+            schema=pg_sql.Identifier(schema), 
+            table=pg_sql.Identifier(table)
+            )
         self.execute_sql(sql)
-        pass
 
     def get_database_connector_connection_string(
         self, user_type: UserType = UserType.ADMIN_USER, release_date: str = None
