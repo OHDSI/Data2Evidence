@@ -230,7 +230,8 @@ export class Property extends AstElement {
                     this.scopeEntityDef.addTableAlias(
                         { baseEntity: "@TEXT", table: attrConfig.placeholderMap["@TEXT"] },
                         false,
-                        "INNER JOIN"
+                        "INNER JOIN",
+                        true
                     );
 
                     const textAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@TEXT"]);
@@ -284,13 +285,14 @@ export class Property extends AstElement {
                         this.scopeEntityDef.addTableAlias(
                         { baseEntity: newRefPlaceholder, table: attrConfig.placeholderMap[newRefPlaceholder] },
                         false,
-                        "INNER JOIN"
+                        "INNER JOIN",
+                        true
                         );
 
                         //Add the ON condition between additional concept table and the descendant expression
                         const maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
                         const maxRefAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[newRefPlaceholder]);
-                        maxRefAliasObj.on = QueryObject.format("1=1"); //initialize
+                        maxRefAliasObj.on = []; //initialize
                         this.pushOnCondition(
                         maxRefAliasObj.on,
                         QueryObject.format("%UNSAFE", 
