@@ -14,6 +14,13 @@ export async function getCDMVersion(req, res, next) {
             req.headers.authorization,
             datasetId
         );
+
+    // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
+    // Always send 5.3.1 if dialect is bigquery
+    if (dialect === config.DB.BIGQUERY) {
+        return res.status(200).send("5.3.1");
+    }
+
     try {
         let dbDao = new DBDAO(dialect, databaseCode);
         const dbConnection = await dbDao.getDBConnectionByTenantPromise(

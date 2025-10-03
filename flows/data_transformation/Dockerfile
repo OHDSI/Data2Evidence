@@ -113,12 +113,14 @@ RUN uv pip install --upgrade "pip<24" \
     && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings \
     && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl"
 
+# For PyNer
+RUN pip install git+https://github.com/data2evidence/py_name_entity_recognition@release-v1.0.8
+RUN pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 
 WORKDIR /app
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_transformation flows
-
 
 RUN chmod -R 755 /app
 
