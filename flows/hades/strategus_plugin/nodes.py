@@ -1138,7 +1138,7 @@ class StrategusNode(Node):
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
                 dbSettings = { "database_code": self.flowOptions["databaseCode"], "schema_name": self.flowOptions["schemaName"], "dataset_id": self.flowOptions["datasetId"] }
                 dbdao = DBDao(
-                    dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
+                    dialect="postgres",
                     use_cache_db=False,
                     database_code=dbSettings['database_code']
                 )
@@ -1186,7 +1186,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
-                dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
+                dialect="postgres",
                 use_cache_db=False,
                 database_code=database_code
             )
@@ -1281,7 +1281,7 @@ def drop_strategus_results_schema(dbSettings):
     database_code = dbSettings['database_code']
     results_schema = f'results_{dbSettings["study_id"]}'
     dbdao = DBDao(
-        dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
+        dialect="postgres",
         use_cache_db=False,
         database_code=database_code, is_study_results_db=True
     )
