@@ -19,9 +19,11 @@ def embedding_concept_table(concept_name_list,tokenizer, model):
 
 def create_tmp_gte_table(trexdao, schema_name, gte_tmp_table, gte_tmp_cols):
     if trexdao.check_table_exists(schema_name, gte_tmp_table):
-        if list(gte_tmp_cols.keys()) == trexdao.get_columns(schema_name, gte_tmp_table):
+        if set(gte_tmp_cols.keys()) == set(trexdao.get_columns(schema_name, gte_tmp_table)):
             trexdao.truncate_table(schema_name, gte_tmp_table)
-        else: trexdao.drop_table(schema_name, gte_tmp_table)
+        else: 
+            trexdao.drop_table(schema_name, gte_tmp_table, casecade=True)
+            trexdao.create_table(schema_name, gte_tmp_table, gte_tmp_cols)
     else:
         trexdao.create_table(schema_name, gte_tmp_table, gte_tmp_cols)
 

@@ -228,12 +228,13 @@ class TrexDao(DaoBase):
 
     def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple]):
         """
-        Insert a pandas DataFrame into a specified table in one operation
+        Insert multiple rows into a specified table in one operation.
         
         Args:
             schema_name: Schema containing the target table
             table_name: Target table name
-            df: DataFrame to insert
+            columns: List of column names to insert into
+            values: List of tuples, each tuple representing a row to insert
         """
         columns_str = ", ".join(columns)
         placeholders = ", ".join(["%s"] * len(columns))
@@ -258,10 +259,8 @@ class TrexDao(DaoBase):
         sql = f"DROP SCHEMA IF EXISTS {schema} {'CASCADE' if cascade else 'RESTRICT'};"
         self.execute_sql(sql)
 
-    def drop_table(self, schema: str, table: str):
-        drop_query = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table};").format(
-            schema=pg_sql.Identifier(schema), 
-            table=pg_sql.Identifier(table))
+    def drop_table(self, schema: str, table: str, cascade: bool = False):
+        drop_query = f"DROP TABLE IF EXISTS {schema}.{table} {'CASCADE' if {cascade} else 'RESTRICT'};"
         self.execute_sql(drop_query)
 
     def truncate_table(self, schema: str, table: str):
