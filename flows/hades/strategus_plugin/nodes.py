@@ -17,6 +17,7 @@ from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
 from prefect import task, flow
+from prefect.runtime import flow_run
 from prefect.context import TaskRunContext
 
 from .types import CohortNodeType, USE_TREX_CONNECTION
@@ -361,7 +362,9 @@ class CohortDefinitionSharedResource(Node):
     # calls the R method createCohortSharedResourceSpecifications. 
     # It also builds cohortdefinition using CirceR module.
     def task(self, task_run_context):
-        webapi = WebAPI()
+        parent_flow_run_id = flow_run.get_parent_flow_run_id()
+        print(f"parent_flow_run_id: {parent_flow_run_id}")
+        webapi = WebAPI(parent_flow_run_id)
 
         with ro.default_converter.context():
             try:
@@ -591,7 +594,6 @@ class CohortMethodAnalysis(Node):
                     riskWindowEnd = convert_py_to_R(self.studyPopArgs["riskWindowEnd"]),
                     endAnchor = convert_py_to_R(self.studyPopArgs["endAnchor"]),
                     firstExposureOnly = convert_py_to_R(self.studyPopArgs["firstExposureOnly"]),
-                    requireTimeAtRisk = convert_py_to_R(self.studyPopArgs["requireTimeAtRisk"]),
                     priorOutcomeLookback = convert_py_to_R(self.studyPopArgs["priorOutcomeLookback"]),
                     removeDuplicateSubjects = convert_py_to_R(self.studyPopArgs["removeDuplicateSubjects"]),
                     removeSubjectsWithPriorOutcome = convert_py_to_R(self.studyPopArgs["removeSubjectsWithPriorOutcome"])
@@ -1220,7 +1222,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
-                dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
+                dialect=None,
                 use_cache_db=False,
                 database_code=database_code, 
                 is_study_results_db = True

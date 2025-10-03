@@ -2,10 +2,11 @@ import re
 import traceback
 from functools import partial
 import json
+import traceback as tb
 from uuid import uuid4
 
 from prefect import flow, task
-from prefect.context import TaskRunContext, FlowRunContext
+from prefect.context import TaskRunContext, FlowRunContext, get_run_context
 from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
@@ -59,13 +60,8 @@ def strategus_plugin(json_graph, options):
 
     n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, testmode)  # flow
 
-    if _options["trace_config"]["trace_mode"]:
-        for k in n.keys():
-            nodes_out[k] = n[k].serialize_result()
-
     try:
-        execute_strategus_node_wo = execute_strategus_node.with_options()
-        study_analysis_result = execute_strategus_node_wo(generated_nodes, n, options)
+        study_analysis_result = execute_strategus_task(generated_nodes, n, options)
         logger.debug(f"Study analysis result: {study_analysis_result}")
         root_flow_run_context = FlowRunContext.get().flow_run.dict()
         flow_run_id = str(root_flow_run_context.get("id"))
@@ -91,16 +87,16 @@ def strategus_plugin(json_graph, options):
                 markdown=file_contents
             )
     except Exception as e:
-        logger.error(f"Error executing Strategus analysis: {e}")
+        logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
     finally:
         strategus_api = StrategusAnalysisAPI()
         study_name = options.get("studyName", "")
         study_id = options.get("studyId", "")
         strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)
 
-@flow(name="execute-strategus-flow")
-def execute_strategus_node(generated_nodes, results, options):
-    task_run_context = TaskRunContext.get().task_run.model_dump()
+@task(task_run_name="execute-strategus-taskrun")
+def execute_strategus_task(generated_nodes, results, options):
+    task_run_context = get_run_context().task_run.dict()
     strategus_node = get_strategus_node(options)
     return strategus_node.task(generated_nodes, results, task_run_context)
 
@@ -185,7 +181,7 @@ def execute_node_task(nodename, node_type, node, input, test):
                 result = _node.task(task_run_context)
             case _:
                 result = _node.task(input, task_run_context)
-    logger.debug(f"Result: {result.serialize_result()}")
+    # logger.debug(f"Result: {result.serialize_result()}")
     return result
 
 
