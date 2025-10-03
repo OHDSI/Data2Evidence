@@ -23,10 +23,9 @@ export async function authn(c: Context, next: Function) {
     ) {
       token = c.req.header("authorization")?.split(" ")[1] || "";
     }
-    // Check for cookie if no token in header and if req url path is /gateway/dashboard/* or /strategus-results/* or /fhir-server/*
-    if ((token === "" && (c.req.path.startsWith("/strategus-results/") || c.req.path.startsWith("/gateway/dashboard/")))
-      || (c.req.path.startsWith("/fhir-server/"))
-    ) {
+    // Check for cookie if no token in authorization header
+    // And for req with /fhir-server path, token is part of cookie
+    if (token === "" || (c.req.path.startsWith("/fhir-server/"))) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
@@ -41,6 +40,14 @@ export async function authn(c: Context, next: Function) {
         }
       }
     }
+
+    if (token === "" && c.req.query("token")) {
+      const urlToken = c.req.query("token");
+      if (urlToken) {
+        token = urlToken;
+      }
+    }
+
     if (token === null || token.length === 0) {
       logger.error("authenticate: no token found");
       return new Response("Unauthorized", { status: 401 });
