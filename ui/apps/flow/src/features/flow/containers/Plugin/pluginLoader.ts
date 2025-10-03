@@ -1,23 +1,3 @@
-import React from "react";
-import ReactDOM from "react-dom";
-
-//@ts-ignore
-import SystemJS from "systemjs/dist/system-production";
-
-function exposeToPlugin(name: string, component: any) {
-  SystemJS.registerDynamic(
-    name,
-    [],
-    true,
-    (require: any, exports: any, module: { exports: any }) => {
-      module.exports = component;
-    }
-  );
-}
-
-exposeToPlugin("react", React);
-exposeToPlugin("react-dom", ReactDOM);
-
 const moduleCache: { [key: string]: any } = {};
 
 export const importPluginModule = (url: string): Promise<any> => {
@@ -28,6 +8,8 @@ export const importPluginModule = (url: string): Promise<any> => {
       return;
     }
 
+    // SystemJS already exists in the sub remote plugin scope
+    // @ts-ignore
     SystemJS.import(url)
       .then((pluginModule: any) => {
         const plugin = pluginModule.plugin || pluginModule.default.plugin;

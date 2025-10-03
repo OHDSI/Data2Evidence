@@ -10,9 +10,15 @@ export let global = {
       "scopes": [
         "trex"
       ]
+    },{
+      "path": "^/trex/log",
+      "scopes": [
+        "trex.log.write"
+      ]
     }],
     ROLE_SCOPES: {
-      "ALP_SYSTEM_ADMIN": ['trex']
+      "ALP_SYSTEM_ADMIN": ['trex'],
+      "TENANT_VIEWER": ['trex.log.write']
     },
     PLUGINS_JSON: "{}"
 }
@@ -106,6 +112,7 @@ export const env = {
 
     USE_PUBLIC_WEBAPI_PROXY: _env.USE_PUBLIC_WEBAPI_PROXY,
     PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
+    PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE,
     GOOGLE_APPLICATION_CREDENTIALS: _env.GOOGLE_APPLICATION_CREDENTIALS,
     REDIS_PASSWORD: _env.REDIS_PASSWORD
 }
