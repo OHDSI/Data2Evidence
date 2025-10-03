@@ -1222,7 +1222,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
-                dialect=None,
+                dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
                 use_cache_db=False,
                 database_code=database_code, 
                 is_study_results_db = True
