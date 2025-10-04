@@ -95,7 +95,8 @@ def strategus_plugin(json_graph, options):
         strategus_api = StrategusAnalysisAPI()
         study_name = options.get("studyName", "")
         study_id = options.get("studyId", "")
-        strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)
+        if(strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)):
+            logger.info(f"Successfully updated strategus analysis specification for study '{study_id}'")
 
 @task(task_run_name="execute-strategus-taskrun")
 def execute_strategus_task(generated_nodes, results, options):
