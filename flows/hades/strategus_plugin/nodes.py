@@ -19,6 +19,7 @@ from genson.schema.node import SchemaGenerationError
 from prefect import task, flow
 from prefect.runtime import flow_run
 from prefect.context import TaskRunContext
+from prefect.artifacts import create_markdown_artifact
 
 from .types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
@@ -1165,7 +1166,19 @@ class StrategusNode(Node):
                 rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
                 analysisSpecJson = convert_R_to_py(rParallelLogger.convertSettingsToJson(rSpec))
 
-                rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
+                try:
+                    rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
+                except Exception as e:
+                    log_file_path = f"/app/errorReportSql.txt"
+                    # if file exists, create an artifact to store the error logs
+                    if os.path.exists(log_file_path):
+                        with open(log_file_path, "r") as f:
+                            file_contents = f.read()
+                            create_markdown_artifact(
+                                key="strategus-analysis-error-logs",
+                                markdown=file_contents
+                            )
+                    raise RuntimeError('Execution of strategus has failed')
                 return Result(False, analysisSpecJson, self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
@@ -1206,7 +1219,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             print('Strategus execution started...')
             rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
         except Exception as e:
-            print('Error: ', e)
+            print('Error: ', tb.format_exc())
             raise RuntimeError('Execution of strategus has failed')
 
 @flow(name="upload-strategus-results",
@@ -1260,7 +1273,15 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 resultsDataModelSettings = resultsDataModelSettings
             )
         except Exception as e:
-            print('Error: ', e)
+            log_file_path = f"/app/errorReportSql.txt"
+            # if file exists, create an artifact to store the error logs
+            if os.path.exists(log_file_path):
+                with open(log_file_path, "r") as f:
+                    file_contents = f.read()
+                    create_markdown_artifact(
+                        key="strategus-analysis-error-logs",
+                        markdown=file_contents
+                    )
             raise RuntimeError('Uploading results of strategus has failed')
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
