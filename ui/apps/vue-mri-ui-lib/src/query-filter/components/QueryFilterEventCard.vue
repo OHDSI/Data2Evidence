@@ -652,6 +652,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
 
   .card-side {
     display: flex;
+    min-height: 100px; // For demographics which do not have concept set
   }
 
   .card-main {
