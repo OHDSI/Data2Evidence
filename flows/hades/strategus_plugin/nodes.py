@@ -1166,19 +1166,7 @@ class StrategusNode(Node):
                 rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
                 analysisSpecJson = convert_R_to_py(rParallelLogger.convertSettingsToJson(rSpec))
 
-                try:
-                    rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
-                except Exception as e:
-                    log_file_path = f"/app/errorReportSql.txt"
-                    # if file exists, create an artifact to store the error logs
-                    if os.path.exists(log_file_path):
-                        with open(log_file_path, "r") as f:
-                            file_contents = f.read()
-                            create_markdown_artifact(
-                                key="strategus-analysis-error-logs",
-                                markdown=file_contents
-                            )
-                    raise RuntimeError('Execution of strategus has failed')
+                execute(rSpec, rExecutionSettings, rConnectionDetails)
                 return Result(False, analysisSpecJson, self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
@@ -1217,10 +1205,28 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
 
             print('Strategus execution started...')
-            rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
+            execute(rAnalysisSpec, rExecutionSettings, rConnectionDetails)
         except Exception as e:
             print('Error: ', tb.format_exc())
             raise RuntimeError('Execution of strategus has failed')
+
+def execute(rSpec, rExecutionSettings, rConnectionDetails):
+    with ro.default_converter.context():
+        ro.r(set_trex_env_var(USE_TREX_CONNECTION))
+        rStrategus = importr('Strategus')
+    try:
+        rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
+    except Exception as e:
+        log_file_path = f"/app/errorReportSql.txt"
+        # if file exists, create an artifact to store the error logs
+        if os.path.exists(log_file_path):
+            with open(log_file_path, "r") as f:
+                file_contents = f.read()
+                create_markdown_artifact(
+                    key="strategus-analysis-error-logs",
+                    markdown=file_contents
+                )
+        raise RuntimeError('Execution of strategus has failed')
 
 @flow(name="upload-strategus-results",
       log_prints=True)
