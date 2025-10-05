@@ -397,9 +397,6 @@ export class Property extends AstElement {
             let tmp;
             sqlArr = attrConfig.getMeasureExpressionWithReplacedPlaceholder(
                 (x) => {
-                    // if (attrConfig.baseEntity === "@REF2") {
-                    //     x = "@TEXT";
-                    // }
                     if (this.scopeEntityDef instanceof With) {
                         tmp = this.scopeEntityDef.getTableAlias(x);
                     } else {
