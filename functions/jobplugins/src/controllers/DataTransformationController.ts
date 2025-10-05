@@ -354,10 +354,10 @@ export class DataTransformationController {
     );
     this.router.delete("/file/csv", this.deleteCsvFile.bind(this));
     
-    this.router.post("/file", upload.single("file"),
+    this.router.post("/file/generic", upload.single("file"),
       this.uploadFile.bind(this)
     );
-    this.router.delete("/file", this.deleteFile.bind(this));
+    this.router.delete("/file/generic", this.deleteFile.bind(this));
 
     this.router.delete("/:id/:revisionId", this.deleteGraphById.bind(this));
 
