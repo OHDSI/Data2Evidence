@@ -153,7 +153,7 @@ export const KaplanMeierDrawer: FC<KaplanMeierDrawerProps> = ({
           </div>
           <Box mb={4}>
             <TextInput
-              label="Study Start Date"
+              label="Study Start Date (yyyymmdd)"
               value={
                 formData.kaplanMeierArgs.getDbCohortMethodDataArgs
                   .studyStartDate || ""
@@ -173,7 +173,7 @@ export const KaplanMeierDrawer: FC<KaplanMeierDrawerProps> = ({
           </Box>
           <Box mb={4}>
             <TextInput
-              label="Study End Date"
+              label="Study End Date (yyyymmdd)"
               value={
                 formData.kaplanMeierArgs.getDbCohortMethodDataArgs
                   .studyEndDate || ""
