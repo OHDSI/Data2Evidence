@@ -29,7 +29,7 @@ export const FileNode = (node: NodeProps<FileNodeData>) => {
         node={node}
         LeftHandle={null}
       >
-        {data.description} 
+        {data.description}
       </NodeLayout>
       <FileDrawer
         node={node}

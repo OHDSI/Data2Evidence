@@ -150,7 +150,7 @@ export class PortalServerAPI {
   }
 
   async deleteFile(nodeId: string, fileName: string) {
-    const url = `${this.baseURL}/supabase-storage/delete/file`; // make sure endpoint exists
+    const url = `${this.baseURL}/supabase-storage/delete/file`;
     const res = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, {
       method: "DELETE",
       headers: { Authorization: this.token },
