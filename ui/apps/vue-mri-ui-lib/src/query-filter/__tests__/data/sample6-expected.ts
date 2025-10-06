@@ -185,13 +185,12 @@ export default {
         Type: 'ALL' as const,
         CriteriaList: [],
         DemographicCriteriaList: [
-          // Uncomment when implemented
-          // {
-          //   Age: {
-          //     Value: 7,
-          //     Op: 'gt',
-          //   },
-          // },
+          {
+            Age: {
+              Value: 7,
+              Op: 'gt',
+            },
+          },
         ],
         Groups: [],
       },
