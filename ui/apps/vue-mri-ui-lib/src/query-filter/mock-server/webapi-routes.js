@@ -188,6 +188,7 @@ const ALLOWED_ENDPOINTS = {
   cohortdefinition: '/cohortdefinition/',
   conceptset: '/conceptset/',
   vocabulary: `/vocabulary/${SOURCE}/search`,
+  concept: `/vocabulary/${SOURCE}/concept/`,
 }
 
 // server has 20,000
@@ -206,6 +207,7 @@ const CACHE_KEYS = {
   VOCABULARY_SEARCH: (datasetId, query) => `get_/d2e-webapi/vocabulary/${datasetId}/search?query=${query}`,
   VOCABULARY_SEARCH_POST: (datasetId, body) =>
     `post_/d2e-webapi/vocabulary/${datasetId}/search/${JSON.stringify(body)}`,
+  CONCEPT_BY_ID: (datasetId, conceptId) => `get_/d2e-webapi/vocabulary/${datasetId}/concept/${conceptId}`,
 }
 
 const logRequest = req => {
@@ -678,6 +680,44 @@ const setupWebapiRoutes = app => {
       return res.status(status).json([])
     }
   })
+
+  // GET /vocabulary/:datasetId/concept/:conceptId - Get concept details by ID
+  app.get(
+    '/d2e-webapi/vocabulary/:datasetId/concept/:conceptId',
+    validateDatasetId,
+    validateId('conceptId'),
+    async (req, res) => {
+      logRequest(req)
+      const { datasetId, conceptId } = req.params
+
+      try {
+        const cacheKey = CACHE_KEYS.CONCEPT_BY_ID(datasetId, conceptId)
+        let data = cache[cacheKey]
+
+        if (!data || !USE_CACHE) {
+          // Call external WebAPI to get concept by ID
+          const endpoint = ALLOWED_ENDPOINTS.concept + conceptId
+          const response = await api.get(endpoint)
+          data = response.data
+          cache[cacheKey] = data
+        }
+
+        return res.json(data)
+      } catch (error) {
+        console.error('Error fetching concept by ID from Atlas API:', error.message)
+
+        // Forward the error status instead of sending mock data
+        const status = error.response?.status || 500
+        return res.status(status).json({
+          error: 'Failed to fetch concept by ID from Atlas API',
+          message: error.message,
+          conceptId: conceptId,
+          datasetId: datasetId,
+          timestamp: new Date().toISOString(),
+        })
+      }
+    }
+  )
 }
 
 module.exports = setupWebapiRoutes

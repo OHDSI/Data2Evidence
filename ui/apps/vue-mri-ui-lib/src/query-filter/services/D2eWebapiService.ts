@@ -89,7 +89,7 @@ export class D2eWebapiService {
   }
 
   public async getConceptById(conceptId: number, datasetId: string): Promise<ConceptDetail[]> {
-    // Create cache key: datasetId + query
+    // Create cache key: datasetId + concept ID
     const cacheKey = `${datasetId}:GET:${conceptId}`
 
     // Check cache first
@@ -112,12 +112,28 @@ export class D2eWebapiService {
       try {
         const response = await client({
           baseURL: D2E_WEBAPI_BASE_URL,
-          url: `/vocabulary/${datasetId}/search?query=${encodeURIComponent(conceptId.toString())}`,
+          url: `/vocabulary/${datasetId}/concept/${conceptId}`,
           method: 'GET',
           headers: { datasetid: datasetId },
         })
 
-        const result = response.data
+        // WebAPI returns concept with UPPERCASE field names, map to lowercase for ConceptDetail type
+        const mapConceptToLowercase = (concept: any): ConceptDetail => ({
+          concept_class_id: concept.CONCEPT_CLASS_ID,
+          concept_code: concept.CONCEPT_CODE,
+          concept_id: concept.CONCEPT_ID,
+          concept_name: concept.CONCEPT_NAME,
+          domain_id: concept.DOMAIN_ID,
+          invalid_reason: concept.INVALID_REASON || null,
+          standard_concept: concept.STANDARD_CONCEPT,
+          vocabulary_id: concept.VOCABULARY_ID,
+          valid_start_date: concept.VALID_START_DATE,
+          valid_end_date: concept.VALID_END_DATE,
+        })
+
+        // WebAPI returns a single concept object, wrap it in an array for backward compatibility
+        const conceptData = Array.isArray(response.data) ? response.data : [response.data]
+        const result = conceptData.map(mapConceptToLowercase)
 
         // Cache the result
         vocabularySearchCache.set(cacheKey, result)
