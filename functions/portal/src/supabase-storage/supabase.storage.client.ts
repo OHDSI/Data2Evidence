@@ -2,22 +2,26 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  SCOPE
 } from "@danet/core";
 import { contentType } from "mime-types";
 import pg from "npm:pg";
 import { env, services } from "../env.ts";
+import { RequestContextService } from "../common/request-context.service.ts";
 
-@Injectable()
+@Injectable({ scope: SCOPE.REQUEST })
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
   private readonly authToken: string;
+  private readonly requestContextService: RequestContextService;
   private pgclient;
   private pgOpt;
 
-  constructor() {
+  constructor(requestContextService: RequestContextService) {
+    this.requestContextService = requestContextService;
     this.baseUrl = services.supabaseStorage;
-    this.authToken = env.SUPABASE_STORAGE_JWT_TOKEN;
+    this.authToken = this.requestContextService.getOriginalToken() || "";
 
     const envObj = Deno.env.toObject();
     this.pgOpt = {
@@ -72,7 +76,7 @@ export class SupabaseStorageClient {
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.authToken}`,
+          Authorization: `${this.authToken}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -163,7 +167,7 @@ export class SupabaseStorageClient {
       const response = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${this.authToken}`,
+          Authorization: `${this.authToken}`,
         },
       });
 
@@ -231,7 +235,7 @@ export class SupabaseStorageClient {
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.authToken}`,
+          Authorization: `${this.authToken}`,
           "Content-Type": file.mimetype || "application/octet-stream",
           "Cache-Control": "3600",
           "x-upsert": "true", // For overwriting existing files
@@ -286,7 +290,7 @@ export class SupabaseStorageClient {
       const response = await fetch(url, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${this.authToken}`,
+          Authorization: `${this.authToken}`,
         },
       });
 
