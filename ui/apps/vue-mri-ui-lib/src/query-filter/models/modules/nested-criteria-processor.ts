@@ -1,7 +1,11 @@
 import type { QueryFilterEvent, QueryFilterAttribute, QueryFilterNestedCriteria } from '../../types/QueryFilterTypes'
-import type { CriteriaGroup, DemographicCriteria, GroupCriteria, NumericRange } from '../../types/AtlasTypes'
-import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId } from './type-guards'
+import type { CriteriaGroup, DemographicCriteria, GroupCriteria, NumericRange, DateRange } from '../../types/AtlasTypes'
+import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId, isDateRangeAttribute } from './type-guards'
 import { mapCardinalityTypeToAtlas, mapEventTypeToAtlas, mapOperatorToAtlas } from './atlas-mappers'
+import { getAtlasAttributeKey } from '../../utils/AtlasUtils'
+
+// Type for DemographicCriteria with dynamic keys
+type DemographicCriteriaRecord = Record<string, unknown>
 
 // Helper method to recursively collect all events including nested ones
 export const collectAllEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] => {
@@ -262,15 +266,61 @@ export const processNestedGroupsRecursively = (
         .filter(event => event.eventType === 'demographic')
         .forEach(event => {
           if (event.attributes && Array.isArray(event.attributes)) {
-            event.attributes.forEach((attr: QueryFilterAttribute) => {
-              if (isNumericRangeAttribute(attr) && attr.attributeId === 'age') {
-                const ageConfig: NumericRange = {
-                  Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
-                  Value: attr.value !== undefined ? parseInt(attr.value) : 0,
+            const demographicCriteria: DemographicCriteriaRecord = {}
+
+            event.attributes.forEach(attr => {
+              if (!hasAttributeId(attr)) return
+
+              // Get the Atlas field name for this attribute using the lookup table
+              const atlasFieldName = getAtlasAttributeKey(attr.attributeId, 'DemographicCriteria')
+
+              // Handle numericRange attributes (e.g., Age)
+              if (isNumericRangeAttribute(attr)) {
+                // Convert internal format (operator, value, extent?) to Atlas format (Op, Value, Extent?)
+                if ('operator' in attr && 'value' in attr && attr.value) {
+                  const numericConfig: NumericRange = {
+                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                    Value: parseInt(attr.value),
+                  }
+                  // Handle BETWEEN/NOT_BETWEEN with extent
+                  if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+                    numericConfig.Extent = parseInt(attr.extent)
+                  }
+                  demographicCriteria[atlasFieldName] = numericConfig
                 }
-                demographicCriteriaList.push({ Age: ageConfig })
+              }
+              // Handle concept-type attributes (e.g., Gender, Race, Ethnicity)
+              else if ('configType' in attr && attr.configType === 'concept') {
+                if ('conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
+                  const conceptData = attr.conceptItems.map(item => ({
+                    CONCEPT_CODE: item.code || '',
+                    CONCEPT_ID: item.conceptId,
+                    CONCEPT_NAME: item.conceptName || item.text || item.display_value || '',
+                    DOMAIN_ID: item.domainId || atlasFieldName,
+                    VOCABULARY_ID: item.system || 'Unknown',
+                  }))
+                  demographicCriteria[atlasFieldName] = conceptData
+                }
+              }
+              // Handle dateRange attributes (e.g., startDate -> OccurrenceStartDate, endDate -> OccurrenceEndDate)
+              // DateRange attributes are stored as 'standard' type with configType: 'dateRange'
+              else if (isDateRangeAttribute(attr)) {
+                // Convert internal format (operator, value, extent?) to Atlas format (Op, Value, Extent)
+                if ('operator' in attr && 'value' in attr && attr.value) {
+                  const dateConfig: DateRange = {
+                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                    Value: attr.value,
+                    Extent: attr.extent || '', // For BETWEEN/NOT_BETWEEN ranges
+                  }
+                  demographicCriteria[atlasFieldName] = dateConfig
+                }
               }
             })
+
+            // Only add if we have at least one demographic attribute
+            if (Object.keys(demographicCriteria).length > 0) {
+              demographicCriteriaList.push(demographicCriteria)
+            }
           }
         })
 
@@ -316,29 +366,67 @@ export const buildNestedCriteriaFromAttributes = (
   const demographicEvents = nestedCriteriaEvents.filter(event => event.eventType === 'demographic')
 
   demographicEvents.forEach(event => {
-    // Process demographic events and their age attributes
+    // Process demographic events and their attributes
     if (event.attributes && Array.isArray(event.attributes)) {
+      const demographicCriteria: DemographicCriteriaRecord = {}
+
       event.attributes.forEach((attr: QueryFilterAttribute) => {
-        if (isNumericRangeAttribute(attr) && attr.attributeId === 'age') {
-          const ageConfig: NumericRange = {
-            Op: 'gt', // Default operator
-            Value: 0, // Default value
+        if (!hasAttributeId(attr)) {
+          return
+        }
+
+        // Get the Atlas field name for this attribute using the lookup table
+        const atlasFieldName = getAtlasAttributeKey(attr.attributeId, 'DemographicCriteria')
+
+        // Handle numericRange attributes (e.g., Age)
+        if (isNumericRangeAttribute(attr)) {
+          let numericConfig: NumericRange | null = null
+
+          // Build from operator and value (internal format)
+          if ('operator' in attr && 'value' in attr) {
+            numericConfig = {
+              Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+              Value: attr.value !== undefined ? parseInt(String(attr.value)) : 0,
+            }
           }
 
-          // Map operator and value if available
-          if (attr.operator) {
-            ageConfig.Op = mapOperatorToAtlas(attr.operator)
+          if (numericConfig) {
+            demographicCriteria[atlasFieldName] = numericConfig
           }
-
-          if (attr.value !== undefined) {
-            ageConfig.Value = parseInt(attr.value)
+        }
+        // Handle concept-type attributes (e.g., Gender, Race, Ethnicity)
+        else if ('configType' in attr && attr.configType === 'concept') {
+          if ('conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
+            const conceptData = attr.conceptItems.map(item => ({
+              CONCEPT_CODE: item.code || '',
+              CONCEPT_ID: item.conceptId,
+              CONCEPT_NAME: item.conceptName || item.text || item.display_value || '',
+              DOMAIN_ID: item.domainId || atlasFieldName,
+              VOCABULARY_ID: item.system || 'Unknown',
+            }))
+            demographicCriteria[atlasFieldName] = conceptData
           }
+        }
 
-          demographicCriteriaList.push({
-            Age: ageConfig,
-          })
+        // Handle dateRange attributes (e.g., startDate -> OccurrenceStartDate, endDate -> OccurrenceEndDate)
+        // DateRange attributes are stored as 'standard' type with configType: 'dateRange'
+        else if (isDateRangeAttribute(attr)) {
+          // Convert internal format (operator, value, extent?) to Atlas format (Op, Value, Extent)
+          if ('operator' in attr && 'value' in attr && attr.value) {
+            const dateConfig: DateRange = {
+              Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+              Value: attr.value,
+              Extent: attr.extent || '', // For BETWEEN/NOT_BETWEEN ranges
+            }
+            demographicCriteria[atlasFieldName] = dateConfig
+          }
         }
       })
+
+      // Only add to list if we have at least one demographic attribute
+      if (Object.keys(demographicCriteria).length > 0) {
+        demographicCriteriaList.push(demographicCriteria as DemographicCriteria)
+      }
     }
   })
 

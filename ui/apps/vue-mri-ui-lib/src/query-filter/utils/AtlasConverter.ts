@@ -1,5 +1,12 @@
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import { QueryFilterEvent, InclusionCriteria, QueryFilterAttribute, CriteriaType } from '../types/QueryFilterTypes'
+import {
+  QueryFilterEvent,
+  InclusionCriteria,
+  QueryFilterAttribute,
+  CriteriaType,
+  QueryFilterAttributeDateRange,
+  QueryFilterAttributeNumericRange,
+} from '../types/QueryFilterTypes'
 import {
   AtlasCohortDefinition,
   CriteriaListItem,
@@ -16,9 +23,9 @@ import {
   CriteriaGroup,
   ConceptSet,
   NumericRange,
-  DemographicCriteria,
   CorrelatedCriteria,
   Concept,
+  DateRange,
 } from '../types/AtlasTypes'
 
 import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
@@ -93,12 +100,6 @@ const hasCorrelatedCriteria = (
   )
 }
 
-const hasDemographicAge = (
-  demoCriteria: DemographicCriteria
-): demoCriteria is DemographicCriteria & { Age: NumericRange } => {
-  return demoCriteria.Age !== undefined
-}
-
 const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConceptItem[] => {
   return atlasConcepts.map(concept => ({
     value: concept.CONCEPT_ID?.toString() || '',
@@ -164,11 +165,14 @@ const convertConceptSetArrayToAttribute = (
       title: displayName,
     }
   } else {
+    // For conceptSet type, we store the concepts as conceptItems array
+    // The actual ConceptSetItemDisplay will be resolved from the concept set ID later
     return {
       id: `attribute_${Math.random().toString(36).substring(2)}`,
       attributeId: attributeId,
-      attributeType: 'conceptSet' as const,
-      conceptSet: conceptItems[0],
+      attributeType: 'standard' as const,
+      configType: 'conceptSet',
+      conceptItems: conceptItems,
       name: displayName,
       title: displayName,
     }
@@ -261,7 +265,7 @@ export const convertAtlasToFilters = (
 
     const getCriteriaType = (criteria: CriteriaListItem): string | undefined => {
       for (const key of CRITERIA_KEYS) {
-        if ((criteria as any)[key]) {
+        if (criteria[key]) {
           return key.charAt(0).toLowerCase() + key.slice(1)
         }
       }
@@ -270,7 +274,7 @@ export const convertAtlasToFilters = (
 
     const getCriteriaObject = (criteria: CriteriaListItem): CriteriaObject => {
       for (const key of CRITERIA_KEYS) {
-        if ((criteria as any)[key]) return (criteria as any)[key]
+        if (criteria[key]) return criteria[key]
       }
       return {}
     }
@@ -370,7 +374,8 @@ export const convertAtlasToFilters = (
           event.attributes.push({
             id: `attribute_${Math.random().toString(36).substring(2)}`,
             attributeId: 'age',
-            attributeType: 'numericRange',
+            attributeType: 'standard',
+            configType: 'numericRange',
             operator: mapAtlasOperatorToInternal(criteriaObj.Age.Op || 'gt'),
             value: criteriaObj.Age.Value.toString(),
           })
@@ -413,6 +418,92 @@ export const convertAtlasToFilters = (
             criteriaObj.CorrelatedCriteria.CriteriaList || [],
             criteriaObj.CorrelatedCriteria.Type
           )
+
+          // Handle DemographicCriteriaList within CorrelatedCriteria
+          if (criteriaObj.CorrelatedCriteria.DemographicCriteriaList?.length > 0) {
+            criteriaObj.CorrelatedCriteria.DemographicCriteriaList.forEach(demoCriteria => {
+              const demographicEvent: QueryFilterEvent = {
+                id: `event_${Math.random().toString(36).substring(2)}`,
+                conceptSet: 'Demographic Criteria',
+                eventType: 'demographic',
+                isExpanded: true,
+                attributes: [],
+              }
+
+              // Handle all demographic attributes generically using config
+              if (configLoader) {
+                const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
+
+                Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+                  const value = demoCriteria[atlasKey]
+                  const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
+
+                  if (!attributeId) {
+                    return
+                  }
+
+                  // Get attribute config using the ConfigLoader method
+                  const attrConfig = configLoader.getAttributeConfig('demographic', attributeId)
+                  if (!attrConfig) {
+                    return
+                  }
+
+                  if (!demographicEvent.attributes) {
+                    demographicEvent.attributes = []
+                  }
+
+                  // Handle based on attribute type from config
+                  if (
+                    attrConfig.type === 'numericRange' &&
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Op' in value &&
+                    'Value' in value
+                  ) {
+                    // NumericRange type (e.g., Age) - Convert from Atlas format to internal format
+                    const numericAttribute: QueryFilterAttributeNumericRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'numericRange',
+                      name: attrConfig.name,
+                      description: attrConfig.description,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(numericAttribute)
+                  } else if (attrConfig.type === 'concept' && Array.isArray(value) && value.length > 0) {
+                    // Concept type (e.g., Gender, Race, Ethnicity)
+                    demographicEvent.attributes.push(
+                      convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
+                    )
+                  } else if (
+                    attrConfig.type === 'dateRange' &&
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Value' in value
+                  ) {
+                    // DateRange type (e.g., StartDate, EndDate) - Convert from Atlas format to internal format
+                    const dateAttribute: QueryFilterAttributeDateRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'dateRange',
+                      name: attrConfig.name,
+                      description: attrConfig.description,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(dateAttribute)
+                  }
+                })
+              }
+
+              nestedCriteriaEvents.push(demographicEvent)
+            })
+          }
 
           const nestedAttribute = {
             id: `attribute_${Math.random().toString(36).substring(2)}`,
@@ -502,34 +593,67 @@ export const convertAtlasToFilters = (
               attributes: [],
             }
 
-            if (hasDemographicAge(demoCriteria)) {
-              if (!demographicEvent.attributes) {
-                demographicEvent.attributes = []
-              }
-              demographicEvent.attributes.push({
-                id: `attribute_${Math.random().toString(36).substring(2)}`,
-                attributeId: 'age',
-                attributeType: 'numericRange',
-                operator: mapAtlasOperatorToInternal(demoCriteria.Age.Op || 'gt'),
-                value: demoCriteria.Age.Value.toString(),
-              })
-            }
-
-            // Handle demographic concept attributes dynamically using configuration
+            // Handle all demographic attributes generically using config (same as nested)
             if (configLoader) {
-              // Use a general mapping approach since demographic attributes might not have their own criteria type
               const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
 
-              Object.keys(demoCriteria).forEach(atlasKey => {
+              Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
                 const value = demoCriteria[atlasKey]
-                if (Array.isArray(value) && value.length > 0 && demographicAtlasKeyToAttributeIdMap[atlasKey]) {
-                  const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
-                  if (!demographicEvent.attributes) {
-                    demographicEvent.attributes = []
+                const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
+
+                if (!attributeId) {
+                  return
+                }
+
+                // Get attribute config using the ConfigLoader method
+                const attrConfig = configLoader.getAttributeConfig('demographic', attributeId)
+                if (!attrConfig) {
+                  return
+                }
+
+                if (!demographicEvent.attributes) {
+                  demographicEvent.attributes = []
+                }
+
+                // Handle based on attribute type from config
+                if (attrConfig.type === 'numericRange' && 'Value' in value) {
+                  // NumericRange type (e.g., Age) - Convert from Atlas format to internal format
+                  const numericAttribute: QueryFilterAttributeNumericRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'numericRange',
+                    name: attrConfig.name,
+                    description: attrConfig.description,
+                    operator: mapAtlasOperatorToInternal(value.Op),
+                    value: value.Value.toString(),
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
                   }
+                  demographicEvent.attributes.push(numericAttribute)
+                } else if (attrConfig.type === 'concept' && Array.isArray(value) && value.length > 0) {
+                  // Concept type (e.g., Gender, Race, Ethnicity)
                   demographicEvent.attributes.push(
                     convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
                   )
+                } else if (
+                  attrConfig.type === 'dateRange' &&
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Value' in value
+                ) {
+                  // DateRange type (e.g., StartDate, EndDate) - Convert from Atlas format to internal format
+                  const dateAttribute: QueryFilterAttributeDateRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'dateRange',
+                    name: attrConfig.name,
+                    description: attrConfig.description,
+                    operator: mapAtlasOperatorToInternal(value.Op),
+                    value: value.Value.toString(),
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                  }
+                  demographicEvent.attributes.push(dateAttribute)
                 }
               })
             }

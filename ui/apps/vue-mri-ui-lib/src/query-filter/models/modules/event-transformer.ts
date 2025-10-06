@@ -1,5 +1,5 @@
 import type { QueryFilterEvent, QueryFilterAttribute } from '../../types/QueryFilterTypes'
-import { hasAttributeId } from './type-guards'
+import { hasAttributeId, isNumericRangeAttribute } from './type-guards'
 
 // Transform events from new structure to internal structure
 export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] => {
@@ -49,7 +49,7 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
           hasAttributeId(attr) &&
           attributeType &&
           attributeType !== 'nested' &&
-          (configType === 'conceptSet' || configType === 'concept')
+          (configType === 'conceptSet' || configType === 'concept' || configType === 'numericRange')
         ) {
           const attributeId = attr.attributeId
 
@@ -71,7 +71,7 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
               category: 'criteria-specific',
             }
 
-            if (attributeId === 'age' && attributeType === 'numericRange') {
+            if (isNumericRangeAttribute(attr)) {
               mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
               mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
             }

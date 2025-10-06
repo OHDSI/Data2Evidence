@@ -313,9 +313,9 @@ export interface OccurrenceSettings {
 
 export interface DemographicCriteria {
   Age?: NumericRange
-  Gender?: ConceptSet[]
-  Race?: ConceptSet[]
-  Ethnicity?: ConceptSet[]
+  Gender?: Concept[]
+  Race?: Concept[]
+  Ethnicity?: Concept[]
   OccurrenceStartDate?: DateRange
   OccurrenceEndDate?: DateRange
 }

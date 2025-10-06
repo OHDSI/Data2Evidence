@@ -11,6 +11,7 @@ import type {
   AtlasCohortDefinition,
   CriteriaListItem,
   GroupCriteria,
+  DateRange,
 } from '../types/AtlasTypes'
 import type {
   QueryFilterEvent,
@@ -23,7 +24,7 @@ import type {
   QueryFilterCriteriaManageData,
 } from '../types/QueryFilterTypes'
 import { getAtlasAttributeKey } from '../utils/AtlasUtils'
-import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId } from './modules/type-guards'
+import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId, isDateRangeAttribute } from './modules/type-guards'
 import {
   mapCriteriaTypeToAtlas,
   mapCardinalityTypeToAtlas,
@@ -466,7 +467,7 @@ export class QueryFilterCriteriaManager {
                         if (attr.configType === 'boolean') {
                           criteria.Criteria[atlasEventType][attributeKey] = true
                         }
-                        if (attr.value) {
+                        if ('value' in attr && attr.value) {
                           criteria.Criteria[atlasEventType][attributeKey] = attr.value
                         }
                       }
@@ -479,40 +480,60 @@ export class QueryFilterCriteriaManager {
             DemographicCriteriaList: group.events
               .filter(event => event.eventType === 'demographic')
               .flatMap(event => {
-                // Process demographic events and their age attributes
-                const demographicEvents = [event]
+                // Process demographic events and their attributes generically
+                const demographicCriteria: Record<string, unknown> = {}
 
-                const demographicCriteria: DemographicCriteria[] = []
+                if (event.attributes && Array.isArray(event.attributes)) {
+                  event.attributes.forEach((attr: QueryFilterAttribute) => {
+                    if (!hasAttributeId(attr)) {
+                      return
+                    }
 
-                demographicEvents.forEach(event => {
-                  // Also check for age attributes directly in the original attributes array (for events not fully transformed)
-                  const eventAny = event
-                  if (eventAny.attributes && Array.isArray(eventAny.attributes)) {
-                    eventAny.attributes.forEach((attr: QueryFilterAttribute) => {
-                      if (isNumericRangeAttribute(attr) && attr.attributeId === 'age') {
-                        const ageConfig: NumericRange = {
-                          Op: 'gt', // Default operator
-                          Value: 0, // Default value
-                        }
+                    // Get the Atlas field name for this attribute using the lookup table
+                    const atlasFieldName = getAtlasAttributeKey(attr.attributeId, 'DemographicCriteria')
 
-                        // Map operator and value if available
-                        if (attr.operator) {
-                          ageConfig.Op = mapOperatorToAtlas(attr.operator)
-                        }
-
-                        if (attr.value !== undefined) {
-                          ageConfig.Value = parseInt(attr.value)
-                        }
-
-                        demographicCriteria.push({
-                          Age: ageConfig,
-                        })
+                    // Handle numericRange attributes (e.g., Age) - Convert from internal format to Atlas format
+                    if (isNumericRangeAttribute(attr) && 'operator' in attr && 'value' in attr && attr.value) {
+                      const numericRange: any = {
+                        Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                        Value: parseInt(attr.value),
                       }
-                    })
-                  }
-                })
+                      // Include Extent for 'between' operations
+                      if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+                        numericRange.Extent = parseInt(attr.extent)
+                      }
+                      demographicCriteria[atlasFieldName] = numericRange
+                    }
+                    // Handle concept attributes (e.g., Gender, Race, Ethnicity)
+                    else if (
+                      'configType' in attr &&
+                      attr.configType === 'concept' &&
+                      'conceptItems' in attr &&
+                      attr.conceptItems
+                    ) {
+                      const conceptData = (attr.conceptItems as any[]).map(item => ({
+                        CONCEPT_CODE: item.code,
+                        CONCEPT_ID: item.conceptId,
+                        CONCEPT_NAME: item.conceptName,
+                        DOMAIN_ID: item.domainId,
+                        VOCABULARY_ID: item.system,
+                      }))
+                      demographicCriteria[atlasFieldName] = conceptData
+                    }
+                    // Handle dateRange attributes (e.g., StartDate) - Convert from internal format to Atlas format
+                    else if (isDateRangeAttribute(attr) && 'operator' in attr && 'value' in attr && attr.value) {
+                      const dateRange: DateRange = {
+                        Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                        Value: attr.value,
+                        Extent: attr.extent || '',
+                      }
+                      demographicCriteria[atlasFieldName] = dateRange
+                    }
+                  })
+                }
 
-                return demographicCriteria
+                // Return as array with single item if there are any demographic criteria
+                return Object.keys(demographicCriteria).length > 0 ? [demographicCriteria as DemographicCriteria] : []
               }),
             Groups: processNestedGroups(group.events, systemIdToAtlasId).filter(
               group =>
@@ -596,7 +617,7 @@ export class QueryFilterCriteriaManager {
                 if (attr.configType === 'boolean') {
                   criteria[eventType][attributeKey] = true
                 }
-                if (attr.value) {
+                if ('value' in attr && attr.value) {
                   criteria[eventType][attributeKey] = attr.value
                 }
               }
@@ -697,7 +718,7 @@ export class QueryFilterCriteriaManager {
                 if (attr.configType === 'boolean') {
                   criteria[eventType][attributeKey] = true
                 }
-                if (attr.value) {
+                if ('value' in attr && attr.value) {
                   criteria[eventType][attributeKey] = attr.value
                 }
               }

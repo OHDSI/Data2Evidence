@@ -59,6 +59,7 @@ const attributeType = computed(() => {
         :is="componentMap[attributeType]"
         @update="getUpdate"
         :value="props.attribute && 'value' in props.attribute && props.attribute.value"
+        :operator="props.attribute && 'operator' in props.attribute && props.attribute.operator"
       />
     </div>
     <div class="attribute-btn-container">

@@ -368,3 +368,40 @@ The mock server is particularly useful for:
 - Performance testing with cached responses
 - Integration testing without affecting production Atlas instances
 
+## Attribute Type System
+
+### QueryFilterAttribute Structure
+
+The `QueryFilterAttribute` type uses a discriminated union based on `attributeType`:
+
+- **`attributeType: 'nested'`**: For nested criteria containing recursive event groups
+- **`attributeType: 'standard'`**: For all other attribute types (concept, numericRange, dateRange, text, boolean)
+
+**Important**: `attributeType` can ONLY be `'nested'` or `'standard'`. There is no `attributeType: 'numericRange'` - numeric range attributes use `attributeType: 'standard'` with `configType: 'numericRange'`.
+
+### Numeric Range Attributes
+
+Numeric range attributes (like Age) are structured as:
+
+```typescript
+{
+  attributeId: 'age',
+  attributeType: 'standard',
+  configType: 'numericRange',
+  name: 'Age',
+  description: 'Age in years',
+  value: {
+    Op: 'btw',      // Operator: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | 'nbt'
+    Value: 10,      // Primary value
+    Extent: 20      // Second value (for 'between' operations)
+  }
+}
+```
+
+The `value` property contains a `NumericRange` object with:
+
+- `Op`: The comparison operator
+- `Value`: The primary numeric value
+- `Extent` (optional): The upper bound for "between" operations
+
+This structure allows type-safe handling of numeric comparisons while maintaining compatibility with Atlas JSON format.

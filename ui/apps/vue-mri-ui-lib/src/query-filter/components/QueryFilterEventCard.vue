@@ -27,6 +27,12 @@ import TrashIcon from './icons/TrashIcon.vue'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 import AttributeContainer from './attributes/AttributeContainer.vue'
 
+// Attribute update payload types
+type AttributeUpdatePayload =
+  | { operator: string; value: string; extent?: string } // NumericRange, DateRange (internal format)
+  | { Op: string; Text: string } // String (Atlas format - not yet normalized)
+  | { StartWith: string; StartOffset: number; EndWith: string; EndOffset: number } // DateAdjustment (Atlas format - not yet normalized)
+
 interface Props {
   event: QueryFilterEvent
   eventIndex: number
@@ -248,11 +254,11 @@ const handleAttributeRemoved = (attributeId: string) => {
 }
 
 // Update a specific attribute's value by id
-const updateAttribute = (attributeId: string, value: any) => {
+const updateAttribute = (attributeId: string, payload: AttributeUpdatePayload) => {
   const currentAttributes = eventData.value.attributes || []
   const updatedAttributes = currentAttributes.map(attr => {
     if (attr.id === attributeId) {
-      return { ...attr, value }
+      return { ...attr, ...payload }
     }
     return attr
   })
@@ -274,7 +280,12 @@ const removeEvent = () => {
 const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItemDisplay) => {
   const currentAttributes = eventData.value.attributes || []
   const updatedAttributes = currentAttributes.map(attr => {
-    if (attr.id === attributeId && attr.attributeType === 'conceptSet') {
+    if (
+      attr.id === attributeId &&
+      attr.attributeType === 'standard' &&
+      'configType' in attr &&
+      attr.configType === 'conceptSet'
+    ) {
       return {
         ...attr,
         conceptSet: conceptSet,

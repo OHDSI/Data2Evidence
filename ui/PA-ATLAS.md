@@ -1543,6 +1543,267 @@ SERVER_URL=http://localhost:3001 npm start
 
 ---
 
+## Recent Updates
+
+### 2025-10-06: Clean Architecture - Normalized Internal Format (operator/value)
+
+**Issue**: The system had mixed representations causing type confusion:
+
+1. Incorrectly included `attributeType: 'numericRange'` and `attributeType: 'conceptSet'` as discriminated union variants
+2. UI components used Atlas format `{ Op, Value }` while internal state used `{ operator, value }`
+3. Data transformation happened inconsistently, mixing string and object forms
+
+**Solution**: **Normalize at boundaries** - Convert Atlas ↔ Internal format only at import/export boundaries:
+
+- **Import**: Atlas `{ Op: 'gt', Value: 18 }` → Internal `{ operator: 'GREATER_THAN', value: '18' }`
+- **UI Layer**: Always uses Internal format `{ operator, value, extent? }`
+- **Export**: Internal `{ operator: 'GREATER_THAN', value: '18' }` → Atlas `{ Op: 'gt', Value: 18 }`
+
+**Changes Made**:
+
+1. **Type Definition Redesign** ([QueryFilterTypes.ts:50-111](apps/vue-mri-ui-lib/src/query-filter/types/QueryFilterTypes.ts#L50-L111))
+
+   - Removed `attributeType: 'numericRange'` and `attributeType: 'conceptSet'` variants
+   - Removed `NumericRange` and `DateRange` imports (no longer needed)
+   - **Proper Discriminated Union**: Now uses two-level discrimination:
+     - First level: `attributeType: 'nested' | 'standard'`
+     - Second level (for `'standard'`): `configType` discriminates between:
+       - `'numericRange'` - Has `operator?: string, value?: string, extent?: string` (all strings)
+       - `'conceptSet'` - Has `conceptSet?`, `conceptSetId?`, `conceptItems?`
+       - `'concept'` - Has `domainFilter?`, `conceptItems?`
+       - `'dateRange'` - Has `operator?: string, value?: string, extent?: string` (all strings)
+       - Generic fallback - Has all optional fields for extensibility
+   - **Type Safety**: Each `configType` variant has only the fields it needs, preventing field confusion
+   - **No more union types**: `value` is always `string`, never an object
+
+2. **AtlasConverter Fixes** ([AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts))
+
+   - Line 366: Changed Age attribute creation from `attributeType: 'numericRange'` → `attributeType: 'standard', configType: 'numericRange'`
+   - Line 163: Changed concept set attributes from `attributeType: 'conceptSet'` → `attributeType: 'standard', configType: 'conceptSet'`
+   - `convertConceptSetArrayToAttribute`: Now consistently uses `attributeType: 'standard'` with appropriate `configType`
+
+3. **Component Fixes** ([QueryFilterEventCard.vue:277](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEventCard.vue#L277))
+
+   - Updated `handleAttributeConceptSetSelected` to check for `attributeType === 'standard' && configType === 'conceptSet'`
+
+4. **Event Transformer Fixes** ([event-transformer.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/event-transformer.ts))
+
+   - Line 52: Added `configType === 'numericRange'` to condition
+   - Line 74: Updated age attribute check to use `attributeType === 'standard' && configType === 'numericRange'`
+
+5. **Type Guards Enhancement** ([type-guards.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/type-guards.ts))
+
+   - Updated type guards to use `Extract<QueryFilterAttribute, {...}>` for proper type narrowing
+   - `isNumericRangeAttribute()`: Narrows to the exact `numericRange` discriminated union variant
+   - `isConceptSetAttribute()`: Narrows to the exact `conceptSet` discriminated union variant
+   - `isConceptAttribute()`: Narrows to the exact `concept` discriminated union variant
+   - `isDateRangeAttribute()`: New guard for `dateRange` variant
+   - **TypeScript IntelliSense**: Now properly shows only the available fields for each variant
+
+6. **NumericRangeInput Component** ([NumericRangeInput.vue](apps/vue-mri-ui-lib/src/query-filter/components/attributes/NumericRangeInput.vue))
+
+   - **Changed props**: Now accepts `operator?: string, value?: string` (internal format)
+   - **Added converters**: `internalToAtlasOperator()` and `atlasToInternalOperator()` for dropdown compatibility
+   - **Emits internal format**: `{ operator: 'GREATER_THAN', value: '18', extent?: '25' }`
+   - **Dropdown still uses Atlas format** (`lt`, `gt`, etc.) for `numericRangeOptions` compatibility
+
+7. **AttributeContainer** ([AttributeContainer.vue:62](apps/vue-mri-ui-lib/src/query-filter/components/attributes/AttributeContainer.vue#L62))
+
+   - Now passes both `:value` and `:operator` props to child components
+
+8. **QueryFilterEventCard** ([QueryFilterEventCard.vue:251-266](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEventCard.vue#L251-L266))
+
+   - `updateAttribute` now spreads payload: `{ ...attr, ...payload }`
+   - Properly updates all fields (`operator`, `value`, `extent`) from UI components
+
+9. **Nested Criteria Processor Simplification** ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts))
+
+   - Lines 279-290: Simplified - always converts internal → Atlas format
+   - Lines 308-316: Same simplification for dateRange
+   - Removed all `typeof attr.value === 'object'` checks (no longer needed)
+   - Removed all `as any` workarounds
+   - **Clean conversion**: `{ Op: mapOperatorToAtlas(attr.operator), Value: parseInt(attr.value) }`
+
+10. **Test Data Updates** ([sample6-input.ts](apps/vue-mri-ui-lib/src/query-filter/__tests__/data/sample6-input.ts))
+    - Updated test data to use `attributeType: 'standard', configType: 'numericRange'`
+
+**Implementation Details**:
+
+- **Clear Boundaries**: Conversion happens only at import (AtlasConverter) and export (nested-criteria-processor)
+- **Single Representation**: UI layer always works with internal format `{ operator, value, extent? }`
+- **No Mixed State**: Eliminated the dual string/object representation problem
+- **Discriminated Union Pattern**: Uses TypeScript's discriminated unions at two levels for precise type narrowing
+- **Type Safety**: Each `configType` variant has its own distinct shape, preventing field confusion
+  - Can't accidentally access `conceptSet` on a `numericRange` attribute
+  - Can't access `domainFilter` on a `conceptSet` attribute
+- **IntelliSense Support**: TypeScript autocomplete shows only valid fields for each variant
+- **Generic Fallback**: Last union variant handles any new `configType` values for extensibility
+- **Type Guards**: Use `Extract<>` utility type to properly narrow to specific variants
+
+**Impact**:
+
+- ✅ **Clean architecture**: Clear separation between Atlas format and internal format
+- ✅ **Eliminates type confusion**: No more union types (`string | NumericRange`)
+- ✅ **Simpler code**: Export logic no longer needs runtime type checks
+- ✅ **Prevents bugs**: TypeScript catches incorrect field access at compile time
+- ✅ **Fixes runtime bugs**: DateRange values correctly handled throughout the flow
+- ✅ **Removes unsafe casts**: No more `as any` workarounds needed
+- ✅ **Better IDE support**: IntelliSense shows only valid fields after type narrowing
+- ✅ **Maintainable**: Conversion logic centralized at boundaries
+- ✅ **All tests pass**: 143/143 tests passing
+
+---
+
+### 2025-10-06: Demographic Criteria in Nested Attributes Fix (Fully Generic)
+
+**Issue**: Demographic criteria in nested attributes within entry events were not being saved or loaded correctly. Only Age was handled, and other attribute types (Gender, Race, dateRange) were ignored.
+
+**Changes Made**:
+
+1. **Export Enhancement** ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts))
+
+   - Refactored to handle **all demographic attribute types generically**:
+     - `configType: 'numericRange'` (Age)
+     - `configType: 'concept'` (Gender, Race, Ethnicity, RaceConcept, etc.)
+     - `configType: 'dateRange'` (StartDate, EndDate)
+   - Uses `getAtlasAttributeKey()` from `AtlasAttributeLookup` for proper field name mapping
+   - Applied to both `buildNestedCriteriaFromAttributes` (lines 352-394) and `processNestedGroupsRecursively` (lines 268-310)
+   - **Zero hardcoding**: works for any attribute type and any new attributes added to config
+
+2. **Import Enhancement** ([AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts))
+   - Enhanced CorrelatedCriteria processing (lines 417-462) to handle `DemographicCriteriaList`
+   - Converts all demographic criteria types from Atlas JSON back to UI events
+   - Uses `convertConceptSetArrayToAttribute` with config loader for generic concept mapping
+   - Handles Age (NumericRange), Gender/Race (Concept[]), and dates (DateRange)
+
+**Implementation Details**:
+
+- **Type Guard** ([type-guards.ts:13-25](apps/vue-mri-ui-lib/src/query-filter/models/modules/type-guards.ts#L13-L25))
+  - `isNumericRangeAttribute()` checks for `attributeType: 'standard'` with `configType: 'numericRange'`
+  - Centralizes attribute type detection logic in one place
+- **Attribute Lookup Table**: Uses `AtlasAttributeLookup.attributeMap.DemographicCriteria` for field name mapping
+  - `age` → `Age` (NumericRange)
+  - `gender` → `Gender` (Concept[])
+  - `startDate` → `OccurrenceStartDate` (DateRange)
+  - `endDate` → `OccurrenceEndDate` (DateRange)
+- **Type-Based Handling**: Automatically detects attribute `configType` (numericRange, concept, dateRange) and applies appropriate conversion
+- **Config-Driven**: Works with any attribute defined in `attributeMapping.demographic[]` in `atlas-config.json`
+- **Type-Safe**: Uses `Record<string, unknown>` instead of `any` for dynamic property assignment
+
+**Impact**:
+
+- ✅ Full round-trip conversion for **all** demographic attribute types
+- ✅ No special cases or hardcoded attribute handling
+- ✅ Future-proof: new attributes work automatically when added to config and lookup table
+
+---
+
+### 2025-10-06: Extent vs extent Case Normalization
+
+**Issue**: Mixed use of Atlas format (uppercase `Extent`) and internal format (lowercase `extent`) throughout the codebase, violating the "normalize at boundaries" pattern.
+
+**Root Cause**: Legacy code from before the normalized architecture was established. Some code paths were storing Atlas format `{ Op, Value, Extent }` objects directly in the internal state, while other code expected internal format `{ operator, value, extent }`.
+
+**Changes Made**:
+
+1. **AtlasConverter.ts Import Fixes** - All numericRange and dateRange conversions now convert from Atlas → Internal format:
+
+   - Lines 455-470: NumericRange import converts `{ Op, Value, Extent }` → `{ operator, value, extent }`
+   - Lines 482-497: DateRange import converts `{ Op, Value, Extent }` → `{ operator, value, extent }`
+   - Lines 624-639: Duplicate numericRange section (for InclusionRules) fixed
+   - Lines 651-666: Duplicate dateRange section fixed
+
+2. **QueryFilterModel.ts Export Fixes** - Conversion from internal → Atlas format:
+
+   - Lines 494-505: NumericRange export converts `{ operator, value, extent }` → `{ Op, Value, Extent }`
+   - Lines 522-530: DateRange export converts `{ operator, value, extent }` → `{ Op, Value, Extent }`
+
+3. **nested-criteria-processor.ts Cleanup** - Removed old dead code:
+   - Lines 385-386: Removed legacy check for Atlas format objects in `value` field
+   - Now always uses internal format and converts to Atlas at export
+
+**Implementation Details**:
+
+- **Import Boundary** ([AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts)): Reads `Extent` from Atlas JSON, stores as `extent` in internal state
+- **Internal Format**: All code uses lowercase `extent` field
+- **Export Boundary** ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts), [QueryFilterModel.ts](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts)): Converts `extent` → `Extent` when creating Atlas JSON
+
+**Impact**:
+
+- ✅ Consistent case usage: `Extent` only in Atlas format, `extent` only in internal format
+- ✅ Removed mixed representations: no more objects stored in `value` field
+- ✅ Simplified code: removed runtime type checks for `typeof value === 'object'`
+- ✅ All 143/143 tests passing
+
+---
+
+### 2025-10-06: Known Inconsistencies - String and DateAdjustment Attributes
+
+**Issue**: Not all attribute input components use normalized internal format. Some still use Atlas format (uppercase keys).
+
+**Current State**:
+
+**Normalized (Internal Format):**
+
+- ✅ `NumericRangeInput.vue` - emits `{ operator: string, value: string, extent?: string }`
+- ✅ `DateInput.vue` - emits `{ operator: string, value: string, extent?: string }`
+
+**Not Normalized (Atlas Format):**
+
+- ⚠️ `StringInput.vue` - emits `{ Op: string, Text: string }`
+- ⚠️ `DateAdjustmentInput.vue` - emits `{ StartWith: string, StartOffset: number, EndWith: string, EndOffset: number }`
+
+**Why Not Fixed**:
+
+These attribute types (`text` and `dateAdjustment`) are **not currently handled in the Atlas import/export pipeline**. They are not converted in:
+
+- [AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts) - No import logic
+- [nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts) - No export logic
+
+They are stored as-is in the internal state and not included in Atlas JSON output, suggesting they may be:
+
+1. Legacy attributes not part of the OHDSI Atlas specification
+2. D2E-specific extensions
+3. Partially implemented features
+
+**Type Documentation**:
+
+The mixed format is documented in [QueryFilterEventCard.vue:30-34](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEventCard.vue#L30-L34):
+
+```typescript
+type AttributeUpdatePayload =
+  | { operator: string; value: string; extent?: string } // NumericRange, DateRange (internal format)
+  | { Op: string; Text: string } // String (Atlas format - not yet normalized)
+  | {
+      StartWith: string;
+      StartOffset: number;
+      EndWith: string;
+      EndOffset: number;
+    }; // DateAdjustment (Atlas format - not yet normalized)
+```
+
+**Future Work**:
+
+To normalize these attributes:
+
+1. **Define Internal Format**:
+
+   - String: `{ operator: string, text: string }` (e.g., `operator: 'startsWith'`)
+   - DateAdjustment: `{ startWith: string, startOffset: number, endWith: string, endOffset: number }`
+
+2. **Update Components**:
+
+   - [StringInput.vue](apps/vue-mri-ui-lib/src/query-filter/components/attributes/StringInput.vue) - Change props/emit to internal format
+   - [DateAdjustmentInput.vue](apps/vue-mri-ui-lib/src/query-filter/components/attributes/DateAdjustmentInput.vue) - Change props/emit to internal format
+
+3. **Add Conversion Logic** (if needed for Atlas compatibility):
+   - Add import logic in AtlasConverter.ts to convert from Atlas → internal
+   - Add export logic in nested-criteria-processor.ts to convert from internal → Atlas
+
+**Recommendation**: Leave as-is until these attributes need to be included in Atlas JSON import/export, then apply the same "normalize at boundaries" pattern used for NumericRange and DateRange.
+
+---
+
 **End of Documentation**
 
 For questions or issues, refer to:
