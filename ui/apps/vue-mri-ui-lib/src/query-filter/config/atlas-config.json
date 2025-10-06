@@ -132,7 +132,8 @@
       "buttonText": "Add Initial Event",
       "excludeTypes": [
         "locationRegion",
-        "group"
+        "group",
+        "demographic"
       ]
     },
     "censoringEvents": {
