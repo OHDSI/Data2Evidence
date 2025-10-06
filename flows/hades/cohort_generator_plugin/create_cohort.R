@@ -8,6 +8,7 @@ library(CohortGenerator)
 #' @param cohortName Name of the cohort
 #' @param cohortId int ID of the cohort
 #' @param vocabSchemaName Name of the vocabulary schema
+#' @param cohortSchemaName Name of the cohort schema
 #' @param set_db_driver_env_string R code string to set DB driver environment
 #' @param set_connection_string R code string to set connection details
 #' @return None
@@ -17,7 +18,8 @@ create_cohort <- function(
     set_connection_string,
     cohortJson, 
     schemaName, 
-    vocabSchemaName, 
+    vocabSchemaName,
+    cohortSchemaName,
     cohortName, 
     cohortId) {
         
@@ -41,7 +43,7 @@ create_cohort <- function(
     
     cat("Creating temporary cohort stats tables")
     CohortGenerator::createCohortTables(connectionDetails = connectionDetails,
-                            cohortDatabaseSchema = schemaName,
+                            cohortDatabaseSchema = cohortSchemaName,
                             cohortTableNames = cohortTableNames,
                             incremental=TRUE)
                             
@@ -54,7 +56,7 @@ create_cohort <- function(
                                         stringsAsFactors = FALSE))       
     cohortsGenerated <- CohortGenerator::generateCohortSet(connectionDetails = connectionDetails,
                                         cdmDatabaseSchema = schemaName,
-                                        cohortDatabaseSchema = schemaName,
+                                        cohortDatabaseSchema = cohortSchemaName,
                                         cohortTableNames = cohortTableNames,
                                         cohortDefinitionSet = cohortsToCreate)
 
@@ -62,7 +64,7 @@ create_cohort <- function(
     cat("Dropping tempoary cohort stats tables")
     CohortGenerator::dropCohortStatsTables(
     connectionDetails = connectionDetails,
-    cohortDatabaseSchema = schemaName,
+    cohortDatabaseSchema = cohortSchemaName,
     cohortTableNames = cohortTableNames
     )
 }

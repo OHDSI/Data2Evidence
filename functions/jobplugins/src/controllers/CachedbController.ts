@@ -61,12 +61,11 @@ export class CachedbController {
 
       const portalServerApi = new PortalServerAPI(token);
       const flowActionType = "create_datamart_cache";
-      const { databaseCode, schemaName } = await portalServerApi.getDataset(
-        params.datasetId
-      );
+      const { databaseCode, schemaName, resultsSchemaName } =
+        await portalServerApi.getDataset(params.datasetId);
 
       const result = await this.cachedbService.createCachedbFileFlowRun(
-        { flowActionType, databaseCode, schemaName },
+        { flowActionType, databaseCode, schemaName, resultsSchemaName },
         token
       );
       res.send(result);

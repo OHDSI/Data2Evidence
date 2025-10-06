@@ -36,6 +36,9 @@ export const validateCohortGeneratorFlowRunDto = () => [
   body("options.schemaName")
     .isString()
     .withMessage("schemaName must be a string"),
+  body("options.resultsSchemaName")
+    .isString()
+    .withMessage("resultsSchemaName must be a string"),
   body("options.vocabSchemaName")
     .isString()
     .withMessage("vocabSchemaName must be a string"),
