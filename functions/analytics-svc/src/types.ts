@@ -383,6 +383,7 @@ export interface StudyDbMetadata {
     schemaName: string;
     databaseName: string;
     vocabSchemaName: string;
+    resultSchemaName: string;
     dialect: string;
     databaseCode: string;
 }
