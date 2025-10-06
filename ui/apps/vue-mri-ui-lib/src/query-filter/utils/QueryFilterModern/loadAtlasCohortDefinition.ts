@@ -523,9 +523,13 @@ export const loadAtlasCohortDefinition = async (
     // Force reactivity update
     await nextTick()
 
-    // Load concept set details for all events with concept sets
-    await loadConceptSetDetailsForAllEvents()
+    // Unblock UI - concept creation and conversion are complete
     isLoading.value = false
+
+    // Load concept set details in background (needed for save, not for display)
+    loadConceptSetDetailsForAllEvents().catch(error => {
+      console.error('Error loading concept set details in background:', error)
+    })
   } catch (error) {
     console.error('Error loading Atlas cohort definition:', error)
     isLoading.value = false

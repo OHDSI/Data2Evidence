@@ -38,6 +38,7 @@ import { loadAtlasCohortDefinition } from '../utils/QueryFilterModern/loadAtlasC
 import * as types from '../../store/mutation-types'
 import { useCriteriaManager } from '../composables/useCriteriaManager'
 import { d2eWebapiService } from '../services/D2eWebapiService'
+import { QueryFilterEvent } from '../types/QueryFilterTypes'
 
 // Interface for close callback values from terminology modal
 interface TerminologyCloseValues {
@@ -810,6 +811,60 @@ const closeSaveDialog = () => {
   isInvalidName.value = false
 }
 
+// Helper function to check if any events are still loading concept details
+const checkAndWaitForConceptDetails = async (): Promise<boolean> => {
+  const criteria = criteriaManager.getCriteria()
+
+  // Collect all events from all groups
+  const allEvents: QueryFilterEvent[] = []
+
+  // Entry events
+  if (criteriaManager.getPrimaryEvents()?.events) {
+    allEvents.push(...criteriaManager.getPrimaryEvents().events)
+  }
+
+  // Inclusion criteria events
+  for (const group of criteria.criteria) {
+    allEvents.push(...group.events)
+  }
+
+  // Exit events
+  if (criteriaManager.getCensoringCriteria()?.censoringCriteria) {
+    allEvents.push(...criteriaManager.getCensoringCriteria().censoringCriteria)
+  }
+
+  // Check if any event with a concept set is still loading
+  const eventsStillLoading = allEvents.filter(event => event.conceptSetId && event.conceptSetLoading === true)
+
+  if (eventsStillLoading.length > 0) {
+    console.log(`Waiting for ${eventsStillLoading.length} concept set(s) to finish loading...`)
+
+    // Poll every 500ms until all concept details are loaded (max 30 seconds)
+    const maxWaitTime = 30000
+    const pollInterval = 500
+    let elapsed = 0
+
+    while (elapsed < maxWaitTime) {
+      // Re-check if any are still loading
+      const stillLoading = allEvents.some(event => event.conceptSetId && event.conceptSetLoading === true)
+
+      if (!stillLoading) {
+        console.log('All concept details loaded successfully')
+        return true
+      }
+
+      // Wait before next check
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+      elapsed += pollInterval
+    }
+
+    console.warn('Timeout waiting for concept details to load')
+    return false
+  }
+
+  return true
+}
+
 const saveAtlasCohort = async () => {
   try {
     if (!cohortName.value.trim()) {
@@ -819,6 +874,13 @@ const saveAtlasCohort = async () => {
 
     if (hasExceededLength.value) {
       return
+    }
+
+    // Wait for any pending concept detail loads before converting to Atlas format
+    const allDetailsLoaded = await checkAndWaitForConceptDetails()
+    if (!allDetailsLoaded) {
+      console.error('Some concept details failed to load. Proceeding with save anyway.')
+      // You could show a warning to the user here if desired
     }
 
     // Get the Atlas format JSON

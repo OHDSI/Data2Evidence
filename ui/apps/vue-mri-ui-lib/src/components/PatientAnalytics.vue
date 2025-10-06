@@ -357,8 +357,6 @@ export default {
       if (isDisplayCohort) {
         this.initializeBookmarks()
         this.toggleQueryFilter(false)
-        // Clear atlas data when returning to bookmarks to ensure clean state
-        this.atlasDataForQueryFilter = null
       } else {
         if (isPaAtlas) {
           this.togglePanel('right', true)
