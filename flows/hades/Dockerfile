@@ -42,7 +42,7 @@ WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=./hades/uv.lock,target=uv.lock \
     --mount=type=bind,source=./hades/pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev --no-editable
+    uv sync --frozen --no-install-project --no-editable
 
 FROM rocker/r-ver:${R_VERSION} AS r-dependencies-build
 

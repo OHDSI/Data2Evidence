@@ -32,8 +32,8 @@ jobs:
         run: |
           echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
 
-      - name: execute run_hades_test.sh script
+      - name: temporary build docker image for flow-hades
         if: env.WF_RUN == 'true'
         run: |
-          chmod +x ./flows/hades/strategus_plugin/run_hades_test.sh
-          ./flows/hades/strategus_plugin/run_hades_test.sh
+          docker build --platform linux/amd64 -t ghcr.io/ohdsi/d2e/flow-hades:local -f ./flows/hades/Dockerfile.local .
+          docker compose -f ./flows/hades/strategus_plugin/dc-local.yml up

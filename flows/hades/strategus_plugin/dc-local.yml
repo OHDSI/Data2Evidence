@@ -2,10 +2,10 @@
 services:
   app:
     platform: linux/amd64
-    image: ghcr.io/ohdsi/d2e/flow-hades:develop
+    image: ghcr.io/ohdsi/d2e/flow-hades:local
     # with debugger listening
     # entrypoint: python -m debugpy --listen 0.0.0.0:9234 --wait-for-client -m flows.hades.strategus_plugin.flow
-    entrypoint: python -m flows.hades.strategus_plugin.flow
+    entrypoint: /app/.venv/bin/python -m pytest /app/flows/hades/strategus_plugin/tests/
     environment:
       - PREFECT_API_URL=http://dataflow-gen-1:41120/api
       - IS_DEV_ENV=true
