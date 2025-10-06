@@ -208,6 +208,43 @@ const displayPatientCount = computed(() => {
   return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
 })
 
+// Helper to recursively check if event or its nested events are loading
+const isEventOrNestedLoading = (event: QueryFilterEvent): boolean => {
+  // Check if this event is loading
+  if (event.conceptSetLoading) {
+    return true
+  }
+
+  // Check if this event has concept set but missing details
+  if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
+    return true
+  }
+
+  // Recursively check nested events in nestedCriteria (for groups)
+  if (event.nestedCriteria?.events) {
+    for (const nestedEvent of event.nestedCriteria.events) {
+      if (isEventOrNestedLoading(nestedEvent)) {
+        return true
+      }
+    }
+  }
+
+  // Recursively check nested events in attributes
+  if (event.attributes) {
+    for (const attr of event.attributes) {
+      if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
+        for (const nestedEvent of attr.nestedCriteria.events) {
+          if (isEventOrNestedLoading(nestedEvent)) {
+            return true
+          }
+        }
+      }
+    }
+  }
+
+  return false
+}
+
 // Check if all concept details are loaded and ready to save
 const isReadyToSave = computed(() => {
   // Don't allow save if main component or concept details are loading
@@ -218,40 +255,28 @@ const isReadyToSave = computed(() => {
   // Check if all events with concept sets have their details loaded
   const criteria = criteriaManager.getCriteria()
 
-  // Check entry events
+  // Check entry events (recursively)
   if (primaryEventsData.value?.events) {
     for (const event of primaryEventsData.value.events) {
-      if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
-        console.log('Entry event missing concept details:', event.id, event.conceptSet)
-        return false
-      }
-      if (event.conceptSetLoading) {
+      if (isEventOrNestedLoading(event)) {
         return false
       }
     }
   }
 
-  // Check inclusion criteria groups
+  // Check inclusion criteria groups (recursively)
   for (const group of criteria.criteria) {
     for (const event of group.events) {
-      if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
-        console.log('Inclusion event missing concept details:', event.id, event.conceptSet)
-        return false
-      }
-      if (event.conceptSetLoading) {
+      if (isEventOrNestedLoading(event)) {
         return false
       }
     }
   }
 
-  // Check exit events
+  // Check exit events (recursively)
   if (exitCriteriaData.value?.censoringCriteria) {
     for (const event of exitCriteriaData.value.censoringCriteria) {
-      if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
-        console.log('Exit event missing concept details:', event.id, event.conceptSet)
-        return false
-      }
-      if (event.conceptSetLoading) {
+      if (isEventOrNestedLoading(event)) {
         return false
       }
     }

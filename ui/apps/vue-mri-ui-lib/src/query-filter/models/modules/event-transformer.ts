@@ -22,6 +22,13 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
       isExpanded: event.isExpanded,
       cardinality: event.cardinality,
       attributes: [], // Will be populated with remaining attributes
+      // Preserve nestedCriteria for group events
+      ...(event.nestedCriteria && {
+        nestedCriteria: {
+          ...event.nestedCriteria,
+          events: transformEvents(event.nestedCriteria.events || []),
+        },
+      }),
     }
     transformedEvents.push(mainEvent)
 

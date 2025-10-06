@@ -53,7 +53,10 @@ const eventsData = computed({
   },
 })
 
-const mainEvents = computed(() => eventsData.value)
+const mainEvents = computed(() => {
+  const events = eventsData.value
+  return events
+})
 
 // Determine the correct section ID based on event type
 const sectionId = computed(() => {

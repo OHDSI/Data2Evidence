@@ -689,6 +689,37 @@ export const convertAtlasToFilters = (
           })
         }
 
+        // Handle Groups - convert them back to group events
+        if (rule.expression?.Groups && rule.expression.Groups.length > 0) {
+          rule.expression.Groups.forEach(groupCriteria => {
+            const groupEvent: QueryFilterEvent = {
+              id: `event_${Math.random().toString(36).substring(2)}`,
+              conceptSet: 'Group',
+              eventType: 'group',
+              isExpanded: true,
+              nestedCriteria: {
+                id: `nested_${Math.random().toString(36).substring(2)}`,
+                criteriaType: groupCriteria.Type || 'ALL',
+                events: [] as QueryFilterEvent[],
+              },
+            }
+
+            // Convert CriteriaList within the group
+            if (groupCriteria.CriteriaList && groupCriteria.CriteriaList.length > 0) {
+              const convertedEvents = convertCriteriaListToEvents(
+                groupCriteria.CriteriaList,
+                groupCriteria.Type || 'ALL'
+              )
+              groupEvent.nestedCriteria!.events = convertedEvents
+            }
+
+            // TODO: Handle DemographicCriteriaList within groups if needed
+            // TODO: Handle nested Groups recursively if needed
+
+            criteriaItem.events.push(groupEvent)
+          })
+        }
+
         inclusionCriteria.criteria.push(criteriaItem)
       })
     }

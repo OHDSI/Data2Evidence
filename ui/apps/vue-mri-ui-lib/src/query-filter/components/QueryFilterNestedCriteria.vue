@@ -45,13 +45,16 @@ const emit = defineEmits<{
 
 // Convert NestedCriteria to QueryFilterGroup format
 const groupData = computed<QueryFilterGroup>({
-  get: () => ({
-    id: props.nestedCriteria.id,
-    title: props.hideHeader ? '' : 'Nested Criteria',
-    description: '',
-    criteriaType: props.nestedCriteria.criteriaType,
-    events: props.nestedCriteria.events,
-  }),
+  get: () => {
+    const result = {
+      id: props.nestedCriteria.id,
+      title: props.hideHeader ? '' : 'Nested Criteria',
+      description: '',
+      criteriaType: props.nestedCriteria.criteriaType,
+      events: props.nestedCriteria.events,
+    }
+    return result
+  },
   set: (value: QueryFilterGroup) => {
     const updatedCriteria: NestedCriteria = {
       id: value.id,

@@ -265,17 +265,7 @@ export class QueryFilterCriteriaManager {
 
     // Also collect concept sets from exitEvents.censoringCriteria
     if (this.exitEvents?.censoringCriteria) {
-      console.log(
-        '🔧 convertToAtlasFormat: Collecting concept sets from censoring criteria:',
-        this.exitEvents.censoringCriteria.length
-      )
-      this.exitEvents.censoringCriteria.forEach((event, index) => {
-        console.log(`🔧 Censoring event ${index}:`, {
-          conceptSetId: event.conceptSetId,
-          conceptSet: event.conceptSet,
-          hasDetails: !!event.conceptSetDetails?.length,
-          detailsCount: event.conceptSetDetails?.length || 0,
-        })
+      this.exitEvents.censoringCriteria.forEach(event => {
         if (event.conceptSetId) {
           if (event.conceptSetDetails && event.conceptSetDetails.length > 0) {
             const systemConceptSetId = event.conceptSetId
@@ -296,17 +286,11 @@ export class QueryFilterCriteriaManager {
               conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
 
               conceptSets.push(conceptSetDef)
-              console.log(
-                `🔧 Added censoring concept set:`,
-                conceptSetDef.name,
-                `(Atlas ID: ${atlasSequentialId}, System ID: ${systemConceptSetId})`
-              )
             }
           } else {
             // Event has concept set but missing details
             const eventName = event.conceptSet || event.id
             missingConceptDetails.push(`Exit event: ${eventName} (ID: ${event.conceptSetId})`)
-            console.log(`🔧 Skipping censoring event ${index}: missing concept details`)
           }
         }
       })
@@ -424,12 +408,7 @@ export class QueryFilterCriteriaManager {
                         Type: 'ALL',
                         CriteriaList: criteriaList,
                         DemographicCriteriaList: demographicCriteriaList,
-                        Groups: groupsList.filter(
-                          group =>
-                            group.CriteriaList.length > 0 ||
-                            group.DemographicCriteriaList.length > 0 ||
-                            group.Groups.length > 0
-                        ),
+                        Groups: groupsList,
                       }
                     }
                   }
@@ -538,10 +517,7 @@ export class QueryFilterCriteriaManager {
                 }
                 return []
               }),
-            Groups: processNestedGroups(group.events, systemIdToAtlasId).filter(
-              group =>
-                group.CriteriaList.length > 0 || group.DemographicCriteriaList.length > 0 || group.Groups.length > 0
-            ),
+            Groups: processNestedGroups(group.events, systemIdToAtlasId),
           },
         }
       }),
@@ -585,10 +561,7 @@ export class QueryFilterCriteriaManager {
                     : 'ALL',
                 CriteriaList: criteriaList,
                 DemographicCriteriaList: demographicCriteriaList,
-                Groups: groupsList.filter(
-                  group =>
-                    group.CriteriaList.length > 0 || group.DemographicCriteriaList.length > 0 || group.Groups.length > 0
-                ),
+                Groups: groupsList,
               }
             }
           }
@@ -677,10 +650,7 @@ export class QueryFilterCriteriaManager {
                     : 'ALL',
                 CriteriaList: criteriaList,
                 DemographicCriteriaList: demographicCriteriaList,
-                Groups: groupsList.filter(
-                  group =>
-                    group.CriteriaList.length > 0 || group.DemographicCriteriaList.length > 0 || group.Groups.length > 0
-                ),
+                Groups: groupsList,
               }
             }
           }
