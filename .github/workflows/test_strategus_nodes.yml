@@ -35,5 +35,5 @@ jobs:
       - name: temporary build docker image for flow-hades
         if: env.WF_RUN == 'true'
         run: |
-          docker build --platform linux/amd64 -t ghcr.io/ohdsi/d2e/flow-hades:local -f ./flows/hades/Dockerfile.local .
+          docker pull --platform linux/amd64 ghcr.io/ohdsi/d2e/flow-hades:develop
           docker compose -f ./flows/hades/strategus_plugin/dc-local.yml up

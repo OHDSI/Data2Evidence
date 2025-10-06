@@ -2,7 +2,7 @@
 services:
   app:
     platform: linux/amd64
-    image: ghcr.io/ohdsi/d2e/flow-hades:local
+    image: ghcr.io/ohdsi/d2e/flow-hades:develop
     # with debugger listening
     # entrypoint: python -m debugpy --listen 0.0.0.0:9234 --wait-for-client -m flows.hades.strategus_plugin.flow
     entrypoint: /app/.venv/bin/python -m pytest /app/flows/hades/strategus_plugin/tests/
