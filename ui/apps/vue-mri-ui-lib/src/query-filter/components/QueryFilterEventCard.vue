@@ -384,7 +384,6 @@ const getEventTypeDisplay = (eventType?: string, criteriaType?: string) => {
     procedureOccurrence: 'Procedure Occurrence',
     specimen: 'Specimen',
     observation: 'Observation',
-    visit: 'Visit',
     visitDetail: 'Visit Detail',
     visitOccurrence: 'Visit Occurrence',
   }

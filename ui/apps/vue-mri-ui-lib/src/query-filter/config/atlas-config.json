@@ -90,7 +90,7 @@
         "all": "Find patients based on specimen."
       }
     },
-    "visit": {
+    "visitOccurrence": {
       "name": "Visit Occurrence",
       "descriptions": {
         "all": "Find patients based on visit information."
@@ -987,7 +987,7 @@
         "type": "nested"
       }
     ],
-    "visit": [
+    "visitOccurrence": [
       {
         "id": "first",
         "name": "First Visit",

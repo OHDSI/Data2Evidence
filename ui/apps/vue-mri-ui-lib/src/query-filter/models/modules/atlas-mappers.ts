@@ -27,26 +27,38 @@ export const mapCardinalityTypeToAtlas = (type: string): number => {
 
 export const mapEventTypeToAtlas = (eventType: string): string => {
   switch (eventType) {
+    case 'conditionEra':
+      return 'ConditionEra'
     case 'conditionOccurrence':
       return 'ConditionOccurrence'
-    case 'drugExposure':
-      return 'DrugExposure'
-    case 'procedureOccurrence':
-      return 'ProcedureOccurrence'
-    case 'measurement':
-      return 'Measurement'
-    case 'observation':
-      return 'Observation'
-    case 'visitOccurrence':
-      return 'VisitOccurrence'
     case 'death':
       return 'Death'
     case 'deviceExposure':
       return 'DeviceExposure'
+    case 'doseEra':
+      return 'DoseEra'
     case 'drugEra':
       return 'DrugEra'
+    case 'drugExposure':
+      return 'DrugExposure'
     case 'locationRegion':
       return 'LocationRegion'
+    case 'measurement':
+      return 'Measurement'
+    case 'observation':
+      return 'Observation'
+    case 'observationPeriod':
+      return 'ObservationPeriod'
+    case 'payerPlanPeriod':
+      return 'PayerPlanPeriod'
+    case 'procedureOccurrence':
+      return 'ProcedureOccurrence'
+    case 'specimen':
+      return 'Specimen'
+    case 'visitDetail':
+      return 'VisitDetail'
+    case 'visitOccurrence':
+      return 'VisitOccurrence'
     default:
       // Convert camelCase to PascalCase for unknown event types
       return toPascalCase(eventType)
