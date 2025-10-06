@@ -1,0 +1,40 @@
+name: d2e/flows/strategus analysis-ui flow nodes tests
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
+  push:
+    branches:
+      - develop
+      - "release/*"
+  workflow_dispatch:
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  test-cachedb:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: check_file_changed
+        with:
+          filters: |
+            has_strategus_changes:
+              - 'flows/hades/strategus_plugin/**'
+
+      - name: Determine condition to run
+        env:
+          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || steps.check_file_changed.outputs.has_strategus_changes == 'True' }}
+        run: |
+          echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: execute run_hades_flow.sh
+        if: env.WF_RUN == 'true'
+        working-directory: ./flows/hades/strategus_plugin
+        run: |
+          chmod +x ./run_hades_flow.sh
+          ./run_hades_flow.sh
