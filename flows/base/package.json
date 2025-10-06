@@ -36,8 +36,19 @@
               "options"
             ],
             "definitions": {
+              "FlowActionType": {
+                "enum": [
+                  "create_datamodel",
+                  "get_version_info"
+                ],
+                "title": "FlowActionType",
+                "type": "string"
+              },
               "DataloadOptions": {
                 "properties": {
+                  "flow_action_type": {
+                    "$ref": "#/definitions/FlowActionType"
+                  },
                   "database_code": {
                     "title": "Database Code",
                     "type": "string"
@@ -45,11 +56,22 @@
                   "schema_name": {
                     "title": "Schema Name",
                     "type": "string"
+                  },
+                  "vocab_schema": {
+                    "title": "Vocabulary Schema",
+                    "type": "string"
+                  },
+                  "results_schema": {
+                    "title": "Results Schema",
+                    "type": "string"
                   }
                 },
                 "required": [
+                  "flow_action_type",
                   "database_code",
-                  "schema_name"
+                  "schema_name",
+                  "vocab_schema",
+                  "results_schema"
                 ],
                 "title": "DataloadOptions",
                 "type": "object"
@@ -114,6 +136,18 @@
                     ],
                     "default": null,
                     "title": "Schemaname"
+                  },
+                  "resultsSchemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Ressultsschemaname"
                   },
                   "tablesToCreateDuckdbFtsIndex": {
                     "anyOf": [
@@ -409,6 +443,10 @@
                     "title": "Vocabschemaname",
                     "type": "string"
                   },
+                  "resultsSchemaName": {
+                    "title": "Resultsschemaname",
+                    "type": "string"
+                  },
                   "releaseDate": {
                     "title": "Releasedate",
                     "type": "string"
@@ -471,6 +509,7 @@
                   "databaseCode",
                   "cdmVersionNumber",
                   "vocabSchemaName",
+                  "resultsSchemaName",
                   "releaseDate"
                 ],
                 "title": "DqdOptionsType",
@@ -542,6 +581,18 @@
                     ],
                     "default": null,
                     "title": "Schema Name"
+                  },
+                  "results_schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Results Schema"
                   },
                   "vocab_schema": {
                     "anyOf": [
