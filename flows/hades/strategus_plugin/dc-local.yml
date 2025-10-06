@@ -19,5 +19,5 @@ services:
 
 networks:
   alp:
-    name: alp_alp
-    external: true
+    # name: alp_alp
+    # external: true
