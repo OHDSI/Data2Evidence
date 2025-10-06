@@ -10,13 +10,14 @@ export default {
 import AppDate from '@/lib/ui/app-date.vue'
 import SelectMaterial from '../SelectMaterial.vue'
 import { dateRangeOptions } from '../../utils/AtlasUtils'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { formatDateToYMD, parseDate } from '../../utils/DateUtils'
 
-// Props now use internal format: operator (string like 'GREATER_THAN') and value (ISO date string)
+// Props now use internal format: operator (string like 'GREATER_THAN'), value (ISO date string), and extent (ISO date string)
 const props = defineProps<{
   value?: string
   operator?: string
+  extent?: string
 }>()
 
 // Emit internal format: operator and value as strings
@@ -61,23 +62,32 @@ const atlasToInternalOperator = (atlas: string): string => {
   return map[atlas] || 'LESS_THAN'
 }
 
-onMounted(() => {
-  if (props.operator) {
-    dateRangeModel.value = internalToAtlasOperator(props.operator)
-  }
+// Initialize from props
+if (props.operator) {
+  dateRangeModel.value = internalToAtlasOperator(props.operator)
+}
+
+// Use nextTick to set both value and extent to ensure proper rendering
+nextTick(() => {
   if (props.value) {
     dateValueModel.value = parseDate(props.value) || ''
+  }
+  if (props.extent) {
+    dateExtentModel.value = parseDate(props.extent) || ''
   }
 })
 
 watch(
-  () => [props.operator, props.value],
-  ([newOperator, newValue]) => {
+  () => [props.operator, props.value, props.extent],
+  ([newOperator, newValue, newExtent]) => {
     if (newOperator) {
       dateRangeModel.value = internalToAtlasOperator(newOperator)
     }
     if (newValue) {
       dateValueModel.value = parseDate(newValue) || ''
+    }
+    if (newExtent) {
+      dateExtentModel.value = parseDate(newExtent) || ''
     }
   }
 )
@@ -96,14 +106,14 @@ watch(
     }
     emit('update', payload)
   },
-  { immediate: true }
+  { immediate: false } // Don't emit on mount - wait for props to be set first
 )
 const updateDateValueModel = (payload: { date: string | Date; isEmpty: boolean }) => {
-  dateValueModel.value = formatDateToYMD(payload.date)
+  dateValueModel.value = payload.date
 }
 
 const updateDateExtentModel = (payload: { date: string | Date; isEmpty: boolean }) => {
-  dateExtentModel.value = formatDateToYMD(payload.date)
+  dateExtentModel.value = payload.date
 }
 </script>
 
