@@ -86,7 +86,7 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
             connectionDetailsString=dqd_params.connectionDetails,
             cdmDatabaseSchema = dqd_params.schemaName,
             vocabDatabaseSchema = dqd_params.vocabSchemaName,
-            resultsDatabaseSchema = dqd_params.schemaName,
+            resultsDatabaseSchema = dqd_params.resultsSchemaName,
             cdmSourceName = dqd_params.schemaName,
             numThreads = dqd_params.numThreads,
             sqlOnly = dqd_params.sqlOnly,
@@ -108,6 +108,7 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
 
     # Create a markdown artifact with the result data
     artifact_key = f"{flow_run_id}-dqd-output"
+
     create_markdown_artifact(
         key=artifact_key,
         markdown=json.dumps(result_data),
@@ -135,13 +136,3 @@ def get_cohort_database_schema(dataset_id: str) -> str:
             f"Successfully fetched cohort_database_schema: {cohort_database_schema}"
         )
         return cohort_database_schema
-
-
-if __name__ == "__main__":
-    try:
-        execute_dqd(
-            {"schemaName": "schemaName", "cdmVersionNumber": "5.4", "threads": 1}
-        )
-        sys.exit(0)
-    except Exception as e:
-        print(e)

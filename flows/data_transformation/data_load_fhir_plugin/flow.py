@@ -83,7 +83,7 @@ def load_data(dataset_token, json_file, logger):
                 logger.debug(data.get("resourceType"))
                 if isinstance(data, dict) and data.get("resourceType") == "Bundle":
                     logger.debug(f"Processing Bundle in file '{json_file}'")
-                    response = fhir_api.post(studyToken=dataset_token, resourceType="Bundle", resource=data)
+                    response = fhir_api.post(studyToken=dataset_token, resourceType="", resource=data)
                     logger.info(f"Posted Bundle: {response}")
                 elif isinstance(data, list):
                     for idx, entry in enumerate(data):

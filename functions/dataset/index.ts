@@ -160,7 +160,7 @@ export class DatasetRouter {
                     schema_name: schemaName,
                     cleansed_schema_option: cleansedSchemaOption,
                     vocab_schema: vocabSchema,
-                    result_schema: resultSchemaValue,
+                    results_schema: resultSchemaValue,
                     plugin: plugin,
                   },
                 };
@@ -289,7 +289,7 @@ export class DatasetRouter {
                   dialect as DbDialect
                 ),
                 source_schema: schemaName,
-                result_schema: resultSchemaName,
+                results_schema: resultSchemaName,
                 dialect: dialect,
                 snapshot_copy_config: snapshotCopyConfig,
               },

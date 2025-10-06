@@ -8,6 +8,7 @@ class DqdOptionsType(BaseModel):
     databaseCode: str
     cdmVersionNumber: str
     vocabSchemaName: str
+    resultsSchemaName: str
     releaseDate: str
     cohortDefinitionId: Optional[str] = None
     checkNames: Optional[List[str]] = None
@@ -49,7 +50,7 @@ class DqdParams(DqdOptionsType):
         return (
             self.materializedCohortDatabaseSchema
             or self.cohortDatabaseSchema
-            or self.schemaName
+            or self.resultsSchemaName
         )
 
     def to_json_dict(self) -> dict:
@@ -61,6 +62,7 @@ class DqdParams(DqdOptionsType):
             "databaseCode": self.databaseCode,
             "cdmVersionNumber": self.cdmVersionNumber,
             "vocabSchema": self.vocabSchemaName,
+            "resultsSchema": self.resultsSchemaName,
             "releaseDate": self.releaseDate,
             "cohortDefinitionId": self.cohortDefinitionId,
             "outputFolder": self.outputFolder,
