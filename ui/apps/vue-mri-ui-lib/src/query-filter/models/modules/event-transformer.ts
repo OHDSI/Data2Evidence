@@ -1,5 +1,5 @@
 import type { QueryFilterEvent, QueryFilterAttribute } from '../../types/QueryFilterTypes'
-import { hasAttributeId, isNumericRangeAttribute } from './type-guards'
+import { hasAttributeId } from './type-guards'
 
 // Transform events from new structure to internal structure
 export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] => {
@@ -73,24 +73,11 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
           if (mainEvent.eventType === 'demographic') {
             remainingAttributes.push(attr)
           }
-          // Keep concept-based attributes (like gender) in the attributes array for UI compatibility
-          else if (attributeType === 'standard' && 'conceptItems' in attr && attr.conceptItems) {
+          // Keep all standard attributes (concept, numericRange, dateRange) in the attributes array
+          else if (attributeType === 'standard') {
             remainingAttributes.push(attr)
           } else {
-            // For other attribute types (like age) on non-demographic events
-            mainEvent.attributeConfig = {
-              id: attributeId,
-              name: attributeId,
-              description: '',
-              type: attributeType,
-              category: 'criteria-specific',
-            }
-
-            if (isNumericRangeAttribute(attr)) {
-              mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
-              mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
-            }
-
+            // For other attribute types, add to processedAttributes
             processedAttributes.push(attr)
           }
         } else {

@@ -461,8 +461,9 @@ export const buildNestedCriteriaFromAttributes = (
         return attributeType === 'nested' && attr.nestedCriteria?.events
       })
 
-      // Handle attributes - both demographic and concept-type attributes
-      const allAttributes = nestedEvent.attributes.filter(attr => 'configType' in attr && attr.configType === 'concept')
+      // Handle all standard attributes (concept, numericRange, dateRange, boolean, text, etc.)
+      // Exclude only nested attributes which are handled separately
+      const allAttributes = nestedEvent.attributes.filter(attr => 'configType' in attr && attr.configType !== 'nested')
 
       // Add attributes to the criteria
       allAttributes.forEach(attr => {
@@ -481,23 +482,42 @@ export const buildNestedCriteriaFromAttributes = (
               // Set the appropriate field based on attribute type - use dynamic event type
               const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
               criteria.Criteria[atlasEventType][fieldName] = conceptData
+              console.log('[nested-criteria-processor] Added concept attribute:', {
+                fieldName,
+                conceptCount: conceptData.length,
+              })
             } else {
               // Initialize empty array for concept-type attributes
               const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
               criteria.Criteria[atlasEventType][fieldName] = []
             }
-          } else if (attr.attributeId === 'age' && isNumericRangeAttribute(attr)) {
-            const ageConfig: NumericRange = {
-              Value: 0,
-              Op: 'gt', // Default operator
+          }
+          // Handle numericRange attributes (age, ageAtStart, ageAtEnd, etc.)
+          else if (isNumericRangeAttribute(attr)) {
+            const attributeKey = getAtlasAttributeKey(attr.attributeId, 'DemographicCriteria')
+            const numericConfig: NumericRange = {
+              Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+              Value: attr.value !== undefined ? parseInt(attr.value) : 0,
             }
-            if (attr.operator) {
-              ageConfig.Op = mapOperatorToAtlas(attr.operator)
+            if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+              numericConfig.Extent = parseInt(attr.extent)
             }
-            if (attr.value !== undefined) {
-              ageConfig.Value = parseInt(attr.value)
-            }
-            criteria.Criteria[atlasEventType].Age = ageConfig
+            criteria.Criteria[atlasEventType][attributeKey] = numericConfig
+            console.log('[nested-criteria-processor] Added numericRange attribute:', {
+              eventType: atlasEventType,
+              attributeKey,
+              numericConfig,
+            })
+          }
+          // TODO: Add handlers for other attribute types (dateRange, boolean, text, dateAdjustment, userDefinedPeriod)
+          // For now, log unsupported types to help identify what needs implementation
+          else {
+            console.warn('[nested-criteria-processor] Unsupported attribute type:', {
+              eventType: atlasEventType,
+              attributeId: attr.attributeId,
+              configType: 'configType' in attr ? attr.configType : 'unknown',
+              attribute: attr,
+            })
           }
         }
       })

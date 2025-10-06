@@ -368,21 +368,7 @@ export class QueryFilterCriteriaManager {
                     },
                   }
 
-                  // Check for age attributes that belong directly to this event
-                  const ageAttributes = group.events.filter(
-                    e =>
-                      e.parentEventId === event.id &&
-                      e.attributeConfig?.type === 'numericRange' &&
-                      e.attributeConfig?.id === 'age'
-                  )
-                  if (ageAttributes.length > 0) {
-                    criteria.Criteria[atlasEventType].Age = {
-                      Op: 'gt',
-                    }
-                  }
-
                   // Check for nested criteria in attributes format
-
                   const attributesNestedCriteria: QueryFilterAttribute[] =
                     event.attributes?.filter(attr => {
                       return attr.attributeType === 'nested' && attr.nestedCriteria?.events
@@ -413,40 +399,64 @@ export class QueryFilterCriteriaManager {
                     }
                   }
 
-                  // Handle concept-type attributes on the main event
+                  // Handle attributes directly on the main event
                   if (event.attributes) {
-                    const conceptAttributes = event.attributes.filter(
-                      attr => hasAttributeId(attr) && 'configType' in attr && attr.configType === 'concept'
-                    )
-
-                    conceptAttributes.forEach(attr => {
-                      if (
-                        hasAttributeId(attr) &&
-                        'conceptItems' in attr &&
-                        attr.conceptItems &&
-                        attr.conceptItems.length > 0
-                      ) {
-                        const conceptData = attr.conceptItems.map(item => ({
-                          CONCEPT_CODE: item.code,
-                          CONCEPT_ID: item.conceptId,
-                          CONCEPT_NAME: item.conceptName,
-                          DOMAIN_ID: item.domainId,
-                          VOCABULARY_ID: item.system,
-                        }))
-
-                        const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
-                        criteria.Criteria[atlasEventType][fieldName] = conceptData
-                      }
-                    })
-
-                    // Handle all other attributes
+                    // Process each attribute based on its configType
                     event.attributes.forEach(attr => {
                       if (hasAttributeId(attr) && 'configType' in attr) {
-                        const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
-                        if (attr.configType === 'boolean') {
+                        // Handle concept-type attributes
+                        if (
+                          attr.configType === 'concept' &&
+                          'conceptItems' in attr &&
+                          attr.conceptItems &&
+                          attr.conceptItems.length > 0
+                        ) {
+                          const conceptData = attr.conceptItems.map(item => ({
+                            CONCEPT_CODE: item.code,
+                            CONCEPT_ID: item.conceptId,
+                            CONCEPT_NAME: item.conceptName,
+                            DOMAIN_ID: item.domainId,
+                            VOCABULARY_ID: item.system,
+                          }))
+                          const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                          criteria.Criteria[atlasEventType][fieldName] = conceptData
+                        }
+                        // Handle numericRange attributes (age)
+                        else if (attr.configType === 'numericRange' && isNumericRangeAttribute(attr)) {
+                          const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                          const numericConfig: NumericRange = {
+                            Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                            Value: attr.value !== undefined ? parseInt(attr.value) : 0,
+                          }
+                          if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+                            numericConfig.Extent = parseInt(attr.extent)
+                          }
+                          criteria.Criteria[atlasEventType][attributeKey] = numericConfig
+                          console.log('[QueryFilterModel] Added numericRange attribute:', {
+                            attributeKey,
+                            numericConfig,
+                            fromAttribute: { operator: attr.operator, value: attr.value, extent: attr.extent },
+                          })
+                        }
+                        // Handle dateRange attributes
+                        else if (attr.configType === 'dateRange' && isDateRangeAttribute(attr)) {
+                          const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                          const dateConfig: DateRange = {
+                            Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                            Value: attr.value || '',
+                            Extent: attr.extent || '',
+                          }
+                          criteria.Criteria[atlasEventType][attributeKey] = dateConfig
+                          console.log('[QueryFilterModel] Added dateRange attribute:', { attributeKey, dateConfig })
+                        }
+                        // Handle boolean attributes
+                        else if (attr.configType === 'boolean') {
+                          const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
                           criteria.Criteria[atlasEventType][attributeKey] = true
                         }
-                        if ('value' in attr && attr.value) {
+                        // Generic fallback for other attribute types
+                        else if ('value' in attr && attr.value) {
+                          const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
                           criteria.Criteria[atlasEventType][attributeKey] = attr.value
                         }
                       }
@@ -566,34 +576,57 @@ export class QueryFilterCriteriaManager {
             }
           }
 
-          // Handle concept-type attributes on the main exit event
+          // Handle attributes directly on the exit event
           if (event.attributes) {
-            const conceptAttributes = event.attributes.filter(
-              attr => hasAttributeId(attr) && 'configType' in attr && attr.configType === 'concept'
-            )
-
-            conceptAttributes.forEach(attr => {
-              if (hasAttributeId(attr) && 'conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
-                const conceptData = attr.conceptItems.map(item => ({
-                  CONCEPT_CODE: item.code,
-                  CONCEPT_ID: item.conceptId,
-                  CONCEPT_NAME: item.conceptName,
-                  DOMAIN_ID: item.domainId,
-                  VOCABULARY_ID: item.system,
-                }))
-
-                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
-                criteria[eventType][fieldName] = conceptData
-              }
-            })
-            // Handle all other attributes
             event.attributes.forEach(attr => {
               if (hasAttributeId(attr) && 'configType' in attr) {
-                const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
-                if (attr.configType === 'boolean') {
+                // Handle concept-type attributes
+                if (
+                  attr.configType === 'concept' &&
+                  'conceptItems' in attr &&
+                  attr.conceptItems &&
+                  attr.conceptItems.length > 0
+                ) {
+                  const conceptData = attr.conceptItems.map(item => ({
+                    CONCEPT_CODE: item.code,
+                    CONCEPT_ID: item.conceptId,
+                    CONCEPT_NAME: item.conceptName,
+                    DOMAIN_ID: item.domainId,
+                    VOCABULARY_ID: item.system,
+                  }))
+                  const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                  criteria[eventType][fieldName] = conceptData
+                }
+                // Handle numericRange attributes (age)
+                else if (attr.configType === 'numericRange' && isNumericRangeAttribute(attr)) {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
+                  const numericConfig: NumericRange = {
+                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                    Value: attr.value !== undefined ? parseInt(attr.value) : 0,
+                  }
+                  if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+                    numericConfig.Extent = parseInt(attr.extent)
+                  }
+                  criteria[eventType][attributeKey] = numericConfig
+                }
+                // Handle dateRange attributes
+                else if (attr.configType === 'dateRange' && isDateRangeAttribute(attr)) {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
+                  const dateConfig: DateRange = {
+                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                    Value: attr.value || '',
+                    Extent: attr.extent || '',
+                  }
+                  criteria[eventType][attributeKey] = dateConfig
+                }
+                // Handle boolean attributes
+                else if (attr.configType === 'boolean') {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
                   criteria[eventType][attributeKey] = true
                 }
-                if ('value' in attr && attr.value) {
+                // Generic fallback for other attribute types
+                else if ('value' in attr && attr.value) {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
                   criteria[eventType][attributeKey] = attr.value
                 }
               }
@@ -655,43 +688,60 @@ export class QueryFilterCriteriaManager {
             }
           }
 
-          // Handle concept-type attributes on the main entry event
+          // Handle attributes directly on the entry event
           if (event.attributes) {
-            const conceptAttributes = event.attributes.filter(attr => {
-              const hasAttrId = hasAttributeId(attr)
-              const hasConfigType = 'configType' in attr
-              const isConceptType = hasConfigType && attr.configType === 'concept'
-
-              return hasAttrId && hasConfigType && isConceptType
-            })
-
-            conceptAttributes.forEach(attr => {
-              if (hasAttributeId(attr) && 'conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
-                const conceptData = attr.conceptItems.map(item => {
-                  const conceptName = item.conceptName || item.text || item.display_value || item.concept || ''
-
-                  return {
-                    CONCEPT_CODE: item.code || '',
-                    CONCEPT_ID: item.conceptId,
-                    CONCEPT_NAME: conceptName,
-                    DOMAIN_ID: item.domainId || 'Unknown',
-                    VOCABULARY_ID: item.system || 'Unknown',
-                  }
-                })
-
-                const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
-                criteria[eventType][fieldName] = conceptData
-              }
-            })
-
-            // Handle all other attributes
             event.attributes.forEach(attr => {
               if (hasAttributeId(attr) && 'configType' in attr) {
-                const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
-                if (attr.configType === 'boolean') {
+                // Handle concept-type attributes
+                if (
+                  attr.configType === 'concept' &&
+                  'conceptItems' in attr &&
+                  attr.conceptItems &&
+                  attr.conceptItems.length > 0
+                ) {
+                  const conceptData = attr.conceptItems.map(item => {
+                    const conceptName = item.conceptName || item.text || item.display_value || item.concept || ''
+                    return {
+                      CONCEPT_CODE: item.code || '',
+                      CONCEPT_ID: item.conceptId,
+                      CONCEPT_NAME: conceptName,
+                      DOMAIN_ID: item.domainId || 'Unknown',
+                      VOCABULARY_ID: item.system || 'Unknown',
+                    }
+                  })
+                  const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                  criteria[eventType][fieldName] = conceptData
+                }
+                // Handle numericRange attributes (age)
+                else if (attr.configType === 'numericRange' && isNumericRangeAttribute(attr)) {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
+                  const numericConfig: NumericRange = {
+                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                    Value: attr.value !== undefined ? parseInt(attr.value) : 0,
+                  }
+                  if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+                    numericConfig.Extent = parseInt(attr.extent)
+                  }
+                  criteria[eventType][attributeKey] = numericConfig
+                }
+                // Handle dateRange attributes
+                else if (attr.configType === 'dateRange' && isDateRangeAttribute(attr)) {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
+                  const dateConfig: DateRange = {
+                    Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                    Value: attr.value || '',
+                    Extent: attr.extent || '',
+                  }
+                  criteria[eventType][attributeKey] = dateConfig
+                }
+                // Handle boolean attributes
+                else if (attr.configType === 'boolean') {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
                   criteria[eventType][attributeKey] = true
                 }
-                if ('value' in attr && attr.value) {
+                // Generic fallback for other attribute types
+                else if ('value' in attr && attr.value) {
+                  const attributeKey = getAtlasAttributeKey(attr.attributeId, eventType)
                   criteria[eventType][attributeKey] = attr.value
                 }
               }

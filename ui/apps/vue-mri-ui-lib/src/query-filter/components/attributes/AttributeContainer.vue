@@ -45,7 +45,8 @@ const getUpdate = payload => {
 }
 
 const attributeType = computed(() => {
-  return 'configType' in props.attribute ? props.attribute.configType : 'text'
+  const type = 'configType' in props.attribute ? props.attribute.configType : 'text'
+  return type
 })
 </script>
 

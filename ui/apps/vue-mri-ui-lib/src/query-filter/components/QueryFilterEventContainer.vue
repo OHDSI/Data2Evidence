@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import QueryFilterNestedCriteria, { type NestedCriteria } from './QueryFilterNestedCriteria.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import type { QueryFilterEvent, QueryFilterGroup } from '../types/QueryFilterTypes'
+import type { QueryFilterEvent, QueryFilterGroup, QueryFilterAttribute } from '../types/QueryFilterTypes'
 import type {
   ConceptSetItemDisplay,
   ConceptSetDomainValues,
@@ -133,11 +133,84 @@ const duplicateEvent = (eventIndex: number) => {
 
 // Event handlers for new QueryFilterEventCard component
 const handleAttributeSelected = (eventId: string, attribute: any) => {
-  console.log('Attribute selected:', eventId, attribute)
+  const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
+  if (eventIndex !== -1) {
+    const currentEvent = eventsData.value[eventIndex]
+    if (!currentEvent) return
+
+    // Initialize attributes array if it doesn't exist
+    const currentAttributes = currentEvent.attributes || []
+
+    // Check if attribute already exists
+    const existingAttrIndex = currentAttributes.findIndex(
+      attr => 'attributeId' in attr && attr.attributeId === attribute.id
+    )
+
+    if (existingAttrIndex === -1) {
+      // Add new attribute with default values based on type
+      // Note: config has 'type' field, we map it to 'configType' for internal use
+      const attributeType = attribute.type || attribute.configType
+      let newAttribute: QueryFilterAttribute
+
+      if (attributeType === 'numericRange') {
+        // Create numericRange attribute with defaults (matches NumericRangeInput defaults)
+        newAttribute = {
+          id: `attribute_${Date.now()}`,
+          attributeId: attribute.id,
+          attributeType: 'standard',
+          configType: 'numericRange',
+          operator: 'LESS_THAN', // Default operator (lt -> LESS_THAN)
+          value: '0', // Default value
+          name: attribute.name || attribute.title || attribute.id,
+          description: attribute.description || attribute.defaultDescription || '',
+        }
+      } else {
+        // Create attribute without defaults for other types
+        newAttribute = {
+          id: `attribute_${Date.now()}`,
+          attributeId: attribute.id,
+          attributeType: 'standard',
+          configType: attributeType,
+          name: attribute.name || attribute.title || attribute.id,
+          description: attribute.description || attribute.defaultDescription || '',
+        }
+      }
+
+      const updatedEvent: QueryFilterEvent = {
+        ...currentEvent,
+        attributes: [...currentAttributes, newAttribute],
+        selectedAttributes: [...(currentEvent.selectedAttributes || []), attribute.id],
+      }
+
+      updateEvent(eventIndex, updatedEvent)
+    }
+  }
 }
 
 const handleAttributeRemoved = (eventId: string, attributeId: string) => {
-  console.log('Attribute removed:', eventId, attributeId)
+  const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
+  if (eventIndex !== -1) {
+    const currentEvent = eventsData.value[eventIndex]
+    if (!currentEvent) return
+
+    // Remove attribute from attributes array by matching the attribute's id (not attributeId field)
+    const updatedAttributes = (currentEvent.attributes || []).filter(attr => attr.id !== attributeId)
+
+    // Remove from selectedAttributes - this uses attributeId field, not id
+    const removedAttribute = currentEvent.attributes?.find(attr => attr.id === attributeId)
+    const removedAttributeId =
+      removedAttribute && 'attributeId' in removedAttribute ? removedAttribute.attributeId : null
+    const updatedSelectedAttributes = removedAttributeId
+      ? (currentEvent.selectedAttributes || []).filter(id => id !== removedAttributeId)
+      : currentEvent.selectedAttributes
+
+    const updatedEvent: QueryFilterEvent = {
+      ...currentEvent,
+      attributes: updatedAttributes,
+      selectedAttributes: updatedSelectedAttributes,
+    }
+    updateEvent(eventIndex, updatedEvent)
+  }
 }
 
 const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItemDisplay | null) => {

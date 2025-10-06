@@ -83,12 +83,6 @@ export const hasCodesetId = (
   return 'CodesetId' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object'
 }
 
-const hasAge = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { Age: NumericRange } => {
-  return (
-    'Age' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object' && criteriaObj.Age !== undefined
-  )
-}
-
 const hasCorrelatedCriteria = (
   criteriaObj: CriteriaObject
 ): criteriaObj is CriteriaObject & { CorrelatedCriteria: CorrelatedCriteria } => {
@@ -366,22 +360,8 @@ export const convertAtlasToFilters = (
           }
         }
 
-        // Handle direct Age attributes on the event
-        if (hasAge(criteriaObj)) {
-          if (!event.attributes) {
-            event.attributes = []
-          }
-          event.attributes.push({
-            id: `attribute_${Math.random().toString(36).substring(2)}`,
-            attributeId: 'age',
-            attributeType: 'standard',
-            configType: 'numericRange',
-            operator: mapAtlasOperatorToInternal(criteriaObj.Age.Op || 'gt'),
-            value: criteriaObj.Age.Value.toString(),
-          })
-        }
-
-        // Handle concept attributes on the event dynamically using configuration
+        // Handle all attributes on the event dynamically using configuration
+        // This includes: concept arrays, NumericRange (Age, AgeAtStart, etc), DateRange, and other types
         if (configLoader) {
           const atlasKeyToAttributeIdMap = configLoader.getAtlasJsonToAttributeMapping(eventType)
 
@@ -395,17 +375,36 @@ export const convertAtlasToFilters = (
                 event.attributes = []
               }
               event.attributes.push(convertConceptSetArrayToAttribute(attributeId, value, eventType, configLoader))
-            } else {
-              const attributeConfig = configLoader.getAttributeConfig(eventType, atlasKeyToAttributeIdMap[atlasKey])
+            } else if (atlasKeyToAttributeIdMap[atlasKey]) {
+              const attributeId = atlasKeyToAttributeIdMap[atlasKey]
+              const attributeConfig = configLoader.getAttributeConfig(eventType, attributeId)
+
               if (attributeConfig) {
-                event.attributes.push({
-                  id: `attribute_${Math.random().toString(36).substring(2)}`,
-                  attributeId: atlasKeyToAttributeIdMap[atlasKey],
-                  attributeType: 'standard' as const,
-                  configType: attributeConfig.type,
-                  description: attributeConfig.description || '',
-                  value: value,
-                })
+                // Check if value is a NumericRange object {Op, Value, Extent?}
+                if (typeof value === 'object' && value !== null && 'Op' in value && 'Value' in value) {
+                  const numericRange = value as NumericRange
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'numericRange',
+                    operator: mapAtlasOperatorToInternal(numericRange.Op || 'gt'),
+                    value: numericRange.Value.toString(),
+                    ...(numericRange.Extent !== undefined && { extent: numericRange.Extent.toString() }),
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                } else {
+                  // Handle other attribute types
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: attributeConfig.type,
+                    description: attributeConfig.description || '',
+                    value: value,
+                  })
+                }
               }
             }
           })

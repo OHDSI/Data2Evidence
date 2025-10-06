@@ -249,8 +249,12 @@ const handleAttributeRemoved = (attributeId: string) => {
   const updatedEvent: QueryFilterEvent = {
     ...eventData.value,
     selectedAttributes: currentSelectedAttributes.filter(id => id !== attributeId),
-    attributes: currentAttributes.filter(obj => obj.id !== attributeId),
+    attributes: currentAttributes.filter(obj => {
+      const match = obj.id !== attributeId
+      return match
+    }),
   }
+
   eventData.value = updatedEvent
   emit('attribute-removed', attributeId)
 }
