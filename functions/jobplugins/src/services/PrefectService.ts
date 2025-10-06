@@ -52,7 +52,7 @@ export class PrefectService {
       id
     );
     const studyName = revision.canvas.name;
-    const studyId = revision.canvas.id;
+    const studyId = revision.canvas.name;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow
     );
@@ -82,6 +82,23 @@ export class PrefectService {
         },
       }
     );
+    console.log(`creating auth token for flowrun (PrefectService): ${flowRunId}`);
+    await this.prefectApi.createInputAuthToken(flowRunId);
+    Promise.any([
+      new Promise(() => {
+        setTimeout(async () => {
+          const msg = "Prefect input authtoken deletion";
+          try {
+            (await this.prefectApi.deleteInputAuthToken(flowRunId))
+              ? console.log(`${msg} successful`)
+              : console.log(`${msg} failed`);
+          } catch (error) {
+            console.log(`${msg} failed`);
+            console.error(error);
+          }
+        }, 1000 * 60 * 5);
+      }),
+    ]);
     await this.analysisflowService.createAnalysisflowRun(id, flowRunId);
     return flowRunId;
   }

@@ -9,4 +9,4 @@ class CohortNodeType(Enum):
     COMPARATOR = "comparator"
 
 
-USE_TREX_CONNECTION = True
+USE_TREX_CONNECTION = False
