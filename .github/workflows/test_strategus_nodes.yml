@@ -34,7 +34,6 @@ jobs:
 
       - name: execute run_hades_test.sh script
         if: env.WF_RUN == 'true'
-        working-directory: ./flows/hades/strategus_plugin
         run: |
-          chmod +x ./run_hades_test.sh
-          ./run_hades_test.sh
+          chmod +x ./flows/hades/strategus_plugin/run_hades_test.sh
+          ./flows/hades/strategus_plugin/run_hades_test.sh
