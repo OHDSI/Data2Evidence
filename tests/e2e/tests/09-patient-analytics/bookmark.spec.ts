@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'patient_analytics_bookmark'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -158,10 +158,20 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.locator('#pane-left').getByRole('listitem').filter({ hasText: 'Cohorts' }).click()
-    await expect(page.getByText('Other saved filters0. Icons/')).toBeVisible({ timeout: 20000 })
-    await page.getByTitle('Delete Saved Filter').getByRole('img').click()
-    await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
-    await expect(page.getByText('Other saved filters0. Icons/')).not.toBeVisible({ timeout: 20000 })
+    await page
+    .getByText('Other saved filters')
+    .locator('..')
+    .locator('..')
+    .locator('..')
+    .locator('..')
+    .locator('> .footer')
+    .locator('div:nth-child(5) > svg')
+    .first()
+    .click()
+    await page.getByRole('button', { name: 'Delete' }).click()
+  // Wait for delete dialog to disappear
+    await expect(page.getByText('Delete Saved Filter')).not.toBeVisible()
+    await expect(page.getByText('Other saved filters')).not.toBeVisible()
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
@@ -310,11 +320,22 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('cell', { name: 'testuserB' })).toBeVisible()
     //Grant permissions to testuserB
     await page.getByRole('link', { name: 'Datasets' }).click()
+
+    // Manage dataset permissions
     await page.getByRole('button', { name: 'Select action' }).first().click()
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
-    await page.getByTestId('dialog').getByTestId('button').click()
-    await page.getByRole('menuitem', { name: 'testuserB' }).click({ timeout: 30000 })
+
+    // Grant access to testuserC user
+    const addButton = page.getByTestId('dialog').getByTestId('button')
+    await expect(addButton).toBeVisible()
+    await addButton.click()
+    await expect(page.getByRole('menu')).toBeVisible({ timeout: 10000 })
+    // Wait for 5 seconds to ensure the menu items are visible
+    await page.waitForTimeout(5000)
+    await expect(page.getByRole('menuitem', { name: 'testuserB' })).toBeVisible({ timeout: 10000 })
+    await page.getByRole('menuitem', { name: 'testuserB' }).click()
+    await expect(page.getByRole('cell', { name: 'testuserB' })).toBeVisible({ timeout: 10000 })
     await page.getByTestId('dialog-close').click()
   })
 
@@ -377,5 +398,24 @@ test(TEST_NAME, async ({ page }) => {
       .locator('.footer .icon-button[title="Delete Saved Filter"]')
       .click()
     await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
+    // Click delete for "Shared saved filter"
+    await page
+      .locator('.item-card', { hasText: 'Shared saved filter' })
+      .locator('.footer .icon-button[title="Delete Saved Filter"]')
+      .click()
+    await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
+    //Delete testuserB
+    //Login as admin again
+    await page.getByRole('link', { name: 'Account' }).click()
+    await page.getByRole('button', { name: 'Logout' }).click()
+    await page.locator('input[name="identifier"]').click()
+    await page.locator('input[name="identifier"]').fill('admin')
+    await page.locator('input[name="password"]').click()
+    await page.locator('input[name="password"]').fill('Updatepassword12345')
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await page.getByTestId('button').nth(1).click()
+    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+    await page.getByTestId('table-row').filter({ hasText: 'testuserB' }).getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
   })
 })
