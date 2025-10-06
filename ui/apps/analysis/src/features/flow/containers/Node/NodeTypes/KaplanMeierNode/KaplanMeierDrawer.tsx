@@ -403,7 +403,7 @@ export const KaplanMeierDrawer: FC<KaplanMeierDrawerProps> = ({
       </Box>
 
       {/* Time At Risk Settings */}
-      <Box mb={4} border={"0.5px solid grey"} padding={"20px"}>
+      {/* <Box mb={4} border={"0.5px solid grey"} padding={"20px"}>
         <div style={{ paddingBottom: "20px" }}>Time At Risk Settings</div>
 
         <Box mb={4}>
@@ -535,7 +535,7 @@ export const KaplanMeierDrawer: FC<KaplanMeierDrawerProps> = ({
             </Select>
           </FormControl>
         </Box>
-      </Box>
+      </Box> */}
     </NodeDrawer>
   );
 };
