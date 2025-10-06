@@ -14,7 +14,7 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  test-cachedb:
+  test-strategus-nodes:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -32,9 +32,9 @@ jobs:
         run: |
           echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
 
-      - name: execute run_hades_flow.sh
+      - name: execute run_hades_test.sh script
         if: env.WF_RUN == 'true'
         working-directory: ./flows/hades/strategus_plugin
         run: |
-          chmod +x ./run_hades_flow.sh
-          ./run_hades_flow.sh
+          chmod +x ./run_hades_test.sh
+          ./run_hades_test.sh
