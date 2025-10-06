@@ -66,7 +66,9 @@ const store = instance?.appContext.config.globalProperties['$store']
 
 // Use the reactive prop directly instead of local copy
 const eventData = computed({
-  get: () => props.event,
+  get: () => {
+    return props.event
+  },
   set: (value: QueryFilterEvent) => {
     emit('update:event', value)
   },

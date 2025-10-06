@@ -49,7 +49,10 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
           hasAttributeId(attr) &&
           attributeType &&
           attributeType !== 'nested' &&
-          (configType === 'conceptSet' || configType === 'concept' || configType === 'numericRange')
+          (configType === 'conceptSet' ||
+            configType === 'concept' ||
+            configType === 'numericRange' ||
+            configType === 'dateRange')
         ) {
           const attributeId = attr.attributeId
 
@@ -58,11 +61,16 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
             mainEvent.selectedAttributes = []
           }
           mainEvent.selectedAttributes.push(attributeId)
+
+          // Keep all attributes in remainingAttributes for demographic events
+          if (mainEvent.eventType === 'demographic') {
+            remainingAttributes.push(attr)
+          }
           // Keep concept-based attributes (like gender) in the attributes array for UI compatibility
-          if (attributeType === 'standard' && 'conceptItems' in attr && attr.conceptItems) {
+          else if (attributeType === 'standard' && 'conceptItems' in attr && attr.conceptItems) {
             remainingAttributes.push(attr)
           } else {
-            // For other attribute types (like age)
+            // For other attribute types (like age) on non-demographic events
             mainEvent.attributeConfig = {
               id: attributeId,
               name: attributeId,
@@ -115,6 +123,7 @@ export const transformNestedEvents = (events: QueryFilterEvent[], parentId: stri
       isExpanded: event.isExpanded,
       cardinality: event.cardinality,
       parentEventId: parentId,
+      selectedAttributes: event.selectedAttributes, // Preserve selectedAttributes from import
     }
 
     if (event.attributes && event.attributes.length > 0) {

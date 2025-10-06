@@ -60,6 +60,7 @@ const attributeType = computed(() => {
         @update="getUpdate"
         :value="props.attribute && 'value' in props.attribute && props.attribute.value"
         :operator="props.attribute && 'operator' in props.attribute && props.attribute.operator"
+        :extent="props.attribute && 'extent' in props.attribute && props.attribute.extent"
       />
     </div>
     <div class="attribute-btn-container">

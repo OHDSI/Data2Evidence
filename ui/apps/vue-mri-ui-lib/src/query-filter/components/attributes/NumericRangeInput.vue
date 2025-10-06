@@ -11,10 +11,11 @@ import SelectMaterial from '../SelectMaterial.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { numericRangeOptions } from '../../utils/AtlasUtils'
 
-// Props now use internal format: operator (string like 'GREATER_THAN') and value (string)
+// Props now use internal format: operator (string like 'GREATER_THAN'), value (string), and extent (string)
 const props = defineProps<{
   value?: string
   operator?: string
+  extent?: string
 }>()
 
 // Emit internal format: operator and value as strings
@@ -66,16 +67,22 @@ onMounted(() => {
   if (props.value) {
     numValueModel.value = props.value
   }
+  if (props.extent) {
+    numExtentModel.value = props.extent
+  }
 })
 
 watch(
-  () => [props.operator, props.value],
-  ([newOperator, newValue]) => {
+  () => [props.operator, props.value, props.extent],
+  ([newOperator, newValue, newExtent]) => {
     if (newOperator) {
       numRangeModel.value = internalToAtlasOperator(newOperator)
     }
     if (newValue) {
       numValueModel.value = newValue
+    }
+    if (newExtent) {
+      numExtentModel.value = newExtent
     }
   }
 )
@@ -94,7 +101,7 @@ watch(
     }
     emit('update', payload)
   },
-  { immediate: true }
+  { immediate: false } // Don't emit on mount - wait for props to be set first
 )
 </script>
 

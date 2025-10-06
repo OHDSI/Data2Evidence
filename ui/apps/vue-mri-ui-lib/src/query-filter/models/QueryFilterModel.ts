@@ -494,7 +494,7 @@ export class QueryFilterCriteriaManager {
 
                     // Handle numericRange attributes (e.g., Age) - Convert from internal format to Atlas format
                     if (isNumericRangeAttribute(attr) && 'operator' in attr && 'value' in attr && attr.value) {
-                      const numericRange: any = {
+                      const numericRange: NumericRange = {
                         Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
                         Value: parseInt(attr.value),
                       }
@@ -511,7 +511,7 @@ export class QueryFilterCriteriaManager {
                       'conceptItems' in attr &&
                       attr.conceptItems
                     ) {
-                      const conceptData = (attr.conceptItems as any[]).map(item => ({
+                      const conceptData = attr.conceptItems.map(item => ({
                         CONCEPT_CODE: item.code,
                         CONCEPT_ID: item.conceptId,
                         CONCEPT_NAME: item.conceptName,
@@ -533,7 +533,10 @@ export class QueryFilterCriteriaManager {
                 }
 
                 // Return as array with single item if there are any demographic criteria
-                return Object.keys(demographicCriteria).length > 0 ? [demographicCriteria as DemographicCriteria] : []
+                if (Object.keys(demographicCriteria).length > 0) {
+                  return [demographicCriteria as DemographicCriteria]
+                }
+                return []
               }),
             Groups: processNestedGroups(group.events, systemIdToAtlasId).filter(
               group =>

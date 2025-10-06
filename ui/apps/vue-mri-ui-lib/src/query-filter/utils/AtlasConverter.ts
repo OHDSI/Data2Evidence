@@ -460,6 +460,9 @@ export const convertAtlasToFilters = (
                     'Op' in value &&
                     'Value' in value
                   ) {
+                    const mappedOperator = mapAtlasOperatorToInternal(value.Op)
+                    const mappedValue = value.Value.toString()
+
                     // NumericRange type (e.g., Age) - Convert from Atlas format to internal format
                     const numericAttribute: QueryFilterAttributeNumericRange = {
                       id: `attribute_${Math.random().toString(36).substring(2)}`,
@@ -468,8 +471,8 @@ export const convertAtlasToFilters = (
                       configType: 'numericRange',
                       name: attrConfig.name,
                       description: attrConfig.description,
-                      operator: mapAtlasOperatorToInternal(value.Op),
-                      value: value.Value.toString(),
+                      operator: mappedOperator,
+                      value: mappedValue,
                       ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
                     }
                     demographicEvent.attributes.push(numericAttribute)
@@ -499,6 +502,13 @@ export const convertAtlasToFilters = (
                     demographicEvent.attributes.push(dateAttribute)
                   }
                 })
+              }
+
+              // Need to populate selectedAttributes for UI to show the attributes
+              if (demographicEvent.attributes && demographicEvent.attributes.length > 0) {
+                demographicEvent.selectedAttributes = demographicEvent.attributes.map(
+                  attr => attr.attributeId || attr.id
+                )
               }
 
               nestedCriteriaEvents.push(demographicEvent)
@@ -616,7 +626,15 @@ export const convertAtlasToFilters = (
                 }
 
                 // Handle based on attribute type from config
-                if (attrConfig.type === 'numericRange' && 'Value' in value) {
+                if (
+                  attrConfig.type === 'numericRange' &&
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value
+                ) {
+                  const mappedOperator = mapAtlasOperatorToInternal(value.Op)
+                  const mappedValue = value.Value.toString()
                   // NumericRange type (e.g., Age) - Convert from Atlas format to internal format
                   const numericAttribute: QueryFilterAttributeNumericRange = {
                     id: `attribute_${Math.random().toString(36).substring(2)}`,
@@ -625,10 +643,11 @@ export const convertAtlasToFilters = (
                     configType: 'numericRange',
                     name: attrConfig.name,
                     description: attrConfig.description,
-                    operator: mapAtlasOperatorToInternal(value.Op),
-                    value: value.Value.toString(),
+                    operator: mappedOperator,
+                    value: mappedValue,
                     ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
                   }
+
                   demographicEvent.attributes.push(numericAttribute)
                 } else if (attrConfig.type === 'concept' && Array.isArray(value) && value.length > 0) {
                   // Concept type (e.g., Gender, Race, Ethnicity)
@@ -656,6 +675,11 @@ export const convertAtlasToFilters = (
                   demographicEvent.attributes.push(dateAttribute)
                 }
               })
+            }
+
+            // Need to populate selectedAttributes for UI to show the attributes
+            if (demographicEvent.attributes && demographicEvent.attributes.length > 0) {
+              demographicEvent.selectedAttributes = demographicEvent.attributes.map(attr => attr.attributeId || attr.id)
             }
 
             criteriaItem.events.push(demographicEvent)

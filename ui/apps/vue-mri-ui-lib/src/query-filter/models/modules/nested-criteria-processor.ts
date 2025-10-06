@@ -388,6 +388,10 @@ export const buildNestedCriteriaFromAttributes = (
               Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
               Value: attr.value !== undefined ? parseInt(String(attr.value)) : 0,
             }
+            // Include Extent for BETWEEN/NOT_BETWEEN operations
+            if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+              numericConfig.Extent = parseInt(String(attr.extent))
+            }
           }
 
           if (numericConfig) {
