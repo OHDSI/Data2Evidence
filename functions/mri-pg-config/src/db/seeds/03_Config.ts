@@ -25555,7 +25555,7 @@ const paConfigDuckdb = {
                     "cached": true,
                     "useRefText": false,
                     "useRefValue": false,
-                    "category": false,
+                    "category": true,
                     "measure": false,
                     "filtercard": {
                         "initial": false,
