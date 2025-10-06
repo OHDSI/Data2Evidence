@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Concepts' }).click()
   await expect(page.getByText('1–25 of 444')).toBeVisible()
-  await expect(page).toHaveScreenshot('concept-sets-1.png', { maxDiffPixels: 100 })
+  await expect.soft(page).toHaveScreenshot('concept-sets-1.png', { maxDiffPixels: 100 })
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
   // Concept set
@@ -73,7 +73,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(2000)
   await page.getByRole('textbox', { name: 'Enter search term' }).press('Enter')
   await expect(page.getByText('1677 / 2694')).toBeVisible({ timeout: 10000 })
-  await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
+  await expect.soft(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
   await page.getByText('✎').click()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
@@ -91,5 +91,5 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Close' }).click()
 
   await expect(page.getByText('1836 / 2694')).toBeVisible({ timeout: 10000 })
-  await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
+  await expect.soft(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
 })
