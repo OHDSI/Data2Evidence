@@ -17,7 +17,9 @@ from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
 from prefect import task, flow
+from prefect.runtime import flow_run
 from prefect.context import TaskRunContext
+from prefect.artifacts import create_markdown_artifact
 
 from .types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
@@ -150,7 +152,7 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = OutcomeDef(node)
         case "cohort_incidence_node":
             nodeobj = CohortIncidenceModuleSpec(node)
-        case "cohort_definition_set_node":
+        case "cohort_node":
             nodeobj = CohortDefinitionSharedResource(node)
         case "outcomes_node":
             nodeobj = CMOutcomes(node)
@@ -195,7 +197,7 @@ class OutcomeDef(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortIncidence = ro.packages.importr('CohortIncidence')
                 rOutcomeDef = rCohortIncidence.createOutcomeDef(
                     id = convert_py_to_R(self.defId), 
@@ -220,7 +222,7 @@ class TimeAtRiskNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortIncidence = ro.packages.importr('CohortIncidence')
                 rTimeAtRisk = rCohortIncidence.createTimeAtRiskDef(
                     id = convert_py_to_R(self.id),
@@ -246,7 +248,7 @@ class CohortIncidenceModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rCohortIncidence = ro.packages.importr('CohortIncidence')
                 rCohortIncidenceModule = rStrategus.CohortIncidenceModule['new']()
@@ -299,7 +301,7 @@ class CharacterizationModuleSpecNode(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rcm = rStrategus.CharacterizationModule['new']()
                 rcmCreateModuleSpec = rcm['createModuleSpecifications']
@@ -329,7 +331,7 @@ class DefaultCovariateSettingsNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rFeatureExtraction = ro.packages.importr('FeatureExtraction')
                 rCovariateSettings = rFeatureExtraction.createDefaultCovariateSettings()
                 return Result(False,  rCovariateSettings, self, task_run_context)
@@ -341,45 +343,58 @@ class DefaultCovariateSettingsNode(Node):
 # cohortIds - list of cohort IDs
 # cohortType - type of the cohort (e.g., event, target, outcome)
 class CohortDefinitionSharedResource(Node):
-    def __init__(self, node):
+    cohortId: int
+    cohortType: CohortNodeType
+    cohortName: str
+
+    def __init__(self, node: dict):
         super().__init__(node)
-        self.cohortIds = node.get("cohorts", [])
-        self.type = node.get("cohortType", CohortNodeType.EVENT)
+        cohort_info = node["cohorts"][0]
+        self.cohortId = int(cohort_info["cohortId"])
+        cohort_type_val = node.get("cohortType")
+        if not cohort_type_val:
+            self.cohortType = CohortNodeType.EVENT
+        else:
+            self.cohortType = CohortNodeType(cohort_type_val)
+        self.cohortName = str(cohort_info["cohortName"])
 
     # create cohortdefinition shared resource
     # uses R package CohortGeneratorModule in Strategus 
     # calls the R method createCohortSharedResourceSpecifications. 
     # It also builds cohortdefinition using CirceR module.
     def task(self, task_run_context):
-        webapi = WebAPI()
+        parent_flow_run_id = flow_run.get_parent_flow_run_id()
+        print(f"parent_flow_run_id: {parent_flow_run_id}")
+        webapi = WebAPI(parent_flow_run_id)
 
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortGenerator = ro.packages.importr('CohortGenerator')
                 rCirce = ro.packages.importr('CirceR')
                 rbind = ro.r['rbind']
                 rCohortDefinitionSet = rCohortGenerator.createEmptyCohortDefinitionSet()
                 datasetId = self.flowOptions.get("datasetId", "") # TODO: throw error if not found
-                for c in self.cohortIds:
-                    cohort_definition = webapi.get_cohort_definition(c, datasetId)
-                    cohortDefStr = json.dumps(cohort_definition["expression"])
-                    rcohortExpr = rCirce.cohortExpressionFromJson(cohortDefStr)
-                    rOptions = rCirce.createGenerateOptions(generateStats = convert_py_to_R(False))
-                    rCohortSql = rCirce.buildCohortQuery(rcohortExpr, options = rOptions)
-                    new_row = ro.r['data.frame'](
-                        cohortId = convert_py_to_R(c),
-                        cohortName = convert_py_to_R(cohort_definition["name"]),
-                        sql = rCohortSql,
-                        json = convert_py_to_R(cohortDefStr)
-                    )
-                    rCohortDefinitionSet = rbind(rCohortDefinitionSet, new_row)
+                cohort_definition = webapi.get_cohort_definition(self.cohortId, datasetId)
+                cohortDefStr = json.dumps(cohort_definition["expression"])
+                rcohortExpr = rCirce.cohortExpressionFromJson(cohortDefStr)
+                rOptions = rCirce.createGenerateOptions(generateStats = convert_py_to_R(False))
+                rCohortSql = rCirce.buildCohortQuery(rcohortExpr, options = rOptions)
+                new_row = ro.r['data.frame'](
+                    cohortId = convert_py_to_R(self.cohortId),
+                    cohortName = convert_py_to_R(cohort_definition["name"]),
+                    sql = rCohortSql,
+                    json = convert_py_to_R(cohortDefStr)
+                )
+                rCohortDefinitionSet = rbind(rCohortDefinitionSet, new_row)
 
                 rStrategus = ro.packages.importr('Strategus')
                 rcgm = rStrategus.CohortGeneratorModule['new']()
                 rCreateCohortSharedResourceSpecifications = rcgm['createCohortSharedResourceSpecifications']
                 rCohortDefinitionSharedResource = rCreateCohortSharedResourceSpecifications(cohortDefinitionSet = rCohortDefinitionSet)
-                return Result(False,  { "cohortDefinitionSharedResource": rCohortDefinitionSharedResource }, self, task_run_context)
+                rCreateCohortGenModuleSpec = rcgm['createModuleSpecifications']
+                rCohortGeneratorModuleSpecifications = rCreateCohortGenModuleSpec(generateStats = convert_py_to_R(True))
+                return Result(False,  { "cohortDefinitionSharedResource": rCohortDefinitionSharedResource, "cohortGeneratorModuleSpecifications": rCohortGeneratorModuleSpecifications }, self, task_run_context)
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -396,7 +411,7 @@ class NegativeControlOutcomeCohortSharedResource(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rNcoCohortSet = get_results_by_class_type(_input, NegativeControlCohortSet)
                 rStrategus = ro.packages.importr('Strategus')
                 rcgm = rStrategus.CohortGeneratorModule['new']()
@@ -420,7 +435,7 @@ class CohortGeneratorSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try: 
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = importr('Strategus')
                 rcgModule = rStrategus.CohortGeneratorModule['new']()
                 rCreateModuleSpecifications = rcgModule['createModuleSpecifications']
@@ -450,7 +465,7 @@ class CohortDiagnosticsModuleSpecNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rcdm = rStrategus.CohortDiagnosticsModule['new']()
                 rCreateCohortDiagnosticsModuleSpecifications = rcdm['createModuleSpecifications']
@@ -473,7 +488,7 @@ class CohortDiagnosticsModuleSpecNode(Node):
 class CMOutcomes(Node):
     def __init__(self, node):
         super().__init__(node)
-        self.cohortIds = []
+        self.cohortId = None
         self.config = {
             "trueEffectSize": node["trueEffectSize"],
             "outcomeOfInterest": node["outcomeOfInterest"],
@@ -483,14 +498,14 @@ class CMOutcomes(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
-                self.cohortIds = [cohortDefNode.cohortIds[0] for cohortDefNode in cohortDefNodes]
+                self.cohortId = cohortDefNodes[0].cohortId if cohortDefNodes else None
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rlapply = ro.r['lapply']
                 kwargs = {i[0]: i[1] for i in self.config.items() if (i[1] != "" or i[1] is False)}
                 rOutcome = rlapply(
-                    X = convert_py_to_R(self.cohortIds[0]),
+                    X = convert_py_to_R(self.cohortId),
                     FUN = rCohortMethod.createOutcome,
                     **kwargs
                 )
@@ -515,22 +530,22 @@ class TargetComparatorOutcomes(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rappend = ro.r['append']
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(_input, CohortDefinitionSharedResource)
                 
-                targetCohortDefNode = next((node for node in cohortDefNodes if node.type == CohortNodeType.TARGET), None)
+                targetCohortDefNode = next((node for node in cohortDefNodes if node.cohortType == CohortNodeType.TARGET), None)
                 if targetCohortDefNode:
-                    self.targetId = targetCohortDefNode.cohortIds[0]
-                comparatorCohortDefNode = next((node for node in cohortDefNodes if node.type == CohortNodeType.COMPARATOR), None)
+                    self.targetId = targetCohortDefNode.cohortId
+                comparatorCohortDefNode = next((node for node in cohortDefNodes if node.cohortType == CohortNodeType.COMPARATOR), None)
                 if comparatorCohortDefNode:
-                    self.comparatorId = comparatorCohortDefNode.cohortIds[0]
+                    self.comparatorId = comparatorCohortDefNode.cohortId
 
                 rOutcomes = get_results_by_class_type(_input, CMOutcomes)
                 cmOutcomesNodes = get_input_nodes_by_class_type_from_results(_input, CMOutcomes)
                 for node in cmOutcomesNodes:
-                    self.outComesCohortIds.append(node.cohortIds[0])
+                    self.outComesCohortIds.append(node.cohortId)
 
                 rCreateTargetComparatorOutcomes = rCohortMethod.createTargetComparatorOutcomes(
                     targetId = convert_py_to_R(self.targetId),
@@ -557,7 +572,7 @@ class CohortMethodAnalysis(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
@@ -580,7 +595,6 @@ class CohortMethodAnalysis(Node):
                     riskWindowEnd = convert_py_to_R(self.studyPopArgs["riskWindowEnd"]),
                     endAnchor = convert_py_to_R(self.studyPopArgs["endAnchor"]),
                     firstExposureOnly = convert_py_to_R(self.studyPopArgs["firstExposureOnly"]),
-                    requireTimeAtRisk = convert_py_to_R(self.studyPopArgs["requireTimeAtRisk"]),
                     priorOutcomeLookback = convert_py_to_R(self.studyPopArgs["priorOutcomeLookback"]),
                     removeDuplicateSubjects = convert_py_to_R(self.studyPopArgs["removeDuplicateSubjects"]),
                     removeSubjectsWithPriorOutcome = convert_py_to_R(self.studyPopArgs["removeSubjectsWithPriorOutcome"])
@@ -613,7 +627,7 @@ class CohortMethodModuleSpecNode(Node):
     def task(self, _input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCmAnalysisList = []
                 rStrategus = ro.packages.importr('Strategus')
                 rCohortMethodModule = rStrategus.CohortMethodModule['new']()
@@ -664,7 +678,7 @@ class EraCovariateSettings(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateEraCovariateSettings = rSelfControlledCaseSeries.createEraCovariateSettings
                 rCovarPreExp = rCreateEraCovariateSettings(
@@ -696,7 +710,7 @@ class CalendarCovariateSettingsNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateCalendarTimeCovariateSettings = rSelfControlledCaseSeries.createCalendarTimeCovariateSettings
                 rCalendarTimeSettings = rCreateCalendarTimeCovariateSettings(
@@ -719,7 +733,7 @@ class SeasonalityCovariateSettingsNode(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateSeasonalityCovariateSettings = rSelfControlledCaseSeries.createSeasonalityCovariateSettings
                 rSeasonalitySettings = rCreateSeasonalityCovariateSettings(
@@ -742,7 +756,7 @@ class StudyPopulationArgs(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 data = {}
                 if(self.sccsArgs):
                     rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
@@ -793,7 +807,7 @@ class NegativeControlCohortSet(Node):
     def task(self, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortGenerator = ro.packages.importr('CohortGenerator')
                 rSystemFile = ro.r['system.file']
                 rReadCsv = rCohortGenerator.readCsv
@@ -816,7 +830,7 @@ class SCCSAnalysis(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rCreateSccsAnalysis = rSelfControlledCaseSeries.createSccsAnalysis
 
@@ -877,7 +891,7 @@ class SCCSModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 rSccsModule = rStrategus.SelfControlledCaseSeriesModule['new']()
                 rCreatSelfControlledCaseSeriesModuleSpecifications = rSccsModule['createModuleSpecifications']
@@ -918,7 +932,7 @@ class PLPModuleSpec(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 studyPopulationResults = get_results_by_class_type(input, StudyPopulationArgs)
                 # filter patientLevelPredictionArgs from StudyPopulationResults (as it contains other args)
                 rPlpPopulationSettings = [r["patientLevelPredictionArgs"] for r in studyPopulationResults if r["patientLevelPredictionArgs"] != None]
@@ -955,7 +969,7 @@ class ExposuresOutcome(Node):
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rSelfControlledCaseSeries = ro.packages.importr('SelfControlledCaseSeries')
                 rExposuresOutcomeList = []
                 rCreateExposuresOutcome = rSelfControlledCaseSeries.createExposuresOutcome
@@ -986,41 +1000,41 @@ class TreatmentPatterns(Node):
         # self.name = node["name"]
         # self.description = node["description"]
         self.ageWindow = int(node.get("ageWindow", 5))  # default 5
-        self.splitTime = int(node.get("splitTime", None))  # default 0
+        self.splitTime = int(node.get("splitTime", 0))  # default 0
         self.censorType = node.get("censorType", "minCellCount")  # default "minCellCount"
         self.minCellCount = int(node.get("minCellCount", 1))  # default 1
         self.maxPathLength = int(node.get("maxPathLength", 5))  # default 5
         self.minEraDuration = int(node.get("minEraDuration", 0))  # default 0
         self.eraCollapseSize = int(node.get("eraCollapseSize", 30))  # default 30
-        self.indexDateOffset = int(node.get("indexDateOffset", 0))  # default 0
         self.filterTreatments = node.get("filterTreatments", "First")  # default "First"
         self.combinationWindow = int(node.get("combinationWindow", 30))  # default 30
-        self.includeTreatments = node.get("includeTreatments", "startDate")  # default "startDate"
+        self.startAnchor = node.get("startAnchor", "startDate")
+        self.windowStart = int(node.get("windowStart", 0))
+        self.endAnchor = node.get("endAnchor", "endDate")
+        self.windowEnd = int(node.get("windowEnd", 0))
         self.splitEventCohorts = node.get("splitEventCohorts", None)  # default None
         self.minPostCombinationDuration = int(node.get("minPostCombinationDuration", 30))  # default 30
 
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rStrategus = ro.packages.importr('Strategus')
                 cohortDefinitionNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
                 for cohortDefinition in cohortDefinitionNodes:
-                    self.cohortIds.append(cohortDefinition.cohortIds)
+                    self.cohortIds.append(cohortDefinition.cohortId)
                 rTreatmentPatternsModule = rStrategus.TreatmentPatternsModule['new']()
                 rCreateTreatmentPatternsModuleSpec = rTreatmentPatternsModule['createModuleSpecifications']
                 cohorts_df = pd.DataFrame.from_records([{
-                    'cohortId': cohortDefinitionNode.cohortIds[0],
-                    'cohortName': "", # TODO: change the cohort name
-                    "type": cohortDefinitionNode.type
+                    'cohortId': cohortDefinitionNode.cohortId,
+                    'cohortName': cohortDefinitionNode.cohortName,
+                    "type": cohortDefinitionNode.cohortType.value
                 } for cohortDefinitionNode in cohortDefinitionNodes])
 
                 rSpec = rCreateTreatmentPatternsModuleSpec(
                     cohorts = convert_py_to_R(cohorts_df),
-                    includeTreatments = convert_py_to_R(self.includeTreatments),
-                    indexDateOffset = convert_py_to_R(self.indexDateOffset),
                     minEraDuration = convert_py_to_R(self.minEraDuration),
-                    splitEventCohorts = convert_py_to_R(self.splitEventCohorts),
+                    splitEventCohorts = convert_py_to_R(self.splitEventCohorts) if self.splitEventCohorts != "" else convert_py_to_R(None),
                     splitTime = convert_py_to_R(self.splitTime),
                     eraCollapseSize = convert_py_to_R(self.eraCollapseSize),
                     combinationWindow = convert_py_to_R(self.combinationWindow),
@@ -1029,7 +1043,11 @@ class TreatmentPatterns(Node):
                     maxPathLength = convert_py_to_R(self.maxPathLength),
                     ageWindow = convert_py_to_R(self.ageWindow),
                     minCellCount = convert_py_to_R(self.minCellCount),
-                    censorType = convert_py_to_R(self.censorType)
+                    censorType = convert_py_to_R(self.censorType),
+                    startAnchor = convert_py_to_R(self.startAnchor),
+                    windowStart = convert_py_to_R(self.windowStart),
+                    endAnchor = convert_py_to_R(self.endAnchor),
+                    windowEnd = convert_py_to_R(self.windowEnd),
                 )
 
                 return Result(False, rSpec, self, task_run_context)
@@ -1039,24 +1057,27 @@ class TreatmentPatterns(Node):
 class KaplanMeierCMAnalysis(Node):
     def __init__(self, node):
         super().__init__(node)
-        self.analysisId = int(node["analysisId"])
-        self.dbCohortMethodDataArgs = node["getDbCohortMethodDataArgs"] # required
-        self.studyPopArgs = node['createStudyPopArgs'] # required
+        kmArgs = node.get("kaplanMeierArgs", None)
+        if not kmArgs:
+            raise ValueError("kaplanMeierArgs is required for KaplanMeierCMAnalysis")
+        self.analysisId = int(kmArgs["analysisId"])
+        self.dbCohortMethodDataArgs = kmArgs["getDbCohortMethodDataArgs"] # required
+        self.studyPopArgs = kmArgs['createStudyPopArgs'] # required
         # self.fitOutcomeModelArgs = getattr(node, "fitOutcomeModelArgs", None)
         # self.psArgs = getattr(node, "psArgs", None)
 
     def task(self, input: Dict[str, Result], task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rCreateCmAnalysis = rCohortMethod.createCmAnalysis
                 rCreateGetDbCohortMethodDataArgs = rCohortMethod.createGetDbCohortMethodDataArgs
                 covarSettingsNode = DefaultCovariateSettingsNode({ "type": "default_covariate_settings_node", "id": str(uuid.uuid4()), "flowOptions": self.flowOptions })
                 covarSettingsResult = covarSettingsNode.task(task_run_context)
                 rGetDbCmDataArgs = rCreateGetDbCohortMethodDataArgs(
-                    studyStartDate = convert_py_to_R(self.dbCohortMethodDataArgs["studyStartDate"]),
-                    studyEndDate = convert_py_to_R(self.dbCohortMethodDataArgs["studyEndDate"]),
+                    studyStartDate = convert_py_to_R(self.dbCohortMethodDataArgs.get("studyStartDate", "")),
+                    studyEndDate = convert_py_to_R(self.dbCohortMethodDataArgs.get("studyEndDate", "")),
                     covariateSettings = covarSettingsResult.data
                 )
                 rCreateCreateStudyPopulationArgs = rCohortMethod.createCreateStudyPopulationArgs
@@ -1093,7 +1114,7 @@ class StrategusNode(Node):
     def task(self, nodes, results, task_run_context):
         with ro.default_converter.context():
             try:
-                set_trex_env_var(USE_TREX_CONNECTION)
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 print('Executing Strategus')
                 rStrategus = ro.packages.importr('Strategus')
                 rParallelLogger = importr('ParallelLogger')
@@ -1103,6 +1124,8 @@ class StrategusNode(Node):
                 for result in sharedResourceResults:
                     rSharedResource = result["cohortDefinitionSharedResource"]
                     rSpec = rStrategus.addSharedResources(rSpec, rSharedResource)
+                    rCohortGeneratorModuleSpecifications = result["cohortGeneratorModuleSpecifications"]
+                    rSpec = rStrategus.addModuleSpecifications(rSpec, rCohortGeneratorModuleSpecifications)
 
                 for moduleSpecType in self.moduleSpecTypes:
                     try:
@@ -1123,13 +1146,12 @@ class StrategusNode(Node):
                 db_credentials = dbdao.tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
                 rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                    dbms='postgresql', 
-                    connectionString=construct_jdbc_url(db_credentials),
+                    dbms=dbdao.get_database_connector_dbms_val(), 
+                    connectionString=dbdao.get_database_connector_connection_string(),
                     user=db_credentials.adminUser,
                     password=db_credentials.adminPassword.get_secret_value(),
                     pathToDriver = databaseConnectorJarFolder
                 )
-
                 task_run = TaskRunContext.get().task_run.dict()
                 flow_run_id = str(task_run.get("flow_run_id"))
                 base_path = f'/tmp/{flow_run_id}'
@@ -1142,9 +1164,10 @@ class StrategusNode(Node):
                     "resultsFolder": path_to_results
                 })
                 rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
+                analysisSpecJson = convert_R_to_py(rParallelLogger.convertSettingsToJson(rSpec))
 
-                rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
-                return Result(False, rSpec.r_repr(), self, task_run_context)
+                execute(rSpec, rExecutionSettings, rConnectionDetails)
+                return Result(False, analysisSpecJson, self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
                 return Result(True, tb.format_exc(), self, task_run_context)
@@ -1157,7 +1180,7 @@ def get_strategus_node(options):
 def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
     with ro.default_converter.context():
         try:
-            set_trex_env_var(USE_TREX_CONNECTION)
+            ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
@@ -1171,28 +1194,46 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             )
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                dbms='postgresql', 
-                connectionString=construct_jdbc_url(db_credentials),
+                dbms=dbdao.get_database_connector_dbms_val(), 
+                connectionString=dbdao.get_database_connector_connection_string(),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
-                pathToDriver = databaseConnectorJarFolder
+                pathToDriver=databaseConnectorJarFolder
             )
 
             rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
 
             print('Strategus execution started...')
-            rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rAnalysisSpec, executionSettings = rExecutionSettings)
+            execute(rAnalysisSpec, rExecutionSettings, rConnectionDetails)
         except Exception as e:
-            print('Error: ', e)
+            print('Error: ', tb.format_exc())
             raise RuntimeError('Execution of strategus has failed')
+
+def execute(rSpec, rExecutionSettings, rConnectionDetails):
+    with ro.default_converter.context():
+        ro.r(set_trex_env_var(USE_TREX_CONNECTION))
+        rStrategus = importr('Strategus')
+    try:
+        rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
+    except Exception as e:
+        log_file_path = f"/app/errorReportSql.txt"
+        # if file exists, create an artifact to store the error logs
+        if os.path.exists(log_file_path):
+            with open(log_file_path, "r") as f:
+                file_contents = f.read()
+                create_markdown_artifact(
+                    key="strategus-analysis-error-logs",
+                    markdown=file_contents
+                )
+        raise RuntimeError('Execution of strategus has failed')
 
 @flow(name="upload-strategus-results",
       log_prints=True)
 def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
     with ro.default_converter.context():
         try:
-            set_trex_env_var(USE_TREX_CONNECTION)
+            ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
             results_schema = f'results_{dbSettings["study_id"]}'
             rStrategus = importr('Strategus')
@@ -1201,7 +1242,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
-                dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None, 
+                dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
                 use_cache_db=False,
                 database_code=database_code, 
                 is_study_results_db = True
@@ -1238,7 +1279,15 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 resultsDataModelSettings = resultsDataModelSettings
             )
         except Exception as e:
-            print('Error: ', e)
+            log_file_path = f"/app/errorReportSql.txt"
+            # if file exists, create an artifact to store the error logs
+            if os.path.exists(log_file_path):
+                with open(log_file_path, "r") as f:
+                    file_contents = f.read()
+                    create_markdown_artifact(
+                        key="strategus-analysis-error-logs",
+                        markdown=file_contents
+                    )
             raise RuntimeError('Uploading results of strategus has failed')
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
@@ -1273,7 +1322,7 @@ def drop_strategus_results_schema(dbSettings):
 def getRCdmExecutionSettings(settings) -> str:
     with ro.default_converter.context():
         try:
-            set_trex_env_var(USE_TREX_CONNECTION)
+            ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rCohortGenerator = importr('CohortGenerator')
@@ -1285,7 +1334,7 @@ def getRCdmExecutionSettings(settings) -> str:
                 workFolder = settings['workFolder'],
                 resultsFolder = settings['resultsFolder'],
                 minCellCount = 5,
-                maxCores = 8
+                maxCores = 1 if USE_TREX_CONNECTION is True else 8
             )
             return convert_R_to_py(rParallelLogger.convertSettingsToJson(rExecutionSettings))
         except Exception as e:

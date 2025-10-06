@@ -8,14 +8,20 @@ import pandas as pd
 from rpy2 import robjects as ro
 from rpy2.robjects import pandas2ri
 
+from _shared_flow_utils.logger.logger import Logger
+
 def get_node_list(graph):
     nodes = {}
     sorted_nodes = []
     for node in graph["nodes"].keys():
         nodes[node] = set()
     for edge in graph["edges"].values():
-        if edge["target"] in nodes.keys():
-            nodes[edge["target"]].add(edge["source"])
+        try:
+            if edge["target"] in nodes.keys():
+                nodes[edge["target"]].add(edge["source"])
+        except KeyError:
+            logger = Logger()
+            logger.debug(f"No target for the edge {edge['source']}")
     while nodes:
         for node in nodes.keys():
             if not nodes[node]:
@@ -31,7 +37,7 @@ def get_node_list(graph):
 def get_incoming_edges(graph, nodes, nodename):
     connected_nodes = {}
     for edge in graph["edges"].values():
-        if edge["target"] == nodename:
+        if "target" in edge and edge["target"] == nodename:
             connected_nodes[edge["source"]] = nodes[edge["source"]]
     return connected_nodes
 
