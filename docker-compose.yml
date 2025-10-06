@@ -208,6 +208,10 @@ services:
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
       PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_API_ENDPOINT: ${AZURE_OPENAI_API_ENDPOINT:-}
+      AZURE_OPENAI_API_DEPLOYMENT_NAME: ${AZURE_OPENAI_API_DEPLOYMENT_NAME:-}
+      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -378,60 +382,6 @@ services:
               header_up Host {upstream_hostport}
               transport http {
                 read_buffer 8192
-              }
-            }
-          }
-
-          @jupyter_websocket {
-            path /jupyter/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-
-          @strategus_websocket {
-            path /strategus-results/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-
-          handle @jupyter_websocket {
-            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
-              transport http {
-                tls
-                tls_insecure_skip_verify
-                read_buffer 8192
-              }
-
-              method GET
-              rewrite /usermgmt/api/me/is_token_valid_internal
-              header_up X-Forwarded-Method {method}
-              header_up X-Forwarded-Uri {uri}
-              header_up authorization {http.request.uri.query.token}
-
-              @good status 2xx
-              handle_response @good {
-                request_header Remote-User {rp.header.Remote-User}
-                request_header Remote-Email {rp.header.Remote-Email}
-              }
-            }
-
-            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
-          }
-
-          handle @strategus_websocket {
-            @study_id path_regexp /strategus-results/([^/]+)
-            handle @study_id {
-              uri strip_prefix /strategus-results/{re.1}
-              reverse_proxy {re.1}:3838 {
-                transport http {
-                  read_buffer 8192
-                }
-                header_up Host {re.1}:3838
-                header_up Connection {http.request.header.Connection}
-                header_up Upgrade {http.request.header.Upgrade}
-                header_up Sec-WebSocket-Key {http.request.header.Sec-WebSocket-Key}
-                header_up Sec-WebSocket-Version {http.request.header.Sec-WebSocket-Version}
-                header_up Sec-WebSocket-Protocol {http.request.header.Sec-WebSocket-Protocol}
               }
             }
           }
