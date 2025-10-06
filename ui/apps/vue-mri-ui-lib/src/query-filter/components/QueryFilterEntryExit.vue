@@ -149,6 +149,15 @@ const daysOffsetOptions = ['1', '2', '3', '4', '5', '6', '7', '14', '21', '30', 
 const selectedEventDateOffset = ref<'StartDate' | 'EndDate'>('StartDate')
 const selectedDaysOffset = ref<number>(30)
 
+// Initialize fixed duration settings from exitCriteriaData when component mounts or data changes
+const initializeFixedDurationSettings = () => {
+  if (props.exitCriteriaData?.fixedDuration) {
+    const settings = props.exitCriteriaData.fixedDuration
+    selectedEventDateOffset.value = settings.dateField || 'StartDate'
+    selectedDaysOffset.value = settings.offset ?? 30
+  }
+}
+
 // Show fixed duration inputs only when limit is FIXED and not ENTRY
 const showFixedDurationInputs = computed(() => {
   return !isEntry.value && initialEventsLimit.value === 'FIXED'
@@ -207,10 +216,20 @@ const initializeContDrugSettings = () => {
 
 // Initialize on mount
 onMounted(() => {
+  initializeFixedDurationSettings()
   initializeContDrugSettings()
 })
 
-// Watch for changes to exitCriteriaData and re-initialize
+// Watch for changes to exitCriteriaData.fixedDuration and re-initialize
+watch(
+  () => props.exitCriteriaData?.fixedDuration,
+  () => {
+    initializeFixedDurationSettings()
+  },
+  { deep: true, immediate: true }
+)
+
+// Watch for changes to exitCriteriaData.contDrugSettings and re-initialize
 watch(
   () => props.exitCriteriaData?.contDrugSettings,
   () => {

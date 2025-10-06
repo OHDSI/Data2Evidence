@@ -1915,6 +1915,7 @@ Groups: groupsList;
 **Root Causes**:
 
 1. **Component State Not Initialized** ([QueryFilterEntryExit.vue:172-175](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEntryExit.vue#L172-L175))
+
    - Local refs (`selectedConceptSet`, `selectedGapDays`, etc.) were initialized with hardcoded defaults
    - Never synchronized with `exitCriteriaData.contDrugSettings` prop when loading data
    - Result: Loaded data was ignored, defaults always used
@@ -1927,27 +1928,32 @@ Groups: groupsList;
 **Changes Made**:
 
 1. **QueryFilterEntryExit.vue - Component Initialization**
+
    - Added `onMounted` and `watch` hooks to initialize local refs from `exitCriteriaData.contDrugSettings`
    - Lines 177-221: Added `initializeContDrugSettings()` function
    - Watches for changes to `exitCriteriaData.contDrugSettings` and `conceptSets` props
    - Re-initializes when concept sets become available (they may load after component mounts)
 
 2. **QueryFilterTypes.ts - Type Definition Update**
+
    - Lines 132-139: Added `conceptSet` and `conceptSetDetails` fields to `contDrugSettings`
    - Follows same pattern as `QueryFilterEvent` (conceptSet, conceptSetId, conceptSetDetails)
    - Stores complete concept set information, not just ID
 
 3. **QueryFilterModel.ts - Concept Set Collection**
+
    - Lines 299-325: Added logic to collect CONT_DRUG concept set into `ConceptSets` array
    - Checks for `contDrugSettings.conceptSetId` and includes it with name and details
    - Adds to missing concept details warning if details not available
 
 4. **useCriteriaManager.ts - Fetch Concept Set Details**
+
    - Lines 101-131: Updated `handleUpdateContDrugSettings` to be async
    - Fetches concept set details using `loadSingleConceptSetDetails`
    - Passes complete concept set data (ID, name, details) to model
 
 5. **QueryFilterModel.ts - Update Method Signature**
+
    - Lines 890-906: Updated `updateContDrugSettings` to accept name and details
    - Stores all three fields in `contDrugSettings`
 
@@ -1969,6 +1975,47 @@ Groups: groupsList;
 - ✅ Component initializes with loaded data instead of defaults
 - ✅ Full round-trip conversion working (UI → Atlas → UI)
 - ✅ Handles async concept set loading (when concept sets load after component mounts)
+
+---
+
+### 2025-10-07: Fixed Duration Settings Not Saving/Loading Fix
+
+**Issue**: When selecting "Fixed duration to initial event" in Cohort Exit, the event date offset (StartDate/EndDate) and number of days offset would not persist through save/load cycles. Users could change these values, but after saving and reloading the cohort, the settings would revert to defaults (StartDate, 30 days).
+
+**Root Cause**: Same issue as the CONT_DRUG fix - component state was not initialized from props.
+
+1. **Component State Not Initialized** ([QueryFilterEntryExit.vue:149-150](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEntryExit.vue#L149-L150))
+   - Local refs (`selectedEventDateOffset`, `selectedDaysOffset`) were initialized with hardcoded defaults
+   - Never synchronized with `exitCriteriaData.fixedDuration` prop when loading data
+   - Result: Loaded data was ignored, defaults always used
+
+**Changes Made**:
+
+1. **QueryFilterEntryExit.vue - Component Initialization**
+
+   - Added `initializeFixedDurationSettings()` function (lines 153-159)
+   - Initializes local refs from `exitCriteriaData.fixedDuration` prop
+   - Follows same pattern as CONT_DRUG settings initialization
+
+2. **QueryFilterEntryExit.vue - Lifecycle Hooks**
+   - Updated `onMounted` to call `initializeFixedDurationSettings()` (line 219)
+   - Added watcher for `exitCriteriaData.fixedDuration` changes (lines 223-230)
+   - Re-initializes when data changes or becomes available
+
+**Implementation Details**:
+
+- **Load Flow**: Atlas JSON → `fixedDuration` (with dateField/offset) → Component props → Local refs initialized → Dropdowns display selections
+- **Save Flow**: User changes dropdown → `updateEventDateOffset` or `updateDaysOffset` → Emits `update-fixed-duration` → `handleUpdateFixedDuration` → Stored in model → Included in Atlas JSON `EndStrategy.DateOffset`
+- **Synchronization**: Component watches props and re-initializes when data changes
+- **Type Safety**: TypeScript types already defined in `QueryFilterTypes.ts`
+
+**Impact**:
+
+- ✅ Fixed duration settings now persist through save/load cycles
+- ✅ Settings properly included in Atlas JSON `EndStrategy.DateOffset` structure
+- ✅ Component initializes with loaded data instead of hardcoded defaults
+- ✅ Full round-trip conversion working (UI → Atlas → UI)
+- ✅ Follows same initialization pattern as CONT_DRUG settings
 
 ---
 
