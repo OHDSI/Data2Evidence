@@ -83,7 +83,8 @@ class CreateCacheOptions(BaseModel):
 
     database_code: Optional[str] = Field(default=None, alias="databaseCode")
     schema_name: Optional[str] = Field(default=None, alias="schemaName")
-
+    results_schema_name: Optional[str] = Field(default=None, alias="resultsSchemaName")
+    
     # Optional flag used to determine which tables to create duckdb FTS indexes.
     # By default only creates FTS indexes for concept table.
     # If required, more table names can be added accordingly to the keys in DUCKDB_FULLTEXT_SEARCH_CONFIG
