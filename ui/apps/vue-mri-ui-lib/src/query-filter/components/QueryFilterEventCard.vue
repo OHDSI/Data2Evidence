@@ -327,6 +327,13 @@ const handleAttributeNestedCriteriaUpdate = (attributeId: string, nestedCriteria
 
 // Create tag input model for concept set selection
 const tagInputModel = computed(() => {
+  // Get the event type
+  const eventType = eventData.value.eventType
+
+  // Get the domain filter from the "default" attribute config for this event type
+  const defaultAttributeConfig = configLoader.getAttributeConfig(eventType, 'default')
+  const domainFilter = defaultAttributeConfig?.domainFilter
+
   const model = {
     id: `event-concept-set-${eventData.value.id}`,
     props: {
@@ -343,7 +350,7 @@ const tagInputModel = computed(() => {
           ]
         : [],
       attributePath: 'condition_occurrence.concept_id',
-      domainFilter: 'Condition',
+      domainFilter: domainFilter,
       standardConceptCodeFilter: 'Standard',
     },
   }

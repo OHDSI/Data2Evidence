@@ -154,6 +154,13 @@
   "attributeMapping": {
     "conditionOccurrence": [
       {
+        "id": "default",
+        "name": "Condition Concept Set",
+        "description": "Select condition concepts",
+        "type": "conceptSet",
+        "domainFilter": "Condition"
+      },
+      {
         "id": "first",
         "name": "First Diagnosis",
         "description": "Limit to first diagnosis in history",
@@ -233,6 +240,13 @@
     ],
     "conditionEra": [
       {
+        "id": "default",
+        "name": "Condition Concept Set",
+        "description": "Select condition concepts",
+        "type": "conceptSet",
+        "domainFilter": "Condition"
+      },
+      {
         "id": "first",
         "name": "First Diagnosis",
         "description": "Limit to first diagnosis in history",
@@ -295,6 +309,13 @@
       }
     ],
     "drugExposure": [
+      {
+        "id": "default",
+        "name": "Drug Concept Set",
+        "description": "Select drug concepts",
+        "type": "conceptSet",
+        "domainFilter": "Drug"
+      },
       {
         "id": "first",
         "name": "First Exposure",
@@ -412,6 +433,13 @@
     ],
     "drugEra": [
       {
+        "id": "default",
+        "name": "Drug Concept Set",
+        "description": "Select drug concepts",
+        "type": "conceptSet",
+        "domainFilter": "Drug"
+      },
+      {
         "id": "first",
         "name": "First Exposure",
         "description": "Limit to first exposure in history",
@@ -474,6 +502,13 @@
       }
     ],
     "doseEra": [
+      {
+        "id": "default",
+        "name": "Drug Concept Set",
+        "description": "Select drug concepts",
+        "type": "conceptSet",
+        "domainFilter": "Drug"
+      },
       {
         "id": "first",
         "name": "First Exposure",
@@ -544,6 +579,13 @@
       }
     ],
     "deviceExposure": [
+      {
+        "id": "default",
+        "name": "Device Concept Set",
+        "description": "Select device concepts",
+        "type": "conceptSet",
+        "domainFilter": "Device"
+      },
       {
         "id": "first",
         "name": "First Exposure",
@@ -628,6 +670,13 @@
       }
     ],
     "measurement": [
+      {
+        "id": "default",
+        "name": "Measurement Concept Set",
+        "description": "Select measurement concepts",
+        "type": "conceptSet",
+        "domainFilter": "Measurement"
+      },
       {
         "id": "first",
         "name": "First Measurement",
@@ -737,6 +786,13 @@
     ],
     "observation": [
       {
+        "id": "default",
+        "name": "Observation Concept Set",
+        "description": "Select observation concepts",
+        "type": "conceptSet",
+        "domainFilter": "Observation"
+      },
+      {
         "id": "first",
         "name": "First Observation",
         "description": "Limit to first observation in history",
@@ -834,6 +890,13 @@
     ],
     "procedureOccurrence": [
       {
+        "id": "default",
+        "name": "Procedure Concept Set",
+        "description": "Select procedure concepts",
+        "type": "conceptSet",
+        "domainFilter": "Procedure"
+      },
+      {
         "id": "first",
         "name": "First Procedure",
         "description": "Limit to first procedure in history",
@@ -912,6 +975,13 @@
     ],
     "specimen": [
       {
+        "id": "default",
+        "name": "Specimen Concept Set",
+        "description": "Select specimen concepts",
+        "type": "conceptSet",
+        "domainFilter": "Specimen"
+      },
+      {
         "id": "first",
         "name": "First Occurrence",
         "description": "Limit to first occurrence in history",
@@ -989,6 +1059,13 @@
     ],
     "visitOccurrence": [
       {
+        "id": "default",
+        "name": "Visit Concept Set",
+        "description": "Select visit concepts",
+        "type": "conceptSet",
+        "domainFilter": "Visit"
+      },
+      {
         "id": "first",
         "name": "First Visit",
         "description": "Limit to first visit in history",
@@ -1065,6 +1142,13 @@
       }
     ],
     "visitDetail": [
+      {
+        "id": "default",
+        "name": "Visit Detail Concept Set",
+        "description": "Select visit detail concepts",
+        "type": "conceptSet",
+        "domainFilter": "Visit"
+      },
       {
         "id": "first",
         "name": "First Visit",
@@ -1149,6 +1233,13 @@
     ],
     "observationPeriod": [
       {
+        "id": "default",
+        "name": "Observation Period Concept Set",
+        "description": "Select observation period concepts",
+        "type": "conceptSet",
+        "domainFilter": "Observation Period"
+      },
+      {
         "id": "first",
         "name": "First Period",
         "description": "Limit to first period in history",
@@ -1211,6 +1302,13 @@
       }
     ],
     "payerPlanPeriod": [
+      {
+        "id": "default",
+        "name": "Payer Plan Period Concept Set",
+        "description": "Select payer plan period concepts",
+        "type": "conceptSet",
+        "domainFilter": "Payer Plan Period"
+      },
       {
         "id": "first",
         "name": "First Period",
@@ -1316,6 +1414,13 @@
       }
     ],
     "death": [
+      {
+        "id": "default",
+        "name": "Death Concept Set",
+        "description": "Select death concepts",
+        "type": "conceptSet",
+        "domainFilter": "Death"
+      },
       {
         "id": "age",
         "name": "Age",

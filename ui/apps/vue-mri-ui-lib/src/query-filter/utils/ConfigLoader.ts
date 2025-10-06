@@ -447,30 +447,33 @@ export class ConfigLoader {
 
   /**
    * Get criteria-specific attribute options (like Add Nested Criteria, Add Stop Reason)
+   * Excludes the "default" attribute which represents the main concept set field
    */
   getCriteriaAttributeOptions(criteriaTypeId: string): AttributeOption[] {
     // First check for criteria-specific attributes (like nested, stop reason, etc.)
     if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
-      return this.criteriaAttributes[criteriaTypeId].map(attr => {
-        const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
+      return this.criteriaAttributes[criteriaTypeId]
+        .filter(attr => attr.id !== 'default') // Exclude "default" - it's the main concept set field
+        .map(attr => {
+          const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
-        const result: AttributeOption = {
-          id: attr.id,
-          title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
-          defaultTitle: displayTitle,
-          description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
-          defaultDescription: attr.description || '',
-          type: attr.type || 'text',
-          action: this.createAttributeActionFunction(attr),
-        }
+          const result: AttributeOption = {
+            id: attr.id,
+            title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
+            defaultTitle: displayTitle,
+            description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
+            defaultDescription: attr.description || '',
+            type: attr.type || 'text',
+            action: this.createAttributeActionFunction(attr),
+          }
 
-        // Only add domainFilter if it exists
-        if (attr.domainFilter) {
-          result.domainFilter = attr.domainFilter
-        }
+          // Only add domainFilter if it exists
+          if (attr.domainFilter) {
+            result.domainFilter = attr.domainFilter
+          }
 
-        return result
-      })
+          return result
+        })
     }
 
     // Fall back to domain-based attributes (like age, gender, etc.)
