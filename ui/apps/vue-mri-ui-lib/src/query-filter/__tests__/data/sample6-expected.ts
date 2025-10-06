@@ -131,11 +131,10 @@ export default {
                     {
                       Criteria: {
                         ConditionOccurrence: {
-                          // Uncomment when implemented
-                          // Age: {
-                          //   Value: 5,
-                          //   Op: 'gt',
-                          // },
+                          Age: {
+                            Value: 5,
+                            Op: 'gt',
+                          },
                         },
                       },
                       StartWindow: {
