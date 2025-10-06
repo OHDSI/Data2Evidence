@@ -1908,6 +1908,70 @@ Groups: groupsList;
 
 ---
 
+### 2025-10-07: CONT_DRUG Concept Set Not Saving/Loading Fix
+
+**Issue**: When selecting a concept set for "Continuous drug exposure" in Cohort Exit, the concept set would not save or load correctly. Users could select a concept set, but after saving and reloading the cohort, the selection would be lost.
+
+**Root Causes**:
+
+1. **Component State Not Initialized** ([QueryFilterEntryExit.vue:172-175](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEntryExit.vue#L172-L175))
+   - Local refs (`selectedConceptSet`, `selectedGapDays`, etc.) were initialized with hardcoded defaults
+   - Never synchronized with `exitCriteriaData.contDrugSettings` prop when loading data
+   - Result: Loaded data was ignored, defaults always used
+
+2. **Missing Concept Set Details** ([QueryFilterModel.ts:299-325](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts#L299-L325))
+   - Only stored concept set ID, not the full concept set details and name
+   - During save, the concept set wasn't added to the `ConceptSets` array in Atlas JSON
+   - Result: Concept set ID saved but referenced a non-existent concept set
+
+**Changes Made**:
+
+1. **QueryFilterEntryExit.vue - Component Initialization**
+   - Added `onMounted` and `watch` hooks to initialize local refs from `exitCriteriaData.contDrugSettings`
+   - Lines 177-221: Added `initializeContDrugSettings()` function
+   - Watches for changes to `exitCriteriaData.contDrugSettings` and `conceptSets` props
+   - Re-initializes when concept sets become available (they may load after component mounts)
+
+2. **QueryFilterTypes.ts - Type Definition Update**
+   - Lines 132-139: Added `conceptSet` and `conceptSetDetails` fields to `contDrugSettings`
+   - Follows same pattern as `QueryFilterEvent` (conceptSet, conceptSetId, conceptSetDetails)
+   - Stores complete concept set information, not just ID
+
+3. **QueryFilterModel.ts - Concept Set Collection**
+   - Lines 299-325: Added logic to collect CONT_DRUG concept set into `ConceptSets` array
+   - Checks for `contDrugSettings.conceptSetId` and includes it with name and details
+   - Adds to missing concept details warning if details not available
+
+4. **useCriteriaManager.ts - Fetch Concept Set Details**
+   - Lines 101-131: Updated `handleUpdateContDrugSettings` to be async
+   - Fetches concept set details using `loadSingleConceptSetDetails`
+   - Passes complete concept set data (ID, name, details) to model
+
+5. **QueryFilterModel.ts - Update Method Signature**
+   - Lines 890-906: Updated `updateContDrugSettings` to accept name and details
+   - Stores all three fields in `contDrugSettings`
+
+6. **QueryFilterEntryExit.vue - Emit Updates**
+   - Lines 41-47, 71-78, 288-297: Updated emits to include concept set name
+   - Ensures name is passed alongside ID when settings change
+
+**Implementation Details**:
+
+- **Load Flow**: Atlas JSON → `contDrugSettings` (with ID/name/details) → Component props → Local refs initialized → Tag input displays selection
+- **Save Flow**: User selects concept set → Fetch details → Store in `contDrugSettings` → Include in `ConceptSets` array → Build `CustomEra` with `DrugCodesetId`
+- **Synchronization**: Component watches props and re-initializes when data changes or concept sets load
+- **Type Safety**: TypeScript types updated to reflect new fields
+
+**Impact**:
+
+- ✅ CONT_DRUG concept set selection now persists through save/load cycles
+- ✅ Concept set properly included in Atlas JSON `ConceptSets` array
+- ✅ Component initializes with loaded data instead of defaults
+- ✅ Full round-trip conversion working (UI → Atlas → UI)
+- ✅ Handles async concept set loading (when concept sets load after component mounts)
+
+---
+
 **End of Documentation**
 
 For questions or issues, refer to:

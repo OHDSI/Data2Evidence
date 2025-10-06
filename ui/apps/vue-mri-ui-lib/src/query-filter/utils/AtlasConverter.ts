@@ -25,7 +25,7 @@ import {
   NumericRange,
   CorrelatedCriteria,
   Concept,
-  DateRange,
+  ConceptSetItem,
 } from '../types/AtlasTypes'
 
 import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
@@ -736,6 +736,8 @@ export const convertAtlasToFilters = (
         gapDays: number
         offset: number
         daysSupplyOverride: number
+        conceptSetName?: string
+        conceptSetDetails?: ConceptSetItem[]
       }
     } = {
       endStrategy: 'CONT_OBS',
@@ -754,11 +756,32 @@ export const convertAtlasToFilters = (
       } else if ('CustomEra' in cohortDefinition.EndStrategy) {
         // Continuous drug strategy
         exitEvents.endStrategy = 'CONT_DRUG'
-        exitEvents.contDrugSettings = {
-          conceptSetId: cohortDefinition.EndStrategy.CustomEra.DrugCodesetId?.toString() || '',
-          gapDays: cohortDefinition.EndStrategy.CustomEra.GapDays,
-          offset: cohortDefinition.EndStrategy.CustomEra.Offset,
-          daysSupplyOverride: cohortDefinition.EndStrategy.CustomEra.DaysSupplyOverride,
+
+        // Find the concept set using the Atlas DrugCodesetId
+        const drugCodesetId = cohortDefinition.EndStrategy.CustomEra.DrugCodesetId
+
+        const conceptSetMapping = drugCodesetId !== undefined ? findConceptSetByCodesetId(drugCodesetId) : null
+
+        if (conceptSetMapping) {
+          // Found the concept set - use system ID, name, and get details
+          const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === drugCodesetId)
+
+          exitEvents.contDrugSettings = {
+            conceptSetId: conceptSetMapping.id, // System ID
+            conceptSetName: conceptSetMapping.name, // Display name
+            conceptSetDetails: atlasConceptSet?.expression?.items, // Details for saving
+            gapDays: cohortDefinition.EndStrategy.CustomEra.GapDays,
+            offset: cohortDefinition.EndStrategy.CustomEra.Offset,
+            daysSupplyOverride: cohortDefinition.EndStrategy.CustomEra.DaysSupplyOverride,
+          }
+        } else {
+          // Fallback - store with Atlas ID (will need to be resolved later)
+          exitEvents.contDrugSettings = {
+            conceptSetId: drugCodesetId?.toString() || '',
+            gapDays: cohortDefinition.EndStrategy.CustomEra.GapDays,
+            offset: cohortDefinition.EndStrategy.CustomEra.Offset,
+            daysSupplyOverride: cohortDefinition.EndStrategy.CustomEra.DaysSupplyOverride,
+          }
         }
       }
       // If neither, it stays as 'CONT_OBS' (default)

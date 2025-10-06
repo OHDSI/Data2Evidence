@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { EntryEvent, ExitEvent, QueryFilterEvent } from '../types/QueryFilterTypes'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
@@ -38,7 +38,13 @@ const emit = defineEmits<{
   'update-entry-days': [type: 'PRIOR' | 'POST', days: number]
   'concept-set-action': [action: ConceptSetAction]
   'update-fixed-duration': [eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number]
-  'update-cont-drug-settings': [conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number]
+  'update-cont-drug-settings': [
+    conceptSetId: string,
+    conceptSetName: string,
+    gapDays: number,
+    offset: number,
+    daysSupplyOverride: number
+  ]
   'update-primary-events': [events: QueryFilterEvent[]]
   'update-exit-events': [events: QueryFilterEvent[]]
 }>()
@@ -57,14 +63,19 @@ const updateLimitValue = (value: string) => {
   if (isValidLimit(value)) {
     emit('update-limit', value)
 
-    // Emit default values when switching to FIXED or CONT_DRUG
-    if (!isEntry.value) {
+    // Only emit settings when user actively switches mode (not during initialization)
+    // Check if the value is different from current prop to detect user action
+    const currentStrategy = props.exitCriteriaData?.endStrategy
+    const isUserAction = currentStrategy && currentStrategy !== value
+
+    if (!isEntry.value && isUserAction) {
       if (value === 'FIXED') {
         emit('update-fixed-duration', selectedEventDateOffset.value, selectedDaysOffset.value)
       } else if (value === 'CONT_DRUG') {
         emit(
           'update-cont-drug-settings',
           selectedConceptSet.value?.value.toString() || '',
+          selectedConceptSet.value?.text || selectedConceptSet.value?.display_value || '',
           selectedGapDays.value,
           selectedOffset.value,
           selectedDaysSupplyOverride.value
@@ -174,6 +185,52 @@ const selectedGapDays = ref<number>(30)
 const selectedOffset = ref<number>(0)
 const selectedDaysSupplyOverride = ref<number>(1)
 
+// Initialize CONT_DRUG settings from exitCriteriaData when component mounts or data changes
+const initializeContDrugSettings = () => {
+  if (props.exitCriteriaData?.contDrugSettings) {
+    const settings = props.exitCriteriaData.contDrugSettings
+
+    // Set numeric values
+    selectedGapDays.value = settings.gapDays ?? 30
+    selectedOffset.value = settings.offset ?? 0
+    selectedDaysSupplyOverride.value = settings.daysSupplyOverride ?? 1
+
+    // Find and set the concept set from the available concept sets
+    if (settings.conceptSetId && props.conceptSets) {
+      const conceptSet = props.conceptSets.find(cs => cs.value.toString() === settings.conceptSetId)
+      if (conceptSet) {
+        selectedConceptSet.value = conceptSet
+      }
+    }
+  }
+}
+
+// Initialize on mount
+onMounted(() => {
+  initializeContDrugSettings()
+})
+
+// Watch for changes to exitCriteriaData and re-initialize
+watch(
+  () => props.exitCriteriaData?.contDrugSettings,
+  () => {
+    initializeContDrugSettings()
+  },
+  { deep: true, immediate: true }
+)
+
+// Also watch for conceptSets to become available (they may load after the component mounts)
+watch(
+  () => props.conceptSets,
+  () => {
+    // Re-initialize to pick up the concept set once it's loaded
+    if (props.exitCriteriaData?.contDrugSettings?.conceptSetId && !selectedConceptSet.value) {
+      initializeContDrugSettings()
+    }
+  },
+  { deep: true }
+)
+
 // Show CONT_DRUG inputs only when limit is CONT_DRUG and not ENTRY
 const showContDrugInputs = computed(() => {
   return !isEntry.value && initialEventsLimit.value === 'CONT_DRUG'
@@ -234,9 +291,13 @@ const updateDaysSupplyOverride = (value: string) => {
 }
 
 const emitContDrugUpdate = () => {
+  const conceptSetId = selectedConceptSet.value?.value.toString() || ''
+  const conceptSetName = selectedConceptSet.value?.text || selectedConceptSet.value?.display_value || ''
+
   emit(
     'update-cont-drug-settings',
-    selectedConceptSet.value?.value.toString() || '',
+    conceptSetId,
+    conceptSetName,
     selectedGapDays.value,
     selectedOffset.value,
     selectedDaysSupplyOverride.value

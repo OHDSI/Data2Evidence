@@ -67,6 +67,8 @@ export class QueryFilterCriteriaManager {
         this.exitEvents = {
           endStrategy: data.exitEvents.endStrategy || 'CONT_OBS',
           censoringCriteria: data.exitEvents.censoringCriteria || [],
+          fixedDuration: data.exitEvents.fixedDuration, // Preserve FIXED duration settings
+          contDrugSettings: data.exitEvents.contDrugSettings, // Preserve CONT_DRUG settings
         }
       } else {
         this.exitEvents = {
@@ -296,6 +298,35 @@ export class QueryFilterCriteriaManager {
       })
     }
 
+    // Also collect concept set from CONT_DRUG settings (not stored as an event)
+    if (this.exitEvents?.contDrugSettings?.conceptSetId) {
+      const systemConceptSetId = this.exitEvents.contDrugSettings.conceptSetId
+      const contDrugDetails = this.exitEvents.contDrugSettings.conceptSetDetails
+      const contDrugName = this.exitEvents.contDrugSettings.conceptSetName
+
+      if (!usedConceptSetIds.has(systemConceptSetId)) {
+        if (contDrugDetails && contDrugDetails.length > 0) {
+          usedConceptSetIds.add(systemConceptSetId)
+          const atlasSequentialId = conceptSets.length
+          systemIdToAtlasId.set(systemConceptSetId, atlasSequentialId)
+
+          const conceptSetDef: ConceptSet = {
+            id: atlasSequentialId,
+            name: contDrugName || `Concept Set ${systemConceptSetId}`,
+            expression: {
+              items: contDrugDetails,
+            },
+          }
+
+          conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+          conceptSets.push(conceptSetDef)
+        } else {
+          console.warn('[QueryFilterModel] CONT_DRUG concept set missing details')
+          missingConceptDetails.push(`CONT_DRUG concept set (ID: ${systemConceptSetId})`)
+        }
+      }
+    }
+
     // SECOND PASS: Collect concept sets from nested events that were missed in initial collection
     // This addresses timing issues where nested events are added after initial collection
     collectNestedConceptSets(this.inclusionCriteria.criteria || [], systemIdToAtlasId, usedConceptSetIds, conceptSets)
@@ -311,7 +342,7 @@ export class QueryFilterCriteriaManager {
       )
     }
 
-    const endStrategy = this.buildEndStrategy()
+    const endStrategy = this.buildEndStrategy(systemIdToAtlasId)
 
     const atlasDef: AtlasCohortDefinition = {
       cdmVersionRange: '>=5.0.0',
@@ -797,7 +828,7 @@ export class QueryFilterCriteriaManager {
     return atlasDef
   }
 
-  private buildEndStrategy() {
+  private buildEndStrategy(systemIdToAtlasId: Map<string, number>) {
     if (this.exitEvents?.endStrategy === 'FIXED' && this.exitEvents.fixedDuration) {
       return {
         DateOffset: {
@@ -808,14 +839,18 @@ export class QueryFilterCriteriaManager {
     }
 
     if (this.exitEvents?.endStrategy === 'CONT_DRUG' && this.exitEvents.contDrugSettings) {
-      return {
+      // Get the Atlas sequential ID from the map, using the system concept set ID
+      const systemConceptSetId = this.exitEvents.contDrugSettings.conceptSetId
+      const atlasConceptSetId = systemIdToAtlasId.get(systemConceptSetId)
+      const endStrategy = {
         CustomEra: {
-          DrugCodesetId: parseInt(this.exitEvents.contDrugSettings.conceptSetId) || 0,
+          DrugCodesetId: atlasConceptSetId, // Use Atlas sequential ID, not system ID
           GapDays: this.exitEvents.contDrugSettings.gapDays,
           Offset: this.exitEvents.contDrugSettings.offset,
           DaysSupplyOverride: this.exitEvents.contDrugSettings.daysSupplyOverride,
         },
       }
+      return endStrategy
     }
 
     return {}
@@ -859,9 +894,18 @@ export class QueryFilterCriteriaManager {
     }
   }
 
-  updateContDrugSettings(conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number) {
+  updateContDrugSettings(
+    conceptSetId: string,
+    conceptSetName: string | undefined,
+    conceptSetDetails: any[] | undefined,
+    gapDays: number,
+    offset: number,
+    daysSupplyOverride: number
+  ) {
     this.exitEvents.contDrugSettings = {
       conceptSetId,
+      conceptSetName,
+      conceptSetDetails,
       gapDays,
       offset,
       daysSupplyOverride,

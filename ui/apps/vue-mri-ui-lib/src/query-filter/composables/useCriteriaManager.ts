@@ -98,14 +98,36 @@ export function useCriteriaManager(
     console.log('Fixed duration updated:', eventDateOffset, daysOffset)
   }
 
-  const handleUpdateContDrugSettings = (
+  const handleUpdateContDrugSettings = async (
     conceptSetId: string,
+    conceptSetName: string,
     gapDays: number,
     offset: number,
     daysSupplyOverride: number
   ) => {
-    criteriaManager.updateContDrugSettings(conceptSetId, gapDays, offset, daysSupplyOverride)
-    console.log('CONT_DRUG settings updated:', conceptSetId, gapDays, offset, daysSupplyOverride)
+    // Find the concept set in allConceptSets to get its details
+    const conceptSetItem = allConceptSets.value.find(cs => cs.value.toString() === conceptSetId)
+
+    let conceptSetDetails: any[] | undefined
+
+    if (conceptSetItem) {
+      try {
+        // Fetch concept set details
+        conceptSetDetails = await loadSingleConceptSetDetails(conceptSetItem, getDatasetId())
+      } catch (error) {
+        console.error('Error loading CONT_DRUG concept set details:', error)
+      }
+    }
+
+    criteriaManager.updateContDrugSettings(
+      conceptSetId,
+      conceptSetName,
+      conceptSetDetails,
+      gapDays,
+      offset,
+      daysSupplyOverride
+    )
+    console.log('CONT_DRUG settings updated:', { conceptSetId, conceptSetName, gapDays, offset, daysSupplyOverride })
   }
 
   const handleUpdatePrimaryEvents = (events: QueryFilterEvent[]) => {

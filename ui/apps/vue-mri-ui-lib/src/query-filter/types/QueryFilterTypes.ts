@@ -131,6 +131,8 @@ export interface ExitEvent {
   }
   contDrugSettings?: {
     conceptSetId: string
+    conceptSetName?: string
+    conceptSetDetails?: ConceptSetDetail[]
     gapDays: number
     offset: number
     daysSupplyOverride: number
