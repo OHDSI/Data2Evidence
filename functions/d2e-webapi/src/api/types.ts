@@ -29,6 +29,7 @@ export interface ICohortGeneratorFlowRun {
   datasetId: string;
   databaseCode: string;
   schemaName: string;
+  resultsSchemaName: string;
   vocabSchemaName: string;
   cohortJson: ICohortJsonType;
   description: string | null;
@@ -245,6 +246,7 @@ export interface IDataset {
   id: string;
   dialect: string;
   schemaName: string;
+  resultsSchemaName: string;
   vocabSchemaName: string;
   dataModel: string;
   plugin: string;
