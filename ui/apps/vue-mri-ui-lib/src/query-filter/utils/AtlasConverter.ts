@@ -478,9 +478,13 @@ export const convertAtlasToFilters = (
                     demographicEvent.attributes.push(numericAttribute)
                   } else if (attrConfig.type === 'concept' && Array.isArray(value) && value.length > 0) {
                     // Concept type (e.g., Gender, Race, Ethnicity)
-                    demographicEvent.attributes.push(
-                      convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
+                    const conceptAttr = convertConceptSetArrayToAttribute(
+                      attributeId,
+                      value,
+                      'demographic',
+                      configLoader
                     )
+                    demographicEvent.attributes.push(conceptAttr)
                   } else if (
                     attrConfig.type === 'dateRange' &&
                     typeof value === 'object' &&
@@ -651,9 +655,8 @@ export const convertAtlasToFilters = (
                   demographicEvent.attributes.push(numericAttribute)
                 } else if (attrConfig.type === 'concept' && Array.isArray(value) && value.length > 0) {
                   // Concept type (e.g., Gender, Race, Ethnicity)
-                  demographicEvent.attributes.push(
-                    convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
-                  )
+                  const conceptAttr = convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
+                  demographicEvent.attributes.push(conceptAttr)
                 } else if (
                   attrConfig.type === 'dateRange' &&
                   typeof value === 'object' &&

@@ -1388,16 +1388,18 @@
         "type": "dateRange"
       },
       {
-        "id": "raceConcept",
+        "id": "race",
         "name": "Race",
         "description": "Filter by patient race",
-        "type": "concept"
+        "type": "concept",
+        "domainFilter": "Race"
       },
       {
-        "id": "nested",
-        "name": "Nested Criteria",
-        "description": "Add nested criteria group",
-        "type": "nested"
+        "id": "ethnicity",
+        "name": "Ethnicity",
+        "description": "Filter by patient ethnicity",
+        "type": "concept",
+        "domainFilter": "Ethnicity"
       }
     ]
   },

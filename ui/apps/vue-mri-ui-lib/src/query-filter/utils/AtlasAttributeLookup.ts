@@ -30,6 +30,9 @@ export const attributeMap = {
     startDate: 'OccurrenceStartDate',
     endDate: 'OccurrenceEndDate',
     age: 'Age',
+    gender: 'Gender',
+    race: 'Race',
+    ethnicity: 'Ethnicity',
   },
   DeviceExposure: {
     startDate: 'OccurrenceStartDate',
@@ -209,4 +212,3 @@ export const atlasToCriteriaAttrMap = {
   VisitTypeExclude: 'exclude',
   VisitLength: 'length',
 }
-
