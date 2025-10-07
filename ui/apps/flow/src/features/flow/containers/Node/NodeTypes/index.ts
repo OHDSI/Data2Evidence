@@ -3,6 +3,7 @@ import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
 import { CsvNode } from "./CsvNode/CsvNode";
 import { FileNode } from "./FileNode/FileNode";
+import { FileNode } from "./FileNode/FileNode";
 import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
@@ -28,6 +29,7 @@ export const NODE_TYPES: {
   concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
   file_node: FileNode,
+  file_node: FileNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
@@ -46,9 +48,11 @@ export const NODE_COLORS: {
   concept_mapping_node: "#999fcb",
   csv_node: "#999fcb",
   file_node: "#999fcb",
+  file_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
+  white_rabbit_node: "#999fcb"
   white_rabbit_node: "#999fcb"
 };
 

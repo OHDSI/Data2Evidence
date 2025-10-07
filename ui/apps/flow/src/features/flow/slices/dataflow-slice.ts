@@ -229,6 +229,32 @@ export const dataflowApiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
     }),
+    uploadNodeFile: builder.mutation<
+      { status: string },
+      { nodeId: string; file: File, file_type?: string}
+    >({
+      query: ({ nodeId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return {
+          url: `dataflow/file/generic?nodeId=${nodeId}`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    deleteNodeFile: builder.mutation<
+      { status: string },
+      { nodeId: string; fileName: string, file_type?: string}
+    >({
+      query: ({ nodeId, fileName }) => ({
+        url: `dataflow/file/generic?nodeId=${nodeId}&fileName=${fileName}`, // Removed /csv
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
     checkRemoteDiff: builder.query<RemoteDiffCheckResponseDto, string>({
       query: (id) => `dataflow/${id}/remote-diff-check`,
       providesTags: (result, error, id) => [
