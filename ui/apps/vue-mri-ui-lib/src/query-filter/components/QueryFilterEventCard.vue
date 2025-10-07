@@ -26,6 +26,7 @@ import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 import AttributeContainer from './attributes/AttributeContainer.vue'
+import TemporalRelationshipSection from './TemporalRelationshipSection.vue'
 
 // Attribute update payload types
 type AttributeUpdatePayload =
@@ -42,6 +43,7 @@ interface Props {
   datasetId?: string | null
   nestedLevel?: number
   readonly?: boolean
+  sectionType?: 'initialEvents' | 'censoringEvents' | 'criteriaGroup'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -86,6 +88,29 @@ const needsConceptSet = computed(() => {
   if (!eventType) return true // Default to true if no type specified
   return configLoader.requiresConceptSet(eventType)
 })
+
+// Check if this event type has temporal relationship in config
+const hasTemporalRelationship = computed(() => {
+  const eventType = eventData.value.eventType || eventData.value.criteriaType
+  if (!eventType) return false
+
+  // Check if temporalRelationship attribute exists in config for this event type
+  const temporalConfig = configLoader.getAttributeConfig(eventType, 'temporalRelationship')
+  if (!temporalConfig) return false
+
+  // Check if this section is excluded (only for top-level events, nested events always show)
+  if (props.nestedLevel === 0 && props.sectionType && temporalConfig.excludeFromSections) {
+    return !temporalConfig.excludeFromSections.includes(props.sectionType)
+  }
+
+  // For nested events (nestedLevel > 0), always show temporal relationship if config exists
+  return true
+})
+
+// Handle temporal relationship updates
+const handleTemporalRelationshipUpdate = (updatedEvent: QueryFilterEvent) => {
+  eventData.value = updatedEvent
+}
 
 // Handle cardinality changes
 const updateCardinality = (updatedEventCardinality: QueryFilterCardinality) => {
@@ -547,6 +572,13 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                 {{ getConceptSetDisplayName() || 'No concept set selected' }}
               </div>
             </div>
+
+            <!-- Temporal Relationship Section (config-driven) -->
+            <TemporalRelationshipSection
+              v-if="hasTemporalRelationship"
+              :event="eventData"
+              @update="handleTemporalRelationshipUpdate"
+            />
 
             <!-- Selected Attributes Display -->
             <div v-if="eventData.attributes?.length" class="selected-attributes">

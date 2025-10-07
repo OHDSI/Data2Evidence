@@ -85,6 +85,17 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
       count: 1,
       using: 'ALL',
     },
+    // Initialize temporal relationship with defaults (not for demographic events)
+    ...(option.id !== 'demographic' && {
+      startWindow: {
+        start: { days: null, coeff: -1 },
+        end: { days: 0, coeff: 1 },
+        useIndexEnd: false,
+        useEventEnd: false,
+      },
+      restrictVisit: false,
+      ignoreObservationPeriod: false,
+    }),
   }
 
   // Handle group events differently
@@ -320,6 +331,7 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           :concept-set-texts="conceptSetTexts || {}"
           :dataset-id="datasetId || null"
           :readonly="readonly"
+          :section-type="sectionId"
           @update:event="
             updateEvent(
               mainEvents.findIndex(e => e.id === event.id),

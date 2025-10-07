@@ -1,11 +1,48 @@
-import type { QueryFilterEvent, QueryFilterAttribute, QueryFilterNestedCriteria } from '../../types/QueryFilterTypes'
-import type { CriteriaGroup, DemographicCriteria, GroupCriteria, NumericRange, DateRange } from '../../types/AtlasTypes'
+import type {
+  QueryFilterEvent,
+  QueryFilterAttribute,
+  QueryFilterNestedCriteria,
+  WindowDefinition,
+} from '../../types/QueryFilterTypes'
+import type {
+  CriteriaGroup,
+  DemographicCriteria,
+  GroupCriteria,
+  NumericRange,
+  DateRange,
+  Window,
+} from '../../types/AtlasTypes'
 import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId, isDateRangeAttribute } from './type-guards'
 import { mapCardinalityTypeToAtlas, mapEventTypeToAtlas, mapOperatorToAtlas } from './atlas-mappers'
 import { getAtlasAttributeKey } from '../../utils/AtlasUtils'
 
 // Type for DemographicCriteria with dynamic keys
 type DemographicCriteriaRecord = Record<string, unknown>
+
+// Helper function to convert internal WindowDefinition to Atlas Window format
+export const createAtlasWindow = (window?: WindowDefinition): Window => {
+  if (!window) {
+    // Default fallback for events without temporal relationship data
+    return {
+      Start: { Coeff: -1 },
+      End: { Coeff: 1 },
+      UseEventEnd: false,
+    }
+  }
+
+  return {
+    Start: {
+      ...(window.start.days !== null && { Days: window.start.days }),
+      Coeff: window.start.coeff,
+    },
+    End: {
+      ...(window.end.days !== null && { Days: window.end.days }),
+      Coeff: window.end.coeff,
+    },
+    UseIndexEnd: window.useIndexEnd,
+    UseEventEnd: window.useEventEnd,
+  }
+}
 
 // Helper method to recursively collect all events including nested ones
 export const collectAllEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] => {
@@ -66,15 +103,10 @@ export const processNestedGroups = (
                 ...(nestedEvent.conceptSetId && atlasCodesetId && { CodesetId: atlasCodesetId }),
               },
             },
-            StartWindow: {
-              Start: {
-                Coeff: -1,
-              },
-              End: {
-                Coeff: 1,
-              },
-              UseEventEnd: false,
-            },
+            StartWindow: createAtlasWindow(nestedEvent.startWindow),
+            ...(nestedEvent.endWindow && {
+              EndWindow: createAtlasWindow(nestedEvent.endWindow),
+            }),
             Occurrence: {
               Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
               Count: nestedEvent.cardinality?.count || 1,
@@ -139,11 +171,12 @@ export const processNestedGroups = (
                             }),
                           },
                         },
-                        StartWindow: {
-                          Start: { Coeff: -1 },
-                          End: { Coeff: 1 },
-                          UseEventEnd: false,
-                        },
+                        StartWindow: createAtlasWindow(groupedEvent.startWindow),
+                        ...(groupedEvent.endWindow && {
+                          EndWindow: createAtlasWindow(groupedEvent.endWindow),
+                        }),
+                        RestrictVisit: groupedEvent.restrictVisit ?? false,
+                        IgnoreObservationPeriod: groupedEvent.ignoreObservationPeriod ?? false,
                         Occurrence: {
                           Type: mapCardinalityTypeToAtlas(groupedEvent.cardinality?.type || 'AT_LEAST'),
                           Count: groupedEvent.cardinality?.count || 1,
@@ -196,11 +229,10 @@ export const processNestedGroupsRecursively = (
                 }),
               },
             },
-            StartWindow: {
-              Start: { Coeff: -1 },
-              End: { Coeff: 1 },
-              UseEventEnd: false,
-            },
+            StartWindow: createAtlasWindow(nestedEvent.startWindow),
+            ...(nestedEvent.endWindow && {
+              EndWindow: createAtlasWindow(nestedEvent.endWindow),
+            }),
             Occurrence: {
               Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
               Count: nestedEvent.cardinality?.count || 1,
@@ -431,15 +463,12 @@ export const buildNestedCriteriaFromAttributes = (
       Criteria: {
         [atlasEventType]: {},
       },
-      StartWindow: {
-        Start: {
-          Coeff: -1,
-        },
-        End: {
-          Coeff: 1,
-        },
-        UseEventEnd: false,
-      },
+      StartWindow: createAtlasWindow(nestedEvent.startWindow),
+      ...(nestedEvent.endWindow && {
+        EndWindow: createAtlasWindow(nestedEvent.endWindow),
+      }),
+      RestrictVisit: nestedEvent.restrictVisit ?? false,
+      IgnoreObservationPeriod: nestedEvent.ignoreObservationPeriod ?? false,
       Occurrence: {
         Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
         Count: nestedEvent.cardinality?.count || 1,

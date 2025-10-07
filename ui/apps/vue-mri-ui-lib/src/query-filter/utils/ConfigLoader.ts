@@ -114,6 +114,7 @@ export interface CriteriaAttributeConfig {
   description: string
   type: string
   domainFilter?: string
+  excludeFromSections?: string[]
 }
 
 export interface AttributeOption {

@@ -21,6 +21,18 @@ export interface AttributeConfig {
   value?: number | undefined
 }
 
+export interface WindowEndpoint {
+  days: number | null // null = "all", number = specific days
+  coeff: -1 | 1 // -1 = Before, 1 = After
+}
+
+export interface WindowDefinition {
+  start: WindowEndpoint
+  end: WindowEndpoint
+  useIndexEnd: boolean // false = "index start date", true = "index end date"
+  useEventEnd: boolean // false = "event starts", true = "event ends"
+}
+
 export interface QueryFilterNestedCriteria {
   id: string
   criteriaType: CriteriaType
@@ -45,6 +57,12 @@ export interface QueryFilterEvent {
   attributes?: QueryFilterAttribute[] | undefined
   eventType?: string | undefined
   nestedCriteria?: QueryFilterNestedCriteria | undefined
+
+  // Temporal relationship fields (NOT attributes - core event properties)
+  startWindow?: WindowDefinition
+  endWindow?: WindowDefinition
+  restrictVisit?: boolean
+  ignoreObservationPeriod?: boolean
 }
 
 // Base type for common fields in standard attributes

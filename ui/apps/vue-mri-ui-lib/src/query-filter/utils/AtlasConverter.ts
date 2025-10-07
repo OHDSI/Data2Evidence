@@ -360,6 +360,42 @@ export const convertAtlasToFilters = (
           }
         }
 
+        // Extract temporal relationship data if this is a CriteriaGroup
+        if (isCriteriaGroup(_criteriaItem)) {
+          if (_criteriaItem.StartWindow) {
+            event.startWindow = {
+              start: {
+                days: _criteriaItem.StartWindow.Start.Days ?? null,
+                coeff: (_criteriaItem.StartWindow.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
+              },
+              end: {
+                days: _criteriaItem.StartWindow.End.Days ?? null,
+                coeff: (_criteriaItem.StartWindow.End.Coeff === 1 ? 1 : -1) as -1 | 1,
+              },
+              useIndexEnd: _criteriaItem.StartWindow.UseIndexEnd ?? false,
+              useEventEnd: _criteriaItem.StartWindow.UseEventEnd ?? false,
+            }
+          }
+
+          if (_criteriaItem.EndWindow) {
+            event.endWindow = {
+              start: {
+                days: _criteriaItem.EndWindow.Start.Days ?? null,
+                coeff: (_criteriaItem.EndWindow.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
+              },
+              end: {
+                days: _criteriaItem.EndWindow.End.Days ?? null,
+                coeff: (_criteriaItem.EndWindow.End.Coeff === 1 ? 1 : -1) as -1 | 1,
+              },
+              useIndexEnd: _criteriaItem.EndWindow.UseIndexEnd ?? false,
+              useEventEnd: _criteriaItem.EndWindow.UseEventEnd ?? false,
+            }
+          }
+
+          event.restrictVisit = _criteriaItem.RestrictVisit ?? false
+          event.ignoreObservationPeriod = _criteriaItem.IgnoreObservationPeriod ?? false
+        }
+
         // Handle all attributes on the event dynamically using configuration
         // This includes: concept arrays, NumericRange (Age, AgeAtStart, etc), DateRange, and other types
         if (configLoader) {

@@ -290,6 +290,7 @@ export interface CriteriaGroup {
   EndWindow?: Window
   Occurrence?: OccurrenceSettings
   RestrictVisit?: boolean
+  IgnoreObservationPeriod?: boolean
 }
 
 export interface Window {

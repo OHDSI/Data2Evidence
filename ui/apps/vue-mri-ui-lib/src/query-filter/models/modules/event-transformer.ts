@@ -22,6 +22,11 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
       isExpanded: event.isExpanded,
       cardinality: event.cardinality,
       attributes: [], // Will be populated with remaining attributes
+      // Preserve temporal relationship properties
+      ...(event.startWindow && { startWindow: event.startWindow }),
+      ...(event.endWindow && { endWindow: event.endWindow }),
+      ...(event.restrictVisit !== undefined && { restrictVisit: event.restrictVisit }),
+      ...(event.ignoreObservationPeriod !== undefined && { ignoreObservationPeriod: event.ignoreObservationPeriod }),
       // Preserve nestedCriteria for group events
       ...(event.nestedCriteria && {
         nestedCriteria: {
@@ -118,6 +123,11 @@ export const transformNestedEvents = (events: QueryFilterEvent[], parentId: stri
       cardinality: event.cardinality,
       parentEventId: parentId,
       selectedAttributes: event.selectedAttributes, // Preserve selectedAttributes from import
+      // Preserve temporal relationship properties
+      ...(event.startWindow && { startWindow: event.startWindow }),
+      ...(event.endWindow && { endWindow: event.endWindow }),
+      ...(event.restrictVisit !== undefined && { restrictVisit: event.restrictVisit }),
+      ...(event.ignoreObservationPeriod !== undefined && { ignoreObservationPeriod: event.ignoreObservationPeriod }),
     }
 
     if (event.attributes && event.attributes.length > 0) {

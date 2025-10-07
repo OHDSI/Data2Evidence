@@ -37,6 +37,7 @@ import {
   collectAllEvents,
   processNestedGroups,
   buildNestedCriteriaFromAttributes,
+  createAtlasWindow,
 } from './modules/nested-criteria-processor'
 import { collectNestedConceptSets, collectNestedConceptSetsFromEvents } from './modules/concept-set-collector'
 
@@ -383,15 +384,10 @@ export class QueryFilterCriteriaManager {
                         ...(event.conceptSetId && { CodesetId: systemIdToAtlasId.get(event.conceptSetId) }),
                       },
                     },
-                    StartWindow: {
-                      Start: {
-                        Coeff: -1,
-                      },
-                      End: {
-                        Coeff: 1,
-                      },
-                      UseEventEnd: false,
-                    },
+                    StartWindow: createAtlasWindow(event.startWindow),
+                    ...(event.endWindow && {
+                      EndWindow: createAtlasWindow(event.endWindow),
+                    }),
                     Occurrence: {
                       Type: mapCardinalityTypeToAtlas(event.cardinality?.type || 'AT_LEAST'), // Maps cardinality.type → Atlas Occurrence.Type
                       Count: event.cardinality?.count || 1, // Maps cardinality.count → Atlas Occurrence.Count
