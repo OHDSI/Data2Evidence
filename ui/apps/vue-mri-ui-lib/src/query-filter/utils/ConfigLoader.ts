@@ -455,6 +455,7 @@ export class ConfigLoader {
     if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
       return this.criteriaAttributes[criteriaTypeId]
         .filter(attr => attr.id !== 'default') // Exclude "default" - it's the main concept set field
+        .filter(attr => attr.type !== 'temporalRelationship')
         .map(attr => {
           const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
