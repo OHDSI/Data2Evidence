@@ -164,6 +164,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
             mode: "kernel",
             datasetId: selectedDatasetId,
             studyId: study.id,
+            uploadResults: true
           },
         };
         const response = await api.dataflow.createStudyAnalysisRun(requestData);
