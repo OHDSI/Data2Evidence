@@ -3,9 +3,7 @@ import { CohortExpressionQueryOptions, CohortExpression } from "../types.ts";
 import { AtlasCohortDefinitionArtifact } from "../../../_shared/user-artifacts/types.ts";
 import { CombinedCohortDefinitionListSchema } from "../api/types.ts";
 
-export const AtlasCohortDefinitionDto = AtlasCohortDefinitionArtifact.omit({
-  materializedCohortDefinitions: true,
-});
+export const AtlasCohortDefinitionDto = AtlasCohortDefinitionArtifact;
 export type IAtlasCohortDefinitionDto = z.infer<
   typeof AtlasCohortDefinitionDto
 >;

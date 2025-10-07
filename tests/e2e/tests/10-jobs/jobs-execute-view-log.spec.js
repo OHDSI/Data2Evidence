@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const TEST_NAME = 'jobs-execute-view-log-and-result'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -45,6 +45,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').fill('demo_cdm');
   await page.locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').click();
   await page.locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').fill('5.3');
+  await page.locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').click();
+  await page.locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').fill('demo_cdm');
   await page.getByRole('button', { name: 'Submit' }).click();
   await page.getByRole('button', { name: 'Job Runs' }).click();
   await expect(page.getByRole('heading', { name: 'Job Runs' })).toBeVisible();

@@ -1,7 +1,10 @@
+import os
+import time
 
 from functools import partial
 
 from prefect import flow
+from prefect.logging import get_run_logger
 
 from .types import *
 from .update import update_omop_cdm_dataset_flow
@@ -14,8 +17,7 @@ from _shared_flow_utils.create_dataset_tasks import *
 from flows.create_cachedb_file_plugin.flow import create_cache_flow
 from flows.create_cachedb_file_plugin.types import CreateCacheOptions, CacheFlowAction
 
-import os
-import time
+
 os.environ['plugin_name'] = 'omop_cdm_plugin'
 
 
@@ -32,6 +34,7 @@ def omop_cdm_plugin(options: OmopCDMPluginOptions):
         case FlowActionType.CREATE_SEED_SCHEMAS:
             create_seed_schemas_flow(options)
         case _:
+            logger = get_run_logger()
             error_msg = f"Flow action type '{options.flow_action_type}' not supported, only '{[action.value for action in FlowActionType]}'"
             logger.error(error_msg)
             raise ValueError(error_msg)
@@ -41,30 +44,36 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
     logger = get_run_logger()
     database_code = options.database_code
     schema_name = options.schema_name
+    results_schema  = options.results_schema
     use_cache_db = options.use_cache_db
-
-    omop_cdm_dao = DBDao(use_cache_db=use_cache_db,
-                         database_code=database_code)
-
+    
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    
     # Create schema if there is no existing schema first
-    create_schema_task(omop_cdm_dao, schema_name)
+    create_schema_task(dbdao, schema_name)
 
     # Parent task with hook to drop schema on failure
     create_datamodel_wo = create_datamodel_parent_task.with_options(
         on_failure=[partial(
-            drop_schema_hook, **dict(dbdao=omop_cdm_dao, schema=schema_name)
+            drop_schema_hook, **dict(dbdao=dbdao, schema=schema_name)
         )]
     )
-    create_datamodel_wo(cdm_version=options.cdm_version,
-                        schema_dao=omop_cdm_dao,
+    create_datamodel_wo(cdm_version=options.cdm_version, 
+                        schema_dao=dbdao,
                         cdm_schema=schema_name,
-                        vocab_schema=options.vocab_schema
-                        )
+                        vocab_schema=options.vocab_schema)
+    
+    # Create results schema
+    create_schema_task(dbdao, results_schema)
+    
+    # Parent task with hook to drop results schema on failure
+    create_results_tables = create_results_tables_parent_task.with_options(
+        on_failure=[partial(
+            drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema)
+        )]
+    )
 
-    # TODO
-    # run data_load_plugin for the source schema
-    # maybe i no need load the data
-    # cannot run data load here unless i call job plugins endpoint
+    create_results_tables(dbdao, results_schema)
 
     if options.cache_schema_name:
         logger.info(f"Creating cache schema {options.cache_schema_name}")
@@ -77,7 +86,6 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
         )
         logger.info(f"Creating result schema {options.cache_schema_name}")
         create_cache_flow(createCacheOptions)
-
 
 def create_seed_schemas_flow(options: OmopCDMPluginOptions):
     create_vocab_schema(options)

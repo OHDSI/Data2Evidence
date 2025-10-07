@@ -169,7 +169,7 @@ export class DatasetRouter {
                     cache_schema_name: parsedNewCacheSchemaName,
                     cleansed_schema_option: cleansedSchemaOption,
                     vocab_schema: vocabSchema,
-                    result_schema: resultSchemaValue,
+                    results_schema: resultSchemaValue,
                     plugin: plugin,
                   },
                 };
@@ -317,7 +317,7 @@ export class DatasetRouter {
                 database_code: databaseCode,
                 schema_name: parsedNewSchemaName,
                 source_schema: schemaName,
-                result_schema: resultSchemaName,
+                results_schema: resultSchemaName,
                 dialect: dialect,
                 snapshot_copy_config: snapshotCopyConfig,
               },
