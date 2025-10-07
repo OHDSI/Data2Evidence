@@ -76,6 +76,13 @@
     - Does the CSV have header: Tick if the CSV file already has headers.
     - Columns: For CSVs without headers. The previous field should be unticked. Enter name for each column.
 
+## File Node (Experimental)
+
+- **Description:** Upload Generic File to Supabase storage, store and return a local address.
+- **Input Nodes:** This node does not accept any input nodes.
+- **Output Data:** Returns only 1 String where the file is stored. 
+- **How To Use:** 
+    - Choose File: Name of the file to upload.
 
 
 ## Data Mapping Node (Experimental)

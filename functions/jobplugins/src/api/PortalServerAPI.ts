@@ -1,6 +1,6 @@
 import { services } from "../env.ts";
 import { OpenIDAPI } from "./OpenIDAPI.ts";
-import { CsvFileOperationResponse } from "../types.ts";
+import { CsvFileOperationResponse, FileOperationResponse } from "../types.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
@@ -129,6 +129,38 @@ export class PortalServerAPI {
       console.error(`Error while deleting CSV file: ${error}`);
       throw error;
     }
+  }
+
+  async uploadFile(nodeId: string, file: File) {
+    const url = `${this.baseURL}/supabase-storage/upload/file`; // make sure endpoint exists
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    const res = await fetch(`${url}?nodeId=${nodeId}`, {
+      method: "POST",
+      headers: { Authorization: this.token },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Upload failed: ${res.status} - ${err}`);
+    }
+    return await res.json();
+  }
+
+  async deleteFile(nodeId: string, fileName: string) {
+    const url = `${this.baseURL}/supabase-storage/delete/file`;
+    const res = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, {
+      method: "DELETE",
+      headers: { Authorization: this.token },
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Delete failed: ${res.status} - ${err}`);
+    }
+    return await res.json();
   }
 
   private createOptions(method: string, token = this.token): RequestInit {
