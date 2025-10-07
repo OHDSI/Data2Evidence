@@ -2,12 +2,15 @@ import ibis
 import json
 import duckdb
 import logging
+import os
+import time
 from typing import Any
 import traceback as tb
 from rpy2 import robjects
 from functools import partial
 from jsonpath_ng import parse
 from pydantic import ValidationError
+from pathlib import Path
 
 import pandas as pd
 from pandas.api.types import is_scalar, is_list_like, is_dict_like
@@ -15,7 +18,7 @@ from pandas.api.types import is_scalar, is_list_like, is_dict_like
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
-from prefect import task, flow
+from prefect import task, flow, get_run_logger
 
 from .hooks import *
 from .flowutils import *
@@ -26,6 +29,7 @@ from .types import (NodeType,
 
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
+from .nodeutils.fileutils import process_zip, process_ndjson
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
@@ -335,60 +339,46 @@ class GenericFileNode(Node):
         encoding (str): Optional file encoding.
         output_folder (str): Folder to store multiple files.
     """
-
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        self.files = _node.get("files", [])
-        if isinstance(self.files, str):
-            self.files = [self.files]
-
-        self.file_type = _node.get("file_type", None)
+        logger = get_run_logger()
+        self.file = _node["file"]
+        self.file_type = _node.get("file_type", Path(self.file).suffix.lower())
         self.encoding = _node.get("encoding", "utf8")
-        self.options = _node.get("options", {})
-        self.output_folder = _node.get("output_folder", f"./{self.id}_json_files")
-
-        # Only create folder if JSON files will be saved
-        if self.file_type == "json" and self.files:
-            os.makedirs(self.output_folder, exist_ok=True)
+        logger.info(f"GenericFileNode: file={self.file}, file_type={self.file_type}, encoding={self.encoding}")
+        self.output_folder = Path(_node.get("output_folder", f"./{self.id}_files"))
+        self.output_folder.mkdir(exist_ok=True)
 
     def _fetch_file(self, file_path):
+        logger = get_run_logger()
+        logger.info(f"Fetching file: {file_path}")
+        # fetch file from Supabase or local
         try:
             return SupabaseStorageAPI().get_file(self.id, file_path)
         except Exception:
-            with open(file_path, "rb") as f:
-                return f.read()
+            # raise error if file not found
+            raise FileNotFoundError(f"File not found: {file_path}")
 
-    def _detect_file_type(self, file_path) -> str:
-        if self.file_type:
-            return self.file_type.lower()
-        ext = file_path.split(".")[-1].lower()
-        return ext
-
-    def _save_files_to_folder(self):
-        os.makedirs(self.output_folder, exist_ok=True)
-
-        for file_path in self.files:
-            raw_data = self._fetch_file(file_path)
-            file_name = os.path.basename(file_path)
-            save_path = os.path.join(self.output_folder, file_name)
-            with open(save_path, "wb") as f:
-                f.write(raw_data)
-
-        # Return the folder path where all files are saved
-        return self.output_folder
-
-    def test(self, task_run_context):
+    def task(self, task_run_context) -> Result:
+        logger = get_run_logger()
         try:
-            return self._save_files_to_folder()
-        except Exception:
-            raise
+            raw_data = self._fetch_file(self.file)
+            file_name = Path(self.file).name
+            file_type = (self.file_type or Path(self.file).suffix[1:]).lower()
 
-    def task(self, task_run_context):
-        try:
-            folder_path = self._save_files_to_folder()
-            return Result(False, folder_path, self, task_run_context)
-        except Exception:
-            return Result(True, tb.format_exc(), self, task_run_context)
+            if file_type == ".zip":
+                process_zip(raw_data, self.output_folder)
+            elif file_type == ".ndjson":
+                process_ndjson(raw_data, self.output_folder, file_name, self.encoding)
+            else:
+                save_path = self.output_folder / file_name
+                save_path.write_bytes(raw_data)
+            # Return folder path (or list of files if you prefer)
+            return Result(False, str(self.output_folder), self, task_run_context)
+
+        except Exception as e:
+            return Result(True, str(e), self, task_run_context)
+    
         
 class DbWriter(Node):
     def __init__(self, name, _node):

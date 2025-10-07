@@ -49,7 +49,7 @@ export const NODE_COLORS: {
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
-  white_rabbit_node: "#999fcb",
+  white_rabbit_node: "#999fcb"
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -138,12 +138,13 @@ test_exec <- function(myinput) {
       encoding: "utf-8",
     },
   },
-   file_node: {
-    title: "Generic Files",
-    description: "Read file from a path and store it into panda dataframe.",
+  file_node: {
+    title: "Generic File",
+    description: "Read file from a path and store it into a backend folder, returning the address where it is stored.",
     tag: NodeTag.Experimental,
     defaultData: {
       file: "",
+      file_type: "json",
       encoding: "utf-8",
     },
   },
