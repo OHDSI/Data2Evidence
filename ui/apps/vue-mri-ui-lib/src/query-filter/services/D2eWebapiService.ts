@@ -78,12 +78,20 @@ export class D2eWebapiService {
     }>,
     datasetId: string
   ): Promise<number | { statusCode: number }> {
+    // Transform booleans to 0/1 for Atlas WebAPI
+    const transformedItems = conceptItems.map(item => ({
+      conceptId: item.conceptId,
+      isExcluded: item.isExcluded ? 1 : 0,
+      includeDescendants: item.includeDescendants ? 1 : 0,
+      includeMapped: item.includeMapped ? 1 : 0,
+    }))
+
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
       url: `/conceptset/${conceptSetId}/items`,
       method: 'PUT',
       headers: { datasetid: datasetId },
-      data: conceptItems,
+      data: transformedItems,
     })
     return response.data
   }
