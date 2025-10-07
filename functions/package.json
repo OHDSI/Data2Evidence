@@ -344,7 +344,8 @@
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
           "TESTSCHEMA": "${TESTSCHEMA}",
-          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}"
+          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}",
+          "BIGQUERY_CDM_VERSION": "${BIGQUERY_CDM_VERSION}"
         },
         "mri-pg-config": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -546,11 +547,11 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-          "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}",
+          "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
-          "GOOGLE_APPLICATION_CREDENTIALS":"/app/google-credentials.json",
+          "GOOGLE_APPLICATION_CREDENTIALS": "/app/google-credentials.json",
           "PREFECT__LOCAL_DEBUG": "${PREFECT__LOCAL_DEBUG:-false}",
           "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}",
           "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",

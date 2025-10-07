@@ -4,7 +4,6 @@ import {
     IMRIRequest,
     CohortType,
     CohortDefinitionTableType,
-    IMaterializedBookmarkCohortDefinition,
 } from "../../types";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import { Logger, getUser, User } from "@alp/alp-base-utils";

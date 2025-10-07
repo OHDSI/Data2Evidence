@@ -139,6 +139,8 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
         try {
           if (study.type == StrategusStudyType.NETWORK) {
             strategusJson = await api.systemPortal.getStudyStrategusJson(study.id!);
+            // backend returns object, convert to string
+            strategusJson = JSON.stringify(strategusJson);
           } else {
             const strategusAnalysis = await api.strategusAnalysis.getStrategusAnalysis(study.id);
             strategusJson = strategusAnalysis.analysisSpec;
@@ -156,7 +158,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
 
         const requestData = {
           json_graph: {
-            analysisSpecification: JSON.stringify(strategusJson),
+            analysisSpecification: strategusJson,
           },
           options: {
             mode: "kernel",
