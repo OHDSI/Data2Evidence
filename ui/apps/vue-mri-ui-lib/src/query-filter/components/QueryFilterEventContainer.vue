@@ -156,45 +156,6 @@ const handleAttributeSelected = (eventId: string, attribute: any) => {
     const existingAttrIndex = currentAttributes.findIndex(
       attr => 'attributeId' in attr && attr.attributeId === attribute.id
     )
-
-    if (existingAttrIndex === -1) {
-      // Add new attribute with default values based on type
-      // Note: config has 'type' field, we map it to 'configType' for internal use
-      const attributeType = attribute.type || attribute.configType
-      let newAttribute: QueryFilterAttribute
-
-      if (attributeType === 'numericRange') {
-        // Create numericRange attribute with defaults (matches NumericRangeInput defaults)
-        newAttribute = {
-          id: `attribute_${Date.now()}`,
-          attributeId: attribute.id,
-          attributeType: 'standard',
-          configType: 'numericRange',
-          operator: 'LESS_THAN', // Default operator (lt -> LESS_THAN)
-          value: '0', // Default value
-          name: attribute.name || attribute.title || attribute.id,
-          description: attribute.description || attribute.defaultDescription || '',
-        }
-      } else {
-        // Create attribute without defaults for other types
-        newAttribute = {
-          id: `attribute_${Date.now()}`,
-          attributeId: attribute.id,
-          attributeType: 'standard',
-          configType: attributeType,
-          name: attribute.name || attribute.title || attribute.id,
-          description: attribute.description || attribute.defaultDescription || '',
-        }
-      }
-
-      const updatedEvent: QueryFilterEvent = {
-        ...currentEvent,
-        attributes: [...currentAttributes, newAttribute],
-        selectedAttributes: [...(currentEvent.selectedAttributes || []), attribute.id],
-      }
-
-      updateEvent(eventIndex, updatedEvent)
-    }
   }
 }
 
