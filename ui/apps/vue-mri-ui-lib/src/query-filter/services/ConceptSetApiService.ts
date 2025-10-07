@@ -29,7 +29,7 @@ const buildApiHeaders = async (datasetId?: string): Promise<Record<string, strin
   return headers
 }
 
-// In-memory cache for concept set expressions with TTL (5 minutes)
+// In-memory cache for concept set expressions with TTL
 interface CacheEntry {
   promise: Promise<ConceptSetExpression>
   timestamp: number
