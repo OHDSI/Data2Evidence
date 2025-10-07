@@ -30,6 +30,7 @@ import {
 
 import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
 import type ConfigLoader from './ConfigLoader'
+import { mapAtlasToCardinality } from './AtlasUtils'
 
 export interface ConceptSetMapping {
   name: string
@@ -332,7 +333,7 @@ export const convertAtlasToFilters = (
           criteriaType, // For nested events, this should be the medical event type initially
           isExpanded: true,
           cardinality: {
-            type: 'AT_LEAST',
+            type: occurrence?.Type !== undefined ? mapAtlasToCardinality(occurrence.Type) : 'AT_LEAST',
             count: occurrence?.Count || 1,
             using: 'ALL',
           },
