@@ -1,0 +1,119 @@
+name: generate npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      GIT_REPO_FULL_NAME:
+        description: Select RepoName
+        required: true
+        type: choice
+        options:
+          - OHDSI/Data2Evidence
+      GIT_BRANCH_NAME:
+        default: develop
+        description: Enter BranchName / ReleaseTagName
+        required: true
+        type: string
+      tag:
+        description: Enter version for release
+        required: true
+        type: string
+      artifacttype:
+        type: choice
+        required: true
+        default: "OSS-develop"
+        options:
+          - "OSS-develop"
+
+env:
+  GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME }} # workflow_dispatch
+  GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME }} # workflow_dispatch
+  NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype }}
+
+jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [pick_runner]
+    if: github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - PKGPATH: ./ui
+            APP_PATH: ./ui/apps/vue-mri-ui-lib
+            NPM: yarn
+
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GIT_BRANCH_NAME }}
+          repository: ${{ env.GIT_REPO_FULL_NAME }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+
+      - name: Setup yarn
+        run: npm install -g yarn
+
+      - name: Update version
+        run: |
+          cd ${{ matrix.APP_PATH }}
+          RELEASE_VERSION=${{ github.event.inputs.tag }}
+          jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' --arg v $RELEASE_VERSION '.version=$v' --arg name atlas-ui '.name=$name' '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' package.json > tmppkg; mv tmppkg package.json
+          cat package.json
+      - name: Build
+        run: |
+          cd ${{ matrix.PKGPATH }}
+          yarn install
+          rm ./apps/vue-mri-ui-lib/src/query-filter/mock-server/.gitignore
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch Package
+        if: ${{ matrix.NPM }}
+        working-directory: ${{ matrix.PKGPATH }}
+        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
+      - name: Use Node.js - OSS Develop
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
+      - name: Publish
+        env:
+          CI: true
+          SHOULD_PUBLISH: ${{ github.event_name == 'workflow_dispatch' }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
+        run: |
+          cd ${{ matrix.APP_PATH }}
+          if [[ $SHOULD_PUBLISH == true ]]; then
+             ${{ matrix.NPM || 'npm' }} publish --dry-run
+          else
+             ${{ matrix.NPM || 'npm' }} pack
+          fi
