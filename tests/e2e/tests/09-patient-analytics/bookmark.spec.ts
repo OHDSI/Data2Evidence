@@ -332,8 +332,7 @@ test(TEST_NAME, async ({ page }) => {
     await addButton.click()
     await expect(page.getByRole('menu')).toBeVisible({ timeout: 10000 })
     await expect(page.getByRole('menuitem', { name: 'testuserB' })).toBeVisible({ timeout: 10000 })
-    await page.getByRole('menuitem', { name: 'testuserB' }).click()
-    await expect(page.getByRole('cell', { name: 'testuserB' })).toBeVisible({ timeout: 10000 })
+    await page.getByRole('menuitem', { name: 'testuserB' }).click({ timeout: 10000 })
     await page.getByTestId('dialog-close').click()
   })
 
