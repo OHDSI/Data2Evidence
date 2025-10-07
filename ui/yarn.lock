@@ -3589,7 +3589,7 @@
 
 "@data2evidence/d2e-starboard-notebook@https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop":
   version "1.0.0"
-  resolved "https://github.com/data2evidence/d2e-starboard-notebook-base.git#b73e420f8a6583d26413a1bf2e02769e24f35513"
+  resolved "https://github.com/data2evidence/d2e-starboard-notebook-base.git#25f009e3b85aa0d3f5a9ba202503adacbfde8044"
 
 "@data2evidence/d2e-starboard-wrap@https://github.com/data2evidence/d2e-starboard-wrap.git#develop":
   version "1.0.0"
