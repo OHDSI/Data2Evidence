@@ -6,7 +6,7 @@ import {
 } from "@danet/core";
 import { contentType } from "mime-types";
 import pg from "npm:pg";
-import { env, services } from "../env.ts";
+import { services } from "../env.ts";
 import { RequestContextService } from "../common/request-context.service.ts";
 
 @Injectable({ scope: SCOPE.REQUEST })
@@ -50,11 +50,6 @@ export class SupabaseStorageClient {
     };
     this.pgclient = new pg.Client(this.pgOpt);
     this.initializeDb();
-
-    this.createBucket(this.DEFAULT_BUCKET);
-
-    // Create the data transformation bucket to store uploaded files
-    this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
   }
 
   private async initializeDb() {
@@ -63,39 +58,6 @@ export class SupabaseStorageClient {
       console.log("Successfully connected to PostgreSQL database");
     } catch (e) {
       console.error(`Error connecting to PostgreSQL: ${e}`);
-    }
-  }
-
-  private async createBucket(bucketName: string) {
-    try {
-      console.info(`Creating bucket ${bucketName}...`);
-
-      const url = `${this.baseUrl}/bucket`;
-      console.log(`Making request to create bucket: ${url}`);
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: `${this.authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: bucketName,
-          public: false,
-        }),
-      });
-
-      if (!response.ok && response.status !== 409) {
-        // 409 means bucket already exists
-        const errorText = await response.text();
-        console.error(
-          `Error creating bucket: ${response.status} - ${errorText}`
-        );
-      } else {
-        console.info(`Bucket ${bucketName} created or already exists`);
-      }
-    } catch (e) {
-      console.error(`Error creating default bucket: ${e}`);
     }
   }
 
