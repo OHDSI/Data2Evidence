@@ -1,4 +1,6 @@
 name: d2e-functions/pa Run HTTP tests
+permissions:
+  contents: read
 
 on:
   pull_request:
