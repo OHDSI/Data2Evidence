@@ -25609,9 +25609,9 @@ const paConfigDuckdb = {
                     "source": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
                     "ordered": false,
                     "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": false,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
                     "measure": false,
                     "filtercard": {
                         "initial": false,
