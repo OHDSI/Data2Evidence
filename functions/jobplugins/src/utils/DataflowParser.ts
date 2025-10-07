@@ -184,6 +184,10 @@ export class PrefectAnalysisParamsTransformer {
       const { id, type } = node;
 
       const { name, description, ...prefectVars } = node.data;
+      // TODO: to remove
+      if (node.data.hasOwnProperty("type")) {
+        prefectVars["cohortType"] = node.data["type"] || "";
+      }
       if (isCsv(node)) {
         // For CSV nodes, ensure all required fields are included and add encoding with default value
         const csvData = node.data as IFlowCsvNodeData;

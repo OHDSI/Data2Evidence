@@ -53,7 +53,7 @@ def data_characterization_plugin(options: DCOptionsType):
         use_trex_connection=use_trex_connection,
     )
 
-    r_connection_string = dbdao.get_database_connector_connection_string(
+    r_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=UserType.ADMIN_USER, release_date=options.releaseDate
     )
 

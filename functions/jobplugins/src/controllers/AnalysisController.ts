@@ -77,6 +77,12 @@ export class AnalysisController {
         req.headers["authorization"].replace(/bearer /i, "")
       ) as JwtPayload;
       console.log(`data transoformation controller, token: ${token}`);
+
+      if (!/^[A-Za-z0-9_]+$/.test(dataflowDto.name)) {
+        console.error("Analysis flow name can only contain letters, numbers, and underscores");
+        return res.status(400).send({ message: "Invalid name; only letters, numbers, and underscores are allowed." });
+      }
+
       const canvas = await this.analysisService.createAnalysisflow(
         dataflowDto,
         token
