@@ -749,7 +749,75 @@ export const convertAtlasToFilters = (
               groupEvent.nestedCriteria!.events = convertedEvents
             }
 
-            // TODO: Handle DemographicCriteriaList within groups if needed
+            // Handle DemographicCriteriaList within groups
+            if (groupCriteria.DemographicCriteriaList && groupCriteria.DemographicCriteriaList.length > 0) {
+              groupCriteria.DemographicCriteriaList.forEach(demoCriteria => {
+                const demographicEvent: QueryFilterEvent = {
+                  id: `event_${Math.random().toString(36).substring(2)}`,
+                  conceptSet: 'Demographic Criteria',
+                  eventType: 'demographic',
+                  isExpanded: true,
+                  attributes: [],
+                }
+
+                // Handle all demographic attributes generically using config
+                if (configLoader) {
+                  const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
+
+                  Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+                    const value = demoCriteria[atlasKey]
+                    const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
+
+                    if (attributeId && value !== undefined && value !== null) {
+                      const attributeConfig = configLoader.getAttributeConfig('demographic', attributeId)
+                      if (attributeConfig) {
+                        if (
+                          attributeConfig.type === 'numericRange' &&
+                          typeof value === 'object' &&
+                          'Op' in value &&
+                          'Value' in value
+                        ) {
+                          const mappedOperator = mapAtlasOperatorToInternal(value.Op)
+                          const mappedValue = value.Value.toString()
+                          const extent = 'Extent' in value ? value.Extent?.toString() : undefined
+
+                          demographicEvent.attributes!.push({
+                            id: `attribute_${Math.random().toString(36).substring(2)}`,
+                            attributeId: attributeId,
+                            attributeType: 'standard' as const,
+                            configType: 'numericRange',
+                            operator: mappedOperator,
+                            value: mappedValue,
+                            extent: extent,
+                            name: attributeConfig.name || attributeId,
+                            description: attributeConfig.description || '',
+                          })
+                        } else if (attributeConfig.type === 'concept' && Array.isArray(value)) {
+                          const conceptItems = convertAtlasConceptsToInternal(value)
+                          demographicEvent.attributes!.push({
+                            id: `attribute_${Math.random().toString(36).substring(2)}`,
+                            attributeId: attributeId,
+                            attributeType: 'standard' as const,
+                            configType: 'concept',
+                            conceptItems: conceptItems,
+                            name: attributeConfig.name || attributeId,
+                            description: attributeConfig.description || '',
+                            domainFilter: attributeConfig.domainFilter,
+                          })
+                        }
+                      }
+                    }
+                  })
+
+                  demographicEvent.selectedAttributes = demographicEvent.attributes.map(
+                    attr => attr.attributeId || attr.id
+                  )
+                }
+
+                groupEvent.nestedCriteria!.events.push(demographicEvent)
+              })
+            }
+
             // TODO: Handle nested Groups recursively if needed
 
             criteriaItem.events.push(groupEvent)
