@@ -32,7 +32,7 @@ After successful installation above, Run
 For example on a bash terminal
 
 ```bash
-WEBAPI_URL=https://atlas-staging.ohdsi.org/WebAPI
+WEBAPI_URL=https://webapi.alp-dev.org/WebAPI
 SERVER_URL=http://localhost:3005
 SOURCE=EUNOMIA
 USE_CACHE=true
