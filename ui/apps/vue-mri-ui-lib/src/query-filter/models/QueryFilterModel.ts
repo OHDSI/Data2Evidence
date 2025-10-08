@@ -87,6 +87,7 @@ export class QueryFilterCriteriaManager {
               title: criteria.title,
               description: criteria.description,
               criteriaType: criteria.criteriaType,
+              criteriaCount: criteria.criteriaCount,
               events: transformEvents(criteria.events || []),
             })) || [],
         }
@@ -143,6 +144,7 @@ export class QueryFilterCriteriaManager {
       title: group?.title || 'Group 1',
       description: group?.description || 'Description 1',
       criteriaType: group?.criteriaType || 'ALL',
+      criteriaCount: group?.criteriaCount,
       events: group?.events || [],
     }
     if (!this.inclusionCriteria.criteria) {
@@ -915,6 +917,7 @@ export class QueryFilterCriteriaManager {
       title: group.title || '',
       description: group.description || '',
       criteriaType: group.criteriaType || 'ALL',
+      criteriaCount: group.criteriaCount,
       events: group.events || [],
     }
 

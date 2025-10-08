@@ -114,6 +114,7 @@ export const processNestedGroups = (
 
           // Process nested criteria from attributes if they exist
           if (nestedEvent.attributes && Array.isArray(nestedEvent.attributes)) {
+            // TODO: check if we can use .find() here so we don't have to attributesNestedCriteria[0]
             const attributesNestedCriteria = nestedEvent.attributes.filter(
               (
                 attr
@@ -147,7 +148,7 @@ export const processNestedGroups = (
                 nestedGroupsList.length > 0
               ) {
                 criteria.Criteria[atlasEventType].CorrelatedCriteria = {
-                  Type: 'ALL',
+                  Type: attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL',
                   CriteriaList: nestedCriteriaList,
                   DemographicCriteriaList: nestedDemographicCriteriaList,
                   Groups: nestedGroupsList,
@@ -228,7 +229,10 @@ export const processNestedGroups = (
 
       // Create the group criteria
       groupsList.push({
-        Type: 'ALL',
+        Type: groupEvent.nestedCriteria.criteriaType || 'ALL',
+        ...(groupEvent.nestedCriteria.criteriaCount !== undefined && {
+          Count: groupEvent.nestedCriteria.criteriaCount,
+        }),
         CriteriaList: criteriaList,
         DemographicCriteriaList: demographicCriteriaList,
         Groups: nestedGroups,
@@ -313,7 +317,7 @@ export const processNestedGroupsRecursively = (
                 nestedGroupsList.length > 0
               ) {
                 criteria.Criteria[atlasEventType].CorrelatedCriteria = {
-                  Type: 'ALL',
+                  Type: attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL',
                   CriteriaList: nestedCriteriaList,
                   DemographicCriteriaList: nestedDemographicCriteriaList,
                   Groups: nestedGroupsList,
@@ -394,7 +398,10 @@ export const processNestedGroupsRecursively = (
 
       // Create the group criteria
       groupsList.push({
-        Type: 'ALL',
+        Type: groupEvent.nestedCriteria.criteriaType || 'ALL',
+        ...(groupEvent.nestedCriteria.criteriaCount !== undefined && {
+          Count: groupEvent.nestedCriteria.criteriaCount,
+        }),
         CriteriaList: criteriaList,
         DemographicCriteriaList: demographicCriteriaList,
         Groups: nestedGroups,
@@ -596,6 +603,10 @@ export const buildNestedCriteriaFromAttributes = (
         let nestedDemographicCriteriaList: DemographicCriteria[] = []
         let nestedGroupsList: GroupCriteria[] = []
 
+        // Get the first nested attribute for criteriaType (all nested attributes at same level should have same criteriaType)
+        const firstNestedAttr = furtherNestedCriteria.find(attr => isNestedAttribute(attr) && attr.nestedCriteria)
+        const criteriaType = isNestedAttribute(firstNestedAttr) ? firstNestedAttr?.nestedCriteria?.criteriaType : 'ALL'
+
         furtherNestedCriteria.forEach(attrObj => {
           if (isNestedAttribute(attrObj) && attrObj.nestedCriteria?.events) {
             const result = buildNestedCriteriaFromAttributes(attrObj.nestedCriteria.events, systemIdToAtlasId)
@@ -610,7 +621,7 @@ export const buildNestedCriteriaFromAttributes = (
 
         if (nestedCriteriaList.length > 0 || nestedDemographicCriteriaList.length > 0 || nestedGroupsList.length > 0) {
           criteria.Criteria[atlasEventType].CorrelatedCriteria = {
-            Type: 'ALL',
+            Type: criteriaType,
             CriteriaList: nestedCriteriaList,
             DemographicCriteriaList: nestedDemographicCriteriaList,
             Groups: nestedGroupsList,

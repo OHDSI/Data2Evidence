@@ -36,6 +36,7 @@ export interface WindowDefinition {
 export interface QueryFilterNestedCriteria {
   id: string
   criteriaType: CriteriaType
+  criteriaCount?: number
   events: QueryFilterEvent[]
 }
 

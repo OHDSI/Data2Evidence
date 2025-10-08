@@ -611,6 +611,7 @@ export const convertAtlasToFilters = (
         nestedCriteria: {
           id: `nested_${Math.random().toString(36).substring(2)}`,
           criteriaType: groupCriteria.Type || 'ALL',
+          criteriaCount: groupCriteria.Count,
           events: [] as QueryFilterEvent[],
         },
       }
@@ -742,6 +743,7 @@ export const convertAtlasToFilters = (
           title: rule.name || 'Inclusion Rule',
           description: rule.description || '',
           criteriaType: rule.expression?.Type || 'ALL',
+          criteriaCount: rule.expression?.Count,
           events: [] as QueryFilterEvent[],
         }
 

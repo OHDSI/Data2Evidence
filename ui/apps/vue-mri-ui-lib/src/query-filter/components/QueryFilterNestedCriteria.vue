@@ -16,6 +16,7 @@ import type { QueryFilterGroup, QueryFilterEvent } from '../types/QueryFilterTyp
 export interface NestedCriteria {
   id: string
   criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  criteriaCount?: number
   events: QueryFilterEvent[]
 }
 
@@ -52,6 +53,7 @@ const groupData = computed<QueryFilterGroup>({
       title: props.hideHeader ? '' : 'Nested Criteria',
       description: '',
       criteriaType: props.nestedCriteria.criteriaType,
+      criteriaCount: props.nestedCriteria.criteriaCount,
       events: props.nestedCriteria.events,
     }
     return result
@@ -60,6 +62,7 @@ const groupData = computed<QueryFilterGroup>({
     const updatedCriteria: NestedCriteria = {
       id: value.id,
       criteriaType: value.criteriaType,
+      criteriaCount: value.criteriaCount,
       events: value.events,
     }
     emit('update:nestedCriteria', updatedCriteria)
