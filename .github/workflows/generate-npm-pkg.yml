@@ -131,7 +131,8 @@ jobs:
           jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg.json
           jq --arg name atlas-ui '.name=$name' tmppkg.json > tmppkg2.json
           jq '.bin.atlas = "./atlas-entrypoint.js"' tmppkg2.json > tmppkg3.json
-          jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' tmppkg3.json > package.json
+          jq '.private=false' tmppkg3.json > tmppkg4.json
+          jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' tmppkg4.json > package.json
           cat package.json
       - name: Build
         run: |
@@ -140,10 +141,6 @@ jobs:
           rm ./apps/vue-mri-ui-lib/src/query-filter/mock-server/.gitignore
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Patch Package
-        if: ${{ matrix.NPM }}
-        working-directory: ${{ matrix.PKGPATH }}
-        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
         with:
