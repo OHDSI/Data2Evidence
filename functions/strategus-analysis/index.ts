@@ -21,7 +21,7 @@ export class App {
       new StrategusResultsRouter(this.server).router
     );
     this.app.use("/strategus/analysis", new StrategusAnalysisRouter().router);
-    this.app.listen(10000);
+    this.server.listen(10000);
     this.logger.info("Strategus Results service is running on port 10000");
   }
 
