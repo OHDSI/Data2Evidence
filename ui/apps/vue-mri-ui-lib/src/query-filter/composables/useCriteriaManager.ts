@@ -240,6 +240,14 @@ export function useCriteriaManager(
           return event
         }
 
+        // Search in group event's nested criteria (for group type events)
+        if (event.eventType === 'group' && event.nestedCriteria?.events) {
+          const nestedEvent = event.nestedCriteria.events.find(ne => ne.id === eventId)
+          if (nestedEvent) {
+            return nestedEvent
+          }
+        }
+
         // Also search nested events within attributes
         if (event.attributes) {
           for (const attribute of event.attributes) {
