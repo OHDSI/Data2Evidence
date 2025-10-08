@@ -27,7 +27,7 @@ After successful installation above, Run
 | SERVER_URL           | local port number for the server to run on                 | http://localhost:3131               |
 
 
-### To override any of the above values, simply export them as environment variables and run npx atlas
+### To override any of the above default values, simply export them as environment variables and run npx atlas
 
 For example on a bash terminal
 
