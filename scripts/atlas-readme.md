@@ -17,6 +17,8 @@ After successful installation above, Run
 
 `npx atlas`
 
+Open in browser with url `http://localhost:3131`
+
 ## Environment variables
 
 | Environment variable | Description                                                | Default value                       |
@@ -38,3 +40,5 @@ SOURCE=EUNOMIA
 USE_CACHE=true
 npx atlas
 ```
+
+Open in browser with url `http://localhost:3005`
