@@ -23,7 +23,7 @@
     "path": "node:path",
     "crypto": "node:crypto",
     "buffer": "node:buffer",
-    "@types/multer": "^1.4.7",
+    "@types/multer": "npm:@types/multer@^1.4.7",
     "./src/types": "./src/types.d.ts",
     "./src/main": "./src/main.ts",
     "./src/routes": "./src/routes.ts",
