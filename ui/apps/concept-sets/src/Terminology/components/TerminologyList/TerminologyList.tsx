@@ -11,6 +11,7 @@ import TablePagination from "@mui/material/TablePagination";
 import {
   MaterialReactTable,
   MRT_ColumnDef,
+  MRT_SortingState,
   useMaterialReactTable,
 } from "material-react-table";
 import { TablePaginationActions } from "@portal/components";
@@ -119,6 +120,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     { id: string; value: unknown }[]
   >([]);
   const [useDefaultFilters, setUseDefaultFilters] = useState(true);
+  const [sorting, setSorting] = useState<MRT_SortingState>([]);
   const { setFeedback } = useFeedback();
   const tableRef = useRef<HTMLTableElement>(null);
 
@@ -132,11 +134,48 @@ const TerminologyList: FC<TerminologyListProps> = ({
       tab === tabNames.RELATED ||
       (isAtlas && tab === tabNames.SEARCH);
 
+    // Apply sorting before pagination (when enabled)
+    let sortedData = fullListData;
+    if (isAtlas && sorting.length > 0) {
+      const sortColumn = sorting[0];
+      const columnId =
+        sortColumn.id as keyof FhirValueSetExpansionContainsWithExt;
+
+      sortedData = [...fullListData].sort((a, b) => {
+        const aValue = a[columnId];
+        const bValue = b[columnId];
+
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortColumn.desc ? 1 : -1;
+        if (bValue == null) return sortColumn.desc ? -1 : 1;
+
+        // Numeric comparison
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          return sortColumn.desc ? bValue - aValue : aValue - bValue;
+        }
+
+        // String comparison
+        const aStr = String(aValue).toLowerCase();
+        const bStr = String(bValue).toLowerCase();
+        const comparison = aStr.localeCompare(bStr);
+        return sortColumn.desc ? -comparison : comparison;
+      });
+    }
+
     const listData = shouldUseClientSidePagination
-      ? fullListData.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-      : fullListData;
+      ? sortedData.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+      : sortedData;
     return listData;
-  }, [tab, conceptsResult, page, rowsPerPage, selectedConcepts, isAtlas]);
+  }, [
+    tab,
+    conceptsResult,
+    page,
+    rowsPerPage,
+    selectedConcepts,
+    isAtlas,
+    sorting,
+  ]);
 
   const updateSearchResult = useCallback((keyword: string) => {
     setSearchText(keyword);
@@ -730,7 +769,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     enableStickyHeader: true,
     onColumnFiltersChange: setColumnFilters,
-    state: { columnFilters, columnOrder, isLoading },
+    onSortingChange: setSorting,
+    manualSorting: isAtlas ? false : true, // Let MRT handle UI, we handle data sorting
+    state: { columnFilters, columnOrder, isLoading, sorting },
     enablePagination: false, // Use TablePagination instead of built in
     muiTableBodyRowProps: ({ row, staticRowIndex }) => ({
       onClick: () => {
