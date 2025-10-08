@@ -132,7 +132,7 @@ export class PortalServerAPI {
   }
 
   async uploadFile(nodeId: string, file: File) {
-    const url = `${this.baseURL}/supabase-storage/upload/file`; // make sure endpoint exists
+    const url = `${this.baseURL}/supabase-storage/upload/file`;
     const formData = new FormData();
     formData.append("file", file, file.name);
 
