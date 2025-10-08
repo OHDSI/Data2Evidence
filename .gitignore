@@ -14,7 +14,6 @@ target
 import.json.bak
 services/trex_base
 package-lock.json
-pnpm-lock.yaml
 yarn-error.log
 run_ssh.sh
 .DS_Store
@@ -58,7 +57,6 @@ ui/npm-debug.log
 ui/*.tmp*
 ui/target
 ui/package-lock.json
-ui/pnpm-lock.yaml
 ui/yarn-error.log
 ui/run_ssh.sh
 ui/.DS_Store

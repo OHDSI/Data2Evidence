@@ -60,8 +60,5 @@
   },
   "keywords": [],
   "author": "D4L",
-  "license": "ISC",
-  "resolutions": {
-    "tar": "^6.1.11"
-  }
+  "license": "ISC"
 }

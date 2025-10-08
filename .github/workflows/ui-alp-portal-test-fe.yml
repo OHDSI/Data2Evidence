@@ -59,15 +59,16 @@ jobs:
         with:
           node-version: "18.14.0"
 
+      - name: Setup pnpm if files have changed
+        uses: pnpm/action-setup@v4
+        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
+        with:
+          version: 10
+
       # Run the step only with "portal_fe_changed" equals "True"
       - name: Run unit tests if files have changed
         if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
         run: |
-          cd libs/portal-plugin
-          yarn --prefer-offline
-          cd ../portal-components
-          yarn --prefer-offline
-          yarn build
-          cd ../../apps/portal
-          yarn --prefer-offline
-          yarn test
+          pnpm install
+          npx nx run @portal/components:build
+          npx nx run portal:test

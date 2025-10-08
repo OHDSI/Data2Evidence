@@ -66,24 +66,29 @@ jobs:
       with:
         node-version: '18.14.0'
 
-    - name: Get yarn cache directory path
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
-      id: yarn-cache-dir-path
-      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-
-    - uses: actions/cache@v4
-      id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+    - name: Setup pnpm if vue files have changed
+      uses: pnpm/action-setup@v4
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ hashFiles('./yarn.lock') }}
+        version: 10
+
+    - name: Get pnpm store directory
+      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@v4
+      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-
+          ${{ runner.os }}-pnpm-store-
 
     - name: Build Project
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       run: |
-        cd apps/vue-mri-ui-lib
-        yarn
-        yarn test:ci
-        cd -
+        pnpm install
+        npx nx run vue-mri:test:ci

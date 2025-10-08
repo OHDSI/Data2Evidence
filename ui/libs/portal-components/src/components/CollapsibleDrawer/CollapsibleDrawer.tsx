@@ -1,6 +1,7 @@
 import { styled, Theme, CSSObject } from "@mui/material/styles";
 import MuiDrawer, { DrawerProps as MuiDrawerProps } from "@mui/material/Drawer";
 import { MUIStyledCommonProps } from "@mui/system";
+import { StyledComponent } from "@emotion/styled";
 
 const openedMixin = (theme: Theme, width: number): CSSObject => ({
   width,
@@ -25,7 +26,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
 
 export type CollapsibleDrawerProps = MuiDrawerProps & MUIStyledCommonProps<Theme> & { theme: Theme; width?: number };
 
-export const CollapsibleDrawer = styled(MuiDrawer, {
+export const CollapsibleDrawer: StyledComponent<MuiDrawerProps & { width?: number }> = styled(MuiDrawer, {
   shouldForwardProp: (prop) => prop !== "open",
 })<{ width?: number }>(({ theme, open, width = 290 }) => {
   return {
