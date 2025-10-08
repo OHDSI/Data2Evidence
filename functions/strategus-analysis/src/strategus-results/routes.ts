@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { Readable } from "stream";
 import { WebSocketServer, WebSocket } from "ws";
+import { Server } from "http";
 import {
   startStrategusResultsViewer,
   stopStrategusResultsViewer,
@@ -11,7 +12,7 @@ export class StrategusResultsRouter {
   public router = express.Router();
   private wss: WebSocketServer;
 
-  constructor(private server: import("http").Server) {
+  constructor(private server: Server) {
     this.registerRoutes();
     this.wss = new WebSocketServer({ noServer: true });
     this.registerUpgradeHandler();
@@ -161,30 +162,75 @@ export class StrategusResultsRouter {
   private registerUpgradeHandler() {
     this.server.on("upgrade", (req, socket, head) => {
       const url = new URL(req.url ?? "", "http://localhost");
-      const match = url.pathname.match(/^\/(\w+)\/websocket\/?$/);
-      if (!match) return socket.destroy();
+
+      const match = url.pathname.match(
+        /^\/strategus-results\/([^/]+)\/websocket\/?$/
+      );
+      if (!match) {
+        console.error(
+          `[Strategus Viewer] Invalid upgrade path: ${url.pathname}`
+        );
+        socket.destroy();
+        return;
+      }
 
       const studyId = match[1];
       const targetUrl = `ws://${encodeURIComponent(studyId)}:3838/websocket`;
-      console.log(`[WS] Upgrade request for studyId: ${studyId}`);
+      console.log(
+        `[Strategus Viewer] Upgrade request for studyId: ${studyId} to ${targetUrl}`
+      );
 
-      // Connect to the remote Strategus WebSocket
       const strategusWS = new WebSocket(targetUrl);
+
+      strategusWS.on("open", () => {
+        console.log(
+          `[Strategus Viewer] Connected to Strategus WS for study ${studyId}`
+        );
+      });
+
+      strategusWS.on("error", (err) => {
+        console.error(`[Strategus Viewer] Strategus WS error:`, err);
+      });
 
       // Complete upgrade
       this.wss.handleUpgrade(req, socket, head, (clientWS) => {
-        console.log(`[WS] Client connected for study ${studyId}`);
+        this.wss.emit("connection", clientWS, req);
+        console.log(`[Strategus Viewer] Client connected for study ${studyId}`);
 
-        // Bridge messages between client and Strategus
-        clientWS.on("message", (msg) => strategusWS.send(msg));
-        strategusWS.on("message", (msg) => clientWS.send(msg));
+        // Client → Strategus
+        clientWS.on("message", (msg) => {
+          if (strategusWS.readyState === WebSocket.OPEN) {
+            strategusWS.send(msg);
+          } else {
+            console.error(
+              `[Strategus Viewer] Strategus WS is not open; dropping client message`
+            );
+          }
+        });
 
-        clientWS.on("close", () => strategusWS.close());
-        strategusWS.on("close", () => clientWS.close());
+        // Strategus → Client
+        strategusWS.on("message", (msg) => {
+          if (clientWS.readyState === WebSocket.OPEN) {
+            clientWS.send(msg);
+          } else {
+            console.error(
+              `[Strategus Viewer] Client WS is not open; dropping Strategus message`
+            );
+          }
+        });
 
-        strategusWS.on("error", (err) => {
-          console.error(`[WS] Strategus error:`, err);
-          clientWS.close(1011, "Strategus connection failed");
+        clientWS.on("close", () => {
+          console.log(
+            `[Strategus Viewer] Client WS closed; closing Strategus WS`
+          );
+          strategusWS.close();
+        });
+
+        strategusWS.on("close", () => {
+          console.log(
+            `[Strategus Viewer] Strategus WS closed; closing client WS`
+          );
+          clientWS.close();
         });
       });
     });
