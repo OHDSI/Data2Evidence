@@ -202,6 +202,9 @@ export class StrategusResultsRouter {
 
       strategusWS.on("error", (err) => {
         console.error(`[Strategus Viewer] Strategus WS error:`, err);
+        if (strategusWS.readyState === WebSocket.OPEN) {
+          strategusWS.close(1011, "Strategus WS error");
+        }
       });
 
       // Complete upgrade
@@ -243,6 +246,16 @@ export class StrategusResultsRouter {
             `[Strategus Viewer] Strategus WS closed; closing client WS`
           );
           clientWS.close();
+        });
+
+        clientWS.on("error", (err) => {
+          console.error(`[Strategus Viewer] Client WS error:`, err);
+          if (clientWS.readyState === WebSocket.OPEN) {
+            clientWS.close(1011, "Client WS error");
+          }
+          if (strategusWS.readyState === WebSocket.OPEN) {
+            strategusWS.close(1011, "Client WS error");
+          }
         });
       });
     });
