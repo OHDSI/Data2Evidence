@@ -2019,6 +2019,233 @@ Groups: groupsList;
 
 ---
 
+### 2025-10-08: Groups Being Split During Save/Load Fix
+
+**Issue**: When users created a single group containing multiple criteria (e.g., Condition Occurrence + Condition Era), after saving and reloading the cohort, the single group would be split into multiple separate groups, each containing only one criterion.
+
+**Example:**
+
+```
+User creates: Group { Condition Occurrence, Condition Era }
+SAVE produced: Groups[0] = { CriteriaList: [Condition Occurrence] }
+               Groups[1] = { CriteriaList: [Condition Era] }
+LOAD showed:   Group 1 containing only Condition Occurrence
+               Group 2 containing only Condition Era
+```
+
+**Root Cause**: In [nested-criteria-processor.ts:77-201](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L77-L201), the `processNestedGroups()` function had a critical bug:
+
+1. **Incorrect Loop Pattern** (lines 94-196):
+
+   - Looped through EACH event in the group separately
+   - Created a NEW `GroupCriteria` for EACH individual event (lines 138-144)
+   - Each iteration pushed a separate group to results (line 194)
+
+2. **Result**: 1 group with N events → N separate groups with 1 event each
+
+**The Correct Pattern** (from `processNestedGroupsRecursively`):
+
+- Collect ALL events into arrays FIRST
+- Create ONE group containing ALL collected events
+
+**Changes Made**:
+
+1. **Rewrote `processNestedGroups()` function** ([nested-criteria-processor.ts:77-240](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L77-L240))
+
+   **Old approach (WRONG):**
+
+   ```typescript
+   groupEvent.nestedCriteria.events.forEach(nestedEvent => {
+     const criteria = {...}  // Create criteria for THIS event
+     const eventGroup = {
+       Type: 'ALL',
+       CriteriaList: [criteria],  // Only contains THIS event
+     }
+     results.push(eventGroup)  // Push separate group for each event
+   })
+   ```
+
+   **New approach (CORRECT):**
+
+   ```typescript
+   const criteriaList: CriteriaGroup[] = []
+   const demographicCriteriaList: DemographicCriteria[] = []
+   const nestedGroups: GroupCriteria[] = []
+
+   // Collect ALL events first
+   groupEvent.nestedCriteria.events
+     .filter(event => event.eventType !== 'group' && event.eventType !== 'demographic')
+     .forEach(nestedEvent => {
+       const criteria = {...}
+       criteriaList.push(criteria)  // Collect into array
+     })
+
+   // Process demographic events
+   groupEvent.nestedCriteria.events
+     .filter(event => event.eventType === 'demographic')
+     .forEach(event => {
+       demographicCriteriaList.push(...)  // Collect into array
+     })
+
+   // Create ONE group containing ALL events
+   groupsList.push({
+     Type: 'ALL',
+     CriteriaList: criteriaList,  // Contains ALL events
+     DemographicCriteriaList: demographicCriteriaList,
+     Groups: nestedGroups,
+   })
+   ```
+
+2. **Reused Correct Logic** from `processNestedGroupsRecursively()`:
+   - Proper handling of nested criteria in attributes (CorrelatedCriteria)
+   - Support for demographic events
+   - Recursive processing of deeper nested groups
+   - Consistent with the rest of the codebase
+
+**Implementation Details**:
+
+- **Data Collection Pattern**: Uses filter + forEach to separate event types
+- **Accumulation**: Builds arrays (`criteriaList`, `demographicCriteriaList`, `nestedGroups`) before creating group
+- **Single Group Creation**: Only ONE `GroupCriteria` is created per group event, containing ALL its child events
+- **Recursive Support**: Properly handles nested groups within groups via `processNestedGroupsRecursively()`
+
+**Impact**:
+
+- ✅ Groups now persist correctly through save/load cycles
+- ✅ Multiple criteria in a single group stay together
+- ✅ Correct Atlas JSON structure: one `GroupCriteria` with multiple items in `CriteriaList`
+- ✅ Aligns with OHDSI Atlas specification
+- ✅ No changes to load logic needed (already correct)
+- ✅ Full round-trip conversion working (UI → Atlas → UI)
+
+---
+
+### 2025-10-08: Nested Groups (Groups Within Groups) Loading Fix
+
+**Issue**: When users created nested groups (a group containing other groups), the nested groups would not load correctly after saving and reloading the cohort. Only the top-level group and its direct criteria would appear, while any nested groups inside would be missing.
+
+**Example:**
+
+```
+User creates: Group A {
+                Group B { Condition Occurrence, Drug Exposure },
+                Condition Era
+              }
+SAVE produced: Correct Atlas JSON with Groups property containing nested GroupCriteria
+LOAD showed:   Group A { Condition Era }  ← Missing Group B entirely!
+```
+
+**Root Cause**: In [AtlasConverter.ts:939](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L939), there was a TODO comment `// TODO: Handle nested Groups recursively if needed` indicating the feature was never implemented.
+
+The load logic only processed:
+
+- `CriteriaList` (regular events like Condition Occurrence)
+- `DemographicCriteriaList` (demographic criteria like Age, Gender)
+- ❌ **Missing**: `Groups` property (nested groups within a group)
+
+**Changes Made**:
+
+1. **Created recursive helper function `convertGroupCriteriaToGroupEvents()`** ([AtlasConverter.ts:603-717](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L603-L717))
+
+   This function handles all three parts of a `GroupCriteria`:
+
+   - `CriteriaList` → Convert to regular events
+   - `DemographicCriteriaList` → Convert to demographic events
+   - **`Groups`** → **Recursively** convert to nested group events
+
+   **Key recursive section** (lines 708-714):
+
+   ```typescript
+   // RECURSIVE: Handle nested Groups within this group
+   if (groupCriteria.Groups && groupCriteria.Groups.length > 0) {
+     groupCriteria.Groups.forEach((nestedGroupCriteria) => {
+       const nestedGroupEvent =
+         convertGroupCriteriaToGroupEvents(nestedGroupCriteria);
+       groupEvent.nestedCriteria!.events.push(nestedGroupEvent);
+     });
+   }
+   ```
+
+2. **Replaced inline group conversion with helper function call** ([AtlasConverter.ts:846-852](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L846-L852))
+
+   **Before** (95 lines of duplicated code):
+
+   ```typescript
+   // Handle Groups - convert them back to group events
+   if (rule.expression?.Groups && rule.expression.Groups.length > 0) {
+     rule.expression.Groups.forEach(groupCriteria => {
+       const groupEvent = { ... }  // 90+ lines of manual conversion
+       // ... handle CriteriaList
+       // ... handle DemographicCriteriaList
+       // TODO: Handle nested Groups recursively if needed  ← Never implemented
+       criteriaItem.events.push(groupEvent)
+     })
+   }
+   ```
+
+   **After** (clean recursive call):
+
+   ```typescript
+   // Handle Groups - convert them back to group events (with recursive support)
+   if (rule.expression?.Groups && rule.expression.Groups.length > 0) {
+     rule.expression.Groups.forEach((groupCriteria) => {
+       const groupEvent = convertGroupCriteriaToGroupEvents(groupCriteria);
+       criteriaItem.events.push(groupEvent);
+     });
+   }
+   ```
+
+3. **Added missing imports** ([AtlasConverter.ts:24-25](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L24-L25))
+   - `GroupCriteria` - Type for Atlas JSON group structure
+   - `DemographicCriteria` - Type for demographic criteria
+
+**Implementation Details**:
+
+- **Recursive Structure**: The function calls itself when it encounters `Groups` property, enabling unlimited nesting depth
+- **Complete Coverage**: Handles all three components of a group (criteria, demographics, nested groups)
+- **Code Reuse**: Leverages existing helper `convertCriteriaListToEvents()` for regular criteria
+- **Consistent Pattern**: Follows same structure as save logic in `processNestedGroupsRecursively()`
+
+**Data Flow**:
+
+```
+Atlas JSON GroupCriteria
+├─ CriteriaList → convertCriteriaListToEvents() → QueryFilterEvent[]
+├─ DemographicCriteriaList → forEach demoCriteria → QueryFilterEvent
+└─ Groups → forEach groupCriteria → convertGroupCriteriaToGroupEvents() ← RECURSIVE
+                                   └─ Creates QueryFilterEvent with eventType='group'
+                                      └─ nestedCriteria.events contains all child events
+```
+
+**Atlas JSON Structure**:
+
+```typescript
+GroupCriteria {
+  Type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST',
+  CriteriaList?: CriteriaGroup[],           // Regular medical events
+  DemographicCriteriaList?: DemographicCriteria[],  // Demographics
+  Groups?: GroupCriteria[]                  // Nested groups (recursive!)
+}
+```
+
+**Impact**:
+
+- ✅ Nested groups now load correctly from Atlas JSON
+- ✅ Supports unlimited nesting depth (group → group → group → ...)
+- ✅ Full round-trip: UI → Save → Load → UI preserves nested group structure
+- ✅ Removed 95 lines of duplicated code by using helper function
+- ✅ Eliminated TODO comment - feature fully implemented
+- ✅ Consistent with OHDSI Atlas specification for recursive groups
+- ✅ Works together with previous fix (groups not splitting during save)
+
+**Testing**:
+
+1. Create nested structure: Group A containing Group B containing events
+2. Save cohort → Reload cohort
+3. Verify: Full nested structure preserved with all groups and events intact
+
+---
+
 **End of Documentation**
 
 For questions or issues, refer to:
