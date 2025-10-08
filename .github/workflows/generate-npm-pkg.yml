@@ -87,7 +87,7 @@ jobs:
         run: |
           cd ${{ matrix.APP_PATH }}
           RELEASE_VERSION=${{ github.event.inputs.tag }}
-          jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' --arg v $RELEASE_VERSION '.version=$v' --arg name atlas-ui '.name=$name' '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' package.json > tmppkg; mv tmppkg package.json
+          jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' --arg v $RELEASE_VERSION '.version=$v' --arg name atlas-ui '.name=$name' package.json > tmppkg; mv tmppkg package.json
           cat package.json
       - name: Build
         run: |
