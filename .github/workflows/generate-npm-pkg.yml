@@ -85,11 +85,14 @@ jobs:
 
       - name: Update version
         run: |
+          cp ./scripts/atlas-entrypoint.js ${{ matrix.APP_PATH }}/atlas-entrypoint.js
+          chmod +x ${{ matrix.APP_PATH }}/atlas-entrypoint.js
           cd ${{ matrix.APP_PATH }}
           RELEASE_VERSION=${{ github.event.inputs.tag }}
           jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg.json
           jq --arg name atlas-ui '.name=$name' tmppkg.json > tmppkg2.json
-          jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' tmppkg2.json > package.json
+          jq '.bin.atlas = "./atlas-entrypoint.js"' tmppkg2.json > tmppkg3.json
+          jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' tmppkg3.json > package.json
           cat package.json
       - name: Build
         run: |
@@ -115,7 +118,7 @@ jobs:
         run: |
           cd ${{ matrix.APP_PATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then
-             ${{ matrix.NPM || 'npm' }} publish --dry-run
+             ${{ matrix.NPM || 'npm' }} publish
           else
              ${{ matrix.NPM || 'npm' }} pack
           fi
