@@ -335,7 +335,7 @@ export const convertAtlasToFilters = (
           isExpanded: true,
           cardinality: {
             type: occurrence?.Type !== undefined ? mapAtlasToCardinality(occurrence.Type) : 'AT_LEAST',
-            count: occurrence?.Count || 1,
+            count: occurrence?.Count ?? 1,
             using: 'ALL',
           },
           attributes: [],

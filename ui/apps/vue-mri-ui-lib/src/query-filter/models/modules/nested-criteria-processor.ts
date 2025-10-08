@@ -108,7 +108,7 @@ export const processNestedGroups = (
             }),
             Occurrence: {
               Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
-              Count: nestedEvent.cardinality?.count || 1,
+              Count: nestedEvent.cardinality?.count ?? 1,
             },
           }
 
@@ -274,7 +274,7 @@ export const processNestedGroupsRecursively = (
             }),
             Occurrence: {
               Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
-              Count: nestedEvent.cardinality?.count || 1,
+              Count: nestedEvent.cardinality?.count ?? 1,
             },
           }
 
@@ -511,7 +511,7 @@ export const buildNestedCriteriaFromAttributes = (
       // IgnoreObservationPeriod: nestedEvent.ignoreObservationPeriod ?? false,
       Occurrence: {
         Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
-        Count: nestedEvent.cardinality?.count || 1,
+        Count: nestedEvent.cardinality?.count ?? 1,
       },
     }
 

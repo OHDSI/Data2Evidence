@@ -2246,6 +2246,84 @@ GroupCriteria {
 
 ---
 
+### 2025-10-08: Cardinality Count 0 Converted to 1 Bug Fix
+
+**Issue**: When users set cardinality count to `0` (e.g., "Exactly 0 occurrences", "At least 0 occurrences", "At most 0 occurrences"), after saving and reloading the cohort, the count would be changed to `1`.
+
+**Example Use Cases for Count 0**:
+
+- "Exactly 0 occurrences" = The event must NOT occur (exclusion criteria)
+- "At most 0 occurrences" = The event must NOT occur (same as Exactly 0)
+- "At least 0 occurrences" = The event is optional (will match all patients)
+
+**Root Cause**: JavaScript's falsy value handling with the `||` operator. When `count` is `0`, JavaScript treats it as falsy, so the expression `count || 1` evaluates to `1`.
+
+**Comprehensive Fix**: All cardinality count-related `||` operators have been verified and fixed.
+
+**Affected Locations** (5 total - ALL FIXED):
+
+1. **LOAD**: [AtlasConverter.ts:338](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L338)
+
+   - When loading Atlas JSON into UI model
+   - `count: occurrence?.Count || 1` → Changed to `count: occurrence?.Count ?? 1`
+
+2. **SAVE**: [nested-criteria-processor.ts:111](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L111)
+
+   - In `processNestedGroups()` function
+   - `Count: nestedEvent.cardinality?.count || 1` → Changed to `Count: nestedEvent.cardinality?.count ?? 1`
+
+3. **SAVE**: [nested-criteria-processor.ts:277](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L277)
+
+   - In `processNestedGroupsRecursively()` function
+   - `Count: nestedEvent.cardinality?.count || 1` → Changed to `Count: nestedEvent.cardinality?.count ?? 1`
+
+4. **SAVE**: [nested-criteria-processor.ts:514](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L514)
+
+   - In `buildNestedCriteriaFromAttributes()` function
+   - `Count: nestedEvent.cardinality?.count || 1` → Changed to `Count: nestedEvent.cardinality?.count ?? 1`
+
+5. **SAVE**: [QueryFilterModel.ts:393](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts#L393)
+   - In InclusionRules conversion (convertToAtlasFormat)
+   - `Count: event.cardinality?.count || 1` → Changed to `Count: event.cardinality?.count ?? 1`
+
+**Solution**: Replaced `|| 1` with nullish coalescing operator `?? 1`. This only defaults to `1` when the value is `undefined` or `null`, but preserves `0` as a valid value.
+
+**JavaScript Behavior**:
+
+```javascript
+// Before (WRONG):
+0 || 1; // → 1 (0 is falsy, defaults to 1)
+undefined || 1; // → 1 (correct)
+
+// After (CORRECT):
+0 ?? 1; // → 0 (0 is a valid value, preserved)
+undefined ?? 1; // → 1 (correct)
+null ?? 1; // → 1 (correct)
+```
+
+**Atlas JSON Specification**: According to OHDSI Atlas spec, `Count: 0` is a **valid value** in the `OccurrenceSettings` interface ([AtlasTypes.ts:309-313](apps/vue-mri-ui-lib/src/query-filter/types/AtlasTypes.ts#L309-L313)).
+
+**Impact**:
+
+- ✅ Count 0 now persists correctly through save/load cycles
+- ✅ "Exactly 0", "At least 0", "At most 0" cardinality settings work as expected
+- ✅ Exclusion criteria using cardinality count 0 now function properly
+- ✅ Aligns with OHDSI Atlas specification
+- ✅ No changes to behavior for count ≥ 1 (still defaults to 1 when undefined)
+
+**Verification**: Full codebase search confirmed no other cardinality/count-related `||` operators exist. Other numeric defaults using `|| 0` (e.g., `priorDays`, `postDays`, date offsets) are semantically correct as `0` has the same meaning as undefined in those contexts.
+
+**Testing**:
+
+1. Set cardinality to "Exactly 0" on an event
+2. Save cohort and reload
+3. Verify count remains 0 (not changed to 1)
+4. Repeat for "At least 0" and "At most 0"
+5. Test with nested groups and nested events
+6. Verify all save/load scenarios preserve count 0
+
+---
+
 **End of Documentation**
 
 For questions or issues, refer to:

@@ -390,7 +390,7 @@ export class QueryFilterCriteriaManager {
                     }),
                     Occurrence: {
                       Type: mapCardinalityTypeToAtlas(event.cardinality?.type || 'AT_LEAST'), // Maps cardinality.type → Atlas Occurrence.Type
-                      Count: event.cardinality?.count || 1, // Maps cardinality.count → Atlas Occurrence.Count
+                      Count: event.cardinality?.count ?? 1, // Maps cardinality.count → Atlas Occurrence.Count
                       ...mapCardinalityExtras(event.cardinality?.using ?? 'ALL'),
                     },
                   }
