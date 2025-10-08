@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { Readable } from "stream";
+import { WebSocketServer, WebSocket } from "ws";
 import {
   startStrategusResultsViewer,
   stopStrategusResultsViewer,
@@ -8,9 +9,12 @@ import { validateStudyIdMiddleware } from "../middlewares/study-validation.middl
 
 export class StrategusResultsRouter {
   public router = express.Router();
+  private wss: WebSocketServer;
 
-  constructor() {
+  constructor(private server: import("http").Server) {
     this.registerRoutes();
+    this.wss = new WebSocketServer({ noServer: true });
+    this.registerUpgradeHandler();
   }
 
   private registerRoutes() {
@@ -103,67 +107,6 @@ export class StrategusResultsRouter {
       }
     );
 
-    this.router.get(
-      "/:studyId/websocket/",
-      validateStudyIdMiddleware,
-      async (req: Request, res: Response) => {
-        const { studyId } = req.params;
-        const targetUrl = `ws://${encodeURIComponent(studyId)}:3838/websocket`;
-
-        const { socket, response } = Deno.upgradeWebSocket(req);
-        const strategusWebSocketConnection = new WebSocket(targetUrl);
-
-        socket.onmessage = (event) => {
-          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
-            strategusWebSocketConnection.send(event.data);
-          }
-        };
-
-        socket.onclose = () => {
-          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
-            strategusWebSocketConnection.close();
-          }
-        };
-
-        socket.onerror = (event) => {
-          console.error(`WebSocket connection request failed: ${event}`);
-          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
-            strategusWebSocketConnection.close(1011, "Client socket error");
-          }
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.close();
-          }
-        };
-
-        strategusWebSocketConnection.onmessage = (event) => {
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.send(event.data);
-          }
-        };
-
-        strategusWebSocketConnection.onclose = () => {
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.close();
-          }
-        };
-
-        strategusWebSocketConnection.onerror = (event) => {
-          console.error(
-            `WebSocket connection to Strategus Study failed: ${event}`
-          );
-
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.close(1011, "Error connecting to Strategus service");
-          }
-          if (strategusWebSocketConnection.readyState === WebSocket.OPEN) {
-            strategusWebSocketConnection.close();
-          }
-        };
-
-        return response;
-      }
-    );
-
     this.router.all(
       "/:studyId/*",
       validateStudyIdMiddleware,
@@ -213,5 +156,37 @@ export class StrategusResultsRouter {
         }
       }
     );
+  }
+
+  private registerUpgradeHandler() {
+    this.server.on("upgrade", (req, socket, head) => {
+      const url = new URL(req.url ?? "", "http://localhost");
+      const match = url.pathname.match(/^\/(\w+)\/websocket\/?$/);
+      if (!match) return socket.destroy();
+
+      const studyId = match[1];
+      const targetUrl = `ws://${encodeURIComponent(studyId)}:3838/websocket`;
+      console.log(`[WS] Upgrade request for studyId: ${studyId}`);
+
+      // Connect to the remote Strategus WebSocket
+      const strategusWS = new WebSocket(targetUrl);
+
+      // Complete upgrade
+      this.wss.handleUpgrade(req, socket, head, (clientWS) => {
+        console.log(`[WS] Client connected for study ${studyId}`);
+
+        // Bridge messages between client and Strategus
+        clientWS.on("message", (msg) => strategusWS.send(msg));
+        strategusWS.on("message", (msg) => clientWS.send(msg));
+
+        clientWS.on("close", () => strategusWS.close());
+        strategusWS.on("close", () => clientWS.close());
+
+        strategusWS.on("error", (err) => {
+          console.error(`[WS] Strategus error:`, err);
+          clientWS.close(1011, "Strategus connection failed");
+        });
+      });
+    });
   }
 }
