@@ -65,8 +65,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText('Test cohort 1')
   await page.getByRole('button', { name: 'D2E' }).click()
   await page.getByText('All').click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('Female')
-  await page.getByText('Female').click()
+  await page.getByRole('textbox', { name: 'Enter search term' }).fill('FEMALE')
+  await page.getByText('FEMALE').click()
   await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`- text: Gender  Clear All FEMALE`)
   await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`
     - text: FEMALE
