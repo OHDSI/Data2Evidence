@@ -224,7 +224,7 @@ export const dataflowApiSlice = createApi({
       { nodeId: string; fileName: string, file_type?: string}
     >({
       query: ({ nodeId, fileName }) => ({
-        url: `dataflow/file/generic?nodeId=${nodeId}&fileName=${fileName}`, // Removed /csv
+        url: `dataflow/file/generic?nodeId=${nodeId}&fileName=${fileName}`,
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
