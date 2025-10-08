@@ -25,9 +25,7 @@
             <button class="landing__button landing__button--outline" @click="handleSearchConcepts">
               Search Concepts
             </button>
-            <button class="landing__button landing__button--secondary" @click="handleNewCohort">
-              New Cohort
-            </button>
+            <button class="landing__button landing__button--secondary" @click="handleNewCohort">New Cohort</button>
           </div>
         </div>
 
@@ -40,24 +38,24 @@
 </template>
 
 <script>
-import atlasLogo from '@/assets/atlas-logo.png'
+import atlasLogo from '@/assets/atlas-loading.svg'
 import { navigateToRoute } from '../utils/AppRegistry'
 
 export default {
   name: 'Landing',
   data() {
     return {
-      atlasLogo
+      atlasLogo,
     }
   },
   methods: {
     handleSearchConcepts() {
-      navigateToRoute('/concepts');
+      navigateToRoute('/concepts')
     },
     handleNewCohort() {
-      navigateToRoute('/cohorts');
-    }
-  }
+      navigateToRoute('/cohorts')
+    },
+  },
 }
 </script>
 
@@ -65,7 +63,7 @@ export default {
 .landing {
   min-height: 100%;
   background-color: var(--color-neutral-lightest, #f2f0f1);
-  color: var(--color-primary, #1F425A);
+  color: var(--color-primary, #1f425a);
   display: flex;
   padding: 32px;
   font-size: 16px;
@@ -155,7 +153,7 @@ export default {
 
   &--secondary {
     color: var(--color-primary, #000080);
-    border-color: var(--color-support-orange, #EB6622);
+    border-color: var(--color-support-orange, #eb6622);
     background-color: white;
   }
 }
