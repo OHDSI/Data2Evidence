@@ -109,138 +109,141 @@ const DQDTable: FC<DQDTableProps> = ({ data }) => {
     [data, getText]
   );
 
-  const renderDetailPanel = ({ row }: { row: MRT_Row<CheckResults> }) => (
-    <Box
-      style={{
-        margin: "auto",
-        gridTemplateColumns: "1fr 1fr",
-        width: "100%",
-        whiteSpace: "pre-line",
-      }}
-    >
+  const detailPanelBoxStyle = {
+    margin: "auto",
+    gridTemplateColumns: "1fr 1fr",
+    width: "100%",
+    whiteSpace: "pre-line" as const,
+  };
+
+  const flexStyle = { display: "flex" };
+  const greyTextStyle = { color: "grey", wordWrap: "break-word" as const };
+
+  const renderDetailPanel = ({ row }: { row: MRT_Row<CheckResults> }): React.ReactElement => (
+    <div style={detailPanelBoxStyle}>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__COLUMN_LEVEL_HEADER)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.checkName}</Typography>
+        <Typography style={greyTextStyle}>{row.original.checkName}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>Description:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.checkDescription}</Typography>
+        <Typography style={greyTextStyle}>{row.original.checkDescription}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>Notes:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>
+        <Typography style={greyTextStyle}>
           {row.original.notesValue == null ? "-" : row.original.notesValue}
         </Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_LEVEL)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.checkLevel}</Typography>
+        <Typography style={greyTextStyle}>{row.original.checkLevel}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_TABLE)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.cdmTableName}</Typography>
+        <Typography style={greyTextStyle}>{row.original.cdmTableName}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_FIELD)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>
+        <Typography style={greyTextStyle}>
           {row.original.cdmFieldName == null ? "-" : row.original.cdmFieldName}
         </Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_CONCEPT_ID)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>
+        <Typography style={greyTextStyle}>
           {row.original.conceptId == null ? "-" : row.original.conceptId}
         </Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_UNIT_CONCEPT_ID)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>
+        <Typography style={greyTextStyle}>
           {row.original.unitConceptId == null ? "-" : row.original.unitConceptId}
         </Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_NOT_APPLICABLE)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>
+        <Typography style={greyTextStyle}>
           {row.original.notApplicable == null ? "-" : mapIntToString(row.original.notApplicable)}
         </Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_CHECK_ID)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.checkId}</Typography>
+        <Typography style={greyTextStyle}>{row.original.checkId}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>
             {getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_NUMBER_ROWS_VIOLATED)}:
           </Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.numViolatedRows}</Typography>
+        <Typography style={greyTextStyle}>{row.original.numViolatedRows}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>
             {getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_PERCENTAGE_ROWS_VIOLATED)}:
           </Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.pctViolatedRows}</Typography>
+        <Typography style={greyTextStyle}>{row.original.pctViolatedRows}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>
             {getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_NUMBER_DENOMINATOR)}:
           </Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.numDenominatorRows}</Typography>
+        <Typography style={greyTextStyle}>{row.original.numDenominatorRows}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_EXECUTION_TIME)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>{row.original.executionTime}</Typography>
+        <Typography style={greyTextStyle}>{row.original.executionTime}</Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_IS_ERROR)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>
+        <Typography style={greyTextStyle}>
           {row.original.isError == null ? "-" : mapIntToString(row.original.isError)}
         </Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_ERROR_MESSAGE)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}>
+        <Typography style={greyTextStyle}>
           {row.original.error == null ? "-" : row.original.error}
         </Typography>
       </Card>
       <Card className="detail__card">
-        <div style={{ display: "flex" }}>
+        <div style={flexStyle}>
           <Typography fontWeight={500}>{getText(i18nKeys.DQD_TABLE__RENDER_DETAIL_PANE_SQL_QUERY)}:</Typography>
         </div>
-        <Typography style={{ color: "grey", wordWrap: "break-word" }}> {row.original.queryText}</Typography>
+        <Typography style={greyTextStyle}> {row.original.queryText}</Typography>
       </Card>
-    </Box>
+    </div>
   );
 
   return (
