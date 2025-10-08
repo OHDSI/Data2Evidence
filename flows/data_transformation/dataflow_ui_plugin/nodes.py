@@ -3,7 +3,6 @@ import json
 import duckdb
 import logging
 import os
-import time
 from typing import Any
 import traceback as tb
 from rpy2 import robjects
@@ -352,7 +351,7 @@ class GenericFileNode(Node):
     def _fetch_file(self, file_path):
         logger = get_run_logger()
         logger.info(f"Fetching file: {file_path}")
-        # fetch file from Supabase or local
+        # fetch file from Supabase storage
         try:
             return SupabaseStorageAPI().get_file(self.id, file_path)
         except Exception:
@@ -364,16 +363,11 @@ class GenericFileNode(Node):
         try:
             raw_data = self._fetch_file(self.file)
             file_name = Path(self.file).name
-            file_type = (self.file_type or Path(self.file).suffix[1:]).lower()
-
-            if file_type == ".zip":
-                process_zip(raw_data, self.output_folder)
-            elif file_type == ".ndjson":
-                process_ndjson(raw_data, self.output_folder, file_name, self.encoding)
-            else:
-                save_path = self.output_folder / file_name
-                save_path.write_bytes(raw_data)
-            # Return folder path (or list of files if you prefer)
+            file_type = Path(self.file).suffix[1:].lower()
+            logger.info(f"Processing file: {file_name} with type: {file_type}")
+            save_path = self.output_folder / file_name
+            save_path.write_bytes(raw_data)
+            # Return folder path
             return Result(False, str(self.output_folder), self, task_run_context)
 
         except Exception as e:
