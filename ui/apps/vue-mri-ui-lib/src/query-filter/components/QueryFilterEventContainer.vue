@@ -43,6 +43,7 @@ const emit = defineEmits<{
   'event-updated': [eventIndex: number, event: QueryFilterEvent]
   'event-removed': [eventIndex: number]
   'concept-set-action': [action: ConceptSetAction]
+  'search-change': [searchQuery: string]
 }>()
 
 // Work directly with props.events for reactivity
@@ -276,6 +277,7 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           :readonly-title="true"
           @remove-nested="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
           @update:nested-criteria="criteria => updateEventNestedCriteria(event.id, criteria)"
+          @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
           @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
         />
 
@@ -304,6 +306,7 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           @concept-set-selected="handleConceptSetSelected(event.id, $event)"
           @attribute-selected="handleAttributeSelected(event.id, $event)"
           @attribute-removed="handleAttributeRemoved(event.id, $event)"
+          @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
           @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
         />
       </template>

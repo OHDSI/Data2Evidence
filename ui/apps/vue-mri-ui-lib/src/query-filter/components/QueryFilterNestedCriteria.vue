@@ -41,6 +41,7 @@ const emit = defineEmits<{
   'update:nestedCriteria': [criteria: NestedCriteria]
   'remove-nested': []
   'concept-set-action': [action: any]
+  'search-change': [searchQuery: string]
 }>()
 
 // Convert NestedCriteria to QueryFilterGroup format
@@ -93,6 +94,7 @@ const handleGroupRemove = () => {
       :readonly-title="readonlyTitle"
       @update-group="handleGroupUpdate"
       @remove-group="handleGroupRemove"
+      @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
       @concept-set-action="action => $emit('concept-set-action', action)"
     />
   </div>

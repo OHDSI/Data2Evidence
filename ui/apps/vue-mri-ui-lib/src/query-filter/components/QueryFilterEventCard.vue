@@ -60,6 +60,7 @@ const emit = defineEmits<{
   'attribute-selected': [attribute: AttributeOption]
   'attribute-removed': [attributeId: string]
   'concept-set-action': [action: ConceptSetAction]
+  'search-change': [searchQuery: string]
 }>()
 
 // Get store access for dataset ID
@@ -566,6 +567,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                 :is-catalog-attribute="false"
                 :max-selections="1"
                 @update:value="handleConceptSetChange"
+                @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
                 @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, eventId: eventData.id })"
               />
               <div v-else class="concept-set-readonly">
@@ -612,6 +614,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                     :readonly="readonly"
                     :hide-header="true"
                     @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
+                    @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
                     @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, parentAttributeId: attribute.id })"
                   />
                 </div>
@@ -658,6 +661,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                           }
                         }
                       "
+                      @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
                       @concept-set-action="(action: ConceptSetAction) => {
                     $emit('concept-set-action', { ...action, attributeId: attribute.attributeId, eventId: eventData.id })
                   }"

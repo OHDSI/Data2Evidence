@@ -1206,6 +1206,7 @@ const generateCohort = async () => {
             @update-limit="handleUpdatePrimaryCriteriaLimit"
             @update-entry-days="handleUpdateEntryDays"
             @update-primary-events="handleUpdatePrimaryEvents"
+            @search-change="handleSearchChange"
             @concept-set-action="handleConceptSetAction"
           />
         </div>
@@ -1225,6 +1226,7 @@ const generateCohort = async () => {
             @add-criteria-group="handleAddCriteriaGroup"
             @update-criteria-group="handleUpdateCriteriaGroup"
             @remove-criteria-group="handleRemoveCriteriaGroup"
+            @search-change="handleSearchChange"
             @concept-set-action="handleConceptSetAction"
           />
         </div>
@@ -1240,6 +1242,7 @@ const generateCohort = async () => {
             :concept-set-texts="tagInputTexts"
             @update-limit="handleUpdateExitStrategy"
             @update-exit-events="handleUpdateExitEvents"
+            @search-change="handleSearchChange"
             @concept-set-action="handleConceptSetAction"
             @update-fixed-duration="handleUpdateFixedDuration"
             @update-cont-drug-settings="handleUpdateContDrugSettings"

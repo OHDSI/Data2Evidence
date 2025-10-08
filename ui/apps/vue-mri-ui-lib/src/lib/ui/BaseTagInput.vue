@@ -339,6 +339,12 @@ export default {
       } else {
         this.currentPlaceholder = this.texts.placeholder
       }
+      // Clear the search filter when dropdown closes to reset the list for other dropdowns
+      // Only for conceptSet type (PA-Atlas) to prevent global filter affecting all dropdowns
+      if (this.componentType === 'conceptSet' && this.searchQuery !== '') {
+        this.searchQuery = ''
+        this.$emit('search-change', '')
+      }
     },
     addTag(newTag) {
       if (this.componentType === 'conceptSet') {
@@ -441,7 +447,7 @@ export default {
             const minHeight = Math.min(contentHeight, 200)
             dropdown.style.minHeight = `${minHeight}px`
           } else {
-          dropdown.style.minHeight = '200px'
+            dropdown.style.minHeight = '200px'
           }
         } else {
           dropdown.style.minHeight = 'auto'

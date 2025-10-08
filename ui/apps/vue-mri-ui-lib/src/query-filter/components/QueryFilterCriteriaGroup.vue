@@ -39,6 +39,7 @@ const emit = defineEmits<{
   'update-group': [group: QueryFilterGroup]
   'remove-group': []
   'concept-set-action': [action: any]
+  'search-change': [searchQuery: string]
 }>()
 
 // Local reactive copy of the group
@@ -222,6 +223,7 @@ const toggleExpanded = () => {
               :dataset-id="datasetId || null"
               :readonly="readonly"
               @update-events="handleEventsUpdate"
+              @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
               @concept-set-action="action => $emit('concept-set-action', action)"
             />
           </div>

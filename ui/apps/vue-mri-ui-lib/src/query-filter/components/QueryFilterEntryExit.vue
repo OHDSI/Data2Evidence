@@ -47,6 +47,7 @@ const emit = defineEmits<{
   ]
   'update-primary-events': [events: QueryFilterEvent[]]
   'update-exit-events': [events: QueryFilterEvent[]]
+  'search-change': [searchQuery: string]
 }>()
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
@@ -463,6 +464,7 @@ const activeTooltipKey = computed(() => {
         :concept-set-texts="props.conceptSetTexts || {}"
         :readonly="readonly"
         @update-events="handleEventsUpdate"
+        @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
         @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
       />
     </div>
