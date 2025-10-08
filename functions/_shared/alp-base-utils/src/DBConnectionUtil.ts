@@ -70,7 +70,7 @@ export class DBConnectionUtil {
         });
     }
 
-    public static getConnection(dialect: string, client: any, schemaName: string, vocabSchemaName?: string, cb?, userObj?: User): Promise<ConnectionInterface> {
+    public static getConnection(dialect: string, client: any, schemaName: string, vocabSchemaName?: string, resultSchemaName?: string, cb?, userObj?: User): Promise<ConnectionInterface> {
         return new Promise((resolve, reject) => {
             const callback = cb || ((err, connection) => {
                 if (err) {
@@ -79,9 +79,9 @@ export class DBConnectionUtil {
                 resolve(connection);
             });
             if (dialect === "postgresql") {
-                PostgresConnection.createConnection(client, schemaName, vocabSchemaName, callback);
+                PostgresConnection.createConnection(client, schemaName, vocabSchemaName, resultSchemaName, callback);
             } else {
-                NodeHDBConnection.createConnection(client, schemaName, vocabSchemaName, async (err, connection: ConnectionInterface) => {
+                NodeHDBConnection.createConnection(client, schemaName, vocabSchemaName, resultSchemaName, async (err, connection: ConnectionInterface) => {
                     if (err) {
                         return callback(err);
                     }
@@ -106,13 +106,13 @@ export class DBConnectionUtil {
         });
     }
 
-    public static getDBConnection({ credentials, schemaName, vocabSchemaName, userObj }:
-        { credentials: IDBCredentialsType; schemaName: string, vocabSchemaName?: string, userObj?: User}) {
+    public static getDBConnection({ credentials, schemaName, vocabSchemaName, resultSchemaName, userObj }:
+        { credentials: IDBCredentialsType; schemaName: string, vocabSchemaName?: string, resultSchemaName?: string, userObj?: User}) {
 
         return new Promise<ConnectionInterface>(async (resolve, reject) => {
             try {
                 const client = await DBConnectionUtil.getDbClient(credentials);
-                const connection  = await DBConnectionUtil.getConnection(credentials.dialect, client, schemaName, vocabSchemaName, null, userObj);
+                const connection  = await DBConnectionUtil.getConnection(credentials.dialect, client, schemaName, vocabSchemaName, resultSchemaName, null, userObj);
                 return resolve(connection);
             } catch (err) {
                 logger.error(err);
