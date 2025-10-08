@@ -125,12 +125,18 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const listData = useMemo(() => {
     const fullListData =
       tab === tabNames.SELECTED ? selectedConcepts : conceptsResult?.data || [];
-    const listData =
-      tab === tabNames.SELECTED || tab === tabNames.RELATED
-        ? fullListData.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-        : fullListData;
+    // For PA-Atlas, use client-side pagination for all tabs (SEARCH, SELECTED, RELATED)
+    // For regular app, only SELECTED and RELATED tabs use client-side pagination (SEARCH uses server-side)
+    const shouldUseClientSidePagination =
+      tab === tabNames.SELECTED ||
+      tab === tabNames.RELATED ||
+      (isAtlas && tab === tabNames.SEARCH);
+
+    const listData = shouldUseClientSidePagination
+      ? fullListData.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+      : fullListData;
     return listData;
-  }, [tab, conceptsResult, page, rowsPerPage, selectedConcepts]);
+  }, [tab, conceptsResult, page, rowsPerPage, selectedConcepts, isAtlas]);
 
   const updateSearchResult = useCallback((keyword: string) => {
     setSearchText(keyword);
@@ -338,16 +344,28 @@ const TerminologyList: FC<TerminologyListProps> = ({
   }, [setFeedback, userId, searchText, tab, JSON.stringify(columnFilters)]);
 
   useEffect(() => {
-    if (conceptsResult) setTerminologiesCount(conceptsResult.count);
-    else setTerminologiesCount(0);
-  }, [conceptsResult]);
+    if (conceptsResult) {
+      // For PA-Atlas, use actual data length since all results are loaded at once
+      // For regular app, use the count from API (total across all pages)
+      const count =
+        isAtlas && tab === tabNames.SEARCH
+          ? conceptsResult.data.length
+          : conceptsResult.count;
+
+      setTerminologiesCount(count);
+    } else {
+      setTerminologiesCount(0);
+    }
+  }, [conceptsResult, isAtlas, tab]);
 
   useEffect(() => {
-    if (tab === "SEARCH") {
+    // For PA-Atlas, don't fetch on page/rowsPerPage changes (client-side pagination)
+    // For regular app, fetch new data when pagination changes in SEARCH tab
+    if (tab === "SEARCH" && !isAtlas) {
       fetchData(++apiCounter);
       return;
     }
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, isAtlas, tab, fetchData]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
@@ -706,7 +724,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     defaultColumn: {
       enableGlobalFilter: false,
       enableHiding: false,
-      enableSorting: false,
+      enableSorting: isAtlas, // Only enable sorting for PA-Atlas (client-side with all data)
       enableColumnFilter: false,
       enableColumnActions: false,
     },
