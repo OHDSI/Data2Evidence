@@ -6,7 +6,10 @@ import {
   startStrategusResultsViewer,
   stopStrategusResultsViewer,
 } from "./services.ts";
-import { validateStudyIdMiddleware } from "../middlewares/study-validation.middleware.ts";
+import {
+  validateStudyIdMiddleware,
+  validateStudyId,
+} from "../middlewares/study-validation.middleware.ts";
 
 export class StrategusResultsRouter {
   public router = express.Router();
@@ -160,7 +163,7 @@ export class StrategusResultsRouter {
   }
 
   private registerUpgradeHandler() {
-    this.server.on("upgrade", (req, socket, head) => {
+    this.server.on("upgrade", async (req, socket, head) => {
       const url = new URL(req.url ?? "", "http://localhost");
 
       const match = url.pathname.match(
@@ -175,6 +178,15 @@ export class StrategusResultsRouter {
       }
 
       const studyId = match[1];
+      const valid = await validateStudyId(studyId);
+
+      if (!valid) {
+        console.warn(`[Strategus Viewer] Invalid studyId: ${studyId}`);
+        socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+
       const targetUrl = `ws://${encodeURIComponent(studyId)}:3838/websocket`;
       console.log(
         `[Strategus Viewer] Upgrade request for studyId: ${studyId} to ${targetUrl}`
