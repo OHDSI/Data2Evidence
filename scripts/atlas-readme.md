@@ -19,12 +19,12 @@ After successful installation above, Run
 
 ## Environment variables
 
-| Environment variable | Description                                                | Default value                       |   |   |   |   |   |   |   |
-|----------------------|------------------------------------------------------------|-------------------------------------|---|---|---|---|---|---|---|
-| WEBAPI_URL           | Remote / local URL for WebAPI with authentication disabled | https://atlas-demo.ohdsi.org/WebAPI |   |   |   |   |   |   |   |
-| SOURCE               | Datasource name                                            | SYNPUF1K                            |   |   |   |   |   |   |   |
-| USE_CACHE            | Used to speeden the concepts fetch on subsequent requests  | false                               |   |   |   |   |   |   |   |
-| SERVER_URL           | local port number for the server to run on                 | http://localhost:3131               |   |   |   |   |   |   |   |
+| Environment variable | Description                                                | Default value                       |
+|----------------------|------------------------------------------------------------|-------------------------------------|
+| WEBAPI_URL           | Remote / local URL for WebAPI with authentication disabled | https://atlas-demo.ohdsi.org/WebAPI |
+| SOURCE               | Datasource name                                            | SYNPUF1K                            |
+| USE_CACHE            | Used to speeden the concepts fetch on subsequent requests  | false                               |
+| SERVER_URL           | local port number for the server to run on                 | http://localhost:3131               |
 
 
 ### To override any of the above values, simply export them as environment variables and run npx atlas
