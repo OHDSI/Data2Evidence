@@ -167,6 +167,7 @@ export interface AttributeDefinition {
   description: string
   type: string
   domainFilter?: string
+  excludeFromSections?: string[]
 }
 
 export interface Config {
@@ -257,6 +258,7 @@ export class ConfigLoader {
           description: mapping.description,
           type: mapping.type,
           domainFilter: mapping.domainFilter,
+          excludeFromSections: mapping.excludeFromSections,
         })
       })
 
