@@ -13,9 +13,7 @@ Following must be installed on your machine
 
 ## Start server
 
-After successful installation above, Run
-
-`npx atlas`
+After successful installation above, Run `npx atlas`
 
 Open in browser with url `http://localhost:3131`
 
