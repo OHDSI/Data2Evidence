@@ -3,11 +3,12 @@
 Following must be installed on your machine
 - Node.js >= v20.0
 - npm >= v5.2
+- Preferrably bash terminal
 
 ## Install node package
 
 - Open a terminal and create a new directory, example `atlas-ui`.
-- Navigate to the new directory and Run the below command to install a new package `atlas-ui`
+- Navigate to the new directory and Run the below command to install a new local package `atlas-ui`
 
 `npm i atlas-ui --registry <registry-url>`
 
