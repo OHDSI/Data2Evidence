@@ -331,7 +331,7 @@ export const convertAtlasToFilters = (
           id: `event_${Math.random().toString(36).substring(2)}`,
           conceptSet: eventDisplayName,
           eventType: eventType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
-          criteriaType, // For nested events, this should be the medical event type initially
+          criteriaType, // For nested events, this should be the medical event type initially. TODO: check if removable
           isExpanded: true,
           cardinality: {
             type: occurrence?.Type !== undefined ? mapAtlasToCardinality(occurrence.Type) : 'AT_LEAST',
@@ -556,6 +556,14 @@ export const convertAtlasToFilters = (
             })
           }
 
+          // Handle Groups within CorrelatedCriteria - convert them back to group events (with recursive support)
+          if (criteriaObj.CorrelatedCriteria.Groups && criteriaObj.CorrelatedCriteria.Groups.length > 0) {
+            criteriaObj.CorrelatedCriteria.Groups.forEach(groupCriteria => {
+              const groupEvent = convertGroupCriteriaToGroupEvents(groupCriteria)
+              nestedCriteriaEvents.push(groupEvent)
+            })
+          }
+
           const nestedAttribute = {
             id: `attribute_${Math.random().toString(36).substring(2)}`,
             attributeId: 'nested', // Config ID for nested attributes
@@ -563,6 +571,7 @@ export const convertAtlasToFilters = (
             nestedCriteria: {
               id: `criteria_${Math.random().toString(36).substring(2)}`,
               criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',
+              criteriaCount: criteriaObj.CorrelatedCriteria.Count,
               events: nestedCriteriaEvents,
             },
           }

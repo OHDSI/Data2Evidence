@@ -408,6 +408,19 @@ export class QueryFilterCriteriaManager {
                     let demographicCriteriaList: DemographicCriteria[] = []
                     let groupsList: GroupCriteria[] = []
 
+                    // Get criteriaType and criteriaCount from first nested attribute (all should have same type)
+                    const firstNestedAttr = attributesNestedCriteria.find(
+                      attr => attr.attributeType === 'nested' && attr.nestedCriteria
+                    )
+                    const nestedCriteriaType =
+                      firstNestedAttr?.attributeType === 'nested' && firstNestedAttr.nestedCriteria
+                        ? firstNestedAttr.nestedCriteria.criteriaType
+                        : 'ALL'
+                    const nestedCriteriaCount =
+                      firstNestedAttr?.attributeType === 'nested' && firstNestedAttr.nestedCriteria
+                        ? firstNestedAttr.nestedCriteria.criteriaCount
+                        : undefined
+
                     // Process nested criteria from attributes
                     attributesNestedCriteria.forEach(attr => {
                       if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
@@ -420,7 +433,8 @@ export class QueryFilterCriteriaManager {
 
                     if (criteriaList.length > 0 || demographicCriteriaList.length > 0 || groupsList.length > 0) {
                       criteria.Criteria[atlasEventType].CorrelatedCriteria = {
-                        Type: 'ALL',
+                        Type: nestedCriteriaType,
+                        ...(nestedCriteriaCount !== undefined && { Count: nestedCriteriaCount }),
                         CriteriaList: criteriaList,
                         DemographicCriteriaList: demographicCriteriaList,
                         Groups: groupsList,
@@ -582,6 +596,17 @@ export class QueryFilterCriteriaManager {
             let demographicCriteriaList: DemographicCriteria[] = []
             let groupsList: GroupCriteria[] = []
 
+            // Get criteriaType and criteriaCount from first nested attribute
+            const firstNestedAttr = attributesNestedCriteria[0]
+            const nestedCriteriaType =
+              firstNestedAttr && isNestedAttribute(firstNestedAttr)
+                ? firstNestedAttr.nestedCriteria?.criteriaType || 'ALL'
+                : 'ALL'
+            const nestedCriteriaCount =
+              firstNestedAttr && isNestedAttribute(firstNestedAttr)
+                ? firstNestedAttr.nestedCriteria?.criteriaCount
+                : undefined
+
             // Process nested criteria from attributes
             attributesNestedCriteria.forEach(attr => {
               if (isNestedAttribute(attr) && attr.nestedCriteria?.events) {
@@ -594,10 +619,8 @@ export class QueryFilterCriteriaManager {
 
             if (criteriaList.length > 0 || demographicCriteriaList.length > 0 || groupsList.length > 0) {
               criteria[eventType].CorrelatedCriteria = {
-                Type:
-                  attributesNestedCriteria[0] && isNestedAttribute(attributesNestedCriteria[0])
-                    ? attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL'
-                    : 'ALL',
+                Type: nestedCriteriaType,
+                ...(nestedCriteriaCount !== undefined && { Count: nestedCriteriaCount }),
                 CriteriaList: criteriaList,
                 DemographicCriteriaList: demographicCriteriaList,
                 Groups: groupsList,
@@ -694,6 +717,17 @@ export class QueryFilterCriteriaManager {
             let demographicCriteriaList: DemographicCriteria[] = []
             let groupsList: GroupCriteria[] = []
 
+            // Get criteriaType and criteriaCount from first nested attribute
+            const firstNestedAttr = attributesNestedCriteria[0]
+            const nestedCriteriaType =
+              firstNestedAttr && isNestedAttribute(firstNestedAttr)
+                ? firstNestedAttr.nestedCriteria?.criteriaType || 'ALL'
+                : 'ALL'
+            const nestedCriteriaCount =
+              firstNestedAttr && isNestedAttribute(firstNestedAttr)
+                ? firstNestedAttr.nestedCriteria?.criteriaCount
+                : undefined
+
             // Process nested criteria from attributes
             attributesNestedCriteria.forEach(attr => {
               if (isNestedAttribute(attr) && attr.nestedCriteria?.events) {
@@ -706,10 +740,8 @@ export class QueryFilterCriteriaManager {
 
             if (criteriaList.length > 0 || demographicCriteriaList.length > 0 || groupsList.length > 0) {
               criteria[eventType].CorrelatedCriteria = {
-                Type:
-                  attributesNestedCriteria[0] && isNestedAttribute(attributesNestedCriteria[0])
-                    ? attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL'
-                    : 'ALL',
+                Type: nestedCriteriaType,
+                ...(nestedCriteriaCount !== undefined && { Count: nestedCriteriaCount }),
                 CriteriaList: criteriaList,
                 DemographicCriteriaList: demographicCriteriaList,
                 Groups: groupsList,

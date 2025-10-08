@@ -149,6 +149,9 @@ export const processNestedGroups = (
               ) {
                 criteria.Criteria[atlasEventType].CorrelatedCriteria = {
                   Type: attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL',
+                  ...(attributesNestedCriteria[0].nestedCriteria?.criteriaCount !== undefined && {
+                    Count: attributesNestedCriteria[0].nestedCriteria.criteriaCount,
+                  }),
                   CriteriaList: nestedCriteriaList,
                   DemographicCriteriaList: nestedDemographicCriteriaList,
                   Groups: nestedGroupsList,
@@ -318,6 +321,9 @@ export const processNestedGroupsRecursively = (
               ) {
                 criteria.Criteria[atlasEventType].CorrelatedCriteria = {
                   Type: attributesNestedCriteria[0].nestedCriteria?.criteriaType || 'ALL',
+                  ...(attributesNestedCriteria[0].nestedCriteria?.criteriaCount !== undefined && {
+                    Count: attributesNestedCriteria[0].nestedCriteria.criteriaCount,
+                  }),
                   CriteriaList: nestedCriteriaList,
                   DemographicCriteriaList: nestedDemographicCriteriaList,
                   Groups: nestedGroupsList,
@@ -606,6 +612,9 @@ export const buildNestedCriteriaFromAttributes = (
         // Get the first nested attribute for criteriaType (all nested attributes at same level should have same criteriaType)
         const firstNestedAttr = furtherNestedCriteria.find(attr => isNestedAttribute(attr) && attr.nestedCriteria)
         const criteriaType = isNestedAttribute(firstNestedAttr) ? firstNestedAttr?.nestedCriteria?.criteriaType : 'ALL'
+        const criteriaCount = isNestedAttribute(firstNestedAttr)
+          ? firstNestedAttr?.nestedCriteria?.criteriaCount
+          : undefined
 
         furtherNestedCriteria.forEach(attrObj => {
           if (isNestedAttribute(attrObj) && attrObj.nestedCriteria?.events) {
@@ -622,6 +631,7 @@ export const buildNestedCriteriaFromAttributes = (
         if (nestedCriteriaList.length > 0 || nestedDemographicCriteriaList.length > 0 || nestedGroupsList.length > 0) {
           criteria.Criteria[atlasEventType].CorrelatedCriteria = {
             Type: criteriaType,
+            ...(criteriaCount !== undefined && { Count: criteriaCount }),
             CriteriaList: nestedCriteriaList,
             DemographicCriteriaList: nestedDemographicCriteriaList,
             Groups: nestedGroupsList,
