@@ -37800,7 +37800,7 @@ export const cdwConfigHades = {
                     }
                 ],
                 "defaultFilter": "1=1",
-                "defaultPlaceholder": "@PATIENT",
+                "defaultPlaceholder": "@SUBJECT",
                 "order": 1,
                 "parentInteraction": [],
                 "parentInteractionLabel": "parent",
@@ -37841,7 +37841,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PATIENT.\"person_id\"",
+                        "expression": "@SUBJECT.\"person_id\"",
                         "order": 0,
                         "annotations": [
                             "person_id"
@@ -37885,7 +37885,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "num",
-                        "expression": "@PATIENT.\"MONTH_OF_BIRTH\"",
+                        "expression": "@SUBJECT.\"MONTH_OF_BIRTH\"",
                         "order": 2,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -37926,7 +37926,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "num",
-                        "expression": "@PATIENT.\"YEAR_OF_BIRTH\"",
+                        "expression": "@SUBJECT.\"YEAR_OF_BIRTH\"",
                         "order": 3,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -37967,7 +37967,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "datetime",
-                        "expression": "@PATIENT.\"birth_datetime\"",
+                        "expression": "@SUBJECT.\"birth_datetime\"",
                         "order": 4,
                         "annotations": [
                             "birth_datetime"
@@ -38017,7 +38017,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PATIENT.\"ethnicity_concept_id\"",
+                        "expression": "@SUBJECT.\"ethnicity_concept_id\"",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Ethnicity' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_ID AS VARCHAR), '@SEARCH_QUERY') >= 0.65",
                         "referenceExpression": "@REF.CONCEPT_ID",
                         "order": 8,
@@ -38068,7 +38068,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "num",
-                        "expression": "@PATIENT.\"location_id\"",
+                        "expression": "@SUBJECT.\"location_id\"",
                         "order": 9,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -38115,7 +38115,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PATIENT.\"gender_source_value\"",
+                        "expression": "@SUBJECT.\"gender_source_value\"",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Gender' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_CODE AS VARCHAR), '@SEARCH_QUERY') >= 0.85",
                         "referenceExpression": "@REF.CONCEPT_CODE",
                         "order": 11,
@@ -38166,7 +38166,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PATIENT.\"race_source_value\"",
+                        "expression": "@SUBJECT.\"race_source_value\"",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Race' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_CODE AS VARCHAR), '@SEARCH_QUERY') >= 0.85",
                         "referenceExpression": "@REF.CONCEPT_CODE",
                         "order": 12,
@@ -38217,7 +38217,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PATIENT.\"ethnicity_source_value\"",
+                        "expression": "@SUBJECT.\"ethnicity_source_value\"",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Ethnicity' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_CODE AS VARCHAR), '@SEARCH_QUERY') >= 0.85",
                         "referenceExpression": "@REF.CONCEPT_CODE",
                         "order": 13,
@@ -38268,7 +38268,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PATIENT.\"GENDER_CONCEPT_ID\"",
+                        "expression": "@SUBJECT.\"GENDER_CONCEPT_ID\"",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Gender' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_ID AS VARCHAR), '@SEARCH_QUERY') >= 0.85",
                         "referenceExpression": "@REF.CONCEPT_ID",
                         "order": 16,
@@ -38321,7 +38321,7 @@ export const cdwConfigHades = {
                         "type": "text",
                         "expression": "@REF.concept_name",
                         "defaultPlaceholder": "@REF",
-                        "defaultFilter": "@REF.concept_id = @PATIENT.gender_concept_id",
+                        "defaultFilter": "@REF.concept_id = @SUBJECT.gender_concept_id",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Gender' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 17,
@@ -38372,7 +38372,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@PATIENT.\"RACE_CONCEPT_ID\"",
+                        "expression": "@SUBJECT.\"RACE_CONCEPT_ID\"",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Race' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_ID AS VARCHAR), '@SEARCH_QUERY') >= 0.85",
                         "referenceExpression": "@REF.CONCEPT_ID",
                         "order": 20,
@@ -38422,7 +38422,7 @@ export const cdwConfigHades = {
                             }
                         ],
                         "type": "num",
-                        "expression": "YEAR(CURRENT_DATE) - @PATIENT.\"YEAR_OF_BIRTH\"",
+                        "expression": "YEAR(CURRENT_DATE) - @SUBJECT.\"YEAR_OF_BIRTH\"",
                         "order": 24,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
@@ -38471,7 +38471,7 @@ export const cdwConfigHades = {
                         "type": "text",
                         "expression": "@REF.concept_name",
                         "defaultPlaceholder": "@REF",
-                        "defaultFilter": "@REF.concept_id = @PATIENT.race_concept_id",
+                        "defaultFilter": "@REF.concept_id = @SUBJECT.race_concept_id",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Race' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 18,
@@ -38524,7 +38524,7 @@ export const cdwConfigHades = {
                         "type": "text",
                         "expression": "@REF.concept_name",
                         "defaultPlaceholder": "@REF",
-                        "defaultFilter": "@REF.concept_id = @PATIENT.ethnicity_concept_id",
+                        "defaultFilter": "@REF.concept_id = @SUBJECT.ethnicity_concept_id",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Ethnicity' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 19,
@@ -38579,7 +38579,7 @@ export const cdwConfigHades = {
                     }
                 ],
                 "type": "num",
-                "expression": "@COHORT.\"cohort_definition_id\"",
+                "expression": "@PATIENT.\"cohort_definition_id\"",
                 "order": 0,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -38628,7 +38628,7 @@ export const cdwConfigHades = {
                     }
                 ],
                 "type": "text",
-                "expression": "@COHORT.\"subject_id\"",
+                "expression": "@PATIENT.\"subject_id\"",
                 "order": 1,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -38675,7 +38675,7 @@ export const cdwConfigHades = {
                     }
                 ],
                 "type": "time",
-                "expression": "@COHORT.\"cohort_end_date\"",
+                "expression": "@PATIENT.\"cohort_end_date\"",
                 "order": 2,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -38722,7 +38722,7 @@ export const cdwConfigHades = {
                     }
                 ],
                 "type": "time",
-                "expression": "@COHORT.\"cohort_start_date\"",
+                "expression": "@PATIENT.\"cohort_start_date\"",
                 "order": 3,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -38763,7 +38763,7 @@ export const cdwConfigHades = {
                     }
                 ],
                 "type": "num",
-                "measureExpression": "COUNT(DISTINCT(@COHORT.\"subject_id\"))",
+                "measureExpression": "COUNT(DISTINCT(@PATIENT.\"subject_id\"))",
                 "order": 3,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
@@ -38776,12 +38776,12 @@ export const cdwConfigHades = {
     "advancedSettings": {
         "tableTypePlaceholderMap": {
             "factTable": {
-                "placeholder": "@COHORT",
+                "placeholder": "@PATIENT",
                 "attributeTables": []
             },
             "dimTables": [
                 {
-                    "placeholder": "@PATIENT",
+                    "placeholder": "@SUBJECT",
                     "attributeTables": [],
                     "hierarchy": true,
                     "time": true,
@@ -38791,19 +38791,16 @@ export const cdwConfigHades = {
             ]
         },
         "tableMapping": {
-            "@COHORT": "$$SCHEMA$$.cohort",
-            "@COHORT.PATIENT_ID": "\"subject_id\"",
-            "@COHORT.INTERACTION_ID": "\"cohort_definition_id\"",
-            "@COHORT.CONDITION_ID": "\"cohort_definition_id\"",
-            "@COHORT.PARENT_INTERACT_ID": "\"cohort_definition_id\"",
-            "@COHORT.START": "\"cohort_start_date\"",
-            "@COHORT.END": "\"cohort_end_date\"",
-            "@COHORT.INTERACTION_TYPE": "\"cohort_definition_id\"",
-            "@INTERACTION": "$$SCHEMA$$.\"person\"",
-            "@PATIENT": "$$SCHEMA$$.\"person\"",
-            "@PATIENT.PATIENT_ID": "\"person_id\"",
-            "@PATIENT.DOD": "\"birth_datetime\"",
-            "@PATIENT.DOB": "\"birth_datetime\"",
+            "@PATIENT": "$$SCHEMA$$.\"cohort\"",
+            "@PATIENT.PATIENT_ID": "\"subject_id\"",
+            "@SUBJECT": "$$SCHEMA$$.\"person\"",
+            "@SUBJECT.PATIENT_ID": "\"person_id\"",
+            "@SUBJECT.DOD": "\"birth_datetime\"",
+            "@SUBJECT.DOB": "\"birth_datetime\"",
+            "@SUBJECT.INTERACTION_ID": "\"person_id\"",
+            "@SUBJECT.CONDITION_ID": "\"person_id\"",
+            "@SUBJECT.PARENT_INTERACT_ID": "\"person_id\"",
+            "@SUBJECT.INTERACTION_TYPE": "\"person_id\"",
             "@REF": "$$VOCAB_SCHEMA$$.\"concept\"",
             "@REF.VOCABULARY_ID": "\"vocabulary_id\"",
             "@REF.CODE": "\"concept_id\"",
@@ -38814,7 +38811,7 @@ export const cdwConfigHades = {
             "@TEXT.VALUE": "\"concept_name\""
         },
         "guardedTableMapping": {
-            "@COHORT": "$$SCHEMA$$.\"cohort\""
+            "@PATIENT": "$$SCHEMA$$.\"cohort\""
         },
         "language": [
             "en",
@@ -38873,26 +38870,6 @@ const paConfigHades = {
                     },
                     "modelName": "Person id"
                 },
-                // {
-                //     "source": "patient.interactions.subject.attributes.pcount",
-                //     "ordered": true,
-                //     "cached": true,
-                //     "useRefText": false,
-                //     "useRefValue": false,
-                //     "category": false,
-                //     "measure": true,
-                //     "filtercard": {
-                //         "initial": false,
-                //         "visible": false,
-                //         "order": 2
-                //     },
-                //     "patientlist": {
-                //         "initial": false,
-                //         "visible": false,
-                //         "linkColumn": false
-                //     },
-                //     "modelName": "Patient Count"
-                // },
                 {
                     "source": "patient.interactions.subject.attributes.monthOfBirth",
                     "ordered": true,
