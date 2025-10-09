@@ -102,8 +102,10 @@ jobs:
         run: |
           cd ${{ matrix.PKGPATH }}
           yarn
-          ls -la ./apps/vue-mri-ui-lib/src/query-filter/mock-server/static
-          rm ./apps/vue-mri-ui-lib/src/query-filter/mock-server/.gitignore
+          cd apps/vue-mri-ui-lib
+          npm run build:mock
+          ls -la src/query-filter/mock-server/static
+          rm src/query-filter/mock-server/.gitignore
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CI: false
