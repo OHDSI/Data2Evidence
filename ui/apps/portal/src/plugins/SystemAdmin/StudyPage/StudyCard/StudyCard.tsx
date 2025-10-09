@@ -61,7 +61,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   useEffect(() => {
     if (isIframeViewerOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
       try {
-        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict;`;
       } catch (error) {
         console.error("Error setting cookie in iframe:", error);
       }
@@ -71,10 +71,10 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       const token = (e as CustomEvent)?.detail?.accessToken as string | undefined;
       if (!token) return;
       setBearerToken(token);
-      document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+      document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict;`;
       if (isIframeViewerOpen && iframeRef.current?.contentWindow) {
         try {
-          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict;`;
         } catch (err) {
           console.error("Error updating iframe cookie after OIDC refresh:", err);
         }
@@ -112,7 +112,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const handleOpenIframeViewer = useCallback(() => {
     if (bearerToken) {
       try {
-        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict;`;
       } catch (err) {
         console.error("Error setting parent cookie before opening iframe:", err);
       }
@@ -164,6 +164,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
             mode: "kernel",
             datasetId: selectedDatasetId,
             studyId: study.id,
+            uploadResults: true
           },
         };
         const response = await api.dataflow.createStudyAnalysisRun(requestData);
