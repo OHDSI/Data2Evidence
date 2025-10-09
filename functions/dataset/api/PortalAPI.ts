@@ -1,5 +1,5 @@
 //import { Service } from 'typedi'
-import axios, { AxiosRequestConfig } from "npm:axios";
+import { AxiosRequestConfig } from "npm:axios";
 //import { createLogger } from '../Logger'
 import https from "node:https";
 import { env, services } from "../env.ts";
