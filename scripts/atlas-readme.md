@@ -36,10 +36,9 @@ Open in browser with url `http://localhost:3131`
 For example on a bash terminal
 
 ```bash
-WEBAPI_URL=https://webapi.alp-dev.org/WebAPI
-SERVER_URL=http://localhost:3005
-SOURCE=EUNOMIA
-USE_CACHE=true
+export WEBAPI_URL=https://webapi.alp-dev.org/WebAPI
+export SERVER_URL=http://localhost:3005
+export SOURCE=EUNOMIA
 npx atlas
 ```
 
