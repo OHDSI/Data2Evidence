@@ -32,8 +32,6 @@ def test_cohort_definition_shared_resource_task_returns_expected_classes(mock_ge
     task_run_context = {"id": "run1", "name": "test", "flow_run_id": "flow1"}
     result = obj.task(task_run_context)
     assert isinstance(result, Result)
-    print("*******Error Message*******:")
-    print(result.data)
     assert result.error is False
 
     # The result data is a dict with keys 'cohortDefinitionSharedResource' and 'cohortGeneratorModuleSpecifications'
