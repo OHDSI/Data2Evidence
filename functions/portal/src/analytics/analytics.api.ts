@@ -8,15 +8,12 @@ import {
 import { RequestContextService } from "../common/request-context.service.ts";
 // import { Agent } from "node:https";
 
-const get = <T = any>(url: string, config?: AxiosRequestConfig) => {
-  return axios.get<T>(url, config);
-};
-
 @Injectable({ scope: SCOPE.REQUEST })
 export class AnalyticsApi {
   private readonly url: string;
   private readonly requestContextService: RequestContextService;
   private readonly jwt: string;
+  private readonly channel;
   // private readonly httpsAgent: Agent
 
   constructor(requestContextService: RequestContextService) {
@@ -24,6 +21,7 @@ export class AnalyticsApi {
     this.jwt = this.requestContextService.getOriginalToken() || "";
     if (services.analytics) {
       this.url = services.analytics;
+      this.channel = Trex.tokioChannel("d2e-functions/analytics-svc");
       // this.httpsAgent = new Agent({
       //   rejectUnauthorized: true,
       //   ca: env.SSL_CA_CERT
@@ -36,16 +34,15 @@ export class AnalyticsApi {
   async getFilterScopes(
     datasetsWithSchema: string
   ): Promise<IDatasetFilterScopesResult> {
-    const url = `${this.url}/api/services/dataset-filter/filter-scopes`;
     const options = this.getRequestConfig();
     const params = new URLSearchParams();
     params.append("datasetsWithSchema", datasetsWithSchema);
+    const url = `${
+      this.url
+    }/api/services/dataset-filter/filter-scopes?${params.toString()}`;
 
     try {
-      const result = await get<IDatasetFilterScopesResult>(url, {
-        ...options,
-        params,
-      });
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -61,13 +58,15 @@ export class AnalyticsApi {
     datasetsWithSchema: string,
     filterParams: any
   ): Promise<IDatabaseSchemaFilterResult> {
-    const url = `${this.url}/api/services/dataset-filter/database-schema-filter`;
-
     const options = this.getRequestConfig();
     const params = new URLSearchParams();
     params.append("datasetsWithSchema", datasetsWithSchema);
     params.append("filterParams", JSON.stringify(filterParams));
-    const result = await get(url, { ...options, params });
+    console.log("filter filter");
+    const url = `${
+      this.url
+    }/api/services/dataset-filter/database-schema-filter?${params.toString()}`;
+    const result = await this.channel.get(url, options);
     return result.data;
   }
 
