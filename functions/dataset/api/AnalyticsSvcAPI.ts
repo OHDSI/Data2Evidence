@@ -1,5 +1,4 @@
 import { AxiosRequestConfig } from "npm:axios";
-import { get } from "./request-util.ts";
 import { services, env } from "../env.ts";
 
 //import { createLogger } from '../Logger'
@@ -11,6 +10,8 @@ export class AnalyticsSvcAPI {
   private readonly logger = console; //createLogger(this.constructor.name)
   private readonly token: string;
   private readonly endpoint: string = "/analytics-svc/api/services/";
+  private readonly channel;
+
   constructor(token: string) {
     this.token = token;
     if (!token) {
@@ -18,6 +19,7 @@ export class AnalyticsSvcAPI {
     }
     if (services.analytics) {
       this.baseURL = services.analytics + this.endpoint;
+      this.channel = Trex.tokioChannel("d2e-functions/analytics-svc");
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: true,
       //   // ca: env.GATEWAY_CA_CERT
@@ -44,7 +46,7 @@ export class AnalyticsSvcAPI {
   async getAllCohorts(datasetId: string) {
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}cohort?datasetId=${datasetId}&excludePatientIds=true`;
-    const result = await get(url, options);
+    const result = await this.channel.get(url, options);
     return result.data;
   }
 
@@ -60,7 +62,7 @@ export class AnalyticsSvcAPI {
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}alpdb/${databaseDialect}/database/${databaseCode}/schema/${schemaName}/exists`;
     try {
-      const result = await get(url, options);
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       const errorMessage = `Failed to check if schema exists for ${schemaName} in ${databaseCode}`;
@@ -72,10 +74,8 @@ export class AnalyticsSvcAPI {
   async getCdmSchemaSnapshotMetadata(datasetId: string) {
     this.logger.info(`Getting CDM schema snapshot metadata for ${datasetId}`);
     const options = await this.getRequestConfig();
-    const params = new URLSearchParams();
-    params.append("datasetId", datasetId);
-    const url = `${this.baseURL}alpdb/metadata/schemasnapshot`;
-    const result = await get(url, { ...options, params });
+    const url = `${this.baseURL}alpdb/metadata/schemasnapshot?datasetId=${datasetId}`;
+    const result = await this.channel.get(url, options);
     if (result.data) {
       return result.data;
     }
