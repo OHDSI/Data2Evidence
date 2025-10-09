@@ -47,7 +47,7 @@ export const encrypt = async (plaintext: ArrayBuffer, publicKey: CryptoKey): Pro
   // Write buffer
   const bufferLength = 1 + 2 + encryptedKey.byteLength + 8 + 16 + ciphertext.byteLength;
   const buffer = new ArrayBuffer(bufferLength);
-  let dataView = new DataView(buffer);
+  let dataView: DataView = new DataView(buffer);
   let offset = 0;
 
   // Write version (length 1)
@@ -166,14 +166,14 @@ const decryptWithAlg = (
  * @param offset The offset where the values should be added
  * @param values The values that should be added
  */
-const setUint8Array = <T extends ArrayBufferLike>(
-  dataView: DataView<T>,
+const setUint8Array = (
+  dataView: DataView,
   offset: number,
   values: Uint8Array
-): [DataView<T>, number] => {
+): readonly [DataView, number] => {
   for (const value of values) {
     dataView.setUint8(offset, value);
     offset++;
   }
-  return [dataView, offset];
+  return [dataView, offset] as const;
 };
