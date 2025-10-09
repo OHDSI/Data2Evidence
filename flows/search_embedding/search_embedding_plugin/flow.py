@@ -34,7 +34,6 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         # -------------------- Direct file connection to cache --------------------
         duckdb_file_path = resolve_duckdb_file_path(database_code, Variable.get("duckdb_data_folder"))
         vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
-        duckdb_file_path = '/app/duckdb_data/cache/demo_database_copy.db'
         with duckdb.connect(duckdb_file_path) as conn:
             conn.load_extension(vss_extension_path)
             create_embeddings_duckdb(conn, schema_name)
