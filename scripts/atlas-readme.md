@@ -10,7 +10,10 @@ Following must be installed on your machine
 - Open a terminal and create a new directory, example `atlas-ui`.
 - Navigate to the new directory and Run the below command to install a new local package `atlas-ui`
 
-`npm i atlas-ui --registry <registry-url>`
+```bash
+npm config set @data2evidence:registry=https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/
+npm i @data2evidence/atlas-ui
+```
 
 ## Start server
 
