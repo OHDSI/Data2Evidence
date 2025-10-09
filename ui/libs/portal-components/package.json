@@ -11,7 +11,7 @@
   "scripts": {
     "prebuild": "rm -rf src/components/Icons && rm -rf dist",
     "svgr": "svgr --title-prop --typescript --index-template indexTemplate.js -d src/components/Icons assets",
-    "build": "yarn svgr && rollup -c",
+    "build": "pnpm svgr && rollup -c",
     "test": "react-scripts test",
     "lint": "tsc && prettier --write . && eslint '*/**/*.{ts,tsx}' --quiet --fix",
     "storybook": "start-storybook -p 6006",
