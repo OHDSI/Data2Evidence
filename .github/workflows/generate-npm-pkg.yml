@@ -93,7 +93,7 @@ jobs:
           cd ${{ matrix.APP_PATH }}
           RELEASE_VERSION=${{ github.event.inputs.tag }}
           jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg.json
-          jq --arg name @data2evidence/atlas-ui '.name=$name' tmppkg.json > tmppkg2.json
+          jq --arg name @data2evidence/atlas-ui-test '.name=$name' tmppkg.json > tmppkg2.json
           jq '.bin.atlas = "./atlas-entrypoint.js"' tmppkg2.json > tmppkg3.json
           jq '.private=false' tmppkg3.json > tmppkg4.json
           jq '.scripts.postinstall = "npm --prefix src/query-filter/mock-server install"' tmppkg4.json > package.json
