@@ -33,7 +33,7 @@ def check_duckdb_column_exists(conn: duckdb.DuckDBPyConnection, table_name: str,
     """
     Check if a column exists in a DuckDB table.
     """
-    rst = conn.execute('PRAGMA table_info(?);', [table_name]).fetchall()
+    rst = conn.execute(f'PRAGMA table_info({table_name});').fetchall()
     columns = [row[1] for row in rst]
     return any(col.lower() == column.lower() for col in columns)
 

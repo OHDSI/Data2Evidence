@@ -34,9 +34,8 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         # -------------------- Direct file connection to cache --------------------
         duckdb_file_path = resolve_duckdb_file_path(database_code, Variable.get("duckdb_data_folder"))
         vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
-        conn = duckdb.connect(duckdb_file_path, read_only=True)
-        conn.close()
-        with duckdb.connect(duckdb_file_path, read_only=True) as conn:
+        duckdb_file_path = '/app/duckdb_data/cache/demo_database_copy.db'
+        with duckdb.connect(duckdb_file_path) as conn:
             conn.load_extension(vss_extension_path)
             create_embeddings_duckdb(conn, schema_name)
 
@@ -89,14 +88,14 @@ def create_embeddings_trex(dbdao, schema_name):
 def create_embeddings_duckdb(conn, schema_name):
     logger = get_run_logger()
     logger.info("***************** Start embedding *****************")
-    concept = conn.execute('SELECT concept_id, concept_name FROM "?".concept', [schema_name]).fetchnumpy()
+    concept = conn.execute(f'SELECT concept_id, concept_name FROM "{schema_name}".concept').fetchnumpy()
     length = len(concept['concept_name'])
     step = 100
     
     ## Create temporary table for embeddings
     tmp_embedding_table = 'tmp_embeddings'
-    conn.execute("DROP TABLE IF EXISTS ?.?", [schema_name, tmp_embedding_table])
-    conn.execute("CREATE TABLE ?.? (concept_id int, vec FLOAT[384]);", [schema_name, tmp_embedding_table])
+    conn.execute(f'DROP TABLE IF EXISTS "{schema_name}"."{tmp_embedding_table}"')
+    conn.execute(f'CREATE TABLE "{schema_name}"."{tmp_embedding_table}" (concept_id int, vec FLOAT[384]);')
     
     ## Generate embedding
     tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
@@ -107,7 +106,7 @@ def create_embeddings_duckdb(conn, schema_name):
         embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
         rst = pd.DataFrame({'concept_id':concept_id, 'embedding': embeddings})
         ## Insert embedding into tmp embedding table
-        conn.execute("INSERT INTO ?.? SELECT concept_id, embedding FROM rst", [schema_name, tmp_embedding_table])
+        conn.execute(f"INSERT INTO {schema_name}.{tmp_embedding_table} SELECT concept_id, embedding FROM rst")
         percent = (i/step + 1)/(int(length / step) + (length % step > 0)) * 100
         logger.info(f'{round(percent,2)} % completed')
 
@@ -117,24 +116,18 @@ def create_embeddings_duckdb(conn, schema_name):
     index_col = 'embedding_cos_idx'
     column_exists = check_duckdb_column_exists(conn, f"{schema_name}.concept", embedding_col_name)
     if not column_exists:
-        conn.execute(f"ALTER TABLE ?.concept ADD COLUMN {embedding_col_name} FLOAT[384];", [schema_name])
-        
-    ## Drop index if exists
-    conn.execute(f"DROP INDEX IF EXISTS ?.?;", [schema_name, index_col])
-    
-    ## Update embedding column safely
+        conn.execute(f"ALTER TABLE \"{schema_name}\".concept ADD COLUMN {embedding_col_name} FLOAT[384];")
+
+    conn.execute(f"DROP INDEX IF EXISTS \"{schema_name}\".{index_col};")
+
     conn.execute(f"""
-        UPDATE ?.concept AS c
+        UPDATE \"{schema_name}\".concept AS c
         SET {embedding_col_name} = t.vec
-        FROM ?.? AS t
+        FROM \"{schema_name}\".\"{tmp_embedding_table}\" AS t
         WHERE c.concept_id = t.concept_id;
-        """, 
-        [schema_name, tmp_embedding_table, schema_name]
-    )
-    
-    # Clean up temporary table
-    conn.execute("DROP TABLE ?.?;", [schema_name, tmp_embedding_table])
-    
-    # Create index
+        """)
+
+    conn.execute(f"DROP TABLE \"{schema_name}\".\"{tmp_embedding_table}\";")
+
     conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
-    conn.execute(f"CREATE INDEX ? ON ?.concept USING HNSW ({embedding_col_name}) WITH (metric = 'cosine')",[index_col, schema_name])
+    conn.execute(f"CREATE INDEX {index_col} ON \"{schema_name}\".concept USING HNSW ({embedding_col_name}) WITH (metric = 'cosine')")
