@@ -29,14 +29,17 @@ export const OverwriteAllNotebooksDialog: FC<OverwriteAllNotebooksDialogProps> =
 }) => {
   const { getText, i18nKeys } = useTranslation();
 
+  const headerBoxStyle = { display: "flex", alignItems: "center", justifyContent: "space-between" };
+  const titleBoxStyle = { display: "flex", alignItems: "center", gap: 1 };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth className="overwrite-dialog">
       <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={1}>
+        <div style={headerBoxStyle}>
+          <div style={titleBoxStyle}>
             <Warning color="warning" />
             {getText(i18nKeys.GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_TITLE)}
-          </Box>
+          </div>
           <IconButton
             onClick={onClose}
             disabled={loading}
@@ -49,7 +52,7 @@ export const OverwriteAllNotebooksDialog: FC<OverwriteAllNotebooksDialogProps> =
           >
             <Close />
           </IconButton>
-        </Box>
+        </div>
       </DialogTitle>
 
       <DialogContent>
