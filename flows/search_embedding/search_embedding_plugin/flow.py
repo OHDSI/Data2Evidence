@@ -50,10 +50,10 @@ def create_embeddings_trex(dbdao, schema_name):
     concept = pd.DataFrame(concept, columns=['concept_id','concept_name'])
     step, length =100, len(concept)
     
-    ## Create tmp gte table
-    gte_tmp_table = 'gte_embeddings'
-    gte_tmp_cols = {'concept_id':'int', 'vec':'FLOAT[384]'}
-    create_tmp_gte_table(dbdao, schema_name, gte_tmp_table, gte_tmp_cols)
+    ## Create tmp embedding table
+    tmp_embedding_table = 'tmp_embeddings'
+    embedding_cols = {'concept_id':'int', 'vec':'FLOAT[384]'}
+    create_tmp_embedding_table(dbdao, schema_name, tmp_embedding_table, embedding_cols)
 
     ## Generate embedding
     tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
@@ -62,10 +62,10 @@ def create_embeddings_trex(dbdao, schema_name):
         concept_name = concept['concept_name'][i:i+step].tolist()
         concept_id = concept['concept_id'][i:i+step].tolist()
         embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
-        columns = list(gte_tmp_cols.keys())
+        columns = list(embedding_cols.keys())
         col_values = list(zip(concept_id, embeddings))    
-        ## Insert embedding into tmp gte table
-        dbdao.batch_insert_values(schema_name, gte_tmp_table, columns, col_values)
+        ## Insert embedding into tmp embedding table
+        dbdao.batch_insert_values(schema_name, tmp_embedding_table, columns, col_values)
         ## Monitoring embedding progress
         percent = (i/step + 1)/(int(length / step) + (length % step > 0)) * 100
         logger.info(f'{round(percent,2)} % completed')
@@ -77,12 +77,13 @@ def create_embeddings_trex(dbdao, schema_name):
         add_embedding_column(dbdao, schema_name, embedding_col)
 
     ## Copy embedding column from intermediate table to concept table, must drop vss index (if exist) before update embedding column
-    drop_gte_index(dbdao, schema_name)
-    update_concept_embedding(dbdao, schema_name, gte_tmp_table, embedding_col)
-    dbdao.drop_table(schema_name, gte_tmp_table, cascade=True)
+    index_col = 'embedding_cos_idx'
+    drop_embedding_index(dbdao, schema_name, index_col)
+    update_concept_embedding(dbdao, schema_name, tmp_embedding_table, embedding_col)
+    dbdao.drop_table(schema_name, tmp_embedding_table, cascade=True)
     
     ## Create vss index on embedding column
-    create_gte_index(dbdao, schema_name, embedding_col)
+    create_embedding_index(dbdao, schema_name, embedding_col, index_col)
     
 @task(log_prints=True, task_run_name="embedding_concept_table_duckdb")
 def create_embeddings_duckdb(conn, schema_name):
@@ -93,8 +94,9 @@ def create_embeddings_duckdb(conn, schema_name):
     step = 100
     
     ## Create temporary table for embeddings
-    conn.execute("DROP TABLE IF EXISTS ?.gte_embeddings", [schema_name])
-    conn.execute("CREATE TABLE ?.gte_embeddings (concept_id int, vec FLOAT[384]);", [schema_name])
+    tmp_embedding_table = 'tmp_embeddings'
+    conn.execute("DROP TABLE IF EXISTS ?.?", [schema_name, tmp_embedding_table])
+    conn.execute("CREATE TABLE ?.? (concept_id int, vec FLOAT[384]);", [schema_name, tmp_embedding_table])
     
     ## Generate embedding
     tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
@@ -103,35 +105,36 @@ def create_embeddings_duckdb(conn, schema_name):
         concept_name = concept['concept_name'][i:i+step].tolist()
         concept_id = concept['concept_id'][i:i+step]
         embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
-        rst = pd.DataFrame({'concept_id':concept_id, 'gte-small_384': embeddings})
-        ## Insert embedding into tmp gte table
-        conn.execute("INSERT INTO ?.gte_embeddings SELECT concept_id, gte-small_384 FROM rst", [schema_name])
+        rst = pd.DataFrame({'concept_id':concept_id, 'embedding': embeddings})
+        ## Insert embedding into tmp embedding table
+        conn.execute("INSERT INTO ?.? SELECT concept_id, embedding FROM rst", [schema_name, tmp_embedding_table])
         percent = (i/step + 1)/(int(length / step) + (length % step > 0)) * 100
         logger.info(f'{round(percent,2)} % completed')
 
     logger.info("***************** Insert embedding *****************")
     ## Check if column exists using parameterized query
     embedding_col_name = 'concept_name_embedding'
+    index_col = 'embedding_cos_idx'
     column_exists = check_duckdb_column_exists(conn, f"{schema_name}.concept", embedding_col_name)
     if not column_exists:
         conn.execute(f"ALTER TABLE ?.concept ADD COLUMN {embedding_col_name} FLOAT[384];", [schema_name])
         
     ## Drop index if exists
-    conn.execute(f"DROP INDEX IF EXISTS ?.gte_cos_idx;", [schema_name])
+    conn.execute(f"DROP INDEX IF EXISTS ?.?;", [schema_name, index_col])
     
     ## Update embedding column safely
     conn.execute(f"""
         UPDATE ?.concept AS c
-        SET {embedding_col_name} = g.vec
-        FROM ?.gte_embeddings AS g
-        WHERE c.concept_id = g.concept_id;
+        SET {embedding_col_name} = t.vec
+        FROM ?.? AS t
+        WHERE c.concept_id = t.concept_id;
         """, 
-        [schema_name, schema_name]
+        [schema_name, tmp_embedding_table, schema_name]
     )
     
     # Clean up temporary table
-    conn.execute("DROP TABLE ?.gte_embeddings;", [schema_name])
+    conn.execute("DROP TABLE ?.?;", [schema_name, tmp_embedding_table])
     
     # Create index
     conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
-    conn.execute(f"CREATE INDEX gte_cos_idx ON ?.concept USING HNSW ({embedding_col_name}) WITH (metric = 'cosine')",[schema_name])
+    conn.execute(f"CREATE INDEX ? ON ?.concept USING HNSW ({embedding_col_name}) WITH (metric = 'cosine')",[index_col, schema_name])
