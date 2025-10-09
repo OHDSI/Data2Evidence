@@ -146,7 +146,7 @@ export const decrypt = async (buffer: ArrayBuffer, privateKey: CryptoKey): Promi
  * Encrypt a message with a given algorithm and key
  */
 const encryptWithAlg = (
-  message: Uint8Array | ArrayBuffer,
+  message: BufferSource,
   key: CryptoKey,
   algorithm: { name: string; iv?: Uint8Array; length?: number }
 ): PromiseLike<ArrayBuffer> => crypto.subtle.encrypt(algorithm, key, message);
@@ -155,7 +155,7 @@ const encryptWithAlg = (
  * Decrypt a ciphertext with a given algorithm and key
  */
 const decryptWithAlg = (
-  ciphertext: Uint8Array,
+  ciphertext: BufferSource,
   key: CryptoKey,
   algorithm: { name: string; iv?: Uint8Array; length?: number }
 ): PromiseLike<ArrayBuffer> => crypto.subtle.decrypt(algorithm, key, ciphertext);
@@ -166,7 +166,11 @@ const decryptWithAlg = (
  * @param offset The offset where the values should be added
  * @param values The values that should be added
  */
-const setUint8Array = (dataView: DataView, offset: number, values: Uint8Array): [DataView, number] => {
+const setUint8Array = <T extends ArrayBufferLike>(
+  dataView: DataView<T>,
+  offset: number,
+  values: Uint8Array
+): [DataView<T>, number] => {
   for (const value of values) {
     dataView.setUint8(offset, value);
     offset++;

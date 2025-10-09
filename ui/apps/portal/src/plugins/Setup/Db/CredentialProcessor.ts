@@ -91,7 +91,7 @@ export class DbCredentialProcessor {
     return value.slice(0, index) + salt + value.slice(index);
   }
 
-  private convertPEMtoBinary(pem: string): ArrayBuffer {
+  private convertPEMtoBinary(pem: string): Uint8Array<ArrayBuffer> {
     const pemContents = pem
       .replace("-----BEGIN PUBLIC KEY-----", "")
       .replace("-----END PUBLIC KEY-----", "")
