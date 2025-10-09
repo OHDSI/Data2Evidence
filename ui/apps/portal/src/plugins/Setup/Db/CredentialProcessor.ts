@@ -49,7 +49,7 @@ export class DbCredentialProcessor {
     try {
       const publicKey = await crypto.subtle.importKey(
         "spki",
-        this.convertPEMtoBinary(pub),
+        this.convertPEMtoBinary(pub) as BufferSource,
         { ...this.algo, hash: "SHA-256" },
         true,
         ["encrypt"]
@@ -91,7 +91,7 @@ export class DbCredentialProcessor {
     return value.slice(0, index) + salt + value.slice(index);
   }
 
-  private convertPEMtoBinary(pem: string): Uint8Array<ArrayBuffer> {
+  private convertPEMtoBinary(pem: string): Uint8Array {
     const pemContents = pem
       .replace("-----BEGIN PUBLIC KEY-----", "")
       .replace("-----END PUBLIC KEY-----", "")
@@ -100,7 +100,7 @@ export class DbCredentialProcessor {
     return this.base64ToArrayBuffer(pemContents);
   }
 
-  private base64ToArrayBuffer(b64: string) {
+  private base64ToArrayBuffer(b64: string): Uint8Array {
     const byteString = window.atob(b64);
     const byteArray = new Uint8Array(byteString.length);
     for (let i = 0; i < byteString.length; i++) {
