@@ -20,7 +20,6 @@ export class PortalServerAPI {
 
   async getGitStudies() {
     try {
-      console.log("i am in git studies");
       const url = `${this.baseURL}/git-studies/studies`;
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);

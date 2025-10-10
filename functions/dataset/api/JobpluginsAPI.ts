@@ -204,7 +204,7 @@ export class JobPluginsAPI {
       options,
       flowRunName,
     };
-    const result = await this.channel.post(url, body, options);
+    const result = await this.channel.post(url, body, postOptions);
 
     if (result.data) {
       return result.data;

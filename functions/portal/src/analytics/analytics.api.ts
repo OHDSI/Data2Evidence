@@ -62,7 +62,7 @@ export class AnalyticsApi {
     const params = new URLSearchParams();
     params.append("datasetsWithSchema", datasetsWithSchema);
     params.append("filterParams", JSON.stringify(filterParams));
-    console.log("filter filter");
+
     const url = `${
       this.url
     }/api/services/dataset-filter/database-schema-filter?${params.toString()}`;

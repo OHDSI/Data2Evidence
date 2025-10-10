@@ -61,7 +61,6 @@ export class PaConfigApi {
     type: PaConfigType,
     datasetId: string
   ): Promise<PaConfig> {
-    console.log("get pa configs");
     const requestConfig = this.getRequestConfig();
     const body = {
       action: CONFIG_TYPE_ACTIONS[type],

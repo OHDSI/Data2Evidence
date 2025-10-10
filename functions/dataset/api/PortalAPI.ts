@@ -117,7 +117,7 @@ export class PortalAPI {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dataset/list/systemadmin`;
-      const result = await await this.channel.get(url, options);
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       this.logger.error("Error getting studies");

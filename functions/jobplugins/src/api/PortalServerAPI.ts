@@ -70,7 +70,7 @@ export class PortalServerAPI {
       const url = `${this.baseURL}/config/secret/${type}`;
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);
-      if (!result.ok) {
+      if (result.status !== 200) {
         console.log(`Config type '${type}' not found or inaccessible`);
         return null;
       }
@@ -122,7 +122,7 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/supabase-storage/delete/csv`;
       const options = this.createOptions("DELETE");
-      const result = this.channel(
+      const result = this.channel.delete(
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
