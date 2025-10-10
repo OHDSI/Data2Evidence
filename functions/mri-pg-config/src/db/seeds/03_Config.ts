@@ -40032,7 +40032,7 @@ export const cdwConfigHades_new = {
                                 "value": ""
                             }
                         ],
-                        "type": "num",
+                        "type": "text",
                         "defaultPlaceholder": "@TPCOUNTSSEX",
                         "expression": "@TPCOUNTSSEX.\"sex\"",
                         "order": 5,
