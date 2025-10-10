@@ -58,7 +58,7 @@ export class JobPluginsAPI {
       );
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cachedb/completed/${dto.flowRunId}`;
-      const result = await this.channel.get(url, options);
+      const result = await get(url, options);
       return result.data;
     } catch (error) {
       console.error(
@@ -89,7 +89,7 @@ export class JobPluginsAPI {
 
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dqd/data-quality/flow-run/${dto.flowRunId}/overview?datasetId=${dto.datasetId}`;
-      const result = await this.channel.get(url, options);
+      const result = await get(url, options);
       return result.data;
     } catch (error) {
       console.error(`Error while checking results of DQD flow run: ${error}`);
