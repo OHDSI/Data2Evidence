@@ -54,10 +54,10 @@ export class AnalyticsSvcAPI {
         datasetId
       )}`;
       const response = await this.channel.get(url, options);
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error(errorMessage);
       }
-      return await response.json();
+      return await response.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
       throw error;
@@ -84,12 +84,12 @@ export class AnalyticsSvcAPI {
       console.log(`Calling ${url} for conceptId ${conceptId}`);
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);
-      if (!result.ok) {
+      if (result.status !== 200) {
         throw new Error(
           "Error while getting data characterization results drilldown"
         );
       }
-      return await result.json();
+      return await result.data;
     } catch (error) {
       console.error(
         `Error while getting data characterization drilldown: ${error}`
