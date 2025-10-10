@@ -35,7 +35,7 @@ export class FhirAPI {
     resourceDetails: any,
     fhirHeaders?: Headers,
   ) {
-    const resourceUrl = `${this.baseUrl}/${resourcePath}`;
+    const resourceUrl = `${this.baseUrl}${resourcePath ? '/' + resourcePath : ''}`;
     const log_msg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
     try {
       let options = await this.getRequestConfig(clientCredentials);

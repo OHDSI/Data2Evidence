@@ -9,8 +9,8 @@ from prefect.blocks.system import Secret
 from _shared_flow_utils.types import AuthToken, AppTokenPayload, User
 
 
-def get_auth_token_from_input() -> AuthToken:
-    iter = AuthToken.receive(key_prefix="authtoken", timeout=300, poll_interval=3)
+def get_auth_token_from_input(flow_run_id = None) -> AuthToken:
+    iter = AuthToken.receive(key_prefix="authtoken", timeout=300, poll_interval=3, flow_run_id=flow_run_id)
     return iter.next()
 
 
@@ -21,10 +21,10 @@ class GetAuthTokens:
     _initialized = False
 
     @classmethod
-    def initialize_tokens(cls) -> None:
+    def initialize_tokens(cls, flow_run_id = None) -> None:
         if cls._initialized:
             return
-        tokens: AuthToken = get_auth_token_from_input()
+        tokens: AuthToken = get_auth_token_from_input(flow_run_id)
         cls.auth_token = getattr(tokens, "token", None)
         cls.refresh_token = getattr(tokens, "thirdpartyrefreshtoken", None)
         cls.third_party_token = getattr(tokens, "thirdpartytoken", None)
@@ -32,9 +32,9 @@ class GetAuthTokens:
 
 
     @classmethod
-    def get_auth_token(cls) -> SecretStr:
+    def get_auth_token(cls, flow_run_id = None) -> SecretStr:
         if not cls._initialized:
-            cls.initialize_tokens()
+            cls.initialize_tokens(flow_run_id)
         if cls.auth_token is None:
             raise RuntimeError("No auth token available. Please ensure the flow run input is provided.")
         return cls.auth_token

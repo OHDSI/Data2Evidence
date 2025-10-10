@@ -12,9 +12,6 @@ import {
   IFormattedBookmark,
   IFormattedMaterializedCohort,
   IFrontendBookmark,
-  IAtlasCohortDefinition,
-  IFormattedAtlasCohortDefinition,
-  IMaterializedBookmarkCohortDefinition,
 } from '../types'
 import { PortalAPI } from '../api/PortalAPI'
 import { AnalyticsSvcAPI } from '../api/AnalyticsAPI'
@@ -57,7 +54,6 @@ export function createBookmarkDto(
     cdm_config_version: cdmConfigVersion,
     user_id: userName,
     shared: shareBookmark,
-    materializedCohortDefinitions: [],
   }
 }
 
@@ -597,7 +593,7 @@ const _filterUntaggedMaterializedCohorts = (
   return filteredMaterializedCohorts
 }
 
-const _getBookmarkMaterializedCohortDefinitionId = (
+const _getBookmarkMaterializedCohortDefinitionId   = (
   bookmarkId: string,
   materializedCohorts: IMaterializedCohort[]
 ): number | undefined => {

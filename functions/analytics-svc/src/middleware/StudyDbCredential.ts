@@ -78,10 +78,7 @@ export default async (req: IMRIRequest, res, next) => {
         const studyDatabaseName: string = studyMetadata.databaseName;
         const studySchemaName: string = studyMetadata.schemaName;
         const studyVocabSchemaName: string = studyMetadata.vocabSchemaName;
-
-        // TODO: Update to use studyMetadata.resultSchemaName after task has been completed to add resultSchema as a dataset column
-        // For now it is using studyMetadata.schemaName as a placeholder
-        const studyResultSchemaName: string = studyMetadata.schemaName;
+        const studyResultSchemaName: string = studyMetadata.resultSchemaName;
 
         log.info(`studyDatabaseName ${studyDatabaseName}`);
 
@@ -97,7 +94,7 @@ export default async (req: IMRIRequest, res, next) => {
             : null;
         studyAnalyticsCredential.resultSchema = studyResultSchemaName
             ? studyResultSchemaName
-            : studySchemaName;
+            : studyAnalyticsCredential.schema;
 
         if (studyAnalyticsCredential.dialect === ANALYTICS_DB_DIALECTS.HANA) {
             studyAnalyticsCredential.schema =

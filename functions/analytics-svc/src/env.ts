@@ -24,6 +24,8 @@ function initEnv(__env) {
         USE_CACHEDB: z.string(),
         USE_TREX_DB_CONN: z.string(),
 
+        BIGQUERY_CDM_VERSION: z.string(),
+
         PG__IDLE_TIMEOUT_IN_MS: z
             .string()
             .refine((val) => !isNaN(parseInt(val)))
