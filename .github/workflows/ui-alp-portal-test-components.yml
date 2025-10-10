@@ -53,17 +53,17 @@ jobs:
               - 'libs/portal-components/**'
               - '.github/workflows/ui-alp-portal-test-components.yml'
 
-      - name: Setup node if files have changed
-        uses: actions/setup-node@v4
+      - name: Setup bun if files have changed
+        uses: oven-sh/setup-bun@v2
         if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_components_changed == 'true'
         with:
-          node-version: "18.14.0"
+          bun-version: 1.2.23
 
       # Run the step only with "portal_components_changed" equals "True"
       - name: Run unit tests if files have changed
         if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_components_changed == 'true'
         run: |
+          bun install
           cd libs/portal-components
-          yarn --prefer-offline
-          yarn svgr
-          yarn test
+          bun svgr
+          bun test

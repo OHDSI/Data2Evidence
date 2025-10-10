@@ -468,7 +468,7 @@ export default {
         this.setCurrentPatientCount({
           currentPatientCount: data.totalPatientCount,
         })
-        this.errorMessage = '' || this.chartData.noDataReason
+        this.errorMessage = this.chartData.noDataReason || ''
 
         if (!this.errorMessage) {
           if (
