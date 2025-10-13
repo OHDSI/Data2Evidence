@@ -66,4 +66,4 @@ jobs:
           bun install
           cd libs/portal-components
           bun svgr
-          bun test
+          bun run test
