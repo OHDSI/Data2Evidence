@@ -344,7 +344,7 @@ class GenericFileNode(Node):
         self.file_type = _node.get("file_type", Path(self.file).suffix.lower())
         self.encoding = _node.get("encoding", "utf8")
         logger.info(f"GenericFileNode: file={self.file}, file_type={self.file_type}, encoding={self.encoding}")
-        self.output_folder = Path(_node.get("output_folder", f"./{self.id}_files"))
+        self.output_folder = Path(_node.get("output_folder", f"./workdir/{self.id}_files"))
         self.output_folder.mkdir(exist_ok=True)
 
     def _fetch_file(self, file_path):

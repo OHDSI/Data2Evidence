@@ -78,6 +78,15 @@ RUN apt-get update && \
     openjdk-17-jdk \
     && apt-get clean
 
+# Install .NET 6 SDK (for running FHIR Anonymizer)
+RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        dotnet-sdk-6.0 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
@@ -130,4 +139,6 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
 
+RUN install -d -m 2775 -o docker -g docker /app/workdir
+USER docker
 ENTRYPOINT []
