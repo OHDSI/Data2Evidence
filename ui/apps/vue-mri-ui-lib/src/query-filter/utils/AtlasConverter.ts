@@ -336,7 +336,19 @@ export const convertAtlasToFilters = (
           cardinality: {
             type: occurrence?.Type !== undefined ? mapAtlasToCardinality(occurrence.Type) : 'AT_LEAST',
             count: occurrence?.Count ?? 1,
-            using: 'ALL',
+            // Only set 'using' if CountColumn/IsDistinct are present in the original
+            ...(occurrence?.CountColumn && {
+              using:
+                occurrence.CountColumn === 'DOMAIN_CONCEPT' && occurrence.IsDistinct
+                  ? 'DISTINCT_CONCEPT'
+                  : occurrence.CountColumn === 'START_DATE' && occurrence.IsDistinct
+                  ? 'DISTINCT_START_DATE'
+                  : occurrence.CountColumn === 'VISIT_ID' && occurrence.IsDistinct
+                  ? 'DISTINCT_VISIT'
+                  : occurrence.CountColumn === 'START_DATE'
+                  ? 'ALL'
+                  : undefined,
+            }),
           },
           attributes: [],
         }
@@ -374,8 +386,9 @@ export const convertAtlasToFilters = (
                 days: _criteriaItem.StartWindow.End.Days ?? null,
                 coeff: (_criteriaItem.StartWindow.End.Coeff === 1 ? 1 : -1) as -1 | 1,
               },
-              useIndexEnd: _criteriaItem.StartWindow.UseIndexEnd ?? false,
-              useEventEnd: _criteriaItem.StartWindow.UseEventEnd ?? false,
+              // Only set these if they exist in the original (preserve undefined)
+              useIndexEnd: _criteriaItem.StartWindow.UseIndexEnd,
+              useEventEnd: _criteriaItem.StartWindow.UseEventEnd,
             }
           }
 
@@ -389,8 +402,9 @@ export const convertAtlasToFilters = (
                 days: _criteriaItem.EndWindow.End.Days ?? null,
                 coeff: (_criteriaItem.EndWindow.End.Coeff === 1 ? 1 : -1) as -1 | 1,
               },
-              useIndexEnd: _criteriaItem.EndWindow.UseIndexEnd ?? false,
-              useEventEnd: _criteriaItem.EndWindow.UseEventEnd ?? false,
+              // Only set these if they exist in the original (preserve undefined)
+              useIndexEnd: _criteriaItem.EndWindow.UseIndexEnd,
+              useEventEnd: _criteriaItem.EndWindow.UseEventEnd,
             }
           }
 

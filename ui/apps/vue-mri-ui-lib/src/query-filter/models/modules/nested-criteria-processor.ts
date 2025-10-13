@@ -39,8 +39,9 @@ export const createAtlasWindow = (window?: WindowDefinition): Window => {
       ...(window.end.days !== null && { Days: window.end.days }),
       Coeff: window.end.coeff,
     },
-    UseIndexEnd: window.useIndexEnd,
-    UseEventEnd: window.useEventEnd,
+    // Only include UseIndexEnd/UseEventEnd if they are explicitly set (not undefined)
+    ...(window.useIndexEnd !== undefined && { UseIndexEnd: window.useIndexEnd }),
+    ...(window.useEventEnd !== undefined && { UseEventEnd: window.useEventEnd }),
   }
 }
 

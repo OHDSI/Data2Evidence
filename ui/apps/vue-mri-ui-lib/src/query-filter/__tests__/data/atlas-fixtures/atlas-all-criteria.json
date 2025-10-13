@@ -1,0 +1,2207 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "ConceptSets": [
+    {
+      "id": 0,
+      "name": "Empty Concept Set",
+      "expression": {
+        "items": []
+      }
+    }
+  ],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "ObservationPeriod": {
+          "CorrelatedCriteria": {
+            "Type": "ALL",
+            "CriteriaList": [
+              {
+                "Criteria": {
+                  "ConditionOccurrence": {}
+                },
+                "StartWindow": {
+                  "Start": {
+                    "Coeff": -1
+                  },
+                  "End": {
+                    "Coeff": 1
+                  },
+                  "UseEventEnd": false
+                },
+                "RestrictVisit": true,
+                "IgnoreObservationPeriod": true,
+                "Occurrence": {
+                  "Type": 2,
+                  "Count": 1
+                }
+              }
+            ],
+            "DemographicCriteriaList": [],
+            "Groups": []
+          },
+          "First": true,
+          "PeriodEndDate": {
+            "Value": "2099-01-01",
+            "Extent": "2999-01-01",
+            "Op": "bt"
+          },
+          "PeriodType": [
+            {
+              "CONCEPT_CODE": "OMOP4822290",
+              "CONCEPT_ID": 44814725,
+              "CONCEPT_NAME": "Period inferred by algorithm",
+              "DOMAIN_ID": "Type Concept",
+              "INVALID_REASON_CAPTION": "Unknown",
+              "STANDARD_CONCEPT_CAPTION": "Unknown",
+              "VOCABULARY_ID": "Obs Period Type"
+            },
+            {
+              "CONCEPT_CODE": "10021000000106",
+              "CONCEPT_ID": 44787739,
+              "CONCEPT_NAME": "FP34D drugs supplied payment form",
+              "DOMAIN_ID": "Type Concept",
+              "INVALID_REASON_CAPTION": "Unknown",
+              "STANDARD_CONCEPT_CAPTION": "Unknown",
+              "VOCABULARY_ID": "SNOMED"
+            }
+          ],
+          "UserDefinedPeriod": {
+            "StartDate": "1900-01-01",
+            "EndDate": "2060-01-01"
+          },
+          "AgeAtStart": {
+            "Value": 0,
+            "Extent": 99,
+            "Op": "bt"
+          },
+          "AgeAtEnd": {
+            "Value": 0,
+            "Extent": 99,
+            "Op": "bt"
+          },
+          "PeriodLength": {
+            "Value": 0,
+            "Extent": 999,
+            "Op": "bt"
+          }
+        }
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "First"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "First"
+  },
+  "ExpressionLimit": {
+    "Type": "First"
+  },
+  "InclusionRules": [
+    {
+      "name": "Demographic Test",
+      "description": "Demographic Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [],
+        "DemographicCriteriaList": [
+          {
+            "Age": {
+              "Value": 0,
+              "Extent": 99,
+              "Op": "bt"
+            },
+            "Gender": [
+              {
+                "CONCEPT_CODE": "M",
+                "CONCEPT_ID": 8507,
+                "CONCEPT_NAME": "MALE",
+                "DOMAIN_ID": "Gender",
+                "INVALID_REASON_CAPTION": "Unknown",
+                "STANDARD_CONCEPT_CAPTION": "Unknown",
+                "VOCABULARY_ID": "Gender"
+              }
+            ],
+            "Race": [
+              {
+                "CONCEPT_CODE": "2",
+                "CONCEPT_ID": 8515,
+                "CONCEPT_NAME": "Asian",
+                "DOMAIN_ID": "Race",
+                "INVALID_REASON_CAPTION": "Unknown",
+                "STANDARD_CONCEPT_CAPTION": "Unknown",
+                "VOCABULARY_ID": "Race"
+              },
+              {
+                "CONCEPT_CODE": "2.05",
+                "CONCEPT_ID": 38003578,
+                "CONCEPT_NAME": "Cambodian",
+                "DOMAIN_ID": "Race",
+                "INVALID_REASON_CAPTION": "Unknown",
+                "STANDARD_CONCEPT_CAPTION": "Unknown",
+                "VOCABULARY_ID": "Race"
+              }
+            ],
+            "Ethnicity": [
+              {
+                "CONCEPT_CODE": "Not Hispanic",
+                "CONCEPT_ID": 38003564,
+                "CONCEPT_NAME": "Not Hispanic or Latino",
+                "DOMAIN_ID": "Ethnicity",
+                "INVALID_REASON_CAPTION": "Unknown",
+                "STANDARD_CONCEPT_CAPTION": "Unknown",
+                "VOCABULARY_ID": "Ethnicity"
+              }
+            ],
+            "OccurrenceStartDate": {
+              "Value": "1900-01-01",
+              "Extent": "2099-01-01",
+              "Op": "bt"
+            },
+            "OccurrenceEndDate": {
+              "Value": "1900-01-01",
+              "Extent": "2099-01-01",
+              "Op": "bt"
+            }
+          }
+        ],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Condition Test",
+      "description": "Condition Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "ConditionOccurrence": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "ConditionOccurrence": {}
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "RestrictVisit": true,
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "OccurrenceEndDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "ConditionType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822075",
+                    "CONCEPT_ID": 38000199,
+                    "CONCEPT_NAME": "Inpatient header - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "StopReason": {
+                  "Text": "this is some test text",
+                  "Op": "contains"
+                },
+                "ConditionSourceConcept": 0,
+                "First": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ],
+                "ProviderSpecialty": [
+                  {
+                    "CONCEPT_CODE": "0396.00",
+                    "CONCEPT_ID": 45444755,
+                    "CONCEPT_NAME": "Psychologist",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Read"
+                  },
+                  {
+                    "CONCEPT_CODE": "03D5.00",
+                    "CONCEPT_ID": 45418395,
+                    "CONCEPT_NAME": "Consultant surgeon",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Read"
+                  }
+                ],
+                "VisitType": [
+                  {
+                    "CONCEPT_CODE": "IP",
+                    "CONCEPT_ID": 9201,
+                    "CONCEPT_NAME": "Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Condition Era Test",
+      "description": "Condition Era Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "ConditionEra": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "ConditionEra": {}
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "EraStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "EraEndDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "OccurrenceCount": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "EraLength": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "First": true,
+                "AgeAtStart": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "AgeAtEnd": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Death Test",
+      "description": "Death Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "Death": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "Death": {
+                          "CodesetId": 0
+                        }
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "DeathType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822044",
+                    "CONCEPT_ID": 256,
+                    "CONCEPT_NAME": "EHR Record underlying cause of death",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822045",
+                    "CONCEPT_ID": 255,
+                    "CONCEPT_NAME": "EHR Record contributory cause of death",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822046",
+                    "CONCEPT_ID": 254,
+                    "CONCEPT_NAME": "EHR Record immediate cause of death",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Device Exposure Test",
+      "description": "Device Exposure Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "DeviceExposure": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "DeviceExposure": {
+                          "CodesetId": 0
+                        }
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "RestrictVisit": true,
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "OccurrenceEndDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "DeviceType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822234",
+                    "CONCEPT_ID": 32465,
+                    "CONCEPT_NAME": "Inferred from claim",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Device Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822236",
+                    "CONCEPT_ID": 44818706,
+                    "CONCEPT_NAME": "Patient reported device",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Device Type"
+                  }
+                ],
+                "UniqueDeviceId": {
+                  "Op": "contains"
+                },
+                "Quantity": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "DeviceSourceConcept": 0,
+                "First": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ],
+                "ProviderSpecialty": [
+                  {
+                    "CONCEPT_CODE": "10",
+                    "CONCEPT_ID": 38004455,
+                    "CONCEPT_NAME": "Gastroenterology",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Medicare Specialty"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YM0800X",
+                    "CONCEPT_ID": 38003625,
+                    "CONCEPT_NAME": "Mental Health Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YP1600X",
+                    "CONCEPT_ID": 38003626,
+                    "CONCEPT_NAME": "Pastoral Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  }
+                ],
+                "VisitType": [
+                  {
+                    "CONCEPT_CODE": "21",
+                    "CONCEPT_ID": 8717,
+                    "CONCEPT_NAME": "Inpatient Hospital",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "CMS Place of Service"
+                  },
+                  {
+                    "CONCEPT_CODE": "22",
+                    "CONCEPT_ID": 8756,
+                    "CONCEPT_NAME": "Outpatient Hospital",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "CMS Place of Service"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Drug Era Test",
+      "description": "Drug Era Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "DrugEra": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "DrugEra": {
+                          "CodesetId": 0
+                        }
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "EraStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "EraEndDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "OccurrenceCount": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "EraLength": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "First": true,
+                "AgeAtStart": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "AgeAtEnd": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Drug Exposure Test",
+      "description": "Drug Exposure Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "DrugExposure": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "DrugExposure": {}
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "RestrictVisit": true,
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "OccurrenceEndDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "DrugType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822239",
+                    "CONCEPT_ID": 38000175,
+                    "CONCEPT_NAME": "Prescription dispensed in pharmacy",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Drug Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822240",
+                    "CONCEPT_ID": 38000176,
+                    "CONCEPT_NAME": "Prescription dispensed through mail order",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Drug Type"
+                  }
+                ],
+                "StopReason": {
+                  "Text": "stop reason",
+                  "Op": "contains"
+                },
+                "Refills": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Quantity": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "DaysSupply": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "RouteConcept": [
+                  {
+                    "CONCEPT_CODE": "6064005",
+                    "CONCEPT_ID": 4263689,
+                    "CONCEPT_NAME": "Topical route",
+                    "DOMAIN_ID": "Route",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  },
+                  {
+                    "CONCEPT_CODE": "10547007",
+                    "CONCEPT_ID": 4023156,
+                    "CONCEPT_NAME": "Auricular",
+                    "DOMAIN_ID": "Route",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  },
+                  {
+                    "CONCEPT_CODE": "12130007",
+                    "CONCEPT_ID": 4006860,
+                    "CONCEPT_NAME": "Intraarticular",
+                    "DOMAIN_ID": "Route",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  }
+                ],
+                "EffectiveDrugDose": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "DoseUnit": [
+                  {
+                    "CONCEPT_CODE": "%",
+                    "CONCEPT_ID": 8554,
+                    "CONCEPT_NAME": "percent",
+                    "DOMAIN_ID": "Unit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "UCUM"
+                  },
+                  {
+                    "CONCEPT_CODE": "%(enzyme'activity}",
+                    "CONCEPT_ID": 8849,
+                    "CONCEPT_NAME": "percent enzyme activity",
+                    "DOMAIN_ID": "Unit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "UCUM"
+                  },
+                  {
+                    "CONCEPT_CODE": "%[slope]",
+                    "CONCEPT_ID": 9214,
+                    "CONCEPT_NAME": "percent slope",
+                    "DOMAIN_ID": "Unit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "UCUM"
+                  }
+                ],
+                "LotNumber": {
+                  "Text": "lot number",
+                  "Op": "contains"
+                },
+                "DrugSourceConcept": 0,
+                "First": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ],
+                "ProviderSpecialty": [
+                  {
+                    "CONCEPT_CODE": "1",
+                    "CONCEPT_ID": 38004446,
+                    "CONCEPT_NAME": "General Practice",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Medicare Specialty"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YM0800X",
+                    "CONCEPT_ID": 38003625,
+                    "CONCEPT_NAME": "Mental Health Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  }
+                ],
+                "VisitType": [
+                  {
+                    "CONCEPT_CODE": "ERIP",
+                    "CONCEPT_ID": 262,
+                    "CONCEPT_NAME": "Emergency Room and Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  },
+                  {
+                    "CONCEPT_CODE": "IP",
+                    "CONCEPT_ID": 9201,
+                    "CONCEPT_NAME": "Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Measurement Test",
+      "description": "Measurement Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "Measurement": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "Measurement": {
+                          "CodesetId": 0
+                        }
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "RestrictVisit": true,
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "First": true,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "MeasurementType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822059",
+                    "CONCEPT_ID": 38000183,
+                    "CONCEPT_NAME": "Inpatient detail - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822075",
+                    "CONCEPT_ID": 38000199,
+                    "CONCEPT_NAME": "Inpatient header - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "Operator": [
+                  {
+                    "CONCEPT_CODE": "276140008",
+                    "CONCEPT_ID": 4172704,
+                    "CONCEPT_NAME": ">",
+                    "DOMAIN_ID": "Meas Value Operator",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  }
+                ],
+                "ValueAsNumber": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "ValueAsConcept": [
+                  {
+                    "CONCEPT_CODE": "10828004",
+                    "CONCEPT_ID": 9191,
+                    "CONCEPT_NAME": "Positive",
+                    "DOMAIN_ID": "Meas Value",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  }
+                ],
+                "Unit": [
+                  {
+                    "CONCEPT_CODE": "/mg",
+                    "CONCEPT_ID": 9256,
+                    "CONCEPT_NAME": "per milligram",
+                    "DOMAIN_ID": "Unit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "UCUM"
+                  }
+                ],
+                "RangeLow": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "RangeHigh": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "MeasurementSourceConcept": 0,
+                "RangeLowRatio": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "RangeHighRatio": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Abnormal": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ],
+                "ProviderSpecialty": [
+                  {
+                    "CONCEPT_CODE": "1",
+                    "CONCEPT_ID": 38004446,
+                    "CONCEPT_NAME": "General Practice",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Medicare Specialty"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YP1600X",
+                    "CONCEPT_ID": 38003626,
+                    "CONCEPT_NAME": "Pastoral Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YP2500X",
+                    "CONCEPT_ID": 38003627,
+                    "CONCEPT_NAME": "Professional Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  }
+                ],
+                "VisitType": [
+                  {
+                    "CONCEPT_CODE": "ERIP",
+                    "CONCEPT_ID": 262,
+                    "CONCEPT_NAME": "Emergency Room and Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  },
+                  {
+                    "CONCEPT_CODE": "IP",
+                    "CONCEPT_ID": 9201,
+                    "CONCEPT_NAME": "Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Observation Test",
+      "description": "Observation Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "Observation": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "Observation": {
+                          "CodesetId": 0
+                        }
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "RestrictVisit": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "ObservationType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822059",
+                    "CONCEPT_ID": 38000183,
+                    "CONCEPT_NAME": "Inpatient detail - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822075",
+                    "CONCEPT_ID": 38000199,
+                    "CONCEPT_NAME": "Inpatient header - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "ValueAsNumber": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "ValueAsString": {
+                  "Text": "some value",
+                  "Op": "contains"
+                },
+                "ValueAsConcept": [
+                  {
+                    "CONCEPT_CODE": "10000005",
+                    "CONCEPT_ID": 36312355,
+                    "CONCEPT_NAME": "17 ketosteroids urine",
+                    "DOMAIN_ID": "Measurement",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "MedDRA"
+                  }
+                ],
+                "Qualifier": [
+                  {
+                    "CONCEPT_CODE": "276136004",
+                    "CONCEPT_ID": 4172703,
+                    "CONCEPT_NAME": "=",
+                    "DOMAIN_ID": "Meas Value Operator",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  },
+                  {
+                    "CONCEPT_CODE": "276137008",
+                    "CONCEPT_ID": 4171754,
+                    "CONCEPT_NAME": "<=",
+                    "DOMAIN_ID": "Meas Value Operator",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  }
+                ],
+                "Unit": [
+                  {
+                    "CONCEPT_CODE": "%",
+                    "CONCEPT_ID": 8554,
+                    "CONCEPT_NAME": "percent",
+                    "DOMAIN_ID": "Unit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "UCUM"
+                  }
+                ],
+                "ObservationSourceConcept": 0,
+                "First": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ],
+                "ProviderSpecialty": [
+                  {
+                    "CONCEPT_CODE": "1",
+                    "CONCEPT_ID": 38004446,
+                    "CONCEPT_NAME": "General Practice",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Medicare Specialty"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YP2500X",
+                    "CONCEPT_ID": 38003627,
+                    "CONCEPT_NAME": "Professional Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  }
+                ],
+                "VisitType": [
+                  {
+                    "CONCEPT_CODE": "ERIP",
+                    "CONCEPT_ID": 262,
+                    "CONCEPT_NAME": "Emergency Room and Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  },
+                  {
+                    "CONCEPT_CODE": "IP",
+                    "CONCEPT_ID": 9201,
+                    "CONCEPT_NAME": "Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Observation Period Test",
+      "description": "Observation Period Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "ObservationPeriod": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "ObservationPeriod": {}
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "First": true,
+                "PeriodStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "PeriodEndDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "PeriodType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822059",
+                    "CONCEPT_ID": 38000183,
+                    "CONCEPT_NAME": "Inpatient detail - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822075",
+                    "CONCEPT_ID": 38000199,
+                    "CONCEPT_NAME": "Inpatient header - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "UserDefinedPeriod": {
+                  "StartDate": "1900-01-01",
+                  "EndDate": "2099-01-01"
+                },
+                "AgeAtStart": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "AgeAtEnd": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "PeriodLength": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                }
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Procedure Occurrence Test",
+      "description": "Procedure Occurrence Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "ProcedureOccurrence": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "ProcedureOccurrence": {
+                          "CodesetId": 0
+                        }
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "RestrictVisit": true,
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "ProcedureType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822059",
+                    "CONCEPT_ID": 38000183,
+                    "CONCEPT_NAME": "Inpatient detail - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822075",
+                    "CONCEPT_ID": 38000199,
+                    "CONCEPT_NAME": "Inpatient header - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "Modifier": [
+                  {
+                    "CONCEPT_CODE": "10013000",
+                    "CONCEPT_ID": 4000804,
+                    "CONCEPT_NAME": "Lateral meniscus structure",
+                    "DOMAIN_ID": "Spec Anatomic Site",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  },
+                  {
+                    "CONCEPT_CODE": "10024003",
+                    "CONCEPT_ID": 4001771,
+                    "CONCEPT_NAME": "Structure of base of lung",
+                    "DOMAIN_ID": "Spec Anatomic Site",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  }
+                ],
+                "Quantity": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "First": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ],
+                "ProviderSpecialty": [
+                  {
+                    "CONCEPT_CODE": "1",
+                    "CONCEPT_ID": 38004446,
+                    "CONCEPT_NAME": "General Practice",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Medicare Specialty"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YP2500X",
+                    "CONCEPT_ID": 38003627,
+                    "CONCEPT_NAME": "Professional Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  }
+                ],
+                "VisitType": [
+                  {
+                    "CONCEPT_CODE": "ERIP",
+                    "CONCEPT_ID": 262,
+                    "CONCEPT_NAME": "Emergency Room and Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  },
+                  {
+                    "CONCEPT_CODE": "IP",
+                    "CONCEPT_ID": 9201,
+                    "CONCEPT_NAME": "Inpatient Visit",
+                    "DOMAIN_ID": "Visit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Visit"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Specimen Test",
+      "description": "Specimen Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "Specimen": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "Specimen": {
+                          "CodesetId": 0
+                        }
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "SpecimenType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822059",
+                    "CONCEPT_ID": 38000183,
+                    "CONCEPT_NAME": "Inpatient detail - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822075",
+                    "CONCEPT_ID": 38000199,
+                    "CONCEPT_NAME": "Inpatient header - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "Quantity": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Unit": [
+                  {
+                    "CONCEPT_CODE": "%{baseline}",
+                    "CONCEPT_ID": 8688,
+                    "CONCEPT_NAME": "percent baseline",
+                    "DOMAIN_ID": "Unit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "UCUM"
+                  },
+                  {
+                    "CONCEPT_CODE": "%{binding}",
+                    "CONCEPT_ID": 9218,
+                    "CONCEPT_NAME": "percent binding",
+                    "DOMAIN_ID": "Unit",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "UCUM"
+                  }
+                ],
+                "AnatomicSite": [
+                  {
+                    "CONCEPT_CODE": "10036009",
+                    "CONCEPT_ID": 4002601,
+                    "CONCEPT_NAME": "Structure of nucleus pulposus of intervertebral disc of eighth thoracic vertebra",
+                    "DOMAIN_ID": "Spec Anatomic Site",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  },
+                  {
+                    "CONCEPT_CODE": "10042008",
+                    "CONCEPT_ID": 4001422,
+                    "CONCEPT_NAME": "Structure of intervertebral foramen of fifth thoracic vertebra",
+                    "DOMAIN_ID": "Spec Anatomic Site",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  },
+                  {
+                    "CONCEPT_CODE": "10047002",
+                    "CONCEPT_ID": 4001433,
+                    "CONCEPT_NAME": "Structure of transplanted lung",
+                    "DOMAIN_ID": "Spec Anatomic Site",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  }
+                ],
+                "DiseaseStatus": [
+                  {
+                    "CONCEPT_CODE": "21594007",
+                    "CONCEPT_ID": 4066212,
+                    "CONCEPT_NAME": "Malignant",
+                    "DOMAIN_ID": "Spec Disease Status",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "SNOMED"
+                  }
+                ],
+                "SourceId": {
+                  "Text": "some sourceID",
+                  "Op": "contains"
+                },
+                "First": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Visit Test",
+      "description": "Visit Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "VisitOccurrence": {
+                "CorrelatedCriteria": {
+                  "Type": "ALL",
+                  "CriteriaList": [
+                    {
+                      "Criteria": {
+                        "VisitOccurrence": {}
+                      },
+                      "StartWindow": {
+                        "Start": {
+                          "Coeff": -1
+                        },
+                        "End": {
+                          "Coeff": 1
+                        },
+                        "UseEventEnd": false
+                      },
+                      "RestrictVisit": true,
+                      "IgnoreObservationPeriod": true,
+                      "Occurrence": {
+                        "Type": 2,
+                        "Count": 1
+                      }
+                    }
+                  ],
+                  "DemographicCriteriaList": [],
+                  "Groups": []
+                },
+                "CodesetId": 0,
+                "OccurrenceStartDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "OccurrenceEndDate": {
+                  "Value": "1900-01-01",
+                  "Extent": "2099-01-01",
+                  "Op": "bt"
+                },
+                "VisitType": [
+                  {
+                    "CONCEPT_CODE": "OMOP4822059",
+                    "CONCEPT_ID": 38000183,
+                    "CONCEPT_NAME": "Inpatient detail - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  },
+                  {
+                    "CONCEPT_CODE": "OMOP4822075",
+                    "CONCEPT_ID": 38000199,
+                    "CONCEPT_NAME": "Inpatient header - primary",
+                    "DOMAIN_ID": "Type Concept",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Condition Type"
+                  }
+                ],
+                "VisitSourceConcept": 0,
+                "VisitLength": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "First": true,
+                "Age": {
+                  "Value": 0,
+                  "Extent": 99,
+                  "Op": "bt"
+                },
+                "Gender": [
+                  {
+                    "CONCEPT_CODE": "F",
+                    "CONCEPT_ID": 8532,
+                    "CONCEPT_NAME": "FEMALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  },
+                  {
+                    "CONCEPT_CODE": "M",
+                    "CONCEPT_ID": 8507,
+                    "CONCEPT_NAME": "MALE",
+                    "DOMAIN_ID": "Gender",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Gender"
+                  }
+                ],
+                "ProviderSpecialty": [
+                  {
+                    "CONCEPT_CODE": "1",
+                    "CONCEPT_ID": 38004446,
+                    "CONCEPT_NAME": "General Practice",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "Medicare Specialty"
+                  },
+                  {
+                    "CONCEPT_CODE": "101YP2500X",
+                    "CONCEPT_ID": 38003627,
+                    "CONCEPT_NAME": "Professional Counselor",
+                    "DOMAIN_ID": "Provider",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "NUCC"
+                  }
+                ],
+                "PlaceOfService": [
+                  {
+                    "CONCEPT_CODE": "1021864",
+                    "CONCEPT_ID": 42628591,
+                    "CONCEPT_NAME": "Pharmacy",
+                    "DOMAIN_ID": "Place of Service",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "CPT4"
+                  },
+                  {
+                    "CONCEPT_CODE": "1021865",
+                    "CONCEPT_ID": 42628592,
+                    "CONCEPT_NAME": "School",
+                    "DOMAIN_ID": "Place of Service",
+                    "INVALID_REASON_CAPTION": "Unknown",
+                    "STANDARD_CONCEPT_CAPTION": "Unknown",
+                    "VOCABULARY_ID": "CPT4"
+                  }
+                ]
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 30,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 30,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": []
+      }
+    },
+    {
+      "name": "Group Test",
+      "description": "Group Test",
+      "expression": {
+        "Type": "ALL",
+        "CriteriaList": [
+          {
+            "Criteria": {
+              "ConditionOccurrence": {
+                "CodesetId": 0
+              }
+            },
+            "StartWindow": {
+              "Start": {
+                "Days": 100,
+                "Coeff": -1
+              },
+              "End": {
+                "Days": 100,
+                "Coeff": 1
+              },
+              "UseEventEnd": false
+            },
+            "Occurrence": {
+              "Type": 2,
+              "Count": 1
+            }
+          }
+        ],
+        "DemographicCriteriaList": [],
+        "Groups": [
+          {
+            "Type": "ANY",
+            "CriteriaList": [
+              {
+                "Criteria": {
+                  "ProcedureOccurrence": {
+                    "CodesetId": 0
+                  }
+                },
+                "StartWindow": {
+                  "Start": {
+                    "Days": 60,
+                    "Coeff": -1
+                  },
+                  "End": {
+                    "Days": 60,
+                    "Coeff": 1
+                  },
+                  "UseEventEnd": false
+                },
+                "Occurrence": {
+                  "Type": 2,
+                  "Count": 1
+                }
+              },
+              {
+                "Criteria": {
+                  "DrugExposure": {
+                    "CodesetId": 0
+                  }
+                },
+                "StartWindow": {
+                  "Start": {
+                    "Days": 30,
+                    "Coeff": -1
+                  },
+                  "End": {
+                    "Days": 30,
+                    "Coeff": 1
+                  },
+                  "UseEventEnd": false
+                },
+                "Occurrence": {
+                  "Type": 2,
+                  "Count": 1
+                }
+              }
+            ],
+            "DemographicCriteriaList": [],
+            "Groups": []
+          }
+        ]
+      }
+    }
+  ],
+  "CensoringCriteria": [],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {}
+}

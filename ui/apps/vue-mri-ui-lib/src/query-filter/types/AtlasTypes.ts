@@ -310,6 +310,7 @@ export interface OccurrenceSettings {
   Type: number
   Count: number
   IsDistinct?: boolean
+  CountColumn?: string
 }
 
 export interface DemographicCriteria {

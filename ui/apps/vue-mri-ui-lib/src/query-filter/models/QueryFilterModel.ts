@@ -372,7 +372,7 @@ export class QueryFilterCriteriaManager {
       InclusionRules: (this.inclusionCriteria.criteria || []).map((group: QueryFilterGroup) => {
         return {
           name: group.title, // Maps group.title → Atlas InclusionRule.name
-          description: group.description, // Maps group.description → Atlas InclusionRule.description
+          ...(group.description && { description: group.description }), // Only include description if present
           expression: {
             Type: group.criteriaType, // Maps criteriaType → Atlas expression.Type
             ...(group.criteriaCount === undefined ? {} : { Count: group.criteriaCount }), // Maps criteriaCount → Atlas expression.Count (for AT_LEAST/AT_MOST)
@@ -395,7 +395,8 @@ export class QueryFilterCriteriaManager {
                     Occurrence: {
                       Type: mapCardinalityTypeToAtlas(event.cardinality?.type || 'AT_LEAST'), // Maps cardinality.type → Atlas Occurrence.Type
                       Count: event.cardinality?.count ?? 1, // Maps cardinality.count → Atlas Occurrence.Count
-                      ...mapCardinalityExtras(event.cardinality?.using ?? 'ALL'),
+                      // Only add CountColumn/IsDistinct if 'using' is explicitly specified
+                      ...(event.cardinality?.using ? mapCardinalityExtras(event.cardinality.using) : {}),
                     },
                   }
 
@@ -583,7 +584,8 @@ export class QueryFilterCriteriaManager {
           const eventType = mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
             [eventType]: {
-              CodesetId: systemIdToAtlasId.get(event.conceptSetId!), // Use Atlas sequential ID
+              // Only add CodesetId if conceptSetId exists
+              ...(event.conceptSetId && { CodesetId: systemIdToAtlasId.get(event.conceptSetId) }),
             },
           }
 
@@ -704,7 +706,8 @@ export class QueryFilterCriteriaManager {
           const eventType = mapEventTypeToAtlas(event.eventType!)
           const criteria: CriteriaListItem = {
             [eventType]: {
-              CodesetId: systemIdToAtlasId.get(event.conceptSetId!),
+              // Only add CodesetId if conceptSetId exists
+              ...(event.conceptSetId && { CodesetId: systemIdToAtlasId.get(event.conceptSetId) }),
             },
           }
 

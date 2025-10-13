@@ -226,4 +226,63 @@ describe('Atlas Round-Trip Tests', () => {
       expect(exported2).toEqual(originalAtlas)
     })
   })
+
+  describe('Comprehensive Scenarios from circe-be', () => {
+    test.skip('all criteria types - from circe-be allCriteriaExpression', () => {
+      // SKIPPED: This test uses features not yet supported:
+      // - DemographicCriteriaList (demographics are not fully implemented)
+      // - Many attribute types that need additional implementation
+      // Source: circe-be/src/test/resources/cohortgeneration/allCriteria/allCriteriaExpression.json
+      //
+      // TODO: Implement demographics and additional attributes, then enable this test
+      const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-all-criteria.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
+
+    test('inclusion rules - from circe-be simpleInclusionRule', () => {
+      // Tests InclusionRules with temporal logic (StartWindow) and cardinality (Occurrence)
+      // Source: circe-be/src/test/resources/cohortgeneration/inclusionRules/simpleInclusionRule.json
+      const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-inclusion-rule-basic.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      // STRICT comparison
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
+
+    test.skip('nested groups - from circe-be groupExpression', () => {
+      // SKIPPED: AdditionalCriteria is not currently supported
+      // Source: circe-be/src/test/resources/cohortgeneration/correlatedCriteria/groupExpression.json
+      //
+      // TODO: Implement AdditionalCriteria support, then enable this test
+      const originalAtlas: any = require('./data/atlas-fixtures/atlas-groups-basic.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
+
+    test.skip('exit strategy - from circe-be censorEventExpression', () => {
+      // SKIPPED: EndStrategy is not currently supported
+      // Source: circe-be/src/test/resources/cohortgeneration/exits/censorEventExpression.json
+      //
+      // TODO: Implement EndStrategy support, then enable this test
+      const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-exit-strategy.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
+  })
 })
