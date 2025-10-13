@@ -967,8 +967,13 @@ export const convertAtlasToFilters = (
       }
     }
 
-    // Add all three structures to the data
-    const data = { inclusionCriteria, entryEvents, exitEvents }
+    // Add all three structures to the data, including cdmVersionRange if present
+    const data = {
+      cdmVersionRange: atlasJson.cdmVersionRange,
+      inclusionCriteria,
+      entryEvents,
+      exitEvents,
+    }
     // Create and return QueryFilterCriteriaManager
     return new QueryFilterCriteriaManager(data)
   } catch (error) {

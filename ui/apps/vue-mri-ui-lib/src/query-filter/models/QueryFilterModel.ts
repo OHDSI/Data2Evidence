@@ -45,8 +45,10 @@ export class QueryFilterCriteriaManager {
   private entryEvents: EntryEvent
   private exitEvents: ExitEvent
   private inclusionCriteria: InclusionCriteria
+  private cdmVersionRange?: string
 
   constructor(data: QueryFilterCriteriaManageData = {}) {
+    this.cdmVersionRange = data.cdmVersionRange
     try {
       if (data.entryEvents) {
         this.entryEvents = {
@@ -348,7 +350,7 @@ export class QueryFilterCriteriaManager {
     const endStrategy = this.buildEndStrategy(systemIdToAtlasId)
 
     const atlasDef: AtlasCohortDefinition = {
-      cdmVersionRange: '>=5.0.0',
+      ...(this.cdmVersionRange && { cdmVersionRange: this.cdmVersionRange }),
       ConceptSets: conceptSets, // Now populated with all concept sets
       PrimaryCriteria: {
         CriteriaList: [],
@@ -811,10 +813,10 @@ export class QueryFilterCriteriaManager {
 
           return criteria
         })
-      atlasDef.cdmVersionRange = '>=5.0.0'
     }
 
     // CensoringCriteria, CollapseSettings, and CensorWindow are already set above
+    // cdmVersionRange is already set in the initial atlasDef if it was present
 
     // ConceptSets already populated above
 
@@ -889,6 +891,7 @@ export class QueryFilterCriteriaManager {
   // Serialization
   toJSON(): QueryFilterCriteriaManageData {
     return {
+      cdmVersionRange: this.cdmVersionRange,
       inclusionCriteria: this.inclusionCriteria,
       entryEvents: this.entryEvents,
       exitEvents: this.exitEvents,

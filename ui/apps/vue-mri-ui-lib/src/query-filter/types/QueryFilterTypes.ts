@@ -165,6 +165,7 @@ export interface InclusionCriteria {
 
 // We use plural as the events array is inside each type
 export interface QueryFilterCriteriaManageData {
+  cdmVersionRange?: string
   entryEvents?: EntryEvent
   inclusionCriteria?: InclusionCriteria
   exitEvents?: ExitEvent
