@@ -715,11 +715,62 @@ Both apps use common UI elements:
 
 ## 5. Technical Implementation
 
+### Data Model Architecture
+
+PA-Atlas uses a **normalized internal format** with bidirectional conversion at import/export boundaries:
+
+**Internal Format (UI Layer):**
+
+- All attributes use: `{ operator: string, value: string, extent?: string }`
+- Consistent representation throughout the application
+- Type-safe discriminated unions
+
+**Atlas Format (JSON):**
+
+- Uses: `{ Op: string, Value: number|string, Extent?: number|string }`
+- OHDSI standard format for interoperability
+- Only used at import/export boundaries
+
+**Conversion Boundaries:**
+
+- **Import (Atlas → Internal)**: [AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts)
+- **Export (Internal → Atlas)**: [QueryFilterModel.ts](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts) and [nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts)
+
+### Type System
+
+**Discriminated Union Pattern** ([QueryFilterTypes.ts:78-121](apps/vue-mri-ui-lib/src/query-filter/types/QueryFilterTypes.ts#L78-L121))
+
+Two-level discrimination for type-safe attributes:
+
+**First Level:**
+
+- `attributeType: 'nested'` → Nested criteria container
+- `attributeType: 'standard'` → Standard attribute (second level below)
+
+**Second Level (for 'standard'):**
+
+- `configType: 'numericRange'` → Has `operator?: string, value?: string, extent?: string`
+- `configType: 'conceptSet'` → Has `conceptSet?, conceptSetId?, conceptItems?`
+- `configType: 'concept'` → Has `domainFilter?, conceptItems?`
+- `configType: 'dateRange'` → Has `operator?: string, value?: string, extent?: string`
+- Generic fallback → Extensible for future types
+
+**Benefits:**
+
+- Compile-time type safety prevents invalid field access
+- IntelliSense shows only valid fields for each variant
+- Type guards (`isNumericRangeAttribute()`) provide proper type narrowing
+- Extensible: Generic fallback handles new attribute types
+
+**Type Guards** ([type-guards.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/type-guards.ts))
+
+All use `Extract<QueryFilterAttribute, {...}>` pattern for proper TypeScript narrowing.
+
 ### Atlas JSON Conversion
 
 #### Import Flow (Atlas → UI)
 
-**File:** `query-filter/utils/AtlasConverter.ts`
+**File:** [AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts)
 
 **Main Function:** `convertAtlasToFilters(atlasJson, availableConceptSets)`
 
@@ -727,9 +778,18 @@ Process:
 
 1. **Extract Concept Sets** - Map concept set IDs to local concept sets
 2. **Convert PrimaryCriteria** → Entry Events
-3. **Convert InclusionRules** → Criteria Groups
+3. **Convert InclusionRules** → Criteria Groups (including nested groups with recursive support)
 4. **Convert CensoringCriteria** → Exit Events
-5. **Process Nested Criteria** - Recursively handle CorrelatedCriteria
+5. **Process Nested Criteria** - Recursively handle CorrelatedCriteria and nested groups
+6. **Normalize Data Format** - Convert Atlas format `{ Op, Value, Extent }` → Internal format `{ operator, value, extent }`
+
+**Operator Conversion** ([AtlasConverter.ts:592-611](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L592-L611)):
+
+- `'gt'` → `'GREATER_THAN'`
+- `'lt'` → `'LESS_THAN'`
+- `'eq'` → `'EQUAL'`
+- `'bt'` → `'BETWEEN'`
+- All values stored as strings
 
 **Example:**
 
@@ -740,16 +800,29 @@ Process:
     CriteriaList: [{
       ConditionOccurrence: {
         CodesetId: 1,
-        Age: { Value: 18, Op: "gte" },
-        CorrelatedCriteria: {...}  // Nested
+        Age: { Op: "gte", Value: 18 },
+        CorrelatedCriteria: {
+          Type: "ALL",
+          Count: 2,
+          CriteriaList: [...],
+          DemographicCriteriaList: [...],
+          Groups: [...]  // Nested groups supported
+        }
       }
     }]
   },
-  InclusionRules: [...],
+  InclusionRules: [{
+    expression: {
+      Type: "AT_LEAST",
+      Count: 1,
+      CriteriaList: [...],
+      Groups: [...]  // Top-level groups
+    }
+  }],
   CensoringCriteria: [...]
 }
 
-// Converted to UI model
+// Converted to UI model (internal format)
 {
   entryEvents: {
     events: [{
@@ -757,29 +830,86 @@ Process:
       criteriaType: "ConditionOccurrence",
       conceptSet: {...},
       attributes: [
-        { id: "age", type: "numericRange", value: 18, operator: "gte" },
-        { id: "nested", type: "nested", nestedCriteria: {...} }
+        {
+          id: "age",
+          attributeType: "standard",
+          configType: "numericRange",
+          operator: "GREATER_THAN_OR_EQUAL",
+          value: "18"
+        },
+        {
+          id: "nested",
+          attributeType: "nested",
+          nestedCriteria: {
+            criteriaType: "ALL",
+            criteriaCount: 2,
+            events: [...]
+          }
+        }
       ]
     }]
   },
-  inclusionCriteria: {...},
+  inclusionCriteria: [{
+    criteriaType: "AT_LEAST",
+    criteriaCount: 1,
+    events: [...]
+  }],
   exitEvents: {...}
 }
 ```
 
+#### Groups and Nested Criteria Support
+
+**Recursive Groups Loading** ([AtlasConverter.ts:603-717](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L603-L717))
+
+The `convertGroupCriteriaToGroupEvents()` function handles:
+
+- `CriteriaList` → Regular medical events
+- `DemographicCriteriaList` → Demographic criteria (Age, Gender, etc.)
+- `Groups` → **Recursively** converts nested groups (unlimited depth)
+
+**Supported Group Locations:**
+
+1. Top-level in InclusionRules (`expression.Groups`)
+2. Within CorrelatedCriteria (`CorrelatedCriteria.Groups`)
+3. Nested within other groups (recursive)
+
+**Group Criteria Types:**
+
+- `ALL` - All criteria must match
+- `ANY` - Any criteria can match
+- `AT_LEAST` - At least N criteria must match (requires `Count`)
+- `AT_MOST` - At most N criteria can match (requires `Count`)
+
 #### Export Flow (UI → Atlas)
 
-**File:** `query-filter/models/QueryFilterModel.ts`
+**File:** [QueryFilterModel.ts](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts)
 
 **Method:** `QueryFilterCriteriaManager.convertToAtlasFormat()`
 
 Process:
 
-1. **Collect Concept Sets** - Build unified concept sets array with ID mapping
-2. **Convert Entry Events** → PrimaryCriteria
-3. **Convert Criteria Groups** → InclusionRules with ExpressionLimit
-4. **Convert Exit Events** → Censoring Criteria or EndStrategy
-5. **Reconstruct Nested Criteria** - Build CorrelatedCriteria from nested attributes
+1. **Collect Concept Sets** - Build unified concept sets array with ID mapping (includes CONT_DRUG concept sets)
+2. **Convert Entry Events** → PrimaryCriteria with CorrelatedCriteria
+3. **Convert Criteria Groups** → InclusionRules with Type/Count and nested Groups
+4. **Convert Exit Events** → CensoringCriteria or EndStrategy (DateOffset/CustomEra)
+5. **Reconstruct Nested Criteria** - Build CorrelatedCriteria with Type, Count, and nested Groups
+6. **Denormalize Data Format** - Convert internal format `{ operator, value, extent }` → Atlas format `{ Op, Value, Extent }`
+
+**Operator Conversion** ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts)):
+
+- `'GREATER_THAN'` → `'gt'`
+- `'LESS_THAN'` → `'lt'`
+- `'EQUAL'` → `'eq'`
+- `'BETWEEN'` → `'bt'`
+- Values converted to appropriate types (numbers for numeric ranges, dates for date ranges)
+
+**Group Export Pattern** ([nested-criteria-processor.ts:77-240](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L77-L240)):
+
+- Collects ALL events into arrays FIRST
+- Creates ONE `GroupCriteria` containing ALL collected events
+- Handles Type and Count fields correctly
+- Supports recursive nesting
 
 ### State Management
 
@@ -863,6 +993,83 @@ export const api = {
 };
 ```
 
+### Exit Criteria Configuration
+
+PA-Atlas supports three types of cohort exit strategies:
+
+#### 1. Fixed Duration to Initial Event
+
+**Type:** `EndStrategy.DateOffset`
+
+**Configuration Fields** ([QueryFilterTypes.ts:147-150](apps/vue-mri-ui-lib/src/query-filter/types/QueryFilterTypes.ts#L147-L150)):
+
+```typescript
+fixedDuration?: {
+  dateField: 'StartDate' | 'EndDate',  // Event date to offset from
+  offset: number                        // Number of days offset
+}
+```
+
+**Atlas JSON Mapping:**
+
+```json
+{
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 30
+    }
+  }
+}
+```
+
+**Component:** [QueryFilterEntryExit.vue:147-230](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEntryExit.vue#L147-L230)
+
+- Local refs synchronized with props via `onMounted` and watchers
+- Settings persist through save/load cycles
+
+#### 2. Continuous Drug Exposure
+
+**Type:** `EndStrategy.CustomEra`
+
+**Configuration Fields** ([QueryFilterTypes.ts:151-158](apps/vue-mri-ui-lib/src/query-filter/types/QueryFilterTypes.ts#L151-L158)):
+
+```typescript
+contDrugSettings?: {
+  conceptSetId: string,              // Selected drug concept set
+  conceptSetName?: string,            // Concept set display name
+  conceptSetDetails?: ConceptSetDetail[],  // Full concept set data
+  gapDays: number,                    // Gap days between exposures
+  offset: number,                     // Offset days
+  daysSupplyOverride: number          // Days supply override
+}
+```
+
+**Atlas JSON Mapping:**
+
+```json
+{
+  "EndStrategy": {
+    "CustomEra": {
+      "DrugCodesetId": 5,
+      "GapDays": 30,
+      "Offset": 0,
+      "DaysSupplyOverride": 0
+    }
+  }
+}
+```
+
+**Features:**
+
+- Full concept set details loaded and saved
+- Concept set included in `ConceptSets` array during export
+- Async loading of concept set details via [useCriteriaManager.ts:101-131](apps/vue-mri-ui-lib/src/utils/useCriteriaManager.ts#L101-L131)
+
+#### 3. End of Continuous Observation
+
+Standard Atlas exit criteria without additional configuration.
+
 ### Nested Criteria Handling
 
 **Recursive Processing:**
@@ -870,7 +1077,16 @@ export const api = {
 Atlas `CorrelatedCriteria` represents medical logic like:
 
 - "Condition occurred AND (Drug within 30 days OR Procedure)"
-- Arbitrary nesting depth supported
+- Supports arbitrary nesting depth
+- Includes Type (`ALL`, `ANY`, `AT_LEAST`, `AT_MOST`) and optional Count
+
+**Demographic Criteria in Nested Context:**
+
+All demographic attribute types are supported in nested criteria:
+
+- `Age` (NumericRange) - Converted via `mapAtlasOperatorToInternal()`
+- `Gender`, `Race`, `Ethnicity` (Concept[]) - Converted via `convertConceptSetArrayToAttribute()`
+- `OccurrenceStartDate`, `OccurrenceEndDate` (DateRange) - Date range conversion
 
 **Import (Atlas → UI):**
 
@@ -881,17 +1097,30 @@ function convertCriteriaListToEvents(criteriaList) {
     const event = createBasicEvent(item);
 
     if (hasCorrelatedCriteria(item)) {
-      // Recursive call
       const nestedEvents = convertCriteriaListToEvents(
         item.CorrelatedCriteria.CriteriaList
       );
 
+      // Handle DemographicCriteriaList
+      if (item.CorrelatedCriteria.DemographicCriteriaList) {
+        // Convert demographic criteria to events
+      }
+
+      // Handle nested Groups recursively
+      if (item.CorrelatedCriteria.Groups) {
+        item.CorrelatedCriteria.Groups.forEach((groupCriteria) => {
+          const groupEvent = convertGroupCriteriaToGroupEvents(groupCriteria);
+          nestedEvents.push(groupEvent);
+        });
+      }
+
       event.attributes.push({
         id: "nested",
-        type: "nested",
+        attributeType: "nested",
         nestedCriteria: {
           events: nestedEvents,
-          criteriaType: item.CorrelatedCriteria.Type, // ALL, ANY, AT_LEAST
+          criteriaType: item.CorrelatedCriteria.Type, // ALL, ANY, AT_LEAST, AT_MOST
+          criteriaCount: item.CorrelatedCriteria.Count, // Optional count for AT_LEAST/AT_MOST
         },
       });
     }
@@ -921,7 +1150,8 @@ function convertCriteriaListToEvents(criteriaList) {
 ```
 
 **Export (UI → Atlas):**
-Reverse process rebuilds CorrelatedCriteria from nested attribute structures.
+
+Reverse process rebuilds CorrelatedCriteria from nested attribute structures with proper Type and Count fields ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts)).
 
 ---
 
@@ -1101,9 +1331,30 @@ document.querySelector(".plugin-container").portalAPI = {
 
 #### Atlas Criteria Config
 
-**File:** `query-filter/config/atlas-config.json`
+**File:** [atlas-config.json](apps/vue-mri-ui-lib/src/query-filter/config/atlas-config.json)
 
-Defines available criteria types and their attributes. Example:
+Defines available criteria types and their attributes. **All attribute IDs must match OHDSI circe-be Java field names** (camelCase).
+
+**Attribute Naming Convention:**
+
+PA-Atlas follows OHDSI circe-be backend naming where attribute IDs match Java `@JsonProperty` field names:
+
+| Atlas @JsonProperty | Config Attribute ID | Java Field Name   | Type         |
+| ------------------- | ------------------- | ----------------- | ------------ |
+| `VisitLength`       | `visitLength`       | `visitLength`     | numericRange |
+| `EraLength`         | `eraLength`         | `eraLength`       | numericRange |
+| `PeriodLength`      | `periodLength`      | `periodLength`    | numericRange |
+| `OccurrenceCount`   | `occurrenceCount`   | `occurrenceCount` | numericRange |
+| `DoseValue`         | `doseValue`         | `doseValue`       | numericRange |
+| `First`             | `first`             | `first`           | boolean      |
+| `Age`               | `age`               | `age`             | numericRange |
+
+**Generic vs Domain-Specific:**
+
+- **Generic attributes**: Use same name across all criteria types (`first`, `age`, `gender`)
+- **Domain-specific attributes**: Use descriptive names that preserve context (`visitLength` vs `eraLength` vs `periodLength`)
+
+**Example:**
 
 ```json
 {
@@ -1112,23 +1363,55 @@ Defines available criteria types and their attributes. Example:
     "icon": "condition",
     "attributes": [
       {
-        "id": "Age",
+        "id": "age",
         "type": "numericRange",
         "label": "Age",
         "category": "Demographics"
       },
       {
-        "id": "Gender",
-        "type": "conceptSet",
+        "id": "gender",
+        "type": "concept",
         "label": "Gender",
         "domain": "Gender"
+      }
+    ]
+  },
+  "VisitOccurrence": {
+    "displayName": "Visit",
+    "icon": "visit",
+    "attributes": [
+      {
+        "id": "visitLength",
+        "type": "numericRange",
+        "label": "Visit Length"
+      }
+    ]
+  },
+  "ConditionEra": {
+    "displayName": "Condition Era",
+    "icon": "condition-era",
+    "attributes": [
+      {
+        "id": "eraLength",
+        "type": "numericRange",
+        "label": "Era Length"
+      },
+      {
+        "id": "occurrenceCount",
+        "type": "numericRange",
+        "label": "Occurrence Count"
       }
     ]
   }
 }
 ```
 
-Add new criteria types or attributes by editing this file.
+**Usage in Code:**
+
+- [AtlasAttributeLookup.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasAttributeLookup.ts) - Bidirectional mapping between config IDs and Atlas field names
+- [ConfigLoader](apps/vue-mri-ui-lib/src/query-filter/utils/ConfigLoader.ts) - Dynamic attribute resolution based on config
+
+Add new criteria types or attributes by editing this file and updating the lookup table.
 
 #### Navigation Config
 
@@ -1511,6 +1794,106 @@ QueryFilterModern.vue:saveAtlasCohort()
 5. Check browser console for conversion errors
 6. Review `AtlasConverter.ts` for type-specific logic
 
+### Important Implementation Details
+
+#### Cardinality Count Handling
+
+**Critical Pattern:** Always use nullish coalescing operator (`??`) instead of logical OR (`||`) for count values.
+
+**Why:** JavaScript treats `0` as falsy, which breaks "Exactly 0" and "At most 0" cardinality settings (exclusion criteria).
+
+```typescript
+// ❌ WRONG - Converts 0 to 1
+Count: event.cardinality?.count || 1; // 0 || 1 → 1
+
+// ✅ CORRECT - Preserves 0
+Count: event.cardinality?.count ?? 1; // 0 ?? 1 → 0
+```
+
+**Affected Locations:**
+
+- [AtlasConverter.ts:338](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L338) - Loading from Atlas
+- [nested-criteria-processor.ts:111, 277, 514](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts) - Export to Atlas
+- [QueryFilterModel.ts:393](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts#L393) - InclusionRules conversion
+
+**Valid Use Case for Count 0:**
+
+- "Exactly 0 occurrences" = Event must NOT occur (exclusion criteria)
+- "At most 0 occurrences" = Event must NOT occur
+- "At least 0 occurrences" = Event is optional (matches all patients)
+
+#### Event Transformer and nestedCriteria
+
+**Critical Pattern:** Always preserve `nestedCriteria` when transforming events.
+
+**Location:** [event-transformer.ts:30-36](apps/vue-mri-ui-lib/src/query-filter/models/modules/event-transformer.ts#L30-L36)
+
+```typescript
+// ✅ CORRECT - Preserves nestedCriteria for group events
+...(event.nestedCriteria && {
+  nestedCriteria: {
+    ...event.nestedCriteria,
+    events: transformEvents(event.nestedCriteria.events || []),
+  },
+}),
+```
+
+**Why:** Groups store their child events in `nestedCriteria.events`. If this field is dropped during transformation, all nested content is lost.
+
+#### Component State Initialization
+
+**Pattern:** Always initialize local refs from props using `onMounted` and watchers.
+
+**Example:** [QueryFilterEntryExit.vue:172-230](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEntryExit.vue#L172-L230)
+
+```typescript
+// Initialize local refs from props
+onMounted(() => {
+  initializeContDrugSettings();
+  initializeFixedDurationSettings();
+});
+
+// Watch for prop changes
+watch(
+  () => props.exitCriteriaData.contDrugSettings,
+  initializeContDrugSettings
+);
+watch(() => props.conceptSets, initializeContDrugSettings);
+```
+
+**Why:** Props may load asynchronously (e.g., concept sets from API). Without watchers, component shows defaults instead of loaded data.
+
+#### Group Export Pattern
+
+**Critical Pattern:** Collect ALL events into arrays FIRST, then create ONE `GroupCriteria`.
+
+**Location:** [nested-criteria-processor.ts:77-240](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L77-L240)
+
+```typescript
+// ✅ CORRECT - Collect first, create group once
+const criteriaList: CriteriaGroup[] = [];
+const demographicCriteriaList: DemographicCriteria[] = [];
+
+groupEvent.nestedCriteria.events.forEach(event => {
+  criteriaList.push(...);  // Collect
+});
+
+groupsList.push({
+  Type: 'ALL',
+  CriteriaList: criteriaList,  // One group with all events
+  // ...
+});
+
+// ❌ WRONG - Creates separate group for each event
+groupEvent.nestedCriteria.events.forEach(event => {
+  groupsList.push({
+    CriteriaList: [event]  // Splits group!
+  });
+});
+```
+
+**Why:** The wrong pattern splits one group with N events into N groups with 1 event each.
+
 ### Mock Server Not Starting
 
 ```bash
@@ -1543,784 +1926,70 @@ SERVER_URL=http://localhost:3001 npm start
 
 ---
 
-## Recent Updates
+## 9. Known Limitations and Future Work
 
-### 2025-10-06: Clean Architecture - Normalized Internal Format (operator/value)
+### Attribute Type Support
 
-**Issue**: The system had mixed representations causing type confusion:
+**Not Normalized (Use Atlas Format):**
 
-1. Incorrectly included `attributeType: 'numericRange'` and `attributeType: 'conceptSet'` as discriminated union variants
-2. UI components used Atlas format `{ Op, Value }` while internal state used `{ operator, value }`
-3. Data transformation happened inconsistently, mixing string and object forms
+The following attribute input components do not yet use the normalized internal format:
 
-**Solution**: **Normalize at boundaries** - Convert Atlas ↔ Internal format only at import/export boundaries:
+- **StringInput.vue** - Emits `{ Op: string, Text: string }` (Atlas format)
+- **DateAdjustmentInput.vue** - Emits `{ StartWith: string, StartOffset: number, EndWith: string, EndOffset: number }` (Atlas format)
 
-- **Import**: Atlas `{ Op: 'gt', Value: 18 }` → Internal `{ operator: 'GREATER_THAN', value: '18' }`
-- **UI Layer**: Always uses Internal format `{ operator, value, extent? }`
-- **Export**: Internal `{ operator: 'GREATER_THAN', value: '18' }` → Atlas `{ Op: 'gt', Value: 18 }`
+**Reason:** These attributes are not currently included in the Atlas import/export pipeline. They are stored as-is in internal state.
 
-**Changes Made**:
+**Future Work:** Apply the same "normalize at boundaries" pattern when these attributes need Atlas JSON round-trip support.
 
-1. **Type Definition Redesign** ([QueryFilterTypes.ts:50-111](apps/vue-mri-ui-lib/src/query-filter/types/QueryFilterTypes.ts#L50-L111))
+### Pending TODOs
 
-   - Removed `attributeType: 'numericRange'` and `attributeType: 'conceptSet'` variants
-   - Removed `NumericRange` and `DateRange` imports (no longer needed)
-   - **Proper Discriminated Union**: Now uses two-level discrimination:
-     - First level: `attributeType: 'nested' | 'standard'`
-     - Second level (for `'standard'`): `configType` discriminates between:
-       - `'numericRange'` - Has `operator?: string, value?: string, extent?: string` (all strings)
-       - `'conceptSet'` - Has `conceptSet?`, `conceptSetId?`, `conceptItems?`
-       - `'concept'` - Has `domainFilter?`, `conceptItems?`
-       - `'dateRange'` - Has `operator?: string, value?: string, extent?: string` (all strings)
-       - Generic fallback - Has all optional fields for extensibility
-   - **Type Safety**: Each `configType` variant has only the fields it needs, preventing field confusion
-   - **No more union types**: `value` is always `string`, never an object
+**Location:** Various files
 
-2. **AtlasConverter Fixes** ([AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts))
+1. **atlas-mappers.ts:74**: Verify Atlas format mappings for BETWEEN and NOT_BETWEEN operators
+2. **nested-criteria-processor.ts:594**: Add handlers for additional attribute types (text, dateAdjustment, userDefinedPeriod) in export logic
+3. **AtlasConverter.ts:334**: Cleanup opportunity for `criteriaType` parameter in nested events
 
-   - Line 366: Changed Age attribute creation from `attributeType: 'numericRange'` → `attributeType: 'standard', configType: 'numericRange'`
-   - Line 163: Changed concept set attributes from `attributeType: 'conceptSet'` → `attributeType: 'standard', configType: 'conceptSet'`
-   - `convertConceptSetArrayToAttribute`: Now consistently uses `attributeType: 'standard'` with appropriate `configType`
+### Standards Compliance
 
-3. **Component Fixes** ([QueryFilterEventCard.vue:277](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEventCard.vue#L277))
+**Fully Compliant:**
 
-   - Updated `handleAttributeConceptSetSelected` to check for `attributeType === 'standard' && configType === 'conceptSet'`
+- ✅ OHDSI Atlas JSON specification
+- ✅ OMOP Common Data Model v5.4
+- ✅ circe-be Java backend field naming
+- ✅ All standard medical criteria types
+- ✅ Recursive groups with unlimited nesting depth
+- ✅ CorrelatedCriteria with Type and Count
+- ✅ Demographic criteria in all contexts
 
-4. **Event Transformer Fixes** ([event-transformer.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/event-transformer.ts))
+**Areas for Enhancement:**
 
-   - Line 52: Added `configType === 'numericRange'` to condition
-   - Line 74: Updated age attribute check to use `attributeType === 'standard' && configType === 'numericRange'`
-
-5. **Type Guards Enhancement** ([type-guards.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/type-guards.ts))
-
-   - Updated type guards to use `Extract<QueryFilterAttribute, {...}>` for proper type narrowing
-   - `isNumericRangeAttribute()`: Narrows to the exact `numericRange` discriminated union variant
-   - `isConceptSetAttribute()`: Narrows to the exact `conceptSet` discriminated union variant
-   - `isConceptAttribute()`: Narrows to the exact `concept` discriminated union variant
-   - `isDateRangeAttribute()`: New guard for `dateRange` variant
-   - **TypeScript IntelliSense**: Now properly shows only the available fields for each variant
-
-6. **NumericRangeInput Component** ([NumericRangeInput.vue](apps/vue-mri-ui-lib/src/query-filter/components/attributes/NumericRangeInput.vue))
-
-   - **Changed props**: Now accepts `operator?: string, value?: string` (internal format)
-   - **Added converters**: `internalToAtlasOperator()` and `atlasToInternalOperator()` for dropdown compatibility
-   - **Emits internal format**: `{ operator: 'GREATER_THAN', value: '18', extent?: '25' }`
-   - **Dropdown still uses Atlas format** (`lt`, `gt`, etc.) for `numericRangeOptions` compatibility
-
-7. **AttributeContainer** ([AttributeContainer.vue:62](apps/vue-mri-ui-lib/src/query-filter/components/attributes/AttributeContainer.vue#L62))
-
-   - Now passes both `:value` and `:operator` props to child components
-
-8. **QueryFilterEventCard** ([QueryFilterEventCard.vue:251-266](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEventCard.vue#L251-L266))
-
-   - `updateAttribute` now spreads payload: `{ ...attr, ...payload }`
-   - Properly updates all fields (`operator`, `value`, `extent`) from UI components
-
-9. **Nested Criteria Processor Simplification** ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts))
-
-   - Lines 279-290: Simplified - always converts internal → Atlas format
-   - Lines 308-316: Same simplification for dateRange
-   - Removed all `typeof attr.value === 'object'` checks (no longer needed)
-   - Removed all `as any` workarounds
-   - **Clean conversion**: `{ Op: mapOperatorToAtlas(attr.operator), Value: parseInt(attr.value) }`
-
-10. **Test Data Updates** ([sample6-input.ts](apps/vue-mri-ui-lib/src/query-filter/__tests__/data/sample6-input.ts))
-    - Updated test data to use `attributeType: 'standard', configType: 'numericRange'`
-
-**Implementation Details**:
-
-- **Clear Boundaries**: Conversion happens only at import (AtlasConverter) and export (nested-criteria-processor)
-- **Single Representation**: UI layer always works with internal format `{ operator, value, extent? }`
-- **No Mixed State**: Eliminated the dual string/object representation problem
-- **Discriminated Union Pattern**: Uses TypeScript's discriminated unions at two levels for precise type narrowing
-- **Type Safety**: Each `configType` variant has its own distinct shape, preventing field confusion
-  - Can't accidentally access `conceptSet` on a `numericRange` attribute
-  - Can't access `domainFilter` on a `conceptSet` attribute
-- **IntelliSense Support**: TypeScript autocomplete shows only valid fields for each variant
-- **Generic Fallback**: Last union variant handles any new `configType` values for extensibility
-- **Type Guards**: Use `Extract<>` utility type to properly narrow to specific variants
-
-**Impact**:
-
-- ✅ **Clean architecture**: Clear separation between Atlas format and internal format
-- ✅ **Eliminates type confusion**: No more union types (`string | NumericRange`)
-- ✅ **Simpler code**: Export logic no longer needs runtime type checks
-- ✅ **Prevents bugs**: TypeScript catches incorrect field access at compile time
-- ✅ **Fixes runtime bugs**: DateRange values correctly handled throughout the flow
-- ✅ **Removes unsafe casts**: No more `as any` workarounds needed
-- ✅ **Better IDE support**: IntelliSense shows only valid fields after type narrowing
-- ✅ **Maintainable**: Conversion logic centralized at boundaries
-- ✅ **All tests pass**: 143/143 tests passing
+- Additional attribute types (String, DateAdjustment)
+- Improved error handling for malformed Atlas JSON
+- Performance optimization for very large cohort definitions
 
 ---
 
-### 2025-10-06: Demographic Criteria in Nested Attributes Fix (Fully Generic)
+## Document History
 
-**Issue**: Demographic criteria in nested attributes within entry events were not being saved or loaded correctly. Only Age was handled, and other attribute types (Gender, Race, dateRange) were ignored.
+**Last Updated:** 2025-10-09
+**Version:** 2.0
 
-**Changes Made**:
+This documentation reflects the current state of PA-Atlas with all recent architectural improvements consolidated into the main sections above.
 
-1. **Export Enhancement** ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts))
+**Major Updates Included:**
 
-   - Refactored to handle **all demographic attribute types generically**:
-     - `configType: 'numericRange'` (Age)
-     - `configType: 'concept'` (Gender, Race, Ethnicity, RaceConcept, etc.)
-     - `configType: 'dateRange'` (StartDate, EndDate)
-   - Uses `getAtlasAttributeKey()` from `AtlasAttributeLookup` for proper field name mapping
-   - Applied to both `buildNestedCriteriaFromAttributes` (lines 352-394) and `processNestedGroupsRecursively` (lines 268-310)
-   - **Zero hardcoding**: works for any attribute type and any new attributes added to config
+- Normalized internal format architecture (Section 5: Technical Implementation)
+- Discriminated union type system (Section 5: Type System)
+- Full groups and nested criteria support (Section 5: Groups and Nested Criteria Support)
+- Exit criteria configuration (Section 5: Exit Criteria Configuration)
+- OHDSI standards compliance (Section 9: Standards Compliance)
+- Critical implementation patterns (Section 8: Important Implementation Details)
 
-2. **Import Enhancement** ([AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts))
-   - Enhanced CorrelatedCriteria processing (lines 417-462) to handle `DemographicCriteriaList`
-   - Converts all demographic criteria types from Atlas JSON back to UI events
-   - Uses `convertConceptSetArrayToAttribute` with config loader for generic concept mapping
-   - Handles Age (NumericRange), Gender/Race (Concept[]), and dates (DateRange)
+**For Historical Context:**
 
-**Implementation Details**:
-
-- **Type Guard** ([type-guards.ts:13-25](apps/vue-mri-ui-lib/src/query-filter/models/modules/type-guards.ts#L13-L25))
-  - `isNumericRangeAttribute()` checks for `attributeType: 'standard'` with `configType: 'numericRange'`
-  - Centralizes attribute type detection logic in one place
-- **Attribute Lookup Table**: Uses `AtlasAttributeLookup.attributeMap.DemographicCriteria` for field name mapping
-  - `age` → `Age` (NumericRange)
-  - `gender` → `Gender` (Concept[])
-  - `startDate` → `OccurrenceStartDate` (DateRange)
-  - `endDate` → `OccurrenceEndDate` (DateRange)
-- **Type-Based Handling**: Automatically detects attribute `configType` (numericRange, concept, dateRange) and applies appropriate conversion
-- **Config-Driven**: Works with any attribute defined in `attributeMapping.demographic[]` in `atlas-config.json`
-- **Type-Safe**: Uses `Record<string, unknown>` instead of `any` for dynamic property assignment
-
-**Impact**:
-
-- ✅ Full round-trip conversion for **all** demographic attribute types
-- ✅ No special cases or hardcoded attribute handling
-- ✅ Future-proof: new attributes work automatically when added to config and lookup table
-
----
-
-### 2025-10-06: Extent vs extent Case Normalization
-
-**Issue**: Mixed use of Atlas format (uppercase `Extent`) and internal format (lowercase `extent`) throughout the codebase, violating the "normalize at boundaries" pattern.
-
-**Root Cause**: Legacy code from before the normalized architecture was established. Some code paths were storing Atlas format `{ Op, Value, Extent }` objects directly in the internal state, while other code expected internal format `{ operator, value, extent }`.
-
-**Changes Made**:
-
-1. **AtlasConverter.ts Import Fixes** - All numericRange and dateRange conversions now convert from Atlas → Internal format:
-
-   - Lines 455-470: NumericRange import converts `{ Op, Value, Extent }` → `{ operator, value, extent }`
-   - Lines 482-497: DateRange import converts `{ Op, Value, Extent }` → `{ operator, value, extent }`
-   - Lines 624-639: Duplicate numericRange section (for InclusionRules) fixed
-   - Lines 651-666: Duplicate dateRange section fixed
-
-2. **QueryFilterModel.ts Export Fixes** - Conversion from internal → Atlas format:
-
-   - Lines 494-505: NumericRange export converts `{ operator, value, extent }` → `{ Op, Value, Extent }`
-   - Lines 522-530: DateRange export converts `{ operator, value, extent }` → `{ Op, Value, Extent }`
-
-3. **nested-criteria-processor.ts Cleanup** - Removed old dead code:
-   - Lines 385-386: Removed legacy check for Atlas format objects in `value` field
-   - Now always uses internal format and converts to Atlas at export
-
-**Implementation Details**:
-
-- **Import Boundary** ([AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts)): Reads `Extent` from Atlas JSON, stores as `extent` in internal state
-- **Internal Format**: All code uses lowercase `extent` field
-- **Export Boundary** ([nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts), [QueryFilterModel.ts](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts)): Converts `extent` → `Extent` when creating Atlas JSON
-
-**Impact**:
-
-- ✅ Consistent case usage: `Extent` only in Atlas format, `extent` only in internal format
-- ✅ Removed mixed representations: no more objects stored in `value` field
-- ✅ Simplified code: removed runtime type checks for `typeof value === 'object'`
-- ✅ All 143/143 tests passing
-
----
-
-### 2025-10-06: Known Inconsistencies - String and DateAdjustment Attributes
-
-**Issue**: Not all attribute input components use normalized internal format. Some still use Atlas format (uppercase keys).
-
-**Current State**:
-
-**Normalized (Internal Format):**
-
-- ✅ `NumericRangeInput.vue` - emits `{ operator: string, value: string, extent?: string }`
-- ✅ `DateInput.vue` - emits `{ operator: string, value: string, extent?: string }`
-
-**Not Normalized (Atlas Format):**
-
-- ⚠️ `StringInput.vue` - emits `{ Op: string, Text: string }`
-- ⚠️ `DateAdjustmentInput.vue` - emits `{ StartWith: string, StartOffset: number, EndWith: string, EndOffset: number }`
-
-**Why Not Fixed**:
-
-These attribute types (`text` and `dateAdjustment`) are **not currently handled in the Atlas import/export pipeline**. They are not converted in:
-
-- [AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts) - No import logic
-- [nested-criteria-processor.ts](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts) - No export logic
-
-They are stored as-is in the internal state and not included in Atlas JSON output, suggesting they may be:
-
-1. Legacy attributes not part of the OHDSI Atlas specification
-2. D2E-specific extensions
-3. Partially implemented features
-
-**Type Documentation**:
-
-The mixed format is documented in [QueryFilterEventCard.vue:30-34](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEventCard.vue#L30-L34):
-
-```typescript
-type AttributeUpdatePayload =
-  | { operator: string; value: string; extent?: string } // NumericRange, DateRange (internal format)
-  | { Op: string; Text: string } // String (Atlas format - not yet normalized)
-  | {
-      StartWith: string;
-      StartOffset: number;
-      EndWith: string;
-      EndOffset: number;
-    }; // DateAdjustment (Atlas format - not yet normalized)
-```
-
-**Future Work**:
-
-To normalize these attributes:
-
-1. **Define Internal Format**:
-
-   - String: `{ operator: string, text: string }` (e.g., `operator: 'startsWith'`)
-   - DateAdjustment: `{ startWith: string, startOffset: number, endWith: string, endOffset: number }`
-
-2. **Update Components**:
-
-   - [StringInput.vue](apps/vue-mri-ui-lib/src/query-filter/components/attributes/StringInput.vue) - Change props/emit to internal format
-   - [DateAdjustmentInput.vue](apps/vue-mri-ui-lib/src/query-filter/components/attributes/DateAdjustmentInput.vue) - Change props/emit to internal format
-
-3. **Add Conversion Logic** (if needed for Atlas compatibility):
-   - Add import logic in AtlasConverter.ts to convert from Atlas → internal
-   - Add export logic in nested-criteria-processor.ts to convert from internal → Atlas
-
-**Recommendation**: Leave as-is until these attributes need to be included in Atlas JSON import/export, then apply the same "normalize at boundaries" pattern used for NumericRange and DateRange.
-
----
-
-### 2025-10-06: Groups Not Being Saved/Loaded Fix
-
-**Issue**: Groups were disappearing during save/load cycles. When users created groups within InclusionRules, they would not persist after saving and reloading the cohort definition. The group container would appear but nested events inside were missing.
-
-**Root Cause Investigation**: Added comprehensive logging to track groups through the save/load pipeline and discovered **THREE separate bugs**.
-
-**Actual Root Causes**:
-
-1. **LOAD BUG #1 (Critical)**: **`transformEvents()` was stripping out `nestedCriteria`**
-
-   - In [event-transformer.ts:13-25](apps/vue-mri-ui-lib/src/query-filter/models/modules/event-transformer.ts#L13-L25), when creating the transformed event object, only specific fields were copied
-   - **`nestedCriteria` was NOT in the list of copied fields**
-   - This happened in the `QueryFilterCriteriaManager` constructor after Atlas JSON was converted to events
-   - Result: Group events loaded but their `nestedCriteria` was undefined, causing the fallback to create empty groups
-
-2. **LOAD BUG #2 (Major)**: **Groups were never being converted back to events during load!**
-
-   - In [AtlasConverter.ts](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts), the code processed `CriteriaList` and `DemographicCriteriaList` from InclusionRules
-   - **BUT there was NO CODE to process `expression.Groups` at all**
-   - Groups in the Atlas JSON were completely ignored during load
-
-3. **SAVE BUG (Minor)**: Empty groups were being filtered out during save
-   - Multiple filter operations removed groups with empty arrays
-   - According to the Atlas JSON spec, all arrays in `GroupCriteria` are optional
-
-**Changes Made**:
-
-1. **AtlasConverter.ts - LOAD Fix** ([AtlasConverter.ts:700-733](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L700-L733))
-
-   **Added missing code** to process `expression.Groups` during InclusionRules load:
-
-```typescript
-// NEW CODE - Handle Groups during load
-if (rule.expression?.Groups && rule.expression.Groups.length > 0) {
-  rule.expression.Groups.forEach((groupCriteria) => {
-    const groupEvent: QueryFilterEvent = {
-      id: `event_${Math.random().toString(36).substring(2)}`,
-      conceptSet: "Group",
-      eventType: "group",
-      isExpanded: true,
-      nestedCriteria: {
-        id: `nested_${Math.random().toString(36).substring(2)}`,
-        criteriaType: groupCriteria.Type || "ALL",
-        events: convertCriteriaListToEvents(
-          groupCriteria.CriteriaList,
-          groupCriteria.Type
-        ),
-      },
-    };
-    criteriaItem.events.push(groupEvent);
-  });
-}
-```
-
-2. **QueryFilterModel.ts - SAVE Fix** - Removed empty group filters at 4 locations:
-
-   - Line 541: InclusionRules Groups array
-   - Line 427: Entry event CorrelatedCriteria Groups
-   - Line 580: Exit event CorrelatedCriteria Groups
-   - Line 669: Entry event PrimaryCriteria CorrelatedCriteria Groups
-
-3. **nested-criteria-processor.ts - SAVE Fix** - Removed empty group filters at 4 locations:
-   - Line 119: `processNestedGroups` CorrelatedCriteria Groups
-   - Line 247: `processNestedGroupsRecursively` CorrelatedCriteria Groups
-   - Line 328: `processNestedGroupsRecursively` group creation
-   - Line 526: `buildNestedCriteriaFromAttributes` CorrelatedCriteria Groups
-
-All filter patterns like this were removed:
-
-```typescript
-// Before (filtered out empty groups)
-Groups: groupsList.filter(
-  (group) =>
-    group.CriteriaList.length > 0 ||
-    group.DemographicCriteriaList.length > 0 ||
-    group.Groups.length > 0
-);
-
-// After (preserves all groups)
-Groups: groupsList;
-```
-
-4. **Added Comprehensive Logging** for debugging:
-   - `QueryFilterModel.ts`: Logs group structure during SAVE
-   - `nested-criteria-processor.ts`: Logs `processNestedGroups` operations
-   - `AtlasConverter.ts`: Logs Groups during LOAD
-
-**Impact**:
-
-- ✅ **Groups now load correctly from Atlas JSON** (PRIMARY FIX - this was the main issue)
-- ✅ Empty groups preserved during save (SECONDARY FIX)
-- ✅ Groups round-trip correctly through save/load cycles
-- ✅ Logical group structure is preserved
-- ✅ Aligns with Atlas JSON spec where all group arrays are optional
-- ✅ All 143 existing tests pass
-- ✅ Comprehensive logging added for future debugging
-
-**Known Limitations**:
-
-- Recursive nested groups within groups not yet implemented (TODO at line 728)
-- DemographicCriteriaList within groups not yet implemented (TODO at line 727)
-
----
-
-### 2025-10-07: CONT_DRUG Concept Set Not Saving/Loading Fix
-
-**Issue**: When selecting a concept set for "Continuous drug exposure" in Cohort Exit, the concept set would not save or load correctly. Users could select a concept set, but after saving and reloading the cohort, the selection would be lost.
-
-**Root Causes**:
-
-1. **Component State Not Initialized** ([QueryFilterEntryExit.vue:172-175](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEntryExit.vue#L172-L175))
-
-   - Local refs (`selectedConceptSet`, `selectedGapDays`, etc.) were initialized with hardcoded defaults
-   - Never synchronized with `exitCriteriaData.contDrugSettings` prop when loading data
-   - Result: Loaded data was ignored, defaults always used
-
-2. **Missing Concept Set Details** ([QueryFilterModel.ts:299-325](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts#L299-L325))
-   - Only stored concept set ID, not the full concept set details and name
-   - During save, the concept set wasn't added to the `ConceptSets` array in Atlas JSON
-   - Result: Concept set ID saved but referenced a non-existent concept set
-
-**Changes Made**:
-
-1. **QueryFilterEntryExit.vue - Component Initialization**
-
-   - Added `onMounted` and `watch` hooks to initialize local refs from `exitCriteriaData.contDrugSettings`
-   - Lines 177-221: Added `initializeContDrugSettings()` function
-   - Watches for changes to `exitCriteriaData.contDrugSettings` and `conceptSets` props
-   - Re-initializes when concept sets become available (they may load after component mounts)
-
-2. **QueryFilterTypes.ts - Type Definition Update**
-
-   - Lines 132-139: Added `conceptSet` and `conceptSetDetails` fields to `contDrugSettings`
-   - Follows same pattern as `QueryFilterEvent` (conceptSet, conceptSetId, conceptSetDetails)
-   - Stores complete concept set information, not just ID
-
-3. **QueryFilterModel.ts - Concept Set Collection**
-
-   - Lines 299-325: Added logic to collect CONT_DRUG concept set into `ConceptSets` array
-   - Checks for `contDrugSettings.conceptSetId` and includes it with name and details
-   - Adds to missing concept details warning if details not available
-
-4. **useCriteriaManager.ts - Fetch Concept Set Details**
-
-   - Lines 101-131: Updated `handleUpdateContDrugSettings` to be async
-   - Fetches concept set details using `loadSingleConceptSetDetails`
-   - Passes complete concept set data (ID, name, details) to model
-
-5. **QueryFilterModel.ts - Update Method Signature**
-
-   - Lines 890-906: Updated `updateContDrugSettings` to accept name and details
-   - Stores all three fields in `contDrugSettings`
-
-6. **QueryFilterEntryExit.vue - Emit Updates**
-   - Lines 41-47, 71-78, 288-297: Updated emits to include concept set name
-   - Ensures name is passed alongside ID when settings change
-
-**Implementation Details**:
-
-- **Load Flow**: Atlas JSON → `contDrugSettings` (with ID/name/details) → Component props → Local refs initialized → Tag input displays selection
-- **Save Flow**: User selects concept set → Fetch details → Store in `contDrugSettings` → Include in `ConceptSets` array → Build `CustomEra` with `DrugCodesetId`
-- **Synchronization**: Component watches props and re-initializes when data changes or concept sets load
-- **Type Safety**: TypeScript types updated to reflect new fields
-
-**Impact**:
-
-- ✅ CONT_DRUG concept set selection now persists through save/load cycles
-- ✅ Concept set properly included in Atlas JSON `ConceptSets` array
-- ✅ Component initializes with loaded data instead of defaults
-- ✅ Full round-trip conversion working (UI → Atlas → UI)
-- ✅ Handles async concept set loading (when concept sets load after component mounts)
-
----
-
-### 2025-10-07: Fixed Duration Settings Not Saving/Loading Fix
-
-**Issue**: When selecting "Fixed duration to initial event" in Cohort Exit, the event date offset (StartDate/EndDate) and number of days offset would not persist through save/load cycles. Users could change these values, but after saving and reloading the cohort, the settings would revert to defaults (StartDate, 30 days).
-
-**Root Cause**: Same issue as the CONT_DRUG fix - component state was not initialized from props.
-
-1. **Component State Not Initialized** ([QueryFilterEntryExit.vue:149-150](apps/vue-mri-ui-lib/src/query-filter/components/QueryFilterEntryExit.vue#L149-L150))
-   - Local refs (`selectedEventDateOffset`, `selectedDaysOffset`) were initialized with hardcoded defaults
-   - Never synchronized with `exitCriteriaData.fixedDuration` prop when loading data
-   - Result: Loaded data was ignored, defaults always used
-
-**Changes Made**:
-
-1. **QueryFilterEntryExit.vue - Component Initialization**
-
-   - Added `initializeFixedDurationSettings()` function (lines 153-159)
-   - Initializes local refs from `exitCriteriaData.fixedDuration` prop
-   - Follows same pattern as CONT_DRUG settings initialization
-
-2. **QueryFilterEntryExit.vue - Lifecycle Hooks**
-   - Updated `onMounted` to call `initializeFixedDurationSettings()` (line 219)
-   - Added watcher for `exitCriteriaData.fixedDuration` changes (lines 223-230)
-   - Re-initializes when data changes or becomes available
-
-**Implementation Details**:
-
-- **Load Flow**: Atlas JSON → `fixedDuration` (with dateField/offset) → Component props → Local refs initialized → Dropdowns display selections
-- **Save Flow**: User changes dropdown → `updateEventDateOffset` or `updateDaysOffset` → Emits `update-fixed-duration` → `handleUpdateFixedDuration` → Stored in model → Included in Atlas JSON `EndStrategy.DateOffset`
-- **Synchronization**: Component watches props and re-initializes when data changes
-- **Type Safety**: TypeScript types already defined in `QueryFilterTypes.ts`
-
-**Impact**:
-
-- ✅ Fixed duration settings now persist through save/load cycles
-- ✅ Settings properly included in Atlas JSON `EndStrategy.DateOffset` structure
-- ✅ Component initializes with loaded data instead of hardcoded defaults
-- ✅ Full round-trip conversion working (UI → Atlas → UI)
-- ✅ Follows same initialization pattern as CONT_DRUG settings
-
----
-
-### 2025-10-08: Groups Being Split During Save/Load Fix
-
-**Issue**: When users created a single group containing multiple criteria (e.g., Condition Occurrence + Condition Era), after saving and reloading the cohort, the single group would be split into multiple separate groups, each containing only one criterion.
-
-**Example:**
-
-```
-User creates: Group { Condition Occurrence, Condition Era }
-SAVE produced: Groups[0] = { CriteriaList: [Condition Occurrence] }
-               Groups[1] = { CriteriaList: [Condition Era] }
-LOAD showed:   Group 1 containing only Condition Occurrence
-               Group 2 containing only Condition Era
-```
-
-**Root Cause**: In [nested-criteria-processor.ts:77-201](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L77-L201), the `processNestedGroups()` function had a critical bug:
-
-1. **Incorrect Loop Pattern** (lines 94-196):
-
-   - Looped through EACH event in the group separately
-   - Created a NEW `GroupCriteria` for EACH individual event (lines 138-144)
-   - Each iteration pushed a separate group to results (line 194)
-
-2. **Result**: 1 group with N events → N separate groups with 1 event each
-
-**The Correct Pattern** (from `processNestedGroupsRecursively`):
-
-- Collect ALL events into arrays FIRST
-- Create ONE group containing ALL collected events
-
-**Changes Made**:
-
-1. **Rewrote `processNestedGroups()` function** ([nested-criteria-processor.ts:77-240](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L77-L240))
-
-   **Old approach (WRONG):**
-
-   ```typescript
-   groupEvent.nestedCriteria.events.forEach(nestedEvent => {
-     const criteria = {...}  // Create criteria for THIS event
-     const eventGroup = {
-       Type: 'ALL',
-       CriteriaList: [criteria],  // Only contains THIS event
-     }
-     results.push(eventGroup)  // Push separate group for each event
-   })
-   ```
-
-   **New approach (CORRECT):**
-
-   ```typescript
-   const criteriaList: CriteriaGroup[] = []
-   const demographicCriteriaList: DemographicCriteria[] = []
-   const nestedGroups: GroupCriteria[] = []
-
-   // Collect ALL events first
-   groupEvent.nestedCriteria.events
-     .filter(event => event.eventType !== 'group' && event.eventType !== 'demographic')
-     .forEach(nestedEvent => {
-       const criteria = {...}
-       criteriaList.push(criteria)  // Collect into array
-     })
-
-   // Process demographic events
-   groupEvent.nestedCriteria.events
-     .filter(event => event.eventType === 'demographic')
-     .forEach(event => {
-       demographicCriteriaList.push(...)  // Collect into array
-     })
-
-   // Create ONE group containing ALL events
-   groupsList.push({
-     Type: 'ALL',
-     CriteriaList: criteriaList,  // Contains ALL events
-     DemographicCriteriaList: demographicCriteriaList,
-     Groups: nestedGroups,
-   })
-   ```
-
-2. **Reused Correct Logic** from `processNestedGroupsRecursively()`:
-   - Proper handling of nested criteria in attributes (CorrelatedCriteria)
-   - Support for demographic events
-   - Recursive processing of deeper nested groups
-   - Consistent with the rest of the codebase
-
-**Implementation Details**:
-
-- **Data Collection Pattern**: Uses filter + forEach to separate event types
-- **Accumulation**: Builds arrays (`criteriaList`, `demographicCriteriaList`, `nestedGroups`) before creating group
-- **Single Group Creation**: Only ONE `GroupCriteria` is created per group event, containing ALL its child events
-- **Recursive Support**: Properly handles nested groups within groups via `processNestedGroupsRecursively()`
-
-**Impact**:
-
-- ✅ Groups now persist correctly through save/load cycles
-- ✅ Multiple criteria in a single group stay together
-- ✅ Correct Atlas JSON structure: one `GroupCriteria` with multiple items in `CriteriaList`
-- ✅ Aligns with OHDSI Atlas specification
-- ✅ No changes to load logic needed (already correct)
-- ✅ Full round-trip conversion working (UI → Atlas → UI)
-
----
-
-### 2025-10-08: Nested Groups (Groups Within Groups) Loading Fix
-
-**Issue**: When users created nested groups (a group containing other groups), the nested groups would not load correctly after saving and reloading the cohort. Only the top-level group and its direct criteria would appear, while any nested groups inside would be missing.
-
-**Example:**
-
-```
-User creates: Group A {
-                Group B { Condition Occurrence, Drug Exposure },
-                Condition Era
-              }
-SAVE produced: Correct Atlas JSON with Groups property containing nested GroupCriteria
-LOAD showed:   Group A { Condition Era }  ← Missing Group B entirely!
-```
-
-**Root Cause**: In [AtlasConverter.ts:939](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L939), there was a TODO comment `// TODO: Handle nested Groups recursively if needed` indicating the feature was never implemented.
-
-The load logic only processed:
-
-- `CriteriaList` (regular events like Condition Occurrence)
-- `DemographicCriteriaList` (demographic criteria like Age, Gender)
-- ❌ **Missing**: `Groups` property (nested groups within a group)
-
-**Changes Made**:
-
-1. **Created recursive helper function `convertGroupCriteriaToGroupEvents()`** ([AtlasConverter.ts:603-717](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L603-L717))
-
-   This function handles all three parts of a `GroupCriteria`:
-
-   - `CriteriaList` → Convert to regular events
-   - `DemographicCriteriaList` → Convert to demographic events
-   - **`Groups`** → **Recursively** convert to nested group events
-
-   **Key recursive section** (lines 708-714):
-
-   ```typescript
-   // RECURSIVE: Handle nested Groups within this group
-   if (groupCriteria.Groups && groupCriteria.Groups.length > 0) {
-     groupCriteria.Groups.forEach((nestedGroupCriteria) => {
-       const nestedGroupEvent =
-         convertGroupCriteriaToGroupEvents(nestedGroupCriteria);
-       groupEvent.nestedCriteria!.events.push(nestedGroupEvent);
-     });
-   }
-   ```
-
-2. **Replaced inline group conversion with helper function call** ([AtlasConverter.ts:846-852](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L846-L852))
-
-   **Before** (95 lines of duplicated code):
-
-   ```typescript
-   // Handle Groups - convert them back to group events
-   if (rule.expression?.Groups && rule.expression.Groups.length > 0) {
-     rule.expression.Groups.forEach(groupCriteria => {
-       const groupEvent = { ... }  // 90+ lines of manual conversion
-       // ... handle CriteriaList
-       // ... handle DemographicCriteriaList
-       // TODO: Handle nested Groups recursively if needed  ← Never implemented
-       criteriaItem.events.push(groupEvent)
-     })
-   }
-   ```
-
-   **After** (clean recursive call):
-
-   ```typescript
-   // Handle Groups - convert them back to group events (with recursive support)
-   if (rule.expression?.Groups && rule.expression.Groups.length > 0) {
-     rule.expression.Groups.forEach((groupCriteria) => {
-       const groupEvent = convertGroupCriteriaToGroupEvents(groupCriteria);
-       criteriaItem.events.push(groupEvent);
-     });
-   }
-   ```
-
-3. **Added missing imports** ([AtlasConverter.ts:24-25](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L24-L25))
-   - `GroupCriteria` - Type for Atlas JSON group structure
-   - `DemographicCriteria` - Type for demographic criteria
-
-**Implementation Details**:
-
-- **Recursive Structure**: The function calls itself when it encounters `Groups` property, enabling unlimited nesting depth
-- **Complete Coverage**: Handles all three components of a group (criteria, demographics, nested groups)
-- **Code Reuse**: Leverages existing helper `convertCriteriaListToEvents()` for regular criteria
-- **Consistent Pattern**: Follows same structure as save logic in `processNestedGroupsRecursively()`
-
-**Data Flow**:
-
-```
-Atlas JSON GroupCriteria
-├─ CriteriaList → convertCriteriaListToEvents() → QueryFilterEvent[]
-├─ DemographicCriteriaList → forEach demoCriteria → QueryFilterEvent
-└─ Groups → forEach groupCriteria → convertGroupCriteriaToGroupEvents() ← RECURSIVE
-                                   └─ Creates QueryFilterEvent with eventType='group'
-                                      └─ nestedCriteria.events contains all child events
-```
-
-**Atlas JSON Structure**:
-
-```typescript
-GroupCriteria {
-  Type: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST',
-  CriteriaList?: CriteriaGroup[],           // Regular medical events
-  DemographicCriteriaList?: DemographicCriteria[],  // Demographics
-  Groups?: GroupCriteria[]                  // Nested groups (recursive!)
-}
-```
-
-**Impact**:
-
-- ✅ Nested groups now load correctly from Atlas JSON
-- ✅ Supports unlimited nesting depth (group → group → group → ...)
-- ✅ Full round-trip: UI → Save → Load → UI preserves nested group structure
-- ✅ Removed 95 lines of duplicated code by using helper function
-- ✅ Eliminated TODO comment - feature fully implemented
-- ✅ Consistent with OHDSI Atlas specification for recursive groups
-- ✅ Works together with previous fix (groups not splitting during save)
-
-**Testing**:
-
-1. Create nested structure: Group A containing Group B containing events
-2. Save cohort → Reload cohort
-3. Verify: Full nested structure preserved with all groups and events intact
-
----
-
-### 2025-10-08: Cardinality Count 0 Converted to 1 Bug Fix
-
-**Issue**: When users set cardinality count to `0` (e.g., "Exactly 0 occurrences", "At least 0 occurrences", "At most 0 occurrences"), after saving and reloading the cohort, the count would be changed to `1`.
-
-**Example Use Cases for Count 0**:
-
-- "Exactly 0 occurrences" = The event must NOT occur (exclusion criteria)
-- "At most 0 occurrences" = The event must NOT occur (same as Exactly 0)
-- "At least 0 occurrences" = The event is optional (will match all patients)
-
-**Root Cause**: JavaScript's falsy value handling with the `||` operator. When `count` is `0`, JavaScript treats it as falsy, so the expression `count || 1` evaluates to `1`.
-
-**Comprehensive Fix**: All cardinality count-related `||` operators have been verified and fixed.
-
-**Affected Locations** (5 total - ALL FIXED):
-
-1. **LOAD**: [AtlasConverter.ts:338](apps/vue-mri-ui-lib/src/query-filter/utils/AtlasConverter.ts#L338)
-
-   - When loading Atlas JSON into UI model
-   - `count: occurrence?.Count || 1` → Changed to `count: occurrence?.Count ?? 1`
-
-2. **SAVE**: [nested-criteria-processor.ts:111](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L111)
-
-   - In `processNestedGroups()` function
-   - `Count: nestedEvent.cardinality?.count || 1` → Changed to `Count: nestedEvent.cardinality?.count ?? 1`
-
-3. **SAVE**: [nested-criteria-processor.ts:277](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L277)
-
-   - In `processNestedGroupsRecursively()` function
-   - `Count: nestedEvent.cardinality?.count || 1` → Changed to `Count: nestedEvent.cardinality?.count ?? 1`
-
-4. **SAVE**: [nested-criteria-processor.ts:514](apps/vue-mri-ui-lib/src/query-filter/models/modules/nested-criteria-processor.ts#L514)
-
-   - In `buildNestedCriteriaFromAttributes()` function
-   - `Count: nestedEvent.cardinality?.count || 1` → Changed to `Count: nestedEvent.cardinality?.count ?? 1`
-
-5. **SAVE**: [QueryFilterModel.ts:393](apps/vue-mri-ui-lib/src/query-filter/models/QueryFilterModel.ts#L393)
-   - In InclusionRules conversion (convertToAtlasFormat)
-   - `Count: event.cardinality?.count || 1` → Changed to `Count: event.cardinality?.count ?? 1`
-
-**Solution**: Replaced `|| 1` with nullish coalescing operator `?? 1`. This only defaults to `1` when the value is `undefined` or `null`, but preserves `0` as a valid value.
-
-**JavaScript Behavior**:
-
-```javascript
-// Before (WRONG):
-0 || 1; // → 1 (0 is falsy, defaults to 1)
-undefined || 1; // → 1 (correct)
-
-// After (CORRECT):
-0 ?? 1; // → 0 (0 is a valid value, preserved)
-undefined ?? 1; // → 1 (correct)
-null ?? 1; // → 1 (correct)
-```
-
-**Atlas JSON Specification**: According to OHDSI Atlas spec, `Count: 0` is a **valid value** in the `OccurrenceSettings` interface ([AtlasTypes.ts:309-313](apps/vue-mri-ui-lib/src/query-filter/types/AtlasTypes.ts#L309-L313)).
-
-**Impact**:
-
-- ✅ Count 0 now persists correctly through save/load cycles
-- ✅ "Exactly 0", "At least 0", "At most 0" cardinality settings work as expected
-- ✅ Exclusion criteria using cardinality count 0 now function properly
-- ✅ Aligns with OHDSI Atlas specification
-- ✅ No changes to behavior for count ≥ 1 (still defaults to 1 when undefined)
-
-**Verification**: Full codebase search confirmed no other cardinality/count-related `||` operators exist. Other numeric defaults using `|| 0` (e.g., `priorDays`, `postDays`, date offsets) are semantically correct as `0` has the same meaning as undefined in those contexts.
-
-**Testing**:
-
-1. Set cardinality to "Exactly 0" on an event
-2. Save cohort and reload
-3. Verify count remains 0 (not changed to 1)
-4. Repeat for "At least 0" and "At most 0"
-5. Test with nested groups and nested events
-6. Verify all save/load scenarios preserve count 0
+- Previous changelog entries (2025-10-06 to 2025-10-09) have been consolidated
+- All features and fixes are now documented in their appropriate sections
+- Implementation details reflect current codebase state verified on 2025-10-09
 
 ---
 
@@ -2328,8 +1997,10 @@ null ?? 1; // → 1 (correct)
 
 For questions or issues, refer to:
 
-- Query-Filter README: `apps/vue-mri-ui-lib/src/query-filter/README.md`
-- Mock Server README: `apps/vue-mri-ui-lib/src/query-filter/mock-server/README.md`
-- Main CLAUDE.md: `/CLAUDE.md` (project root)
+- Query-Filter README: [apps/vue-mri-ui-lib/src/query-filter/README.md](apps/vue-mri-ui-lib/src/query-filter/README.md)
+- Mock Server README: [apps/vue-mri-ui-lib/src/query-filter/mock-server/README.md](apps/vue-mri-ui-lib/src/query-filter/mock-server/README.md)
+- Main CLAUDE.md: [/CLAUDE.md](/CLAUDE.md) (project root)
 
-IMPORTANT: if any task will affect the accuracy of this document, update this document to reflect the changes
+---
+
+**Note:** This document should be updated whenever changes affect PA-Atlas architecture, data model, or key implementation patterns.
