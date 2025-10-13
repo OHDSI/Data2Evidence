@@ -52,23 +52,9 @@ export const PythonDrawer: FC<PythonDrawerProps> = ({
   const loadStarboard = useCallback(async () => {
     const UI_ROOT_FILE_URL = pluginMetadata?.data?.dnBaseUrl;
     const STARBOARD_URL = `${UI_ROOT_FILE_URL}starboard-notebook-base`;
-    const MRI_ROOT_URL = `${pluginMetadata?.data?.dnBaseUrl}ui-files/hc`;
 
     const jwtToken = await pluginMetadata.getToken();
-    const setupPYQE = `
-# %% [python]
-import os
-os.environ['TOKEN'] = '${jwtToken}'
-import micropip
-await micropip.install('ssl')
-await micropip.install('pyjwt==2.9.0')
-await micropip.install('${STARBOARD_URL}/pyodidepyqe-0.0.2-py3-none-any.whl', keep_going=True)
-os.environ['PYQE_URL'] = '${MRI_ROOT_URL}/mri/'
-os.environ['PYQE_TLS_CLIENT_CA_CERT_PATH'] = ''`;
-
-    const content = `
-${setupPYQE}
-${node.data.python_code ?? ""}`;
+    const content = node.data.python_code ?? "";
 
     const mount = document.querySelector("#python-notebook-editor");
     while (mount?.firstChild) {
@@ -78,6 +64,9 @@ ${node.data.python_code ?? ""}`;
     const embedEl = new StarboardEmbed({
       notebookContent: content,
       src: `${STARBOARD_URL}/index.html`,
+      serverUrl: UI_ROOT_FILE_URL,
+      token: jwtToken,
+      userId: pluginMetadata?.userId,
       preventNavigationWithUnsavedChanges: true,
       onUnsavedChangesStatusChange: () => setUnsaved(true),
     });

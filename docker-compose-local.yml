@@ -22,15 +22,14 @@ services:
       RUST_BACKTRACE: full
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "storage"]'
+      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage"]}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
         {
           "analytics-svc": false,
           "mri-pg-config": false,
-          "alp-fhir-svc": false,
-          "alp-fhir-init": false,
+          "alp-fhir-gateway": false,
           "alp-dataflow-gen-init": false,
           "query-gen-svc": false,
           "alp-usermgmt": false,
@@ -114,20 +113,6 @@ services:
   #   ports:
   #     - 9226:9226
 
-
-  fhir-server:
-    build:
-      context: ./services/alp-fhir
-      dockerfile: Dockerfile
-
-  # fhir-fe-server:
-  #   build:
-  #     context: ./services/alp-fhir/
-  #     dockerfile: Dockerfile.frontend
-  #   volumes:
-  #     - ./services/alp-fhir/ui-file-server/index.js:/home/docker/index.js
-  #   ports:
-  #     - 41130:3000
 
   enterprise-gateway:
     build:

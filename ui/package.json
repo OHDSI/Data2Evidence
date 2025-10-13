@@ -26,7 +26,11 @@
     ],
     "nohoist": [
       "**/@vue",
-      "**/@vue/**"
+      "**/@vue/**",
+      "**/@babel/**",
+      "**/babel-**",
+      "**/webpack-manifest-plugin",
+      "**/webpack-manifest-plugin/**"
     ]
   },
   "devDependencies": {
@@ -55,6 +59,10 @@
         {
           "source": "/resources/concept-mapping",
           "target": "/resources/concept-mapping"
+        },
+        {
+          "source": "/resources/concept-sets",
+          "target": "/resources/concept-sets"
         },
         {
           "source": "/jobs",
@@ -368,6 +376,14 @@
             "enabled": true,
             "pluginPath": "plugins/Setup/module",
             "route": "setup"
+          },
+          {
+            "name": "Logs",
+            "nameI18nKey": "UI_PLUGIN_LOGS",
+            "pluginPath": "plugins/SystemAdmin/D2ELogs/module",
+            "enabled": true,
+            "featureFlag": "d2eLogs",
+            "route": "docker-logs"
           }
         ]
       }

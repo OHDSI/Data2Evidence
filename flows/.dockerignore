@@ -15,3 +15,5 @@
 .gitignore
 .npmignore
 flowinit.py
+**/Dockerfile
+**/Dockerfile.*

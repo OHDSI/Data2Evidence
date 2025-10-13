@@ -406,8 +406,8 @@ defineExpose({
     }
 
     &.MriHilite {
-      border-color: #007bff;
-      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      border-color: var(--color-app-date-border, #007bff);
+      box-shadow: 0 0 0 0.2rem var(--color-app-date-highlight, rgba(0, 123, 255, 0.25));
     }
   }
 
@@ -431,19 +431,20 @@ defineExpose({
 }
 
 .dp__theme_light {
-  --dp-text-color: #000080;
+  --dp-text-color: var(--color-primary);
   --dp-hover-color: #d2d2d2;
+  --dp-primary-color: var(--color-primary, --dp-primary-color);
   .dp__today {
-    border: 2.5px solid #ff5e59;
+    border: 2.5px solid var(--color-app-date-today, #ff5e59);
     border-radius: 5px;
     color: #ffffff;
-    background: #000080;
+    background: var(--color-primary);
   }
   .dp__tp_inline_btn_top,
   .dp__tp_inline_btn_bottom {
     &:hover {
       .dp__tp_inline_btn_bar {
-        background: #000080;
+        background: var(--color-primary);
       }
     }
   }

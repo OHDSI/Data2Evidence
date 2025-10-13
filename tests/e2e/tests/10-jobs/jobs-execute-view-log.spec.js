@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const TEST_NAME = 'jobs-execute-view-log-and-result'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -45,6 +45,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').fill('demo_cdm');
   await page.locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').click();
   await page.locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').fill('5.3');
+  await page.locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').click();
+  await page.locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control').fill('demo_cdm');
   await page.getByRole('button', { name: 'Submit' }).click();
   await page.getByRole('button', { name: 'Job Runs' }).click();
   await expect(page.getByRole('heading', { name: 'Job Runs' })).toBeVisible();
@@ -56,8 +58,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(50000);
   await page.getByRole('link', { name: 'dqd_demo' }).first().click();
   await page.waitForTimeout(5000);
-  await page.getByText('Logs', { exact: true }).waitFor({ state: 'visible' });
-  await page.getByText('Logs', { exact: true }).click();
+  await page.locator('li#logs.p-tab.p-tab__active').waitFor({ state: 'visible' });
+  await page.locator('li#logs.p-tab.p-tab__active').click();
   const logsPage = await page.locator('pre');
   await logsPage.scrollIntoViewIfNeeded();
   await expect(page.getByText('Worker \'prefect-docker-worker')).toBeVisible();

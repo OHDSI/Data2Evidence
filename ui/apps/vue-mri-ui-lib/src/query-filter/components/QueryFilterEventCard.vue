@@ -672,7 +672,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 0px 12px;
 
     &__left {
       flex: 1;
@@ -766,7 +766,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
     padding: 6px 8px;
 
     &:hover {
-      color: #000080;
+      color: var(--color-primary, #000080);
       background: #f2f0f1;
     }
   }
@@ -801,7 +801,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
   .sidebar-label {
     writing-mode: sideways-lr;
     text-orientation: sideways;
-    color: #000080;
+    color: var(--color-primary, #000080);
     font-weight: 500;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     user-select: none;
@@ -809,11 +809,11 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
 
   .event-content {
     flex: 1;
-    padding: 12px;
+    padding: 0px 12px;
   }
 
   .concept-set-section {
-    margin-bottom: 12px;
+    margin-bottom: 0px;
   }
 
   .concept-set-label {

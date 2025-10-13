@@ -86,12 +86,12 @@
 
     <div class="bookmark-content">
       <div class="bookmark-content__header">
-        <div class="bookmark-content__header-title">Create Cohort:</div>
+        <div class="bookmark-content__header-title" v-if="!isLocal">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
-          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
+          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort" v-if="!isLocal"></Button>
           <Button
             v-if="useAtlasLite || usePaAtlas"
-            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
+            :text="isLocal ? 'Create Cohort' : getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
             :onClick="openAtlasLink"
           >
           </Button>
@@ -101,7 +101,7 @@
 
           <Button
             v-if="enableAtlasCohortDefinition"
-            :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
+            :text="isLocal ? 'Import Cohort' : getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
             :onClick="openImportAtlasCohortDefinition"
           >
           </Button>
@@ -109,9 +109,10 @@
             :text="getText('MRI_PA_COMPARE_D2E_COHORT_TEXT')"
             :onClick="openCompareDialog"
             :disabled="!showCohortCompareBtn"
+            v-if="!isLocal"
           >
           </Button>
-          <div class="shared-toggle-container">
+          <div class="shared-toggle-container" v-if="!isLocal">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
             <SlideToggle v-model="showSharedBookmarks" />
           </div>
@@ -276,6 +277,9 @@ export default {
     },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
+    },
+    isLocal() {
+      return getPortalAPI().isLocal
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges

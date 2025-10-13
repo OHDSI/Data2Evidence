@@ -1,3 +1,4 @@
+import json
 import requests
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
@@ -15,12 +16,12 @@ class StrategusAnalysisAPI(BaseAPI):
             self.strategus_analysis_url,
             headers=self.headers,
             verify=self.get_verify_value(),
-            json={
+            json=({
                 "studyId": study_id,
-                "analysisSpec": analysis_spec,
+                "analysisSpec": json.loads(analysis_spec),
                 "notebookName": study_name,
                 "mode": "analysis-ui-flow"
-            }
+            })
         )
         if ((result.status_code >= 400) and (result.status_code < 600)):
             raise Exception(

@@ -70,24 +70,22 @@ def create_datamodel_parent_task(cdm_version: str,
 def create_cdm_tables(dbdao: DaoBase, schema_name: str, cdm_version: str, logger) -> bool:
     # currently only supports pg dialect
     admin_user =  UserType.ADMIN_USER
-    set_connection_string = dbdao.get_database_connector_connection_string(
+    set_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=admin_user
     )
     set_db_driver_env_string = dbdao.set_db_driver_env()
+    create_script_path = os.path.join(os.path.dirname(__file__), 'create_cdm_tables.R')
     
     logger.info(f"Running CommonDataModel version '{cdm_version}' on schema '{schema_name}' in database '{dbdao.database_code}'")
     try:
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(
-                f'''
-                library('CommonDataModel')
-                {set_db_driver_env_string}
-                {set_connection_string}
-                cdm_version <- "{cdm_version}"
-                schema_name <- "{schema_name}"
-                CommonDataModel::executeDdl(connectionDetails = connectionDetails, cdmVersion = cdm_version, cdmDatabaseSchema = schema_name, executeDdl = TRUE, executePrimaryKey = TRUE, executeForeignKey = FALSE)
-                '''
-            )
+            robjects.r(f"source('{create_script_path}')")
+            r_create_cdm_tables = robjects.r['create_cdm_tables']
+            r_create_cdm_tables(
+                set_db_driver_env_string=set_db_driver_env_string,
+                set_connection_string=set_connection_string,
+                cdmVersion=cdm_version,
+                schemaName=schema_name)
         logger.info(f"Succesfully ran CommonDataModel version '{cdm_version}' on schema '{schema_name}' in database '{dbdao.database_code}'")
     except Exception as e:
         logger.error(f"Failed to run CommonDataModel version '{cdm_version}' on schema '{schema_name}' in database '{dbdao.database_code}'")

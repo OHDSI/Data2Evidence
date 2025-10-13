@@ -1,4 +1,5 @@
 import DateUtils from './DateUtils'
+import { BookmarkSchema, AtlasCohortDefinitionSchema, MaterializedCohortSchema } from '@/schema/bookmarksSchema'
 
 export function formatBookmark(bookmark: FormattedBookmark) {
   if (!bookmark) {
@@ -87,4 +88,46 @@ export function getBookmarkType(obj: BookmarkDisplay): BookmarkType {
   if (obj.bookmark) {
     return 'D'
   }
+}
+
+export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], paConfigId: string) => {
+  const filterBookmarkByConfigId = (bookmark: IBookmark, paConfigId: string) => {
+    if (bookmark.paConfigId === paConfigId) {
+      return bookmark
+    }
+  }
+
+  const formatRawAtlasCohortDefinition = (acd: ICohortDefinition) => {
+    return {
+      id: acd.id,
+      name: acd.name,
+      createdOn: new Date(acd.createdDate).toISOString(),
+      updatedOn: new Date(acd.modifiedDate || acd.createdDate).toISOString(),
+      ...(acd.createdBy && { username: acd.createdBy }),
+      ...(acd.cohortDefinitionId && { cohortDefinitionId: acd.cohortDefinitionId }),
+    }
+  }
+
+  const formattedBookmarks = {
+    bookmarks: [],
+    atlasCohortDefinitions: [],
+    materializedCohorts: [],
+  }
+
+  data.forEach(item => {
+    if (BookmarkSchema.safeParse(item).success) {
+      const filtered = filterBookmarkByConfigId(item as IBookmark, paConfigId)
+      if (filtered !== undefined) {
+        formattedBookmarks.bookmarks.push(filtered)
+      }
+    }
+    if (AtlasCohortDefinitionSchema.safeParse(item).success) {
+      formattedBookmarks.atlasCohortDefinitions.push(formatRawAtlasCohortDefinition(item as ICohortDefinition))
+    }
+    if (MaterializedCohortSchema.safeParse(item).success) {
+      formattedBookmarks.materializedCohorts.push(item as IMaterializedCohort)
+    }
+  })
+
+  return formattedBookmarks
 }

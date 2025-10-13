@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { CohortExpressionQueryOptions, CohortExpression } from "../types.ts";
 import { AtlasCohortDefinitionArtifact } from "../../../_shared/user-artifacts/types.ts";
+import { CombinedCohortDefinitionListSchema } from "../api/types.ts";
 
-export const AtlasCohortDefinitionDto = AtlasCohortDefinitionArtifact.omit({
-  materializedCohortDefinitions: true,
-});
+export const AtlasCohortDefinitionDto = AtlasCohortDefinitionArtifact;
 export type IAtlasCohortDefinitionDto = z.infer<
   typeof AtlasCohortDefinitionDto
 >;
@@ -16,18 +15,7 @@ export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
 >;
 
 export const CohortDefinitionListResponseDto = z.array(
-  z.object({
-    id: z.number(),
-    name: z.string(),
-    description: z.string().nullable(),
-    createdBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
-    createdDate: z.number().nullable(),
-    modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
-    modifiedDate: z.number().nullable(),
-    hasWriteAccess: z.boolean(),
-    hasReadAccess: z.boolean(),
-    tags: z.array(z.string()),
-  })
+  CombinedCohortDefinitionListSchema
 );
 export type ICohortDefinitionListResponseDto = z.infer<
   typeof CohortDefinitionListResponseDto
