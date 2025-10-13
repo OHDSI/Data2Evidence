@@ -258,10 +258,21 @@ describe('Atlas Round-Trip Tests', () => {
     })
 
     test.skip('nested groups - from circe-be groupExpression', () => {
-      // SKIPPED: AdditionalCriteria is not currently supported
+      // SKIPPED: AdditionalCriteria field is NOT IMPLEMENTED
+      //
+      // AdditionalCriteria is a top-level field in Atlas cohort definitions that defines
+      // additional qualifying criteria that must be met. It has the same structure as
+      // InclusionRules expression (Type, CriteriaList, Groups, DemographicCriteriaList).
+      //
       // Source: circe-be/src/test/resources/cohortgeneration/correlatedCriteria/groupExpression.json
       //
-      // TODO: Implement AdditionalCriteria support, then enable this test
+      // Implementation needed:
+      // 1. Add AdditionalCriteria to AtlasCohortDefinition interface
+      // 2. Parse AdditionalCriteria in AtlasConverter (import)
+      // 3. Export AdditionalCriteria in QueryFilterModel.convertToAtlasFormat()
+      // 4. Store in QueryFilterCriteriaManager model
+      //
+      // TODO: Implement full AdditionalCriteria support, then enable this test
       const originalAtlas: any = require('./data/atlas-fixtures/atlas-groups-basic.json')
       const mocks = mockConceptSetsForAtlas(originalAtlas)
 
