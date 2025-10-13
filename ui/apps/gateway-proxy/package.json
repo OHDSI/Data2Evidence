@@ -5,7 +5,7 @@
   "scripts": {
     "precommit": "lint-staged",
     "start": "parcel public/index.html -p 3000",
-    "build": "rm -rf ../../resources/gateway/dist && parcel build public/index.html --no-autoinstall --public-url /ui/gateway/dashboard --dist-dir ../../resources/gateway/dist",
+    "build": "rm -rf ../../resources/gateway/dist && parcel build public/index.html --public-url /ui/gateway/dashboard --dist-dir ../../resources/gateway/dist",
     "lint": "eslint --ext .js src",
     "stylelint": "stylelint \"src/**/*.scss\""
   },
