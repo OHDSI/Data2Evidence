@@ -335,5 +335,25 @@ describe('Atlas Round-Trip Tests', () => {
 
       expect(exportedAtlas).toEqual(originalAtlas)
     })
+
+    test.skip('comprehensive attributes coverage', () => {
+      // Tests extensive attribute types and operators across multiple criteria types
+      // New criteria: ConditionEra, VisitOccurrence, VisitDetail, PayerPlanPeriod, Specimen, LocationRegion
+      // DateAdjustment: StartWith/EndWith + offsets
+      // Date operators: gte, eq, gt, lt, lte, bt, !bt (NOT BETWEEN)
+      // Numeric operators: All 7 operators (lt, lte, eq, gte, gt, bt, !bt)
+      // Text attribute: ValueAsString with "contains"
+      // Boolean: First attribute
+      // Occurrence Type 0 (Exactly N): Count 1
+      // Occurrence Type 2: Count 5 with IsDistinct + CountColumn
+      // IgnoreObservationPeriod flag
+      const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-comprehensive-attributes.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
   })
 })

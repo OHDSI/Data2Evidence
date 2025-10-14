@@ -16,7 +16,7 @@ Test that each criteria type can round-trip successfully:
 
 - [x] **Empty Cohort** - No criteria, minimal structure
 - [x] **ConditionOccurrence** - Diagnoses (✓ atlas-complex-nested-correlated.json)
-- [ ] **ConditionEra** - Diagnosis periods
+- [ ] **ConditionEra** - Diagnosis periods (⏭️ atlas-comprehensive-attributes.json SKIPPED - DateAdjustment, date/numeric attributes not implemented)
 - [x] **DrugExposure** - Medications (✓ atlas-groups-inclusion-rule.json)
 - [x] **DrugEra** - Medication periods (✓ atlas-complex-nested-correlated.json in nested group)
 - [ ] **DoseEra** - Dosage periods
@@ -24,13 +24,13 @@ Test that each criteria type can round-trip successfully:
 - [x] **Observation** - Lab results, vitals (✓ atlas-complex-nested-correlated.json in nested group)
 - [x] **Measurement** - Quantitative observations (✓ atlas-complex-nested-correlated.json, deep nested)
 - [x] **DeviceExposure** - Medical devices (✓ atlas-complex-nested-correlated.json)
-- [ ] **VisitOccurrence** - Healthcare visits
-- [ ] **VisitDetail** - Visit details
+- [ ] **VisitOccurrence** - Healthcare visits (⏭️ atlas-comprehensive-attributes.json SKIPPED - date/numeric attributes not implemented)
+- [ ] **VisitDetail** - Visit details (⏭️ atlas-comprehensive-attributes.json SKIPPED - date/numeric attributes not implemented)
 - [x] **Death** - Death events (✓ atlas-complex-nested-correlated.json)
-- [x] **ObservationPeriod** - Observation windows (✓ atlas-complex-nested-correlated.json)
-- [ ] **PayerPlanPeriod** - Insurance periods
-- [ ] **Specimen** - Specimen collection
-- [ ] **LocationRegion** - Geographic filters (group only)
+- [x] **ObservationPeriod** - Observation windows (✓ atlas-complex-nested-correlated.json, ⏭️ atlas-comprehensive-attributes.json SKIPPED)
+- [ ] **PayerPlanPeriod** - Insurance periods (⏭️ atlas-comprehensive-attributes.json SKIPPED - not implemented)
+- [ ] **Specimen** - Specimen collection (⏭️ atlas-comprehensive-attributes.json SKIPPED - numeric attributes not implemented)
+- [ ] **LocationRegion** - Geographic filters (group only) (⏭️ atlas-comprehensive-attributes.json SKIPPED - IgnoreObservationPeriod not implemented)
 - [x] **DemographicCriteria** - Age, gender, race, ethnicity (✓ atlas-demographics-simple.json, atlas-complex-nested-correlated.json)
 
 ### B. ATTRIBUTE TYPES
@@ -39,63 +39,63 @@ Test that each attribute type preserves values correctly:
 
 #### B.1 Primitive Types
 
-- [ ] **boolean** - `First`, `Abnormal` (true/false values)
-- [ ] **text** - `ValueAsString`, `LotNumber`, `UniqueDeviceId`
+- [ ] **boolean** - `First`, `Abnormal` (true/false values) (⏭️ atlas-comprehensive-attributes.json SKIPPED - boolean attributes not implemented)
+- [ ] **text** - `ValueAsString`, `LotNumber`, `UniqueDeviceId` (⏭️ atlas-comprehensive-attributes.json SKIPPED - text attributes not implemented)
 
 #### B.2 Numeric Range Attributes
 
 - [x] **numericRange** - Basic structure (✓ tested with Age)
-  - [ ] Operator: `lt` (less than)
-  - [ ] Operator: `lte` (less than or equal)
-  - [ ] Operator: `eq` (equal)
-  - [ ] Operator: `gte` (greater than or equal)
-  - [ ] Operator: `gt` (greater than)
-  - [x] Operator: `bt` (between - requires Value + Extent) (✓ atlas-complex-nested-correlated.json: Age bt 5-11)
-  - [ ] Operator: `nbt` (not between)
+  - [ ] Operator: `lt` (less than) (⏭️ atlas-comprehensive-attributes.json SKIPPED - EraLength, VisitDetailLength, Refills, DaysSupply, ValueAsNumber)
+  - [ ] Operator: `lte` (less than or equal) (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitLength, DaysSupply)
+  - [ ] Operator: `eq` (equal) (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitDetailLength)
+  - [ ] Operator: `gte` (greater than or equal) (⏭️ atlas-comprehensive-attributes.json SKIPPED - Age on Specimen)
+  - [ ] Operator: `gt` (greater than) (⏭️ atlas-comprehensive-attributes.json SKIPPED - Quantity on Specimen)
+  - [x] Operator: `bt` (between - requires Value + Extent) (✓ atlas-complex-nested-correlated.json: Age bt 5-11, ⏭️ atlas-comprehensive-attributes.json SKIPPED - Age in ConditionOccurrence)
+  - [ ] Operator: `!bt` (not between) (⏭️ atlas-comprehensive-attributes.json SKIPPED - Age demographic with !bt operator)
   - [ ] With `Value` only (single threshold)
   - [x] With `Value` and `Extent` (range) (✓ atlas-complex-nested-correlated.json: Age bt 5-11)
 
 **Common Numeric Fields:**
 
 - [x] `Age` - Age in years (✓ atlas-demographics-simple.json, atlas-complex-nested-correlated.json)
-- [ ] `VisitLength` - Visit duration
-- [ ] `EraLength` - Era duration
+- [ ] `VisitLength` - Visit duration (⏭️ atlas-comprehensive-attributes.json SKIPPED)
+- [ ] `EraLength` - Era duration (⏭️ atlas-comprehensive-attributes.json SKIPPED)
 - [ ] `PeriodLength` - Period duration
-- [ ] `Quantity` - Quantity value
-- [ ] `ValueAsNumber` - Numeric measurement
-- [ ] `RefillsRange` - Drug refills
-- [ ] `DaysSupplyRange` - Days supply
+- [ ] `Quantity` - Quantity value (⏭️ atlas-comprehensive-attributes.json SKIPPED - on Specimen)
+- [ ] `ValueAsNumber` - Numeric measurement (⏭️ atlas-comprehensive-attributes.json SKIPPED - on Observation)
+- [ ] `RefillsRange` - Drug refills (⏭️ atlas-comprehensive-attributes.json SKIPPED - Refills on DrugExposure)
+- [ ] `DaysSupplyRange` - Days supply (⏭️ atlas-comprehensive-attributes.json SKIPPED - DaysSupply on DrugExposure)
 - [ ] `AgeAtStart` - Age at start of era/period
 - [ ] `AgeAtEnd` - Age at end of era/period
 
 #### B.3 Date Range Attributes
 
-- [ ] **dateRange** - Basic structure
-  - [ ] Operator: `lt` (before date)
-  - [ ] Operator: `lte` (on or before)
-  - [ ] Operator: `eq` (on exact date)
-  - [ ] Operator: `gte` (on or after)
-  - [ ] Operator: `gt` (after date)
-  - [ ] Operator: `bt` (between dates - requires Value + Extent)
-  - [ ] Operator: `nbt` (not between dates)
+- [ ] **dateRange** - Basic structure (⏭️ atlas-comprehensive-attributes.json SKIPPED - multiple date fields)
+  - [ ] Operator: `lt` (before date) (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitDetailStartDate, OccurrenceStartDate, OccurrenceEndDate, PeriodEndDate)
+  - [ ] Operator: `lte` (on or before) (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitDetailEndDate)
+  - [ ] Operator: `eq` (on exact date) (⏭️ atlas-comprehensive-attributes.json SKIPPED - OccurrenceStartDate on VisitOccurrence, PeriodStartDate)
+  - [ ] Operator: `gte` (on or after) (⏭️ atlas-comprehensive-attributes.json SKIPPED - EraStartDate)
+  - [ ] Operator: `gt` (after date) (⏭️ atlas-comprehensive-attributes.json SKIPPED - OccurrenceEndDate on VisitOccurrence)
+  - [ ] Operator: `bt` (between dates - requires Value + Extent) (⏭️ atlas-comprehensive-attributes.json SKIPPED - EraEndDate)
+  - [ ] Operator: `!bt` (not between dates) (⏭️ atlas-comprehensive-attributes.json SKIPPED - OccurrenceStartDate on Observation)
   - [ ] With `Value` only (single date)
   - [ ] With `Value` and `Extent` (date range)
 
 **Common Date Fields:**
 
-- [ ] `OccurrenceStartDate` - Event start date
-- [ ] `OccurrenceEndDate` - Event end date
-- [ ] `EraStartDate` - Era start date
-- [ ] `EraEndDate` - Era end date
-- [ ] `PeriodStartDate` - Period start date
-- [ ] `PeriodEndDate` - Period end date
+- [ ] `OccurrenceStartDate` - Event start date (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitOccurrence eq, Observation !bt)
+- [ ] `OccurrenceEndDate` - Event end date (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitOccurrence gt, DrugExposure lt)
+- [ ] `EraStartDate` - Era start date (⏭️ atlas-comprehensive-attributes.json SKIPPED - ConditionEra gte)
+- [ ] `EraEndDate` - Era end date (⏭️ atlas-comprehensive-attributes.json SKIPPED - ConditionEra bt)
+- [ ] `PeriodStartDate` - Period start date (⏭️ atlas-comprehensive-attributes.json SKIPPED - ObservationPeriod eq)
+- [ ] `PeriodEndDate` - Period end date (⏭️ atlas-comprehensive-attributes.json SKIPPED - ObservationPeriod lt)
 
 #### B.4 Complex Types
 
 - [x] **concept** - Single concept or concept array (✓ Gender in atlas-demographics-simple.json)
 - [x] **conceptSet** - CodesetId reference to concept set (✓ Multiple tests use concept sets)
 - [x] **temporalRelationship** - StartWindow/EndWindow with coefficients (✓ Multiple tests)
-- [ ] **dateAdjustment** - Adjust event dates with offsets
+- [ ] **dateAdjustment** - Adjust event dates with offsets (⏭️ atlas-comprehensive-attributes.json SKIPPED - StartWith/EndWith/StartOffset/EndOffset on ConditionEra, VisitOccurrence)
 - [ ] **userDefinedPeriod** - Custom time periods
 - [x] **nested** - CorrelatedCriteria (✓ atlas-complex-nested-correlated.json)
 
@@ -142,13 +142,13 @@ Test that each attribute type preserves values correctly:
   - [x] UseEventEnd flag (✓ atlas-complex-nested-correlated.json)
 - [ ] **EndWindow** - End window (optional)
 - [x] **Occurrence** - Cardinality settings (✓ Multiple tests)
-  - [ ] Type: 0 (exactly N times)
+  - [ ] Type: 0 (exactly N times) (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitDetail Count 1)
   - [ ] Type: 1 (at most N times)
   - [x] Type: 2 (at least N times) (✓ atlas-groups-inclusion-rule.json, atlas-complex-nested-correlated.json)
   - [x] Count field (various values) (✓ Count 1, Count 2 tested)
-  - [ ] IsDistinct flag
+  - [ ] IsDistinct flag (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitOccurrence with IsDistinct + CountColumn)
 - [ ] **RestrictVisit** - Visit restriction flag
-- [ ] **IgnoreObservationPeriod** - Ignore observation period flag
+- [ ] **IgnoreObservationPeriod** - Ignore observation period flag (⏭️ atlas-comprehensive-attributes.json SKIPPED - LocationRegion with IgnoreObservationPeriod true)
 
 #### C.4 CorrelatedCriteria (Nested Events)
 
@@ -206,7 +206,7 @@ Test that each attribute type preserves values correctly:
 **Type 0: Exactly N times**
 
 - [ ] Count = 0 (exclusion - event must NOT occur)
-- [ ] Count = 1 (exactly once)
+- [ ] Count = 1 (exactly once) (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitDetail)
 - [ ] Count = 2 (exactly twice)
 - [ ] Count > 2 (exactly N times)
 
@@ -221,7 +221,7 @@ Test that each attribute type preserves values correctly:
 - [ ] Count = 0 (optional - matches all patients)
 - [x] Count = 1 (at least once) (✓ atlas-groups-inclusion-rule.json, atlas-complex-nested-correlated.json - multiple occurrences)
 - [x] Count = 2 (at least twice) (✓ atlas-complex-nested-correlated.json - Observation event in nested group)
-- [ ] Count > 2 (at least N times)
+- [ ] Count = 5+ with IsDistinct (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitOccurrence Count 5 IsDistinct + CountColumn)
 
 #### E.3 Qualifying Events Limits
 
@@ -281,23 +281,23 @@ Test that each attribute type preserves values correctly:
 
 **Numeric Operators:**
 
-- [ ] `lt` - Less than
-- [ ] `lte` - Less than or equal
-- [ ] `eq` - Equal
-- [ ] `gte` - Greater than or equal
-- [ ] `gt` - Greater than
-- [ ] `bt` - Between (Value + Extent)
-- [ ] `nbt` - Not between
+- [ ] `lt` - Less than (⏭️ atlas-comprehensive-attributes.json SKIPPED - multiple uses)
+- [ ] `lte` - Less than or equal (⏭️ atlas-comprehensive-attributes.json SKIPPED - multiple uses)
+- [ ] `eq` - Equal (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitDetailLength)
+- [ ] `gte` - Greater than or equal (⏭️ atlas-comprehensive-attributes.json SKIPPED - Age on Specimen)
+- [ ] `gt` - Greater than (⏭️ atlas-comprehensive-attributes.json SKIPPED - Quantity)
+- [ ] `bt` - Between (Value + Extent) (⏭️ atlas-comprehensive-attributes.json SKIPPED - Age in ConditionOccurrence)
+- [ ] `!bt` - Not between (⏭️ atlas-comprehensive-attributes.json SKIPPED - Age demographic)
 
 **Date Operators:**
 
-- [ ] `lt` - Before date
-- [ ] `lte` - On or before date
-- [ ] `eq` - On exact date
-- [ ] `gte` - On or after date
-- [ ] `gt` - After date
-- [ ] `bt` - Between dates (Value + Extent)
-- [ ] `nbt` - Not between dates
+- [ ] `lt` - Before date (⏭️ atlas-comprehensive-attributes.json SKIPPED - multiple uses)
+- [ ] `lte` - On or before date (⏭️ atlas-comprehensive-attributes.json SKIPPED - VisitDetailEndDate)
+- [ ] `eq` - On exact date (⏭️ atlas-comprehensive-attributes.json SKIPPED - OccurrenceStartDate, PeriodStartDate)
+- [ ] `gte` - On or after date (⏭️ atlas-comprehensive-attributes.json SKIPPED - EraStartDate)
+- [ ] `gt` - After date (⏭️ atlas-comprehensive-attributes.json SKIPPED - OccurrenceEndDate)
+- [ ] `bt` - Between dates (Value + Extent) (⏭️ atlas-comprehensive-attributes.json SKIPPED - EraEndDate)
+- [ ] `!bt` - Not between dates (⏭️ atlas-comprehensive-attributes.json SKIPPED - OccurrenceStartDate on Observation)
 
 ---
 
@@ -353,7 +353,7 @@ test('Round-trip: {scenario}', () => {
 - ✅ EndStrategy (DateOffset) - atlas-exit-strategy.json
 - ✅ DemographicCriteriaList (Age, Gender) - atlas-demographics-simple.json
 - ✅ Groups in InclusionRules - atlas-groups-inclusion-rule.json
-- ✅ **Complex Nested CorrelatedCriteria** - atlas-complex-nested-correlated.json (NEW!)
+- ✅ **Complex Nested CorrelatedCriteria** - atlas-complex-nested-correlated.json
   - Deep nesting (3 levels)
   - Groups in CorrelatedCriteria (FIXED!)
   - Demographics in CorrelatedCriteria
@@ -361,6 +361,16 @@ test('Round-trip: {scenario}', () => {
   - ExpressionLimit LATEST
   - Multiple criteria types: ConditionOccurrence, DrugEra, DrugExposure, DeviceExposure, Death, ObservationPeriod, Observation, Measurement
   - BETWEEN operator for Age with Extent
+- ⏭️ **Comprehensive Attributes Coverage** - atlas-comprehensive-attributes.json (SKIPPED - not implemented)
+  - New criteria: ConditionEra, VisitOccurrence, VisitDetail, PayerPlanPeriod, Specimen, LocationRegion, ObservationPeriod
+  - DateAdjustment: StartWith/EndWith + StartOffset/EndOffset
+  - All 7 date operators: lt, lte, eq, gte, gt, bt, !bt (NOT BETWEEN)
+  - All 7 numeric operators: lt, lte, eq, gte, gt, bt, !bt (NOT BETWEEN)
+  - Text attribute: ValueAsString with "contains" operator
+  - Boolean attribute: First (true value)
+  - Occurrence Type 0: Exactly N times (Count 1)
+  - Occurrence Type 2 with IsDistinct + CountColumn (Count 5)
+  - IgnoreObservationPeriod flag
 
 Update this checklist as tests are added. Mark items with `[x]` when test coverage is added and passing.
 
