@@ -161,12 +161,12 @@ Test that each attribute type preserves values correctly:
 
 #### C.5 GroupCriteria (Nested Groups)
 
-- [ ] **Basic group structure** - Group with events
-- [ ] **GroupCriteria.Type** - `ALL`, `ANY`, `AT_LEAST`, `AT_MOST`
-- [ ] **GroupCriteria.Count** - For `AT_LEAST`/`AT_MOST`
-- [ ] **GroupCriteria.CriteriaList[]** - Events in group
-- [ ] **GroupCriteria.DemographicCriteriaList[]** - Demographics in group
-- [ ] **GroupCriteria.Groups[]** - Recursively nested groups
+- [x] **Basic group structure** - Group with events (✓ TESTED - atlas-groups-inclusion-rule.json)
+- [x] **GroupCriteria.Type** - `ALL`, `ANY`, `AT_LEAST`, `AT_MOST` (✓ Type: ALL tested)
+- [ ] **GroupCriteria.Count** - For `AT_LEAST`/`AT_MOST` (not tested - basic test uses Type: ALL)
+- [x] **GroupCriteria.CriteriaList[]** - Events in group (✓ TESTED - 2 events in test)
+- [x] **GroupCriteria.DemographicCriteriaList[]** - Demographics in group (✓ Empty array tested)
+- [ ] **GroupCriteria.Groups[]** - Recursively nested groups (implementation exists, needs deep nesting test)
 
 ### D. NESTING SCENARIOS
 
@@ -181,7 +181,7 @@ Test that each attribute type preserves values correctly:
 #### D.2 Nesting Locations
 
 - [ ] **In PrimaryCriteria** - Entry events with nested criteria
-- [ ] **In InclusionRules** - Inclusion criteria with nested events
+- [x] **In InclusionRules** - Inclusion criteria with nested groups (✓ TESTED - atlas-groups-inclusion-rule.json)
 - [ ] **In CensoringCriteria** - Exit criteria with nested events
 - [ ] **In Groups** - Groups containing nested groups (recursive)
 
@@ -345,8 +345,14 @@ test('Round-trip: {scenario}', () => {
 ## Progress Tracking
 
 **Total Items:** 150+
-**Completed:** 1 (Empty cohort)
-**Percentage:** <1%
+**Completed:** 10
+**Percentage:** ~7%
+
+**Recent Additions:**
+
+- ✅ EndStrategy (DateOffset) - atlas-exit-strategy.json
+- ✅ DemographicCriteriaList (Age, Gender) - atlas-demographics-simple.json
+- ✅ Groups in InclusionRules - atlas-groups-inclusion-rule.json
 
 Update this checklist as tests are added. Mark items with `[x]` when test coverage is added and passing.
 

@@ -229,12 +229,11 @@ describe('Atlas Round-Trip Tests', () => {
 
   describe('Comprehensive Scenarios from circe-be', () => {
     test.skip('all criteria types - from circe-be allCriteriaExpression', () => {
-      // SKIPPED: This test uses features not yet supported:
-      // - DemographicCriteriaList (demographics are not fully implemented)
-      // - Many attribute types that need additional implementation
+      // SKIPPED: This fixture is very complex with 74KB of test data including:
+      // - Observation Period criterion (not fully implemented)
+      // - Many advanced attributes (PeriodType, UserDefinedPeriod, AgeAtStart, etc.)
+      // - DemographicCriteriaList (infrastructure exists but needs testing/fixes)
       // Source: circe-be/src/test/resources/cohortgeneration/allCriteria/allCriteriaExpression.json
-      //
-      // TODO: Implement demographics and additional attributes, then enable this test
       const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-all-criteria.json')
       const mocks = mockConceptSetsForAtlas(originalAtlas)
 
@@ -288,6 +287,30 @@ describe('Atlas Round-Trip Tests', () => {
       //
       // EndStrategy is fully implemented with support for DateOffset, CustomEra, and CONT_OBS
       const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-exit-strategy.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
+
+    test('demographics - simple Age and Gender', () => {
+      // Tests DemographicCriteriaList with Age (NumericRange) and Gender (Concept[])
+      // Simpler focused test for demographics round-trip
+      const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-demographics-simple.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
+
+    test('groups - basic group in inclusion rule', () => {
+      // Tests Groups[] within InclusionRules.expression
+      // Group contains CriteriaList with 2 medical events (DrugExposure, ProcedureOccurrence)
+      const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-groups-inclusion-rule.json')
       const mocks = mockConceptSetsForAtlas(originalAtlas)
 
       const manager = convertAtlasToFilters(originalAtlas, mocks)

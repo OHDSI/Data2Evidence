@@ -186,6 +186,9 @@ export interface StoredConceptItem {
   system?: string | undefined
   conceptClassId?: string | undefined
   standardConcept?: string | undefined
+  standardConceptCaption?: string | undefined // For round-trip with Atlas
+  invalidReason?: string | undefined
+  invalidReasonCaption?: string | undefined // For round-trip with Atlas
   concept?: string | undefined
   code?: string | undefined
   validStartDate?: string | undefined

@@ -6,6 +6,7 @@ import {
   CriteriaType,
   QueryFilterAttributeDateRange,
   QueryFilterAttributeNumericRange,
+  QueryFilterAttributeConcept,
 } from '../types/QueryFilterTypes'
 import {
   AtlasCohortDefinition,
@@ -32,6 +33,7 @@ import {
 import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
 import type ConfigLoader from './ConfigLoader'
 import { mapAtlasToCardinality } from './AtlasUtils'
+import { attributeMap } from './AtlasAttributeLookup'
 
 export interface ConceptSetMapping {
   name: string
@@ -107,6 +109,9 @@ const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConcept
     system: concept.VOCABULARY_ID || '',
     code: concept.CONCEPT_CODE || '',
     standardConcept: concept.STANDARD_CONCEPT || '',
+    standardConceptCaption: concept.STANDARD_CONCEPT_CAPTION || '', // Preserve for round-trip
+    invalidReason: concept.INVALID_REASON || '',
+    invalidReasonCaption: concept.INVALID_REASON_CAPTION || '', // Preserve for round-trip
     conceptClassId: concept.CONCEPT_CLASS_ID || '', // Add conceptClassId if available
     validity: concept.VALID_START_DATE && concept.VALID_END_DATE ? 'Valid' : undefined, // Basic validity info
     validStartDate: concept.VALID_START_DATE,
@@ -849,6 +854,87 @@ export const convertAtlasToFilters = (
                     configType: 'dateRange',
                     name: attrConfig.name,
                     description: attrConfig.description,
+                    operator: mapAtlasOperatorToInternal(value.Op),
+                    value: value.Value.toString(),
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                  }
+                  demographicEvent.attributes.push(dateAttribute)
+                }
+              })
+            } else {
+              // Fallback: Handle standard demographic fields directly without configLoader
+              // This enables round-trip testing without full config infrastructure
+              // Use the attribute map to avoid hardcoding Atlas keys
+              if (!demographicEvent.attributes) {
+                demographicEvent.attributes = []
+              }
+
+              // Create reverse lookup: Atlas key -> internal attributeId
+              const demographicMapping = attributeMap['DemographicCriteria'] || {}
+              const atlasToInternalMap: Record<string, string> = {}
+              Object.entries(demographicMapping).forEach(([internalKey, atlasKey]) => {
+                atlasToInternalMap[String(atlasKey)] = internalKey
+              })
+
+              Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+                const value = demoCriteria[atlasKey]
+                const attributeId = atlasToInternalMap[atlasKey]
+
+                if (!attributeId) {
+                  // Skip unknown fields
+                  return
+                }
+
+                // Determine attribute type by inspecting the value structure (not by field name)
+                // NumericRange: has Op, Value (number), and optional Extent
+                if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'number'
+                ) {
+                  const numericAttribute: QueryFilterAttributeNumericRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'numericRange',
+                    name: atlasKey, // Use the Atlas key as the display name
+                    description: atlasKey,
+                    operator: mapAtlasOperatorToInternal(value.Op),
+                    value: value.Value.toString(),
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                  }
+                  demographicEvent.attributes.push(numericAttribute)
+                }
+                // Concept array: is an array of Concept objects with CONCEPT_ID, CONCEPT_NAME, etc.
+                else if (Array.isArray(value) && value.length > 0 && value[0].CONCEPT_ID !== undefined) {
+                  const conceptAttribute: QueryFilterAttributeConcept = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'concept',
+                    name: atlasKey, // Use the Atlas key as the display name
+                    description: atlasKey,
+                    conceptItems: convertAtlasConceptsToInternal(value), // Convert Concept[] to StoredConceptItem[]
+                  }
+                  demographicEvent.attributes.push(conceptAttribute)
+                }
+                // DateRange: has Op, Value (string), and optional Extent (string)
+                else if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'string'
+                ) {
+                  const dateAttribute: QueryFilterAttributeDateRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'dateRange',
+                    name: atlasKey, // Use the Atlas key as the display name
+                    description: atlasKey,
                     operator: mapAtlasOperatorToInternal(value.Op),
                     value: value.Value.toString(),
                     ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),

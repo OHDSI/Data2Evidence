@@ -554,6 +554,8 @@ export class QueryFilterCriteriaManager {
                         CONCEPT_NAME: item.conceptName,
                         DOMAIN_ID: item.domainId,
                         VOCABULARY_ID: item.system,
+                        STANDARD_CONCEPT_CAPTION: item.standardConceptCaption || '',
+                        INVALID_REASON_CAPTION: item.invalidReasonCaption || '',
                       }))
                       demographicCriteria[atlasFieldName] = conceptData
                     }
