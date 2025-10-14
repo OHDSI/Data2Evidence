@@ -69,7 +69,12 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-      
+      - name: Wait for services to be ready
+        if: success() || failure()
+        run: |
+          sleep 300
+          echo "Waiting for services to be ready..."  | tee -a $GITHUB_STEP_SUMMARY
+          docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee -a $GITHUB_STEP_SUMMARY
       - name: Log status
         if: success() || failure()
         run: |
