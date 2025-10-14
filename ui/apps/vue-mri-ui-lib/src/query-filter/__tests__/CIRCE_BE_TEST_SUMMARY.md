@@ -41,9 +41,9 @@ We've imported 4 comprehensive test fixtures from the official OHDSI circe-be re
 
 ## Test Results
 
-**Current Status: ✅ 14 passing, ⏸️ 1 skipped**
+**Current Status: ✅ 15 passing, ⏸️ 1 skipped**
 
-### Passing Tests (14)
+### Passing Tests (15)
 
 - ✅ Empty cohort strict equality
 - ✅ cdmVersionRange preservation (3 tests)
@@ -54,7 +54,8 @@ We've imported 4 comprehensive test fixtures from the official OHDSI circe-be re
 - ✅ **Inclusion rules round-trip** - circe-be simpleInclusionRule
 - ✅ **Exit strategy** - circe-be censorEventExpression
 - ✅ **Demographics** - Simple Age and Gender test
-- ✅ **Groups** - Basic group in inclusion rule (NEW!)
+- ✅ **Groups** - Basic group in inclusion rule
+- ✅ **Complex nested correlated criteria** - Deep nesting with Groups in CorrelatedCriteria (NEW! FIXED!)
 
 ### Skipped Tests (1)
 
@@ -133,10 +134,37 @@ By using these fixtures, we ensure our implementation matches the OHDSI standard
 - `/Users/jerome/Dev/data2evidence/Data2Evidence-pa-atlas/ui/apps/vue-mri-ui-lib/src/query-filter/__tests__/data/atlas-fixtures/atlas-groups-basic.json` (circe-be fixture, skipped - requires AdditionalCriteria)
 - `/Users/jerome/Dev/data2evidence/Data2Evidence-pa-atlas/ui/apps/vue-mri-ui-lib/src/query-filter/__tests__/data/atlas-fixtures/atlas-exit-strategy.json`
 - `/Users/jerome/Dev/data2evidence/Data2Evidence-pa-atlas/ui/apps/vue-mri-ui-lib/src/query-filter/__tests__/data/atlas-fixtures/atlas-demographics-simple.json`
-- `/Users/jerome/Dev/data2evidence/Data2Evidence-pa-atlas/ui/apps/vue-mri-ui-lib/src/query-filter/__tests__/data/atlas-fixtures/atlas-groups-inclusion-rule.json` (NEW!)
-- Added 6 tests in `AtlasRoundTripComprehensive.test.ts`
+- `/Users/jerome/Dev/data2evidence/Data2Evidence-pa-atlas/ui/apps/vue-mri-ui-lib/src/query-filter/__tests__/data/atlas-fixtures/atlas-groups-inclusion-rule.json`
+- `/Users/jerome/Dev/data2evidence/Data2Evidence-pa-atlas/ui/apps/vue-mri-ui-lib/src/query-filter/__tests__/data/atlas-fixtures/atlas-complex-nested-correlated.json` (✅ NOW PASSING!)
+- Added 7 tests in `AtlasRoundTripComprehensive.test.ts` (7 passing, 0 skipped!)
 - This summary document
 
 ## Conclusion
 
-The circe-be fixtures successfully identified and helped resolve **4 implementation bugs** and confirmed **3 feature implementations** (EndStrategy, DemographicCriteriaList, and Groups). The test suite now has strong coverage with **14 passing tests** validating round-trip fidelity and standards compliance. One feature remains unimplemented (AdditionalCriteria), but Groups functionality is fully working within InclusionRules.
+The circe-be fixtures successfully identified and helped resolve **6 implementation bugs** and confirmed **4 feature implementations** (EndStrategy, DemographicCriteriaList, Groups, and Groups in CorrelatedCriteria). The test suite now has strong coverage with **15 passing tests** validating round-trip fidelity and standards compliance, including complex deep nesting scenarios. One feature remains unimplemented (AdditionalCriteria), but all tested OHDSI cohort definition structures are now working correctly.
+
+### Bugs Fixed in This Session
+
+5. **Demographics in CorrelatedCriteria without configLoader** ✅
+
+   - **Issue**: Demographics inside CorrelatedCriteria required configLoader
+   - **Fix**: Added fallback logic using structure-based type detection
+   - **Location**: AtlasConverter.ts lines 565-630
+
+6. **Groups in CorrelatedCriteria not preserved during transformation** ✅
+
+   - **Issue**: Group events' `nestedCriteria` property was lost in `transformNestedEvents`
+   - **Fix**: Added `nestedCriteria` preservation logic to `transformNestedEvents` function
+   - **Location**: event-transformer.ts lines 131-137
+   - **Impact**: Enables complex deep nesting with Groups inside CorrelatedCriteria
+
+7. **Duplicate processing of nested groups** ✅
+
+   - **Issue**: Calling both `buildNestedCriteriaFromAttributes` and `processNestedGroupsRecursively` separately
+   - **Fix**: Use `result.groupsList` from `buildNestedCriteriaFromAttributes` instead of redundant call
+   - **Location**: nested-criteria-processor.ts lines 305-310
+
+8. **Function hoisting issue** ✅
+   - **Issue**: `convertGroupCriteriaToGroupEvents` was const arrow function called before definition
+   - **Fix**: Converted to function declaration to enable hoisting for mutual recursion
+   - **Location**: AtlasConverter.ts line 710

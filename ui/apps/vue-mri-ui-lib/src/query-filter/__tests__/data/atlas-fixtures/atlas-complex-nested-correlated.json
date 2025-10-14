@@ -1,0 +1,202 @@
+{
+    "ConceptSets": [],
+    "PrimaryCriteria": {
+        "CriteriaList": [
+            {
+                "ConditionOccurrence": {
+                    "CorrelatedCriteria": {
+                        "Type": "ANY",
+                        "CriteriaList": [],
+                        "DemographicCriteriaList": [
+                            {
+                                "Age": {
+                                    "Value": 5,
+                                    "Extent": 6,
+                                    "Op": "bt"
+                                }
+                            }
+                        ],
+                        "Groups": [
+                            {
+                                "Type": "ALL",
+                                "CriteriaList": [
+                                    {
+                                        "Criteria": {
+                                            "DrugEra": {}
+                                        },
+                                        "StartWindow": {
+                                            "Start": {
+                                                "Days": 1,
+                                                "Coeff": -1
+                                            },
+                                            "End": {
+                                                "Days": 7,
+                                                "Coeff": 1
+                                            },
+                                            "UseEventEnd": false
+                                        },
+                                        "Occurrence": {
+                                            "Type": 2,
+                                            "Count": 1
+                                        }
+                                    }
+                                ],
+                                "DemographicCriteriaList": [],
+                                "Groups": []
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "ObservationWindow": {
+            "PriorDays": 0,
+            "PostDays": 0
+        },
+        "PrimaryCriteriaLimit": {
+            "Type": "First"
+        }
+    },
+    "QualifiedLimit": {
+        "Type": "First"
+    },
+    "ExpressionLimit": {
+        "Type": "Last"
+    },
+    "InclusionRules": [
+        {
+            "name": "test1",
+            "description": "test2",
+            "expression": {
+                "Type": "AT_MOST",
+                "Count": 0,
+                "CriteriaList": [
+                    {
+                        "Criteria": {
+                            "DeviceExposure": {}
+                        },
+                        "StartWindow": {
+                            "Start": {
+                                "Coeff": -1
+                            },
+                            "End": {
+                                "Coeff": 1
+                            },
+                            "UseEventEnd": false
+                        },
+                        "Occurrence": {
+                            "Type": 2,
+                            "Count": 1
+                        }
+                    },
+                    {
+                        "Criteria": {
+                            "Death": {
+                                "CorrelatedCriteria": {
+                                    "Type": "ALL",
+                                    "CriteriaList": [
+                                        {
+                                            "Criteria": {
+                                                "ObservationPeriod": {
+                                                    "CorrelatedCriteria": {
+                                                        "Type": "ALL",
+                                                        "CriteriaList": [
+                                                            {
+                                                                "Criteria": {
+                                                                    "Measurement": {}
+                                                                },
+                                                                "StartWindow": {
+                                                                    "Start": {
+                                                                        "Coeff": -1
+                                                                    },
+                                                                    "End": {
+                                                                        "Coeff": 1
+                                                                    },
+                                                                    "UseEventEnd": false
+                                                                },
+                                                                "Occurrence": {
+                                                                    "Type": 2,
+                                                                    "Count": 1
+                                                                }
+                                                            }
+                                                        ],
+                                                        "DemographicCriteriaList": [],
+                                                        "Groups": []
+                                                    }
+                                                }
+                                            },
+                                            "StartWindow": {
+                                                "Start": {
+                                                    "Days": 1,
+                                                    "Coeff": 1
+                                                },
+                                                "End": {
+                                                    "Days": 14,
+                                                    "Coeff": -1
+                                                },
+                                                "UseEventEnd": false
+                                            },
+                                            "Occurrence": {
+                                                "Type": 2,
+                                                "Count": 1
+                                            }
+                                        }
+                                    ],
+                                    "DemographicCriteriaList": [],
+                                    "Groups": [
+                                        {
+                                            "Type": "ALL",
+                                            "CriteriaList": [
+                                                {
+                                                    "Criteria": {
+                                                        "Observation": {}
+                                                    },
+                                                    "StartWindow": {
+                                                        "Start": {
+                                                            "Coeff": -1
+                                                        },
+                                                        "End": {
+                                                            "Coeff": 1
+                                                        },
+                                                        "UseEventEnd": false
+                                                    },
+                                                    "Occurrence": {
+                                                        "Type": 2,
+                                                        "Count": 2
+                                                    }
+                                                }
+                                            ],
+                                            "DemographicCriteriaList": [],
+                                            "Groups": []
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "StartWindow": {
+                            "Start": {
+                                "Coeff": -1
+                            },
+                            "End": {
+                                "Coeff": 1
+                            },
+                            "UseEventEnd": false
+                        },
+                        "Occurrence": {
+                            "Type": 2,
+                            "Count": 1
+                        }
+                    }
+                ],
+                "DemographicCriteriaList": [],
+                "Groups": []
+            }
+        }
+    ],
+    "CensoringCriteria": [],
+    "CollapseSettings": {
+        "CollapseType": "ERA",
+        "EraPad": 0
+    },
+    "CensorWindow": {}
+}

@@ -128,6 +128,13 @@ export const transformNestedEvents = (events: QueryFilterEvent[], parentId: stri
       ...(event.endWindow && { endWindow: event.endWindow }),
       ...(event.restrictVisit !== undefined && { restrictVisit: event.restrictVisit }),
       ...(event.ignoreObservationPeriod !== undefined && { ignoreObservationPeriod: event.ignoreObservationPeriod }),
+      // Preserve nestedCriteria for group events
+      ...(event.nestedCriteria && {
+        nestedCriteria: {
+          ...event.nestedCriteria,
+          events: transformNestedEvents(event.nestedCriteria.events || [], event.id),
+        },
+      }),
     }
 
     if (event.attributes && event.attributes.length > 0) {

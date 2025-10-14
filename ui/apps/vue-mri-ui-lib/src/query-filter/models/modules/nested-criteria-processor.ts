@@ -135,10 +135,8 @@ export const processNestedGroups = (
                   const result = buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
                   nestedCriteriaList = nestedCriteriaList.concat(result.criteriaList)
                   nestedDemographicCriteriaList = nestedDemographicCriteriaList.concat(result.demographicCriteriaList)
-
-                  // RECURSIVE CALL: Process deeper nested groups
-                  const deeperGroups = processNestedGroupsRecursively(attr.nestedCriteria.events, systemIdToAtlasId)
-                  nestedGroupsList = nestedGroupsList.concat(deeperGroups)
+                  // Use groupsList from buildNestedCriteriaFromAttributes (which already calls processNestedGroupsRecursively)
+                  nestedGroupsList = nestedGroupsList.concat(result.groupsList || [])
                 }
               })
 
@@ -307,10 +305,8 @@ export const processNestedGroupsRecursively = (
                   const result = buildNestedCriteriaFromAttributes(attr.nestedCriteria.events, systemIdToAtlasId)
                   nestedCriteriaList = nestedCriteriaList.concat(result.criteriaList)
                   nestedDemographicCriteriaList = nestedDemographicCriteriaList.concat(result.demographicCriteriaList)
-
-                  // RECURSIVE CALL: Process deeper nested groups
-                  const deeperGroups = processNestedGroupsRecursively(attr.nestedCriteria.events, systemIdToAtlasId)
-                  nestedGroupsList = nestedGroupsList.concat(deeperGroups)
+                  // Use groupsList from buildNestedCriteriaFromAttributes (which already calls processNestedGroupsRecursively)
+                  nestedGroupsList = nestedGroupsList.concat(result.groupsList || [])
                 }
               })
 

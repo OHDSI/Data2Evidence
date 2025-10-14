@@ -562,6 +562,83 @@ export const convertAtlasToFilters = (
                     demographicEvent.attributes.push(dateAttribute)
                   }
                 })
+              } else {
+                // Fallback: Handle demographics without configLoader (for round-trip testing)
+                // Use attribute map to detect types from data structure
+                const demographicMapping = attributeMap['DemographicCriteria'] || {}
+                const atlasToInternalMap: Record<string, string> = {}
+                Object.entries(demographicMapping).forEach(([internalKey, atlasKey]) => {
+                  atlasToInternalMap[String(atlasKey)] = internalKey
+                })
+
+                if (!demographicEvent.attributes) {
+                  demographicEvent.attributes = []
+                }
+
+                Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+                  const value = demoCriteria[atlasKey]
+                  const attributeId = atlasToInternalMap[atlasKey]
+
+                  if (!attributeId) {
+                    return
+                  }
+
+                  // NumericRange: typeof value.Value === 'number'
+                  if (
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Op' in value &&
+                    'Value' in value &&
+                    typeof value.Value === 'number'
+                  ) {
+                    const numericAttribute: QueryFilterAttributeNumericRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'numericRange',
+                      name: atlasKey,
+                      description: atlasKey,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(numericAttribute)
+                  }
+                  // Concept array: Array.isArray && value[0].CONCEPT_ID
+                  else if (Array.isArray(value) && value.length > 0 && value[0].CONCEPT_ID !== undefined) {
+                    const conceptAttribute: QueryFilterAttributeConcept = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'concept',
+                      name: atlasKey,
+                      description: atlasKey,
+                      conceptItems: convertAtlasConceptsToInternal(value),
+                    }
+                    demographicEvent.attributes.push(conceptAttribute)
+                  }
+                  // DateRange: typeof value.Value === 'string'
+                  else if (
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Op' in value &&
+                    'Value' in value &&
+                    typeof value.Value === 'string'
+                  ) {
+                    const dateAttribute: QueryFilterAttributeDateRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'dateRange',
+                      name: atlasKey,
+                      description: atlasKey,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(dateAttribute)
+                  }
+                })
               }
 
               // Need to populate selectedAttributes for UI to show the attributes
@@ -630,7 +707,7 @@ export const convertAtlasToFilters = (
     }
 
     // Recursive helper function to convert GroupCriteria to group events
-    const convertGroupCriteriaToGroupEvents = (groupCriteria: GroupCriteria): QueryFilterEvent => {
+    function convertGroupCriteriaToGroupEvents(groupCriteria: GroupCriteria): QueryFilterEvent {
       const groupEvent: QueryFilterEvent = {
         id: `event_${Math.random().toString(36).substring(2)}`,
         conceptSet: 'Group',

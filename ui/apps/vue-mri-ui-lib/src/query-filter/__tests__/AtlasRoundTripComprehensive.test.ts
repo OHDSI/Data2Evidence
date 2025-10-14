@@ -318,5 +318,22 @@ describe('Atlas Round-Trip Tests', () => {
 
       expect(exportedAtlas).toEqual(originalAtlas)
     })
+
+    test('complex nested correlated criteria', () => {
+      // Tests deep nesting (3+ levels), CorrelatedCriteria in multiple locations
+      // - PrimaryCriteria with CorrelatedCriteria (DemographicCriteriaList + Groups)
+      // - InclusionRules with Type: AT_MOST, Count: 0
+      // - Deep nesting: Death → CorrelatedCriteria → ObservationPeriod → CorrelatedCriteria → Measurement
+      // - Groups inside CorrelatedCriteria
+      // - BETWEEN operator (bt) for Age with Extent
+      // - ExpressionLimit: Last (LATEST)
+      const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-complex-nested-correlated.json')
+      const mocks = mockConceptSetsForAtlas(originalAtlas)
+
+      const manager = convertAtlasToFilters(originalAtlas, mocks)
+      const exportedAtlas = manager.convertToAtlasFormat()
+
+      expect(exportedAtlas).toEqual(originalAtlas)
+    })
   })
 })

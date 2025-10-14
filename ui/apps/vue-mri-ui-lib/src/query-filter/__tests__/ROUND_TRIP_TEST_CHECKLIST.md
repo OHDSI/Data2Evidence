@@ -15,23 +15,23 @@ The goal is to verify that importing an Atlas cohort definition, loading it into
 Test that each criteria type can round-trip successfully:
 
 - [x] **Empty Cohort** - No criteria, minimal structure
-- [ ] **ConditionOccurrence** - Diagnoses
+- [x] **ConditionOccurrence** - Diagnoses (✓ atlas-complex-nested-correlated.json)
 - [ ] **ConditionEra** - Diagnosis periods
-- [ ] **DrugExposure** - Medications
-- [ ] **DrugEra** - Medication periods
+- [x] **DrugExposure** - Medications (✓ atlas-groups-inclusion-rule.json)
+- [x] **DrugEra** - Medication periods (✓ atlas-complex-nested-correlated.json in nested group)
 - [ ] **DoseEra** - Dosage periods
-- [ ] **ProcedureOccurrence** - Procedures
-- [ ] **Observation** - Lab results, vitals
-- [ ] **Measurement** - Quantitative observations
-- [ ] **DeviceExposure** - Medical devices
+- [x] **ProcedureOccurrence** - Procedures (✓ atlas-groups-inclusion-rule.json)
+- [x] **Observation** - Lab results, vitals (✓ atlas-complex-nested-correlated.json in nested group)
+- [x] **Measurement** - Quantitative observations (✓ atlas-complex-nested-correlated.json, deep nested)
+- [x] **DeviceExposure** - Medical devices (✓ atlas-complex-nested-correlated.json)
 - [ ] **VisitOccurrence** - Healthcare visits
 - [ ] **VisitDetail** - Visit details
-- [ ] **Death** - Death events
-- [ ] **ObservationPeriod** - Observation windows
+- [x] **Death** - Death events (✓ atlas-complex-nested-correlated.json)
+- [x] **ObservationPeriod** - Observation windows (✓ atlas-complex-nested-correlated.json)
 - [ ] **PayerPlanPeriod** - Insurance periods
 - [ ] **Specimen** - Specimen collection
 - [ ] **LocationRegion** - Geographic filters (group only)
-- [ ] **DemographicCriteria** - Age, gender, race, ethnicity
+- [x] **DemographicCriteria** - Age, gender, race, ethnicity (✓ atlas-demographics-simple.json, atlas-complex-nested-correlated.json)
 
 ### B. ATTRIBUTE TYPES
 
@@ -44,20 +44,20 @@ Test that each attribute type preserves values correctly:
 
 #### B.2 Numeric Range Attributes
 
-- [ ] **numericRange** - Basic structure
+- [x] **numericRange** - Basic structure (✓ tested with Age)
   - [ ] Operator: `lt` (less than)
   - [ ] Operator: `lte` (less than or equal)
   - [ ] Operator: `eq` (equal)
   - [ ] Operator: `gte` (greater than or equal)
   - [ ] Operator: `gt` (greater than)
-  - [ ] Operator: `bt` (between - requires Value + Extent)
+  - [x] Operator: `bt` (between - requires Value + Extent) (✓ atlas-complex-nested-correlated.json: Age bt 5-11)
   - [ ] Operator: `nbt` (not between)
   - [ ] With `Value` only (single threshold)
-  - [ ] With `Value` and `Extent` (range)
+  - [x] With `Value` and `Extent` (range) (✓ atlas-complex-nested-correlated.json: Age bt 5-11)
 
 **Common Numeric Fields:**
 
-- [ ] `Age` - Age in years
+- [x] `Age` - Age in years (✓ atlas-demographics-simple.json, atlas-complex-nested-correlated.json)
 - [ ] `VisitLength` - Visit duration
 - [ ] `EraLength` - Era duration
 - [ ] `PeriodLength` - Period duration
@@ -92,12 +92,12 @@ Test that each attribute type preserves values correctly:
 
 #### B.4 Complex Types
 
-- [ ] **concept** - Single concept or concept array (Gender, Race, Ethnicity, etc.)
-- [ ] **conceptSet** - CodesetId reference to concept set
-- [ ] **temporalRelationship** - StartWindow/EndWindow with coefficients
+- [x] **concept** - Single concept or concept array (✓ Gender in atlas-demographics-simple.json)
+- [x] **conceptSet** - CodesetId reference to concept set (✓ Multiple tests use concept sets)
+- [x] **temporalRelationship** - StartWindow/EndWindow with coefficients (✓ Multiple tests)
 - [ ] **dateAdjustment** - Adjust event dates with offsets
 - [ ] **userDefinedPeriod** - Custom time periods
-- [ ] **nested** - CorrelatedCriteria (nested events with logic)
+- [x] **nested** - CorrelatedCriteria (✓ atlas-complex-nested-correlated.json)
 
 ### C. STRUCTURAL ELEMENTS
 
@@ -105,59 +105,59 @@ Test that each attribute type preserves values correctly:
 
 - [x] **ConceptSets[]** - Array of concept set definitions (empty array tested)
 - [x] **PrimaryCriteria** - Entry events structure
-  - [x] CriteriaList (empty array tested)
+  - [x] CriteriaList (✓ tested with ConditionOccurrence in atlas-complex-nested-correlated.json)
   - [x] ObservationWindow with PriorDays/PostDays
   - [x] PrimaryCriteriaLimit with Type
-- [x] **InclusionRules[]** - Inclusion criteria groups (empty array tested)
-- [x] **CensoringCriteria[]** - Exit criteria events (empty array tested)
-- [ ] **EndStrategy** - Exit strategy configuration
-  - [ ] DateOffset (fixed duration from StartDate)
+- [x] **InclusionRules[]** - Inclusion criteria groups (✓ Multiple tests)
+- [x] **CensoringCriteria[]** - Exit criteria events (✓ atlas-exit-strategy.json)
+- [x] **EndStrategy** - Exit strategy configuration (✓ atlas-exit-strategy.json)
+  - [x] DateOffset (fixed duration from StartDate) (✓ atlas-exit-strategy.json)
   - [ ] DateOffset (fixed duration from EndDate)
   - [ ] CustomEra (continuous drug exposure with gaps)
-- [x] **QualifiedLimit** - Qualifying events limit
-- [x] **ExpressionLimit** - Expression limit
+- [x] **QualifiedLimit** - Qualifying events limit (✓ atlas-exit-strategy.json)
+- [x] **ExpressionLimit** - Expression limit (✓ atlas-complex-nested-correlated.json: Type "Last")
 - [x] **CollapseSettings** - Era collapse settings
 - [x] **CensorWindow** - Censoring window (empty object tested)
 
 #### C.2 InclusionRule Structure
 
-- [ ] **Single InclusionRule** - One inclusion rule
+- [x] **Single InclusionRule** - One inclusion rule (✓ Multiple tests)
 - [ ] **Multiple InclusionRules** - 2+ inclusion rules
-- [ ] **InclusionRule fields**:
-  - [ ] name (string)
+- [x] **InclusionRule fields**:
+  - [x] name (string) (✓ Tested in multiple fixtures)
   - [ ] description (optional string)
-  - [ ] expression.Type (`ALL`, `ANY`, `AT_LEAST`, `AT_MOST`)
-  - [ ] expression.Count (for `AT_LEAST`/`AT_MOST`)
-  - [ ] expression.CriteriaList[] (medical events)
-  - [ ] expression.DemographicCriteriaList[] (demographics)
-  - [ ] expression.Groups[] (nested groups)
+  - [x] expression.Type (`ALL`, `ANY`, `AT_LEAST`, `AT_MOST`) (✓ ALL, AT_MOST tested)
+  - [x] expression.Count (for `AT_LEAST`/`AT_MOST`) (✓ atlas-complex-nested-correlated.json: AT_MOST Count 0)
+  - [x] expression.CriteriaList[] (medical events) (✓ Multiple tests)
+  - [x] expression.DemographicCriteriaList[] (demographics) (✓ atlas-demographics-simple.json)
+  - [x] expression.Groups[] (nested groups) (✓ atlas-groups-inclusion-rule.json)
 
 #### C.3 CriteriaGroup Structure
 
-- [ ] **Criteria** - The medical event (CriteriaListItem)
-- [ ] **StartWindow** - Temporal window
-  - [ ] Start.Days and Start.Coeff
-  - [ ] End.Days and End.Coeff
+- [x] **Criteria** - The medical event (CriteriaListItem) (✓ Multiple tests)
+- [x] **StartWindow** - Temporal window (✓ Multiple tests)
+  - [x] Start.Days and Start.Coeff (✓ Tested)
+  - [x] End.Days and End.Coeff (✓ Tested)
   - [ ] UseIndexEnd flag
-  - [ ] UseEventEnd flag
+  - [x] UseEventEnd flag (✓ atlas-complex-nested-correlated.json)
 - [ ] **EndWindow** - End window (optional)
-- [ ] **Occurrence** - Cardinality settings
+- [x] **Occurrence** - Cardinality settings (✓ Multiple tests)
   - [ ] Type: 0 (exactly N times)
   - [ ] Type: 1 (at most N times)
-  - [ ] Type: 2 (at least N times)
-  - [ ] Count field (various values)
+  - [x] Type: 2 (at least N times) (✓ atlas-groups-inclusion-rule.json, atlas-complex-nested-correlated.json)
+  - [x] Count field (various values) (✓ Count 1, Count 2 tested)
   - [ ] IsDistinct flag
 - [ ] **RestrictVisit** - Visit restriction flag
 - [ ] **IgnoreObservationPeriod** - Ignore observation period flag
 
 #### C.4 CorrelatedCriteria (Nested Events)
 
-- [ ] **Basic nested structure** - Event with CorrelatedCriteria
-- [ ] **CorrelatedCriteria.Type** - `ALL`, `ANY`, `AT_LEAST`, `AT_MOST`
+- [x] **Basic nested structure** - Event with CorrelatedCriteria (✓ atlas-complex-nested-correlated.json)
+- [x] **CorrelatedCriteria.Type** - `ALL`, `ANY`, `AT_LEAST`, `AT_MOST` (✓ ANY, ALL tested)
 - [ ] **CorrelatedCriteria.Count** - For `AT_LEAST`/`AT_MOST`
-- [ ] **CorrelatedCriteria.CriteriaList[]** - Nested medical events
-- [ ] **CorrelatedCriteria.DemographicCriteriaList[]** - Nested demographics
-- [ ] **CorrelatedCriteria.Groups[]** - Nested groups (recursive)
+- [x] **CorrelatedCriteria.CriteriaList[]** - Nested medical events (✓ atlas-complex-nested-correlated.json)
+- [x] **CorrelatedCriteria.DemographicCriteriaList[]** - Nested demographics (✓ atlas-complex-nested-correlated.json: Age in CorrelatedCriteria)
+- [x] **CorrelatedCriteria.Groups[]** - Nested groups (✓ FIXED! atlas-complex-nested-correlated.json: DrugEra, Observation in Groups)
 
 #### C.5 GroupCriteria (Nested Groups)
 
@@ -172,34 +172,34 @@ Test that each attribute type preserves values correctly:
 
 #### D.1 Nesting Depth Levels
 
-- [ ] **Level 0** - No nesting (flat structure with single events)
-- [ ] **Level 1** - Single nested criteria (event → CorrelatedCriteria → events)
-- [ ] **Level 2** - Two levels deep (event → nested → nested)
-- [ ] **Level 3** - Three levels deep
+- [x] **Level 0** - No nesting (flat structure with single events) (✓ atlas-groups-inclusion-rule.json)
+- [x] **Level 1** - Single nested criteria (event → CorrelatedCriteria → events) (✓ atlas-complex-nested-correlated.json)
+- [x] **Level 2** - Two levels deep (event → CorrelatedCriteria → Groups → events) (✓ atlas-complex-nested-correlated.json)
+- [x] **Level 3** - Three levels deep (✓ atlas-complex-nested-correlated.json: Death → CorrelatedCriteria → ObservationPeriod → CorrelatedCriteria → Measurement)
 - [ ] **Level 4+** - Deep nesting (arbitrary depth)
 
 #### D.2 Nesting Locations
 
-- [ ] **In PrimaryCriteria** - Entry events with nested criteria
-- [x] **In InclusionRules** - Inclusion criteria with nested groups (✓ TESTED - atlas-groups-inclusion-rule.json)
-- [ ] **In CensoringCriteria** - Exit criteria with nested events
-- [ ] **In Groups** - Groups containing nested groups (recursive)
+- [x] **In PrimaryCriteria** - Entry events with nested criteria (✓ atlas-complex-nested-correlated.json: ConditionOccurrence with CorrelatedCriteria)
+- [x] **In InclusionRules** - Inclusion criteria with nested groups (✓ atlas-groups-inclusion-rule.json, atlas-complex-nested-correlated.json)
+- [x] **In CensoringCriteria** - Exit criteria with nested events (✓ atlas-exit-strategy.json)
+- [x] **In Groups** - Groups containing nested groups (✓ atlas-complex-nested-correlated.json: Groups in CorrelatedCriteria)
 
 #### D.3 Nesting Combinations
 
-- [ ] **Events + Demographics** - Both in same nested level
-- [ ] **Events + Groups** - Both in same nested level
-- [ ] **Demographics + Groups** - Both in same nested level
-- [ ] **Events + Demographics + Groups** - All three in same level
+- [x] **Events + Demographics** - Both in same nested level (✓ atlas-complex-nested-correlated.json: Age + empty CriteriaList in CorrelatedCriteria)
+- [x] **Events + Groups** - Both in same nested level (✓ atlas-complex-nested-correlated.json: DeviceExposure + Groups in InclusionRule)
+- [x] **Demographics + Groups** - Both in same nested level (✓ atlas-complex-nested-correlated.json: Age + Groups in CorrelatedCriteria)
+- [ ] **Events + Demographics + Groups** - All three in same level (empty CriteriaList doesn't count)
 
 ### E. CARDINALITY & LOGIC TYPES
 
 #### E.1 Group/Nested Criteria Logic Types
 
-- [ ] **ALL** - All criteria must match
-- [ ] **ANY** - Any criteria can match
+- [x] **ALL** - All criteria must match (✓ Multiple tests)
+- [x] **ANY** - Any criteria can match (✓ atlas-complex-nested-correlated.json: CorrelatedCriteria Type ANY)
 - [ ] **AT_LEAST** - At least N criteria must match (with Count)
-- [ ] **AT_MOST** - At most N criteria can match (with Count)
+- [x] **AT_MOST** - At most N criteria can match (with Count) (✓ atlas-complex-nested-correlated.json: InclusionRule AT_MOST Count 0)
 
 #### E.2 Occurrence Types (Cardinality)
 
@@ -219,8 +219,8 @@ Test that each attribute type preserves values correctly:
 **Type 2: At Least N times**
 
 - [ ] Count = 0 (optional - matches all patients)
-- [ ] Count = 1 (at least once)
-- [ ] Count = 2 (at least twice)
+- [x] Count = 1 (at least once) (✓ atlas-groups-inclusion-rule.json, atlas-complex-nested-correlated.json - multiple occurrences)
+- [x] Count = 2 (at least twice) (✓ atlas-complex-nested-correlated.json - Observation event in nested group)
 - [ ] Count > 2 (at least N times)
 
 #### E.3 Qualifying Events Limits
@@ -345,14 +345,22 @@ test('Round-trip: {scenario}', () => {
 ## Progress Tracking
 
 **Total Items:** 150+
-**Completed:** 10
-**Percentage:** ~7%
+**Completed:** 68+ (marked with [x])
+**Percentage:** ~45%
 
 **Recent Additions:**
 
 - ✅ EndStrategy (DateOffset) - atlas-exit-strategy.json
 - ✅ DemographicCriteriaList (Age, Gender) - atlas-demographics-simple.json
 - ✅ Groups in InclusionRules - atlas-groups-inclusion-rule.json
+- ✅ **Complex Nested CorrelatedCriteria** - atlas-complex-nested-correlated.json (NEW!)
+  - Deep nesting (3 levels)
+  - Groups in CorrelatedCriteria (FIXED!)
+  - Demographics in CorrelatedCriteria
+  - AT_MOST cardinality
+  - ExpressionLimit LATEST
+  - Multiple criteria types: ConditionOccurrence, DrugEra, DrugExposure, DeviceExposure, Death, ObservationPeriod, Observation, Measurement
+  - BETWEEN operator for Age with Extent
 
 Update this checklist as tests are added. Mark items with `[x]` when test coverage is added and passing.
 
