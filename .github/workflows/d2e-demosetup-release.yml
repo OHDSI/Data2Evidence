@@ -72,12 +72,13 @@ jobs:
       - name: Wait for services to be ready
         if: success() || failure()
         run: |
-          sleep 300
           echo "Waiting for services to be ready..."  | tee -a $GITHUB_STEP_SUMMARY
+          sleep 300
           docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee -a $GITHUB_STEP_SUMMARY
       - name: Log status
         if: success() || failure()
         run: |
+          echo "Logging status..."  | tee -a $GITHUB_STEP_SUMMARY
           echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
@@ -131,18 +132,18 @@ jobs:
         run: |
           echo "y" | d2e clean  
 
-      # - name: Discord notification on status
-      #   if: success() || failure()
-      #   uses: tsickert/discord-webhook@v7.0.0
-      #   with:
-      #     webhook-url: ${{ secrets.DISCORD_WEBHOOK_DEVOPS }}
-      #     username: ${{ github.actor }}
-      #     content: "### Status of Installation\n
-      #       install: ${{ steps.install.outcome }}\n
-      #       init: ${{ steps.init.outcome }}\n
-      #       pull: ${{ steps.pull.outcome }}\n
-      #       start: ${{ steps.start.outcome }}\n
-      #       patchdemodb: ${{ steps.patchdemodb.outcome }}\n
-      #       setupdemo: ${{ steps.setupdemo.outcome }}\n
-      #       checkflow: ${{ steps.checkflow.outcome }}\n
-      #       stop: ${{ steps.stop.outcome }}"
+      - name: Discord notification on status
+        if: success() || failure()
+        uses: tsickert/discord-webhook@v7.0.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK_DEVOPS }}
+          username: ${{ github.actor }}
+          content: "### Status of Installation\n
+            install: ${{ steps.install.outcome }}\n
+            init: ${{ steps.init.outcome }}\n
+            pull: ${{ steps.pull.outcome }}\n
+            start: ${{ steps.start.outcome }}\n
+            patchdemodb: ${{ steps.patchdemodb.outcome }}\n
+            setupdemo: ${{ steps.setupdemo.outcome }}\n
+            checkflow: ${{ steps.checkflow.outcome }}\n
+            stop: ${{ steps.stop.outcome }}"
