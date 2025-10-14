@@ -39,7 +39,6 @@ jobs:
         id: install
         run: |
           npm i -g d2e
-          npm list -g 
       
       - name: Initialise d2e
         if: success() || failure()
@@ -65,7 +64,7 @@ jobs:
           retry_on: any
           command: |
             d2e -e start
-            sleep 240
+            sleep 300
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
