@@ -64,6 +64,45 @@ export const isDateRangeAttribute = (
   return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'dateRange'
 }
 
+export const isDateAdjustmentAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'dateAdjustment'
+  }
+> => {
+  // Check for standard type with dateAdjustment config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'dateAdjustment'
+}
+
+export const isBooleanAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'boolean'
+  }
+> => {
+  // Check for standard type with boolean config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'boolean'
+}
+
+export const isTextAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'text'
+  }
+> => {
+  // Check for standard type with text config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'text'
+}
+
 export const hasAttributeId = (
   attr: QueryFilterAttribute
 ): attr is Extract<QueryFilterAttribute, { attributeId: string }> => {

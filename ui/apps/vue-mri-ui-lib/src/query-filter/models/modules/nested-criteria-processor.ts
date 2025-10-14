@@ -10,9 +10,18 @@ import type {
   GroupCriteria,
   NumericRange,
   DateRange,
+  DateAdjustment,
   Window,
 } from '../../types/AtlasTypes'
-import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId, isDateRangeAttribute } from './type-guards'
+import {
+  isNestedAttribute,
+  isNumericRangeAttribute,
+  hasAttributeId,
+  isDateRangeAttribute,
+  isDateAdjustmentAttribute,
+  isBooleanAttribute,
+  isTextAttribute,
+} from './type-guards'
 import { mapCardinalityTypeToAtlas, mapEventTypeToAtlas, mapOperatorToAtlas } from './atlas-mappers'
 import { getAtlasAttributeKey } from '../../utils/AtlasUtils'
 
@@ -573,7 +582,7 @@ export const buildNestedCriteriaFromAttributes = (
           }
           // Handle numericRange attributes (age, ageAtStart, ageAtEnd, etc.)
           else if (isNumericRangeAttribute(attr)) {
-            const attributeKey = getAtlasAttributeKey(attr.attributeId, 'DemographicCriteria')
+            const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
             const numericConfig: NumericRange = {
               Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
               Value: attr.value !== undefined ? parseInt(attr.value) : 0,
@@ -588,7 +597,42 @@ export const buildNestedCriteriaFromAttributes = (
               numericConfig,
             })
           }
-          // TODO: Add handlers for other attribute types (dateRange, boolean, text, dateAdjustment, userDefinedPeriod)
+          // Handle dateRange attributes (startDate, endDate, etc.)
+          else if (isDateRangeAttribute(attr)) {
+            const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+            const dateConfig: DateRange = {
+              Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+              Value: attr.value || '',
+              Extent: attr.extent || '',
+            }
+            // Remove Extent if it's empty (for operators other than BETWEEN/NOT_BETWEEN)
+            if (!dateConfig.Extent) {
+              delete (dateConfig as any).Extent
+            }
+            criteria.Criteria[atlasEventType][attributeKey] = dateConfig
+          }
+          // Handle dateAdjustment attributes
+          else if (isDateAdjustmentAttribute(attr)) {
+            const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+            const dateAdjustmentConfig: DateAdjustment = {
+              StartWith: attr.startWith || 'START_DATE',
+              StartOffset: attr.startOffset || 0,
+              EndWith: attr.endWith || 'END_DATE',
+              EndOffset: attr.endOffset || 0,
+            }
+            criteria.Criteria[atlasEventType][attributeKey] = dateAdjustmentConfig
+          }
+          // Handle boolean attributes (First, etc.)
+          else if (isBooleanAttribute(attr)) {
+            const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+            criteria.Criteria[atlasEventType][attributeKey] = attr.value || false
+          }
+          // Handle text attributes (ValueAsString, etc.)
+          else if (isTextAttribute(attr)) {
+            const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+            criteria.Criteria[atlasEventType][attributeKey] = attr.value || ''
+          }
+          // TODO: Add handler for userDefinedPeriod if needed
           // For now, log unsupported types to help identify what needs implementation
           else {
             console.warn('[nested-criteria-processor] Unsupported attribute type:', {

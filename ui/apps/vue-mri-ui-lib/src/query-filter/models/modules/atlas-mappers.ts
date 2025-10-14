@@ -71,8 +71,7 @@ export const toPascalCase = (str: string): string => {
 }
 
 export const mapOperatorToAtlas = (operator: string): NumericRange['Op'] => {
-  // TODO: Verify Atlas format mappings for BETWEEN and NOT_BETWEEN operators
-  // These mappings are educated guesses based on common patterns
+  // Atlas format mappings verified from OHDSI documentation
   switch (operator) {
     case 'GREATER_THAN':
       return 'gt'
@@ -87,7 +86,7 @@ export const mapOperatorToAtlas = (operator: string): NumericRange['Op'] => {
     case 'BETWEEN':
       return 'bt' // Common abbreviation for "between"
     case 'NOT_BETWEEN':
-      return 'nbt' // Not between - may need verification
+      return '!bt' // Not between - Atlas uses !bt notation
     default:
       return 'gt'
   }

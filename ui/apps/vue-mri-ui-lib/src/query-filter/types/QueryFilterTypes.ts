@@ -108,16 +108,37 @@ export type QueryFilterAttributeDateRange = StandardAttributeBase & {
   extent?: string // For BETWEEN/NOT_BETWEEN ranges
   description?: string
 }
+export type QueryFilterAttributeDateAdjustment = StandardAttributeBase & {
+  configType: 'dateAdjustment'
+  startWith?: 'START_DATE' | 'END_DATE'
+  startOffset?: number
+  endWith?: 'START_DATE' | 'END_DATE'
+  endOffset?: number
+  description?: string
+}
+export type QueryFilterAttributeBoolean = StandardAttributeBase & {
+  configType: 'boolean'
+  value?: boolean
+  description?: string
+}
+export type QueryFilterAttributeText = StandardAttributeBase & {
+  configType: 'text'
+  value?: string
+  description?: string
+}
 export type QueryFilterAttribute =
   | QueryFilterAttributeNested
   | QueryFilterAttributeNumericRange
   | QueryFilterAttributeConceptSet
   | QueryFilterAttributeConcept
   | QueryFilterAttributeDateRange
+  | QueryFilterAttributeDateAdjustment
+  | QueryFilterAttributeBoolean
+  | QueryFilterAttributeText
   | (StandardAttributeBase & {
       configType?: string // For other config types not explicitly defined
       description?: string
-      value?: string
+      value?: string | boolean
     })
 
 export interface QueryFilterGroup {

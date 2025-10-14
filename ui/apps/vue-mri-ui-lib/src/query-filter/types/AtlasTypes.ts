@@ -205,13 +205,20 @@ export interface CriteriaListItem {
 export interface DateRange {
   Value: string // ISO date string
   Extent: string // ISO date string
-  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | 'nbt'
+  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | '!bt'
 }
 
 export interface NumericRange {
   Value: number
   Extent?: number
-  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | 'nbt'
+  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | '!bt'
+}
+
+export interface DateAdjustment {
+  StartWith: 'START_DATE' | 'END_DATE'
+  StartOffset: number
+  EndWith: 'START_DATE' | 'END_DATE'
+  EndOffset: number
 }
 
 export interface ObservationWindow {

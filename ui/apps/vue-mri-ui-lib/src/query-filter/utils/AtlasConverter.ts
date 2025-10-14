@@ -31,6 +31,7 @@ import {
 } from '../types/AtlasTypes'
 
 import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
+import configLoaderSingleton from './ConfigLoader'
 import type ConfigLoader from './ConfigLoader'
 import { mapAtlasToCardinality } from './AtlasUtils'
 import { attributeMap } from './AtlasAttributeLookup'
@@ -123,7 +124,7 @@ const convertConceptSetArrayToAttribute = (
   attributeId: string,
   conceptArray: Concept[],
   eventType: string,
-  configLoader?: typeof ConfigLoader
+  configLoader = configLoaderSingleton
 ): QueryFilterAttribute => {
   const conceptItems = convertAtlasConceptsToInternal(conceptArray)
 
@@ -204,7 +205,7 @@ const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedC
 export const convertAtlasToFilters = (
   atlasJson: AtlasCohortDefinition,
   availableConceptSets: ConceptSetItemDisplay[] = [],
-  configLoader?: typeof ConfigLoader
+  configLoader = configLoaderSingleton
 ): QueryFilterCriteriaManager => {
   try {
     if (!atlasJson) {
@@ -418,7 +419,7 @@ export const convertAtlasToFilters = (
         }
 
         // Handle all attributes on the event dynamically using configuration
-        // This includes: concept arrays, NumericRange (Age, AgeAtStart, etc), DateRange, and other types
+        // This includes: concept arrays, NumericRange, DateRange, DateAdjustment, Boolean, Text, and other types
         if (configLoader) {
           const atlasKeyToAttributeIdMap = configLoader.getAtlasJsonToAttributeMapping(eventType)
 
@@ -437,8 +438,62 @@ export const convertAtlasToFilters = (
               const attributeConfig = configLoader.getAttributeConfig(eventType, attributeId)
 
               if (attributeConfig) {
-                // Check if value is a NumericRange object {Op, Value, Extent?}
-                if (typeof value === 'object' && value !== null && 'Op' in value && 'Value' in value) {
+                if (!event.attributes) {
+                  event.attributes = []
+                }
+
+                // Check if value is a DateAdjustment object {StartWith, StartOffset, EndWith, EndOffset}
+                if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'StartWith' in value &&
+                  'StartOffset' in value &&
+                  'EndWith' in value &&
+                  'EndOffset' in value
+                ) {
+                  const dateAdjustment = value as any
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'dateAdjustment',
+                    startWith: dateAdjustment.StartWith,
+                    startOffset: dateAdjustment.StartOffset,
+                    endWith: dateAdjustment.EndWith,
+                    endOffset: dateAdjustment.EndOffset,
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Check if value is a DateRange object {Op, Value: string, Extent?}
+                else if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'string'
+                ) {
+                  const dateRange = value as any
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'dateRange',
+                    operator: mapAtlasOperatorToInternal(dateRange.Op || 'gt'),
+                    value: dateRange.Value,
+                    ...(dateRange.Extent !== undefined && { extent: dateRange.Extent }),
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Check if value is a NumericRange object {Op, Value: number, Extent?}
+                else if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'number'
+                ) {
                   const numericRange = value as NumericRange
                   event.attributes.push({
                     id: `attribute_${Math.random().toString(36).substring(2)}`,
@@ -451,8 +506,33 @@ export const convertAtlasToFilters = (
                     name: attributeConfig.name || attributeId,
                     description: attributeConfig.description || '',
                   })
-                } else {
-                  // Handle other attribute types
+                }
+                // Check if value is a boolean
+                else if (typeof value === 'boolean') {
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'boolean',
+                    value: value,
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Check if value is a string (text attribute)
+                else if (typeof value === 'string') {
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'text',
+                    value: value,
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Handle other attribute types generically
+                else {
                   event.attributes.push({
                     id: `attribute_${Math.random().toString(36).substring(2)}`,
                     attributeId: attributeId,
@@ -700,6 +780,7 @@ export const convertAtlasToFilters = (
         case 'bt':
           return 'BETWEEN'
         case 'nbt':
+        case '!bt':
           return 'NOT_BETWEEN'
         default:
           return 'GREATER_THAN'

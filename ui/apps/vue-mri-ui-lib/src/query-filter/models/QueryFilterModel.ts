@@ -12,6 +12,7 @@ import type {
   CriteriaListItem,
   GroupCriteria,
   DateRange,
+  DateAdjustment,
 } from '../types/AtlasTypes'
 import type {
   QueryFilterEvent,
@@ -24,7 +25,15 @@ import type {
   QueryFilterCriteriaManageData,
 } from '../types/QueryFilterTypes'
 import { getAtlasAttributeKey } from '../utils/AtlasUtils'
-import { isNestedAttribute, isNumericRangeAttribute, hasAttributeId, isDateRangeAttribute } from './modules/type-guards'
+import {
+  isNestedAttribute,
+  isNumericRangeAttribute,
+  hasAttributeId,
+  isDateRangeAttribute,
+  isDateAdjustmentAttribute,
+  isBooleanAttribute,
+  isTextAttribute,
+} from './modules/type-guards'
 import {
   mapCriteriaTypeToAtlas,
   mapCardinalityTypeToAtlas,
@@ -494,13 +503,45 @@ export class QueryFilterCriteriaManager {
                             Value: attr.value || '',
                             Extent: attr.extent || '',
                           }
+                          // Remove Extent if it's empty (for operators other than BETWEEN/NOT_BETWEEN)
+                          if (!dateConfig.Extent) {
+                            delete (dateConfig as any).Extent
+                          }
                           criteria.Criteria[atlasEventType][attributeKey] = dateConfig
                           console.log('[QueryFilterModel] Added dateRange attribute:', { attributeKey, dateConfig })
                         }
-                        // Handle boolean attributes
-                        else if (attr.configType === 'boolean') {
+                        // Handle dateAdjustment attributes
+                        else if (attr.configType === 'dateAdjustment' && isDateAdjustmentAttribute(attr)) {
                           const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
-                          criteria.Criteria[atlasEventType][attributeKey] = true
+                          const dateAdjustmentConfig: DateAdjustment = {
+                            StartWith: attr.startWith || 'START_DATE',
+                            StartOffset: attr.startOffset || 0,
+                            EndWith: attr.endWith || 'END_DATE',
+                            EndOffset: attr.endOffset || 0,
+                          }
+                          criteria.Criteria[atlasEventType][attributeKey] = dateAdjustmentConfig
+                          console.log('[QueryFilterModel] Added dateAdjustment attribute:', {
+                            attributeKey,
+                            dateAdjustmentConfig,
+                          })
+                        }
+                        // Handle boolean attributes
+                        else if (attr.configType === 'boolean' && isBooleanAttribute(attr)) {
+                          const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                          criteria.Criteria[atlasEventType][attributeKey] = attr.value || false
+                          console.log('[QueryFilterModel] Added boolean attribute:', {
+                            attributeKey,
+                            value: attr.value,
+                          })
+                        }
+                        // Handle text attributes
+                        else if (attr.configType === 'text' && isTextAttribute(attr)) {
+                          const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                          criteria.Criteria[atlasEventType][attributeKey] = attr.value || ''
+                          console.log('[QueryFilterModel] Added text attribute:', {
+                            attributeKey,
+                            value: attr.value,
+                          })
                         }
                         // Generic fallback for other attribute types
                         else if ('value' in attr && attr.value) {
