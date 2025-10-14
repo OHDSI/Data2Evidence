@@ -217,7 +217,7 @@ jobs:
           if [[ $SHOULD_PUBLISH == true ]]; then
              ${{ matrix.NPM || 'npm' }} publish
           else
-            ${{ matrix.NPM == 'bun' && 'bun pm pack' || ${{ matrix.NPM || 'npm' }} pack }}
+             ${{ matrix.NPM == 'bun' && 'bun pm pack' || ${{ matrix.NPM || 'npm' }} pack }}
           fi
 
   success:
