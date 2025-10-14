@@ -1,6 +1,11 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { env } from "../env.ts";
-import { ICohortDefinition, IAnalyticsCohortDefinition } from "./types.ts";
+import {
+  ICohortDefinition,
+  IAnalyticsCohortDefinition,
+  IFilterValue,
+  IBaseMaterializedCohort,
+} from "./types.ts";
 
 export class AnalyticsSvcAPI {
   private readonly baseURL: string;
@@ -121,6 +126,31 @@ export class AnalyticsSvcAPI {
       return result.data;
     } catch (error) {
       console.error(`Error while getting cdm version: ${error}`);
+      throw error;
+    }
+  }
+
+  async getFilteredCohorts(
+    datasetId: string,
+    filterValue: IFilterValue
+  ): Promise<IBaseMaterializedCohort[]> {
+    try {
+      const url = `${this.baseURL}/cohort/SYNTAX/${encodeURIComponent(
+        JSON.stringify(filterValue)
+      )}`;
+      console.log(`Calling ${url} to get filtered cohorts`);
+      const options = this.getRequestConfig();
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+      params.append("excludePatientIds", "true");
+      const result = await axios.get(url, { ...options, params });
+      if (result.data) {
+        return result.data.data;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.error(`Error while getting all cohorts: ${error}`);
       throw error;
     }
   }

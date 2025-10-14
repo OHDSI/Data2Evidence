@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'dataset-new-schema-omop-cdm-plugin-53'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+const randomString = 'omop53' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/portal')
@@ -16,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page.getByRole('button', { name: 'Add dataset' }).click()
   await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test Study 4')
+  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill('Test Study')
   await page.getByRole('textbox', { name: 'Dataset summary' }).click()
   await page.getByRole('textbox', { name: 'Dataset summary' }).fill('Test Summary')
   await page.locator('pre').nth(1).click()
@@ -27,20 +29,31 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
   await page.locator('#mui-component-select-vocabSchemaOption').click()
   await page.getByRole('option', { name: 'demo_cdm' }).click()
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.locator('#mui-component-select-dataModelOption').click()
   await page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).click()
-  await page.getByRole('textbox', { name: 'Token dataset code' }).fill('ts4')
+
+  await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomString)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await expect(page.getByText('Test Study 4')).toBeVisible()
+  await expect(page.getByText('Test Study')).toBeVisible()
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
-  const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_ts4_"))').first()
+  const firstEntry = page.locator(`a:has(span:text("datamodel-create-cdm_${randomString}"))`).first()
   // Find the closest state badge to this entry (adjust the selector as needed)
   const stateBadge = firstEntry.locator(
     'xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]'
   )
   await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page
+    .getByRole('row', { name: /Test Study/ })
+    .filter({ hasText: 'Not Available' })
+    .getByRole('button')
+    .nth(2)
+    .click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
 })

@@ -34,7 +34,7 @@ export const validateStudyIdMiddleware = async (
   }
 };
 
-async function validateStudyId(
+export async function validateStudyId(
   studyId: string,
   token?: string
 ): Promise<boolean> {

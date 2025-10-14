@@ -1,16 +1,17 @@
-import pandas as pd
-from sqlalchemy import text
-import sqlalchemy_hana
-from zipfile import ZipFile
 import requests
+import pandas as pd
 from pathlib import Path
-from _shared_flow_utils.dao.DBDao import DBDao
-from _shared_flow_utils.create_dataset_tasks import *
-from prefect import flow, task, get_run_logger
-from time import sleep
+from shutil import rmtree
+from sqlalchemy import text
+from zipfile import ZipFile
 from functools import partial
 
-from .types import DataloadOptions
+from prefect import flow, task, get_run_logger
+
+from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.create_dataset_tasks import *
+
+from .types import DataloadOptions, FlowActionType
 from .constants import (
     BASE_URL,
     DATA_DIR,
@@ -20,25 +21,40 @@ from .constants import (
     SQL_FILES_ORDER
 )
 
+os.environ["plugin_name"] = "hana_load_plugin"
+
 # flows
 @flow(log_prints=True)
 def hana_load_plugin(options: DataloadOptions):
+    match options.flow_action_type:
+        case FlowActionType.CREATE_DATA_MODEL:
+            create_datamodel(options)
+        # Todo: implement get get_version_info for hana
+        case FlowActionType.GET_VERSION_INFO:
+            get_version_info(options)
+
+
+
+def get_version_info(options: DataloadOptions):
+    pass
+
+def create_datamodel(options: DataloadOptions):
     logger = get_run_logger()
     database_code = options.database_code
     use_cache_db = options.use_cache_db
     schema = options.schema_name
+    results_schema = options.results_schema
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
-
-    # Download dataset if zip is missing
-    if not ZIP_PATH.exists():
-        zip_path = download_eunomia()
-    else:
-        logger.info("Zip already exists, skipping download.")
-        zip_path = ZIP_PATH
 
     # Extract dataset if folder missing or empty
     if not (EXTRACT_DIR.exists() and any(EXTRACT_DIR.iterdir())):
-        folder = unzip_dataset(zip_path)
+        # Download dataset if zip is missing
+        if not ZIP_PATH.exists():
+            zip_path = download_eunomia()
+            folder = unzip_dataset(zip_path)
+        else:
+            logger.info("Zip already exists, skipping download.")
+            zip_path = ZIP_PATH
     else:
         logger.info("Extracted folder already exists, skipping unzip.")
         folder = EXTRACT_DIR
@@ -51,7 +67,20 @@ def hana_load_plugin(options: DataloadOptions):
             drop_schema_hook, **dict(dbdao=dbdao, schema=schema)
         )]
     )
+
     create_datamodel_wo(schema, dbdao, folder)
+
+    # Create results schema
+    create_schema_task(dbdao, results_schema)
+
+    # Parent task with hook to drop results schema on failure
+    create_results_tables = create_results_tables_parent_task.with_options(
+        on_failure=[partial(
+            drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema)
+        )]
+    )
+
+    create_results_tables(dbdao, results_schema)
 
 #task
 @task(log_prints=True)
@@ -115,6 +144,8 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
         table_name = csv_file.stem.lower()
         logger.info(f"Loading {csv_file.name} -> {schema}.{table_name}")
         df = pd.read_csv(csv_file)
+        if (table_name == 'vocabulary' or table_name == 'concept'):
+            df['VOCABULARY_ID'] = df['VOCABULARY_ID'].fillna('None')
         df.to_sql(
             table_name,
             dbdao.engine,
@@ -122,3 +153,4 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
             if_exists="append",
             index=False
         )
+    rmtree(DATA_DIR)

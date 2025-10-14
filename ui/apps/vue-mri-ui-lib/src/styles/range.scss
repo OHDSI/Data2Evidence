@@ -1,4 +1,3 @@
-@import './mri-variables';
 @import './mri-bootstrap-variables';
 @import './mixins';
 
@@ -10,10 +9,10 @@ div.app-variant-range {
   border-radius: 0px !important;
   width: 100%;
   width: 100%;
-  background-color: $UiLightestBG;
+  background-color: var(--color-ui-lightest-bg);
 
   &.form-control {
-    border-color: $MriDropDownBorderLight;
+    border-color: var(--color-mri-dropdown-border-light);
   }
 
   input {
@@ -35,7 +34,7 @@ div.app-variant-range {
     margin-right: 4px;
     margin-top: 2px;
     border-radius: 0.125rem;
-    border: 1px $MriTokenValidSyntaxBorder solid;
+    border: 1px var(--color-mri-token-valid-syntax-border) solid;
     font-size: 0.76563rem;
     font-weight: bold;
     .tokenText {
@@ -54,23 +53,23 @@ div.app-variant-range {
 
   .MriPaFailToken,
   .MriPaFilterCard .sapMToken.MriPaFailToken:hover {
-    color: $MriLightestText;
-    background-color: $MriTokenInvalidBG;
-    border-color: $MriTokenInvalidBorder;
+    color: var(--color-mri-lightest-text);
+    background-color: var(--color-mri-token-invalid-bg);
+    border-color: var(--color-mri-token-invalid-border);
     cursor: default;
   }
   .MriPaValidToken,
   .MriPaFilterCard .sapMToken.MriPaValidToken:hover {
-    border-color: $MriTokenValidSyntaxBorder;
-    color: $MriSelectTokenValidTextDark;
-    background-color: $MriSelectTokenValidBGLight;
+    border-color: var(--color-mri-token-valid-syntax-border);
+    color: var(--color-mri-select-token-valid-text-dark);
+    background-color: var(--color-mri-select-token-valid-bg-light);
     cursor: default;
   }
   .MriPaUnknownToken,
   .MriPaFilterCard .sapMToken.MriPaUnknownToken:hover {
-    color: $MriLightestText;
-    background-color: $MriTokenPendingBG;
-    border-color: $MriTokenPendingBorder;
+    color: var(--color-mri-lightest-text);
+    background-color: var(--color-mri-token-pending-bg);
+    border-color: var(--color-mri-token-pending-border);
     cursor: default;
   }
   .MriPaValidToken .sapMTokenIcon[style],
@@ -84,12 +83,12 @@ div.app-variant-range {
     opacity: 0.7;
   }
   .MriPaValidToken span.sapMTokenIcon {
-    color: $MriValidSyntaxText;
+    color: var(--color-mri-valid-syntax-text);
     cursor: pointer;
   }
   .MriPaFailToken span.sapMTokenIcon,
   .MriPaUnknownToken span.sapMTokenIcon {
-    color: $MriLightestText;
+    color: var(--color-mri-lightest-text);
     cursor: pointer;
   }
   .MriPaFailToken .sapMTokenText:after {

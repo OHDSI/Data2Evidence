@@ -1,5 +1,8 @@
 name: d2e/demosetup-dev
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch: # Allow manual triggering
   pull_request:
@@ -11,7 +14,7 @@ on:
 
 env:
   VERSION: develop
-
+  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
 
 jobs:
   demosetup:
@@ -32,7 +35,7 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: true
-      
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -40,7 +43,7 @@ jobs:
       - name: npm install
         if: success() || failure()
         run: |
-          npm install 
+          npm install
 
       - name: Initialise d2e
         if: success() || failure()
@@ -54,6 +57,10 @@ jobs:
           filters: |
             flow_base:
               - "flows/base/**"
+            flow_i2b2:
+              - "flows/i2b2/**"
+            flow_data_management:
+              - "flows/data_management/**"
             ui: 
               - "ui/**"
 
@@ -62,6 +69,18 @@ jobs:
         id: build_flow_base_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+        
+      - name: Build i2b2 docker image
+        if: steps.file_changes.outputs.flow_i2b2 == 'true'
+        id: build_i2b2_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./flows
+
+      - name: Build data management docker image
+        if: steps.file_changes.outputs.flow_data_management == 'true'
+        id: build_dm_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
 
       - name: Build docker images
         if: success() || failure()
@@ -75,7 +94,7 @@ jobs:
         id: prune
         run: |
           docker buildx prune -af
-      
+
       - name: Start services
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -91,7 +110,7 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-      
+
       - name: Log status
         if: success() || failure()
         run: |
@@ -101,8 +120,8 @@ jobs:
           echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
           DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
           echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
-      
-      - name: Logs 
+
+      - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -122,8 +141,8 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-  
-      - name: Logs 
+
+      - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -145,7 +164,7 @@ jobs:
       - name: UI Setup yarn
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
-        run: npm install -g yarn      
+        run: npm install -g yarn
       - name: UI Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         working-directory: ./ui
@@ -155,18 +174,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential curl file git
           yarn
-          yarn build-all 2>/dev/null
+          yarn build-all --verbose 2>&1 | tee build-logs.txt
+      - name: Upload UI Build Logs
+        if: ${{ steps.file_changes.outputs.ui == 'true' && failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-build-logs
+          path: ui/build-logs.txt
       - name: UI docker-compose-local
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
           sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
-      
+
       - name: Restart d2e services
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions start
-      
+
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
@@ -186,13 +211,13 @@ jobs:
           npm test
 
       - name: Upload Error Context
-        if: always()  # Always run, even if the previous step fails
+        if: always() # Always run, even if the previous step fails
         uses: actions/upload-artifact@v4
         with:
           name: error-context
           path: tests/e2e/test-results/**/*
 
-      - name: Logs 
+      - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
@@ -201,9 +226,9 @@ jobs:
         if: always()
         uses: ctrf-io/github-test-reporter@v1
         with:
-          report-path: './tests/e2e/ctrf/*.json'
+          report-path: "./tests/e2e/ctrf/*.json"
           file-report: true
-        
+
       - name: Stop d2e services
         if: success() || failure()
         id: stop

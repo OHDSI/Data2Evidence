@@ -1,4 +1,4 @@
-@import './mri-variables';
+@import './mri-bootstrap-variables';
 
 @mixin mriBaseStyle {
   font-family: $font-family-base;
@@ -11,11 +11,11 @@
 }
 
 @mixin mriHiliteStyle {
-  border: 1px solid $HoverBorder;
+  border: 1px solid var(--color-hover-border);
 }
 
 @mixin mriFocusStyle {
-  outline: 1px dotted $UiFocus;
+  outline: 1px dotted var(--color-focus);
   outline-offset: -3px;
 }
 
@@ -37,11 +37,11 @@
 
 @mixin mriActionButtonHoverable {
   &:hover {
-    background-color: $MriButtonHoverDark;
+    background-color: var(--color-mri-button-hover-dark);
     border-radius: 3.1px;
     .icon,
     .app-icon {
-      color: $MriLightestText;
+      color: var(--color-mri-lightest-text);
     }
   }
 }
@@ -49,6 +49,6 @@
 @mixin mriTagFocus {
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px $UiFocus;
+    box-shadow: 0 0 0 2px var(--color-focus);
   }
 }

@@ -17,7 +17,7 @@ from .types import DCOptionsType, AchillesParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-from _shared_flow_utils.rutils import set_trex_env_var, py_bool_to_r
+from _shared_flow_utils.rutils import set_trex_env_var
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
 
 
@@ -53,7 +53,7 @@ def data_characterization_plugin(options: DCOptionsType):
         use_trex_connection=use_trex_connection,
     )
 
-    r_connection_string = dbdao.get_database_connector_connection_string(
+    r_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=UserType.ADMIN_USER, release_date=options.releaseDate
     )
 
@@ -195,43 +195,28 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             f"Running Achilles::achilles on thread count: {achilles_params.numThreads}"
         )
 
-        r_script = f"""
-            library('Achilles')
-                
-            {set_trex_env_string}
-            {achilles_params.setDBDriverEnv}
-            {achilles_params.connectionDetails}
-
-            cdmVersion <- '{achilles_params.cdmVersionNumber}'
-            cdmDatabaseSchema <- '{achilles_params.schemaName}'
-            vocabDatabaseSchema <- '{achilles_params.vocabSchemaName}'
-            resultsDatabaseSchema <- '{achilles_params.resultsSchema}'
-            outputFolder <- '{achilles_params.outputFolder}'
-            numThreads <- {achilles_params.numThreads}
-            createTable <- {py_bool_to_r(achilles_params.createTable)}
-            sqlOnly <- {py_bool_to_r(achilles_params.sqlOnly)}
-            verboseMode <- {py_bool_to_r(achilles_params.verboseMode)}
-            createIndices <- {py_bool_to_r(achilles_params.createIndices)}
-            excludeAnalysisIds <- c({achilles_params.excludeAnalysisIds})
-
-            Achilles::achilles(
-                connectionDetail = connectionDetails, 
-                cdmVersion = cdmVersion, 
-                cdmDatabaseSchema = cdmDatabaseSchema, 
-                createTable = createTable, 
-                resultsDatabaseSchema = resultsDatabaseSchema, 
-                outputFolder = outputFolder, 
-                sqlOnly = sqlOnly, 
-                numThreads = numThreads, 
-                verboseMode = verboseMode, 
-                excludeAnalysisIds = excludeAnalysisIds, 
-                createIndices = createIndices
-            )
-            """
+        r_script_path = os.path.join(os.path.dirname(__file__), "execute_achilles.R")
 
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(r_script)
-
+            robjects.r(f"source('{r_script_path}')")
+            r_execute_achilles = robjects.r['execute_achilles']
+            r_execute_achilles(
+                set_trex_env_string=set_trex_env_string,
+                setDBDriverEnv=achilles_params.setDBDriverEnv,
+                connectionDetailsString=achilles_params.connectionDetails,
+                cdmVersion=achilles_params.cdmVersionNumber,
+                cdmDatabaseSchema=achilles_params.schemaName,
+                vocabDatabaseSchema=achilles_params.vocabSchemaName,
+                createTable=achilles_params.createTable,
+                resultsDatabaseSchema=achilles_params.resultsSchema,
+                outputFolder=achilles_params.outputFolder,
+                sqlOnly=achilles_params.sqlOnly,
+                numThreads=achilles_params.numThreads,
+                verboseMode=achilles_params.verboseMode,
+                excludeAnalysisIds=robjects.StrVector([achilles_params.excludeAnalysisIds]) if achilles_params.excludeAnalysisIds else robjects.NULL,
+                createIndices=achilles_params.createIndices
+            )
+            
         # Todo: Task will succeed so need to check for error report or analyses
         error_message = get_error_message(
             "errorReportR.txt", achilles_params.outputFolder
@@ -279,35 +264,25 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
     logger = get_run_logger()
     logger.info("Running Achilles::exportToAres")
-
+    
     set_trex_env_string = set_trex_env_var(achilles_params.use_trex_connection)
 
-    r_script = f"""
-        library('Achilles')
-
-        {set_trex_env_string}
-        {achilles_params.setDBDriverEnv}
-        {achilles_params.connectionDetails}
-
-        cdmVersion <- '{achilles_params.cdmVersionNumber}'
-        cdmDatabaseSchema <- '{achilles_params.schemaName}'
-        vocabDatabaseSchema <- '{achilles_params.vocabSchemaName}'
-        resultsDatabaseSchema <- '{achilles_params.resultsSchema}'
-        outputPath <- '{achilles_params.outputFolder}'
-
-        Achilles::exportToAres(
-            connectionDetails = connectionDetails,
-            cdmDatabaseSchema = cdmDatabaseSchema,
-            resultsDatabaseSchema = resultsDatabaseSchema,
-            vocabDatabaseSchema = vocabDatabaseSchema,
-            outputPath = outputPath,
-            reports = c()
-        )
-    """
-
+    r_script_path = os.path.join(os.path.dirname(__file__), "export_to_ares.R")
     try:
         with robjects.conversion.localconverter(robjects.default_converter):
-            robjects.r(r_script)
+            robjects.r(f"source('{r_script_path}')")
+            
+            r_export_to_ares = robjects.r['export_to_ares']
+            r_export_to_ares(
+                set_trex_env_string=set_trex_env_string,
+                setDBDriverEnv=achilles_params.setDBDriverEnv,
+                connectionDetailsString=achilles_params.connectionDetails,
+                cdmVersion=achilles_params.cdmVersionNumber,
+                cdmDatabaseSchema=achilles_params.schemaName,
+                vocabDatabaseSchema=achilles_params.vocabSchemaName,
+                resultsDatabaseSchema=achilles_params.resultsSchema,
+                outputPath=achilles_params.outputFolder
+            )   
 
     except Exception as e:
         logger.error("execute_export_to_ares task failed")

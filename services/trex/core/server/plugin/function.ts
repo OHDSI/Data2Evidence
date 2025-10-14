@@ -1,5 +1,6 @@
 import {env, global, logger} from "../env.ts"
 import {waitfor} from "./utils.ts"
+import * as LogtoAPI from '../api/LogtoAPI.ts'
 import { authn } from "../auth/authn.ts"
 import { authz } from "../auth/authz.ts";
 import { Hono, Context } from "npm:hono";
@@ -172,8 +173,8 @@ async function _callInit (servicePath: string, imports: any, fnEnv: any, xenv: a
 	const myenv = Object.assign({ TREX_CURRENT_USER_FUNCTION_NAME }, xenv["_shared"], fnEnv in xenv ? xenv[fnEnv] : {}, {SERVICE_ROUTES: env.SERVICE_ROUTES, TREX_FUNCTION_PATH: `/usr/src/${dir}`})
 	const _myenv =  Object.keys(myenv).map((k) => [k, typeof(myenv[k])==="string"? myenv[k]:JSON.stringify(myenv[k])]);
 	const watch = env.WATCH[fnEnv] || false; 
-	const options: any = {servicePath: servicePath, memoryLimitMb: 150,
-		workerTimeoutMs: 1 * 60 * 1000, noModuleCache: false,
+	const options: any = {servicePath: servicePath, memoryLimitMb: 1000,
+		workerTimeoutMs: 1 * 60 * 3000, noModuleCache: false,
 		importMapPath: imports, envVars: _myenv,
 		forceCreate: env._FORCE_CREATE || watch, netAccessDisabled: false, 
 		cpuTimeSoftLimitMs: 100000, cpuTimeHardLimitMs: 200000,
@@ -253,6 +254,64 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
 	}
 	app.all(url+postfix, authn, authz, async (c: Context) => {
 
+    const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
+
+    if (isWs) {
+      const req = c.req.raw;
+      const url = new URL(c.req.url);
+      const { hostname, port } = new URL(service_url);
+      const serviceUrl = `ws://${hostname}:${port}${url.pathname}${url.search}`;
+
+      const { socket, response } = Deno.upgradeWebSocket(req);
+      const serviceWebSocketConnection = new WebSocket(serviceUrl);
+
+      socket.onmessage = (event) => {
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.send(event.data);
+        }
+      };
+
+      socket.onclose = () => {
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.close();
+        }
+      };
+
+      socket.onerror = (event) => {
+        logger.error(`WebSocket connection request failed: ${event}`);
+        if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+          serviceWebSocketConnection.close(1011, "Client socket error");
+        }
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+
+      serviceWebSocketConnection.onclose = () => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+      };
+
+      serviceWebSocketConnection.onmessage = (event) => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(event.data);
+        }
+      };
+
+      serviceWebSocketConnection.onerror = (event) => {
+        logger.error(`WebSocket connection to service failed: ${event}`);
+        if (
+          socket.readyState === WebSocket.OPEN ||
+          socket.readyState === WebSocket.CONNECTING
+        ) {
+          socket.close(1011, "Service WebSocket connection error");
+        }
+      };
+
+      return response;
+    }
+
 		let newHeaders = new Headers(c.req.raw.headers)
 		newHeaders.append('x-source-origin', env.GATEWAY_WO_PROTOCOL_FQDN)
 		const path = rmsrc? c.req.raw.url.replace(/^[^#]*?:\/\/.*?\//,'/').replace(url,'') : c.req.raw.url.replace(/^[^#]*?:\/\/.*?\//,'/');
@@ -294,7 +353,7 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
         }
     }
     if(value.roles) {
-        for(const [name, cfg] of Object.entries(value.roles)) {
+		Object.entries(value.roles).forEach(async ([name, cfg]) => {
 			let _name;
 			if(name === "IDP_ALP_SVC_CLIENT_ID")
 				_name = env.IDP_ALP_SVC_CLIENT_ID;
@@ -304,13 +363,32 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
 				_name = name
 			if(global.ROLE_SCOPES[_name]) 
 				global.ROLE_SCOPES[_name]= global.ROLE_SCOPES[_name].concat(cfg).filter((v: any, i: any, self: any) => self.lastIndexOf(v) == i);
-			else 
+			else {
             	global.ROLE_SCOPES[_name] = cfg;
-        }
-
+				const roleName = _name
+				// Create the Logto role when the role doesn't exist
+				try {
+					const result = await LogtoAPI.createLogtoRole(roleName);
+					if (result.status === 200) {
+						logger.info(`Created Logto role: ${roleName}`);
+					} else if (result.status === 422) {
+						logger.info(`Logto role '${roleName}' exists`);
+					} else {
+						logger.info(`Logto role creation for '${roleName}' returned status ${result.status}: ${JSON.stringify(result.data)}`);
+					}
+				} catch (err) {
+					logger.error(`Failed to create Logto role '${roleName}': ${err}`);
+				}
+			}
+		});
     }
     if(value.scopes) {
-        global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes)
+        global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(value.scopes);
+		try {
+			await LogtoAPI.createLogtoApisAndScopes(value.scopes);
+		} catch (error) {
+			logger.error(`Failed to create Logto APIs and scopes: ${error}`);
+		}
     }
     
     if(value.api)
@@ -326,5 +404,5 @@ export async function addPlugin(app: Hono, value: any, dir: string, name: string
         } else {
             logger.error("unknown  route type");
         }
-    }); 
+    });
 }

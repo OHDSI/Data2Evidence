@@ -1,4 +1,6 @@
 name: d2e-functions/pa Run HTTP tests
+permissions:
+  contents: read
 
 on:
   pull_request:
@@ -12,6 +14,15 @@ on:
 env:
   VERSION: develop
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
   check_file_changes:
     runs-on: ubuntu-latest
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
@@ -43,10 +54,10 @@ jobs:
               - "docker-compose.yml"
 
   run-http-tests:
-    needs: [check_file_changes]
+    needs: [pick_runner, check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    timeout-minutes: 80
     env:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
@@ -343,6 +354,8 @@ jobs:
       - name: Print alp-trex env vars
         run: |
           echo "$(docker exec alp-trex printenv)"
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
+          ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
 
       - name: Print alp-demodb env vars
         run: |

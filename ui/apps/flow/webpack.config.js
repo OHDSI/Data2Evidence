@@ -15,7 +15,7 @@ module.exports = (env, argv) => {
     : "/";
 
   const entryFile = isBuild ? "module.ts" : "index.tsx";
-  const externals = isBuild ? ["react"] : [];
+  const externals = isBuild ? ["react", "@emotion/react", "@data2evidence/d2e-starboard-wrap"] : [];
 
   return {
     mode: argv.mode,

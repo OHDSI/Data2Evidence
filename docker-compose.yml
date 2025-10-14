@@ -14,7 +14,6 @@ volumes:
   trex:
   demodb-data:
   dicom-sqlite-storage:
-  fhir-binary-1:
   supabase-storage-data:
   hana-data:
 
@@ -46,7 +45,7 @@ x-envs:
     REDIS_PORT: ${REDIS_PORT:-6379}
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
-    TREX__SQL__PORT: 5432
+    TREX__SQL__PORT: 5433
     TREX__SQL__USER: postgres
     TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD:-pencil} # Password for the trex sql interface
     TREX__SQL__DBNAME: postgres
@@ -83,10 +82,6 @@ services:
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated # Volume for dynamically generated cdw-config duckdb file
-      # GOOGLE_APPLICATION_CREDENTIALS can be set in your .env file
-      # If not present, the credentials volume/secret will not be mounted
-      # Ensure that 'BigQuery Read Session User' role is assigned to the service account
-      - ${GOOGLE_APPLICATION_CREDENTIALS:-/dev/null}:/run/secrets/google-credentials.json:ro
     healthcheck:
       interval: 60s
       retries: 30
@@ -123,8 +118,8 @@ services:
         "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
         "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
         "minio": "",
-        "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
-        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
+        "fhir": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-server/fhir/R4",
+        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-server/oauth2/token",
         "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
         "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
         "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
@@ -134,7 +129,8 @@ services:
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
         "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
-        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
+        "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
+        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -170,13 +166,16 @@ services:
       LOGTO__SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
       LOGTO__SVC_CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
       LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
+      LOGTO__ADMIN_SERVER__FQDN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3002
+      LOGTO__DEFAULT_TENANT__FQDN_URL: ${LOGTO__DEFAULT_TENANT__FQDN_URL:-https://default.logto.app/api}
+      LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       NODE_ENV: development
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire"]}'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -189,7 +188,7 @@ services:
       NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
-      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-credentials.json
+      GOOGLE_APPLICATION_CREDENTIALS: /usr/src/data/google-credentials.json
       PG_ADMIN_PASSWORD: ${PG_ADMIN_PASSWORD}
       PG_WRITE_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_STUDY_RESULTS_READ_PASSWORD: ${PG_STUDY_RESULTS_READ_PASSWORD}
@@ -210,7 +209,18 @@ services:
       DEMO__DB_PASSWORD: ${DEMO__DB_PASSWORD:-mypass}
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
-      
+      PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SQL_RETURN_ON: ${SQL_RETURN_ON:-false}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_API_ENDPOINT: ${AZURE_OPENAI_API_ENDPOINT:-}
+      AZURE_OPENAI_API_DEPLOYMENT_NAME: ${AZURE_OPENAI_API_DEPLOYMENT_NAME:-}
+      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-}
+      BIGQUERY_CDM_VERSION: ${BIGQUERY_CDM_VERSION:-5.3}
+      D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
+      D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
+      INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
+
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
@@ -380,60 +390,6 @@ services:
               header_up Host {upstream_hostport}
               transport http {
                 read_buffer 8192
-              }
-            }
-          }
-
-          @jupyter_websocket {
-            path /jupyter/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-
-          @strategus_websocket {
-            path /strategus-results/*
-            header Connection *Upgrade*
-            header Upgrade websocket
-          }
-
-          handle @jupyter_websocket {
-            reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
-              transport http {
-                tls
-                tls_insecure_skip_verify
-                read_buffer 8192
-              }
-
-              method GET
-              rewrite /usermgmt/api/me/is_token_valid_internal
-              header_up X-Forwarded-Method {method}
-              header_up X-Forwarded-Uri {uri}
-              header_up authorization {http.request.uri.query.token}
-
-              @good status 2xx
-              handle_response @good {
-                request_header Remote-User {rp.header.Remote-User}
-                request_header Remote-Email {rp.header.Remote-Email}
-              }
-            }
-
-            reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
-          }
-
-          handle @strategus_websocket {
-            @study_id path_regexp /strategus-results/([^/]+)
-            handle @study_id {
-              uri strip_prefix /strategus-results/{re.1}
-              reverse_proxy {re.1}:3838 {
-                transport http {
-                  read_buffer 8192
-                }
-                header_up Host {re.1}:3838
-                header_up Connection {http.request.header.Connection}
-                header_up Upgrade {http.request.header.Upgrade}
-                header_up Sec-WebSocket-Key {http.request.header.Sec-WebSocket-Key}
-                header_up Sec-WebSocket-Version {http.request.header.Sec-WebSocket-Version}
-                header_up Sec-WebSocket-Protocol {http.request.header.Sec-WebSocket-Protocol}
               }
             }
           }
@@ -645,6 +601,7 @@ services:
     # Enable if need to access admin console
     # ports:
     #  - 3002:3002
+    #  - 3001:3001
     entrypoint:
       - sh
       - -c
@@ -655,6 +612,7 @@ services:
         - *x-tls
       ADMIN_DISABLE_LOCALHOST: ${LOGTO__DISABLE_ADMIN_CONSOLE:-false}
       # ADMIN_ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3002 # Enable if need to access admin console
+      # ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3001 # Enable if need to access admin console
       DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}?options=-c%20search_path%3Dlogto
       ENDPOINT: https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
@@ -763,7 +721,6 @@ services:
       alp:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    profiles: [fhir]
 
   supabase-storage:
     container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
@@ -851,54 +808,6 @@ services:
         echo 'Supabase Storage post-initialization complete!' &&
         exit 0
       "
-
-  fhir-server:
-    container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
-    depends_on:
-      trex:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    healthcheck:
-      interval: 20s
-      retries: 5
-      start_period: 420s
-      test:
-        - CMD
-        - wget
-        - --no-proxy
-        - -O
-        - fhir.status
-        - http://localhost:8103/healthcheck
-    hostname: fhir-server-1
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c6
-    networks:
-      alp:
-        priority: 20
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    volumes:
-      - fhir-binary-1:/home/docker/app/medplum/binary
-    environment:
-      <<:
-        - *x-pg
-        - *x-redis
-        - *x-fhir
-      PG__DB_NAME: alp
-      PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
-      PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      DUCKDB_PATH: /home/docker/app
-      FHIR_CUSTOM_SCHEMA: ${FHIR_CUSTOM_SCHEMA:-fhir}
-      FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
-      FHIR_SCHEMA_FILE_NAME: fhir.schema.json
-      BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
-    profiles: [fhir]
 
   dicom-server:
     # uses 8042 port on the container
@@ -1020,5 +929,5 @@ services:
       alp:
     environment:
       - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
-      - DOZZLE_BASE=/logs
+      - DOZZLE_BASE=/dockerlogs
       - DOZZLE_NO_ANALYTICS=true
