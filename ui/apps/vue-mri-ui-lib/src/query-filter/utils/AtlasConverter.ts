@@ -948,9 +948,15 @@ export const convertAtlasToFilters = (
     }
 
     // Process PrimaryCriteria for entryEvents
-    const entryEvents = {
-      primaryCriteriaLimit: 'ALL' as 'ALL' | 'EARLIEST' | 'LATEST',
-      events: [] as QueryFilterEvent[],
+    const entryEvents: {
+      primaryCriteriaLimit: 'ALL' | 'EARLIEST' | 'LATEST'
+      qualifiedLimit?: 'ALL' | 'EARLIEST' | 'LATEST'
+      events: QueryFilterEvent[]
+      priorDays: number
+      postDays: number
+    } = {
+      primaryCriteriaLimit: 'ALL',
+      events: [],
       priorDays: 0,
       postDays: 0,
     }
@@ -977,6 +983,17 @@ export const convertAtlasToFilters = (
           entryEvents.primaryCriteriaLimit = 'LATEST'
         } else if (limitType === 'All') {
           entryEvents.primaryCriteriaLimit = 'ALL'
+        }
+      }
+
+      // Store QualifiedLimit separately for round-trip preservation
+      if (qualifiedLimitType) {
+        if (qualifiedLimitType === 'First') {
+          entryEvents.qualifiedLimit = 'EARLIEST'
+        } else if (qualifiedLimitType === 'Last') {
+          entryEvents.qualifiedLimit = 'LATEST'
+        } else if (qualifiedLimitType === 'All') {
+          entryEvents.qualifiedLimit = 'ALL'
         }
       }
     }

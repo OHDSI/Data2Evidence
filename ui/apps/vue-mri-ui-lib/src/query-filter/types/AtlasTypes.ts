@@ -340,7 +340,7 @@ export interface AtlasCohortDefinition {
   cdmVersionRange: string
   PrimaryCriteria: PrimaryCriteria
   ConceptSets: ConceptSet[]
-  QualifiedLimit: QualifiedLimit
+  QualifiedLimit: QualifiedLimit // Hardcoded to Type: 'First' to match Atlas default
   ExpressionLimit: ExpressionLimit
   InclusionRules: InclusionRule[]
   EndStrategy?: EndStrategy

@@ -136,6 +136,7 @@ export interface QueryFilterCriteria {
 
 export interface EntryEvent {
   primaryCriteriaLimit: 'ALL' | 'EARLIEST' | 'LATEST'
+  qualifiedLimit?: 'ALL' | 'EARLIEST' | 'LATEST' // Store QualifiedLimit from Atlas import for round-trip
   events: QueryFilterEvent[]
   priorDays: number
   postDays: number

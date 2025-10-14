@@ -53,6 +53,7 @@ export class QueryFilterCriteriaManager {
       if (data.entryEvents) {
         this.entryEvents = {
           primaryCriteriaLimit: data.entryEvents.primaryCriteriaLimit || 'EARLIEST',
+          qualifiedLimit: data.entryEvents.qualifiedLimit, // Preserve QualifiedLimit for round-trip
           events: transformEvents(data.entryEvents.events || []),
           priorDays: data.entryEvents.priorDays || 0,
           postDays: data.entryEvents.postDays || 0,
@@ -363,8 +364,9 @@ export class QueryFilterCriteriaManager {
         },
       },
       QualifiedLimit: {
-        // This is for 'Restrict initial events to'
-        Type: 'First',
+        // NOTE: QualifiedLimit is primarily for AdditionalCriteria (not yet supported)
+        // Use the stored value from import if available, otherwise default to 'First'
+        Type: this.entryEvents.qualifiedLimit ? mapCriteriaTypeToAtlas(this.entryEvents.qualifiedLimit) : 'First',
       },
       ExpressionLimit: {
         Type: mapCriteriaTypeToAtlas(this.inclusionCriteria.qualifyingEventsLimit),

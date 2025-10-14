@@ -282,11 +282,11 @@ describe('Atlas Round-Trip Tests', () => {
       expect(exportedAtlas).toEqual(originalAtlas)
     })
 
-    test.skip('exit strategy - from circe-be censorEventExpression', () => {
-      // SKIPPED: EndStrategy is not currently supported
+    test('exit strategy - from circe-be censorEventExpression', () => {
+      // Tests EndStrategy (DateOffset) and CensoringCriteria
       // Source: circe-be/src/test/resources/cohortgeneration/exits/censorEventExpression.json
       //
-      // TODO: Implement EndStrategy support, then enable this test
+      // EndStrategy is fully implemented with support for DateOffset, CustomEra, and CONT_OBS
       const originalAtlas: AtlasCohortDefinition = require('./data/atlas-fixtures/atlas-exit-strategy.json')
       const mocks = mockConceptSetsForAtlas(originalAtlas)
 
