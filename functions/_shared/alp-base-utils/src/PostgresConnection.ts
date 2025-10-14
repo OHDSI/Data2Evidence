@@ -26,6 +26,7 @@ export class PostgresConnection implements ConnectionInterface {
     public conn: Pool,
     public schemaName,
     public vocabSchemaName,
+    public resultSchema,
     public dialect = "postgresql",
   ) {}
 
@@ -33,11 +34,12 @@ export class PostgresConnection implements ConnectionInterface {
     pool: Pool,
     schemaName,
     vocabSchemaName = schemaName,
+    resultSchema = schemaName,
     callback,
     dialect = "postgresql",
   ) {
     try {
-      const conn = new PostgresConnection(pool, schemaName, vocabSchemaName, dialect);
+      const conn = new PostgresConnection(pool, schemaName, vocabSchemaName, resultSchema, dialect);
       callback(null, conn);
     } catch (err) {
       callback(err, null);
@@ -124,9 +126,9 @@ export class PostgresConnection implements ConnectionInterface {
   public parseSql(temp: string, parameters?: ParameterInterface[]): string {
     switch (this.dialect) {
       case "postgresql":
-        return translateHanaToPostgres(temp, this.schemaName, this.vocabSchemaName);
+        return translateHanaToPostgres(temp, this.schemaName, this.vocabSchemaName, this.resultSchema);
       case "duckdb":
-        return translateHanaToDuckdb(temp, this.schemaName, this.vocabSchemaName, parameters);
+        return translateHanaToDuckdb(temp, this.schemaName, this.vocabSchemaName, this.resultSchema, parameters);
       default:
         throw new Error("Invalid Dialect")
     }
