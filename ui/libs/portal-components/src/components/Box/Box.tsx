@@ -1,5 +1,6 @@
-import { default as MuiBox, BoxProps as MuiBoxProps } from "@mui/material/Box";
+import { BoxProps as MuiBoxProps } from "@mui/material/Box";
 
 export type BoxProps = MuiBoxProps;
 
-export const Box = MuiBox;
+// Re-export MUI Box directly to avoid complex type resolution
+export { default as Box } from "@mui/material/Box";
