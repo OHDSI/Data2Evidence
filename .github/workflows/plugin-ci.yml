@@ -145,8 +145,13 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
+      - name: Setup bun
+        if: ${{ matrix.NPM == 'bun' }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
       - name: Setup NPM
-        if: ${{ matrix.NPM }}
+        if: ${{ matrix.NPM && matrix.NPM != 'bun' }}
         run: npm install -g ${{ matrix.NPM }}
       - name: Install dependencies
         if: ${{ matrix.DESTPATH }}
