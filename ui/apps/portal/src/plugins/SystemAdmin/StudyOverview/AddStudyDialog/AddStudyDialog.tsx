@@ -15,7 +15,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import { SxProps } from "@mui/system";
-import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Box, Autocomplete } from "@portal/components";
+import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Autocomplete } from "@portal/components";
 import {
   NewStudyInput,
   Feedback,
@@ -592,10 +592,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     >
       <Divider />
       <div className="add-study-dialog__content">
-        <Box mt={4} fontWeight="bold">
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>
           {getText(i18nKeys.ADD_STUDY_DIALOG__INFO_CONFIG)}
-        </Box>
-        <Box mb={4}>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -607,8 +607,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           {formError.name.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
-        </Box>
-        <Box mb={4}>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -616,7 +616,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             value={formData.summary}
             onChange={(event) => handleFormDataChange({ summary: event.target.value })}
           />
-        </Box>
+        </div>
         <div>{getText(i18nKeys.ADD_STUDY_DIALOG__DESCRIPTION)}</div>
         <SimpleMDE
           data-testid="add-study-mde"
@@ -626,7 +626,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           style={{ marginTop: "11px" }}
         />
         {/* Schema Options */}
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <FormControl
             sx={styles}
             className="select"
@@ -666,11 +666,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
-        </Box>
+        </div>
 
         {/* DB Input */}
         {displayDatabases && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl
               sx={styles}
               className="select"
@@ -710,13 +710,13 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
             </FormControl>
-          </Box>
+          </div>
         )}
 
         {/* Custom Schema Input */}
         {displaySchemaNameInput &&
           (formData.schemaOption === SchemaTypes.ExistingCDM ? (
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 fullWidth
                 variant="standard"
@@ -728,9 +728,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               {formError.cdmSchemaValue.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
-            </Box>
+            </div>
           ) : formData.schemaOption === SchemaTypes.CustomCDM ? (
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <Autocomplete
                 freeSolo
                 sx={styles}
@@ -751,10 +751,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               {formError.cdmSchemaValue.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__INVALID_SCHEMA_NAME)}</FormHelperText>
               )}
-            </Box>
+            </div>
           ) : (
             formData.schemaOption === SchemaTypes.FHIR && (
-              <Box mb={4}>
+              <div style={{ marginBottom: "32px" }}>
                 <FormControl
                   sx={styles}
                   className="select"
@@ -788,12 +788,12 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
                   )}
                 </FormControl>
-              </Box>
+              </div>
             )
           ))}
 
         {displaySameCdmVocabSchemaCheckbox && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <Checkbox
               checked={formData.isSameCdmSchemaForVocab}
               checkbox-id="is-same-cdm-schema-for-vocab-checkbox"
@@ -807,12 +807,12 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 );
               }}
             />
-          </Box>
+          </div>
         )}
 
         {/* Vocab Schema Dropdown */}
         {displayVocabSchemaDropdown ? (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl
               sx={styles}
               className="select"
@@ -847,11 +847,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
             </FormControl>
-          </Box>
+          </div>
         ) : (
           // Custom Vocab Schema Input
           displayVocabSchemaInput && (
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 fullWidth
                 variant="standard"
@@ -863,11 +863,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               {formError.vocabSchemaValue.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
-            </Box>
+            </div>
           )
         )}
 
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -879,11 +879,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           {formError.resultSchemaValue.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
-        </Box>
+        </div>
 
         {/* Data Model Options */}
         {displayDataModels && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl
               sx={styles}
               className="select"
@@ -917,12 +917,12 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
             </FormControl>
-          </Box>
+          </div>
         )}
 
         {/* Custom Data Model Options */}
         {displayCustomDataModelInput && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               fullWidth
               variant="standard"
@@ -935,10 +935,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             {formError.dataModelCustom.required && (
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
-          </Box>
+          </div>
         )}
 
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <FormControl
             sx={styles}
             className="select"
@@ -969,9 +969,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
-        </Box>
+        </div>
 
-        {/* <Box mb={4}>
+        {/* <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -979,7 +979,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             value={formData.type}
             onChange={(event) => handleFormDataChange({ type: event.target.value })}
           />
-        </Box> */}
+        </div> */}
         <div>
           <Checkbox
             checked={formData.showRequestAccess}
@@ -990,7 +990,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             }}
           />
         </div>
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -1007,7 +1007,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
           )}
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
-        </Box>
+        </div>
         {/* {formData?.schemaOption !== "" && formData?.schemaOption !== SchemaTypes.NoCDM && (
           <div>
             <Checkbox
@@ -1021,8 +1021,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           </div>
         )} */}
 
-        <Box mb={4}>
-          <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__METADATA)}</Box>
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.ADD_STUDY_DIALOG__METADATA)}</div>
           {attributeConfigs.length !== 0 &&
             studyMetadata.map((data, index) => (
               <MetadataForm
@@ -1040,10 +1040,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             title={getText(i18nKeys.ADD_STUDY_DIALOG__ADD_METADATA)}
             onClick={handleAddMetadataForm}
           />
-        </Box>
+        </div>
 
-        {/* <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__TAGS)}</Box>
-        <Box mb={4}>
+        {/* <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.ADD_STUDY_DIALOG__TAGS)}</div>
+        <div style={{ marginBottom: "32px" }}>
           <Autocomplete
             multiple
             sx={styles}
@@ -1058,9 +1058,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             value={studyTagsData}
             onChange={handleTagChange}
           />
-        </Box> */}
+        </div> */}
 
-        {/* <Box mb={4}>
+        {/* <div style={{ marginBottom: "32px" }}>
           <FormControl component="fieldset">
             <FormLabel component="legend">{getText(i18nKeys.ADD_STUDY_DIALOG__DATA_VISIBILITY)}</FormLabel>
             <RadioGroup
@@ -1079,7 +1079,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormControlLabel value="HIDDEN" control={<Radio />} label={getText(i18nKeys.ADD_STUDY_DIALOG__HIDDEN)} />
             </RadioGroup>
           </FormControl>
-        </Box> */}
+        </div> */}
       </div>
       <Divider />
       <div className="button-group-actions">
