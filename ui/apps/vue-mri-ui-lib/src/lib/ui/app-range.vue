@@ -105,7 +105,7 @@ export default {
       this.tagId++
     },
     addFailFilter() {
-      this.errorMsg = 'Invalid input. Use a number, comparison, or interval.'
+      this.errorMsg = this.getText('MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT')
     },
     async openInput() {
       this.inputVisible = true
@@ -243,6 +243,9 @@ export default {
         this.$refs[targetItemRefId][0].focus()
       }
     },
+  },
+  computed: {
+    ...mapGetters(['getText']),
   },
   components: {
     appIcon,

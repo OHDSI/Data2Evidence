@@ -53,7 +53,9 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import moment from 'moment'
 import appIcon from './app-icon.vue'
 import appLabel from './app-label.vue'
+import { useStore } from 'vuex' 
 
+const store = useStore()
 // Component configuration
 defineOptions({
   name: 'AppDate',
@@ -159,7 +161,7 @@ const isValid = ref(true)
 const isActive = ref(false)
 const tempDate = ref<Date | string | null>(null)
 const datepicker = ref()
-const errMsg = computed(() => props.errMsg || (isValid.value ? '' : 'Invalid date'))
+const errMsg = computed(() => props.errMsg || (isValid.value ? '' : store.getters['getText']('MRI_PA_INVALID_DATE')))
 
 // Computed properties
 const defaultConfig = computed(() => ({
