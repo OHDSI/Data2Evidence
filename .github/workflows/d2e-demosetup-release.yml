@@ -39,6 +39,7 @@ jobs:
         id: install
         run: |
           npm i -g d2e
+          npm list -g 
       
       - name: Initialise d2e
         if: success() || failure()
