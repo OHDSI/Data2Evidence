@@ -11,7 +11,7 @@
     "build-all": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin && bun build-ui5 && bun build-starboard && bun build-gateway",
     "build-all-skip-cache": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin --skip-nx-cache && bun build-ui5",
     "build-ui5": "bunx ui5 build -a --clean-dest --dest ./resources/ui5",
-    "build-gateway": "cd apps/gateway-proxy && bun run build && cd ../../",
+    "build-gateway": "cd apps/gateway-proxy && bun run build",
     "build-starboard": "node scripts/build-starboard.js",
     "mri-vue": "bun install; bunx nx build vue-mri",
     "portal-ui": "bun install; bunx nx build @portal/plugin; bunx nx build @portal/components; bunx nx build portal; bunx nx build-mri portal",
