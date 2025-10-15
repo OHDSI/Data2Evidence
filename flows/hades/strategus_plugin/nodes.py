@@ -1249,11 +1249,11 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             )
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                dbms='postgresql', 
-                connectionString=construct_jdbc_url(db_credentials),
+                dbms=dbdao.get_database_connector_dbms_val(), 
+                connectionString=dbdao.get_database_connector_connection_string(),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
-                pathToDriver = databaseConnectorJarFolder
+                pathToDriver=databaseConnectorJarFolder
             )
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
             # create results datamodel settings
@@ -1261,7 +1261,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 resultsDatabaseSchema = results_schema,
                 resultsFolder = path_to_results,
             )
-
             # if schema does not exist, create one (including the data model)
             if(not dbdao.check_schema_exists(results_schema)):
                 dbdao.create_schema(results_schema)
