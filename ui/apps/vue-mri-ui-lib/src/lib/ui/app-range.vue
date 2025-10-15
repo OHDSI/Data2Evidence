@@ -37,6 +37,7 @@
         ref="textControl"
         @blur="onInputBlur"
         @focus="isActive = true"
+        @input="errorMsg = ''"
       />
     </div>
     <div v-if="errorMsg" class="input-error">{{ errorMsg }}</div>
@@ -116,9 +117,10 @@ export default {
       this.isActive = true
       this.errorMsg = ''
     },
-    onInputBlur() {
+    onInputBlur(event) {
       this.isActive = false
       this.errorMsg = ''
+      event.target.value = ''
     },
     getClass(item) {
       return ['MriPaToken', item.valid ? 'MriPaValidToken' : 'MriPaFailToken']
