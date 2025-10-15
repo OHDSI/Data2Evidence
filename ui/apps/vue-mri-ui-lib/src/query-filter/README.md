@@ -1,407 +1,279 @@
-# Query Filter Workflow Documentation
-
-## Overview
-
-The Query Filter module provides a visual interface for building OHDSI Atlas-compatible cohort definitions. It enables users to import Atlas JSON, make visual edits using a hierarchical interface, and save changes back to Atlas format. The system handles complex medical criteria with nested conditions and concept set resolution.
-
-## Component Architecture
-
-The Query Filter system follows a hierarchical component structure that mirrors the complexity of medical cohort definitions:
-
-```mermaid
-graph TD
-    A[QueryFilterModern] -->|Main Container| B[QueryFilterCriteria]
-    A -->|Entry/Exit Events| C[QueryFilterEntryExit]
-    A -->|Concept Management| D[ConceptSetApiService]
-
-    B -->|Criteria Groups| E[QueryFilterCriteriaGroup]
-    E -->|Individual Events| F[QueryFilterEvent]
-    F -->|Event Cards| G[QueryFilterEventCard]
-    F -->|Nested Logic| H[QueryFilterNestedCriteria]
-    H -->|Recursive Events| I[QueryFilterNestedEvent]
-
-    A -->|Data Conversion| J[AtlasConverter]
-    A -->|State Management| K[QueryFilterCriteriaManager]
-
-    style A fill:#e1f5fe
-    style J fill:#fff3e0
-    style K fill:#f3e5f5
-```
-
-### Component Responsibilities
-
-- **QueryFilterModern**: Main orchestrator, handles Atlas import/export, concept set loading
-- **QueryFilterCriteria**: Manages inclusion criteria groups and their interactions
-- **QueryFilterCriteriaGroup**: Handles individual criteria groups with AND/OR logic
-- **QueryFilterEventContainer**: Manages collections of events within criteria groups
-- **QueryFilterEventCard**: Modern event component with full functionality and visual design
-- **QueryFilterEvent**: Legacy event component maintained for backward compatibility
-- **QueryFilterNestedCriteria**: Handles recursive nested criteria within events
-- **QueryFilterNestedEvent**: Event component designed for nested contexts with level indicators
-- **QueryFilterCard**: Main container component for filter groups with multiple conditions and AND/OR operators
-- **QueryFilterChip**: Individual filter chips representing selected concepts (removable with multiple variants)
-- **AttributesDropdown**: Dropdown for adding criteria-specific attributes with multi-select interface
-- **CriteriaSelectorDropdown**: Dropdown for selecting criteria types with medical domain icons and searchable options
-- **AtlasConverter**: Core conversion engine between Atlas JSON and UI models
-- **QueryFilterCriteriaManager**: State management for hierarchical criteria data
-
-## Import Atlas JSON Process
-
-The Atlas import process involves several steps to convert OHDSI Atlas cohort definitions into the visual interface:
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant QFM as QueryFilterModern
-    participant AC as AtlasConverter
-    participant CSA as ConceptSetAPI
-    participant QCM as QueryFilterCriteriaManager
-    participant UI as UI Components
-
-    User->>QFM: loadAtlasCohortDefinition(atlasJson)
-    QFM->>QFM: Extract concept set IDs from criteria
-    QFM->>CSA: Resolve/create concept sets
-    CSA-->>QFM: Updated concept sets
-    QFM->>AC: convertAtlasToFilters(atlasJson, conceptSets)
-    AC->>AC: Process PrimaryCriteria → entryEvents
-    AC->>AC: Process InclusionRules → inclusionCriteria
-    AC->>AC: Process CensoringCriteria → exitEvents
-    AC->>QCM: Create QueryFilterCriteriaManager
-    QCM-->>QFM: Hierarchical criteria data
-    QFM->>UI: Render visual interface
-    QFM->>QFM: loadConceptSetDetailsForAllEvents()
-    loop Batch Processing
-        QFM->>CSA: Load concept details (batches of 10)
-        CSA-->>QFM: Full medical concept data
-        QFM->>UI: Update events with concept details
-    end
-    Note over QFM,UI: UI now displays complete medical terminology
-```
-
-### Key Conversion Functions
-
-#### `convertAtlasToFilters(atlasJson, availableConceptSets)` - AtlasConverter.ts
-
-The main conversion function that transforms Atlas JSON into UI models:
-
-1. **Concept Set Resolution**: Maps Atlas concept set IDs to local concept sets
-2. **Criteria Processing**: Converts different criteria types (conditions, drugs, procedures)
-3. **Nested Handling**: Processes `CorrelatedCriteria` recursively
-4. **Attribute Mapping**: Converts Atlas operators to internal format
-
-#### `convertCriteriaListToEvents(criteriaList)` - AtlasConverter.ts
-
-Recursive function that processes Atlas criteria lists:
-
-```mermaid
-graph TD
-    A[Atlas CriteriaList] --> B[convertCriteriaListToEvents]
-    B --> C{For each criteriaItem}
-    C --> D[Determine criteria type]
-    D --> E[Extract concept set info]
-    E --> F{Has CorrelatedCriteria?}
-    F -->|Yes| G[Recursively process nested criteria]
-    G --> H[Create nested attribute]
-    F -->|No| I[Create QueryFilterEvent]
-    H --> I
-    I --> J[Add to events array]
-    J --> C
-    C --> K[Return events array]
+# Query Filter - OHDSI Atlas Cohort Builder
 
-    style G fill:#ffcdd2
-    style B fill:#e8f5e8
-```
+Visual interface for building OHDSI Atlas-compatible cohort definitions with full bidirectional JSON conversion.
 
-## Load from Bookmarks Integration
+## Architecture
 
-The Query Filter integrates with the application's bookmark system through the Vuex store:
+### Core Components
 
-1. **Bookmark Selection**: User selects an Atlas cohort bookmark
-2. **Expression Extraction**: Atlas JSON expression is extracted from bookmark
-3. **Import Process**: Standard Atlas import workflow is triggered
-4. **UI Population**: Visual interface is populated with bookmark data
+**QueryFilterModern.vue**: Main orchestrator
 
-The main integration point is in `QueryFilterModern.vue` where `loadAtlasCohortDefinition(atlasJson)` processes bookmark data.
+- Loads/saves Atlas JSON
+- Manages concept set resolution (async loading in batches of 10)
+- Coordinates terminology modal via `alp-terminology-open` event
+- Location: `components/QueryFilterModern.vue`
 
-## Making Changes - Visual Editing
+**QueryFilterEntryExit.vue**: Entry/Exit criteria editor
 
-The visual interface allows users to modify cohort definitions through several interaction patterns:
+- Handles primary (entry) and censoring (exit) events
+- Supports 3 exit strategies: CONT_OBS, FIXED duration, CONT_DRUG
+- Manages observation period (priorDays, postDays)
+- Location: `components/QueryFilterEntryExit.vue`
 
-### Event Management
+**QueryFilterCriteria.vue**: Inclusion criteria container
 
-- **Add Events**: Users can add new medical events to criteria groups
-- **Configure Events**: Select concept sets, set cardinality, add attributes
-- **Nested Criteria**: Create complex nested conditions within events
+- Manages multiple criteria groups
+- Controls qualifying events limit (ALL | EARLIEST | LATEST)
+- Location: `components/QueryFilterCriteria.vue`
 
-### Concept Set Handling
+**QueryFilterCriteriaGroup.vue**: Individual criteria group
 
-- **Selection**: Choose from existing concept sets or create new ones
-- **Details Loading**: Concept details are loaded asynchronously for visualization
-- **Terminology Integration**: Interface with external terminology services
+- Supports group logic: ALL, ANY, AT_LEAST, AT_MOST (with count)
+- Contains medical events and demographic criteria
+- Supports nested groups (unlimited depth)
+- Location: `components/QueryFilterCriteriaGroup.vue`
 
-### Recursive Component Structure
+**QueryFilterEventCard.vue**: Modern event editor
 
-The UI handles nested medical criteria through recursive component rendering:
+- Full-featured: concept sets, cardinality, attributes, temporal windows
+- Supports all OHDSI criteria types (Condition, Drug, Procedure, etc.)
+- Location: `components/QueryFilterEventCard.vue`
 
-```mermaid
-graph TD
-    A[QueryFilterEvent] --> B{Has nested criteria?}
-    B -->|Yes| C[QueryFilterNestedCriteria]
-    C --> D[QueryFilterNestedEvent]
-    D --> A
-    B -->|No| E[Simple Event Display]
+**QueryFilterNestedCriteria.vue**: Recursive nested logic
 
-    F[User adds nested condition] --> C
-    C --> G[Renders nested events recursively]
-    G --> H[Each nested event can have more nesting]
+- Renders `CorrelatedCriteria` and nested groups
+- Supports arbitrary nesting depth
+- Includes Type (ALL/ANY/AT_LEAST/AT_MOST) and optional Count
+- Location: `components/QueryFilterNestedCriteria.vue`
 
-    style C fill:#fff3e0
-    style D fill:#fff3e0
-```
+**Supporting Components**:
 
-## Save Process
-
-The save workflow converts the visual interface back to Atlas format and persists the changes:
+- **CriteriaSelectorDropdown.vue**: Event type picker with icons
+- **AttributesDropdown.vue**: Attribute selector (multi-select)
+- **CardinalitySidebar.vue**: Cardinality editor (type, count, using)
+- **GroupCriteriaSidebar.vue**: Group type/count editor
+- **TemporalRelationshipSection.vue**: Start/end window editor
+- **ObservationPeriodBlock.vue**: Prior/post days editor
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant QFM as QueryFilterModern
-    participant QCM as QueryFilterCriteriaManager
-    participant Store as Vuex Store
-    participant API as Backend API
+### Core Models & Utilities
 
-    User->>QFM: Click Save
-    QFM->>QFM: openSaveDialog()
-    User->>QFM: Enter cohort name
-    QFM->>QCM: convertToAtlasFormat()
-    QCM->>QCM: Transform hierarchical data to Atlas JSON
-    QCM-->>QFM: Atlas expression
-    QFM->>QFM: Create cohort definition object
-    QFM->>Store: dispatch('fireUpdateAtlasCohortDefinitionQuery')
-    Store->>API: Save Atlas cohort
-    API-->>Store: Success confirmation
-    Store-->>QFM: Save complete
-```
+**QueryFilterModel.ts** (QueryFilterCriteriaManager class):
 
-### Key Save Functions
+- State management for hierarchical criteria
+- Methods: `getCriteria()`, `addCriteria()`, `updatePrimaryEvents()`, `convertToAtlasFormat()`
+- Handles concept set collection (including CONT_DRUG)
+- Bidirectional Atlas JSON conversion
+- Location: `models/QueryFilterModel.ts`
 
-#### `saveAtlasCohort()` - QueryFilterModern.vue
+**AtlasConverter.ts**:
 
-Orchestrates the save process:
+- Import: Atlas JSON → Internal UI model
+- Main function: `convertAtlasToFilters(atlasJson, availableConceptSets)`
+- Recursive: `convertCriteriaListToEvents()` handles CorrelatedCriteria
+- Supports groups via `convertGroupCriteriaToGroupEvents()` (unlimited depth)
+- Location: `utils/AtlasConverter.ts`
 
-1. **Validation**: Ensures cohort name is provided
-2. **Conversion**: Calls `convertToAtlasFormat()` to get Atlas JSON
-3. **Metadata**: Adds creation/modification timestamps and user info
-4. **Persistence**: Dispatches Vuex action to save via API
+**Nested Criteria Processor** (`models/modules/nested-criteria-processor.ts`):
 
-#### `convertToAtlasFormat()` - QueryFilterModel.ts
+- Export functions: `buildNestedCriteriaFromAttributes()`, `processNestedGroups()`
+- Creates CorrelatedCriteria with Type/Count
+- Handles recursive Groups with proper structure
 
-Transforms UI model back to Atlas JSON structure (method of QueryFilterCriteriaManager class):
+**Type Guards** (`models/modules/type-guards.ts`):
 
-1. **Concept Set Management**: Builds unified concept sets array and creates ID mappings
-2. **Primary Criteria Conversion**: Converts entryEvents to Atlas PrimaryCriteria format
-3. **Inclusion Rules Processing**: Transforms query filter groups into Atlas InclusionRules
-4. **Exit Strategy Mapping**: Converts exit events to Atlas CensoringCriteria
-5. **Data Type Mapping**: Maps internal event types to Atlas criteria types
-6. **Nested Structure Processing**: Recursively processes nested criteria from attributes
+- `isNestedAttribute()`, `isNumericRangeAttribute()`, `isDateRangeAttribute()`
+- Type-safe attribute handling
 
-## Recursive Data Handling
+**Atlas Mappers** (`models/modules/atlas-mappers.ts`):
 
-The system handles two main types of recursion:
+- Operator conversion: `GREATER_THAN` ⟷ `gt`, `LESS_THAN` ⟷ `lt`, etc.
+- Cardinality mapping: `AT_LEAST` ⟷ `0`, `EXACTLY` ⟷ `2`, etc.
+- Criteria type mapping
 
-### 1. Data Model Recursion (Atlas Import)
+## Data Flow
 
-Atlas `CorrelatedCriteria` structures can be nested arbitrarily deep. The conversion handles this through recursive processing:
+### Import (Atlas JSON → UI)
 
-```javascript
-// AtlasConverter.ts - convertCriteriaListToEvents(criteriaList)
-if (criteriaObj.CorrelatedCriteria) {
-  const nestedCriteriaEvents = convertCriteriaListToEvents(criteriaObj.CorrelatedCriteria.CriteriaList || []) // Recursive call
+1. **Load Atlas JSON**: `loadAtlasCohortDefinition(atlasJson)` in QueryFilterModern
+2. **Extract Concept Sets**: Parse `ConceptSets` array, extract IDs from criteria
+3. **Resolve Concept Sets**: Fetch/create via WebAPI
+4. **Convert**: `convertAtlasToFilters(atlasJson, conceptSets)` → AtlasConverter.ts
+   - `PrimaryCriteria` → `entryEvents`
+   - `InclusionRules` → `inclusionCriteria` (with Groups support)
+   - `CensoringCriteria` + `EndStrategy` → `exitEvents`
+   - Recursively process `CorrelatedCriteria` and nested Groups
+5. **Normalize**: Convert `{Op, Value, Extent}` → `{operator, value, extent}`
+6. **Load Details**: Async load concept details (batches of 10)
+7. **Render**: Update UI components
 
-  const nestedAttribute = {
-    id: 'nested',
-    type: 'nested',
-    nestedCriteria: {
-      events: nestedCriteriaEvents,
-    },
-  }
-}
-```
+**Key Files**:
 
-### 2. UI Component Recursion
+- `utils/AtlasConverter.ts` - Main conversion
+- `utils/QueryFilterModern/loadAtlasCohortDefinition.ts` - Orchestration
+- `utils/QueryFilterModern/loadConceptSets.ts` - Concept set resolution
 
-The visual interface renders nested criteria through recursive Vue components:
+### Export (UI → Atlas JSON)
 
-```vue
-<!-- QueryFilterNestedCriteria.vue -->
-<template>
-  <div v-for="event in nestedEvents" :key="event.id">
-    <QueryFilterNestedEvent :event="event" />
-    <!-- Recursive: NestedEvent can contain more NestedCriteria -->
-  </div>
-</template>
-```
+1. **User clicks Save**: `saveAtlasCohort()` in QueryFilterModern
+2. **Convert**: `criteriaManager.convertToAtlasFormat()` → QueryFilterModel.ts
+   - Collect concept sets (including nested, CONT_DRUG)
+   - Build ID mappings (system ID → Atlas sequential ID)
+   - Convert `entryEvents` → `PrimaryCriteria`
+   - Convert `inclusionCriteria` → `InclusionRules` (with Groups)
+   - Convert `exitEvents` → `CensoringCriteria` + `EndStrategy`
+3. **Denormalize**: Convert `{operator, value, extent}` → `{Op, Value, Extent}`
+4. **Add Metadata**: User, timestamps
+5. **Persist**: Vuex action → WebAPI
 
-## Data Flow Architecture
+**Key Files**:
 
-The complete data flow through the system follows this pattern:
+- `models/QueryFilterModel.ts` - `convertToAtlasFormat()` method
+- `models/modules/nested-criteria-processor.ts` - Nested criteria export
+- `models/modules/event-transformer.ts` - Event transformations
 
-```mermaid
-graph TB
-    subgraph "Import Flow"
-        A1[Atlas JSON] --> A2[AtlasConverter]
-        A2 --> A3[QueryFilterCriteriaManager]
-        A3 --> A4[UI Components]
-    end
+## Type System
 
-    subgraph "Edit Flow"
-        B1[User Interaction] --> B2[Component Events]
-        B2 --> B3[State Updates]
-        B3 --> B4[UI Re-render]
-    end
+### Discriminated Union (QueryFilterAttribute)
 
-    subgraph "Export Flow"
-        C1[Save Action] --> C2[convertToAtlasFormat]
-        C2 --> C3[Atlas JSON]
-        C3 --> C4[API Persistence]
-    end
+**Two-level discrimination**:
 
-    A4 --> B1
-    B4 --> C1
+1. `attributeType: 'nested' | 'standard'`
+2. For `'standard'`: `configType: 'numericRange' | 'conceptSet' | 'concept' | 'dateRange' | 'dateAdjustment' | 'text' | 'boolean'`
 
-    style A2 fill:#e8f5e8
-    style C2 fill:#e8f5e8
-```
-
-## Key Technical Concepts
-
-### Concept Set Resolution
-
-- Atlas cohort definitions reference concept sets by ID
-- During import, the system resolves these IDs to local concept sets
-- Missing concept sets are created automatically from Atlas definitions
-- Concept details are loaded asynchronously for UI display
-
-### Bidirectional Conversion
-
-- **Import**: Atlas JSON → Internal UI Model → Vue Components
-- **Export**: Vue Components → Internal UI Model → Atlas JSON
-- Conversion maintains semantic fidelity while adapting to UI requirements
-
-### State Management
-
-- `QueryFilterCriteriaManager` maintains the canonical state
-- Components receive data via props and emit changes via events
-- Reactive updates ensure UI consistency during edits
-
-## Configuration
-
-The module is configured through `config/cohort-criteria-config.json`. This file defines:
-
-- Available criteria types
-- Attribute options
-- UI labels and descriptions
-- Icon mappings
-
-## Mock Server
-
-The Query Filter module includes a mock server for development and testing purposes. The mock server proxies WebAPI requests to an external OHDSI Atlas instance and provides mock responses for testing cohort definitions and concept sets.
-
-### Running the Mock Server
-
-To start the mock server, use the npm script from the vue-mri-ui-lib directory:
-
-```bash
-npm run start:mock
-```
-
-### Environment Variables
-
-The mock server can be configured using the following environment variables:
-
-| Variable     | Description                                           | Default Value                                                 |
-| ------------ | ----------------------------------------------------- | ------------------------------------------------------------- |
-| `WEBAPI_URL` | The base URL of the external OHDSI WebAPI instance    | `http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI` |
-| `SOURCE`     | The vocabulary source key to use for concept searches | `vocab`                                                       |
-| `USE_CACHE`  | Enable/disable response caching (true/false)          | `true`                                                        |
-| `SERVER_URL` | The URL where the mock server will run                | `http://localhost:3131`                                       |
-
-### Usage Examples
-
-**Using a different WebAPI instance:**
-
-```bash
-WEBAPI_URL='https://atlas-demo.ohdsi.org/WebAPI' npm run start:mock
-```
-
-**Using a different vocabulary source:**
-
-```bash
-SOURCE='SYNPUF1K' npm run start:mock
-```
-
-**Combining multiple environment variables:**
-
-```bash
-WEBAPI_URL='https://atlas-demo.ohdsi.org/WebAPI' SOURCE='SYNPUF1K' USE_CACHE='false' npm run start:mock
-```
-
-**Running without cache for development:**
-
-```bash
-USE_CACHE='false' npm run start:mock
-```
-
-### Mock Server Features
-
-- **WebAPI Proxy**: Forwards cohort definition and concept set requests to external Atlas instances
-- **Response Caching**: Improves performance by caching API responses
-- **Request Validation**: Validates input parameters to prevent SSRF attacks
-- **Concept Search**: Supports vocabulary concept search with filtering
-- **Atlas Format Mapping**: Converts between internal and Atlas API formats
-
-The mock server is particularly useful for:
-
-- Development when working offline or with limited connectivity
-- Testing different Atlas instances and vocabulary sources
-- Performance testing with cached responses
-- Integration testing without affecting production Atlas instances
-
-## Attribute Type System
-
-### QueryFilterAttribute Structure
-
-The `QueryFilterAttribute` type uses a discriminated union based on `attributeType`:
-
-- **`attributeType: 'nested'`**: For nested criteria containing recursive event groups
-- **`attributeType: 'standard'`**: For all other attribute types (concept, numericRange, dateRange, text, boolean)
-
-**Important**: `attributeType` can ONLY be `'nested'` or `'standard'`. There is no `attributeType: 'numericRange'` - numeric range attributes use `attributeType: 'standard'` with `configType: 'numericRange'`.
-
-### Numeric Range Attributes
-
-Numeric range attributes (like Age) are structured as:
+**Examples**:
 
 ```typescript
+// Numeric range (Age)
 {
   attributeId: 'age',
   attributeType: 'standard',
   configType: 'numericRange',
-  name: 'Age',
-  description: 'Age in years',
-  value: {
-    Op: 'btw',      // Operator: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | 'nbt'
-    Value: 10,      // Primary value
-    Extent: 20      // Second value (for 'between' operations)
+  operator: 'BETWEEN',
+  value: '18',
+  extent: '65'
+}
+
+// Nested criteria
+{
+  attributeType: 'nested',
+  nestedCriteria: {
+    criteriaType: 'ALL',
+    criteriaCount: 2,
+    events: [ /* recursive events */ ]
   }
 }
 ```
 
-The `value` property contains a `NumericRange` object with:
+**Location**: `types/QueryFilterTypes.ts`
 
-- `Op`: The comparison operator
-- `Value`: The primary numeric value
-- `Extent` (optional): The upper bound for "between" operations
+## Critical Implementation Patterns
 
-This structure allows type-safe handling of numeric comparisons while maintaining compatibility with Atlas JSON format.
+### 1. Cardinality Count (⚠️ CRITICAL)
+
+**Use `??` not `||`** - JavaScript treats `0` as falsy
+
+```typescript
+// ✅ CORRECT
+Count: event.cardinality?.count ?? 1
+
+// ❌ WRONG (converts 0 → 1)
+Count: event.cardinality?.count || 1
+```
+
+**Locations**: AtlasConverter.ts:338, nested-criteria-processor.ts:111/277/514, QueryFilterModel.ts:408
+
+**Why**: "Exactly 0" and "At most 0" are valid exclusion criteria
+
+### 2. Preserve nestedCriteria
+
+Always preserve `nestedCriteria` when transforming events
+
+```typescript
+...(event.nestedCriteria && {
+  nestedCriteria: {
+    ...event.nestedCriteria,
+    events: transformEvents(event.nestedCriteria.events || [])
+  }
+})
+```
+
+**Location**: `models/modules/event-transformer.ts:30-36`
+
+### 3. Group Export Pattern
+
+Collect ALL events FIRST, then create ONE GroupCriteria
+
+```typescript
+// ✅ CORRECT
+const criteriaList: CriteriaGroup[] = []
+groupEvent.nestedCriteria.events.forEach(e => criteriaList.push(...))
+groupsList.push({ Type: 'ALL', CriteriaList: criteriaList })
+
+// ❌ WRONG (splits one group into N groups)
+groupEvent.nestedCriteria.events.forEach(e =>
+  groupsList.push({ CriteriaList: [e] })
+)
+```
+
+**Location**: `models/modules/nested-criteria-processor.ts:77-240`
+
+### 4. Component State Init
+
+Initialize local refs from props via `onMounted` + watchers (props load async)
+
+**Location**: `components/QueryFilterEntryExit.vue:172-230`
+
+## Development
+
+### Setup
+
+```bash
+# Mock server (built app + mock APIs)
+npm run build:mock && npm run start:mock  # http://localhost:3131
+
+# Dev server (hot reload)
+cd src/query-filter/mock-server && npm start  # port 3001
+nx serve vue-mri  # port 8081
+```
+
+### Mock Server Config
+
+| Variable     | Default                         | Description           |
+| ------------ | ------------------------------- | --------------------- |
+| `WEBAPI_URL` | `http://alp-dev-sg-3.../WebAPI` | External OHDSI WebAPI |
+| `SOURCE`     | `vocab`                         | Vocabulary source     |
+| `USE_CACHE`  | `true`                          | Response caching      |
+| `SERVER_URL` | `http://localhost:3131`         | Server URL            |
+
+**Example**: `WEBAPI_URL='https://atlas-demo.ohdsi.org/WebAPI' SOURCE='SYNPUF1K' npm start`
+
+### Debugging
+
+Enable debug in `public/index.html`: `portalAPI.debug = true`
+
+- Shows Atlas JSON, criteria JSON
+- Copy to clipboard buttons
+- Use Vue DevTools for Vuex state
+
+## Configuration
+
+**`config/atlas-config.json`**: Defines criteria types, attributes, UI labels, icons
+
+**⚠️ CRITICAL**: Attribute IDs **must match OHDSI circe-be Java field names** (camelCase)
+
+- Example: `visitLength`, `eraLength`, `occurrenceCount`, `age`, `gender`
+- See: `utils/AtlasAttributeLookup.ts` for bidirectional mapping
+
+## Key Concepts
+
+**Concept Set Resolution**: Atlas JSON contains concept set IDs → resolve to local concept sets → auto-create if missing → async load details for UI
+
+**Bidirectional Conversion**: Atlas JSON ⟷ Internal UI Model (normalized) ⟷ Vue Components
+
+**State**: QueryFilterCriteriaManager is canonical source, components use props/emit pattern
+
+**Recursive Processing**:
+
+- **Data**: `CorrelatedCriteria` nested arbitrarily deep via recursive functions
+- **UI**: QueryFilterNestedCriteria renders recursively
+- **Groups**: Unlimited nesting depth in `InclusionRules` and `CorrelatedCriteria`
