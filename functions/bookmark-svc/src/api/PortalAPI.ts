@@ -1,6 +1,5 @@
 import { env } from '../env'
 import http from 'http'
-import axios, { AxiosRequestConfig } from 'axios'
 import { IAtlasCohortDefinition } from '../types'
 
 interface CreateBookmarkDto {
@@ -12,7 +11,7 @@ export class PortalAPI {
   private readonly token: string
   private readonly logger = console
   private readonly httpAgent: http.Agent
-  private portalApi
+  private portalapi
 
   constructor(token: string) {
     this.token = token
@@ -26,11 +25,11 @@ export class PortalAPI {
       throw new Error('No url is set for PortalAPI')
     }
 
-    this.portalApi = Trex.tokioChannel('d2e-functions/portal')
+    this.portalapi = Trex.tokioChannel('d2e-functions/portal')
   }
 
   private async getRequestConfig() {
-    let options: AxiosRequestConfig = {
+    let options = {
       headers: {
         Authorization: this.token,
       },
@@ -45,8 +44,8 @@ export class PortalAPI {
       const timestamp = new Date().valueOf()
       console.time(`time-bookmarks-svc-main-getBookmarks-${timestamp}`)
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks/list?datasetId=${datasetId}`
-      const result = await axios.get(url, options)
+      const url = `${this.baseURL}/user-artifact/bookmarks/list?datasetId=${encodeURIComponent(datasetId)}`
+      const result = await this.portalapi.get(url, options)
       console.timeEnd(`time-bookmarks-svc-main-getBookmarks-${timestamp}`)
       return result.data
     } catch (error) {
@@ -64,7 +63,7 @@ export class PortalAPI {
       const url = `${this.baseURL}/user-artifact/bookmarks/${encodeURIComponent(
         bookmarkId
       )}?datasetId=${encodeURIComponent(datasetId)}`
-      const result = await axios.get(url, options)
+      const result = await this.portalapi.get(url, options)
       console.timeEnd(`time-bookmarks-svc-main-getBookmarkById-${timestamp}`)
       return result.data
     } catch (error) {
@@ -77,8 +76,8 @@ export class PortalAPI {
   async createBookmark(input: CreateBookmarkDto, datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${datasetId}`
-      const result = await axios.post(url, input, options)
+      const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${encodeURIComponent(datasetId)}`
+      const result = await this.portalapi.post(url, input, options)
 
       if (result.data.status === 400) {
         throw new Error(result.error)
@@ -95,8 +94,8 @@ export class PortalAPI {
   async updateBookmark(input: any, datasetId: string): Promise<any> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${datasetId}`
-      const result = await axios.put(url, input, options)
+      const url = `${this.baseURL}/user-artifact/bookmarks?datasetId=${encodeURIComponent(datasetId)}`
+      const result = await this.portalapi.put(url, input, options)
 
       if (result.data.status === 400) {
         throw new Error(result.error)
@@ -116,7 +115,7 @@ export class PortalAPI {
       const url = `${this.baseURL}/user-artifact/bookmarks/${encodeURIComponent(
         bookmarkId
       )}?datasetId=${encodeURIComponent(datasetId)}`
-      const result = await axios.delete(url, options)
+      const result = await this.portalapi.delete(url, options)
       return result.data
     } catch (error) {
       console.error(error)
@@ -128,8 +127,10 @@ export class PortalAPI {
   async getAtlasCohortDefinitions(datasetId: string): Promise<IAtlasCohortDefinition[]> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/user-artifact/atlas_cohort_definitions/list?datasetId=${datasetId}`
-      const result = await axios.get(url, options)
+      const url = `${this.baseURL}/user-artifact/atlas_cohort_definitions/list?datasetId=${encodeURIComponent(
+        datasetId
+      )}`
+      const result = await this.portalapi.get(url, options)
       return result.data
     } catch (error) {
       console.error(error)
@@ -141,9 +142,8 @@ export class PortalAPI {
   async getDatasetDialect(datasetId: string): Promise<string> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/dataset`
-      options.params = { datasetId }
-      const result = await axios.get(url, options)
+      const url = `${this.baseURL}/dataset?datasetId=${encodeURIComponent(datasetId)}`
+      const result = await this.portalapi.get(url, options)
       return result.data.dialect
     } catch (error) {
       console.error(error)
@@ -156,7 +156,7 @@ export class PortalAPI {
     try {
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/dataset/list/systemadmin`
-      const result = await this.portalApi.get(url, options)
+      const result = await this.portalapi.get(url, options)
       const dataset = result.data.find(e => e.id === datasetId)
 
       if (!dataset) {
