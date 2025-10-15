@@ -166,6 +166,7 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
     modifiedDate: '',
   }
 
+  // Create the loading event and keep a local reference
   const updatedEvent: QueryFilterEvent = {
     ...eventData.value,
     selectedConceptSet,
@@ -180,18 +181,19 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
   try {
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetIdFromProps())
 
-    // Update event with concept set details
+    // Update event with concept set details - use updatedEvent as base, not eventData.value
+    // to preserve the loading state we set above
     const eventWithDetails: QueryFilterEvent = {
-      ...eventData.value,
+      ...updatedEvent,
       conceptSetDetails,
       conceptSetLoading: false,
     }
     eventData.value = eventWithDetails
   } catch (error) {
     console.error('Failed to load concept set details:', error)
-    // Update loading state even if failed
+    // Update loading state even if failed - use updatedEvent as base
     const eventWithError: QueryFilterEvent = {
-      ...eventData.value,
+      ...updatedEvent,
       conceptSetLoading: false,
     }
     eventData.value = eventWithError

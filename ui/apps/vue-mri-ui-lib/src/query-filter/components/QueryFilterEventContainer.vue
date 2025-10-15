@@ -186,52 +186,6 @@ const handleAttributeRemoved = (eventId: string, attributeId: string) => {
   }
 }
 
-const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItemDisplay | null) => {
-  const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
-  if (eventIndex !== -1) {
-    const currentEvent = eventsData.value[eventIndex]
-    if (!currentEvent) return
-
-    if (!conceptSet) {
-      // Handle concept set removal
-      const updatedEvent: QueryFilterEvent = {
-        ...currentEvent,
-        selectedConceptSet: undefined,
-        conceptSetId: undefined,
-        conceptSet: '',
-      }
-      updateEvent(eventIndex, updatedEvent)
-      return
-    }
-
-    const selectedConceptSet: SelectedConceptSet = {
-      value: parseInt(conceptSet.value),
-      text: conceptSet.text || '',
-      display_value: conceptSet.display_value || '',
-      conceptIds: conceptSet.conceptIds || [],
-      concepts:
-        conceptSet.concepts?.map(c => ({
-          id: c.id || c.concept_id || 0,
-          useMapped: c.useMapped || false,
-          isExcluded: c.isExcluded || false,
-          useDescendants: c.useDescendants || false,
-        })) || [],
-      shared: false,
-      userName: '',
-      createdDate: '',
-      modifiedDate: '',
-    }
-
-    const updatedEvent: QueryFilterEvent = {
-      ...currentEvent,
-      conceptSet: conceptSet.text || conceptSet.display_value || conceptSet.value,
-      selectedConceptSet,
-      conceptSetId: conceptSet.value,
-    }
-    updateEvent(eventIndex, updatedEvent)
-  }
-}
-
 // Handle nested criteria updates for group events
 const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriteria) => {
   const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
@@ -303,7 +257,6 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           "
           @remove-event="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
           @duplicate-event="duplicateEvent(mainEvents.findIndex(e => e.id === event.id))"
-          @concept-set-selected="handleConceptSetSelected(event.id, $event)"
           @attribute-selected="handleAttributeSelected(event.id, $event)"
           @attribute-removed="handleAttributeRemoved(event.id, $event)"
           @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
