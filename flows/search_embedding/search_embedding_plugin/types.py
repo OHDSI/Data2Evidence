@@ -1,7 +1,4 @@
 from pydantic import BaseModel
-from typing import Optional
-
-# PATH_TO_EXTERNAL_FILES = r"external"
 
 class SearchEmbeddingType(BaseModel):
     database_code: str
@@ -16,4 +13,4 @@ class SearchEmbeddingType(BaseModel):
         """
         Whether to use the TREX sql connection or direct database connection.
         """
-        return False
+        return True
