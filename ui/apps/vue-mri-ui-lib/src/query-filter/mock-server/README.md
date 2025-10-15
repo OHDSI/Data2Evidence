@@ -8,7 +8,7 @@ This mock server provides a development environment for PA-Atlas (query-filter) 
 
 ```bash
 # Build the Docker image from repo root
-docker build -f Dockerfile -t pa-atlas:latest .
+docker build -f Dockerfile.pa-atlas -t pa-atlas:latest .
 
 # Run the container
 docker run -e SERVER_URL="http://localhost:3132" -e WEBAPI_URL="https://atlas-demo.ohdsi.org/WebAPI" -e SOURCE="SYNPUF1K" -e USE_CACHE="true" -p 3132:3132 pa-atlas:latest
