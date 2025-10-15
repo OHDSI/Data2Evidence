@@ -20,7 +20,7 @@ export class BookmarksAPI {
     }
   }
 
-  async getAllBookmarks(datasetId): Promise<IBookmarks> {
+  async getAllBookmarks(datasetId: string): Promise<IBookmarks> {
     const options = await this.getRequestConfig();
     const params = new URLSearchParams();
     params.append("datasetId", datasetId);
