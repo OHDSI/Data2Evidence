@@ -469,6 +469,7 @@
         "RJSONIO",
         "jsonlite",
         "ResultModelManager",
+        "SqlRender (>= 1.11.1)",
         "stringi (>= 1.7.6)",
         "tibble"
       ],
@@ -2344,7 +2345,8 @@
       "RoxygenNote": "7.3.2",
       "Depends": [
         "R (>= 4.1.0)",
-        "R6"
+        "R6",
+        "DatabaseConnector (>= 6.0.0)"
       ],
       "Imports": [
         "ParallelLogger",
@@ -2362,6 +2364,7 @@
       ],
       "Suggests": [
         "testthat (>= 3.0.0)",
+        "SqlRender",
         "RSQLite",
         "duckdb",
         "knitr",
