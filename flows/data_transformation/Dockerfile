@@ -75,27 +75,23 @@ RUN apt-get update && \
     wget \
     libpq5 \
     python3-pip \
-    openjdk-17-jdk \
-    && apt-get clean
-
-# Install .NET 6 SDK (for running FHIR Anonymizer)
-RUN wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
-    && dpkg -i packages-microsoft-prod.deb \
-    && rm packages-microsoft-prod.deb \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        dotnet-sdk-6.0 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    openjdk-17-jdk && \
+    wget -O packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends dotnet-sdk-6.0 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 
 # Create folders and set ownership
-RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
-    && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop \
-    && chmod 711 -R /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
+RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data /app/workdir \
+    && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/workdir \
+    && chmod 711 -R /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data /app/workdir \
     && chown docker:alp /app/duckdb_data
 
 
@@ -139,6 +135,5 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
 
-RUN install -d -m 2775 -o docker -g docker /app/workdir
-USER docker
+# USER docker
 ENTRYPOINT []
