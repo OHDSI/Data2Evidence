@@ -105,8 +105,18 @@ class TrexDao(DaoBase):
 
 
     def create_table(self, schema: str, table: str, columns: dict) -> None:
-        pass
-
+        columns_with_types = [
+            pg_sql.SQL("{col_name} {col_type}").format(
+                col_name = pg_sql.Identifier(col_name),
+                col_type = pg_sql.SQL(col_type)
+            ) for col_name, col_type in columns.items()
+        ]
+        create_table_query = pg_sql.SQL("CREATE TABLE IF NOT EXISTS {schema}.{table} ({columns_with_types});").format(
+            schema = pg_sql.Identifier(schema),
+            table = pg_sql.Identifier(table),
+            columns_with_types = pg_sql.SQL(", ").join(columns_with_types)
+        )
+        self.execute_sql(create_table_query)
 
     # --- Read methods ---
 
@@ -128,7 +138,20 @@ class TrexDao(DaoBase):
 
 
     def check_table_exists(self, schema: str, table: str) -> bool:
-        pass
+        try:
+            sql_query = pg_sql.SQL("""
+                                    SELECT table_name FROM information_schema.tables
+                                    WHERE table_schema = {schema} AND table_name = {table};""")\
+                                .format(
+                                    schema = pg_sql.Literal(schema),
+                                    table = pg_sql.Literal(table)
+                                )
+                
+            result = self.execute_sql(sql_query, fetch=True)
+            tables = {row[0] for row in result}
+            return table in tables
+        except psycopg2.Error as e:
+            raise
 
 
     def get_table_names(self, schema: str, include_views=False) -> list[str]:
@@ -136,7 +159,17 @@ class TrexDao(DaoBase):
 
 
     def get_columns(self, schema: str, table: str) -> list[str]:
-        pass
+        sql = pg_sql.SQL("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = {schema} AND table_name = {table}
+            ORDER BY ordinal_position;
+        """).format(
+            schema=pg_sql.Literal(schema),
+            table=pg_sql.Literal(table)
+        )
+        result = self.execute_sql(sql, fetch=True)
+        return [row[0] for row in result]   
 
 
     def get_table_row_count(self, schema: str, table: str) -> int:
@@ -193,17 +226,63 @@ class TrexDao(DaoBase):
     ):
         pass
 
+    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple]):
+        """
+        Insert multiple rows into a specified table in one operation.
+        
+        Args:
+            schema_name: Schema containing the target table
+            table_name: Target table name
+            columns: List of column names to insert into
+            values: List of tuples, each tuple representing a row to insert
+        """
+        columns_str = ", ".join(columns)
+        placeholders = ", ".join(["%s"] * len(columns))
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES ({placeholders})").format(
+            schema_name=pg_sql.Identifier(schema_name),
+            table_name=pg_sql.Identifier(table_name),
+            columns_str=pg_sql.SQL(columns_str),
+            placeholders=pg_sql.SQL(placeholders)
+        )
+        with self._get_connection() as con:
+            cur = None
+            try:
+                cur = con.cursor()
+                cur.executemany(sql, values)
+                if not con.autocommit:
+                    con.commit()
+            except Exception:
+                # Re-raise the original exception with preserved stack trace
+                raise
+            finally:
+                if cur:
+                    cur.close()
+
 
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):
-        sql = f"DROP SCHEMA IF EXISTS {schema} {'CASCADE' if cascade else 'RESTRICT'};"
+        sql = pg_sql.SQL("DROP SCHEMA IF EXISTS {schema} {cond};").format(
+            schema=pg_sql.Identifier(schema),
+            cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
+        )
         self.execute_sql(sql)
 
+    def drop_table(self, schema: str, table: str, cascade: bool = False):
+        sql = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table} {cond};").format(
+            schema=pg_sql.Identifier(schema),
+            table=pg_sql.Identifier(table),
+            cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
+        )
+        self.execute_sql(sql)
 
     def truncate_table(self, schema: str, table: str):
-        pass
+        sql = pg_sql.SQL("TRUNCATE TABLE {schema}.{table};").format(
+            schema=pg_sql.Identifier(schema), 
+            table=pg_sql.Identifier(table)
+            )
+        self.execute_sql(sql)
 
-    def get_database_connector_connection_string(
+    def get_r_database_connector_connection_string(
         self, user_type: UserType = UserType.ADMIN_USER, release_date: str = None
     ) -> str:
         """
@@ -220,3 +299,15 @@ class TrexDao(DaoBase):
         conn_url = f"{DialectDrivers.jdbc.trex}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{DialectDrivers.database_connector.trex}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{self.path_to_driver}')"""
+
+    def get_database_connector_connection_string(self) -> str:
+        """
+        Generate JDBC connection string for Trex PostgreSQL database.
+        """
+        host = self.tenant_configs.host
+        port = self.tenant_configs.port
+
+        return f"{DialectDrivers.jdbc.trex}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
+
+    def get_database_connector_dbms_val(self) -> str:
+        return DialectDrivers.database_connector.trex

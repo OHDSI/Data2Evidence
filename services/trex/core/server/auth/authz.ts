@@ -271,8 +271,9 @@ export async function authz(c: Context, next: any) {
     const originalUrl = c.req.path;
 
     let bearerToken = c.req.raw.headers.get("authorization");
-    if (!bearerToken && (originalUrl.startsWith("/strategus-results/") || originalUrl.startsWith("/gateway/dashboard/")) 
-        || (bearerToken && originalUrl.startsWith("/fhir-server/"))) {
+    // Check for cookie if no token in authorization header
+    // And for req with /fhir-server path, token is part of cookie
+    if (!bearerToken || bearerToken === "" || (bearerToken && originalUrl.startsWith("/fhir-server/"))) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
@@ -287,6 +288,14 @@ export async function authz(c: Context, next: any) {
         }
       }
     }
+    if (!bearerToken && c.req.url) {
+      const requestUrl = new URL(c.req.url);
+      const urlToken = requestUrl.searchParams.get("token");
+      if (urlToken) {
+        bearerToken = `Bearer ${urlToken}`;
+      }
+    }
+
     if (PUBLIC_API_PATHS.some((path) => new RegExp(path).test(originalUrl))) {
       return next();
     } else if (!bearerToken) {

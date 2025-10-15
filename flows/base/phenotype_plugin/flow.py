@@ -142,7 +142,7 @@ def materialize_cohort_definitions(
     
     # Setup database connection for R
     set_db_driver_env_string = dbdao.set_db_driver_env()
-    set_connection_string = dbdao.get_database_connector_connection_string(
+    set_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=user
     )
 

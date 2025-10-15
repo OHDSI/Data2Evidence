@@ -10,9 +10,15 @@ export let global = {
       "scopes": [
         "trex"
       ]
+    },{
+      "path": "^/trex/log",
+      "scopes": [
+        "trex.log.write"
+      ]
     }],
     ROLE_SCOPES: {
-      "ALP_SYSTEM_ADMIN": ['trex']
+      "ALP_SYSTEM_ADMIN": ['trex'],
+      "TENANT_VIEWER": ['trex.log.write']
     },
     PLUGINS_JSON: "{}"
 }
@@ -69,6 +75,9 @@ export const env = {
     WATCH: _env.WATCH ? JSON.parse(_env.WATCH) : {},
     LOGTO_CLIENT_SECRET: _env.LOGTO__CLIENT_SECRET,
     LOGTO_TOKEN_URL: _env.LOGTO__TOKEN_URL,
+    LOGTO__ADMIN_SERVER__FQDN_URL: _env.LOGTO__ADMIN_SERVER__FQDN_URL,
+    LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: _env.LOGTO__CLIENTID_PASSWORD__BASIC_AUTH,
+    LOGTO__DEFAULT_TENANT__FQDN_URL : _env.LOGTO__DEFAULT_TENANT__FQDN_URL || "https://default.logto.app/api",
     LOGTO_RESOURCE_API: _env.LOGTO__RESOURCE_API,
     GATEWAY_IDP_SUBJECT_PROP: _env.GATEWAY__IDP_SUBJECT_PROP,
     PLUGINS_DEV_PATH: _env.PLUGINS_DEV_PATH || "./plugins",
@@ -108,5 +117,9 @@ export const env = {
     PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
     PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE,
     GOOGLE_APPLICATION_CREDENTIALS: _env.GOOGLE_APPLICATION_CREDENTIALS,
-    REDIS_PASSWORD: _env.REDIS_PASSWORD
+    REDIS_PASSWORD: _env.REDIS_PASSWORD,
+
+    INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY,
+    D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
+    D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
 }

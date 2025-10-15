@@ -285,6 +285,11 @@
           "source": "/mlflow",
           "service": "mlflow",
           "rmsrc": true
+        },
+        {
+          "source": "/dockerlogs",
+          "service": "docker-logs",
+          "rmsrc": false
         }
       ],
       "env": {
@@ -339,7 +344,8 @@
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
           "TESTSCHEMA": "${TESTSCHEMA}",
-          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}"
+          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}",
+          "BIGQUERY_CDM_VERSION": "${BIGQUERY_CDM_VERSION}"
         },
         "mri-pg-config": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -494,6 +500,7 @@
         "demo": {
           "DEMO__DB_CODE": "demo_database",
           "DEMO__DB_CDM_SCHEMA": "demo_cdm",
+          "DEMO__DB_RESULT_SCHEMA": "demo_cdm",
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
@@ -530,8 +537,8 @@
           "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
           "PG__STUDY_RESULTS_ADMIN_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
           "PG__STUDY_RESULTS_ADMIN_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-          "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
+          "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
+          "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
           "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
           "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
           "DATA_TRANSFORMATION_BUCKET": "data-transformation",
@@ -540,13 +547,17 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-          "INSTALL_SQLALCHEMY" : "${INSTALL_SQLALCHEMY:-}",
+          "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
-          "GOOGLE_APPLICATION_CREDENTIALS":"/app/google-credentials.json",
+          "GOOGLE_APPLICATION_CREDENTIALS": "/app/google-credentials.json",
           "PREFECT__LOCAL_DEBUG": "${PREFECT__LOCAL_DEBUG:-false}",
           "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
           "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}"
         },
         "jupyter-gateway": {},
@@ -732,7 +743,8 @@
           "strategus.results.read",
           "strategus.results.write",
           "strategus.results.delete",
-          "mlflow"
+          "mlflow",
+          "d2e.container.logs.read"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content",
@@ -2704,6 +2716,12 @@
           "path": "^/mlflow(.*)",
           "scopes": [
             "mlflow"
+          ]
+        },
+        {
+          "path": "^/dockerlogs(.*)",
+          "scopes": [
+            "d2e.container.logs.read"
           ]
         },
         {

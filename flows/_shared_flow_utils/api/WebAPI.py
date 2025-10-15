@@ -4,10 +4,10 @@ import requests
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 
 class WebAPI(BaseAPI):
-    def __init__(self):
+    def __init__(self, flow_run_id = None):
         super().__init__()
         self.url = f"{self.get_service_route("d2e-webapi")}"
-        self.headers = self.get_options()
+        self.headers = self.get_options(flow_run_id)
 
     def get_cohort_definition(self, cohortDefinitionId: int, datasetId: str) -> dict:
         url = f"{self.url}cohortdefinition/{cohortDefinitionId}"

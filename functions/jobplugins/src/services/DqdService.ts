@@ -147,6 +147,7 @@ export class DqdService {
       databaseCode,
       schemaName,
       vocabSchemaName: vocabSchema,
+      resultsSchemaName: resultsSchema,
     } = await portalServerApi.getDataset(datasetId);
     const releaseDate = (
       await this.getReleaseDate(releaseId, portalServerApi)
@@ -162,6 +163,7 @@ export class DqdService {
         datasetId,
         cdmVersionNumber: parseCdmVersionForOhdsi(cdmVersionNumber),
         vocabSchemaName: vocabSchema || vocabSchemaName,
+        resultsSchemaName: resultsSchema || schemaName,
         comment,
         cohortDefinitionId,
         releaseId,

@@ -356,7 +356,7 @@ export class AttributeConfig extends ConfigEntity {
             if (
                 this.settings.getAttributesTablePlaceholders().indexOf(x) >
                     -1 ||
-                x === "@TEXT" ||  x === "@REF"
+                x === "@TEXT" ||  x.startsWith("@REF")
             ) {
                 this.useDefaultFilter = true;
                 tmp = getTableAliasFunc(
@@ -378,7 +378,7 @@ export class AttributeConfig extends ConfigEntity {
             if (
                 (this.settings.getAttributesTablePlaceholders().indexOf(x) >
                     -1 ||
-                    x === "@TEXT" ||  x === "@REF") &&
+                    x === "@TEXT" ||  x.startsWith("@REF")) &&
                 this.getExpressionHash().length > 0
             ) {
                 tmp = getTableAliasFunc(
