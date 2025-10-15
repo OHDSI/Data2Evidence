@@ -375,6 +375,16 @@ test('Round-trip: {scenario}', () => {
   - **Occurrence Type 2** with IsDistinct + CountColumn (Count 5)
   - **Attributes in Groups** within CorrelatedCriteria (FIXED!)
   - **100% round-trip fidelity** - 0 differences!
+- ✅ **All Criteria Types from circe-be** - atlas-all-criteria.json (ENABLED & TESTING! 🚀)
+  - Comprehensive test from OHDSI circe-be test suite
+  - All major criteria types in one fixture
+  - ObservationPeriod in PrimaryCriteria with CorrelatedCriteria
+  - Multiple InclusionRules (14 rules covering all criteria types)
+  - Advanced attributes: PeriodType, UserDefinedPeriod, AgeAtStart, AgeAtEnd, PeriodLength
+  - DemographicCriteriaList in InclusionRules
+  - Groups within InclusionRules
+  - RouteConcept attribute for DrugExposure (FIXED!)
+  - RangeLowRatio and RangeHighRatio for Measurement (ADDED!)
 
 Update this checklist as tests are added. Mark items with `[x]` when test coverage is added and passing.
 
