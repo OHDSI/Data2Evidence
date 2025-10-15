@@ -1,44 +1,46 @@
 <template>
-  <div
-    tabindex="0"
-    :class="[
-      'app-range',
-      'form-control',
-      'form-control-sm',
-      isActive && !errorMsg ? 'MriHilite' : '',
-      errorMsg ? 'error-border' : '',
-    ]"
-    ref="container"
-    @click="openInput"
-    @focus="openInput"
-  >
-    <template v-for="item in tokens" :key="item">
-      <div
-        :ref="`item-${item.id}`"
-        tabindex="0"
-        :class="getClass(item)"
-        @keyup.right="rangeNavHandler(item, $event)"
-        @keyup.left="rangeNavHandler(item, $event)"
-        @keydown.stop.prevent.delete="tagKeyUpHandler(item)"
-        @click.stop.prevent="tagClickHandler(item)"
-      >
-        <span class="tokenText">{{ item.text }}</span>
-        <span class="tokenIcon" @click="removeTag(item)">
-          <appIcon icon="decline"></appIcon>
-        </span>
-      </div>
-    </template>
-    <input
-      v-if="inputVisible"
-      type="text"
-      v-on:keyup.delete="focusTag"
-      v-on:keyup.enter="addTagEvent"
-      ref="textControl"
-      @blur="onInputBlur"
-      @focus="isActive = true"
-    />
+  <div>
+    <div
+      tabindex="0"
+      :class="[
+        'app-range',
+        'form-control',
+        'form-control-sm',
+        isActive && !errorMsg ? 'MriHilite' : '',
+        errorMsg ? 'error-border' : '',
+      ]"
+      ref="container"
+      @click="openInput"
+      @focus="openInput"
+    >
+      <template v-for="item in tokens" :key="item">
+        <div
+          :ref="`item-${item.id}`"
+          tabindex="0"
+          :class="getClass(item)"
+          @keyup.right="rangeNavHandler(item, $event)"
+          @keyup.left="rangeNavHandler(item, $event)"
+          @keydown.stop.prevent.delete="tagKeyUpHandler(item)"
+          @click.stop.prevent="tagClickHandler(item)"
+        >
+          <span class="tokenText">{{ item.text }}</span>
+          <span class="tokenIcon" @click="removeTag(item)">
+            <appIcon icon="decline"></appIcon>
+          </span>
+        </div>
+      </template>
+      <input
+        v-if="inputVisible"
+        type="text"
+        v-on:keyup.delete="focusTag"
+        v-on:keyup.enter="addTagEvent"
+        ref="textControl"
+        @blur="onInputBlur"
+        @focus="isActive = true"
+      />
+    </div>
+    <div v-if="errorMsg" class="input-error">{{ errorMsg }}</div>
   </div>
-  <div v-if="errorMsg" class="input-error">{{ errorMsg }}</div>
 </template>
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
@@ -259,13 +261,5 @@ export default {
   height: 1rem;
   color: var(--color-mri-error);
   font-size: 0.7rem;
-}
-.error-border {
-  border: 1px solid var(--color-mri-error);
-  border-color: var(--color-mri-error);
-  &:hover {
-    border: 1px solid var(--color-mri-error);
-    border-color: var(--color-mri-error);
-  }
 }
 </style>
