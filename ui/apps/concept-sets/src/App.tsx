@@ -100,9 +100,9 @@ export default function App(props: PortalProps) {
 
   const propsWithMock = {
     ...props,
-    // getToken: props.getToken || mockGetToken,
-    // Using mock getToken for now for no-auth
-    getToken: mockGetToken,
+    // Use mock getToken only when isAtlas is true (standalone mode)
+    // Otherwise use the actual getToken from portal (no fallback)
+    getToken: props.isAtlas ? mockGetToken : props.getToken,
   };
 
   const theme = props.isAtlas ? theme_atlas : theme_d2e;
