@@ -381,46 +381,53 @@ export const convertAtlasToFilters = (
         }
 
         // Extract temporal relationship data if this is a CriteriaGroup
-        if (isCriteriaGroup(_criteriaItem)) {
-          if (_criteriaItem.StartWindow) {
-            event.startWindow = {
-              start: {
-                days: _criteriaItem.StartWindow.Start.Days ?? null,
-                coeff: (_criteriaItem.StartWindow.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
-              },
-              end: {
-                days: _criteriaItem.StartWindow.End.Days ?? null,
-                coeff: (_criteriaItem.StartWindow.End.Coeff === 1 ? 1 : -1) as -1 | 1,
-              },
-              // Only set these if they exist in the original (preserve undefined)
-              useIndexEnd: _criteriaItem.StartWindow.UseIndexEnd,
-              useEventEnd: _criteriaItem.StartWindow.UseEventEnd,
-            }
-          }
+        // Also check the criteriaItem itself which may have temporal data in nested scenarios
+        const hasStartWindow = isCriteriaGroup(_criteriaItem) && _criteriaItem.StartWindow
+        const hasEndWindow = isCriteriaGroup(_criteriaItem) && _criteriaItem.EndWindow
+        const hasRestrictVisit = isCriteriaGroup(_criteriaItem) && _criteriaItem.RestrictVisit !== undefined
+        const hasIgnoreObservationPeriod =
+          isCriteriaGroup(_criteriaItem) && _criteriaItem.IgnoreObservationPeriod !== undefined
 
-          if (_criteriaItem.EndWindow) {
-            event.endWindow = {
-              start: {
-                days: _criteriaItem.EndWindow.Start.Days ?? null,
-                coeff: (_criteriaItem.EndWindow.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
-              },
-              end: {
-                days: _criteriaItem.EndWindow.End.Days ?? null,
-                coeff: (_criteriaItem.EndWindow.End.Coeff === 1 ? 1 : -1) as -1 | 1,
-              },
-              // Only set these if they exist in the original (preserve undefined)
-              useIndexEnd: _criteriaItem.EndWindow.UseIndexEnd,
-              useEventEnd: _criteriaItem.EndWindow.UseEventEnd,
-            }
+        if (hasStartWindow) {
+          const startWindowData = _criteriaItem.StartWindow!
+          event.startWindow = {
+            start: {
+              days: startWindowData.Start.Days ?? null,
+              coeff: (startWindowData.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            end: {
+              days: startWindowData.End.Days ?? null,
+              coeff: (startWindowData.End.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            // Default to false if undefined to prevent blank display in UI
+            useIndexEnd: startWindowData.UseIndexEnd ?? false,
+            useEventEnd: startWindowData.UseEventEnd ?? false,
           }
+        }
 
-          // Only set these fields if they exist in the Atlas JSON (preserve round-trip)
-          if (_criteriaItem.RestrictVisit !== undefined) {
-            event.restrictVisit = _criteriaItem.RestrictVisit
+        if (hasEndWindow) {
+          const endWindowData = _criteriaItem.EndWindow!
+          event.endWindow = {
+            start: {
+              days: endWindowData.Start.Days ?? null,
+              coeff: (endWindowData.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            end: {
+              days: endWindowData.End.Days ?? null,
+              coeff: (endWindowData.End.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            // Default to false if undefined to prevent blank display in UI
+            useIndexEnd: endWindowData.UseIndexEnd ?? false,
+            useEventEnd: endWindowData.UseEventEnd ?? false,
           }
-          if (_criteriaItem.IgnoreObservationPeriod !== undefined) {
-            event.ignoreObservationPeriod = _criteriaItem.IgnoreObservationPeriod
-          }
+        }
+
+        // Only set these fields if they exist in the Atlas JSON (preserve round-trip)
+        if (hasRestrictVisit) {
+          event.restrictVisit = _criteriaItem.RestrictVisit
+        }
+        if (hasIgnoreObservationPeriod) {
+          event.ignoreObservationPeriod = _criteriaItem.IgnoreObservationPeriod
         }
 
         // Handle all attributes on the event dynamically using configuration

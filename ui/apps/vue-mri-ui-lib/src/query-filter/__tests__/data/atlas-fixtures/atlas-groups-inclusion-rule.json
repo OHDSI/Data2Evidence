@@ -45,7 +45,8 @@
                     "Days": 0,
                     "Coeff": -1
                   },
-                  "UseEventEnd": false
+                  "UseEventEnd": false,
+                  "UseIndexEnd": false
                 },
                 "Occurrence": {
                   "Type": 2,
@@ -65,7 +66,8 @@
                     "Days": 0,
                     "Coeff": -1
                   },
-                  "UseEventEnd": false
+                  "UseEventEnd": false,
+                  "UseIndexEnd": false
                 },
                 "Occurrence": {
                   "Type": 2,

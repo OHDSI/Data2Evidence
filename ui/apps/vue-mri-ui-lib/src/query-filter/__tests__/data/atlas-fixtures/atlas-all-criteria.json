@@ -19,7 +19,8 @@
                   "End": {
                     "Coeff": 1
                   },
-                  "UseEventEnd": false
+                  "UseEventEnd": false,
+                  "UseIndexEnd": false
                 },
                 "Occurrence": {
                   "Type": 2,
@@ -186,7 +187,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -281,7 +283,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -316,7 +319,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -380,7 +384,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -415,7 +420,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -496,7 +502,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -531,7 +538,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -666,7 +674,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -701,7 +710,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -774,7 +784,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -809,7 +820,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -1013,7 +1025,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -1048,7 +1061,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -1229,7 +1243,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -1264,7 +1279,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -1428,7 +1444,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -1463,7 +1480,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -1535,7 +1553,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -1570,7 +1589,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -1708,7 +1728,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -1743,7 +1764,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -1885,7 +1907,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -1920,7 +1943,8 @@
                         "End": {
                           "Coeff": 1
                         },
-                        "UseEventEnd": false
+                        "UseEventEnd": false,
+                        "UseIndexEnd": false
                       },
                       "Occurrence": {
                         "Type": 2,
@@ -2043,7 +2067,8 @@
                 "Days": 30,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -2074,7 +2099,8 @@
                 "Days": 100,
                 "Coeff": 1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,
@@ -2100,7 +2126,8 @@
                     "Days": 60,
                     "Coeff": 1
                   },
-                  "UseEventEnd": false
+                  "UseEventEnd": false,
+                  "UseIndexEnd": false
                 },
                 "Occurrence": {
                   "Type": 2,
@@ -2120,7 +2147,8 @@
                     "Days": 30,
                     "Coeff": 1
                   },
-                  "UseEventEnd": false
+                  "UseEventEnd": false,
+                  "UseIndexEnd": false
                 },
                 "Occurrence": {
                   "Type": 2,

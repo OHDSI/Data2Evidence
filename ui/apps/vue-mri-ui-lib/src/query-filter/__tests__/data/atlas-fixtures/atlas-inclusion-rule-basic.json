@@ -39,7 +39,8 @@
                 "Days": 1,
                 "Coeff": -1
               },
-              "UseEventEnd": false
+              "UseEventEnd": false,
+              "UseIndexEnd": false
             },
             "Occurrence": {
               "Type": 2,

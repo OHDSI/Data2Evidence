@@ -58,7 +58,8 @@
                             "End": {
                                 "Coeff": 1
                             },
-                            "UseEventEnd": false
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
                         },
                         "Occurrence": {
                             "Type": 2,
@@ -95,7 +96,8 @@
                             "End": {
                                 "Coeff": 1
                             },
-                            "UseEventEnd": false
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
                         },
                         "Occurrence": {
                             "IsDistinct": true,
@@ -128,7 +130,8 @@
                             "End": {
                                 "Coeff": 1
                             },
-                            "UseEventEnd": false
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
                         },
                         "Occurrence": {
                             "Type": 0,
@@ -152,7 +155,8 @@
                                                 "End": {
                                                     "Coeff": 1
                                                 },
-                                                "UseEventEnd": false
+                                                "UseEventEnd": false,
+                                                "UseIndexEnd": false
                                             },
                                             "Occurrence": {
                                                 "Type": 2,
@@ -179,7 +183,8 @@
                                                 "End": {
                                                     "Coeff": 1
                                                 },
-                                                "UseEventEnd": false
+                                                "UseEventEnd": false,
+                                                "UseIndexEnd": false
                                             },
                                             "Occurrence": {
                                                 "Type": 2,
@@ -197,7 +202,8 @@
                                                 "End": {
                                                     "Coeff": 1
                                                 },
-                                                "UseEventEnd": false
+                                                "UseEventEnd": false,
+                                                "UseIndexEnd": false
                                             },
                                             "Occurrence": {
                                                 "Type": 2,
@@ -230,7 +236,8 @@
                             "End": {
                                 "Coeff": 1
                             },
-                            "UseEventEnd": false
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
                         },
                         "Occurrence": {
                             "Type": 2,
@@ -260,7 +267,8 @@
                                     "End": {
                                         "Coeff": 1
                                     },
-                                    "UseEventEnd": false
+                                    "UseEventEnd": false,
+                                    "UseIndexEnd": false
                                 },
                                 "Occurrence": {
                                     "Type": 2,
@@ -295,7 +303,8 @@
                                     "End": {
                                         "Coeff": 1
                                     },
-                                    "UseEventEnd": false
+                                    "UseEventEnd": false,
+                                    "UseIndexEnd": false
                                 },
                                 "Occurrence": {
                                     "Type": 2,
@@ -322,7 +331,8 @@
                                     "End": {
                                         "Coeff": 1
                                     },
-                                    "UseEventEnd": false
+                                    "UseEventEnd": false,
+                                    "UseIndexEnd": false
                                 },
                                 "Occurrence": {
                                     "Type": 2,
