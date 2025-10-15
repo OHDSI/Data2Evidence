@@ -469,7 +469,6 @@
         "RJSONIO",
         "jsonlite",
         "ResultModelManager",
-        "SqlRender (>= 1.11.1)",
         "stringi (>= 1.7.6)",
         "tibble"
       ],
@@ -924,8 +923,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
-      "RemoteRef": "alp-dqd",
-      "RemoteSha": "4a20bfccf83ac8a738091184cffed62429d262f2"
+      "RemoteRef": "csafreen/set_autoCommit_true",
+      "RemoteSha": "e381b0f307d3b8dcbfecac71fe4670dd429f043a"
     },
     "DeepPatientLevelPrediction": {
       "Package": "DeepPatientLevelPrediction",
@@ -2345,11 +2344,9 @@
       "RoxygenNote": "7.3.2",
       "Depends": [
         "R (>= 4.1.0)",
-        "R6",
-        "DatabaseConnector (>= 6.0.0)"
+        "R6"
       ],
       "Imports": [
-        "SqlRender",
         "ParallelLogger",
         "checkmate",
         "DBI",
