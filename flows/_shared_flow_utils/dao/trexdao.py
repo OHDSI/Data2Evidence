@@ -282,7 +282,7 @@ class TrexDao(DaoBase):
             )
         self.execute_sql(sql)
 
-    def get_database_connector_connection_string(
+    def get_r_database_connector_connection_string(
         self, user_type: UserType = UserType.ADMIN_USER, release_date: str = None
     ) -> str:
         """
@@ -299,3 +299,15 @@ class TrexDao(DaoBase):
         conn_url = f"{DialectDrivers.jdbc.trex}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{DialectDrivers.database_connector.trex}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{self.path_to_driver}')"""
+
+    def get_database_connector_connection_string(self) -> str:
+        """
+        Generate JDBC connection string for Trex PostgreSQL database.
+        """
+        host = self.tenant_configs.host
+        port = self.tenant_configs.port
+
+        return f"{DialectDrivers.jdbc.trex}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
+
+    def get_database_connector_dbms_val(self) -> str:
+        return DialectDrivers.database_connector.trex

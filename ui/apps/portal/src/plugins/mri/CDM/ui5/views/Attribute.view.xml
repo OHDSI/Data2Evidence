@@ -167,7 +167,17 @@
                                 tooltip="{configEditorModel>expression/value}" 
                                 change="onAdvancedExpressionChange" 
                                 valueLiveUpdate="true"></Input>
-
+                            <CheckBox text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_INCLUDE_DESCENDANTS}" 
+                            selected="{configEditorModel>includeDescendants/value}"
+                            select="onIncludeDescendantsAttributeSwitched"/>
+                            <Label class="sapMxConfigPropLabel" 
+                                tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_DESCENDANTS_FILTER_EXPRESSION}" 
+                                text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_DESCENDANTS_FILTER_EXPRESSION}"></Label>
+                            <Input class="sapTriggerSave sapMxConfigProp" 
+                                value="{configEditorModel>includeDescendantsExpression/value}" 
+                                id="includeDescendantsExpression" 
+                                enabled="{configEditorModel>includeDescendants/value}" 
+                                valueLiveUpdate="true"></Input>
                         </l:content>
                     </l:VerticalLayout>
 

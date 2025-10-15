@@ -1,4 +1,6 @@
 name: d2e-functions/pa Run HTTP tests
+permissions:
+  contents: read
 
 on:
   pull_request:
@@ -10,6 +12,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
   check_file_changes:
     runs-on: ubuntu-latest
     if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
@@ -41,10 +52,10 @@ jobs:
               - "docker-compose.yml"
 
   run-http-tests:
-    needs: [check_file_changes]
+    needs: [pick_runner, check_file_changes]
     if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    timeout-minutes: 80
     env:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
@@ -348,14 +359,6 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-minerva-postgres-1 -t
-      - name: print logs for alp-supabase-storage-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-supabase-storage-1 -t
-      - name: print logs for alp-supabase-storage-post-init-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-supabase-storage-post-init-1 -t
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
         run: |

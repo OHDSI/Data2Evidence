@@ -22,7 +22,6 @@ import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
 import { applyTheme } from './utils/ThemeManager'
-import 'import-map-overrides'
 
 let app: Component
 const portalAPI = getPortalAPI()
@@ -30,6 +29,7 @@ const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
 import './styles/themes/_main.scss'
 
 if (isLocal) {
+  import('import-map-overrides')
   app = createApp(RootLayout as unknown as Component)
   applyTheme('atlas')
 

@@ -221,6 +221,86 @@ export class Property extends AstElement {
                         }
                     }
                 }
+
+                //If including descendants, then its an inner join between Concept and Concept Ancestor Table with the joining keys as 
+                // 1 - CONCEPT.CONCEPT_ID = CONCEPT_ANCESTOR.ANCESTOR_CONCEPT_ID and 
+                // 2 - CONCEPT_ANCESTOR.DESCENDANT_CONCEPT_ID = @INTERACTION.<ANY_CONCEPT_ID_COLUMN>
+                // The only Pre-requisite is @REF/Concept must be defined in the Data source expression.
+                if (attrConfig.__config.includeDescendants) {
+                    this.scopeEntityDef.addTableAlias(
+                        { baseEntity: "@TEXT", table: attrConfig.placeholderMap["@TEXT"] },
+                        false,
+                        "INNER JOIN",
+                        true
+                    );
+
+                    const textAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@TEXT"]);
+                    const refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+
+                    if(!refAlias) {
+                        throw new Error("@REF undefined in the Data Source (Expression)!")
+                    }
+
+                    this.pushOnCondition(
+                        textAliasObj.on,
+                        QueryObject.format("%UNSAFE", 
+                                            `${textAliasObj.alias}.ANCESTOR_CONCEPT_ID 
+                                              = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
+                    )
+                    
+                    let descendantsFilterExpression = attrConfig.__config.includeDescendantsExpression;
+                    if(!descendantsFilterExpression) {
+                        throw new Error("Expression undefined in the descendantsFilterExpression!")
+                    }
+                    const descendantsPlaceholder = descendantsFilterExpression.match(/@[^.^\s]+/g)[0];
+                    const descendantsAlias = this.scopeEntityDef.getTableAliasByBaseEntity(descendantsPlaceholder);
+                    descendantsFilterExpression = descendantsFilterExpression.replaceAll(descendantsPlaceholder, descendantsAlias);
+
+                    this.pushOnCondition(
+                        textAliasObj.on,
+                        QueryObject.format("%UNSAFE", 
+                                            `${textAliasObj.alias}.DESCENDANT_CONCEPT_ID 
+                                             = ${descendantsFilterExpression}`)
+                    )
+
+                    //Detect if its on the x1 or x2
+                    //If yes, append Inner JOIN referring to another Vocabulary concept table
+                    //Modify group by and its attribute config to point to the new reference @REFX placeholder
+                    const groupByNode = queryNode.node.groupBy?.find((groupBy) => groupBy.path === this.node.path);
+                    if(groupByNode) {
+                        const newRefPlaceholder = this.getNewMaxPlaceholderRefPlaceholder(attrConfig.placeholderMap);
+                        attrConfig.placeholderMap[newRefPlaceholder] = attrConfig.placeholderMap["@REF"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.CODE`] = attrConfig.placeholderMap["@REF.CODE"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.TEXT`] = attrConfig.placeholderMap["@REF.TEXT"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.VOCABULARY_ID`] = attrConfig.placeholderMap["@REF.VOCABULARY_ID"];
+                        if(!groupByNode.attrConfig) {
+                            groupByNode.attrConfig = JSON.parse(JSON.stringify(attrConfig))
+                        }
+                        groupByNode.attrConfig.baseEntity = newRefPlaceholder;
+
+                        groupByNode.attrConfig.__config.expression = groupByNode.attrConfig.__config.expression.replaceAll("@REF", newRefPlaceholder);
+
+                        groupByNode.attrConfig.__config.defaultFilter = groupByNode.attrConfig.__config.defaultFilter.replaceAll("@REF", newRefPlaceholder);
+                        
+                        this.scopeEntityDef.addTableAlias(
+                        { baseEntity: newRefPlaceholder, table: attrConfig.placeholderMap[newRefPlaceholder] },
+                        false,
+                        "INNER JOIN",
+                        true
+                        );
+
+                        //Add the ON condition between additional concept table and the descendant expression
+                        const maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
+                        const maxRefAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[newRefPlaceholder]);
+                        maxRefAliasObj.on = []; //initialize
+                        this.pushOnCondition(
+                        maxRefAliasObj.on,
+                        QueryObject.format("%UNSAFE", 
+                                            `${maxRefAliasObj.alias}.CONCEPT_ID 
+                                             = ${descendantsFilterExpression}`)
+                        )
+                    }
+                }
             }
         }
     }
@@ -232,6 +312,17 @@ export class Property extends AstElement {
             }
         }
         onArray.push(onStatement);
+    }
+
+    private getNewMaxPlaceholderRefPlaceholder(placeholderMap) {
+        const sortedArray = Object.keys(placeholderMap).filter((x) => x.startsWith("@REF")).map(x => x.match(/@[^.^\s]+/g)[0]).sort();
+        if (sortedArray[sortedArray.length - 1] === "@REF") {
+            return "@REF2";
+        } else {
+            const maxRef = sortedArray[sortedArray.length - 1];
+            const refNumber = parseInt(maxRef.replace("@REF", ""));
+            return "@REF" + (refNumber + 1);
+        }
     }
 
     public getSQLWithAlias(): QueryObject {

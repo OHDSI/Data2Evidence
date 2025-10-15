@@ -33,7 +33,7 @@ function getColumnsForTable(
       ? parsedName.schema
       : connection.schemaName;
     let query = ""
-    if (this.connection.dialect === "hana") {
+    if (connection.dialect === "hana") {
       query = `SELECT COLUMN_NAME as "value"
       FROM  VIEW_COLUMNS WHERE SCHEMA_NAME = %s AND VIEW_NAME = %s
       UNION

@@ -69,6 +69,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   const [nameRef, setNameRef] = useState<any>();
   const [commentRef, setCommentRef] = useState<any>();
   const [error, setError] = useState<ErrorResponse>();
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (props.open) {
@@ -94,6 +95,13 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   }, [props.open, dataflow, nameRef, commentRef]);
 
   const handleSave = useCallback(async () => {
+    // Validate name: only letters, numbers, and underscores allowed
+    if (!formData.name || !/^[A-Za-z0-9_]+$/.test(formData.name)) {
+      setNameError("Name can only contain letters, numbers, and underscores");
+      nameRef && nameRef.focus && nameRef.focus();
+      return;
+    }
+    setNameError(undefined);
     const dataflow: SaveDataflowDto = {
       id: saveFlowDialog.dataflowId,
       name: formData.name,
@@ -118,7 +126,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     dispatch(setRevisionId(undefined));
     dispatch(markStatusAsSaved());
     typeof onClose === "function" && onClose();
-  }, [saveFlowDialog, isNew, formData, nodes, edges]);
+  }, [saveFlowDialog, isNew, formData, nodes, edges, nameRef]);
 
   const handleClose = useCallback(() => {
     typeof onClose === "function" && onClose();
@@ -146,9 +154,17 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
               sx={{ width: "100%" }}
               variant="standard"
               value={formData.name}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                onFormDataChange({ name: e.target.value })
-              }
+              error={!!nameError}
+              helperText={nameError}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                const value = e.target.value;
+                onFormDataChange({ name: value });
+                if (!value || !/^[A-Za-z0-9_]+$/.test(value)) {
+                  setNameError("Name can only contain letters, numbers, and underscores");
+                } else {
+                  setNameError(undefined);
+                }
+              }}
             />
           ) : (
             <div>
