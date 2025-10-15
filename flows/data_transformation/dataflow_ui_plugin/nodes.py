@@ -17,7 +17,7 @@ from pandas.api.types import is_scalar, is_list_like, is_dict_like
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
-from prefect import task, flow, get_run_logger
+from prefect import task, flow
 
 from .hooks import *
 from .flowutils import *
@@ -339,17 +339,15 @@ class GenericFileNode(Node):
     """
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        logger = get_run_logger()
         self.file = _node["file"]
         self.file_type = _node.get("file_type", Path(self.file).suffix.lower())
         self.encoding = _node.get("encoding", "utf8")
-        logger.info(f"GenericFileNode: file={self.file}, file_type={self.file_type}, encoding={self.encoding}")
+        logging.info(f"GenericFileNode: file={self.file}, file_type={self.file_type}, encoding={self.encoding}")
         self.output_folder = Path(_node.get("output_folder", f"./workdir/{self.id}_files"))
         self.output_folder.mkdir(exist_ok=True)
 
     def _fetch_file(self, file_path):
-        logger = get_run_logger()
-        logger.info(f"Fetching file: {file_path}")
+        logging.info(f"Fetching file: {file_path}")
         # fetch file from Supabase storage
         try:
             return SupabaseStorageAPI().get_file(self.id, file_path)
@@ -358,19 +356,18 @@ class GenericFileNode(Node):
             raise FileNotFoundError(f"File not found: {file_path}")
 
     def task(self, task_run_context) -> Result:
-        logger = get_run_logger()
         try:
             raw_data = self._fetch_file(self.file)
             file_name = Path(self.file).name
             file_type = Path(self.file).suffix[1:].lower()
-            logger.info(f"Processing file: {file_name} with type: {file_type}")
+            logging.info(f"Processing file: {file_name} with type: {file_type}")
             save_path = self.output_folder / file_name
             save_path.write_bytes(raw_data)
             # Return folder path
             return Result(False, str(self.output_folder), self, task_run_context)
 
         except Exception as e:
-            return Result(True, str(e), self, task_run_context)
+            return Result(True, tb.format_exc(), self, task_run_context)
     
         
 class DbWriter(Node):
