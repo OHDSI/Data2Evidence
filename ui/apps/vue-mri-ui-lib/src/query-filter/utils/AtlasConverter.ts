@@ -110,9 +110,9 @@ const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConcept
     system: concept.VOCABULARY_ID || '',
     code: concept.CONCEPT_CODE || '',
     standardConcept: concept.STANDARD_CONCEPT || '',
-    standardConceptCaption: concept.STANDARD_CONCEPT_CAPTION || '', // Preserve for round-trip
+    standardConceptCaption: concept.STANDARD_CONCEPT_CAPTION, // Preserve for round-trip (undefined if not present)
     invalidReason: concept.INVALID_REASON || '',
-    invalidReasonCaption: concept.INVALID_REASON_CAPTION || '', // Preserve for round-trip
+    invalidReasonCaption: concept.INVALID_REASON_CAPTION, // Preserve for round-trip (undefined if not present)
     conceptClassId: concept.CONCEPT_CLASS_ID || '', // Add conceptClassId if available
     validity: concept.VALID_START_DATE && concept.VALID_END_DATE ? 'Valid' : undefined, // Basic validity info
     validStartDate: concept.VALID_START_DATE,
@@ -414,8 +414,13 @@ export const convertAtlasToFilters = (
             }
           }
 
-          event.restrictVisit = _criteriaItem.RestrictVisit ?? false
-          event.ignoreObservationPeriod = _criteriaItem.IgnoreObservationPeriod ?? false
+          // Only set these fields if they exist in the Atlas JSON (preserve round-trip)
+          if (_criteriaItem.RestrictVisit !== undefined) {
+            event.restrictVisit = _criteriaItem.RestrictVisit
+          }
+          if (_criteriaItem.IgnoreObservationPeriod !== undefined) {
+            event.ignoreObservationPeriod = _criteriaItem.IgnoreObservationPeriod
+          }
         }
 
         // Handle all attributes on the event dynamically using configuration

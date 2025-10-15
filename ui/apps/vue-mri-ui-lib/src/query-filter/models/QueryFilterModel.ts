@@ -474,6 +474,12 @@ export class QueryFilterCriteriaManager {
                             CONCEPT_NAME: item.conceptName,
                             DOMAIN_ID: item.domainId,
                             VOCABULARY_ID: item.system,
+                            ...(item.standardConceptCaption !== undefined && {
+                              STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                            }),
+                            ...(item.invalidReasonCaption !== undefined && {
+                              INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                            }),
                           }))
                           const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
                           criteria.Criteria[atlasEventType][fieldName] = conceptData
@@ -595,8 +601,12 @@ export class QueryFilterCriteriaManager {
                         CONCEPT_NAME: item.conceptName,
                         DOMAIN_ID: item.domainId,
                         VOCABULARY_ID: item.system,
-                        STANDARD_CONCEPT_CAPTION: item.standardConceptCaption || '',
-                        INVALID_REASON_CAPTION: item.invalidReasonCaption || '',
+                        ...(item.standardConceptCaption !== undefined && {
+                          STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                        }),
+                        ...(item.invalidReasonCaption !== undefined && {
+                          INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                        }),
                       }))
                       demographicCriteria[atlasFieldName] = conceptData
                     }
@@ -694,6 +704,12 @@ export class QueryFilterCriteriaManager {
                     CONCEPT_NAME: item.conceptName,
                     DOMAIN_ID: item.domainId,
                     VOCABULARY_ID: item.system,
+                    ...(item.standardConceptCaption !== undefined && {
+                      STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                    }),
+                    ...(item.invalidReasonCaption !== undefined && {
+                      INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                    }),
                   }))
                   const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
                   criteria[eventType][fieldName] = conceptData
@@ -818,6 +834,12 @@ export class QueryFilterCriteriaManager {
                       CONCEPT_NAME: conceptName,
                       DOMAIN_ID: item.domainId || 'Unknown',
                       VOCABULARY_ID: item.system || 'Unknown',
+                      ...(item.standardConceptCaption !== undefined && {
+                        STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                      }),
+                      ...(item.invalidReasonCaption !== undefined && {
+                        INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                      }),
                     }
                   })
                   const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)

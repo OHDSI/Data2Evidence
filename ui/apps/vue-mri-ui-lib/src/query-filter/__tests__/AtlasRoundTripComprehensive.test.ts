@@ -228,7 +228,7 @@ describe('Atlas Round-Trip Tests', () => {
   })
 
   describe('Comprehensive Scenarios from circe-be', () => {
-    test.skip('all criteria types - from circe-be allCriteriaExpression', () => {
+    test('all criteria types - from circe-be allCriteriaExpression', () => {
       // SKIPPED: This fixture is very complex with 74KB of test data including:
       // - Observation Period criterion (not fully implemented)
       // - Many advanced attributes (PeriodType, UserDefinedPeriod, AgeAtStart, etc.)

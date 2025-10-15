@@ -222,7 +222,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -391,7 +391,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -422,7 +422,7 @@
         "type": "numericRange"
       },
       {
-        "id": "route",
+        "id": "routeConcept",
         "name": "Route",
         "description": "Filter by route of administration",
         "type": "concept",
@@ -691,7 +691,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -785,7 +785,7 @@
         "type": "concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -832,6 +832,18 @@
         "id": "rangeHigh",
         "name": "Range High",
         "description": "Filter by upper range",
+        "type": "numericRange"
+      },
+      {
+        "id": "rangeLowRatio",
+        "name": "Range Low Ratio",
+        "description": "Filter by lower range ratio",
+        "type": "numericRange"
+      },
+      {
+        "id": "rangeHighRatio",
+        "name": "Range High Ratio",
+        "description": "Filter by upper range ratio",
         "type": "numericRange"
       },
       {
@@ -911,7 +923,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -1025,7 +1037,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",

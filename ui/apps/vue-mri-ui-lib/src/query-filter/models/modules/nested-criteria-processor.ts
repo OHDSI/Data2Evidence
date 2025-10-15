@@ -116,6 +116,10 @@ export const processNestedGroups = (
             ...(nestedEvent.endWindow && {
               EndWindow: createAtlasWindow(nestedEvent.endWindow),
             }),
+            ...(nestedEvent.restrictVisit !== undefined && { RestrictVisit: nestedEvent.restrictVisit }),
+            ...(nestedEvent.ignoreObservationPeriod !== undefined && {
+              IgnoreObservationPeriod: nestedEvent.ignoreObservationPeriod,
+            }),
             Occurrence: {
               Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
               Count: nestedEvent.cardinality?.count ?? 1,
@@ -140,6 +144,17 @@ export const processNestedGroups = (
                     CONCEPT_NAME: item.conceptName,
                     DOMAIN_ID: item.domainId,
                     VOCABULARY_ID: item.system,
+                    ...(item.standardConcept !== undefined && { STANDARD_CONCEPT: item.standardConcept }),
+                    ...(item.standardConceptCaption !== undefined && {
+                      STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                    }),
+                    ...(item.invalidReason !== undefined && { INVALID_REASON: item.invalidReason }),
+                    ...(item.invalidReasonCaption !== undefined && {
+                      INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                    }),
+                    ...(item.conceptClassId !== undefined && { CONCEPT_CLASS_ID: item.conceptClassId }),
+                    ...(item.validStartDate !== undefined && { VALID_START_DATE: item.validStartDate }),
+                    ...(item.validEndDate !== undefined && { VALID_END_DATE: item.validEndDate }),
                   }))
                   const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
                   criteria.Criteria[atlasEventType][fieldName] = conceptData
@@ -280,6 +295,17 @@ export const processNestedGroups = (
                     CONCEPT_NAME: item.conceptName || item.text || item.display_value || '',
                     DOMAIN_ID: item.domainId || atlasFieldName,
                     VOCABULARY_ID: item.system || 'Unknown',
+                    ...(item.standardConcept !== undefined && { STANDARD_CONCEPT: item.standardConcept }),
+                    ...(item.standardConceptCaption !== undefined && {
+                      STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                    }),
+                    ...(item.invalidReason !== undefined && { INVALID_REASON: item.invalidReason }),
+                    ...(item.invalidReasonCaption !== undefined && {
+                      INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                    }),
+                    ...(item.conceptClassId !== undefined && { CONCEPT_CLASS_ID: item.conceptClassId }),
+                    ...(item.validStartDate !== undefined && { VALID_START_DATE: item.validStartDate }),
+                    ...(item.validEndDate !== undefined && { VALID_END_DATE: item.validEndDate }),
                   }))
                   demographicCriteria[atlasFieldName] = conceptData
                 }
@@ -359,6 +385,10 @@ export const processNestedGroupsRecursively = (
             ...(nestedEvent.endWindow && {
               EndWindow: createAtlasWindow(nestedEvent.endWindow),
             }),
+            ...(nestedEvent.restrictVisit !== undefined && { RestrictVisit: nestedEvent.restrictVisit }),
+            ...(nestedEvent.ignoreObservationPeriod !== undefined && {
+              IgnoreObservationPeriod: nestedEvent.ignoreObservationPeriod,
+            }),
             Occurrence: {
               Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
               Count: nestedEvent.cardinality?.count ?? 1,
@@ -383,6 +413,17 @@ export const processNestedGroupsRecursively = (
                     CONCEPT_NAME: item.conceptName,
                     DOMAIN_ID: item.domainId,
                     VOCABULARY_ID: item.system,
+                    ...(item.standardConcept !== undefined && { STANDARD_CONCEPT: item.standardConcept }),
+                    ...(item.standardConceptCaption !== undefined && {
+                      STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                    }),
+                    ...(item.invalidReason !== undefined && { INVALID_REASON: item.invalidReason }),
+                    ...(item.invalidReasonCaption !== undefined && {
+                      INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                    }),
+                    ...(item.conceptClassId !== undefined && { CONCEPT_CLASS_ID: item.conceptClassId }),
+                    ...(item.validStartDate !== undefined && { VALID_START_DATE: item.validStartDate }),
+                    ...(item.validEndDate !== undefined && { VALID_END_DATE: item.validEndDate }),
                   }))
                   const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
                   criteria.Criteria[atlasEventType][fieldName] = conceptData
@@ -522,6 +563,17 @@ export const processNestedGroupsRecursively = (
                     CONCEPT_NAME: item.conceptName || item.text || item.display_value || '',
                     DOMAIN_ID: item.domainId || atlasFieldName,
                     VOCABULARY_ID: item.system || 'Unknown',
+                    ...(item.standardConcept !== undefined && { STANDARD_CONCEPT: item.standardConcept }),
+                    ...(item.standardConceptCaption !== undefined && {
+                      STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                    }),
+                    ...(item.invalidReason !== undefined && { INVALID_REASON: item.invalidReason }),
+                    ...(item.invalidReasonCaption !== undefined && {
+                      INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                    }),
+                    ...(item.conceptClassId !== undefined && { CONCEPT_CLASS_ID: item.conceptClassId }),
+                    ...(item.validStartDate !== undefined && { VALID_START_DATE: item.validStartDate }),
+                    ...(item.validEndDate !== undefined && { VALID_END_DATE: item.validEndDate }),
                   }))
                   demographicCriteria[atlasFieldName] = conceptData
                 }
@@ -632,6 +684,17 @@ export const buildNestedCriteriaFromAttributes = (
               CONCEPT_NAME: item.conceptName || item.text || item.display_value || '',
               DOMAIN_ID: item.domainId || atlasFieldName,
               VOCABULARY_ID: item.system || 'Unknown',
+              ...(item.standardConcept !== undefined && { STANDARD_CONCEPT: item.standardConcept }),
+              ...(item.standardConceptCaption !== undefined && {
+                STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+              }),
+              ...(item.invalidReason !== undefined && { INVALID_REASON: item.invalidReason }),
+              ...(item.invalidReasonCaption !== undefined && {
+                INVALID_REASON_CAPTION: item.invalidReasonCaption,
+              }),
+              ...(item.conceptClassId !== undefined && { CONCEPT_CLASS_ID: item.conceptClassId }),
+              ...(item.validStartDate !== undefined && { VALID_START_DATE: item.validStartDate }),
+              ...(item.validEndDate !== undefined && { VALID_END_DATE: item.validEndDate }),
             }))
             demographicCriteria[atlasFieldName] = conceptData
           }
@@ -669,9 +732,10 @@ export const buildNestedCriteriaFromAttributes = (
       ...(nestedEvent.endWindow && {
         EndWindow: createAtlasWindow(nestedEvent.endWindow),
       }),
-      // RestrictVisit and IgnoreObservationPeriod are current disabled
-      // RestrictVisit: nestedEvent.restrictVisit ?? false,
-      // IgnoreObservationPeriod: nestedEvent.ignoreObservationPeriod ?? false,
+      ...(nestedEvent.restrictVisit !== undefined && { RestrictVisit: nestedEvent.restrictVisit }),
+      ...(nestedEvent.ignoreObservationPeriod !== undefined && {
+        IgnoreObservationPeriod: nestedEvent.ignoreObservationPeriod,
+      }),
       Occurrence: {
         Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
         Count: nestedEvent.cardinality?.count ?? 1,
@@ -709,6 +773,17 @@ export const buildNestedCriteriaFromAttributes = (
                 CONCEPT_NAME: item.conceptName,
                 DOMAIN_ID: item.domainId,
                 VOCABULARY_ID: item.system,
+                ...(item.standardConcept !== undefined && { STANDARD_CONCEPT: item.standardConcept }),
+                ...(item.standardConceptCaption !== undefined && {
+                  STANDARD_CONCEPT_CAPTION: item.standardConceptCaption,
+                }),
+                ...(item.invalidReason !== undefined && { INVALID_REASON: item.invalidReason }),
+                ...(item.invalidReasonCaption !== undefined && {
+                  INVALID_REASON_CAPTION: item.invalidReasonCaption,
+                }),
+                ...(item.conceptClassId !== undefined && { CONCEPT_CLASS_ID: item.conceptClassId }),
+                ...(item.validStartDate !== undefined && { VALID_START_DATE: item.validStartDate }),
+                ...(item.validEndDate !== undefined && { VALID_END_DATE: item.validEndDate }),
               }))
 
               // Set the appropriate field based on attribute type - use dynamic event type

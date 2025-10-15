@@ -1,14 +1,6 @@
 {
   "cdmVersionRange": ">=5.0.0",
-  "ConceptSets": [
-    {
-      "id": 0,
-      "name": "Empty Concept Set",
-      "expression": {
-        "items": []
-      }
-    }
-  ],
+  "ConceptSets": [],
   "PrimaryCriteria": {
     "CriteriaList": [
       {
@@ -29,8 +21,6 @@
                   },
                   "UseEventEnd": false
                 },
-                "RestrictVisit": true,
-                "IgnoreObservationPeriod": true,
                 "Occurrence": {
                   "Type": 2,
                   "Count": 1
@@ -198,8 +188,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "RestrictVisit": true,
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -209,7 +197,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -235,7 +222,6 @@
                   "Text": "this is some test text",
                   "Op": "contains"
                 },
-                "ConditionSourceConcept": 0,
                 "First": true,
                 "Age": {
                   "Value": 0,
@@ -332,7 +318,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -342,7 +327,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "EraStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -422,9 +406,7 @@
                   "CriteriaList": [
                     {
                       "Criteria": {
-                        "Death": {
-                          "CodesetId": 0
-                        }
+                        "Death": {}
                       },
                       "StartWindow": {
                         "Start": {
@@ -435,7 +417,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -445,7 +426,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -542,9 +522,7 @@
                   "CriteriaList": [
                     {
                       "Criteria": {
-                        "DeviceExposure": {
-                          "CodesetId": 0
-                        }
+                        "DeviceExposure": {}
                       },
                       "StartWindow": {
                         "Start": {
@@ -555,8 +533,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "RestrictVisit": true,
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -566,7 +542,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -605,7 +580,6 @@
                   "Extent": 99,
                   "Op": "bt"
                 },
-                "DeviceSourceConcept": 0,
                 "First": true,
                 "Age": {
                   "Value": 0,
@@ -718,9 +692,7 @@
                   "CriteriaList": [
                     {
                       "Criteria": {
-                        "DrugEra": {
-                          "CodesetId": 0
-                        }
+                        "DrugEra": {}
                       },
                       "StartWindow": {
                         "Start": {
@@ -731,7 +703,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -840,8 +811,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "RestrictVisit": true,
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -851,7 +820,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -968,7 +936,6 @@
                   "Text": "lot number",
                   "Op": "contains"
                 },
-                "DrugSourceConcept": 0,
                 "First": true,
                 "Age": {
                   "Value": 0,
@@ -1072,9 +1039,7 @@
                   "CriteriaList": [
                     {
                       "Criteria": {
-                        "Measurement": {
-                          "CodesetId": 0
-                        }
+                        "Measurement": {}
                       },
                       "StartWindow": {
                         "Start": {
@@ -1085,8 +1050,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "RestrictVisit": true,
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -1170,7 +1133,6 @@
                   "Extent": 99,
                   "Op": "bt"
                 },
-                "MeasurementSourceConcept": 0,
                 "RangeLowRatio": {
                   "Value": 0,
                   "Extent": 99,
@@ -1293,9 +1255,7 @@
                   "CriteriaList": [
                     {
                       "Criteria": {
-                        "Observation": {
-                          "CodesetId": 0
-                        }
+                        "Observation": {}
                       },
                       "StartWindow": {
                         "Start": {
@@ -1306,7 +1266,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "RestrictVisit": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -1316,7 +1275,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -1393,7 +1351,6 @@
                     "VOCABULARY_ID": "UCUM"
                   }
                 ],
-                "ObservationSourceConcept": 0,
                 "First": true,
                 "Age": {
                   "Value": 0,
@@ -1508,7 +1465,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -1605,9 +1561,7 @@
                   "CriteriaList": [
                     {
                       "Criteria": {
-                        "ProcedureOccurrence": {
-                          "CodesetId": 0
-                        }
+                        "ProcedureOccurrence": {}
                       },
                       "StartWindow": {
                         "Start": {
@@ -1618,8 +1572,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "RestrictVisit": true,
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -1629,7 +1581,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -1783,9 +1734,7 @@
                   "CriteriaList": [
                     {
                       "Criteria": {
-                        "Specimen": {
-                          "CodesetId": 0
-                        }
+                        "Specimen": {}
                       },
                       "StartWindow": {
                         "Start": {
@@ -1796,7 +1745,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -1806,7 +1754,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -1975,8 +1922,6 @@
                         },
                         "UseEventEnd": false
                       },
-                      "RestrictVisit": true,
-                      "IgnoreObservationPeriod": true,
                       "Occurrence": {
                         "Type": 2,
                         "Count": 1
@@ -1986,7 +1931,6 @@
                   "DemographicCriteriaList": [],
                   "Groups": []
                 },
-                "CodesetId": 0,
                 "OccurrenceStartDate": {
                   "Value": "1900-01-01",
                   "Extent": "2099-01-01",
@@ -2017,7 +1961,6 @@
                     "VOCABULARY_ID": "Condition Type"
                   }
                 ],
-                "VisitSourceConcept": 0,
                 "VisitLength": {
                   "Value": 0,
                   "Extent": 99,
@@ -2120,9 +2063,7 @@
         "CriteriaList": [
           {
             "Criteria": {
-              "ConditionOccurrence": {
-                "CodesetId": 0
-              }
+              "ConditionOccurrence": {}
             },
             "StartWindow": {
               "Start": {
@@ -2148,9 +2089,7 @@
             "CriteriaList": [
               {
                 "Criteria": {
-                  "ProcedureOccurrence": {
-                    "CodesetId": 0
-                  }
+                  "ProcedureOccurrence": {}
                 },
                 "StartWindow": {
                   "Start": {
@@ -2170,9 +2109,7 @@
               },
               {
                 "Criteria": {
-                  "DrugExposure": {
-                    "CodesetId": 0
-                  }
+                  "DrugExposure": {}
                 },
                 "StartWindow": {
                   "Start": {
