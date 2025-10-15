@@ -2349,6 +2349,7 @@
         "DatabaseConnector (>= 6.0.0)"
       ],
       "Imports": [
+        "SqlRender",
         "ParallelLogger",
         "checkmate",
         "DBI",
@@ -2364,7 +2365,6 @@
       ],
       "Suggests": [
         "testthat (>= 3.0.0)",
-        "SqlRender",
         "RSQLite",
         "duckdb",
         "knitr",
