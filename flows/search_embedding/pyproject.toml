@@ -9,6 +9,7 @@ dependencies = [
     "ibis-framework[duckdb,postgres]==10.0.0",
     "pandas==2.2.2",
     "prefect[docker,shell]==3.0.3",
+    "psycopg2-binary==2.9.6",
     "pydantic==2.10.6",
     "pyjwt==2.10.1",
     "sqlalchemy==2.0.38",
