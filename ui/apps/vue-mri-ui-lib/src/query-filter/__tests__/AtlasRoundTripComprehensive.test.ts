@@ -336,7 +336,7 @@ describe('Atlas Round-Trip Tests', () => {
       expect(exportedAtlas).toEqual(originalAtlas)
     })
 
-    test.skip('comprehensive attributes coverage', () => {
+    test('comprehensive attributes coverage', () => {
       // Tests extensive attribute types and operators across multiple criteria types
       // New criteria: ConditionEra, VisitOccurrence, VisitDetail, PayerPlanPeriod, Specimen, LocationRegion
       // DateAdjustment: StartWith/EndWith + offsets

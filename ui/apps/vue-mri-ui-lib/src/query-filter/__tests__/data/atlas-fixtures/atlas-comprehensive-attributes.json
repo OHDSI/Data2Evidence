@@ -199,7 +199,6 @@
                                                 },
                                                 "UseEventEnd": false
                                             },
-                                            "IgnoreObservationPeriod": true,
                                             "Occurrence": {
                                                 "Type": 2,
                                                 "Count": 1

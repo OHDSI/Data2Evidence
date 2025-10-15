@@ -122,6 +122,78 @@ export const processNestedGroups = (
             },
           }
 
+          // Process standard attributes (NumericRange, DateRange, Boolean, Text, DateAdjustment, Concept)
+          if (nestedEvent.attributes && Array.isArray(nestedEvent.attributes)) {
+            const standardAttributes = nestedEvent.attributes.filter(
+              attr => hasAttributeId(attr) && attr.attributeType === 'standard'
+            )
+
+            standardAttributes.forEach(attr => {
+              if (!hasAttributeId(attr)) return
+
+              // Handle concept attributes
+              if ('configType' in attr && attr.configType === 'concept') {
+                if ('conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
+                  const conceptData = attr.conceptItems.map(item => ({
+                    CONCEPT_CODE: item.code,
+                    CONCEPT_ID: item.conceptId,
+                    CONCEPT_NAME: item.conceptName,
+                    DOMAIN_ID: item.domainId,
+                    VOCABULARY_ID: item.system,
+                  }))
+                  const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                  criteria.Criteria[atlasEventType][fieldName] = conceptData
+                }
+              }
+              // Handle numericRange attributes
+              else if (isNumericRangeAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                const numericConfig: NumericRange = {
+                  Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                  Value: attr.value !== undefined ? parseInt(attr.value) : 0,
+                }
+                if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+                  numericConfig.Extent = parseInt(attr.extent)
+                }
+                criteria.Criteria[atlasEventType][attributeKey] = numericConfig
+              }
+              // Handle dateRange attributes
+              else if (isDateRangeAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                const dateConfig: DateRange = {
+                  Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                  Value: attr.value || '',
+                  Extent: attr.extent || '',
+                }
+                if (!dateConfig.Extent) {
+                  delete (dateConfig as any).Extent
+                }
+                criteria.Criteria[atlasEventType][attributeKey] = dateConfig
+              }
+              // Handle dateAdjustment attributes
+              else if (isDateAdjustmentAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                const dateAdjustmentConfig: DateAdjustment = {
+                  StartWith: attr.startWith || 'START_DATE',
+                  StartOffset: attr.startOffset || 0,
+                  EndWith: attr.endWith || 'END_DATE',
+                  EndOffset: attr.endOffset || 0,
+                }
+                criteria.Criteria[atlasEventType][attributeKey] = dateAdjustmentConfig
+              }
+              // Handle boolean attributes
+              else if (isBooleanAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                criteria.Criteria[atlasEventType][attributeKey] = attr.value || false
+              }
+              // Handle text attributes
+              else if (isTextAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                criteria.Criteria[atlasEventType][attributeKey] = attr.value || ''
+              }
+            })
+          }
+
           // Process nested criteria from attributes if they exist
           if (nestedEvent.attributes && Array.isArray(nestedEvent.attributes)) {
             // TODO: check if we can use .find() here so we don't have to attributesNestedCriteria[0]
@@ -291,6 +363,78 @@ export const processNestedGroupsRecursively = (
               Type: mapCardinalityTypeToAtlas(nestedEvent.cardinality?.type || 'AT_LEAST'),
               Count: nestedEvent.cardinality?.count ?? 1,
             },
+          }
+
+          // Process standard attributes (NumericRange, DateRange, Boolean, Text, DateAdjustment, Concept)
+          if (nestedEvent.attributes && Array.isArray(nestedEvent.attributes)) {
+            const standardAttributes = nestedEvent.attributes.filter(
+              attr => hasAttributeId(attr) && attr.attributeType === 'standard'
+            )
+
+            standardAttributes.forEach(attr => {
+              if (!hasAttributeId(attr)) return
+
+              // Handle concept attributes
+              if ('configType' in attr && attr.configType === 'concept') {
+                if ('conceptItems' in attr && attr.conceptItems && attr.conceptItems.length > 0) {
+                  const conceptData = attr.conceptItems.map(item => ({
+                    CONCEPT_CODE: item.code,
+                    CONCEPT_ID: item.conceptId,
+                    CONCEPT_NAME: item.conceptName,
+                    DOMAIN_ID: item.domainId,
+                    VOCABULARY_ID: item.system,
+                  }))
+                  const fieldName = attr.attributeId.charAt(0).toUpperCase() + attr.attributeId.slice(1)
+                  criteria.Criteria[atlasEventType][fieldName] = conceptData
+                }
+              }
+              // Handle numericRange attributes
+              else if (isNumericRangeAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                const numericConfig: NumericRange = {
+                  Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                  Value: attr.value !== undefined ? parseInt(attr.value) : 0,
+                }
+                if (attr.extent && (attr.operator === 'BETWEEN' || attr.operator === 'NOT_BETWEEN')) {
+                  numericConfig.Extent = parseInt(attr.extent)
+                }
+                criteria.Criteria[atlasEventType][attributeKey] = numericConfig
+              }
+              // Handle dateRange attributes
+              else if (isDateRangeAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                const dateConfig: DateRange = {
+                  Op: attr.operator ? mapOperatorToAtlas(attr.operator) : 'gt',
+                  Value: attr.value || '',
+                  Extent: attr.extent || '',
+                }
+                if (!dateConfig.Extent) {
+                  delete (dateConfig as any).Extent
+                }
+                criteria.Criteria[atlasEventType][attributeKey] = dateConfig
+              }
+              // Handle dateAdjustment attributes
+              else if (isDateAdjustmentAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                const dateAdjustmentConfig: DateAdjustment = {
+                  StartWith: attr.startWith || 'START_DATE',
+                  StartOffset: attr.startOffset || 0,
+                  EndWith: attr.endWith || 'END_DATE',
+                  EndOffset: attr.endOffset || 0,
+                }
+                criteria.Criteria[atlasEventType][attributeKey] = dateAdjustmentConfig
+              }
+              // Handle boolean attributes
+              else if (isBooleanAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                criteria.Criteria[atlasEventType][attributeKey] = attr.value || false
+              }
+              // Handle text attributes
+              else if (isTextAttribute(attr)) {
+                const attributeKey = getAtlasAttributeKey(attr.attributeId, atlasEventType)
+                criteria.Criteria[atlasEventType][attributeKey] = attr.value || ''
+              }
+            })
           }
 
           // Process nested criteria from attributes if they exist
