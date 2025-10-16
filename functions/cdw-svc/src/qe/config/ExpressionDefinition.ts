@@ -125,6 +125,8 @@ export class ExpressionDefinition {
             // Regex functions
             // <EXP>/<AGGR> LIKE_REGEXPR <EXP>/<AGGR> [FLAG {i|m|s|x}]
             { regex: /<((?:EXP)|(?:AGGR))>[\s]+LIKE_REGEXPR[\s]+<((?:EXP)|(?:AGGR))>[\s]+FLAG[\s]+<((?:EXP)|(?:AGGR))>[\s]*/, placeholder: "<COND>" },
+            // REPLACE_REGEXPR (<EXP>/<AGGR> IN <EXP>/<AGGR> WITH <EXP>/<AGGR>) LIKE_REGEXPR <EXP>/<AGGR> FLAG <EXP>/<AGGR>
+            { regex: /REPLACE_REGEXPR[\s]*\([\s]*<((?:EXP)|(?:AGGR))>[\s]+IN[\s]+<((?:EXP)|(?:AGGR))>[\s]+WITH[\s]+<((?:EXP)|(?:AGGR))>[\s]*\)[\s]+LIKE_REGEXPR[\s]+<((?:EXP)|(?:AGGR))>[\s]+FLAG[\s]+<((?:EXP)|(?:AGGR))>[\s]*/, placeholder: "<COND>" },
             // LOCATE_REGEXPR([START|AFTER] <EXP>/<AGGR> [FLAG {i|m|s|x}] IN <EXP>/<AGGR> [FROM <EXP>/<AGGR>] [OCCURRENCE <EXP>/<AGGR>] [GROUP <EXP>/<AGGR>])
             { regex: /LOCATE_REGEXPR[\s]*\([\s]*(?:(?:START|AFTER)[\s]+)?<((?:EXP)|(?:AGGR))>[\s]+(?:FLAG[\s]+'[imsx]{1,4}'[\s]+)?IN[\s]+<((?:EXP)|(?:AGGR))>(?:[\s]+FROM[\s]+<((?:EXP)|(?:AGGR))>)?(?:[\s]+OCCURRENCE[\s]+<((?:EXP)|(?:AGGR))>)?(?:[\s]+GROUP[\s]+<((?:EXP)|(?:AGGR))>)?[\s]*\)/ },
             // OCCURRENCES_REGEXPR(<EXP>/<AGGR> [FLAG {i|m|s|x}] IN <EXP>/<AGGR> [FROM <EXP>/<AGGR>])
@@ -144,7 +146,7 @@ export class ExpressionDefinition {
             { regex: /<((?:EXP)|(?:AGGR))>[\s]*(\*|\/|\+|-|\|\|)[\s]*<((?:EXP)|(?:AGGR))>/ },
 
             // Constants
-            { regex: /'(?:(?:'')|[^'])+'/, placeholder: "<EXP>" },
+            { regex: /'(?:(?:'')|[^'])*'/, placeholder: "<EXP>" },
             { regex: /\d+(\.\d+)?/, placeholder: "<EXP>" },
             { regex: /NULL/, placeholder: "<EXP>" },
 
