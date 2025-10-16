@@ -15,7 +15,9 @@
             <div class="input-container">
               <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
             </div>
-
+            <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
+              Please enter another name
+            </div>
             <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
               Filter name must not exceed 40 characters
             </div>
@@ -372,6 +374,7 @@ export default {
       }
     },
     closeRenameBookmark() {
+      this.isInvalidName = false
       this.showRenameDialog = false
     },
     renameBookmark(bookmarkDisplay) {
@@ -383,6 +386,23 @@ export default {
     },
     confirmRenameBookmark() {
       const bookmarkDisplay = this.selectedBookmark
+
+      this.renamedBookmark = this.renamedBookmark.trim()
+
+      // Check if the new name is empty
+      if (!this.renamedBookmark.length) {
+        this.isInvalidName = true
+        return
+      }
+
+      // Check if the new name is already taken
+      const username = getPortalAPI().username
+      for (const bookmark of this.getBookmarks) {
+        if (username === bookmark.user_id && bookmark.bookmarkname === this.renamedBookmark) {
+          this.isInvalidName = true
+          return
+        }
+      }
 
       if (this.isMScohort(bookmarkDisplay)) {
         this.fireRenameMaterializedCohortQuery({
@@ -645,3 +665,4 @@ export default {
   },
 }
 </script>
+
