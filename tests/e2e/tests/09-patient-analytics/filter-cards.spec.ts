@@ -124,12 +124,12 @@ test(TEST_NAME, async ({ browser }) => {
   await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card
-  const alertBanner = await page.getByRole('alert')
-  const closeBannerBtn = await page.getByRole('button', { name: 'Close' })
-  if (alertBanner) {
-    await closeBannerBtn.click()
-  }
   await page.getByRole('button', { name: '' }).nth(1).click()
+  let menuVisible = await page.getByRole('menu').isVisible()
+  if (!menuVisible) {
+    await page.getByRole('button', { name: '' }).nth(1).click()
+    await expect(page.getByRole('menu')).toBeVisible()
+  }
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await page.waitForSelector('.loading-animation-component', { state: 'hidden' })
   await page.getByText('Select an AttributeSelect').click()
