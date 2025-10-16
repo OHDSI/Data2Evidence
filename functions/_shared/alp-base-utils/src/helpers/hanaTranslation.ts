@@ -4,7 +4,7 @@ interface ParameterInterface {
 }
 
 // Translation function containing regex that are shared between DUCKDB and POSTGRES dialects
-const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName: string): string => {
+const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName: string, resultSchemaName: string): string => {
   // The first few queries to replace are very specific query which does not require further string replacements
   // subsequent lines, hence early return is used.
   const regex1 =
@@ -174,12 +174,13 @@ const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName
 
   temp = temp.replace(/\$\$SCHEMA\$\$./g, `"${schemaName}".`);
   temp = temp.replace(/\$\$VOCAB_SCHEMA\$\$./g, `"${vocabSchemaName}".`);
+  temp = temp.replace(/\$\$RESULT_SCHEMA\$\$./g, `"${resultSchemaName}".`);
 
   return temp;
 };
 
-export const translateHanaToPostgres = (temp: string, schemaName: string, vocabSchemaName: string) => {
-  temp = hanaCommonTranslation(temp, schemaName, vocabSchemaName);
+export const translateHanaToPostgres = (temp: string, schemaName: string, vocabSchemaName: string, resultSchemaName: string) => {
+  temp = hanaCommonTranslation(temp, schemaName, vocabSchemaName, resultSchemaName);
   temp = temp.replace(/LIKE_REGEXPR/gi, "~*"); // ~* short for regex, case insensitive matching
   temp = temp.replace(
     /DAYS_BETWEEN \(\(\(("[\w]*"."[\w]*")\)\),\(\(("[\w]*"."[\w]*")\)\)\)/gi,
@@ -199,6 +200,7 @@ export const translateHanaToDuckdb = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
+  resultSchemaName: string,
   parameters?: ParameterInterface[],
 ): string => {
   temp = temp.replace(
@@ -210,7 +212,7 @@ export const translateHanaToDuckdb = (
       `direct_db_conn.${schemaName}.COHORT`
   );
 
-  temp = hanaCommonTranslation(temp, schemaName, vocabSchemaName);
+  temp = hanaCommonTranslation(temp, schemaName, vocabSchemaName, resultSchemaName);
 
   // Cast left comparator to varchar which is required by duckdb
   temp = temp.replace(/LIKE_REGEXPR/gi, "::VARCHAR ILIKE");
