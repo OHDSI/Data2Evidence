@@ -1,7 +1,7 @@
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useState, useEffect } from "react";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
-import { Dialog, Button } from "@portal/components";
+import { Dialog, Button, Box, InputLabel, Select, MenuItem } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
@@ -21,6 +21,8 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
   const { getText } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   loader.config({ monaco });
 
   const handleClose = useCallback(
@@ -51,6 +53,15 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
     }
   }, [code, getText, study]);
 
+  const getTemplates = useCallback(async () => {
+    const templates = await api.strategusAnalysis.getStudyViewerTemplates();
+    setTemplates(templates);
+  }, []);
+
+  useEffect(() => {
+    getTemplates();
+  }, [getTemplates]);
+
   return (
     <Dialog
       className="study-template-dialog"
@@ -63,7 +74,39 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
       feedback={feedback}
     >
       <Divider />
+
       <div className="study-template-dialog__content">
+        <Box mb={4}>
+          <InputLabel sx={{ mb: 1 }}>Template</InputLabel>
+          <Select
+            sx={{ width: "100%" }}
+            variant="standard"
+            displayEmpty
+            value={selectedTemplate}
+            onChange={(event: any) => {
+              const filename = (event?.target?.value as string) ?? "";
+              setSelectedTemplate(filename);
+              if (filename) {
+                const tmpl = (templates as any[]).find((t: any) => t?.filename === filename);
+                if (tmpl?.content) {
+                  // TODO: editor should update with the template code
+                  onCodeChange(tmpl.content);
+                }
+              }
+            }}
+          >
+            <MenuItem value="">
+              <em>Default</em>
+            </MenuItem>
+            {Array.isArray(templates) &&
+              templates.map((template: any) => (
+                <MenuItem key={template?.filename} value={template?.filename ?? ""}>
+                  {template?.filename}
+                </MenuItem>
+              ))}
+          </Select>
+        </Box>
+
         <SafeEditor
           height="60vh"
           defaultLanguage="r"

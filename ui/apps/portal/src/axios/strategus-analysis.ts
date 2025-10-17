@@ -1,6 +1,7 @@
 import { request } from "./request";
 import { NetworkStrategusStudy } from "../types";
 const STRATEGUS_ANALYSIS_URL = "strategus/analysis";
+const STRATEGUS_TEMPLATE_URL = "strategus/template";
 
 export class StrategusAnalysis {
   public getAllStrategusAnalysis(): Promise<NetworkStrategusStudy[]> {
@@ -28,6 +29,13 @@ export class StrategusAnalysis {
         studyId,
         viewerCode: code,
       },
+    });
+  }
+
+  public getStudyViewerTemplates() {
+    return request({
+      baseURL: STRATEGUS_TEMPLATE_URL,
+      method: "GET",
     });
   }
 }
