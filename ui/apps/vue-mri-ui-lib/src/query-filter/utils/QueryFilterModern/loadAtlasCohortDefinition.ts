@@ -124,7 +124,8 @@ export const loadAtlasCohortDefinition = async (
   criteriaManager: Reactive<QueryFilterCriteriaManager>,
   conceptSetsFromCriteria: ComputedRef<ConceptSetItemDisplay[]>,
   nextTick: () => Promise<void>,
-  selectedConceptSets: Ref<ConceptSetItemDisplay[]>
+  selectedConceptSets: Ref<ConceptSetItemDisplay[]>,
+  isAtlas: boolean
 ) => {
   const loadConceptSetDetailsForAllEvents = async () => {
     const criteria = criteriaManager.getCriteria()
@@ -310,14 +311,13 @@ export const loadAtlasCohortDefinition = async (
         const createRequest: CreateConceptSetRequest = {
           id: 0,
           name: sanitizedName,
-          description: null,
           expression: {
             items: expressionItems,
           },
         }
 
         // Create the concept set via API
-        const newConceptSetId = await createConceptSet(createRequest, datasetId)
+        const newConceptSetId = await createConceptSet(createRequest, datasetId, isAtlas)
 
         // Create a temporary concept set item to return immediately
         // The actual reload will happen at the end of all concept set processing

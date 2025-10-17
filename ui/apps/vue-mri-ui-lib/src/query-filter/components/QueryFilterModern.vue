@@ -416,7 +416,8 @@ watch(
         criteriaManager,
         conceptSetsFromCriteria,
         nextTick,
-        selectedConceptSets
+        selectedConceptSets,
+        isAtlas.value
       )
 
       // Fetch cohort info after loading cohort definition
@@ -1001,7 +1002,13 @@ const fetchCohortInfo = async (cohortDefinitionId: number) => {
   try {
     isLoadingCohortInfo.value = true
     console.log('Fetching cohort info for cohort definition ID:', cohortDefinitionId)
-    const info = await d2eWebapiService.getCohortInfo(cohortDefinitionId)
+    // Use selected dataset from dropdown in Atlas mode, or portal dataset in portal mode
+    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+    if (!datasetId) {
+      console.error('Missing datasetId for fetching cohort info')
+      return
+    }
+    const info = await d2eWebapiService.getCohortInfo(cohortDefinitionId, datasetId)
     cohortInfo.value = info
     console.log('Fetched cohort info:', info)
 

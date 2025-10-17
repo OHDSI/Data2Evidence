@@ -37,7 +37,11 @@ export class D2eWebapiService {
     return response.data
   }
 
-  public async createConceptSet(conceptSetData: CreateConceptSetRequest, datasetId: string): Promise<number> {
+  public async createConceptSet(
+    conceptSetData: CreateConceptSetRequest,
+    datasetId: string,
+    isAtlas?: boolean
+  ): Promise<number> {
     // Step 1: Create the concept set
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
@@ -50,7 +54,7 @@ export class D2eWebapiService {
       data: conceptSetData,
     })
 
-    const conceptSetId = response.data
+    const conceptSetId = response.data.id
 
     // Step 2: Add concepts to the concept set if expression has items
     // Note that even though Step 1 may include the expression items, it is not saved, and this step is needed
@@ -62,7 +66,7 @@ export class D2eWebapiService {
         includeMapped: item.includeMapped,
       }))
 
-      await this.updateConceptSetItems(conceptSetId, conceptItems, datasetId)
+      await this.updateConceptSetItems(conceptSetId, conceptItems, datasetId, isAtlas)
     }
 
     return conceptSetId
@@ -76,15 +80,19 @@ export class D2eWebapiService {
       includeDescendants: boolean
       includeMapped: boolean
     }>,
-    datasetId: string
+    datasetId: string,
+    isAtlas?: boolean
   ): Promise<number | { statusCode: number }> {
-    // Transform booleans to 0/1 for Atlas WebAPI
-    const transformedItems = conceptItems.map(item => ({
-      conceptId: item.conceptId,
-      isExcluded: item.isExcluded ? 1 : 0,
-      includeDescendants: item.includeDescendants ? 1 : 0,
-      includeMapped: item.includeMapped ? 1 : 0,
-    }))
+    // Transform booleans to 0/1 only for Atlas WebAPI (when isAtlas = true)
+    // d2e-webapi expects booleans, so only transform when needed
+    const transformedItems = isAtlas
+      ? conceptItems.map(item => ({
+          conceptId: item.conceptId,
+          isExcluded: item.isExcluded ? 1 : 0,
+          includeDescendants: item.includeDescendants ? 1 : 0,
+          includeMapped: item.includeMapped ? 1 : 0,
+        }))
+      : conceptItems
 
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
@@ -168,11 +176,12 @@ export class D2eWebapiService {
     return response.data
   }
 
-  public async getCohortInfo(cohortDefinitionId: number): Promise<CohortInfoResponse> {
+  public async getCohortInfo(cohortDefinitionId: number, datasetId: string): Promise<CohortInfoResponse> {
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
       url: `/cohortdefinition/${cohortDefinitionId}/info`,
       method: 'GET',
+      headers: { datasetid: datasetId },
     })
     return response.data
   }

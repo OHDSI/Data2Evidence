@@ -456,14 +456,13 @@ const setupWebapiRoutes = app => {
       // Create the concept set - the client will handle adding items separately
       const createResponse = await api.post(ALLOWED_ENDPOINTS.conceptset, req.body)
       const { data: conceptSet } = createResponse
-      const conceptSetId = conceptSet.id
-      console.log(`Created concept set with ID: ${conceptSetId}`)
+      console.log(`Created concept set with ID: ${conceptSet.id}`)
 
       // Invalidate concept sets cache since we created a new one
       delete cache[CACHE_KEYS.CONCEPT_SETS]
 
-      // Return the concept set ID as expected by our client code
-      return res.json(conceptSetId)
+      // Return the full concept set object to match d2e-webapi behavior
+      return res.json(conceptSet)
     } catch (error) {
       console.error('Error creating concept set in Atlas API:', error.message)
 

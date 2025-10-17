@@ -356,13 +356,17 @@ export const getConceptSetExpression = async (
   }
 }
 
-export const createConceptSet = async (conceptSetData: CreateConceptSetRequest, datasetId: string): Promise<number> => {
+export const createConceptSet = async (
+  conceptSetData: CreateConceptSetRequest,
+  datasetId: string,
+  isAtlas: boolean
+): Promise<number> => {
   if (!datasetId) {
     throw new Error('Missing datasetId for concept set creation')
   }
 
   try {
-    return await d2eWebapiService.createConceptSet(conceptSetData, datasetId)
+    return await d2eWebapiService.createConceptSet(conceptSetData, datasetId, isAtlas)
   } catch (error) {
     console.error('Error creating concept set:', error)
     throw error
