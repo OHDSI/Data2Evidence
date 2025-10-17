@@ -92,7 +92,6 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
             onChange={(event) => {
               const filename = event.target.value;
               setSelectedTemplate(filename);
-
               if (filename === "default") {
                 onCodeChange(study.viewerCode);
               } else {
@@ -103,15 +102,14 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
               }
             }}
           >
-            <MenuItem value="">
+            <MenuItem value="default">
               <em>Default</em>
             </MenuItem>
-            {Array.isArray(templates) &&
-              templates.map((template: any) => (
-                <MenuItem key={template?.filename} value={template?.filename ?? ""}>
-                  {template?.filename}
-                </MenuItem>
-              ))}
+            {templates.map((template) => (
+              <MenuItem key={template.filename} value={template.filename}>
+                {template?.filename}
+              </MenuItem>
+            ))}
           </Select>
         </Box>
 
