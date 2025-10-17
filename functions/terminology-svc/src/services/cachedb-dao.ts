@@ -20,6 +20,7 @@ export class CachedbDAO {
   private readonly semanticRatio: number;
   private readonly databaseCode: string;
   private readonly schemaName: string;
+  private readonly resultSchemaName: string;
   private readonly fts_concept_identifier: string;
 
   constructor(
@@ -28,7 +29,8 @@ export class CachedbDAO {
     vocabSchemaName: string,
     semanticRatio: number,
     databaseCode: string,
-    schemaName: string
+    schemaName: string,
+    resultSchemaName: string
   ) {
     this.jwt = jwt;
     this.datasetId = datasetId;
@@ -36,6 +38,7 @@ export class CachedbDAO {
     this.semanticRatio = semanticRatio;
     this.databaseCode = databaseCode;
     this.schemaName = schemaName;
+    this.resultSchemaName = resultSchemaName;
     this.fts_concept_identifier = env.USE_TREX_DB_CONN
       ? `fts_${vocabSchemaName}_concept`
       : `${vocabSchemaName}.fts_main_concept`;
@@ -807,7 +810,8 @@ export class CachedbDAO {
     return new TrexDuckdbConnection(
       this.databaseCode,
       this.schemaName,
-      this.vocabSchemaName
+      this.vocabSchemaName,
+      this.resultSchemaName
     );
   };
 }
@@ -818,7 +822,8 @@ class TrexDuckdbConnection {
   constructor(
     databaseCode: string,
     schemaName: string,
-    vocabSchemaName: string
+    vocabSchemaName: string,
+    resultSchemaName: string
   ) {
     try {
       const dbm = Trex.databaseManager();
@@ -826,6 +831,7 @@ class TrexDuckdbConnection {
         databaseCode,
         schemaName,
         vocabSchemaName,
+        resultSchemaName,
         {
           duckdb: (e: unknown) => e,
         } // Dummy function which returns itself, originally used for translation function
