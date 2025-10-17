@@ -299,11 +299,14 @@ export const StudyCard: FC<StudyCardProps> = ({
     [selectedDatasetId, setFeedback, study]
   );
 
-  const handleCodeSave = useCallback(async (newCode: string) => {
-    if (typeof onUpdateStudyViewerCode === "function" && study.id) {
-      onUpdateStudyViewerCode(study.id, newCode);
-    }
-  }, []);
+  const handleCodeSave = useCallback(
+    async (newCode: string) => {
+      if (typeof onUpdateStudyViewerCode === "function" && study.id) {
+        onUpdateStudyViewerCode(study.id, newCode);
+      }
+    },
+    [onUpdateStudyViewerCode, study.id]
+  );
 
   return (
     <>

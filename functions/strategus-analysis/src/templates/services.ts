@@ -6,8 +6,7 @@ import * as path from "path";
 import { ResultViewerTemplateData } from "../type.ts";
 export default class StrategusViewerTemplateService {
   private readonly repoDir = "./ResultViewerTemplateRepository";
-  private readonly repositoryUrl =
-    "https://github.com/data2evidence/result_viewer_templates.git";
+  private readonly repositoryUrl = env.GIT_RESULT_VIEWER_TEMPLATE_REPO_URL;
   private readonly repositoryBranch =
     env.GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH;
 
