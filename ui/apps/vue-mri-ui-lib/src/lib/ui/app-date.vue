@@ -15,6 +15,7 @@
           @keyup.enter="onKeyEnter"
           @focus="onInputFocus"
           @blur="onInputBlur"
+          @input="clearError"
         />
         <div ref="calendarButton" class="app-date__icon" @click="togglePicker">
           <appIcon icon="calendar" />
@@ -339,6 +340,10 @@ const onCleared = () => {
   displayValue.value = ''
   isValid.value = true
   emit('update', { date: '', isEmpty: true })
+}
+
+const clearError = () => {
+  isValid.value = true
 }
 
 const togglePicker = () => {
