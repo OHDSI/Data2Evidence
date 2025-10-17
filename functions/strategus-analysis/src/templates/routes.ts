@@ -13,8 +13,8 @@ export default class StrategusViewerTemplateRouter {
     this.router.get("/", async (req: Request, res: Response) => {
       try {
         const result =
-          this.strategusViewerTemplateService.getTemplatesFromRepository();
-        return res.status(200).json(result);
+          await this.strategusViewerTemplateService.getTemplatesFromRepository();
+        return res.status(200).send(result);
       } catch (error) {
         return res.status(500).json({
           message: `An error occurred retrieving result viewer templates ${error.message}`,

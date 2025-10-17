@@ -574,7 +574,7 @@
           "PG_SCHEMA": "strategus",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viwer_templates.git}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }
       },
