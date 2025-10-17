@@ -1,5 +1,5 @@
 import { request } from "./request";
-import { NetworkStrategusStudy } from "../types";
+import { NetworkStrategusStudy, StrategusResultViewerTemplateData } from "../types";
 const STRATEGUS_ANALYSIS_URL = "strategus/analysis";
 const STRATEGUS_TEMPLATE_URL = "strategus/template";
 
@@ -32,7 +32,7 @@ export class StrategusAnalysis {
     });
   }
 
-  public getStudyViewerTemplates() {
+  public getStudyViewerTemplates(): Promise<StrategusResultViewerTemplateData[]> {
     return request({
       baseURL: STRATEGUS_TEMPLATE_URL,
       method: "GET",

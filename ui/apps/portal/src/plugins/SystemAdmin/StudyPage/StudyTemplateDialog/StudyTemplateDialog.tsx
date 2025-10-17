@@ -6,7 +6,13 @@ import Divider from "@mui/material/Divider";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
 import { api } from "../../../../axios/api";
-import { CloseDialogType, Feedback, StrategusStudy, StrategusStudyType } from "../../../../types";
+import {
+  CloseDialogType,
+  Feedback,
+  StrategusStudy,
+  StrategusStudyType,
+  StrategusResultViewerTemplateData,
+} from "../../../../types";
 import "./StudyTemplateDialog.scss";
 
 interface StudyTemplateDialogProps {
@@ -21,7 +27,7 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
   const { getText } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
-  const [templates, setTemplates] = useState([]);
+  const [templates, setTemplates] = useState<StrategusResultViewerTemplateData[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   loader.config({ monaco });
 
@@ -83,13 +89,15 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
             variant="standard"
             displayEmpty
             value={selectedTemplate}
-            onChange={(event: any) => {
-              const filename = (event?.target?.value as string) ?? "";
+            onChange={(event) => {
+              const filename = event.target.value;
               setSelectedTemplate(filename);
-              if (filename) {
-                const tmpl = (templates as any[]).find((t: any) => t?.filename === filename);
+
+              if (filename === "default") {
+                onCodeChange(study.viewerCode);
+              } else {
+                const tmpl = templates.find((t) => t.filename === filename);
                 if (tmpl?.content) {
-                  // TODO: editor should update with the template code
                   onCodeChange(tmpl.content);
                 }
               }
@@ -109,8 +117,8 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
 
         <SafeEditor
           height="60vh"
-          defaultLanguage="r"
-          defaultValue={code}
+          language="r"
+          value={code}
           options={{
             scrollBeyondLastLine: false,
             fontSize: "14px",
