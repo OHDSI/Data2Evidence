@@ -21,11 +21,18 @@ interface StudyCardProps {
   setFeedback: (feedback: any) => void;
   onDownloadResults?: (study: StrategusStudy) => void;
   onShareResults?: (study: StrategusStudy) => void;
+  onUpdateStudyViewerCode?: (studyId: string, code: string) => void;
 }
 
 type ViewerStatus = "idle" | "starting" | "up" | "stopping" | "down" | "failed";
 
-export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDatasetId, setFeedback }) => {
+export const StudyCard: FC<StudyCardProps> = ({
+  study,
+  highlightText,
+  selectedDatasetId,
+  setFeedback,
+  onUpdateStudyViewerCode,
+}) => {
   const { getText } = useTranslation();
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [bearerToken, setBearerToken] = useState<string>("");
@@ -164,7 +171,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
             mode: "kernel",
             datasetId: selectedDatasetId,
             studyId: study.id,
-            uploadResults: true
+            uploadResults: true,
           },
         };
         const response = await api.dataflow.createStudyAnalysisRun(requestData);
@@ -291,6 +298,12 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     },
     [selectedDatasetId, setFeedback, study]
   );
+
+  const handleCodeSave = useCallback(async (newCode: string) => {
+    if (typeof onUpdateStudyViewerCode === "function" && study.id) {
+      onUpdateStudyViewerCode(study.id, newCode);
+    }
+  }, []);
 
   return (
     <>
@@ -437,6 +450,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
         onClose={closeStudyTemplateDialog}
         code={viewerCode}
         onCodeChange={setViewerCode}
+        onSave={handleCodeSave}
       />
     </>
   );

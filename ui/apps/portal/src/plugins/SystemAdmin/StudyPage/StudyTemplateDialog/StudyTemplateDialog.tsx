@@ -21,14 +21,15 @@ interface StudyTemplateDialogProps {
   onClose?: (type: CloseDialogType) => void;
   code: string;
   onCodeChange: (code: string) => void;
+  onSave?: (code: string) => void;
 }
 const SafeEditor = Editor as any;
-const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClose, code, onCodeChange }) => {
+const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClose, code, onCodeChange, onSave }) => {
   const { getText } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
   const [templates, setTemplates] = useState<StrategusResultViewerTemplateData[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   loader.config({ monaco });
 
   const handleClose = useCallback(
@@ -46,18 +47,22 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
       if (study.type === StrategusStudyType.LOCAL) {
         await api.strategusAnalysis.saveStategusAnalysisViewerCode(study.id, code);
       }
+      if (typeof onSave === "function") {
+        onSave(code);
+      }
       setFeedback({
         type: "success",
         message: getText(i18nKeys.STUDY_TEMPLATE_DIALOG__SAVE_SUCCESS),
         autoClose: 6000,
       });
+      setSelectedTemplate("default");
     } catch (err: any) {
       console.error(err);
       setFeedback({ type: "error", message: getText(i18nKeys.STUDY_TEMPLATE_DIALOG__SAVE_ERROR, [study.id]) });
     } finally {
       setLoading(false);
     }
-  }, [code, getText, study]);
+  }, [code, getText, onSave, study]);
 
   const getTemplates = useCallback(async () => {
     const templates = await api.strategusAnalysis.getStudyViewerTemplates();
@@ -87,7 +92,6 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
           <Select
             sx={{ width: "100%" }}
             variant="standard"
-            displayEmpty
             value={selectedTemplate}
             onChange={(event) => {
               const filename = event.target.value;
