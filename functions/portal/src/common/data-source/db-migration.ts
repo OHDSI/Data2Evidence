@@ -11,7 +11,7 @@ export const runMigrations = async () => {
     )} ).catch((err) => {
       console.log("error in datasource", err)
     })
-    await migrationDataSource.runMigrations().then(() => {console.log("migration stated")}
+    await migrationDataSource.runMigrations().then(() => {console.log("migration started")}
     ).catch((err) => {
       console.log("error in migration", err)
     })
