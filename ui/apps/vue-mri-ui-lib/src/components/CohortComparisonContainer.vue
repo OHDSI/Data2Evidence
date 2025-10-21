@@ -82,6 +82,8 @@
         <BoxplotCohortCompare
           v-if="activeChart === 'boxplot'"
           @busyEv="setChartBusy"
+          @upperAxisMenu="setUpperAxisMenu"
+          @lowerAxisMenu="setLowerAxisMenu"
           :bookmarkList="bookmarkIds"
           :xAxes="axis"
           :yAxis="yaxis"
@@ -90,6 +92,7 @@
           v-if="activeChart === 'km'"
           @response="setResponse"
           @busyEv="setChartBusy"
+          @lowerAxisMenu="setLowerAxisMenu"
           :bookmarkList="bookmarkIds"
           :xAxes="axis"
           :yAxis="yaxis"
@@ -120,7 +123,14 @@
 </template>
 
 <script lang="ts">
-import { mapGetters } from 'vuex'
+export default {
+  name: 'CohortComparisonContainer',
+  compatConfig: { MODE: 3 },
+}
+</script>
+
+<script setup lang="ts">
+import { getCurrentInstance, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import BoxplotCohortCompare from './BoxplotCohortCompare.vue'
 import CohortCompareAxisButton from './CohortCompareAxisButton.vue'
 import CohortCompareSortButton from './CohortCompareSortButton.vue'
@@ -134,154 +144,151 @@ import CohortCompareKMMenuButton from './CohortCompareKMMenuButton.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
 
-export default {
-  name: 'cohortComparisonContainer',
-  props: ['bookmarkIds', 'activeChart'],
-  data() {
-    return {
-      showCohortCompareDialog: false,
-      bookmarkName: '',
-      chartConfig: [],
-      chartData: {},
-      axis: '',
-      yaxis: 'patient.attributes.pcount', // default values for bar chart
-      sortType: '',
-      downloadButton: null,
-      downloadMenuData: [],
-      downloadMenuOpened: false,
-      showDownloadPNGDialog: false,
-      compareChartType: '',
-      chartBusy: false,
-      upperAxisMenu: [],
-      lowerAxisMenu: [],
-      kmStartEvent: '',
-      kmStartEventOcc: '',
-      kmEndEvent: '',
-      kmEndEventOcc: '',
-      kmSeries: [],
-      censoring: false,
-      errorLines: false,
-      response: null, // this data will be emitted from the charts
-    }
-  },
-  mounted() {
-    if (!this.activeChart) {
-      this.activeChart = 'stacked'
-    }
-    this.$nextTick(() => {
-      window.addEventListener('click', this.closeSubMenu)
-    })
-    this.$on('series', list => {
-      this.kmSeries = list
-    })
-
-    this.downloadButton = this.$refs.downloadButton
-  },
-  beforeDestroy() {
-    window.removeEventListener('click', this.closeSubMenu)
-  },
-  computed: {
-    ...mapGetters(['getText']),
-  },
-  methods: {
-    setUpperAxisMenu(menu) {
-      this.upperAxisMenu = menu
-    },
-    setLowerAxisMenu(menu) {
-      this.lowerAxisMenu = menu
-    },
-    setResponse(response) {
-      this.response = response
-    },
-    setChartBusy(status) {
-      this.chartBusy = status
-    },
-    closeSubMenu(event) {
-      if (
-        this.downloadMenuOpened &&
-        event.target !== this.$refs.downloadButton &&
-        event.target.parentElement !== this.$refs.downloadButton
-      ) {
-        this.downloadButtonClose()
-      }
-    },
-    downloadButtonClose() {
-      if (this.downloadMenuOpened) {
-        this.downloadMenuOpened = false
-      }
-    },
-    handleDownloadClick() {
-      this.showDownloadPNGDialog = true
-      if (this.activeChart === 'stacked') {
-        this.compareChartType = 'columnbar'
-      }
-      if (this.activeChart === 'boxplot') {
-        this.compareChartType = 'boxplotCompare'
-      }
-      if (this.activeChart === 'km') {
-        this.compareChartType = 'kmCompare'
-      }
-      this.downloadMenuOpened = false
-    },
-    onSelectAttribute(val) {
-      // get selected axis
-      if (val) {
-        if (val.type === 'x') {
-          this.axis = val.configname
-        } else if (val.type === 'y') {
-          this.yaxis = val.configname
-        } else if (val.type === 'sort') {
-          this.sortType = val.value
-        }
-      }
-    },
-    onSelectKMAttribute(val) {
-      if (val) {
-        if (val.kmStartEventIdentifier) {
-          this.kmStartEvent = val.kmStartEventIdentifier
-        }
-        if (val.kmStartEventOccurence) {
-          this.kmStartEventOcc = val.kmStartEventOccurence
-        }
-        if (val.kmEndEventIdentifier) {
-          this.kmEndEvent = val.kmEndEventIdentifier
-        }
-        if (val.kmEndEventOccurence) {
-          this.kmEndEventOcc = val.kmEndEventOccurence
-        }
-      }
-    },
-    downloadClicked() {
-      const menuData = []
-      const menuIdx = 0
-      menuData.push({
-        idx: menuIdx,
-        subMenuStyle: {},
-        text: this.getText('MRI_PA_BUTTON_DOWNLOAD_PNG'),
-        hasSubMenu: false,
-        isSeperator: false,
-        subMenu: [],
-        disabled: false,
-        data: 'PNG',
-      })
-
-      this.downloadMenuData = menuData
-      this.downloadMenuOpened = !this.downloadMenuOpened
-    },
-  },
-  components: {
-    BoxplotCohortCompare,
-    CohortCompareAxisButton,
-    CohortCompareSortButton,
-    StackBarCohortCompare,
-    DropDownMenu,
-    ImageExport,
-    KMCohortCompare,
-    CohortCompareKMMenuButton,
-    KMInteractionList,
-    LoadingAnimation,
-    appLabel,
-    appCheckbox,
-  },
+// Props
+interface Props {
+  bookmarkIds?: any[]
+  activeChart?: string
 }
+
+const props = withDefaults(defineProps<Props>(), {
+  bookmarkIds: () => [],
+  activeChart: 'stacked',
+})
+
+// Vuex store access via getCurrentInstance pattern
+const instance = getCurrentInstance()
+const store = instance?.appContext.config.globalProperties['$store']
+
+const getText = (key: string) => store?.getters?.getText?.(key) || key
+
+// Reactive state
+const showCohortCompareDialog = ref(false)
+const bookmarkName = ref('')
+const chartConfig = ref<any[]>([])
+const chartData = ref<any>({})
+const axis = ref('')
+const yaxis = ref('patient.attributes.pcount') // default values for bar chart
+const sortType = ref('')
+const downloadButton = ref<any>(null)
+const downloadMenuData = ref<any[]>([])
+const downloadMenuOpened = ref(false)
+const showDownloadPNGDialog = ref(false)
+const compareChartType = ref('')
+const chartBusy = ref(false)
+const upperAxisMenu = ref<any[]>([])
+const lowerAxisMenu = ref<any[]>([])
+const kmStartEvent = ref('')
+const kmStartEventOcc = ref('')
+const kmEndEvent = ref('')
+const kmEndEventOcc = ref('')
+const kmSeries = ref<any[]>([])
+const censoring = ref(false)
+const errorLines = ref(false)
+const response = ref<any>(null) // this data will be emitted from the charts
+
+// Methods
+const setUpperAxisMenu = (menu: any) => {
+  upperAxisMenu.value = menu
+}
+
+const setLowerAxisMenu = (menu: any) => {
+  lowerAxisMenu.value = menu
+}
+
+const setResponse = (res: any) => {
+  response.value = res
+}
+
+const setChartBusy = (status: boolean) => {
+  chartBusy.value = status
+}
+
+const downloadButtonClose = () => {
+  if (downloadMenuOpened.value) {
+    downloadMenuOpened.value = false
+  }
+}
+
+const closeSubMenu = (event: any) => {
+  if (
+    downloadMenuOpened.value &&
+    event.target !== downloadButton.value &&
+    event.target.parentElement !== downloadButton.value
+  ) {
+    downloadButtonClose()
+  }
+}
+
+const handleDownloadClick = () => {
+  showDownloadPNGDialog.value = true
+  if (props.activeChart === 'stacked') {
+    compareChartType.value = 'columnbar'
+  }
+  if (props.activeChart === 'boxplot') {
+    compareChartType.value = 'boxplotCompare'
+  }
+  if (props.activeChart === 'km') {
+    compareChartType.value = 'kmCompare'
+  }
+  downloadMenuOpened.value = false
+}
+
+const onSelectAttribute = (val: any) => {
+  // get selected axis
+  if (val) {
+    if (val.type === 'x') {
+      axis.value = val.configname
+    } else if (val.type === 'y') {
+      yaxis.value = val.configname
+    } else if (val.type === 'sort') {
+      sortType.value = val.value
+    }
+  }
+}
+
+const onSelectKMAttribute = (val: any) => {
+  if (val) {
+    if (val.kmStartEventIdentifier) {
+      kmStartEvent.value = val.kmStartEventIdentifier
+    }
+    if (val.kmStartEventOccurence) {
+      kmStartEventOcc.value = val.kmStartEventOccurence
+    }
+    if (val.kmEndEventIdentifier) {
+      kmEndEvent.value = val.kmEndEventIdentifier
+    }
+    if (val.kmEndEventOccurence) {
+      kmEndEventOcc.value = val.kmEndEventOccurence
+    }
+  }
+}
+
+const downloadClicked = () => {
+  const menuData: any[] = []
+  const menuIdx = 0
+  menuData.push({
+    idx: menuIdx,
+    subMenuStyle: {},
+    text: getText('MRI_PA_BUTTON_DOWNLOAD_PNG'),
+    hasSubMenu: false,
+    isSeperator: false,
+    subMenu: [],
+    disabled: false,
+    data: 'PNG',
+  })
+
+  downloadMenuData.value = menuData
+  downloadMenuOpened.value = !downloadMenuOpened.value
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  nextTick(() => {
+    window.addEventListener('click', closeSubMenu)
+  })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('click', closeSubMenu)
+})
 </script>
