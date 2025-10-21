@@ -78,11 +78,12 @@
 
 ## Generic File Node (Experimental)
 
-- **Description:** Upload Generic File to Supabase storage, store and return a local address.
+- **Description:** Upload a file of any datatype to Supabase Storage and return it directly.
 - **Input Nodes:** This node does not accept any input nodes.
-- **Output Data:** Returns the name of the file in the database, where the file is ready to get from the Supabase storage by calling get_file
+- **Output Data:** Returns an python dictionary object containing the file name and raw bytes.
 - **How To Use:** 
     - Choose File: Name of the file to upload.
+    - The sample output will look like {"filename" : "yourFileName"; "data" : "someContent"}
 
 
 ## Data Mapping Node (Experimental)
