@@ -280,6 +280,9 @@ export class TrexDAO {
     conceptIds: number[],
     dcResultSchemaName: string
   ): Promise<IConceptRecordCount[]> {
+    if (dcResultSchemaName === "") {
+      return [];
+    }
     try {
       // Sql referenced from OHDSI WebAPI CDMCacheRepository.java
       const sql = `

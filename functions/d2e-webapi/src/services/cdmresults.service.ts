@@ -1,5 +1,6 @@
 import { TrexDAO } from "../dao/trex.dao.ts";
 import { ICdmresultsConceptRecordCountResponseDto } from "../dto/cdmresults.ts";
+import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 
 export const getConceptRecordCount = async (
   token: string,
@@ -8,17 +9,16 @@ export const getConceptRecordCount = async (
 ): Promise<ICdmresultsConceptRecordCountResponseDto> => {
   const trexDao = await TrexDAO.getTrexDao(token, datasetId);
 
-  // TODO: Get dc results schema from datasetId
-  // TODO: REMOVE hardcode for testing
-  // const dcResultSchemaName = `cdmdefault_dc_1760603594959`;
-  const dcResultSchemaName = `demo_cdm_dc_1760606157168`;
-  // const dcResultSchemaName = `CDMSYNPUF1K_DC_1761023111166`;
+  const jobPluginsApi = new JobPluginsAPI(token);
+  const dcResultSchemaName =
+    await jobPluginsApi.getLatestSuccessfulDataCharacterizationResultsSchemaName(
+      datasetId
+    );
 
   const results = await trexDao.getConceptRecordCount(
     conceptIds,
     dcResultSchemaName
   );
-
   const mappedResults: ICdmresultsConceptRecordCountResponseDto = results.map(
     (e) => ({
       [e.CONCEPT_ID.toString()]: [
