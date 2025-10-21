@@ -2,7 +2,6 @@ import ibis
 import json
 import duckdb
 import logging
-import os
 from typing import Any
 import traceback as tb
 from rpy2 import robjects
