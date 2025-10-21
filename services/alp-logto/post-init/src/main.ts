@@ -351,7 +351,7 @@ async function main() {
   console.log(
     "*********************************** SIGN-IN EXPERIENCES **********************************************"
   );
-  let signinExperience: any = {
+  let signinExperience = {
     tenantId: "default",
     id: "default",
     branding: {
@@ -368,15 +368,9 @@ img[alt="app logo"] { height: 80px; }
 button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
     unknownSessionRedirectUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal`,
+    termsOfUseUrl: process.env.LOGTO__TERM_OF_USE_URL || "",
+    privacyPolicyUrl: process.env.LOGTO__PRIVACY_POLICY_URL || "",
   };
-
-  if (process.env.LOGTO__TERM_OF_USE_URL) {
-    signinExperience.termsOfUseUrl = process.env.LOGTO__TERM_OF_USE_URL;
-  }
-
-  if (process.env.LOGTO__PRIVACY_POLICY_URL) {
-    signinExperience.privacyPolicyUrl = process.env.LOGTO__PRIVACY_POLICY_URL;
-  }
 
   await update("sign-in-exp", headers, signinExperience);
   console.log(
