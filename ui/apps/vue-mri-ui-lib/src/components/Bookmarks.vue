@@ -16,7 +16,7 @@
               <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
             </div>
             <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
-              Please enter another name
+              {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
             </div>
             <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
               Filter name must not exceed 40 characters
