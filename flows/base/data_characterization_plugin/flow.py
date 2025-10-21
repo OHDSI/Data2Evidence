@@ -91,20 +91,21 @@ def data_characterization_plugin(options: DCOptionsType):
 
         execute_achilles_wo(achilles_params, flow_run_id)
 
-        execute_concept_record_count_wo = execute_concept_record_count.with_options(
-            on_failure=[
-                partial(
-                    drop_schema_hook,
-                    **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
-                )
-            ]
-        )
-        execute_concept_record_count_wo(
-            achilles_params.resultsSchema,
-            achilles_params.vocabSchemaName,
-            dbdao,
-            logger,
-        )
+        if options.executeConceptRecordCount:
+            execute_concept_record_count_wo = execute_concept_record_count.with_options(
+                on_failure=[
+                    partial(
+                        drop_schema_hook,
+                        **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
+                    )
+                ]
+            )
+            execute_concept_record_count_wo(
+                achilles_params.resultsSchema,
+                achilles_params.vocabSchemaName,
+                dbdao,
+                logger,
+            )
 
         # Todo: Update implementation if Hana uses trex
         if not use_trex_connection:
