@@ -64,6 +64,7 @@ interface DropdownItem {
 interface Props {
   dropdownItems?: DropdownItem[]
   value?: string
+  modelValue?: string
   emptyListText?: string
   emptySelectionText?: string
   disabled?: boolean
@@ -71,7 +72,8 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   dropdownItems: () => [],
-  value: '',
+  value: undefined,
+  modelValue: undefined,
   emptyListText: '',
   emptySelectionText: '',
   disabled: false,
@@ -83,6 +85,11 @@ const emit = defineEmits<{
   onSelectedChange: []
 }>()
 
+// Merge both props - modelValue takes precedence for Vue 2/3 compat
+const mergedValue = computed(() => {
+  return props.modelValue !== undefined ? props.modelValue : props.value ?? ''
+})
+
 // Template refs
 const dropdownListMenu = ref<HTMLElement | null>(null)
 const dropdownContainer = ref<HTMLElement | null>(null)
@@ -90,12 +97,12 @@ const dropdownContainer = ref<HTMLElement | null>(null)
 // Internal reactive state
 const dropdownListStyle = ref<Record<string, string>>({})
 const dropdownVisible = ref<boolean>(false)
-const selected = ref<string>(props.value)
+const selected = ref<string>(mergedValue.value)
 const hoverIndex = ref<number>(-1)
 
 // Watch for external value changes
 watch(
-  () => props.value,
+  mergedValue,
   val => {
     if (val !== selected.value) {
       selected.value = val

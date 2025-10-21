@@ -42,7 +42,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 
 interface SegmentedItem {
   text: string
@@ -52,12 +52,14 @@ interface SegmentedItem {
 interface Props {
   segmentedItems?: SegmentedItem[]
   value?: string
+  modelValue?: string
   onSelectedChange?: () => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   segmentedItems: () => [],
-  value: '',
+  value: undefined,
+  modelValue: undefined,
   onSelectedChange: undefined,
 })
 
@@ -67,16 +69,21 @@ const emit = defineEmits<{
   onSelectedChange: []
 }>()
 
+// Merge both props - modelValue takes precedence for Vue 2/3 compat
+const mergedValue = computed(() => {
+  return props.modelValue !== undefined ? props.modelValue : props.value ?? ''
+})
+
 // Template refs
 const segmentedItemList = ref<HTMLElement | null>(null)
 
 // Internal reactive state
-const selected = ref<string>(props.value)
+const selected = ref<string>(mergedValue.value)
 const focusedItem = ref<SegmentedItem | Record<string, never>>({})
 
 // Watch for external value changes
 watch(
-  () => props.value,
+  mergedValue,
   val => {
     if (val !== selected.value) {
       selected.value = val

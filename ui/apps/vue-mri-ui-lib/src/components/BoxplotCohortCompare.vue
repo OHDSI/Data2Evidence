@@ -750,7 +750,6 @@ watch(
 // Lifecycle hooks
 onMounted(() => {
   setUpSelectedAxis()
-  // Replace $parent.$emit with direct emit
   emit('upperAxisMenu', getUpperAxisProperties())
   emit('lowerAxisMenu', getLowerAxisProperties())
   nextTick(() => {

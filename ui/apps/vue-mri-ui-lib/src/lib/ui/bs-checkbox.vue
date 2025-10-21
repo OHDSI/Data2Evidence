@@ -52,7 +52,8 @@ interface MenuItem {
 }
 
 interface Props {
-  value?: CheckboxValue // Value to add/remove from group array
+  value?: CheckboxValue // Value to add/remove from group array (Vue 2 compat)
+  modelValue?: CheckboxValue // v-model value (Vue 3)
   checked?: boolean // For standalone checkboxes - visual state only
   name?: string | null // Form field name
   disabled?: boolean // Disable interaction
@@ -62,6 +63,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   value: true,
+  modelValue: undefined,
   checked: false,
   name: null,
   disabled: false,
@@ -93,7 +95,13 @@ const isChecked = computed((): boolean => {
     return checkboxGroup.modelValue === props.value || checkboxGroup.modelValue === true
   }
 
-  // checked prop for standalone checkboxes
+  // For standalone checkboxes: check modelValue first (Vue 3), then checked prop
+  // This allows v-model to work in both Vue 2 and Vue 3 modes
+  if (props.modelValue !== undefined) {
+    return Boolean(props.modelValue)
+  }
+
+  // Fallback to checked prop for standalone checkboxes
   return props.checked
 })
 

@@ -22,11 +22,12 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import appLabel from './app-label.vue'
 
 interface Props {
   value?: boolean
+  modelValue?: boolean
   disabled?: boolean
   text?: string
   checkEv?: string
@@ -34,7 +35,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  value: false,
+  value: undefined,
+  modelValue: undefined,
   disabled: false,
   text: '',
   labelClass: '',
@@ -46,12 +48,17 @@ const emit = defineEmits<{
   checkEv: []
 }>()
 
+// Merge both props - modelValue takes precedence for Vue 2/3 compat
+const mergedValue = computed(() => {
+  return props.modelValue !== undefined ? props.modelValue : props.value ?? false
+})
+
 // Internal reactive state
-const checked = ref<boolean>(props.value)
+const checked = ref<boolean>(mergedValue.value)
 
 // Watch for external value changes
 watch(
-  () => props.value,
+  mergedValue,
   val => {
     if (val !== checked.value) {
       checked.value = val

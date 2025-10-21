@@ -441,7 +441,7 @@ export default {
             const minHeight = Math.min(contentHeight, 200)
             dropdown.style.minHeight = `${minHeight}px`
           } else {
-          dropdown.style.minHeight = '200px'
+            dropdown.style.minHeight = '200px'
           }
         } else {
           dropdown.style.minHeight = 'auto'
