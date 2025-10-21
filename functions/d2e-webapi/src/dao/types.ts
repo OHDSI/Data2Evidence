@@ -68,9 +68,9 @@ export interface IRelatedConceptsFromIdentifier {
 }
 
 export interface IConceptRecordCount {
-  concept_id: number;
-  record_count: number;
-  descendant_record_count: number;
-  person_count: number;
-  descendant_person_count: number;
+  CONCEPT_ID: number;
+  RECORD_COUNT: number;
+  DESCENDANT_RECORD_COUNT: number;
+  PERSON_COUNT: number;
+  DESCENDANT_PERSON_COUNT: number;
 }

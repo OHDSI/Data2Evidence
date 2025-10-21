@@ -18,6 +18,7 @@ export default class TrexConnection {
         resultSchemaName,
         {
           duckdb: (e: unknown) => e,
+          hana: (e: unknown) => e,
         } // Dummy function which returns itself, originally used for translation function
       );
 

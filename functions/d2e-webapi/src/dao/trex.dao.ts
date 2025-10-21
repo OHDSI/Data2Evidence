@@ -33,9 +33,6 @@ export class TrexDAO {
 
       this.vocabSchemaName = vocabSchemaName;
       this.resultSchemaName = resultSchemaName;
-      // TODO: Bran discuss where to store results for concept count
-      // TODO: REMOVE hardcode for testing
-      this.resultSchemaName = `alpdev_pg__srcdb.cdmdefault_dc_1736477703219`;
     } catch (err) {
       console.error("Error getting trex connection, ", err);
       throw err;
@@ -280,13 +277,14 @@ export class TrexDAO {
   }
 
   async getConceptRecordCount(
-    conceptIds: number[]
+    conceptIds: number[],
+    dcResultSchemaName: string
   ): Promise<IConceptRecordCount[]> {
     try {
       // Sql referenced from OHDSI WebAPI CDMCacheRepository.java
       const sql = `
-        select concept_id, record_count, descendant_record_count, person_count, descendant_person_count
-        from ${this.resultSchemaName}.achilles_result_concept_count
+        select concept_id AS CONCEPT_ID, record_count AS RECORD_COUNT, descendant_record_count AS DESCENDANT_RECORD_COUNT, person_count AS PERSON_COUNT, descendant_person_count AS DESCENDANT_PERSON_COUNT
+        from ${dcResultSchemaName}.achilles_result_concept_count
         where concept_id IN (${conceptIds.join(", ")})
       `;
 
