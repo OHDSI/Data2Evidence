@@ -90,6 +90,10 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('tab', { name: 'Selected concepts' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
+  // Dismiss popover
+  await page.mouse.move(0, 0)
+  await page.locator('.modal-wrapper').click()
+
   // Step 8 - Select concept set
   await page.getByTitle('Condition Occurrence A - Condition concept Set').locator('div').nth(1).click()
   await page.getByRole('textbox', { name: 'Enter search term' }).fill('')

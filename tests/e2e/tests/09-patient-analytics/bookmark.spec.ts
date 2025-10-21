@@ -310,7 +310,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('cell', { name: 'testuserB' })).toBeVisible()
     //Grant permissions to testuserB
     await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.getByRole('button', { name: 'Select action' }).first().click()
+    await page.getByText('Select action').first().click()
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
