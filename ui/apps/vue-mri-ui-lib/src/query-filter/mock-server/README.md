@@ -8,7 +8,7 @@ Development server for PA-Atlas (query-filter) with mock APIs and built applicat
 
 ```bash
 # Build from repo root
-docker build -f Dockerfile.pa-atlas -t pa-atlas:latest .
+docker build -f ui/Dockerfile.mock-server -t pa-atlas:latest .
 
 # Run
 docker run -e WEBAPI_URL="https://atlas-demo.ohdsi.org/WebAPI" -e SOURCE="SYNPUF1K" -p 3131:3131 pa-atlas:latest
