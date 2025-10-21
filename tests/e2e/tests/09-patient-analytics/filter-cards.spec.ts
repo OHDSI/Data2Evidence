@@ -192,7 +192,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('textbox', { name: 'Enter search term' }).fill('Shell')
   await page.getByText('Shellfish allergy - Shellfish').click()
 
-  // // Reset filters
+  // Reset filters
   await page.getByRole('button', { name: '↺' }).click()
   await page.getByRole('button', { name: 'Reset' }).click()
 })
