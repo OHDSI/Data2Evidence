@@ -1,12 +1,18 @@
 .manage-dashboard-dialog {
-  .manage-dashboard-dialog__content {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 25px; 
+  }
+
+  &__content {
     min-height: 200px;
-    margin: 10px 25px 0;
-    text-align: center;
-    color: var(--color-primary);
+    margin: 10px 25px;
+    overflow: auto;
+    scrollbar-color: #c7c7c7 transparent;
     .u-padding-vertical--small {
-        padding-right: 20px;
-      }
+      padding-right: 20px;
+    }
   }
 
   .button-group-actions {

@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
-import { Button, Dialog } from "@portal/components";
+import { Button, Dialog, Select, MenuItem, SelectChangeEvent } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
 import { Study, CloseDialogType } from "../../../../types";
@@ -37,11 +37,26 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       onClose={() => handleClose("cancelled")}
     >
       <Divider />
+
+      <div className="manage-dashboard-dialog__header">
+        <div>
+          <Select value="hello">
+            <MenuItem value="hello">Hello</MenuItem>
+            <MenuItem value="hello1">Hello 1</MenuItem>
+          </Select>
+        </div>
+        <div>
+          <Button text="Start Viewer" variant="text" />
+          <Button text="Stop Viewer" variant="text" />
+        </div>
+      </div>
+      <Divider />
+
       <div className="manage-dashboard-dialog__content">
         <SafeEditor
           height="70vh"
-          defaultLanguage="r"
-          defaultValue={dashboardCode}
+          language="r"
+          value={dashboardCode}
           options={{
             scrollBeyondLastLine: false,
             fontSize: "14px",
