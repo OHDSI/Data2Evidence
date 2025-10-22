@@ -36,6 +36,7 @@ export const i18nDefault = {
     ACTION_SELECTOR__CREATE_RELEASE: "Create release",
     ACTION_SELECTOR__DELETE_DATASET: "Delete dataset",
     ACTION_SELECTOR__PERMISSIONS: "Permissions",
+    ACTION_SELECTOR__MANAGE_DASHBOARD: "Manage Dashboard",
     ACTION_SELECTOR__RESOURCES: "Resources",
     ACTION_SELECTOR__SELECT_ACTION: "Select action",
     ACTION_SELECTOR__UPDATE_DATASET: "Update dataset",
