@@ -27,9 +27,9 @@
       :multiple="maxSelections !== 1"
       :options-limit="optionLimitSize"
       :loading="isLoading"
-      :close-on-select="false"
+      :close-on-select="componentType === 'conceptSet' && maxSelections === 1"
       @search-change="handleSearchChange"
-      @select="openControl"
+      @select="componentType === 'conceptSet' && maxSelections === 1 ? null : openControl"
       :preserveSearch="true"
       ref="multiselect"
       :clear-on-select="true"
@@ -338,6 +338,12 @@ export default {
         this.currentPlaceholder = this.texts.enterSearchTerm
       } else {
         this.currentPlaceholder = this.texts.placeholder
+      }
+      // Clear the search filter when dropdown closes to reset the list for other dropdowns
+      // Only for conceptSet type (PA-Atlas) to prevent global filter affecting all dropdowns
+      if (this.componentType === 'conceptSet' && this.searchQuery !== '') {
+        this.searchQuery = ''
+        this.$emit('search-change', '')
       }
     },
     addTag(newTag) {
