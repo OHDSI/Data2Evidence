@@ -9,7 +9,6 @@ import "./FileNode.scss";
 
 export interface FileNodeData extends NodeDataState {
   file: string;
-  file_type: string;
   encoding?: string;
 }
 

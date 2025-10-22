@@ -35,7 +35,7 @@ class SupabaseStorageAPI(BaseAPI):
         bucket = Variable.get("data_transformation_bucket")
         request_url = f"{self.url}object/{bucket}/data-transformation/{node_id}/{filename}"
         logger.info(f"Fetching file from URL: {request_url}")
-        response = requests.get(request_url)
+        response = requests.get(request_url, headers=self.get_options())
         logger.info(f"Response status code: {response.status_code}")
         response.raise_for_status()
         return response.content

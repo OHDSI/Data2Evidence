@@ -49,7 +49,6 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   file: "",
-  file_type: "",
   encoding: "utf-8",
 };
 
@@ -82,7 +81,6 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
         name: node.data.name,
         description: node.data.description,
         file: node.data.file,
-        file_type: node.data.file_type,
         encoding: node.data.encoding || "utf-8",
       });
     } else {
@@ -118,8 +116,7 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
 
         await uploadFile({
           nodeId: node.id,
-          file,
-          file_type: formData.file_type,  // include selected file type
+          file : file
         }).unwrap();
 
         const updatedFormData = { ...formData, file : file.name,};
@@ -202,13 +199,6 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             onFormDataChange({ description: e.target.value })
           }
-        />
-      </Box>
-      <Box mb={4}>
-        <Autocomplete<string, false, undefined, true>
-          options={["json", "ndjson", "zip", "rar"]}
-          onChange={(event, value) => onFormDataChange({ file_type: value || "json" })}
-          renderInput={(params) => <TextField {...params} label="File Type" variant="standard" />}
         />
       </Box>
       <Box mb={4} display="flex" alignItems="center">

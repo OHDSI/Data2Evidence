@@ -331,17 +331,16 @@ class GenericFileNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
         self.file = _node["file"]
-        self.encoding = _node.get("encoding", "utf8")
-        logging.info(f"GenericFileNode: file={self.file}, encoding={self.encoding}")
+        logging.info(f"GenericFileNode: file={self.file}")
 
     def task(self, task_run_context) -> Result:
         try:
-            data = SupabaseStorageAPI().get_file(self.id, self.file)
-            filename = Path(self.file).name
-            logging.info(f"GenericFileNode: Retrieved file of name {filename}")
+            node_id = self.id
+            filename = self.file
+            # since two parameter needed for SupabaseStorageAPI().get_file(self.id, self.file)
             result = {
-                "filename": filename,
-                "data": data,
+                "node_id": node_id,
+                "filename": filename
             }
             return Result(False, result, self, task_run_context)
         except Exception:

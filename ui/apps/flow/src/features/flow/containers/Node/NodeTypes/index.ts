@@ -144,7 +144,6 @@ test_exec <- function(myinput) {
     tag: NodeTag.Experimental,
     defaultData: {
       file: "",
-      file_type: "json",
       encoding: "utf-8",
     },
   },
