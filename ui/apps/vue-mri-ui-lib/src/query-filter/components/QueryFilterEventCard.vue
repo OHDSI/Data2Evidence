@@ -8,7 +8,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, getCurrentInstance } from 'vue'
+import { ref, computed } from 'vue'
+import { useStore } from 'vuex'
 import QueryFilterNestedCriteria, { type NestedCriteria } from './QueryFilterNestedCriteria.vue'
 import AttributesDropdown from './AttributesDropdown.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
@@ -53,9 +54,7 @@ const emit = defineEmits<{
   'concept-set-action': [action: ConceptSetAction]
 }>()
 
-// Get store access for dataset ID
-const instance = getCurrentInstance()
-const store = instance?.appContext.config.globalProperties['$store']
+const store = useStore()
 
 // Use the reactive prop directly instead of local copy
 const eventData = computed({

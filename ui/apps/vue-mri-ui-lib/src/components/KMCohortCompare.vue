@@ -159,7 +159,8 @@ export default {
 import axios from 'axios'
 import d3 from 'd3'
 import VueSlider from 'vue-slider-component'
-import { getCurrentInstance, computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
@@ -262,9 +263,7 @@ const emit = defineEmits<{
   lowerAxisMenu: [properties: any]
 }>()
 
-// Vuex store access via getCurrentInstance pattern
-const instance = getCurrentInstance()
-const store = instance?.appContext.config.globalProperties['$store']
+const store = useStore()
 
 const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
 const getText = (key: string) => store?.getters?.getText?.(key) || key

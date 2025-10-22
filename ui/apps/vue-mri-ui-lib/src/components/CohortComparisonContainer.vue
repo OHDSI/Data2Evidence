@@ -130,7 +130,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useStore } from 'vuex'
 import BoxplotCohortCompare from './BoxplotCohortCompare.vue'
 import CohortCompareAxisButton from './CohortCompareAxisButton.vue'
 import CohortCompareSortButton from './CohortCompareSortButton.vue'
@@ -155,9 +156,7 @@ const props = withDefaults(defineProps<Props>(), {
   activeChart: 'stacked',
 })
 
-// Vuex store access via getCurrentInstance pattern
-const instance = getCurrentInstance()
-const store = instance?.appContext.config.globalProperties['$store']
+const store = useStore()
 
 const getText = (key: string) => store?.getters?.getText?.(key) || key
 

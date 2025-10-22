@@ -26,7 +26,8 @@ export default {
 
 <script setup lang="ts">
 import d3 from 'd3'
-import { getCurrentInstance, computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useStore } from 'vuex'
 import axios from 'axios'
 import Constants from '../utils/Constants'
 import boxplotInfo from './BoxplotInfo.vue'
@@ -81,9 +82,7 @@ const emit = defineEmits<{
   lowerAxisMenu: [properties: any]
 }>()
 
-// Vuex store access via getCurrentInstance pattern
-const instance = getCurrentInstance()
-const store = instance?.appContext.config.globalProperties['$store']
+const store = useStore()
 
 const getActiveAxes = computed(() => store?.getters?.getActiveAxes)
 const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
