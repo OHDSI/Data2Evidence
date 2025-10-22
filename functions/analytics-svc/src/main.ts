@@ -176,18 +176,6 @@ const initRoutes = async (app: express.Application) => {
                     log.debug(`No user found in request:${err.stack}`);
                 }
 
-                // Skip getting db connections if request starts with "/analytics-svc/api/services/alpdb/", as these requests are all in dbsvc.ts and uses a separate implementation for database connection
-                if (
-                    req.originalUrl.startsWith(
-                        "/analytics-svc/api/services/alpdb/"
-                    )
-                ) {
-                    log.info(
-                        "Skipping middleware to get req.dbConnections for /alpdb/* requests"
-                    );
-                    return next();
-                }
-
                 const credentials = req.dbCredentials.studyAnalyticsCredential;
 
                 // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
