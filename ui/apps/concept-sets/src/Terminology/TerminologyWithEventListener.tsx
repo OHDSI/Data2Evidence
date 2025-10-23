@@ -5,7 +5,11 @@ import { usePortal } from "../hooks";
 
 const eventListenerName = "alp-terminology-open";
 
-export const TerminologyWithEventListener = () => {
+export const TerminologyWithEventListener = ({
+  isAtlas,
+}: {
+  isAtlas: boolean;
+}) => {
   const [props, setProps] = useState<TerminologyProps | null>(null);
   const [open, setOpen] = useState(false);
   const { userId } = usePortal();
@@ -51,6 +55,7 @@ export const TerminologyWithEventListener = () => {
       selectedDatasetId={props?.selectedDatasetId}
       defaultFilters={props?.defaultFilters}
       initialSelectedConcepts={props?.initialSelectedConcepts}
+      isAtlas={isAtlas}
     />
   );
 };

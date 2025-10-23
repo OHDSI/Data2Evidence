@@ -12,7 +12,7 @@ import { computed } from 'vue'
 import QueryFilterEventCard from './QueryFilterEventCard.vue'
 import QueryFilterNestedCriteria, { type NestedCriteria } from './QueryFilterNestedCriteria.vue'
 import CriteriaSelectorDropdown from './CriteriaSelectorDropdown.vue'
-import type { QueryFilterEvent, QueryFilterGroup } from '../types/QueryFilterTypes'
+import type { QueryFilterEvent, QueryFilterGroup, QueryFilterAttribute } from '../types/QueryFilterTypes'
 import type {
   ConceptSetItemDisplay,
   ConceptSetDomainValues,
@@ -43,6 +43,7 @@ const emit = defineEmits<{
   'event-updated': [eventIndex: number, event: QueryFilterEvent]
   'event-removed': [eventIndex: number]
   'concept-set-action': [action: ConceptSetAction]
+  'search-change': [searchQuery: string]
 }>()
 
 // Work directly with props.events for reactivity
@@ -53,7 +54,10 @@ const eventsData = computed({
   },
 })
 
-const mainEvents = computed(() => eventsData.value)
+const mainEvents = computed(() => {
+  const events = eventsData.value
+  return events
+})
 
 // Determine the correct section ID based on event type
 const sectionId = computed(() => {
@@ -82,6 +86,17 @@ const handleCriteriaSelected = (option: CriteriaOption) => {
       count: 1,
       using: 'ALL',
     },
+    // Initialize temporal relationship with defaults (not for demographic events)
+    ...(option.id !== 'demographic' && {
+      startWindow: {
+        start: { days: null, coeff: -1 },
+        end: { days: 0, coeff: 1 },
+        useIndexEnd: false,
+        useEventEnd: false,
+      },
+      restrictVisit: false,
+      ignoreObservationPeriod: false,
+    }),
   }
 
   // Handle group events differently
@@ -130,54 +145,42 @@ const duplicateEvent = (eventIndex: number) => {
 
 // Event handlers for new QueryFilterEventCard component
 const handleAttributeSelected = (eventId: string, attribute: any) => {
-  console.log('Attribute selected:', eventId, attribute)
-}
-
-const handleAttributeRemoved = (eventId: string, attributeId: string) => {
-  console.log('Attribute removed:', eventId, attributeId)
-}
-
-const handleConceptSetSelected = (eventId: string, conceptSet: ConceptSetItemDisplay | null) => {
   const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
   if (eventIndex !== -1) {
     const currentEvent = eventsData.value[eventIndex]
     if (!currentEvent) return
 
-    if (!conceptSet) {
-      // Handle concept set removal
-      const updatedEvent: QueryFilterEvent = {
-        ...currentEvent,
-        selectedConceptSet: undefined,
-        conceptSetId: undefined,
-        conceptSet: '',
-      }
-      updateEvent(eventIndex, updatedEvent)
-      return
-    }
+    // Initialize attributes array if it doesn't exist
+    const currentAttributes = currentEvent.attributes || []
 
-    const selectedConceptSet: SelectedConceptSet = {
-      value: parseInt(conceptSet.value),
-      text: conceptSet.text || '',
-      display_value: conceptSet.display_value || '',
-      conceptIds: conceptSet.conceptIds || [],
-      concepts:
-        conceptSet.concepts?.map(c => ({
-          id: c.id || c.concept_id || 0,
-          useMapped: c.useMapped || false,
-          isExcluded: c.isExcluded || false,
-          useDescendants: c.useDescendants || false,
-        })) || [],
-      shared: false,
-      userName: '',
-      createdDate: '',
-      modifiedDate: '',
-    }
+    // Check if attribute already exists
+    const existingAttrIndex = currentAttributes.findIndex(
+      attr => 'attributeId' in attr && attr.attributeId === attribute.id
+    )
+  }
+}
+
+const handleAttributeRemoved = (eventId: string, attributeId: string) => {
+  const eventIndex = eventsData.value.findIndex(e => e.id === eventId)
+  if (eventIndex !== -1) {
+    const currentEvent = eventsData.value[eventIndex]
+    if (!currentEvent) return
+
+    // Remove attribute from attributes array by matching the attribute's id (not attributeId field)
+    const updatedAttributes = (currentEvent.attributes || []).filter(attr => attr.id !== attributeId)
+
+    // Remove from selectedAttributes - this uses attributeId field, not id
+    const removedAttribute = currentEvent.attributes?.find(attr => attr.id === attributeId)
+    const removedAttributeId =
+      removedAttribute && 'attributeId' in removedAttribute ? removedAttribute.attributeId : null
+    const updatedSelectedAttributes = removedAttributeId
+      ? (currentEvent.selectedAttributes || []).filter(id => id !== removedAttributeId)
+      : currentEvent.selectedAttributes
 
     const updatedEvent: QueryFilterEvent = {
       ...currentEvent,
-      conceptSet: conceptSet.text || conceptSet.display_value || conceptSet.value,
-      selectedConceptSet,
-      conceptSetId: conceptSet.value,
+      attributes: updatedAttributes,
+      selectedAttributes: updatedSelectedAttributes,
     }
     updateEvent(eventIndex, updatedEvent)
   }
@@ -225,7 +228,10 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           :dataset-id="datasetId || null"
           :readonly="readonly"
           :hide-header="false"
+          :readonly-title="true"
+          @remove-nested="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
           @update:nested-criteria="criteria => updateEventNestedCriteria(event.id, criteria)"
+          @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
           @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
         />
 
@@ -242,6 +248,7 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           :concept-set-texts="conceptSetTexts || {}"
           :dataset-id="datasetId || null"
           :readonly="readonly"
+          :section-type="sectionId"
           @update:event="
             updateEvent(
               mainEvents.findIndex(e => e.id === event.id),
@@ -250,9 +257,9 @@ const updateEventNestedCriteria = (eventId: string, nestedCriteria: NestedCriter
           "
           @remove-event="removeEvent(mainEvents.findIndex(e => e.id === event.id))"
           @duplicate-event="duplicateEvent(mainEvents.findIndex(e => e.id === event.id))"
-          @concept-set-selected="handleConceptSetSelected(event.id, $event)"
           @attribute-selected="handleAttributeSelected(event.id, $event)"
           @attribute-removed="handleAttributeRemoved(event.id, $event)"
+          @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
           @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
         />
       </template>

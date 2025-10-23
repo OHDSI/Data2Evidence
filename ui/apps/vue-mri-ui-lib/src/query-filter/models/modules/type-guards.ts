@@ -1,4 +1,5 @@
 import type { QueryFilterAttribute, QueryFilterNestedCriteria } from '../../types/QueryFilterTypes'
+import type { ConceptSetItemDisplay, StoredConceptItem } from '../../types/ConceptSetTypes'
 
 // Type guards for QueryFilterAttribute discriminated union
 export const isNestedAttribute = (
@@ -12,13 +13,94 @@ export const isNestedAttribute = (
 
 export const isNumericRangeAttribute = (
   attr: QueryFilterAttribute
-): attr is QueryFilterAttribute & {
-  attributeId: string
-  attributeType: 'numericRange'
-  operator: string
-  value: string
-} => {
-  return attr.attributeType === 'numericRange'
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'numericRange'
+  }
+> => {
+  // Check for standard type with numericRange config
+  // Note: attributeType can only be 'nested' or 'standard', never 'numericRange'
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'numericRange'
+}
+
+export const isConceptSetAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'conceptSet'
+  }
+> => {
+  // Check for standard type with conceptSet config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'conceptSet'
+}
+
+export const isConceptAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'concept'
+  }
+> => {
+  // Check for standard type with concept config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'concept'
+}
+
+export const isDateRangeAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'dateRange'
+  }
+> => {
+  // Check for standard type with dateRange config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'dateRange'
+}
+
+export const isDateAdjustmentAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'dateAdjustment'
+  }
+> => {
+  // Check for standard type with dateAdjustment config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'dateAdjustment'
+}
+
+export const isBooleanAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'boolean'
+  }
+> => {
+  // Check for standard type with boolean config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'boolean'
+}
+
+export const isTextAttribute = (
+  attr: QueryFilterAttribute
+): attr is Extract<
+  QueryFilterAttribute,
+  {
+    attributeType: 'standard'
+    configType: 'text'
+  }
+> => {
+  // Check for standard type with text config
+  return attr.attributeType === 'standard' && 'configType' in attr && attr.configType === 'text'
 }
 
 export const hasAttributeId = (
