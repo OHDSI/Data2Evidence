@@ -140,7 +140,7 @@ test_exec <- function(myinput) {
   },
   file_node: {
     title: "Generic File",
-    description: "Read file from a path and store it into a backend folder, returning the address where it is stored.",
+    description: "Read file from a path, returning the node_id and the filename of the file.",
     tag: NodeTag.Experimental,
     defaultData: {
       file: "",
