@@ -13,6 +13,7 @@ export interface CriteriaType {
   id: string
   name: string
   class: string
+  requiresConceptSet?: boolean
   groupOnly?: boolean
   descriptions: {
     initial?: string
@@ -113,6 +114,7 @@ export interface CriteriaAttributeConfig {
   description: string
   type: string
   domainFilter?: string
+  excludeFromSections?: string[]
 }
 
 export interface AttributeOption {
@@ -142,6 +144,7 @@ export interface CriteriaConfig {
 // Config interfaces
 export interface ConfigCriteriaType {
   name: string
+  requiresConceptSet?: boolean
   groupOnly?: boolean
   descriptions: {
     initial?: string
@@ -164,6 +167,7 @@ export interface AttributeDefinition {
   description: string
   type: string
   domainFilter?: string
+  excludeFromSections?: string[]
 }
 
 export interface Config {
@@ -210,6 +214,7 @@ export class ConfigLoader {
         id,
         name: configType.name,
         class: this.capitalizeFirst(id), // e.g., conditionOccurrence -> ConditionOccurrence
+        requiresConceptSet: configType.requiresConceptSet ?? true, // Default to true if not specified
         groupOnly: configType.groupOnly,
         descriptions: {
           initial: configType.descriptions.initial || configType.descriptions.all || '',
@@ -253,6 +258,7 @@ export class ConfigLoader {
           description: mapping.description,
           type: mapping.type,
           domainFilter: mapping.domainFilter,
+          excludeFromSections: mapping.excludeFromSections,
         })
       })
 
@@ -444,30 +450,34 @@ export class ConfigLoader {
 
   /**
    * Get criteria-specific attribute options (like Add Nested Criteria, Add Stop Reason)
+   * Excludes the "default" attribute which represents the main concept set field
    */
   getCriteriaAttributeOptions(criteriaTypeId: string): AttributeOption[] {
     // First check for criteria-specific attributes (like nested, stop reason, etc.)
     if (this.criteriaAttributes && this.criteriaAttributes[criteriaTypeId]) {
-      return this.criteriaAttributes[criteriaTypeId].map(attr => {
-        const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
+      return this.criteriaAttributes[criteriaTypeId]
+        .filter(attr => attr.id !== 'default') // Exclude "default" - it's the main concept set field
+        .filter(attr => attr.type !== 'temporalRelationship')
+        .map(attr => {
+          const displayTitle = this.getAttributeDisplayTitle(attr.id, attr.name)
 
-        const result: AttributeOption = {
-          id: attr.id,
-          title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
-          defaultTitle: displayTitle,
-          description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
-          defaultDescription: attr.description || '',
-          type: attr.type || 'text',
-          action: this.createAttributeActionFunction(attr),
-        }
+          const result: AttributeOption = {
+            id: attr.id,
+            title: this.getI18nText(`cohortbuilder.attributes.${attr.id}.title`, displayTitle),
+            defaultTitle: displayTitle,
+            description: this.getI18nText(`cohortbuilder.attributes.${attr.id}.description`, attr.description || ''),
+            defaultDescription: attr.description || '',
+            type: attr.type || 'text',
+            action: this.createAttributeActionFunction(attr),
+          }
 
-        // Only add domainFilter if it exists
-        if (attr.domainFilter) {
-          result.domainFilter = attr.domainFilter
-        }
+          // Only add domainFilter if it exists
+          if (attr.domainFilter) {
+            result.domainFilter = attr.domainFilter
+          }
 
-        return result
-      })
+          return result
+        })
     }
 
     // Fall back to domain-based attributes (like age, gender, etc.)
@@ -634,6 +644,20 @@ export class ConfigLoader {
    */
   getOccurrenceCountOperators(): OccurrenceOperator[] {
     return this.occurrenceCount.operators
+  }
+
+  /**
+   * Check if a criteria type requires a concept set selection
+   * @param criteriaTypeId - The criteria type identifier (e.g., 'demographic', 'conditionOccurrence')
+   * @returns true if the criteria type requires a concept set, false otherwise
+   */
+  requiresConceptSet(criteriaTypeId: string): boolean {
+    const criteriaType = this.criteriaTypes[criteriaTypeId]
+    if (!criteriaType) {
+      // Default to true for unknown types to maintain backward compatibility
+      return true
+    }
+    return criteriaType.requiresConceptSet ?? true
   }
 
   /**
