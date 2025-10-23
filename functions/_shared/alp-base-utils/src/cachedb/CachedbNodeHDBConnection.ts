@@ -26,6 +26,7 @@ export class CachedbNodeHDBConnection extends PostgresConnection.PostgresConnect
     pool: Pool,
     schemaName,
     vocabSchemaName = schemaName,
+    resultSchemaName = schemaName,
     callback,
   ) {
     try {
@@ -33,6 +34,7 @@ export class CachedbNodeHDBConnection extends PostgresConnection.PostgresConnect
         pool,
         schemaName,
         vocabSchemaName,
+        resultSchemaName,
       );
       callback(null, conn);
     } catch (err) {
