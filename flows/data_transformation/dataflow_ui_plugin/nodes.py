@@ -326,31 +326,43 @@ class CsvNode(Node):
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
+
 class TransformDataNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
         self.structure_map = _node["structure_map"]
         self.dataframe = _node["dataframe"]
         
-    def transform_data(self):
+    def transform_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
+        print("Starting FHIR Transform")
+        transformed_omop = []
+        if input_fhir_df is not None and "content" in input_fhir_df.columns:
+            content_list = input_fhir_df["content"].tolist()
+            fhir_resource = content_list if content_list else None
+        else:
+            fhir_resource = None
+        print(fhir_resource)
         script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
-        process = Popen(
-            [
-                'node',
-                script_path,
-                json.dumps(self.structure_map),
-                self.dataframe.to_json(orient="records")
-            ],
-            stdout=PIPE,
-            stderr=STDOUT,
-            text=True
-        )
-        stdout, _ = process.communicate()
-        if process.returncode != 0:
-            raise Exception(f"FHIR Transform failed with error: {stdout}")
-        transformed_data = json.loads(stdout)
-        print(transformed_data)
-        df = pd.json_normalize(transformed_data)
+        for key in fhir_resource:
+            process = Popen(
+                [
+                    'node',
+                    script_path,
+                    self.structure_map,
+                    json.dumps(fhir_resource)
+                ],
+                stdout=PIPE,
+                stderr=STDOUT,
+                text=True
+            )
+            stdout, _ = process.communicate()
+            if process.returncode != 0:
+                raise Exception(f"FHIR Transform failed with error: {stdout}")
+            transformed_data = json.loads(stdout)
+            print(transformed_data)
+            transformed_omop.append(transformed_data)
+        # Flatten the list of transformed data into a single DataFrame  
+        df = pd.json_normalize(transformed_omop)
         return df
     
     def test(self, task_run_context) -> Result:
@@ -359,10 +371,11 @@ class TransformDataNode(Node):
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
-        
-    def task(self, test, task_run_context) -> Result:
+
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
-            df = self.transform_data()
+            df_to_write = _input[self.dataframe].result
+            df = self.transform_data(df_to_write)
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
@@ -416,7 +429,6 @@ class DBReader(Node):
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
-
 
 class ConceptMappingNode(Node):
     def __init__(self, name, _node):
