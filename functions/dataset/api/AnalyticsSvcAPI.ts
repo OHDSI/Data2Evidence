@@ -58,13 +58,12 @@ export class AnalyticsSvcAPI {
       `Checking if schema exists for ${schemaName} in ${databaseCode}`
     );
     const options = await this.getRequestConfig();
-    const params = new URLSearchParams();
-    params.append("dialect", dialect);
-    params.append("databaseCode", databaseCode);
-    params.append("schemaName", schemaName);
-    const url = `${this.baseURL}alpdb/schema/exists`;
+    const url = `${this.baseURL}alpdb/schema/exists
+    ?dialect=${encodeURIComponent(dialect)}
+    &databaseCode=${encodeURIComponent(databaseCode)}
+    &schemaName=${encodeURIComponent(schemaName)}`;
     try {
-      const result = await get(url, { ...options, params });
+      const result = await get(url, options);
       return result.data;
     } catch (error) {
       const errorMessage = `Failed to check if schema exists for ${schemaName} in ${databaseCode}`;
