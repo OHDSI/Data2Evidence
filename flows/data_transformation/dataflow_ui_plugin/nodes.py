@@ -1,3 +1,4 @@
+from io import StringIO
 import ibis
 import json
 import duckdb
@@ -29,7 +30,7 @@ from .nodeutils.csvutils import convert_csv_to_dataframe
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
-
+from subprocess import Popen, PIPE, STDOUT
 
 class Node:
     def __init__(self, name, node):
@@ -325,8 +326,47 @@ class CsvNode(Node):
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
-
-
+class TransformDataNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.structure_map = _node["structure_map"]
+        self.dataframe = _node["dataframe"]
+        
+    def transform_data(self):
+        script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
+        process = Popen(
+            [
+                'node',
+                script_path,
+                json.dumps(self.structure_map),
+                self.dataframe.to_json(orient="records")
+            ],
+            stdout=PIPE,
+            stderr=STDOUT,
+            text=True
+        )
+        stdout, _ = process.communicate()
+        if process.returncode != 0:
+            raise Exception(f"FHIR Transform failed with error: {stdout}")
+        transformed_data = json.loads(stdout)
+        print(transformed_data)
+        df = pd.json_normalize(transformed_data)
+        return df
+    
+    def test(self, task_run_context) -> Result:
+        try:
+            df = self.transform_data()
+            return Result(False,  df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+        
+    def task(self, test, task_run_context) -> Result:
+        try:
+            df = self.transform_data()
+            return Result(False,  df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+        
 class DbWriter(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
@@ -636,6 +676,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = DataMappingNode(nodename, node)
         case NodeType.CONCEPTMAPPING:
             nodeobj = ConceptMappingNode(nodename, node)
+        case NodeType.TRANSFORMDATA:
+            nodeobj = TransformDataNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())

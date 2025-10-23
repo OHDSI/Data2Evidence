@@ -14,6 +14,7 @@ import { SqlNode } from "./SqlNode/SqlNode";
 import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
 import { ConceptMappingNode } from "./ConceptMappingNode/ConceptMappingNode";
 import { WhiteRabbitNode } from "./WhiteRabbitNode/WhiteRabbitNode";
+import { TransformDataNode } from "./TransformNode/TransformDataNode";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -30,6 +31,7 @@ export const NODE_TYPES: {
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
   white_rabbit_node: WhiteRabbitNode,
+  transform_data_node: TransformDataNode,
 };
 
 export const NODE_COLORS: {
@@ -47,6 +49,7 @@ export const NODE_COLORS: {
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
   white_rabbit_node: "#999fcb",
+  transform_data_node: "#999fcb",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -134,6 +137,12 @@ test_exec <- function(myinput) {
       columns: [],
       encoding: "utf-8",
     },
+  },
+  transform_data_node: {
+    title: "Transform Data",
+    description: "Transform data from one format to another using mapping rules.",
+    tag: NodeTag.Experimental,
+    defaultData: {},
   },
   db_reader_node: {
     title: "Database query",

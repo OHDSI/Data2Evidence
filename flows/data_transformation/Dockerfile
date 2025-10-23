@@ -48,7 +48,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=./data_transformation/pyproject.toml,target=pyproject.toml \
     uv sync --all-extras --frozen --no-install-project --no-dev --no-editable
 
-
 FROM rocker/r-ver:${R_VERSION} AS runtime
 
 
@@ -76,8 +75,11 @@ RUN apt-get update && \
     libpq5 \
     python3-pip \
     openjdk-17-jdk \
+    nodejs \
+    npm \
     && apt-get clean
 
+RUN npm install @synanetics/fhir-transform
 
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
@@ -120,7 +122,7 @@ RUN pip install https://github.com/explosion/spacy-models/releases/download/en_c
 WORKDIR /app
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./data_transformation flows
+# COPY --chown=docker:docker --chmod=711 ./data_transformation flows
 
 RUN chmod -R 755 /app
 
