@@ -9,8 +9,8 @@
   >
     <multiselect
       size="sm"
-      :value="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
-      @input="handleUpdateValue"
+      :modelValue="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
+      @update:modelValue="handleUpdateValue"
       track-by="value"
       :hide-selected="true"
       :internal-search="false"
