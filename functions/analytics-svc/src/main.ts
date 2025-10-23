@@ -176,7 +176,27 @@ const initRoutes = async (app: express.Application) => {
                     log.debug(`No user found in request:${err.stack}`);
                 }
 
-                const credentials = req.dbCredentials.studyAnalyticsCredential;
+                let credentials;
+                // If request starts with "/analytics-svc/api/services/alpdb/schema/exists", as this request is seeking information where a dataset might not exist yet, get database credentials directly from incoming databaseCode
+                if (
+                    req.originalUrl.startsWith(
+                        "/analytics-svc/api/services/alpdb/schema/exists"
+                    )
+                ) {
+                    log.info(
+                        "Skipping middleware to get req.dbConnections for /alpdb/schema/exists requests"
+                    );
+                    const databaseCode = req.query.databaseCode as string;
+                    credentials =
+                        req.dbCredentials.analyticsCredentials[databaseCode];
+                    if (!credentials) {
+                        throw new Error(
+                            `Database code:${databaseCode} not found in analytics credentials`
+                        );
+                    }
+                } else {
+                    credentials = req.dbCredentials.studyAnalyticsCredential;
+                }
 
                 // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (

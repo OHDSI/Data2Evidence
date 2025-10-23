@@ -53,9 +53,9 @@ export async function getCDMVersion(req, res, next) {
 }
 
 export async function checkIfSchemaExists(req, res, next) {
-    const dialect: string = req.params.databaseType;
-    const _tenant: string = req.params.tenant;
-    const schema: string = req.params.schemaName;
+    const dialect: string = req.query.dialect;
+    const databaseCode: string = req.query.databaseCode;
+    const schemaName: string = req.query.schemaName;
 
     // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
     // Always send true if dialect is bigquery
@@ -66,7 +66,10 @@ export async function checkIfSchemaExists(req, res, next) {
     try {
         const { analyticsConnection } = req.dbConnections;
         const dbDao = new DBDAO(analyticsConnection);
-        const schemaExists = await dbDao.checkIfSchemaExists(schema);
+        const schemaExists = await dbDao.checkIfSchemaExists(
+            databaseCode,
+            schemaName
+        );
         res.status(200).send(schemaExists);
     } catch (err) {
         logger.error(`Error checking if schema exists: ${err}`);

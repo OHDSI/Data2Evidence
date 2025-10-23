@@ -16,10 +16,10 @@ export class DBDAO {
         this.connection = conn;
     }
 
-    public getCDMVersion = async (schema: string): Promise<string> => {
+    public getCDMVersion = async (schemaName: string): Promise<string> => {
         return new Promise((resolve, reject) => {
             this.connection.executeQuery(
-                `SELECT CDM_VERSION FROM ${schema}.CDM_SOURCE`,
+                `SELECT CDM_VERSION FROM ${schemaName}.CDM_SOURCE`,
                 [],
                 (err: any, result: string) => {
                     if (err) {
@@ -33,11 +33,33 @@ export class DBDAO {
         });
     };
 
-    public checkIfSchemaExists = async (schema: string): Promise<boolean> => {
+    public checkIfSchemaExists = async (
+        databaseName: string,
+        schemaName: string
+    ): Promise<boolean> => {
         return new Promise((resolve, reject) => {
+            let sql, sqlParams;
+            if (this.connection.constructor.name === "TrexConnection") {
+                sql = `
+                select
+                    schema_name as SCHEMA_NAME
+                from
+                    information_schema.schemata
+                where
+                    catalog_name =?
+                    and schema_name =?`;
+                // Use direct_connection_suffix instead of databaseName as checking if schema exists is only used in the context of the source database
+                sqlParams = [
+                    { value: `${databaseName}__srcdb` },
+                    { value: schemaName },
+                ];
+            } else {
+                sql = `SELECT SCHEMA_NAME FROM SCHEMAS WHERE SCHEMA_NAME=?`;
+                sqlParams = [{ value: schemaName }];
+            }
             this.connection.executeQuery(
-                `SELECT SCHEMA_NAME FROM SCHEMAS WHERE SCHEMA_NAME=?`,
-                [{ value: schema }],
+                sql,
+                sqlParams,
                 (err: any, result: string) => {
                     if (err) {
                         logger.info(err);
@@ -93,7 +115,7 @@ export class DBDAO {
     // Gets all the tables except DATABASECHANGELOG and DATABASECHANGELOGLOCK for schema
     private getSnapshotSchemaTables = (
         databaseName: string,
-        schema: string
+        schemaName: string
     ) => {
         return new Promise<string[]>((resolve, reject) => {
             let sql, sqlParams;
@@ -104,14 +126,14 @@ export class DBDAO {
                     table_catalog=?
                     AND table_schema=?
                     AND (TABLE_NAME NOT IN ('databasechangelog', 'databasechangeloglock'));`;
-                sqlParams = [{ value: databaseName }, { value: schema }];
+                sqlParams = [{ value: databaseName }, { value: schemaName }];
             } else {
                 sql = `
                 SELECT TABLE_NAME FROM SYS.M_TABLES
                 WHERE 
                   SCHEMA_NAME=?
                   AND (TABLE_NAME NOT IN ('DATABASECHANGELOG', 'DATABASECHANGELOGLOCK'));`;
-                sqlParams = [{ value: schema }];
+                sqlParams = [{ value: schemaName }];
             }
             this.connection.executeQuery(
                 sql,
@@ -121,7 +143,7 @@ export class DBDAO {
                         reject(err);
                     } else {
                         logger.info(
-                            `Retrieved schema snapshot tables for Schema: ${schema}`
+                            `Retrieved schema snapshot tables for Schema: ${schemaName}`
                         );
                         const tables: string[] = [];
                         result.forEach((elem: { TABLE_NAME: string }) => {
@@ -137,7 +159,7 @@ export class DBDAO {
     // Gets the metadata of the table in the schema, this is for the frontend to know which column is essential for copying, e.g if a column is a primary key, it must be copied in the snapshot
     private getSnapshotSchemaTableMetadata = (
         databaseName: string,
-        schema: string,
+        schemaName: string,
         table: string
     ) => {
         return new Promise<SnapshotTableMetadata>((resolve, reject) => {
@@ -188,12 +210,12 @@ export class DBDAO {
                 // Therefore querying the direct database for this information is required
                 sqlParams = [
                     { value: `${databaseName}__srcdb` },
-                    { value: schema },
+                    { value: schemaName },
                     { value: table },
                 ];
             } else {
                 sql = `SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON (tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON (tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME) WHERE tc.SCHEMA_NAME = ? AND tc.TABLE_NAME = ?;`;
-                sqlParams = [{ value: schema }, { value: table }];
+                sqlParams = [{ value: schemaName }, { value: table }];
             }
             this.connection.executeQuery(
                 sql,
@@ -203,7 +225,7 @@ export class DBDAO {
                         reject(err);
                     } else {
                         logger.info(
-                            `Retrieved schema snapshot table metadata for Table: ${table} in Schema: ${schema}`
+                            `Retrieved schema snapshot table metadata for Table: ${table} in Schema: ${schemaName}`
                         );
                         let tableMetadata = <SnapshotTableMetadata>{
                             tableName: table,

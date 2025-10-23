@@ -50,7 +50,7 @@ export class AnalyticsSvcAPI {
 
   // alpdb endpoints
   async checkIfSchemaExists(
-    databaseDialect: string,
+    dialect: string,
     databaseCode: string,
     schemaName: string
   ): Promise<boolean> {
@@ -58,9 +58,13 @@ export class AnalyticsSvcAPI {
       `Checking if schema exists for ${schemaName} in ${databaseCode}`
     );
     const options = await this.getRequestConfig();
-    const url = `${this.baseURL}alpdb/${databaseDialect}/database/${databaseCode}/schema/${schemaName}/exists`;
+    const params = new URLSearchParams();
+    params.append("dialect", dialect);
+    params.append("databaseCode", databaseCode);
+    params.append("schemaName", schemaName);
+    const url = `${this.baseURL}alpdb/schema/exists`;
     try {
-      const result = await get(url, options);
+      const result = await get(url, { ...options, params });
       return result.data;
     } catch (error) {
       const errorMessage = `Failed to check if schema exists for ${schemaName} in ${databaseCode}`;
