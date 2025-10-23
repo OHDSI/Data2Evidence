@@ -2,21 +2,16 @@ import { Logger } from "@alp/alp-base-utils";
 import { ANALYTICS_DB_DIALECTS } from "../../types";
 import * as dbUtils from "../../utils/DBSvcDBUtils";
 import { DBDAO } from "../../dao/DBDAO";
-import PortalServerAPI from "../PortalServerAPI";
 import { env } from "../../env";
 
 const logger = Logger.CreateLogger("analytics-log");
 
 export async function getCDMVersion(req, res, next) {
-    const datasetId = req.query.datasetId;
-
-    const { dialect, schemaName } = await new PortalServerAPI().getStudy(
-        req.headers.authorization,
-        datasetId
-    );
+    const { schema: schemaName, dialect } =
+        req.dbCredentials.studyAnalyticsCredential;
 
     // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
-    // Always send 5.3.1 if dialect is bigquery
+    // Always send hardcoded value from env if dialect is bigquery
     if (dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
         return res.status(200).send(env.BIGQUERY_CDM_VERSION);
     }
@@ -83,8 +78,7 @@ export async function checkIfSchemaExists(req, res, next) {
 }
 
 export async function getSnapshotSchemaMetadata(req, res, next) {
-    const _datasetId = req.query.datasetId;
-    const { schema: SchemaName, code: databaseName } =
+    const { schema: schemaName, code: databaseName } =
         req.dbCredentials.studyAnalyticsCredential;
 
     try {
@@ -92,7 +86,7 @@ export async function getSnapshotSchemaMetadata(req, res, next) {
         const dbDao = new DBDAO(analyticsConnection);
         const results = await dbDao.getSnapshotSchemaMetadata(
             databaseName,
-            SchemaName
+            schemaName
         );
         res.status(200).json(results);
     } catch (err: any) {
