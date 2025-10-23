@@ -140,7 +140,7 @@ test_exec <- function(myinput) {
   },
   file_node: {
     title: "Generic File",
-    description: "Read file from a path, returning the node_id and the filename of the file.",
+    description: "Read file of a general type from a path.",
     tag: NodeTag.Experimental,
     defaultData: {
       file: "",
