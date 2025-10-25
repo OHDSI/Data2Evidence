@@ -29,6 +29,9 @@ import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
 import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
+import ExecuteSidePanel from '@/components/ExecuteSidePanel.vue'
+import Drawer from '@/components/Drawer.vue'
+import bsCard from '@/lib/ui/bs-card.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiveIcon.vue'
@@ -67,6 +70,7 @@ const store = useStore()
 const showDebug = ref(false)
 
 const showSaveDialog = ref(false)
+const showExecuteDrawer = ref(false)
 const cohortName = ref('')
 const shareBookmark = ref(false)
 const isInvalidName = ref(false)
@@ -203,6 +207,20 @@ const displayPatientCount = computed(() => {
     return 'Failed'
   }
   return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
+})
+
+// Compute patient counts by source for ExecuteSidePanel
+const patientCountsBySource = computed(() => {
+  const counts: Record<string, number | null> = {}
+  cohortInfo.value.forEach(info => {
+    const source = availableSources.value.find(s => s.sourceId === info.id.sourceId)
+    if (source && info.status === 'COMPLETE') {
+      counts[source.sourceKey] = info.personCount
+    } else if (source) {
+      counts[source.sourceKey] = null
+    }
+  })
+  return counts
 })
 
 // Helper to recursively check if event or its nested events are loading
@@ -834,6 +852,10 @@ const closeSaveDialog = () => {
   isInvalidName.value = false
 }
 
+const openExecuteDrawer = () => {
+  showExecuteDrawer.value = true
+}
+
 // Helper function to check if any events are still loading concept details
 const checkAndWaitForConceptDetails = async (): Promise<boolean> => {
   const criteria = criteriaManager.getCriteria()
@@ -1149,6 +1171,13 @@ const generateCohort = async () => {
     isGeneratingCohort.value = false
   }
 }
+
+// Handler for ExecuteSidePanel generate-cohort event
+const handleExecutePanelGenerateCohort = (sourceKey: string) => {
+  // Update the selected dataset and trigger generation
+  selectedDatasetForGeneration.value = sourceKey
+  generateCohort()
+}
 </script>
 
 <template>
@@ -1196,6 +1225,7 @@ const generateCohort = async () => {
             <ButtonMaterial @button-click="openSaveDialog" :disabled="!isReadyToSave">
               {{ isReadyToSave ? 'Save' : 'Loading...' }}
             </ButtonMaterial>
+            <ButtonMaterial color="primary" variant="outlined" @button-click="openExecuteDrawer"> More </ButtonMaterial>
           </div>
         </div>
       </div>
@@ -1425,6 +1455,18 @@ const generateCohort = async () => {
         ></appButton>
       </template>
     </messageBox>
+
+    <!-- Execute Drawer -->
+    <Drawer v-if="showExecuteDrawer" :width="'85vw'" :title="'Execute Cohort'" @close="showExecuteDrawer = false">
+      <ExecuteSidePanel
+        :available-sources="availableSources"
+        :is-generating-cohort="isGeneratingCohort"
+        :generation-status="generationStatus"
+        :patient-counts="patientCountsBySource"
+        :current-generating-source-key="selectedDatasetForGeneration"
+        @generate-cohort="handleExecutePanelGenerateCohort"
+      />
+    </Drawer>
   </div>
 </template>
 
@@ -1433,3 +1475,4 @@ const generateCohort = async () => {
 // Import existing styles for backward compatibility
 @import '../styles/QueryFilter';
 </style>
+
