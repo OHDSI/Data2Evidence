@@ -24,7 +24,6 @@ Trex/ext/event_worker
 Trex/ext/os
 Trex/ext/env
 Trex/ext/xs
-Trex/ext/spod2
 
 # Exclude node_modules and build artifacts everywhere
 **/node_modules
@@ -33,8 +32,7 @@ Trex/ext/spod2
 **/.git
 **/*.duckdb_extension
 
-# Exclude from spod specifically
-Trex/ext/spod/node_modules
-Trex/ext/spod/target
-Trex/ext/spod/build
-Trex/ext/spod/.git
+Trex/ext/bao/node_modules
+Trex/ext/bao/target
+Trex/ext/bao/build
+Trex/ext/bao/.git
