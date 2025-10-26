@@ -26,6 +26,8 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   structure_map: "",
+  source_structure_definition: "",
+  target_structure_definition: "",
   output_omop_data: "",
   dataframe: "",
 };
@@ -47,6 +49,8 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
         name: node.data.name,
         description: node.data.description,
         structure_map: node.data.structure_map,
+        source_structure_definition: node.data.source_structure_definition ?? "",
+        target_structure_definition: node.data.target_structure_definition ?? "",
         dataframe: node.data.dataframe,
         output_omop_data: node.data.output_omop_data,
       });
@@ -104,6 +108,24 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
           value={formData.structure_map}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             onFormDataChange({ structure_map: e.target.value })
+          }
+        />
+      </Box>
+      <Box mb={4}>
+        <TextInput
+          label="Source Structure Definition"
+          value={formData.source_structure_definition}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ source_structure_definition: e.target.value })
+          }
+        />
+      </Box>
+      <Box mb={4}>
+        <TextInput
+          label="Target Structure Definition"
+          value={formData.target_structure_definition}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ target_structure_definition: e.target.value })
           }
         />
       </Box>

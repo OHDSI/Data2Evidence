@@ -13,6 +13,8 @@ export interface TransformNodeData extends NodeDataState {
   structure_map: string;
   output_omop_data: string;
   dataframe: string;
+  source_structure_definition: string;
+  target_structure_definition: string;
 }
 
 export const TransformDataNode = (node: NodeProps<TransformNodeData>) => {

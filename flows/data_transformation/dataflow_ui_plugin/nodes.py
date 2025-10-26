@@ -331,6 +331,8 @@ class TransformDataNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
         self.structure_map = _node["structure_map"]
+        self.source_structure_definition = _node["source_structure_definition"]
+        self.target_structure_definition = _node["target_structure_definition"]
         self.dataframe = _node["dataframe"]
         
     def transform_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
@@ -341,15 +343,17 @@ class TransformDataNode(Node):
             fhir_resource = content_list if content_list else None
         else:
             fhir_resource = None
-        print(fhir_resource)
         script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
+        
         for key in fhir_resource:
             process = Popen(
                 [
                     'node',
                     script_path,
                     self.structure_map,
-                    json.dumps(fhir_resource)
+                    json.dumps(fhir_resource),
+                    self.source_structure_definition,
+                    self.target_structure_definition
                 ],
                 stdout=PIPE,
                 stderr=STDOUT,
@@ -359,12 +363,11 @@ class TransformDataNode(Node):
             if process.returncode != 0:
                 raise Exception(f"FHIR Transform failed with error: {stdout}")
             transformed_data = json.loads(stdout)
-            print(transformed_data)
+            print(json.loads(stdout))
             transformed_omop.append(transformed_data)
-        # Flatten the list of transformed data into a single DataFrame  
         df = pd.json_normalize(transformed_omop)
         return df
-    
+
     def test(self, task_run_context) -> Result:
         try:
             df = self.transform_data()
