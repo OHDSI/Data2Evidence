@@ -1244,13 +1244,12 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
                 use_cache_db=False,
-                database_code=database_code, 
-                is_study_results_db = True
+                database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                dbms='postgresql', 
-                connectionString=construct_jdbc_url(db_credentials),
+                dbms=dbdao.get_database_connector_dbms_val(), 
+                connectionString=dbdao.get_database_connector_connection_string(),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
@@ -1311,7 +1310,7 @@ def drop_strategus_results_schema(dbSettings):
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
         use_cache_db=False,
-        database_code=database_code, is_study_results_db=True
+        database_code=database_code
     )
 
     if(dbdao.check_schema_exists(results_schema)):
