@@ -58,6 +58,7 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
       <!-- dataset list -->
       <div v-for="source in availableSources" :key="source.sourceId">
         <bsCard
+          class="dataset-card"
           v-bind:class="{ 'active-dataset': activeDataset === source.sourceKey }"
           @click="activeDataset = source.sourceKey"
         >
@@ -75,21 +76,28 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
                   :disabled="isGeneratingForSource(source.sourceKey)"
                   class="btn btn-primary generate-cohort-btn"
                 >
-                  Generate cohort
+                  Generate
                 </button>
-
-                <div class="patient-count-display">
-                  <span class="patient-count-value">{{ getDisplayPatientCount(source.sourceKey) }}</span>
-                  <span class="patient-count-label">Patients</span>
-                </div>
               </div>
             </div>
           </template>
+          <div>
+            <div class="patient-count-display">
+              <div v-if="isGeneratingForSource(source.sourceKey)" class="patient-count-label generating-label">
+                Generating...
+              </div>
+              <div v-else>
+                <!-- "Uninitialised" or something when it's never been generated? -->
+                <div class="patient-count-value">{{ getDisplayPatientCount(source.sourceKey) }}</div>
+                <div class="patient-count-label">Patients</div>
+              </div>
+            </div>
+          </div>
         </bsCard>
       </div>
-      <!--  -->
     </aside>
-    <section>
+    <!-- Main content -->
+    <section class="main-content">
       <appTab class="tabs" :tabItems="tabList" :value="selectedView" @onSelectedChange="selectedView = $event" />
       <div class="tab-content">
         <h3 v-if="selectedView === 'inclusion_report'">Attrition</h3>
@@ -102,43 +110,61 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
 </template>
 
 <style lang="scss" scoped>
+.dataset-card {
+  :global(.card-header) {
+    background-color: transparent;
+    border-bottom: none;
+  }
+  border-radius: 8px;
+  background-color: white;
+  border: none;
+}
 .active-dataset {
   border: 2px solid var(--color-primary);
 }
-.tabs {
-  width: 100%;
 
-  :global(.app-list) {
-    margin-top: 0;
-    margin-bottom: 0;
+.main-content {
+  display: flex;
+  flex-direction: column;
+  .tabs {
     width: 100%;
-    display: flex;
-    justify-content: space-between;
-    background-color: transparent;
+    margin-bottom: -5px;
+    z-index: 1;
+
+    :global(.app-list) {
+      margin-top: 0;
+      margin-bottom: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      background-color: transparent;
+    }
+
+    :global(.app-listItem) {
+      width: 100%;
+      // text-align: center;
+      background-color: transparent !important;
+      color: var(--color-primary) !important;
+      font-size: 1.2rem !important;
+    }
   }
 
-  :global(.app-listItem) {
-    width: 100%;
-    // text-align: center;
-    background-color: transparent !important;
-    color: var(--color-primary) !important;
-    font-size: 1.2rem !important;
-  }
-}
-.generate-spinner {
-  :global(.spinner) {
-    width: 10px;
-    height: 10px;
-    border-width: 3px;
+  .tab-content {
+    background-color: white;
+    height: 100%;
+    border-radius: 8px;
   }
 }
 .generate-spinner-container {
-  width: 20px;
-  height: 20px;
-  &--horizontal {
-    .spinner {
-      width: 20px;
-      height: 20px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: end;
+  .generate-spinner {
+    :global(.spinner) {
+      width: 22px;
+      height: 22px;
+      border-width: 4px;
     }
   }
 }
@@ -148,7 +174,7 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
 }
 
 .card-header-content {
-  display: flex;
+  display: grid;
   align-items: center;
   justify-content: space-between;
   grid-template-columns: 3fr 1fr;
@@ -165,8 +191,7 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
 
   .card-header-controls {
     display: flex;
-    flex-direction: column;
-    align-items: right;
+    justify-content: end;
     gap: 12px;
     flex-shrink: 0;
     white-space: nowrap;
@@ -174,12 +199,12 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
     .generate-cohort-btn {
       gap: 6px;
       padding: 6px 12px;
-      font-size: 12px;
+      font-size: 16px;
       border-radius: 4px;
       border: none;
       cursor: pointer;
       transition: all 0.2s ease;
-
+      width: fit-content;
       &.btn-primary {
         background-color: var(--color-primary);
         color: #fff;
@@ -219,30 +244,31 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
         }
       }
     }
-
-    .patient-count-display {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-
-      .patient-count-label {
-        font-size: 11px;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-
-      .patient-count-value {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--color-primary);
-        min-width: 40px;
-        text-align: right;
-      }
-    }
   }
 }
+.patient-count-display {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 4px;
 
+  .patient-count-label {
+    font-size: 16px;
+    color: #666;
+    letter-spacing: 0.5px;
+    &.generating-label {
+      min-height: 50px;
+    }
+  }
+
+  .patient-count-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--color-primary);
+    min-width: 40px;
+    text-align: right;
+  }
+}
 .side {
   display: flex;
   flex-direction: column;

@@ -1228,7 +1228,14 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
             <ButtonMaterial @button-click="openSaveDialog" :disabled="!isReadyToSave">
               {{ isReadyToSave ? 'Save' : 'Loading...' }}
             </ButtonMaterial>
-            <ButtonMaterial color="primary" variant="outlined" @button-click="openExecuteDrawer"> More </ButtonMaterial>
+            <ButtonMaterial
+              class="cohort-actions-btn"
+              color="primary"
+              variant="outlined"
+              @button-click="openExecuteDrawer"
+            >
+              More
+            </ButtonMaterial>
           </div>
         </div>
       </div>
@@ -1460,7 +1467,7 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
     </messageBox>
 
     <!-- Execute Drawer -->
-    <Drawer v-if="showExecuteDrawer" :width="'85vw'" :title="'Execute Cohort'" @close="showExecuteDrawer = false">
+    <Drawer v-if="showExecuteDrawer" :width="'85vw'" :title="'Cohort Actions'" @close="showExecuteDrawer = false">
       <ExecuteSidePanel
         :available-sources="availableSources"
         :is-generating-cohort="isGeneratingCohort"
