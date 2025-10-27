@@ -184,14 +184,14 @@ const initRoutes = async (app: express.Application) => {
                     )
                 ) {
                     log.info(
-                        "Skipping middleware to get req.dbConnections for /alpdb/schema/exists requests"
+                        "Getting credentials from analyticsCredentials for /alpdb/schema/exists requests"
                     );
                     const databaseCode = req.query.databaseCode as string;
                     credentials =
                         req.dbCredentials.analyticsCredentials[databaseCode];
                     if (!credentials) {
                         throw new Error(
-                            `Database code:${databaseCode} not found in analytics credentials`
+                            `Database code:${databaseCode} not found in analyticsCredentials`
                         );
                     }
                 } else {
