@@ -127,6 +127,8 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
+            cp .env.local .env
+            ls -al
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
