@@ -42453,7 +42453,712 @@ export const cdwConfigHades_dataset = {
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
-                    }
+                    },
+                    "pathway": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Treatment pathway"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "text",
+                        "defaultPlaceholder": "@TPPATHWAY",
+                        "expression": "@TPPATHWAY.\"pathway\"",
+                        "order": 12,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "pathwaySex": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Treatment pathway sex"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "text",
+                        "defaultPlaceholder": "@TPPATHWAY",
+                        "expression": "@TPPATHWAY.\"sex\"",
+                        "order": 13,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "pathwayIndexYear": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Treatment pathway index year"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "text",
+                        "defaultPlaceholder": "@TPPATHWAY",
+                        "expression": "@TPPATHWAY.\"index_year\"",
+                        "order": 14,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "pathwayFreq": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Treatment pathway frequency"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPPATHWAY",
+                        "expression": "@TPPATHWAY.\"freq\"",
+                        "order": 15,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "pathwayAge": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Treatment pathway age"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPPATHWAY",
+                        "expression": "@TPPATHWAY.\"age\"",
+                        "order": 16,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "eventDuration": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Duration"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"duration_average\"",
+                        "order": 17,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "eventCount": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Event Count"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"event_count\"",
+                        "order": 18,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "eventName": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Event Name"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "text",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"event_name\"",
+                        "order": 19,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "eventLine": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Event Line"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "text",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"line\"",
+                        "order": 20,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "durationMax": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Event duration max"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"duration_max\"",
+                        "order": 21,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "durationMedian": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Event duration median"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"duration_median\"",
+                        "order": 22,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "durationMin": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Event duration min"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"duration_min\"",
+                        "order": 23,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "durationq1": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Q1 duration in days"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"duration_q_1\"",
+                        "order": 24,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "durationq2": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Q2 duration in days"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"duration_q_2\"",
+                        "order": 25,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "durationsd": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Standard Deviation of duration in days"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPEVENTDURATION",
+                        "expression": "@TPEVENTDURATION.\"duration_sd\"",
+                        "order": 26,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
                 }
             }
         },
@@ -42567,6 +43272,14 @@ export const cdwConfigHades_dataset = {
                         {
                             "placeholder": "@TPCOUNTSYEAR",
                             "oneToN": true
+                        },
+                        {
+                            "placeholder": "@TPPATHWAY",
+                            "oneToN": true
+                        },
+                        {
+                            "placeholder": "@TPEVENTDURATION",
+                            "oneToN": true
                         }
                     ],
                     "hierarchy": false,
@@ -42577,7 +43290,7 @@ export const cdwConfigHades_dataset = {
             ]
         },
         "tableMapping": {
-            "@TP": "results_treatment_pathways_study_tp1.\"tp_metadata\"",
+            "@TP": "results_treatment_pathways_study_demo.\"tp_metadata\"",
             "@TP.PATIENT_ID": "\"database_id\"",
             "@TP.INTERACTION_ID": "\"database_id\"",
             "@TP.CONDITION_ID": "\"database_id\"",
@@ -42585,19 +43298,27 @@ export const cdwConfigHades_dataset = {
             "@TP.START": "\"execution_start\"",
             "@TP.END": "\"execution_end\"",
             "@TP.INTERACTION_TYPE": "\"database_id\"",
-            "@TPCOUNTSAGE": "results_treatment_pathways_study_tp1.\"tp_counts_age\"",
+            "@TPCOUNTSAGE": "results_treatment_pathways_study_demo.\"tp_counts_age\"",
             "@TPCOUNTSAGE.INTERACTION_ID": "\"database_id\"",
             "@TPCOUNTSAGE.ATTRIBUTE": "\"database_id\"",
             "@TPCOUNTSAGE.VALUE": "\"database_id\"",
-            "@TPCOUNTSSEX": "results_treatment_pathways_study_tp1.\"tp_counts_sex\"",
+            "@TPCOUNTSSEX": "results_treatment_pathways_study_demo.\"tp_counts_sex\"",
             "@TPCOUNTSSEX.INTERACTION_ID": "\"database_id\"",
             "@TPCOUNTSSEX.ATTRIBUTE": "\"database_id\"",
             "@TPCOUNTSSEX.VALUE": "\"database_id\"",
-            "@TPCOUNTSYEAR": "results_treatment_pathways_study_tp1.\"tp_counts_year\"",
+            "@TPCOUNTSYEAR": "results_treatment_pathways_study_demo.\"tp_counts_year\"",
             "@TPCOUNTSYEAR.INTERACTION_ID": "\"database_id\"",
             "@TPCOUNTSYEAR.ATTRIBUTE": "\"database_id\"",
             "@TPCOUNTSYEAR.VALUE": "\"database_id\"",
-            "@PATIENT": "results_treatment_pathways_study_tp1.\"database_meta_data\"",
+            "@TPPATHWAY": "results_treatment_pathways_study_demo.\"tp_treatment_pathways\"",
+            "@TPPATHWAY.INTERACTION_ID": "\"database_id\"",
+            "@TPPATHWAY.ATTRIBUTE": "\"database_id\"",
+            "@TPPATHWAY.VALUE": "\"database_id\"",
+            "@TPEVENTDURATION": "results_treatment_pathways_study_demo.\"tp_summary_event_duration\"",
+            "@TPEVENTDURATION.INTERACTION_ID": "\"database_id\"",
+            "@TPEVENTDURATION.ATTRIBUTE": "\"database_id\"",
+            "@TPEVENTDURATION.VALUE": "\"database_id\"",
+            "@PATIENT": "results_treatment_pathways_study_demo.\"database_meta_data\"",
             "@PATIENT.PATIENT_ID": "\"database_id\"",
             "@PATIENT.DOD": "\"cdm_release_date\"",
             "@PATIENT.DOB": "\"cdm_release_date\"",
@@ -42611,7 +43332,7 @@ export const cdwConfigHades_dataset = {
             "@TEXT.VALUE": "\"concept_name\""
         },
         "guardedTableMapping": {
-            "@PATIENT": "results_treatment_pathways_study_tp1.\"database_meta_data\""
+            "@PATIENT": "results_treatment_pathways_study_demo.\"database_meta_data\""
         },
         "language": [
             "en",
@@ -42920,6 +43641,306 @@ const paConfigHades_dataset = {
                     },
                     "modelName": "Count per year"
                 },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.pathway",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Pathway"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.pathwaySex",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Pathway Sex"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.pathwayIndexYear",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 12
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Pathway Index Year"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.pathwayFreq",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 13
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Pathway Frequency"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.pathwayAge",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 14
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Pathway Age"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.eventDuration",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 14
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Duration"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.eventCount",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 15
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Count"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.eventName",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 16
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Name"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.eventLine",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 17
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Line"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.durationMax",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 18
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Duration Max"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.durationMedian",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 19
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Duration Median"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.durationMin",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 20
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Duration Min"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.durationq1",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 21
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Duration Q1"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.durationq2",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 22
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Duration Q2"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.durationsd",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 23
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Event Duration SD"
+                }
             ],
             "initialPatientlistColumn": true,
             "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
