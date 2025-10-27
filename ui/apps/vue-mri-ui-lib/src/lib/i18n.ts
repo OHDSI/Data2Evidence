@@ -661,6 +661,7 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_GEQ_LEQ: '{0} or {1} for greater than or equal to/less than or equal to',
     MRI_PA_RANGE_CONSTRAINT_HELP_INTERVAL: '{0} or {1} for an interval including or excluding the endpoints',
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0} for negative values',
+    MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT: 'Invalid input. Use a number, comparison, or interval.',
     MRI_PA_DISABLED_FC_HELP_HEADER: 'Disabled Filter Card',
     MRI_PA_DISABLED_FC_HELP_TEXT: 'To activate the filter card, enter a valid variant location.',
     MRI_PA_VARIANT_CONSTRAINT_HELP_TEXT: 'Enter one or more of the following:',
@@ -1569,6 +1570,8 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_INTERVAL:
       '{0} oder {1} für ein Intervall einschließlich oder ausschließlich der Endpunkte',
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0} für negative Werte',
+    MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT:
+      'Ungültige Eingabe. Verwenden Sie eine Zahl, einen Vergleich oder ein Intervall.',
     MRI_PA_DISABLED_FC_HELP_HEADER: 'Deaktivierte Filterkachel',
     MRI_PA_DISABLED_FC_HELP_TEXT: 'Um die Filterkachel zu aktivieren, geben Sie eine gültige Variantenposition ein.',
     MRI_PA_VARIANT_CONSTRAINT_HELP_TEXT: 'Machen Sie eine oder mehrere der folgenden Angaben:',
@@ -2411,6 +2414,7 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_GEQ_LEQ: '{0} 或 {1}，表示大于或等于/小于或等于',
     MRI_PA_RANGE_CONSTRAINT_HELP_INTERVAL: '{0} 或 {1}，表示包括或排除端点的间隔',
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0}，表示负值',
+    MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT: '无效输入。请使用数字、比较或区间。',
     MRI_PA_DISABLED_FC_HELP_HEADER: '已禁用的过滤器卡',
     MRI_PA_DISABLED_FC_HELP_TEXT: '要激活过滤器卡，请输入有效的变式位置。',
     MRI_PA_VARIANT_CONSTRAINT_HELP_TEXT: '输入以下一项或多项内容：',
