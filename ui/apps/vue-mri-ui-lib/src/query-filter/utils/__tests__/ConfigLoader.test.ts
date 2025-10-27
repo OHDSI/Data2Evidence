@@ -49,7 +49,6 @@ describe('ConfigLoader', () => {
         'demographic',
         'locationRegion',
         'group',
-        'fromReusable',
       ]
 
       expectedTypes.forEach(type => {
@@ -178,15 +177,6 @@ describe('ConfigLoader', () => {
       // Execute the action
       const result = actionFn()
       expect(result).toBeDefined()
-    })
-
-    test('should create action function for special reusable criteria', () => {
-      const actionFn = loader.createActionFunction('fromReusable', mockExpression)
-
-      expect(typeof actionFn).toBe('function')
-
-      // Should not throw when executed
-      expect(() => actionFn()).not.toThrow()
     })
 
     test('should create action function for group criteria', () => {

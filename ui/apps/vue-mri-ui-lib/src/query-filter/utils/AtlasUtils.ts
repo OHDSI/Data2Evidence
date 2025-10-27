@@ -49,6 +49,18 @@ export function mapCardinalityToAtlas(cardinality: CardinalityType): AtlasOccurr
   }
 }
 
+export function mapAtlasToCardinality(atlasType: number): CardinalityType {
+  switch (atlasType) {
+    case 0:
+      return 'EXACTLY'
+    case 1:
+      return 'AT_MOST'
+    case 2:
+    default:
+      return 'AT_LEAST'
+  }
+}
+
 export function mapCriteriaTypeToAtlas(criteriaType: 'ALL' | 'EARLIEST' | 'LATEST'): 'All' | 'First' | 'Last' {
   switch (criteriaType) {
     case 'EARLIEST':
