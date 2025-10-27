@@ -41,12 +41,25 @@ const getGroupCriteriaDisplay = () => {
   const criteriaType = props.group.criteriaType || 'ALL'
   const criteriaCount = props.group.criteriaCount
 
-  if (criteriaType === 'AT_LEAST' && criteriaCount) {
+  if (criteriaType === 'AT_LEAST' && criteriaCount !== undefined) {
     return `At least ${criteriaCount}`
-  } else if (criteriaType === 'AT_MOST' && criteriaCount) {
+  } else if (criteriaType === 'AT_MOST' && criteriaCount !== undefined) {
     return `At most ${criteriaCount}`
   }
-  return criteriaType
+
+  // Convert enum to friendly text
+  switch (criteriaType) {
+    case 'ALL':
+      return 'All'
+    case 'ANY':
+      return 'Any'
+    case 'AT_LEAST':
+      return 'At least' // Fallback without count
+    case 'AT_MOST':
+      return 'At most' // Fallback without count
+    default:
+      return criteriaType
+  }
 }
 
 // Handle group criteria changes from menu
