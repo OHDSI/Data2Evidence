@@ -2,6 +2,66 @@
  * TypeScript interfaces for concept set functionality
  */
 
+export interface IWebapiSourceDaimon {
+  sourceDaimonId: number
+  daimonType: string
+  tableQualifier: string
+  priority: number
+}
+
+export interface IWebapiSource {
+  sourceId: number
+  sourceName: string
+  sourceDialect: string
+  sourceKey: string
+  daimons: IWebapiSourceDaimon[]
+}
+
+export interface CohortGenerationInfo {
+  id: {
+    cohortDefinitionId: number
+    sourceId: number
+  }
+  startTime: number
+  executionDuration: number
+  status: string
+  isValid: boolean
+  isCanceled: boolean
+  failMessage: string | null
+  personCount: number
+  recordCount: number
+  createdBy: string | null
+  ccGenerateId: number
+  isDemographic: boolean
+}
+
+export interface CohortInfoResponse extends Array<CohortGenerationInfo> {}
+
+export interface NotificationJobInstance {
+  instanceId: number
+  name: string
+}
+
+export interface NotificationJobParameters {
+  jobName: string
+  jobAuthor: string
+  cohort_definition_id: string
+  source_id: string
+}
+
+export interface Notification {
+  status: 'STARTED' | 'COMPLETED' | string // Using string union for known values, but allowing others
+  startDate: number
+  endDate: number | null
+  exitStatus: string
+  executionId: number
+  jobInstance: NotificationJobInstance
+  jobParameters: NotificationJobParameters
+  ownerType: string
+}
+
+export type NotificationsResponse = Notification[]
+
 export interface ConceptSetItemDisplay {
   value: string
   text?: string
@@ -126,6 +186,9 @@ export interface StoredConceptItem {
   system?: string | undefined
   conceptClassId?: string | undefined
   standardConcept?: string | undefined
+  standardConceptCaption?: string | undefined // For round-trip with Atlas
+  invalidReason?: string | undefined
+  invalidReasonCaption?: string | undefined // For round-trip with Atlas
   concept?: string | undefined
   code?: string | undefined
   validStartDate?: string | undefined

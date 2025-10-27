@@ -115,7 +115,8 @@ export default {
                         {
                           id: 'attribute_1749626300529',
                           attributeId: 'age',
-                          attributeType: 'numericRange',
+                          attributeType: 'standard',
+                          configType: 'numericRange',
                           operator: 'GREATER_THAN',
                           value: '5',
                         },
@@ -152,7 +153,8 @@ export default {
               {
                 id: 'attribute_1749626300529',
                 attributeId: 'age',
-                attributeType: 'numericRange',
+                attributeType: 'standard',
+                configType: 'numericRange',
                 operator: 'GREATER_THAN',
                 value: '7',
               },
