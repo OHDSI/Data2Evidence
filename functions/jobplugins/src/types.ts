@@ -338,6 +338,7 @@ export interface ICreateCachedbFileFlowRunDto {
   flowActionType: string;
   databaseCode: string;
   schemaName: string;
+  snapshotSchemaName?: string;
   resultsSchemaName?: string;
 }
 

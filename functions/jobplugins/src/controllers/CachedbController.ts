@@ -64,8 +64,24 @@ export class CachedbController {
       const { databaseCode, schemaName, resultsSchemaName } =
         await portalServerApi.getDataset(params.datasetId);
 
+      const cacheDatasetId = params?.cacheDatasetId;
+      let snapshotSchemaName;
+
+      if (cacheDatasetId) {
+        const { schemaName } = await portalServerApi.getDataset(
+          params.cacheDatasetId
+        );
+        snapshotSchemaName = schemaName;
+      }
+
       const result = await this.cachedbService.createCachedbFileFlowRun(
-        { flowActionType, databaseCode, schemaName, resultsSchemaName },
+        {
+          flowActionType,
+          databaseCode,
+          schemaName,
+          resultsSchemaName,
+          snapshotSchemaName,
+        },
         token
       );
       res.send(result);

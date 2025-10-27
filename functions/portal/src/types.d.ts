@@ -26,6 +26,7 @@ export interface IDataset {
   databaseCode: string
   schemaName?: string
   vocabSchemaName?: string
+  sourceDatasetId?: string
   dataModel?: string
   studyDetail: {
     id: string

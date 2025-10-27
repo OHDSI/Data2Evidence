@@ -251,9 +251,11 @@ export class DatasetRouter {
             type: cacheDatasetType,
           };
 
-          await portalAPI.copyDataset(snapshotRequest);
+          const newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
 
-          return res.status(200).json(newDataset);
+          return res
+            .status(200)
+            .json({ id: newDataset.id, cacheId: newCacheDataset.id });
         } catch (error) {
           this.logger.error(
             `Error while creating dataset: ${JSON.stringify(error)}`
