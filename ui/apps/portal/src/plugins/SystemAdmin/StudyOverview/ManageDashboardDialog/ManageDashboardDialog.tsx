@@ -59,12 +59,8 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       <Divider />
 
       <div className="manage-dashboard-dialog__header">
-        <div className="manage-dashboard-dialog__header__content">
-          <Select value="hello">
-            <MenuItem value="hello">Hello</MenuItem>
-            <MenuItem value="hello1">Hello 1</MenuItem>
-          </Select>
-        </div>
+        {/* TODO: add git template support */}
+
         <div className="manage-dashboard-dialog__header__content">
           <Button
             onClick={handleStartViewer}
