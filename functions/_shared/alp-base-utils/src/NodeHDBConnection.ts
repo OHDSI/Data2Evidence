@@ -16,9 +16,10 @@ export class NodeHDBConnection implements ConnectionInterface {
     client: any,
     schemaName,
     vocabSchemaName = schemaName,
+    resultSchemaName = schemaName,
     callback,
   ) {
-    const conn = new NodeHDBConnection(client, schemaName, vocabSchemaName);
+    const conn = new NodeHDBConnection(client, schemaName, vocabSchemaName, resultSchemaName);
     const sql = 'SET SCHEMA "' + schemaName + '"';
     conn.execute(sql, [], (err, data) => {
       if (err) {
@@ -39,6 +40,7 @@ export class NodeHDBConnection implements ConnectionInterface {
     public conn: any,
     public schemaName,
     public vocabSchemaName,
+    public resultSchemaName,
     public dialect = "hana",
   ) {}
 
@@ -54,7 +56,7 @@ export class NodeHDBConnection implements ConnectionInterface {
       );
       const timestamp = (new Date()).valueOf();
       // console.time(`time-NodeHDBConnection--connected-${timestamp}`)
-      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.schemaName,sql);
+      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.resultSchemaName,sql);
 
       if (this.conn.readyState === "connected") {
         this.prepareStatementAndExecute(sql, parameters, callback);
@@ -78,7 +80,7 @@ export class NodeHDBConnection implements ConnectionInterface {
   }
 
   public getTranslatedSql(sql: string, schemaName: string, parameters: ParameterInterface[]): string {
-    return this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.schemaName, sql);
+    return this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.resultSchemaName, sql);
   }
 
   private prepareStatementAndExecute(
@@ -142,7 +144,7 @@ export class NodeHDBConnection implements ConnectionInterface {
     schemaName: string = "",
   ) {
     try {
-      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.schemaName, sql);
+      sql = this.getSqlStatementWithSchemaName(schemaName || this.schemaName, this.vocabSchemaName, this.cohortSchemaName || this.resultSchemaName, sql);
       this.conn.prepare(sql, (err, statement) => {
         if (err) {
           logger.error(`Execute error: ${JSON.stringify(err)}
@@ -470,6 +472,7 @@ export class NodeHDBConnection implements ConnectionInterface {
             );
     sql = sql.replace(/\$\$SCHEMA\$\$./g, replacement);
     sql = sql.replace(/\$\$VOCAB_SCHEMA\$\$./g, `${vocabSchemaName}.`);
+    sql = sql.replace(/\$\$RESULT_SCHEMA\$\$./g, `${cohortSchemaName}.`);
     return sql;
   }
 }

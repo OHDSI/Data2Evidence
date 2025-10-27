@@ -365,6 +365,17 @@ services:
           }
         }
 
+        (proxy_headers_codespaces) {
+          header_up Host {upstream_hostport}
+          header_up X-Forwarded-Host ${CADDY__ALP__PUBLIC_FQDN}
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Forwarded-For {remote}
+        }
+
+        (proxy_headers_default) {
+          header_up Host {upstream_hostport}
+        }
+
         (portal) {
           log {
             format console {
@@ -385,7 +396,7 @@ services:
 
           handle @logto {
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001 {
-              header_up Host {upstream_hostport}
+              import ${PROXY_HEADERS_MODE:-proxy_headers_default}
               transport http {
                 read_buffer 8192
               }
@@ -406,7 +417,7 @@ services:
 
         $INSTANCE_SPECIFIC_CONFIG
 
-        https://$CADDY__ALP__PUBLIC_FQDN {
+        https://$CADDY__ALP__PUBLIC_FQDN${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
           $TLS__CADDY_DIRECTIVE
           redir / /portal
           import portal

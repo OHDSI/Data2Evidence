@@ -22,6 +22,18 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
       isExpanded: event.isExpanded,
       cardinality: event.cardinality,
       attributes: [], // Will be populated with remaining attributes
+      // Preserve temporal relationship properties
+      ...(event.startWindow && { startWindow: event.startWindow }),
+      ...(event.endWindow && { endWindow: event.endWindow }),
+      ...(event.restrictVisit !== undefined && { restrictVisit: event.restrictVisit }),
+      ...(event.ignoreObservationPeriod !== undefined && { ignoreObservationPeriod: event.ignoreObservationPeriod }),
+      // Preserve nestedCriteria for group events
+      ...(event.nestedCriteria && {
+        nestedCriteria: {
+          ...event.nestedCriteria,
+          events: transformEvents(event.nestedCriteria.events || []),
+        },
+      }),
     }
     transformedEvents.push(mainEvent)
 
@@ -33,8 +45,10 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
         const configType = 'configType' in attr ? attr.configType : 'conceptSet'
         if (attributeType === 'nested' && attr.nestedCriteria) {
           // Keep nested criteria in the attributes format, just process the events
+          const attrId = attr.id
           const processedAttr: QueryFilterAttribute = {
-            id: attr.id,
+            id: attrId,
+            attributeId: 'attributeId' in attr && attr.attributeId ? attr.attributeId : attrId, // Preserve or set attributeId
             attributeType: 'nested',
             nestedCriteria: {
               ...attr.nestedCriteria,
@@ -47,7 +61,10 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
           hasAttributeId(attr) &&
           attributeType &&
           attributeType !== 'nested' &&
-          (configType === 'conceptSet' || configType === 'concept')
+          (configType === 'conceptSet' ||
+            configType === 'concept' ||
+            configType === 'numericRange' ||
+            configType === 'dateRange')
         ) {
           const attributeId = attr.attributeId
 
@@ -56,24 +73,16 @@ export const transformEvents = (events: QueryFilterEvent[]): QueryFilterEvent[] 
             mainEvent.selectedAttributes = []
           }
           mainEvent.selectedAttributes.push(attributeId)
-          // Keep concept-based attributes (like gender) in the attributes array for UI compatibility
-          if (attributeType === 'standard' && 'conceptItems' in attr && attr.conceptItems) {
+
+          // Keep all attributes in remainingAttributes for demographic events
+          if (mainEvent.eventType === 'demographic') {
+            remainingAttributes.push(attr)
+          }
+          // Keep all standard attributes (concept, numericRange, dateRange) in the attributes array
+          else if (attributeType === 'standard') {
             remainingAttributes.push(attr)
           } else {
-            // For other attribute types (like age)
-            mainEvent.attributeConfig = {
-              id: attributeId,
-              name: attributeId,
-              description: '',
-              type: attributeType,
-              category: 'criteria-specific',
-            }
-
-            if (attributeId === 'age' && attributeType === 'numericRange') {
-              mainEvent.attributeConfig.operator = attr.operator || 'GREATER_THAN'
-              mainEvent.attributeConfig.value = attr.value ? parseInt(attr.value) : undefined
-            }
-
+            // For other attribute types, add to processedAttributes
             processedAttributes.push(attr)
           }
         } else {
@@ -113,6 +122,19 @@ export const transformNestedEvents = (events: QueryFilterEvent[], parentId: stri
       isExpanded: event.isExpanded,
       cardinality: event.cardinality,
       parentEventId: parentId,
+      selectedAttributes: event.selectedAttributes, // Preserve selectedAttributes from import
+      // Preserve temporal relationship properties
+      ...(event.startWindow && { startWindow: event.startWindow }),
+      ...(event.endWindow && { endWindow: event.endWindow }),
+      ...(event.restrictVisit !== undefined && { restrictVisit: event.restrictVisit }),
+      ...(event.ignoreObservationPeriod !== undefined && { ignoreObservationPeriod: event.ignoreObservationPeriod }),
+      // Preserve nestedCriteria for group events
+      ...(event.nestedCriteria && {
+        nestedCriteria: {
+          ...event.nestedCriteria,
+          events: transformNestedEvents(event.nestedCriteria.events || [], event.id),
+        },
+      }),
     }
 
     if (event.attributes && event.attributes.length > 0) {
@@ -120,8 +142,10 @@ export const transformNestedEvents = (events: QueryFilterEvent[], parentId: stri
         const attributeType = attr.attributeType
 
         if (attributeType === 'nested' && attr.nestedCriteria) {
+          const attrId = attr.id
           return {
-            id: attr.id,
+            id: attrId,
+            attributeId: 'attributeId' in attr && attr.attributeId ? attr.attributeId : attrId, // Preserve or set attributeId
             attributeType: 'nested',
             nestedCriteria: {
               ...attr.nestedCriteria,

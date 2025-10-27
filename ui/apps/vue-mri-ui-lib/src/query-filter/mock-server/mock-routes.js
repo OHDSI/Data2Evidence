@@ -135,6 +135,22 @@ const setupMockRoutes = app => {
       })
     }
   )
+
+  app.get('/terminology/concept/filter-options', (req, res) => {
+    console.log('Request query:', req.query)
+    console.log('Request body:', req.body)
+
+    res.status(200).json({
+      filterOptions: {
+        conceptClassId: {},
+        domainId: {},
+        standardConcept: {},
+        vocabularyId: {},
+        concept: {},
+        validity: {},
+      },
+    })
+  })
 }
 
 module.exports = setupMockRoutes
