@@ -16,6 +16,7 @@ import type { QueryFilterGroup, QueryFilterEvent } from '../types/QueryFilterTyp
 export interface NestedCriteria {
   id: string
   criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  criteriaCount?: number
   events: QueryFilterEvent[]
 }
 
@@ -27,33 +28,41 @@ interface Props {
   datasetId?: string | null
   readonly?: boolean
   hideHeader?: boolean
+  readonlyTitle?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   conceptSets: () => [],
   readonly: false,
   hideHeader: false,
+  readonlyTitle: false,
 })
 
 const emit = defineEmits<{
   'update:nestedCriteria': [criteria: NestedCriteria]
   'remove-nested': []
   'concept-set-action': [action: any]
+  'search-change': [searchQuery: string]
 }>()
 
 // Convert NestedCriteria to QueryFilterGroup format
 const groupData = computed<QueryFilterGroup>({
-  get: () => ({
-    id: props.nestedCriteria.id,
-    title: props.hideHeader ? '' : 'Nested Criteria',
-    description: '',
-    criteriaType: props.nestedCriteria.criteriaType,
-    events: props.nestedCriteria.events,
-  }),
+  get: () => {
+    const result = {
+      id: props.nestedCriteria.id,
+      title: props.hideHeader ? '' : 'Nested Criteria',
+      description: '',
+      criteriaType: props.nestedCriteria.criteriaType,
+      criteriaCount: props.nestedCriteria.criteriaCount,
+      events: props.nestedCriteria.events,
+    }
+    return result
+  },
   set: (value: QueryFilterGroup) => {
     const updatedCriteria: NestedCriteria = {
       id: value.id,
       criteriaType: value.criteriaType,
+      criteriaCount: value.criteriaCount,
       events: value.events,
     }
     emit('update:nestedCriteria', updatedCriteria)
@@ -84,9 +93,11 @@ const handleGroupRemove = () => {
       :concept-set-texts="conceptSetTexts || {}"
       :dataset-id="datasetId || null"
       :readonly="readonly"
-      :hide-header="true"
+      :hide-header="hideHeader"
+      :readonly-title="readonlyTitle"
       @update-group="handleGroupUpdate"
       @remove-group="handleGroupRemove"
+      @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
       @concept-set-action="action => $emit('concept-set-action', action)"
     />
   </div>

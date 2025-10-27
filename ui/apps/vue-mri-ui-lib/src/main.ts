@@ -70,3 +70,4 @@ applyPolyfills().then(() => {
 })
 
 app.mount('.vue-main')
+
