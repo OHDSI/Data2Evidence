@@ -32,6 +32,21 @@ export class PortalServerAPI {
     }
   }
 
+  async getDatasets() {
+    try {
+      const url = `${this.baseURL}/dataset/list`;
+      const options = this.createOptions("GET");
+      const result = await fetch(url, options);
+      if (!result.ok) {
+        throw new Error("Error while getting datasets");
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(`Error while getting datasets: ${error}`);
+      throw error;
+    }
+  }
+
   async getGitStudies() {
     try {
       const url = `${this.baseURL}/git-studies/studies`;
