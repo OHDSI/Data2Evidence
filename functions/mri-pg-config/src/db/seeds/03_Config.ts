@@ -232,6 +232,34 @@ export async function seed(knex: Knex): Promise<void> {
                 Modifier: "ALICE",
                 Modified: "2024-07-26 00:00:00",
             },
+            {
+                Id: "e10f93a0-ade9-4a33-90ae-cf760813943c",
+                Version: "A",
+                Status: "",
+                Name: "HADES_dataset",
+                Type: "HC/MRI/PA",
+                Data: paConfigHades_dataset,
+                ParentId: "4fce3ce7-32bf-4b46-8cba-32e4f77a14dd",
+                ParentVersion: "1",
+                Creator: "ALICE",
+                Created: "2024-07-26 00:00:00",
+                Modifier: "ALICE",
+                Modified: "2024-07-26 00:00:00",
+            },
+            {
+                Id: "4fce3ce7-32bf-4b46-8cba-32e4f77a14dd",
+                Version: "1",
+                Status: "A",
+                Name: "HADES_dataset_DM",
+                Type: "HC/HPH/CDW",
+                Data: cdwConfigHades_dataset,
+                ParentId: "",
+                ParentVersion: "",
+                Creator: "ALICE",
+                Created: "2024-07-26 00:00:00",
+                Modifier: "ALICE",
+                Modified: "2024-07-26 00:00:00",
+            },
         ])
         .onConflict(["Id", "Version"])
         .ignore();
@@ -41553,6 +41581,1125 @@ const paConfigHades_new = {
                     },
                     "modelName": "Target Cohort id"
                 },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.pid",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Age"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.enddate",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 4
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Analysis Id"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 5
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Count per age"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.age",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 6
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Age"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.sex",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Sex"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.analysisId",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Analysis Id"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.countPerAge",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Count per age"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.targetCohortName",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Target Cohort name"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.countPerSex",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Count per sex"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.indexYear",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Index Year"
+                },
+                {
+                    "source": "patient.interactions.treatmentPattern.attributes.countPerYear",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Count per year"
+                },
+            ],
+            "initialPatientlistColumn": true,
+            "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
+        }
+    ],
+    "chartOptions": {
+        "initialAttributes": {
+            "measures": [
+                "patient.attributes.pcount"
+            ],
+            "categories": []
+        },
+        "initialChart": "stacked",
+        "stacked": {
+            "visible": true,
+            "pdfDownloadEnabled": true,
+            "downloadEnabled": true,
+            "imageDownloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "fillMissingValuesEnabled": true
+        },
+        "boxplot": {
+            "visible": true,
+            "pdfDownloadEnabled": true,
+            "downloadEnabled": true,
+            "imageDownloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "fillMissingValuesEnabled": true
+        },
+        "km": {
+            "visible": true,
+            "pdfDownloadEnabled": true,
+            "downloadEnabled": true,
+            "imageDownloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "confidenceInterval": 1.95996398454,
+            "filters": [],
+            "selectedInteractions": [],
+            "selectedEndInteractions": []
+        },
+        "list": {
+            "visible": true,
+            "zipDownloadEnabled": true,
+            "downloadEnabled": true,
+            "collectionEnabled": true,
+            "beginVisible": true,
+            "pageSize": 20
+        },
+        "vb": {
+            "visible": true,
+            "referenceName": "GRCh37",
+            "enabled": false
+        },
+        "custom": {
+            "visible": true,
+            "customCharts": []
+        },
+        "sac": {
+            "visible": false,
+            "sacCharts": [],
+            "enabled": false
+        },
+        "shared": {
+            "enabled": false,
+            "systemName": "MRI"
+        },
+        "minCohortSize": 1
+    },
+    "configInformations": {
+        "note": ""
+    },
+    "panelOptions": {
+        "addToCohorts": true,
+        "domainValuesLimit": 5000,
+        "calcViewAccessPoint": true,
+        "externalAccessPoints": true,
+        "cohortEntryExit": false,
+        "atlasCohortDefinition": true,
+        "usePaAtlas": true
+    }
+};
+
+
+export const cdwConfigHades_dataset = {
+    "patient": {
+        "conditions": {},
+        "interactions": {
+            "treatmentPattern": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Treatment Pattern"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "de",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "fr",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "es",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "pt",
+                        "value": "",
+                        "visible": true
+                    },
+                    {
+                        "lang": "zh",
+                        "value": "",
+                        "visible": true
+                    }
+                ],
+                "defaultFilter": "1=1",
+                "defaultPlaceholder": "@TP",
+                "order": 1,
+                "parentInteraction": [],
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": "",
+                "attributes": {
+                    "pid": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Dataset Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "num",
+                        "expression": "@TPMETADATA.\"database_id\"",
+                        "order": 1,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "enddate": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "End Date"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "time",
+                        "expression": "@TPMETADATA.\"execution_start\"",
+                        "order": 2,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "startdate": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Start Date"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "time",
+                        "expression": "@TPMETADATA.\"execution_end\"",
+                        "order": 3,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "age": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Age"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPCOUNTSAGE",
+                        "expression": "@TPCOUNTSAGE.\"age\"",
+                        "order": 4,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "Age",
+                        "conceptIdentifierType": ""
+                    },
+                    "sex": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Sex"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "text",
+                        "defaultPlaceholder": "@TPCOUNTSSEX",
+                        "expression": "@TPCOUNTSSEX.\"sex\"",
+                        "order": 5,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "analysisId": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Analysis Id"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPCOUNTSAGE",
+                        "expression": "@TPCOUNTSAGE.\"analysis_id\"",
+                        "order": 6,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "countPerAge": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Count per age"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPCOUNTSAGE",
+                        "expression": "@TPCOUNTSAGE.\"n\"",
+                        "order": 7,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "targetCohortName": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Target Cohort Name"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "text",
+                        "defaultPlaceholder": "@TPCOUNTSAGE",
+                        "expression": "@TPCOUNTSAGE.\"target_cohort_name\"",
+                        "order": 8,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "countPerSex": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Count per sex"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPCOUNTSSEX",
+                        "expression": "@TPCOUNTSSEX.\"n\"",
+                        "order": 9,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "indexYear": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Index Year"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPCOUNTSYEAR",
+                        "expression": "@TPCOUNTSYEAR.\"index_year\"",
+                        "order": 10,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    },
+                    "countPerYear": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Count per year"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "en",
+                                "value": ""
+                            }
+                        ],
+                        "type": "num",
+                        "defaultPlaceholder": "@TPCOUNTSYEAR",
+                        "expression": "@TPCOUNTSYEAR.\"n\"",
+                        "order": 11,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "",
+                        "conceptIdentifierType": ""
+                    }
+                }
+            }
+        },
+        "attributes": {
+            "pid": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Dataset id"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": ""
+                    },
+                    {
+                        "lang": "de",
+                        "value": ""
+                    },
+                    {
+                        "lang": "fr",
+                        "value": ""
+                    },
+                    {
+                        "lang": "es",
+                        "value": ""
+                    },
+                    {
+                        "lang": "pt",
+                        "value": ""
+                    },
+                    {
+                        "lang": "zh",
+                        "value": ""
+                    }
+                ],
+                "type": "num",
+                "expression": "@PATIENT.\"database_id\"",
+                "order": 0,
+                "annotations": [
+                    "person_id"
+                ],
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": ""
+            },
+            "pcount": {
+                "name": [
+                    {
+                        "lang": "",
+                        "value": "Dataset Count"
+                    }
+                ],
+                "disabledLangName": [
+                    {
+                        "lang": "en",
+                        "value": ""
+                    },
+                    {
+                        "lang": "de",
+                        "value": ""
+                    },
+                    {
+                        "lang": "fr",
+                        "value": ""
+                    },
+                    {
+                        "lang": "es",
+                        "value": ""
+                    },
+                    {
+                        "lang": "pt",
+                        "value": ""
+                    },
+                    {
+                        "lang": "zh",
+                        "value": ""
+                    }
+                ],
+                "type": "num",
+                "measureExpression": "COUNT(DISTINCT(@PATIENT.\"database_id\"))",
+                "order": 1,
+                "domainFilter": "",
+                "standardConceptCodeFilter": "",
+                "cohortDefinitionKey": "",
+                "conceptIdentifierType": ""
+            }
+        }
+    },
+    "censor": {},
+    "advancedSettings": {
+        "tableTypePlaceholderMap": {
+            "factTable": {
+                "placeholder": "@PATIENT",
+                "attributeTables": []
+            },
+            "dimTables": [
+                {
+                    "placeholder": "@TP",
+                    "attributeTables": [
+                        {
+                            "placeholder": "@TPCOUNTSAGE",
+                            "oneToN": true
+                        },
+                        {
+                            "placeholder": "@TPCOUNTSSEX",
+                            "oneToN": true
+                        },
+                        {
+                            "placeholder": "@TPCOUNTSYEAR",
+                            "oneToN": true
+                        }
+                    ],
+                    "hierarchy": false,
+                    "time": false,
+                    "oneToN": false,
+                    "condition": false
+                }
+            ]
+        },
+        "tableMapping": {
+            "@TP": "results_treatment_pathways_study_tp1.\"tp_metadata\"",
+            "@TP.PATIENT_ID": "\"database_id\"",
+            "@TP.INTERACTION_ID": "\"database_id\"",
+            "@TP.CONDITION_ID": "\"database_id\"",
+            "@TP.PARENT_INTERACT_ID": "\"database_id\"",
+            "@TP.START": "\"execution_start\"",
+            "@TP.END": "\"execution_end\"",
+            "@TP.INTERACTION_TYPE": "\"database_id\"",
+            "@TPCOUNTSAGE": "results_treatment_pathways_study_tp1.\"tp_counts_age\"",
+            "@TPCOUNTSAGE.INTERACTION_ID": "\"database_id\"",
+            "@TPCOUNTSAGE.ATTRIBUTE": "\"database_id\"",
+            "@TPCOUNTSAGE.VALUE": "\"database_id\"",
+            "@TPCOUNTSSEX": "results_treatment_pathways_study_tp1.\"tp_counts_sex\"",
+            "@TPCOUNTSSEX.INTERACTION_ID": "\"database_id\"",
+            "@TPCOUNTSSEX.ATTRIBUTE": "\"database_id\"",
+            "@TPCOUNTSSEX.VALUE": "\"database_id\"",
+            "@TPCOUNTSYEAR": "results_treatment_pathways_study_tp1.\"tp_counts_year\"",
+            "@TPCOUNTSYEAR.INTERACTION_ID": "\"database_id\"",
+            "@TPCOUNTSYEAR.ATTRIBUTE": "\"database_id\"",
+            "@TPCOUNTSYEAR.VALUE": "\"database_id\"",
+            "@PATIENT": "results_treatment_pathways_study_tp1.\"database_meta_data\"",
+            "@PATIENT.PATIENT_ID": "\"database_id\"",
+            "@PATIENT.DOD": "\"cdm_release_date\"",
+            "@PATIENT.DOB": "\"cdm_release_date\"",
+            "@REF": "$$VOCAB_SCHEMA$$.\"concept\"",
+            "@REF.VOCABULARY_ID": "\"vocabulary_id\"",
+            "@REF.CODE": "\"concept_id\"",
+            "@REF.TEXT": "\"concept_name\"",
+            "@TEXT": "$$VOCAB_SCHEMA$$.\"concept\"",
+            "@TEXT.INTERACTION_ID": "\"concept_id\"",
+            "@TEXT.INTERACTION_TEXT_ID": "\"concept_id\"",
+            "@TEXT.VALUE": "\"concept_name\""
+        },
+        "guardedTableMapping": {
+            "@PATIENT": "results_treatment_pathways_study_tp1.\"database_meta_data\""
+        },
+        "language": [
+            "en",
+            "de",
+            "fr",
+            "es",
+            "pt",
+            "zh"
+        ],
+        "others": {},
+        "settings": {
+            "fuzziness": 0,
+            "maxResultSize": 5000,
+            "sqlReturnOn": false,
+            "errorDetailsReturnOn": false,
+            "errorStackTraceReturnOn": false,
+            "enableFreeText": true,
+            "vbEnabled": true,
+            "dateFormat": "YYYY-MM-dd",
+            "timeFormat": "HH:mm:ss",
+            "otsTableMap": {
+                "@CODE": "$$VOCAB_SCHEMA$$.\"concept\""
+            },
+            "datasetId": "DEFAULT"
+        },
+        "shared": {},
+        "schemaVersion": "3"
+    }
+};
+
+const paConfigHades_dataset = {
+    "filtercards": [
+        {
+            "source": "patient",
+            "visible": true,
+            "order": 1,
+            "initial": true,
+            "attributes": [
+                {
+                    "source": "patient.attributes.pid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 1
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Person id"
+                },
+                {
+                    "source": "patient.attributes.pcount",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": false,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": false,
+                        "order": 2
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": false,
+                        "linkColumn": false
+                    },
+                    "modelName": "Patient Count"
+                }
+            ],
+            "initialPatientlistColumn": true,
+            "modelName": "MRI_PA_SERVICES_FILTERCARD_TITLE_BASIC_DATA"
+        },
+        {
+            "source": "patient.interactions.treatmentPattern",
+            "visible": true,
+            "order": 2,
+            "initial": false,
+            "attributes": [
                 {
                     "source": "patient.interactions.treatmentPattern.attributes.pid",
                     "ordered": true,
