@@ -96,11 +96,6 @@ export class StrategusResultsRouter {
               running: true,
               message: `Strategus Viewer for study ${studyId} is up.`,
             });
-          } else {
-            res.status(403).end({
-              running: false,
-              message: `Strategus Viewer for study ${studyId} is down.`,
-            });
           }
         } catch (error) {
           res.status(503).json({
