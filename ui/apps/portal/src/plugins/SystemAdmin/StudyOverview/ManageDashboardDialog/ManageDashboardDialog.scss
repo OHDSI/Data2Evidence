@@ -3,6 +3,12 @@
     display: flex;
     justify-content: space-between;
     margin: 10px 25px; 
+
+    &__content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
   }
 
   &__content {

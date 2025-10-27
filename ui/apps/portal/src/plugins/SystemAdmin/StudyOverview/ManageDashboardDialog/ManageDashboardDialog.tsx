@@ -1,9 +1,12 @@
 import React, { FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
-import { Button, Dialog, Select, MenuItem, SelectChangeEvent } from "@portal/components";
+import CircularProgress from "@mui/material/CircularProgress";
+import { PlayCircleFilled, StopCircle } from "@mui/icons-material";
+import { Button, Dialog, Select, MenuItem } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
 import { Study, CloseDialogType } from "../../../../types";
+import { useKernelViewer } from "../../../../hooks";
 import "./ManageDashboardDialog.scss";
 
 interface ManageDashboardDialogProps {
@@ -16,8 +19,25 @@ const SafeEditor = Editor as any;
 
 const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, onClose }) => {
   loader.config({ monaco });
+  const [dashboardCode, setDashboardCode] = useState<string>("print('Hello, World!')");
 
-  const [dashboardCode, setDashboardCode] = useState<string>("hello123");
+  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(study?.id!, study?.id!);
+
+  const handleStartViewer = useCallback(async () => {
+    try {
+      await startViewer(dashboardCode);
+    } catch (error) {
+      console.error("Failed to start viewer:", error);
+    }
+  }, [startViewer, dashboardCode]);
+
+  const handleStopViewer = useCallback(async () => {
+    try {
+      await stopViewer();
+    } catch (error) {
+      console.error("Failed to stop viewer:", error);
+    }
+  }, [stopViewer]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
@@ -39,16 +59,42 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       <Divider />
 
       <div className="manage-dashboard-dialog__header">
-        <div>
+        <div className="manage-dashboard-dialog__header__content">
           <Select value="hello">
             <MenuItem value="hello">Hello</MenuItem>
             <MenuItem value="hello1">Hello 1</MenuItem>
           </Select>
         </div>
-        <div>
-          <Button text="Start Viewer" variant="text" />
-          <Button text="Stop Viewer" variant="text" />
+        <div className="manage-dashboard-dialog__header__content">
+          <Button
+            onClick={handleStartViewer}
+            startIcon={
+              viewerStatus == "starting" ? (
+                <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+              ) : (
+                <PlayCircleFilled className="study-card__action-icon" />
+              )
+            }
+            text={viewerStatus == "starting" ? "Starting Viewer..." : "Start Viewer"}
+            disabled={viewerStatus !== "down" && viewerStatus !== "failed"}
+            variant="text"
+          />
+
+          <Button
+            startIcon={
+              viewerStatus == "stopping" ? (
+                <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
+              ) : (
+                <StopCircle className="study-card__action-icon" />
+              )
+            }
+            text={viewerStatus == "stopping" ? "Stopping Viewer..." : "Stop Viewer"}
+            disabled={viewerStatus !== "up"}
+            variant="text"
+            onClick={handleStopViewer}
+          />
         </div>
+        <div className="manage-dashboard-dialog__header__content">Viewer Status: {viewerStatus}</div>
       </div>
       <Divider />
 
