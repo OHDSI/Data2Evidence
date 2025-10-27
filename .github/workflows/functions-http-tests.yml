@@ -69,7 +69,7 @@ jobs:
       # HDIUSER: SYSTEM # az-hn-db/Admin user
       TESTPORT: 39041 # az-hn-db/DB Port
       TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
-      PROJECT_NAME: alp
+      PROJECT_NAME: d2e
       CADDY__CONFIG: ./deploy/caddy-config
       ENV_TYPE: local
       DOTENV_FILE: .env.local
