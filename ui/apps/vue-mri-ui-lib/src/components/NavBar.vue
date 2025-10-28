@@ -15,8 +15,8 @@
           </template>
         </ul>
       </nav>
-      <div class="nav-bar__right" @click="handleOhdsiClick" role="button" tabindex="0">
-        <img :src="logoOhdsiSrc" alt="OHDSI" height="30px" />
+      <div class="nav-bar__right" tabindex="0">
+        <img :src="logoOhdsiSrc" alt="OHDSI" height="30px" role="button" @click="handleOhdsiClick" />
       </div>
     </div>
   </header>
