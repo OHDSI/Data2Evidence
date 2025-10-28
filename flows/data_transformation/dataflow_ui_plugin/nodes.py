@@ -1,4 +1,6 @@
 from io import StringIO
+import os
+from flows._shared_flow_utils.api.FhirAPI import FhirAPI
 import ibis
 import json
 import duckdb
@@ -331,12 +333,39 @@ class TransformDataNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
         self.structure_map = _node["structure_map"]
-        self.source_structure_definition = _node["source_structure_definition"]
-        self.target_structure_definition = _node["target_structure_definition"]
         self.dataframe = _node["dataframe"]
         
+    def get_fhir_structure_definition(self, url: str) -> dict:
+        fhir_api = FhirAPI()
+        query = f"?url={url}"
+        response = fhir_api.get(studyToken="fds1", resourceType="StructureDefinition", query=query)
+        if(response):
+            response_json = response.get("entry", [])[0].get("resource", {})
+        else:
+            response_json = {}
+        return response_json
+    
+    def get_omop_structure_definition(self, alias: str) -> dict:
+        folder = "/Users/afreen.sikandara/Documents/Data2Evidence/d2e/flows/data_transformation/dataflow_ui_plugin/fhirutils/omop_structureDefinition"
+        for fname in os.listdir(folder):
+            if fname.startswith(alias.lower()) and fname.endswith('.json'):
+                file_path = os.path.join(folder, fname)
+                with open(file_path, "r", encoding="utf8") as f:
+                    omop_def = json.load(f)
+                return omop_def
+
     def transform_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
         print("Starting FHIR Transform")
+        source_structure_definition_url = ""
+        target_structure_definition_alias = ""
+        for struct in self.structureMap.structure:
+            if struct['mode'] == 'source':
+                source_structure_definition_url = struct['url']
+            elif struct['mode'] == 'target':
+                target_structure_definition_alias = struct['alias']
+        # Call FHIR server to get source structure definition
+        source_structure_definition = self.get_fhir_structure_definition(source_structure_definition_url)
+        target_structure_definition = self.get_omop_structure_definition(target_structure_definition_alias)
         transformed_omop = []
         if input_fhir_df is not None and "content" in input_fhir_df.columns:
             content_list = input_fhir_df["content"].tolist()
@@ -352,8 +381,8 @@ class TransformDataNode(Node):
                     script_path,
                     self.structure_map,
                     json.dumps(fhir_resource),
-                    self.source_structure_definition,
-                    self.target_structure_definition
+                    source_structure_definition,
+                    target_structure_definition
                 ],
                 stdout=PIPE,
                 stderr=STDOUT,

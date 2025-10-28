@@ -6,50 +6,9 @@ const { url } = require('inspector');
 const transform = fhirTransform.default;
 
 let structureDefinitions = {}
-const structureDefinitionResolver_ = async (url) => {
-  switch (url) {
-    case 'http://hl7.org/fhir/uv/omop/StructureDefinition/Observation':
-    // case 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-observation-lab':
-        const obsPath = path.join(__dirname, 'Observation_omop.json');
-        const obsJson = fs.readFileSync(obsPath, 'utf8');
-        const obsDef = JSON.parse(obsJson);
-        return obsDef;
-    case 'http://hl7.org/fhir/StructureDefinition/AllergyIntolerance':
-    // case 'http://hl7.org/fhir/us/core/StructureDefinition/us-core-allergyintolerance':
-        const allergyPath = path.join(__dirname, 'AllergyIntolerance.json');
-        const allergyJson = fs.readFileSync(allergyPath, 'utf8');
-        const allergyDef = JSON.parse(allergyJson);
-        return allergyDef;
-  }
-};
 
 const _structureDefinitionResolver = async (url) => {
   return structureDefinitions[url]
-};
-
-const structureMapResolver_ = async (url) => {
-    const record = {};
-    const map = await fetch(url);
-    console.log('Fetched concept map from:', url);
-    record[url] = await map.json();
-    if (map.group[0].unmapped?.url) {
-      const otherMap = await fetch(map.group[0].unmapped.url);
-      console.log('Fetched unmapped concept map from:', map.group[0].unmapped.url);
-      record[map.group[0].unmapped.url] = await otherMap.json();
-    }
-    return record;
-};
-
-const conceptMapResolver = async (url) => {
-  const record = {};
-  const map = await fetch(url);
-  console.log('Fetched concept map from:', url);
-  record[url] = await map.json();
-  if (map.group[0].unmapped?.url) {
-    const otherMap = await fetch(map.group[0].unmapped.url);
-    console.log('Fetched unmapped concept map from:', map.group[0].unmapped.url);
-    record[map.group[0].unmapped.url] = await otherMap.json();
-  }
 };
 
 async function main() {
@@ -94,8 +53,7 @@ async function main() {
     const result = await transform({
       content: resource,
       structureMap: structureMap,
-      structureDefinitionResolver: _structureDefinitionResolver,
-      structureMapResolver: structureMapResolver_
+      structureDefinitionResolver: _structureDefinitionResolver
     });
     process.stdout.write(JSON.stringify(result));
   } catch (err) {

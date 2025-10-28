@@ -30,3 +30,16 @@ class FhirAPI(BaseAPI):
                 f"[{result.status_code}] FhirAPI - Failed to post FHIR resource")
         else:
             return True
+
+    def get(self, studyToken: str, resourceType: str, query: str):
+        url = f"{self.url}project/{studyToken}/{resourceType}{query}"
+        result = requests.get(
+            url,
+            headers=self.get_headers(),
+            verify=self.get_verify_value()
+        )
+        if ((result.status_code >= 400) and (result.status_code < 600)):
+            raise Exception(
+                f"[{result.status_code}] FhirAPI - Failed to get FHIR resource")
+        else:
+            return result.json()
