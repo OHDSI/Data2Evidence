@@ -172,9 +172,7 @@ export default {
           this.currentTagPlaceholder = ''
           // Recalculate dropdown height when data finishes loading (only if dropdown is open)
           if (this.isDropdownOpen) {
-            this.$nextTick(() => {
-              this.adjustDropdownHeight()
-            })
+            this.adjustDropdownHeight()
           }
         }
       },
