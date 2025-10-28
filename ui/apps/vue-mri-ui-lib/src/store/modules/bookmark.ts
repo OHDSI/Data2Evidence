@@ -149,6 +149,10 @@ const getters = {
       // cohort definitions without bookmark
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
+        // Currently receiving string value "20389"//
+        // displayBookmarkDateFormat expects ISO String
+        // May need to cast to Date depending on fix on backend
+        cohortDefinition.createdOn = new Date(+'1761628967000').toISOString()
         // check bookmark exists, if yes, should use the bookmark name
         const bookmark = bookmarks.find(
           bookmark =>
