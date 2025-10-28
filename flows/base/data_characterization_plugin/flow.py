@@ -190,6 +190,12 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 
     failed_analysis_ids = []
 
+    # Convert comma-separated string to R vector format
+    if achilles_params.excludeAnalysisIds:
+        # Split the comma-separated string and convert to integers
+        ids = [int(x.strip()) for x in achilles_params.excludeAnalysisIds.split(',') if x.strip()]
+        exclude_ids_r = robjects.IntVector(ids)
+
     try:
         logger.info(
             f"Running Achilles::achilles on thread count: {achilles_params.numThreads}"
@@ -213,7 +219,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 sqlOnly=achilles_params.sqlOnly,
                 numThreads=achilles_params.numThreads,
                 verboseMode=achilles_params.verboseMode,
-                excludeAnalysisIds=robjects.StrVector([achilles_params.excludeAnalysisIds]) if achilles_params.excludeAnalysisIds else robjects.NULL,
+                excludeAnalysisIds=exclude_ids_r,
                 createIndices=achilles_params.createIndices
             )
             
