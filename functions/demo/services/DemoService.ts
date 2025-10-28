@@ -242,22 +242,33 @@ export class DemoService {
     if (!dataset) {
       throw new Error("Dataset not found");
     }
+    const portalAPI = new PortalAPI(token);
+    const { cacheId: datasetId } = dataset;
+
+    const cacheDataset = await portalAPI.getDataset(datasetId);
+
+    if (!cacheDataset) {
+      throw new Error("Cache dataset not found");
+    }
 
     if (!dataset?.plugin) {
       throw new Error("Dataset has empty plugin");
     }
 
-    // TODO: datasets parameter should have the cache dataset too
+    if (!cacheDataset?.plugin) {
+      throw new Error("Cache dataset has empty plugin");
+    }
+
     const result = await jobPluginsAPI.createGetVersionInfoFlowRun({
-      flowRunName: `${dataset.plugin}-get_version_info`,
+      flowRunName: `cache-get_version_info`,
       options: {
         options: {
           flow_action_type: "get_version_info",
           token: "",
           database_code: "",
           data_model: "",
-          plugin: dataset.plugin,
-          datasets: [dataset],
+          plugin: "create_cachedb_file_plugin",
+          datasets: [cacheDataset],
         },
       },
     });

@@ -27,6 +27,20 @@ export class PortalAPI {
     }
   }
 
+  async getDataset(datasetId: string): Promise<IDataset> {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset?datasetId=${encodeURIComponent(
+        datasetId
+      )}`;
+      const result = await get(url, options);
+      return result.data;
+    } catch (error) {
+      this.logger.error(`Error while getting dataset: ${error}`);
+      throw error;
+    }
+  }
+
   async getDatasets(): Promise<IDataset[]> {
     try {
       const options = await this.getRequestConfig();

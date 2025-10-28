@@ -57,6 +57,7 @@ export interface IDataset {
   schemaName: string;
   vocabSchemaName: string;
   sourceStudyId: string;
+  plugin: string;
 }
 
 export interface ICacheCreateFlowRun {
