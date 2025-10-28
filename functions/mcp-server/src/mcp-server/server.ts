@@ -1,4 +1,3 @@
-import express, { Request, Response } from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { fetchCohortData } from "../utils/utils";

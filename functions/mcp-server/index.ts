@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application } from "express";
 import { mcpServerRouter } from "./src/mcp-server/routes";
 
 export class App {
@@ -10,8 +10,11 @@ export class App {
   }
 
   async start() {
+    const port = 10000;
     this.app.use("/mcp", new mcpServerRouter().router);
-    this.app.listen(10000);
+    this.app.listen(port, () => {
+      this.logger.log(`Server is listening on port ${port}`);
+    });
   }
 }
 
