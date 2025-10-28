@@ -775,6 +775,12 @@ services:
   enterprise-gateway:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
     container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     platform: linux/amd64
     logging:
       options:
