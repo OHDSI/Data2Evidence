@@ -96,6 +96,7 @@
         "./src/utils/DuckdbConnection": "./src/utils/DuckdbConnection.ts",
         "./src/utils/MRIEndpointErrorHandler": "./src/utils/MRIEndpointErrorHandler.ts",
         "./src/utils/TrexCsvStreamWriter": "./src/utils/TrexCsvStreamWriter.ts",
+        "./src/utils/utils": "./src/utils/utils.ts",
         "./src/utils/QueryGenSvcProxy": "./src/utils/QueryGenSvcProxy.ts",
         "./src/utils/AnnotationError": "./src/utils/AnnotationError.ts",
         "./src/utils/DBSvcTypes": "./src/utils/DBSvcTypes.ts",

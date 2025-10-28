@@ -38,6 +38,7 @@ import { getDuckdbDBConnection } from "./utils/DuckdbConnection";
 import { getCachedbDbConnections } from "./utils/cachedb/cachedb.ts";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
+import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
 dotenv.config();
 const log = console; //Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
@@ -186,7 +187,10 @@ const initRoutes = async (app: express.Application) => {
                     log.info(
                         "Getting credentials from analyticsCredentials for /alpdb/schema/exists requests"
                     );
-                    const databaseCode = req.query.databaseCode as string;
+                    const databaseCode =
+                        parseValueForPrototypePollutingAssignment(
+                            req.query.databaseCode as string
+                        );
                     credentials =
                         req.dbCredentials.analyticsCredentials[databaseCode];
                     if (!credentials) {
