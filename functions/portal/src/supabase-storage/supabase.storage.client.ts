@@ -2,7 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-  SCOPE
+  SCOPE,
 } from "@danet/core";
 import { contentType } from "mime-types";
 import pg from "npm:pg";
@@ -117,13 +117,20 @@ export class SupabaseStorageClient {
     }
   }
 
-  async download(datasetId: string, fileName: string) {
+  async download(
+    datasetId: string,
+    fileName: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
     try {
-      const filePath = this.getFilePath(datasetId, fileName);
-      console.log(`Downloading file: ${filePath}`);
+      const targetBucket = bucketName || this.DEFAULT_BUCKET;
+
+      const filePath = this.getFilePath(datasetId, fileName, pathType);
+      console.log(`Downloading file: ${filePath} from bucket: ${targetBucket}`);
 
       // Direct request to download file
-      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {

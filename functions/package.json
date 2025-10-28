@@ -1852,6 +1852,15 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/get/csv",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/system-portal/supabase-storage/delete/csv",
           "scopes": [
             "portal.supabaseStorage.delete"
@@ -2068,6 +2077,15 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/file/csv$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

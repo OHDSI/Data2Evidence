@@ -107,6 +107,27 @@ export class PortalServerAPI {
     }
   }
 
+  async getCsvFile(nodeId: string, fileName: string): Promise<any> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/get/csv`;
+      const options = this.createOptions("GET");
+      const result = await fetch(
+        `${url}?nodeId=${nodeId}&fileName=${fileName}`,
+        options
+      );
+
+      if (!result.ok) {
+        const errorText = await result.text();
+        throw new Error(
+          `Error while downloading CSV file: ${result.status} - ${errorText}`
+        );
+      }
+      return await result.json();
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async deleteCsvFile(
     nodeId: string,
     fileName: string

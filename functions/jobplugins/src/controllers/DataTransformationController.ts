@@ -163,6 +163,36 @@ export class DataTransformationController {
     }
   }
 
+  private async getCsvFile(req: Request, res: Response) {
+    try {
+      const { nodeId, fileName } = req.query;
+      const authHeader = req.headers["authorization"];
+
+      if (!authHeader) {
+        return res
+          .status(401)
+          .json({ message: "Authorization header is required" });
+      }
+
+      if (!nodeId || !fileName) {
+        return res.status(400).json({
+          message: "nodeId and fileName query parameters are required",
+        });
+      }
+
+      const portalAPI = new PortalServerAPI(authHeader);
+      const result = await portalAPI.getCsvFile(
+        nodeId as string,
+        fileName as string
+      );
+
+      return res.status(200).send(result);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: error });
+    }
+  }
+
   private async deleteCsvFile(req: Request, res: Response) {
     try {
       const { nodeId, fileName } = req.query;
@@ -296,6 +326,7 @@ export class DataTransformationController {
       upload.single("file"),
       this.uploadCsvFile.bind(this)
     );
+    this.router.get("/file/csv", this.getCsvFile.bind(this));
     this.router.delete("/file/csv", this.deleteCsvFile.bind(this));
     this.router.delete("/:id/:revisionId", this.deleteGraphById.bind(this));
 
