@@ -42,11 +42,13 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
             datasetid: [],
           },
         ],
+        querystring: z.object({
+          source: z.string().optional(),
+        }),
       },
     },
     async (req, res) => {
-      const referer = req.headers.referer;
-      const isAtlas = referer?.includes("/atlas");
+      const isAtlas = !req.query.source || req.query.source !== "pa";
       const result = await getCohortDefinitionList(
         req.token,
         req.datasetId,
