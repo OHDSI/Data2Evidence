@@ -46,23 +46,54 @@
     <span class="plugin-container"></span>
 
     <script>
-      document.querySelector('.plugin-container').portalAPI = {
-        qeSvcUrl: 'https://localhost:8081',
-        studyId: '963820c6-94b0-42d8-8359-115b2695faf5', // Change to your dev studyID
-        releaseId: '',
-        async getToken() {
-          return localStorage.getItem('msaltoken')
-        },
-        isLocal: true,
-        username: 'admin', // Change to your logto username
-        locale: 'en',
-        debug: false,
+      ;(function () {
+        const isLocal = true
+        const defaultDatasource = 'SYNPUF1K' // Default fallback
 
-        // DEMO
-        REACT_APP_PUBLIC_WEBAPI_PROXY_URL: 'http://localhost:3001',
-        REACT_APP_USE_PUBLIC_WEBAPI_PROXY: 'true',
-        REACT_APP_PUBLIC_WEBAPI_DATASOURCE: 'SYNPUF1K',
-      }
+        // Set portalAPI immediately with default values
+        document.querySelector('.plugin-container').portalAPI = {
+          qeSvcUrl: 'https://localhost:8081',
+          studyId: '963820c6-94b0-42d8-8359-115b2695faf5', // Change to your dev studyID
+          releaseId: '',
+          async getToken() {
+            return localStorage.getItem('msaltoken')
+          },
+          isLocal: isLocal,
+          username: 'admin', // Change to your logto username
+          locale: 'en',
+          debug: false,
+
+          // DEMO
+          // REACT_APP_PUBLIC_WEBAPI_PROXY_URL: 'http://localhost:3001', // only used when different url from website url
+          REACT_APP_USE_PUBLIC_WEBAPI_PROXY: 'true',
+          REACT_APP_PUBLIC_WEBAPI_DATASOURCE: defaultDatasource,
+        }
+
+        console.log('PortalAPI initialized with default datasource:', defaultDatasource)
+
+        // Fetch datasource dynamically when in local mode and update portalAPI
+        if (isLocal) {
+          ;(async function () {
+            try {
+              const token = localStorage.getItem('msaltoken')
+              const response = await fetch('/d2e-webapi/source/sources', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              })
+              if (response.ok) {
+                const sources = await response.json()
+                if (sources && sources.length > 0 && sources[0].sourceKey) {
+                  const datasource = sources[0].sourceKey
+                  // Update the datasource in portalAPI
+                  document.querySelector('.plugin-container').portalAPI.REACT_APP_PUBLIC_WEBAPI_DATASOURCE = datasource
+                  console.log('PortalAPI datasource updated to:', datasource)
+                }
+              }
+            } catch (error) {
+              console.warn('Failed to fetch datasource, using default:', error)
+            }
+          })()
+        }
+      })()
     </script>
 
     <script

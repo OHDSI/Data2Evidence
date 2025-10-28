@@ -27,26 +27,38 @@ export const mapCardinalityTypeToAtlas = (type: string): number => {
 
 export const mapEventTypeToAtlas = (eventType: string): string => {
   switch (eventType) {
+    case 'conditionEra':
+      return 'ConditionEra'
     case 'conditionOccurrence':
       return 'ConditionOccurrence'
-    case 'drugExposure':
-      return 'DrugExposure'
-    case 'procedureOccurrence':
-      return 'ProcedureOccurrence'
-    case 'measurement':
-      return 'Measurement'
-    case 'observation':
-      return 'Observation'
-    case 'visitOccurrence':
-      return 'VisitOccurrence'
     case 'death':
       return 'Death'
     case 'deviceExposure':
       return 'DeviceExposure'
+    case 'doseEra':
+      return 'DoseEra'
     case 'drugEra':
       return 'DrugEra'
+    case 'drugExposure':
+      return 'DrugExposure'
     case 'locationRegion':
       return 'LocationRegion'
+    case 'measurement':
+      return 'Measurement'
+    case 'observation':
+      return 'Observation'
+    case 'observationPeriod':
+      return 'ObservationPeriod'
+    case 'payerPlanPeriod':
+      return 'PayerPlanPeriod'
+    case 'procedureOccurrence':
+      return 'ProcedureOccurrence'
+    case 'specimen':
+      return 'Specimen'
+    case 'visitDetail':
+      return 'VisitDetail'
+    case 'visitOccurrence':
+      return 'VisitOccurrence'
     default:
       // Convert camelCase to PascalCase for unknown event types
       return toPascalCase(eventType)
@@ -59,8 +71,7 @@ export const toPascalCase = (str: string): string => {
 }
 
 export const mapOperatorToAtlas = (operator: string): NumericRange['Op'] => {
-  // TODO: Verify Atlas format mappings for BETWEEN and NOT_BETWEEN operators
-  // These mappings are educated guesses based on common patterns
+  // Atlas format mappings verified from OHDSI documentation
   switch (operator) {
     case 'GREATER_THAN':
       return 'gt'
@@ -75,7 +86,7 @@ export const mapOperatorToAtlas = (operator: string): NumericRange['Op'] => {
     case 'BETWEEN':
       return 'bt' // Common abbreviation for "between"
     case 'NOT_BETWEEN':
-      return 'nbt' // Not between - may need verification
+      return '!bt' // Not between - Atlas uses !bt notation
     default:
       return 'gt'
   }

@@ -29,6 +29,35 @@ const buildApiHeaders = async (datasetId?: string): Promise<Record<string, strin
   return headers
 }
 
+// In-memory cache for concept set expressions with TTL
+interface CacheEntry {
+  promise: Promise<ConceptSetExpression>
+  timestamp: number
+}
+
+const conceptSetExpressionCache = new Map<string, CacheEntry>()
+const CACHE_TTL_MS = 10 * 1000 // 10 seconds
+
+// Helper to get cache key
+const getCacheKey = (datasetId: string, conceptSetId: string): string => {
+  return `${datasetId}:${conceptSetId}`
+}
+
+// Clear expired entries from cache
+const clearExpiredCache = () => {
+  const now = Date.now()
+  for (const [key, entry] of conceptSetExpressionCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL_MS) {
+      conceptSetExpressionCache.delete(key)
+    }
+  }
+}
+
+// Clear the entire cache (useful when dataset changes)
+export const clearConceptSetExpressionCache = () => {
+  conceptSetExpressionCache.clear()
+}
+
 export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept set API call')
@@ -69,18 +98,9 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
   }
 }
 
-const cachedConcepts: { [key: number]: ConceptDetail } = {}
-
 export const fetchConceptById = async (datasetId: string, conceptId: number): Promise<ConceptDetail | null> => {
   try {
-    if (cachedConcepts[conceptId]) {
-      return cachedConcepts[conceptId]
-    }
-
     const data = await d2eWebapiService.getConceptById(conceptId, datasetId)
-    if (data[0]) {
-      cachedConcepts[conceptId] = data[0]
-    }
     return Array.isArray(data) && data.length > 0 ? data[0] : null
   } catch (error) {
     console.error(`Error fetching concept by ID ${conceptId}:`, error)
@@ -305,21 +325,48 @@ export const getConceptSetExpression = async (
   datasetId: string,
   conceptSetId: string
 ): Promise<ConceptSetExpression> => {
+  const cacheKey = getCacheKey(datasetId, conceptSetId)
+
+  // Clear expired entries periodically
+  clearExpiredCache()
+
+  // Check if we have a cached promise (either pending or resolved)
+  const cached = conceptSetExpressionCache.get(cacheKey)
+  if (cached) {
+    console.log(`Using cached concept set expression for ID ${conceptSetId}`)
+    return cached.promise
+  }
+
+  // Create new promise and cache it immediately (deduplicates concurrent requests)
+  console.log(`Fetching concept set expression for ID ${conceptSetId}`)
+  const promise = d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId, 10), datasetId)
+
+  conceptSetExpressionCache.set(cacheKey, {
+    promise,
+    timestamp: Date.now(),
+  })
+
   try {
-    return await d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId, 10), datasetId)
+    return await promise
   } catch (error) {
+    // Remove from cache on error so it can be retried
+    conceptSetExpressionCache.delete(cacheKey)
     console.error('Error fetching concept set expression:', error)
     throw error
   }
 }
 
-export const createConceptSet = async (conceptSetData: CreateConceptSetRequest, datasetId: string): Promise<number> => {
+export const createConceptSet = async (
+  conceptSetData: CreateConceptSetRequest,
+  datasetId: string,
+  isAtlas: boolean
+): Promise<number> => {
   if (!datasetId) {
     throw new Error('Missing datasetId for concept set creation')
   }
 
   try {
-    return await d2eWebapiService.createConceptSet(conceptSetData, datasetId)
+    return await d2eWebapiService.createConceptSet(conceptSetData, datasetId, isAtlas)
   } catch (error) {
     console.error('Error creating concept set:', error)
     throw error

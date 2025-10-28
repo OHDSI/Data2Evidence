@@ -37,9 +37,11 @@ enum ConceptSetTab {
   ConceptSets = "ConceptSets",
 }
 
-interface ConceptSetsProps {}
+interface ConceptSetsProps {
+  isAtlas: boolean;
+}
 
-export const ConceptSets: FC<ConceptSetsProps> = () => {
+export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
   const { getText } = useTranslation();
   const { datasetId, userId, userName } = usePortal();
   const [isLoading, setIsLoading] = useState(false);
@@ -133,6 +135,7 @@ export const ConceptSets: FC<ConceptSetsProps> = () => {
               },
               mode: "CONCEPT_SET",
               selectedDatasetId: datasetId,
+              isAtlas,
             },
           },
         }
@@ -193,7 +196,7 @@ export const ConceptSets: FC<ConceptSetsProps> = () => {
           <div className="concept-sets__break"></div>
 
           {tabValue == ConceptSetTab.ConceptSearch && (
-            <Terminology userId={userId} />
+            <Terminology userId={userId} isAtlas={isAtlas} />
           )}
 
           {tabValue == ConceptSetTab.ConceptSets && (

@@ -232,6 +232,11 @@
           "rmsrc": true
         },
         {
+          "source": "/jupyter-viewer",
+          "service": "jupyter-gateway-viewer",
+          "rmsrc": true
+        },
+        {
           "source": "/prefect/docs",
           "service": "prefect"
         },
@@ -567,6 +572,7 @@
           "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}"
         },
         "jupyter-gateway": {},
+        "jupyter-gateway-viewer": {},
         "mlflow": {},
         "strategus-analysis": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
