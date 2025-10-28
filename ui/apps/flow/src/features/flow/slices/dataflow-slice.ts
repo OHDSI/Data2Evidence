@@ -228,6 +228,10 @@ export const dataflowApiSlice = createApi({
       query: () => "dataflow/templates",
       providesTags: ["Template"],
     }),
+    getFhirStructureMapTemplates: builder.query<TemplateDto[], void>({
+      query: () => "dataflow/templates/fhir",
+      providesTags: ["Template"],
+    }),
     createCanvasFromTemplate: builder.mutation<
       SaveDataflowResponseDto,
       CreateFromTemplateDto
@@ -346,6 +350,7 @@ export const {
   useCheckRemoteDiffQuery,
   useOverwriteCanvasFromRemoteMutation,
   useGetTemplatesQuery,
+  useGetFhirStructureMapTemplatesQuery,
   useCreateCanvasFromTemplateMutation,
   useCreateDBScanReportMutation,
   useCreateScanReportMutation,

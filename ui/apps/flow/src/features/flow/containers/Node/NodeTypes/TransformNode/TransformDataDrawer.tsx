@@ -1,7 +1,7 @@
 import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
-import { Box, TextInput } from "@portal/components";
+import { Box, InputLabel, MenuItem, Select, SelectChangeEvent, TextInput } from "@portal/components";
 import { SelectSource } from "../../SelectSource/SelectSource";
 import { useFormData } from "~/features/flow/hooks";
 import {
@@ -14,6 +14,7 @@ import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "..";
 import { TransformNodeData } from "./TransformDataNode";
+import { useGetFhirStructureMapTemplatesQuery } from "~/features/flow/slices";
 
 export interface TransformDataDrawerProps extends Omit<NodeDrawerProps, "children"> {
   node: NodeProps<TransformNodeData>;
@@ -26,8 +27,6 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   structure_map: "",
-  source_structure_definition: "",
-  target_structure_definition: "",
   output_omop_data: "",
   dataframe: "",
 };
@@ -42,15 +41,16 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
-
+  const { data: structureMaps = [], isLoading: structureMapsLoading } =
+    useGetFhirStructureMapTemplatesQuery(undefined, {
+      skip: false,
+    });
   useEffect(() => {
     if (node.data) {
       setFormData({
         name: node.data.name,
         description: node.data.description,
         structure_map: node.data.structure_map,
-        source_structure_definition: node.data.source_structure_definition ?? "",
-        target_structure_definition: node.data.target_structure_definition ?? "",
         dataframe: node.data.dataframe,
         output_omop_data: node.data.output_omop_data,
       });
@@ -103,32 +103,27 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
         />
       </Box>
       <Box mb={4}>
-        <TextInput
-          label="Structure Map"
-          value={formData.structure_map}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ structure_map: e.target.value })
-          }
-        />
-      </Box>
-      <Box mb={4}>
-        <TextInput
-          label="Source Structure Definition"
-          value={formData.source_structure_definition}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ source_structure_definition: e.target.value })
-          }
-        />
-      </Box>
-      <Box mb={4}>
-        <TextInput
-          label="Target Structure Definition"
-          value={formData.target_structure_definition}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ target_structure_definition: e.target.value })
-          }
-        />
-      </Box>
+          <InputLabel sx={{ mb: 1 }}>Structure Map</InputLabel>
+          <Select
+            sx={{ width: "100%" }}
+            variant="standard"
+            value={formData.structure_map}
+            onChange={(e: SelectChangeEvent) =>
+              onFormDataChange({ structure_map: e.target.value })
+            }
+            displayEmpty
+            disabled={structureMapsLoading}
+          >
+            <MenuItem value="">
+              <em>No Structure Map</em>
+            </MenuItem>
+            {structureMaps.map((template) => (
+              <MenuItem key={template.id} value={template.id}>
+                {template.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
     </NodeDrawer>
   );
 };

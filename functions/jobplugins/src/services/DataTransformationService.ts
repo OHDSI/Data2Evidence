@@ -1104,14 +1104,23 @@ export class TransformationService {
     }
   }
 
-  async getTemplates() {
-    const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
-    const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
-
+  async getTemplates(subdir?: string) {
+    let templateRepoUrl,templateBranch, subDir='';
+    
+    if(subdir && subdir === GIT_REPO_CONSTANTS.FHIR_SUBDIR){
+      this.logger.info('Fetching FHIR Structure Map templates');
+      templateRepoUrl = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL;
+      templateBranch = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH;
+      subDir = GIT_REPO_CONSTANTS.FHIR_SUBDIR;
+    }else{
+      templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
+      templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
+      subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
+    }
+  
     const repoDir = this.templateRepoPath;
-    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
     const subDirPath = path.join(repoDir, subDir);
-
+    this.logger.info(`Fetching templates from ${repoDir} in subdirectory ${subDir} branch ${templateBranch}`);
     try {
       await this.ensureLatestFromGitRemote(
         repoDir,
