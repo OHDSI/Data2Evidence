@@ -359,7 +359,8 @@
           "isTestEnv": "${isTestEnv}",
           "TESTSCHEMA": "${TESTSCHEMA}",
           "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
-          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}"
+          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}",
+          "OMOP_RELATIONSHIPS_FOR_DESCENDANTS": "${OMOP_RELATIONSHIPS_FOR_DESCENDANTS}"
         },
         "alp-usermgmt": {
           "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",

@@ -263,11 +263,12 @@ export class Property extends AstElement {
 
                     // const ref0AliasObj = this.scopeEntityDef.getTableAliasByBaseEntity("@REF0");
                     const ref0AliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@REF0"]);
+                    const relationships = Deno.env.get("OMOP_RELATIONSHIPS_FOR_DESCENDANTS") || `'Maps to','Subsumes'`;
                     ref0AliasObj.on = []; //initialize
                     this.pushOnCondition(
                         ref0AliasObj.on,
                         QueryObject.format("%UNSAFE", 
-                                            `${ref0AliasObj.alias}.relationship_id = 'Maps to' AND 
+                                            `${ref0AliasObj.alias}.relationship_id in ${relationships} AND 
                                              ${ref0AliasObj.alias}.concept_id_1 = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
                     )
 
