@@ -157,6 +157,7 @@ export default {
       optionLimitSize: 200,
       selectedValuesTimeout: null,
       tagRefs: {},
+      isDropdownOpen: false,
     }
   },
   mounted() {
@@ -169,6 +170,12 @@ export default {
       handler(newVal, oldVal) {
         if (newVal.isLoading !== oldVal.isLoading && !newVal.isLoading) {
           this.currentTagPlaceholder = ''
+          // Recalculate dropdown height when data finishes loading (only if dropdown is open)
+          if (this.isDropdownOpen) {
+            this.$nextTick(() => {
+              this.adjustDropdownHeight()
+            })
+          }
         }
       },
       deep: true,
@@ -327,6 +334,7 @@ export default {
         return
       }
 
+      this.isDropdownOpen = true
       this.currentPlaceholder = this.texts.enterSearchTerm
       this.handleSearchChange(this.searchQuery)
 
@@ -334,6 +342,7 @@ export default {
       this.adjustDropdownHeight()
     },
     close() {
+      this.isDropdownOpen = false
       if (this.selectedValues.length) {
         this.currentPlaceholder = this.texts.enterSearchTerm
       } else {
@@ -440,11 +449,9 @@ export default {
         // Only apply min-height if there's limited space below
         if (spaceBelow < 300) {
           if (content) {
-            // Get the actual content height
-            const contentHeight = content.scrollHeight
-
-            // Use the smaller of actual content height or 200px
-            const minHeight = Math.min(contentHeight, 200)
+            // Calculate expected height based on filteredList (each item is 40px)
+            const expectedHeight = this.filteredList.length * 40
+            const minHeight = Math.min(expectedHeight, 200)
             dropdown.style.minHeight = `${minHeight}px`
           } else {
             dropdown.style.minHeight = '200px'
