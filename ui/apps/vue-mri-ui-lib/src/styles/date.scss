@@ -28,14 +28,6 @@
   .invalidDate {
     border: 1.5px solid var(--color-mri-error);
   }
-  .errortext {
-    position: absolute;
-    right: 0;
-    background: var(--color-date-error-text-bg);
-    padding-right: 5px;
-    padding-left: 5px;
-    font-size: 0.765625rem;
-  }
   .form-control:focus {
     box-shadow: none;
   }
