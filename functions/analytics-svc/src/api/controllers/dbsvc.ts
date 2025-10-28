@@ -2,13 +2,17 @@ import { Logger } from "@alp/alp-base-utils";
 import { ANALYTICS_DB_DIALECTS } from "../../types";
 import * as dbUtils from "../../utils/DBSvcDBUtils";
 import { DBDAO } from "../../dao/DBDAO";
+import PortalServerAPI from "../PortalServerAPI";
 import { env } from "../../env";
 
 const logger = Logger.CreateLogger("analytics-log");
 
 export async function getCDMVersion(req, res, next) {
-    const { schema: schemaName, dialect } =
-        req.dbCredentials.studyAnalyticsCredential;
+    const datasetId = req.query.datasetId;
+    const { dialect, schemaName } = await new PortalServerAPI().getStudy(
+        req.headers.authorization,
+        datasetId
+    );
 
     // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
     // Always send hardcoded value from env if dialect is bigquery
