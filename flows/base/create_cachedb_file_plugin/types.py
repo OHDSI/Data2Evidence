@@ -80,7 +80,7 @@ class CacheFlowAction(str, Enum):
 
 
 class CreateCacheOptions(BaseModel):
-    flow_action_type: CacheFlowAction
+    flow_action_type: CacheFlowAction = Field(alias="flowActionType")
 
     database_code: Optional[str] = Field(default=None, alias="databaseCode")
     schema_name: Optional[str] = Field(default=None, alias="schemaName")
