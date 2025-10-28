@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION=3.12
 ARG R_VERSION=4.4.3
 
-FROM ghcr.io/data2evidence/whiterabbit:master AS base
+FROM ghcr.io/data2evidence/whiterabbit:master AS whiterabbit_base
 
 FROM alpine AS nlp_external_files
 
@@ -65,14 +65,12 @@ RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
     && groupadd alp \
     && adduser docker alp
 
-COPY --chown=docker:docker --chmod=711 --from=base . /app/
-ENV DISPLAY=:1
-
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
     curl \
     wget \
+    xvfb \
     libpq5 \
     python3-pip \
     openjdk-17-jdk \
@@ -84,11 +82,15 @@ COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 
 # Create folders and set ownership
-RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
-    && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop \
-    && chmod 711 -R /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \
-    && chown docker:alp /app/duckdb_data
+RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data /app/whiterabbit \
+    && mkdir -p /app/whiterabbit/csvfiles \
+    && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/whiterabbit \
+    && chown docker:alp /app/duckdb_data \
+    && chmod -R 711 /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/whiterabbit /app/duckdb_data
 
+
+# Copy the entire WhiteRabbit distribution
+COPY --chown=docker:docker --from=whiterabbit_base /dist /app/whiterabbit/dist
 
 # Verify the Java installation
 RUN java -version && R CMD javareconf
@@ -111,11 +113,10 @@ RUN uv pip install --upgrade "pip<24" \
     && uv pip install spacy-transformers==1.3.9 \
     && uv pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz \
     && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings \
-    && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl"
-
-# For PyNer
-RUN pip install git+https://github.com/data2evidence/py_name_entity_recognition@release-v1.0.8
-RUN pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+    && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl" \
+    # For PyNer
+    && pip install git+https://github.com/data2evidence/py_name_entity_recognition@release-v1.0.8 \
+    && pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 
 WORKDIR /app
 
@@ -129,5 +130,7 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
+
+USER docker
 
 ENTRYPOINT []
