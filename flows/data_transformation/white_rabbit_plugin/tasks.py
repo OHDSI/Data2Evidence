@@ -172,7 +172,7 @@ def download_file_from_supabase_storage(node_id: str, filename: str) -> bool:
 
     try:
         supabase_api = SupabaseStorageAPI()
-        csv_content = supabase_api.get_csv_file(node_id, filename)
+        csv_content = supabase_api.get_csv_content(node_id, filename)
 
         csv_file_path = f"{WHITERABBIT_CSV_DIR}/{filename}"
         with open(csv_file_path, 'w', encoding='utf-8') as csvfile:
