@@ -260,7 +260,9 @@ const StudyOverview: FC = () => {
               database_code: "",
               data_model: "",
               plugin: flow,
-              datasets: datasetsByFlow[flow],
+              datasets: datasetsByFlow[flow].filter((dataset) =>
+                dataset.attributes?.some((attribute) => attribute.attributeId !== "source_dataset_id")
+              ),
             },
           },
         })
@@ -268,14 +270,14 @@ const StudyOverview: FC = () => {
     }
     apiRequests.push(
       api.dataflow.createGetVersionInfoFlowRun({
-        flowRunName: "datamart-get_version_info",
+        flowRunName: "cache-get_version_info",
         options: {
           options: {
             flow_action_type: "get_version_info",
             token: "",
             database_code: "",
             data_model: "",
-            plugin: "datamart_plugin",
+            plugin: "create_cachedb_file_plugin",
             datasets: datasets.filter(
               (dataset) => dataset.attributes?.some((attribute) => attribute.attributeId === "source_dataset_id") // Filter out the datamart dataset
             ),
