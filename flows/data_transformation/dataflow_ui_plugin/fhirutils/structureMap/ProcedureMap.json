@@ -1,0 +1,220 @@
+{
+  "resourceType" : "StructureMap",
+  "id" : "ProcedureMap",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: StructureMap ProcedureMap</b></p><a name=\"ProcedureMap\"> </a><a name=\"hcProcedureMap\"> </a><pre class=\"fml\">\r\n<span style=\"color: #cc00cc\">/// <b>url</b> = </span><span style=\"color: blue\">'http://hl7.org/fhir/uv/omop/StructureMap/ProcedureMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>name</b> = </span><span style=\"color: blue\">'ProcedureMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>title</b> = </span><span style=\"color: blue\">'Mapping Procedure resource to Procedure Occurrence OMOP Domain'</span>\r\n<span style=\"color: #cc00cc\">/// <b>status</b> = </span><span style=\"color: blue\">'draft'</span>\r\n\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"http://hl7.org/fhir/R5/procedure.html\" title=\"Procedure\">http://hl7.org/fhir/StructureDefinition/Procedure</a><span style=\"color: navy\">&quot; </span><b>alias </b>Procedure <b>as </b><b>source</b>\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"StructureDefinition-ProcedureOccurrence.html\" title=\"Procedure Occurrence OMOP Table\">http://hl7.org/fhir/uv/omop/StructureDefinition/ProcedureOccurrence</a><span style=\"color: navy\">&quot; </span><b>alias </b>ProcedureTable <b>as </b><b>target</b>\r\n\r\n<b>group </b>ProcedureOccurrence<span style=\"color: navy\">(</span><b>source</b> <span style=\"color: maroon\">src</span><span style=\"color: navy\"> : </span>Procedure, <b>target</b> <span style=\"color: maroon\">tgt</span><span style=\"color: navy\"> : </span>ProcedureTable<span style=\"color: navy\">)</span><span style=\"color: navy\"> {\r\n</span>  src.code<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.procedure_concept_id<span style=\"color: navy\">, </span> tgt.procedure_source_value<span style=\"color: navy\">, </span> tgt.procedure_source_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.id as id -&gt; tgt.procedure_occurrence_id = cast(id, &quot;integer&quot;);</span>\r\n  src.occurrence<span style=\"color: navy\"> : </span>dateTime<b> as </b><span style=\"color: maroon\">edt</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.procedure_datetime = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">edt</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'dateTime'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.procedure_date = <span style=\"color: maroon\">edt</span><span style=\"color: navy\">;</span>\r\n  src.occurrence<span style=\"color: navy\"> : </span>Period<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.start<b> as </b><span style=\"color: maroon\">start</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.procedure_datetime = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">start</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'dateTime'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.procedure_date = <span style=\"color: maroon\">start</span><span style=\"color: navy\">;</span>\r\n    s.end<b> as </b><span style=\"color: maroon\">end</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.procedure_end_datetime<span style=\"color: navy\">, </span> tgt.procedure_end_date = <span style=\"color: maroon\">end</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n<span style=\"color: navy\">}\r\n\r\n</span></pre></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "brr"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1,
+    "_valueInteger" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "informative",
+    "_valueCode" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  }],
+  "url" : "http://hl7.org/fhir/uv/omop/StructureMap/ProcedureMap",
+  "version" : "1.0.0-ballot",
+  "name" : "ProcedureMap",
+  "title" : "Mapping Procedure resource to Procedure Occurrence OMOP Domain",
+  "status" : "draft",
+  "date" : "2025-07-29T17:40:15+00:00",
+  "publisher" : "HL7 International / Biomedical Research and Regulation",
+  "contact" : [{
+    "name" : "HL7 International / Biomedical Research and Regulation",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/rcrim"
+    }]
+  }],
+  "description" : "This mapping maps FHIR Procedure instances to OMOP Procedure Occurrence Table objects.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "structure" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/Procedure",
+    "mode" : "source",
+    "alias" : "Procedure"
+  },
+  {
+    "url" : "http://hl7.org/fhir/uv/omop/StructureDefinition/ProcedureOccurrence",
+    "mode" : "target",
+    "alias" : "ProcedureTable"
+  }],
+  "group" : [{
+    "name" : "ProcedureOccurrence",
+    "input" : [{
+      "name" : "src",
+      "type" : "Procedure",
+      "mode" : "source"
+    },
+    {
+      "name" : "tgt",
+      "type" : "ProcedureTable",
+      "mode" : "target"
+    }],
+    "rule" : [{
+      "name" : "code",
+      "source" : [{
+        "context" : "src",
+        "element" : "code",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code",
+            "variable" : "a"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "procedure_concept_id"
+          },
+          {
+            "context" : "tgt",
+            "element" : "procedure_source_value"
+          },
+          {
+            "context" : "tgt",
+            "element" : "procedure_source_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          }]
+        }]
+      }],
+      "documentation" : "src.id as id -> tgt.procedure_occurrence_id = cast(id, \"integer\");"
+    },
+    {
+      "name" : "occurrenceDateTime",
+      "source" : [{
+        "context" : "src",
+        "type" : "dateTime",
+        "element" : "occurrence",
+        "variable" : "edt"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "procedure_datetime",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "edt"
+        },
+        {
+          "valueString" : "dateTime"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "procedure_date",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "edt"
+        }]
+      }]
+    },
+    {
+      "name" : "occurrencePeriod",
+      "source" : [{
+        "context" : "src",
+        "type" : "Period",
+        "element" : "occurrence",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "start",
+        "source" : [{
+          "context" : "s",
+          "element" : "start",
+          "variable" : "start"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "procedure_datetime",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "start"
+          },
+          {
+            "valueString" : "dateTime"
+          }]
+        },
+        {
+          "context" : "tgt",
+          "element" : "procedure_date",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "start"
+          }]
+        }]
+      },
+      {
+        "name" : "end",
+        "source" : [{
+          "context" : "s",
+          "element" : "end",
+          "variable" : "end"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "procedure_end_datetime"
+        },
+        {
+          "context" : "tgt",
+          "element" : "procedure_end_date",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "end"
+          }]
+        }]
+      }]
+    }]
+  }]
+}

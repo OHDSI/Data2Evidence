@@ -1,0 +1,324 @@
+{
+  "resourceType" : "StructureMap",
+  "id" : "EncounterVisitMap",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: StructureMap EncounterVisitMap</b></p><a name=\"EncounterVisitMap\"> </a><a name=\"hcEncounterVisitMap\"> </a><pre class=\"fml\">\r\n<span style=\"color: #cc00cc\">/// <b>url</b> = </span><span style=\"color: blue\">'http://hl7.org/fhir/uv/omop/StructureMap/EncounterVisitMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>name</b> = </span><span style=\"color: blue\">'EncounterVisitMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>title</b> = </span><span style=\"color: blue\">'Mapping Encounter resource to VisitOccurrence OMOP Domain'</span>\r\n<span style=\"color: #cc00cc\">/// <b>status</b> = </span><span style=\"color: blue\">'draft'</span>\r\n\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"http://hl7.org/fhir/R5/encounter.html\" title=\"Encounter\">http://hl7.org/fhir/StructureDefinition/Encounter</a><span style=\"color: navy\">&quot; </span><b>alias </b>Encounter <b>as </b><b>source</b>\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"StructureDefinition-VisitOccurrence.html\" title=\"Visit Occurrence OMOP Table\">http://hl7.org/fhir/uv/omop/StructureDefinition/VisitOccurrence</a><span style=\"color: navy\">&quot; </span><b>alias </b>VisitTable <b>as </b><b>target</b>\r\n\r\n<b>group </b>VisitOccurrence<span style=\"color: navy\">(</span><b>source</b> <span style=\"color: maroon\">src</span><span style=\"color: navy\"> : </span>Encounter, <b>target</b> <span style=\"color: maroon\">tgt</span><span style=\"color: navy\"> : </span>VisitTable<span style=\"color: navy\">)</span><span style=\"color: navy\"> {\r\n</span>  src.class<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.visit_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">, </span> tgt.visit_source_value = <span style=\"color: maroon\">a</span><span style=\"color: navy\">, </span> tgt.visit_source_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.id as id -&gt; tgt.visit_occurrence_id = cast(id, &quot;integer&quot;);</span>\r\n  src.actualPeriod<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.start<b> as </b><span style=\"color: maroon\">std</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.visit_start_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">std</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.visit_start_datetime = <span style=\"color: maroon\">std</span><span style=\"color: navy\">;</span>\r\n    s.end<b> as </b><span style=\"color: maroon\">ed</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.visit_end_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">ed</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.visit_end_datetime = <span style=\"color: maroon\">ed</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.admission<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.admitSource<b> as </b><span style=\"color: maroon\">sa</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sa.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>        sc.code<b> as </b><span style=\"color: maroon\">code</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.admitted_from_concept_id = <span style=\"color: maroon\">code</span><span style=\"color: navy\">, </span> tgt.admitted_from_source_value = <span style=\"color: maroon\">code</span><span style=\"color: navy\">;</span>\r\n      <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    s.dischargeDisposition<b> as </b><span style=\"color: maroon\">sd</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sd.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>        sc.code<b> as </b><span style=\"color: maroon\">code</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.discharged_to_concept_id = <span style=\"color: maroon\">code</span><span style=\"color: navy\">, </span> tgt.discharged_to_source_value = <span style=\"color: maroon\">code</span><span style=\"color: navy\">;</span>\r\n      <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n<span style=\"color: navy\">}\r\n\r\n</span></pre></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "brr"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1,
+    "_valueInteger" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "informative",
+    "_valueCode" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  }],
+  "url" : "http://hl7.org/fhir/uv/omop/StructureMap/EncounterVisitMap",
+  "version" : "1.0.0-ballot",
+  "name" : "EncounterVisitMap",
+  "title" : "Mapping Encounter resource to VisitOccurrence OMOP Domain",
+  "status" : "draft",
+  "date" : "2025-07-29T17:40:15+00:00",
+  "publisher" : "HL7 International / Biomedical Research and Regulation",
+  "contact" : [{
+    "name" : "HL7 International / Biomedical Research and Regulation",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/rcrim"
+    }]
+  }],
+  "description" : "This mapping maps FHIR Encounter instances to OMOP Visit Occurence Table objects.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "structure" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/Encounter",
+    "mode" : "source",
+    "alias" : "Encounter"
+  },
+  {
+    "url" : "http://hl7.org/fhir/uv/omop/StructureDefinition/VisitOccurrence",
+    "mode" : "target",
+    "alias" : "VisitTable"
+  }],
+  "group" : [{
+    "name" : "VisitOccurrence",
+    "input" : [{
+      "name" : "src",
+      "type" : "Encounter",
+      "mode" : "source"
+    },
+    {
+      "name" : "tgt",
+      "type" : "VisitTable",
+      "mode" : "target"
+    }],
+    "rule" : [{
+      "name" : "class",
+      "source" : [{
+        "context" : "src",
+        "element" : "class",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code",
+            "variable" : "a"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "visit_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          },
+          {
+            "context" : "tgt",
+            "element" : "visit_source_value",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          },
+          {
+            "context" : "tgt",
+            "element" : "visit_source_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          }]
+        }]
+      }],
+      "documentation" : "src.id as id -> tgt.visit_occurrence_id = cast(id, \"integer\");"
+    },
+    {
+      "name" : "actualPeriod",
+      "source" : [{
+        "context" : "src",
+        "element" : "actualPeriod",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "start",
+        "source" : [{
+          "context" : "s",
+          "element" : "start",
+          "variable" : "std"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "visit_start_date",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "std"
+          },
+          {
+            "valueString" : "date"
+          }]
+        },
+        {
+          "context" : "tgt",
+          "element" : "visit_start_datetime",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "std"
+          }]
+        }]
+      },
+      {
+        "name" : "end",
+        "source" : [{
+          "context" : "s",
+          "element" : "end",
+          "variable" : "ed"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "visit_end_date",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "ed"
+          },
+          {
+            "valueString" : "date"
+          }]
+        },
+        {
+          "context" : "tgt",
+          "element" : "visit_end_datetime",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "ed"
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "admission",
+      "source" : [{
+        "context" : "src",
+        "element" : "admission",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "admitSource",
+        "source" : [{
+          "context" : "s",
+          "element" : "admitSource",
+          "variable" : "sa"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "coding",
+          "source" : [{
+            "context" : "sa",
+            "element" : "coding",
+            "variable" : "sc"
+          }],
+          "target" : [{
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "tgt"
+            }]
+          }],
+          "rule" : [{
+            "name" : "code",
+            "source" : [{
+              "context" : "sc",
+              "element" : "code",
+              "variable" : "code"
+            }],
+            "target" : [{
+              "context" : "tgt",
+              "element" : "admitted_from_concept_id",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "code"
+              }]
+            },
+            {
+              "context" : "tgt",
+              "element" : "admitted_from_source_value",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "code"
+              }]
+            }]
+          }]
+        }]
+      },
+      {
+        "name" : "dischargeDisposition",
+        "source" : [{
+          "context" : "s",
+          "element" : "dischargeDisposition",
+          "variable" : "sd"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "coding",
+          "source" : [{
+            "context" : "sd",
+            "element" : "coding",
+            "variable" : "sc"
+          }],
+          "target" : [{
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "tgt"
+            }]
+          }],
+          "rule" : [{
+            "name" : "code",
+            "source" : [{
+              "context" : "sc",
+              "element" : "code",
+              "variable" : "code"
+            }],
+            "target" : [{
+              "context" : "tgt",
+              "element" : "discharged_to_concept_id",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "code"
+              }]
+            },
+            {
+              "context" : "tgt",
+              "element" : "discharged_to_source_value",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "code"
+              }]
+            }]
+          }]
+        }]
+      }]
+    }]
+  }]
+}

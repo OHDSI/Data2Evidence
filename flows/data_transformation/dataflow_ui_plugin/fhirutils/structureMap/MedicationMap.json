@@ -1,0 +1,387 @@
+{
+  "resourceType" : "StructureMap",
+  "id" : "MedicationMap",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: StructureMap MedicationMap</b></p><a name=\"MedicationMap\"> </a><a name=\"hcMedicationMap\"> </a><pre class=\"fml\">\r\n<span style=\"color: #cc00cc\">/// <b>url</b> = </span><span style=\"color: blue\">'http://hl7.org/fhir/uv/omop/StructureMap/MedicationMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>name</b> = </span><span style=\"color: blue\">'MedicationMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>title</b> = </span><span style=\"color: blue\">'Mapping MedicationStatement resource to DrugExposure OMOP Domain'</span>\r\n<span style=\"color: #cc00cc\">/// <b>status</b> = </span><span style=\"color: blue\">'draft'</span>\r\n\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"http://hl7.org/fhir/R5/medicationstatement.html\" title=\"MedicationStatement\">http://hl7.org/fhir/StructureDefinition/MedicationStatement</a><span style=\"color: navy\">&quot; </span><b>alias </b>MedState <b>as </b><b>source</b>\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"StructureDefinition-DrugExposure.html\" title=\"Drug Exposure OMOP Table\">http://hl7.org/fhir/uv/omop/StructureDefinition/DrugExposure</a><span style=\"color: navy\">&quot; </span><b>alias </b>DrugExpTable <b>as </b><b>target</b>\r\n\r\n<b>group </b>MedExposure<span style=\"color: navy\">(</span><b>source</b> <span style=\"color: maroon\">src</span><span style=\"color: navy\"> : </span>MedState, <b>target</b> <span style=\"color: maroon\">tgt</span><span style=\"color: navy\"> : </span>DrugExpTable<span style=\"color: navy\">)</span><span style=\"color: navy\"> {\r\n</span>  src.medication<span style=\"color: navy\"> : </span>CodeableReference<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.concept<b> as </b><span style=\"color: maroon\">scs</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      scs.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>        sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.drug_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n      <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.id as id -&gt; tgt.drug_exposure_id = cast(id, &quot;integer&quot;);</span>\r\n  src.effective<span style=\"color: navy\"> : </span>dateTime<b> as </b><span style=\"color: maroon\">edt</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.drug_exposure_start_datetime = <span style=\"color: maroon\">edt</span><span style=\"color: navy\">, </span> tgt.drug_exposure_start_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">edt</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n  src.effective<span style=\"color: navy\"> : </span>Period<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.start<b> as </b><span style=\"color: maroon\">fps</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.drug_exposure_start_datetime = <span style=\"color: maroon\">fps</span><span style=\"color: navy\">, </span> tgt.drug_exposure_start_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">fps</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.effective<span style=\"color: navy\"> : </span>Period<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.end<b> as </b><span style=\"color: maroon\">fpe</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.drug_exposure_end_datetime = <span style=\"color: maroon\">fpe</span><span style=\"color: navy\">, </span> tgt.drug_exposure_end_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">fps</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.effective<span style=\"color: navy\"> : </span>Period<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.end<b> as </b><span style=\"color: maroon\">fpe</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.verbatim_end_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">fps</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.category<span style=\"color: navy\"> : </span>CodeableConcept<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.drug_type_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.reason<span style=\"color: navy\"> : </span>CodeableReference<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.concept<b> as </b><span style=\"color: maroon\">scs</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      scs.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>        sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.stop_reason = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n      <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n<span style=\"color: navy\">}\r\n\r\n</span></pre></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "brr"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1,
+    "_valueInteger" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "informative",
+    "_valueCode" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  }],
+  "url" : "http://hl7.org/fhir/uv/omop/StructureMap/MedicationMap",
+  "version" : "1.0.0-ballot",
+  "name" : "MedicationMap",
+  "title" : "Mapping MedicationStatement resource to DrugExposure OMOP Domain",
+  "status" : "draft",
+  "date" : "2025-07-29T17:40:15+00:00",
+  "publisher" : "HL7 International / Biomedical Research and Regulation",
+  "contact" : [{
+    "name" : "HL7 International / Biomedical Research and Regulation",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/rcrim"
+    }]
+  }],
+  "description" : "This mapping maps FHIR MedicationStatement instances to OMOP Drug Exposure Table objects.  NOTE: It does not map FHIR MedicationRequest instances although there is a discussion of those instances in the notes.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "structure" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/MedicationStatement",
+    "mode" : "source",
+    "alias" : "MedState"
+  },
+  {
+    "url" : "http://hl7.org/fhir/uv/omop/StructureDefinition/DrugExposure",
+    "mode" : "target",
+    "alias" : "DrugExpTable"
+  }],
+  "group" : [{
+    "name" : "MedExposure",
+    "input" : [{
+      "name" : "src",
+      "type" : "MedState",
+      "mode" : "source"
+    },
+    {
+      "name" : "tgt",
+      "type" : "DrugExpTable",
+      "mode" : "target"
+    }],
+    "rule" : [{
+      "name" : "medicationCodeableReference",
+      "source" : [{
+        "context" : "src",
+        "type" : "CodeableReference",
+        "element" : "medication",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "concept",
+        "source" : [{
+          "context" : "s",
+          "element" : "concept",
+          "variable" : "scs"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "coding",
+          "source" : [{
+            "context" : "scs",
+            "element" : "coding",
+            "variable" : "sc"
+          }],
+          "target" : [{
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "tgt"
+            }]
+          }],
+          "rule" : [{
+            "name" : "code",
+            "source" : [{
+              "context" : "sc",
+              "element" : "code",
+              "variable" : "a"
+            }],
+            "target" : [{
+              "context" : "tgt",
+              "element" : "drug_concept_id",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "a"
+              }]
+            }]
+          }]
+        }]
+      }],
+      "documentation" : "src.id as id -> tgt.drug_exposure_id = cast(id, \"integer\");"
+    },
+    {
+      "name" : "effectiveDateTime",
+      "source" : [{
+        "context" : "src",
+        "type" : "dateTime",
+        "element" : "effective",
+        "variable" : "edt"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "drug_exposure_start_datetime",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "edt"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "drug_exposure_start_date",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "edt"
+        },
+        {
+          "valueString" : "date"
+        }]
+      }]
+    },
+    {
+      "name" : "effectivePeriod",
+      "source" : [{
+        "context" : "src",
+        "type" : "Period",
+        "element" : "effective",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "start",
+        "source" : [{
+          "context" : "s",
+          "element" : "start",
+          "variable" : "fps"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "drug_exposure_start_datetime",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "fps"
+          }]
+        },
+        {
+          "context" : "tgt",
+          "element" : "drug_exposure_start_date",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "fps"
+          },
+          {
+            "valueString" : "date"
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "effectivePeriod",
+      "source" : [{
+        "context" : "src",
+        "type" : "Period",
+        "element" : "effective",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "end",
+        "source" : [{
+          "context" : "s",
+          "element" : "end",
+          "variable" : "fpe"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "drug_exposure_end_datetime",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "fpe"
+          }]
+        },
+        {
+          "context" : "tgt",
+          "element" : "drug_exposure_end_date",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "fps"
+          },
+          {
+            "valueString" : "date"
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "effectivePeriod",
+      "source" : [{
+        "context" : "src",
+        "type" : "Period",
+        "element" : "effective",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "end",
+        "source" : [{
+          "context" : "s",
+          "element" : "end",
+          "variable" : "fpe"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "verbatim_end_date",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "fps"
+          },
+          {
+            "valueString" : "date"
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "categoryCodeableConcept",
+      "source" : [{
+        "context" : "src",
+        "type" : "CodeableConcept",
+        "element" : "category",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code",
+            "variable" : "a"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "drug_type_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "reasonCodeableReference",
+      "source" : [{
+        "context" : "src",
+        "type" : "CodeableReference",
+        "element" : "reason",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "concept",
+        "source" : [{
+          "context" : "s",
+          "element" : "concept",
+          "variable" : "scs"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "coding",
+          "source" : [{
+            "context" : "scs",
+            "element" : "coding",
+            "variable" : "sc"
+          }],
+          "target" : [{
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "tgt"
+            }]
+          }],
+          "rule" : [{
+            "name" : "code",
+            "source" : [{
+              "context" : "sc",
+              "element" : "code",
+              "variable" : "a"
+            }],
+            "target" : [{
+              "context" : "tgt",
+              "element" : "stop_reason",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "a"
+              }]
+            }]
+          }]
+        }]
+      }]
+    }]
+  }]
+}

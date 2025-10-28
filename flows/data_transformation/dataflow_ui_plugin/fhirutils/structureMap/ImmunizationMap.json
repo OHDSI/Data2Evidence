@@ -1,0 +1,307 @@
+{
+  "resourceType" : "StructureMap",
+  "id" : "ImmunizationMap",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: StructureMap ImmunizationMap</b></p><a name=\"ImmunizationMap\"> </a><a name=\"hcImmunizationMap\"> </a><pre class=\"fml\">\r\n<span style=\"color: #cc00cc\">/// <b>url</b> = </span><span style=\"color: blue\">'http://hl7.org/fhir/uv/omop/StructureMap/ImmunizationMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>name</b> = </span><span style=\"color: blue\">'ImmunizationMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>title</b> = </span><span style=\"color: blue\">'Mapping Immunization resource to Drug Exposure OMOP Domain'</span>\r\n<span style=\"color: #cc00cc\">/// <b>status</b> = </span><span style=\"color: blue\">'draft'</span>\r\n\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"http://hl7.org/fhir/R5/immunization.html\" title=\"Immunization\">http://hl7.org/fhir/StructureDefinition/Immunization</a><span style=\"color: navy\">&quot; </span><b>alias </b>Immunization <b>as </b><b>source</b>\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"StructureDefinition-DrugExposure.html\" title=\"Drug Exposure OMOP Table\">http://hl7.org/fhir/uv/omop/StructureDefinition/DrugExposure</a><span style=\"color: navy\">&quot; </span><b>alias </b>DrugExposureTable <b>as </b><b>target</b>\r\n\r\n<b>group </b>DrugExposure<span style=\"color: navy\">(</span><b>source</b> <span style=\"color: maroon\">src</span><span style=\"color: navy\"> : </span>Immunization, <b>target</b> <span style=\"color: maroon\">tgt</span><span style=\"color: navy\"> : </span>DrugExposureTable<span style=\"color: navy\">)</span><span style=\"color: navy\"> {\r\n</span>  src.vaccineCode<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<span style=\"color: navy\"><b> -&gt; </b></span> tgt.drug_concept_id<span style=\"color: navy\">, </span> tgt.drug_source_value<span style=\"color: navy\">, </span> tgt.drug_source_concept_id<span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.id as id -&gt; tgt.drug_exposure_id = cast(id, &quot;integer&quot;);</span>\r\n  src.doseQuantity<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.value<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.quantity = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">s</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'decimal'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n    s.code<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.dose_unit_source_value = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">s</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'string'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.patient as s -&gt; tgt then {</span>\r\n  src.route<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.text<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.route_source_value = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">s</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'string'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<span style=\"color: navy\"><b> -&gt; </b></span> tgt.route_concept_id<span style=\"color: navy\">, </span> tgt.route_source_value<span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.occurrence<span style=\"color: navy\"> : </span>dateTime<b> as </b><span style=\"color: maroon\">odt</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.drug_exposure_start_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">odt</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.drug_exposure_start_datetime = <span style=\"color: maroon\">odt</span><span style=\"color: navy\">, </span> tgt.drug_exposure_end_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">odt</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.drug_exposure_end_datetime = <span style=\"color: maroon\">odt</span><span style=\"color: navy\">;</span>\r\n  src.lotNumber<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.lot_number = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">s</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'string'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.encounter as s -&gt; tgt then {</span>\r\n<span style=\"color: navy\">}\r\n\r\n</span></pre></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "brr"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1,
+    "_valueInteger" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "informative",
+    "_valueCode" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  }],
+  "url" : "http://hl7.org/fhir/uv/omop/StructureMap/ImmunizationMap",
+  "version" : "1.0.0-ballot",
+  "name" : "ImmunizationMap",
+  "title" : "Mapping Immunization resource to Drug Exposure OMOP Domain",
+  "status" : "draft",
+  "date" : "2025-07-29T17:40:15+00:00",
+  "publisher" : "HL7 International / Biomedical Research and Regulation",
+  "contact" : [{
+    "name" : "HL7 International / Biomedical Research and Regulation",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/rcrim"
+    }]
+  }],
+  "description" : "This mapping maps FHIR Immunization instances to OMOP Drug Exposure Table objects.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "structure" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/Immunization",
+    "mode" : "source",
+    "alias" : "Immunization"
+  },
+  {
+    "url" : "http://hl7.org/fhir/uv/omop/StructureDefinition/DrugExposure",
+    "mode" : "target",
+    "alias" : "DrugExposureTable"
+  }],
+  "group" : [{
+    "name" : "DrugExposure",
+    "input" : [{
+      "name" : "src",
+      "type" : "Immunization",
+      "mode" : "source"
+    },
+    {
+      "name" : "tgt",
+      "type" : "DrugExposureTable",
+      "mode" : "target"
+    }],
+    "rule" : [{
+      "name" : "vaccineCode",
+      "source" : [{
+        "context" : "src",
+        "element" : "vaccineCode",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "drug_concept_id"
+          },
+          {
+            "context" : "tgt",
+            "element" : "drug_source_value"
+          },
+          {
+            "context" : "tgt",
+            "element" : "drug_source_concept_id"
+          }]
+        }]
+      }],
+      "documentation" : "src.id as id -> tgt.drug_exposure_id = cast(id, \"integer\");"
+    },
+    {
+      "name" : "doseQuantity",
+      "source" : [{
+        "context" : "src",
+        "element" : "doseQuantity",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "value",
+        "source" : [{
+          "context" : "s",
+          "element" : "value",
+          "variable" : "s"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "quantity",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "s"
+          },
+          {
+            "valueString" : "decimal"
+          }]
+        }]
+      },
+      {
+        "name" : "code",
+        "source" : [{
+          "context" : "s",
+          "element" : "code",
+          "variable" : "s"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "dose_unit_source_value",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "s"
+          },
+          {
+            "valueString" : "string"
+          }]
+        }]
+      }],
+      "documentation" : "src.patient as s -> tgt then {"
+    },
+    {
+      "name" : "route",
+      "source" : [{
+        "context" : "src",
+        "element" : "route",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "text",
+        "source" : [{
+          "context" : "s",
+          "element" : "text",
+          "variable" : "s"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "route_source_value",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "s"
+          },
+          {
+            "valueString" : "string"
+          }]
+        }]
+      },
+      {
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "route_concept_id"
+          },
+          {
+            "context" : "tgt",
+            "element" : "route_source_value"
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "occurrenceDateTime",
+      "source" : [{
+        "context" : "src",
+        "type" : "dateTime",
+        "element" : "occurrence",
+        "variable" : "odt"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "drug_exposure_start_date",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "odt"
+        },
+        {
+          "valueString" : "date"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "drug_exposure_start_datetime",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "odt"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "drug_exposure_end_date",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "odt"
+        },
+        {
+          "valueString" : "date"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "drug_exposure_end_datetime",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "odt"
+        }]
+      }]
+    },
+    {
+      "name" : "lotNumber",
+      "source" : [{
+        "context" : "src",
+        "element" : "lotNumber",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "lot_number",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "s"
+        },
+        {
+          "valueString" : "string"
+        }]
+      }],
+      "documentation" : "src.encounter as s -> tgt then {"
+    }]
+  }]
+}

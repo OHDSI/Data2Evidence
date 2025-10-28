@@ -1,0 +1,145 @@
+{
+  "resourceType" : "StructureMap",
+  "id" : "PersonMap",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: StructureMap PersonMap</b></p><a name=\"PersonMap\"> </a><a name=\"hcPersonMap\"> </a><pre class=\"fml\">\r\n<span style=\"color: #cc00cc\">/// <b>url</b> = </span><span style=\"color: blue\">'http://hl7.org/fhir/uv/omop/StructureMap/PersonMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>name</b> = </span><span style=\"color: blue\">'PersonMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>title</b> = </span><span style=\"color: blue\">'Mapping Patient resource to Person OMOP Domain'</span>\r\n<span style=\"color: #cc00cc\">/// <b>status</b> = </span><span style=\"color: blue\">'draft'</span>\r\n\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"http://hl7.org/fhir/R5/patient.html\" title=\"Patient\">http://hl7.org/fhir/StructureDefinition/Patient</a><span style=\"color: navy\">&quot; </span><b>alias </b>Patient <b>as </b><b>source</b>\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"StructureDefinition-Person.html\" title=\"Person OMOP Table\">http://hl7.org/fhir/uv/omop/StructureDefinition/Person</a><span style=\"color: navy\">&quot; </span><b>alias </b>PersonTable <b>as </b><b>target</b>\r\n\r\n<b>group </b>Person<span style=\"color: navy\">(</span><b>source</b> <span style=\"color: maroon\">src</span><span style=\"color: navy\"> : </span>Patient, <b>target</b> <span style=\"color: maroon\">tgt</span><span style=\"color: navy\"> : </span>PersonTable<span style=\"color: navy\">)</span><span style=\"color: navy\"> {\r\n</span>  src.gender<b> as </b><span style=\"color: maroon\">gender</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.gender_concept_id = <span style=\"color: maroon\">gender</span><span style=\"color: navy\">, </span> tgt.gender_source_value = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">gender</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'string'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.id as id -&gt; tgt.person_id = cast(id, &quot;integer&quot;);</span>\r\n  src.birthDate<b> as </b><span style=\"color: maroon\">bdSrc</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.birth_datetime = <span style=\"color: maroon\">bdSrc</span><span style=\"color: navy\">, </span> tgt.year_of_birth = <span style=\"color: navy\">(</span>src.birthDate.toString().substring(0, 4)<span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.month_of_birth = <span style=\"color: navy\">(</span>src.birthDate.toString().substring(5, 2)<span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.day_of_birth = <span style=\"color: navy\">(</span>src.birthDate.toString().substring(8, 2)<span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n<span style=\"color: navy\">}\r\n\r\n</span></pre></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "brr"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1,
+    "_valueInteger" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "informative",
+    "_valueCode" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  }],
+  "url" : "http://hl7.org/fhir/uv/omop/StructureMap/PersonMap",
+  "version" : "1.0.0-ballot",
+  "name" : "PersonMap",
+  "title" : "Mapping Patient resource to Person OMOP Domain",
+  "status" : "draft",
+  "date" : "2025-07-29T17:40:15+00:00",
+  "publisher" : "HL7 International / Biomedical Research and Regulation",
+  "contact" : [{
+    "name" : "HL7 International / Biomedical Research and Regulation",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/rcrim"
+    }]
+  }],
+  "description" : "This mapping maps FHIR Patient instances to OMOP Person Table objects.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "structure" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/Patient",
+    "mode" : "source",
+    "alias" : "Patient"
+  },
+  {
+    "url" : "http://hl7.org/fhir/uv/omop/StructureDefinition/Person",
+    "mode" : "target",
+    "alias" : "PersonTable"
+  }],
+  "group" : [{
+    "name" : "Person",
+    "input" : [{
+      "name" : "src",
+      "type" : "Patient",
+      "mode" : "source"
+    },
+    {
+      "name" : "tgt",
+      "type" : "PersonTable",
+      "mode" : "target"
+    }],
+    "rule" : [{
+      "name" : "gender",
+      "source" : [{
+        "context" : "src",
+        "element" : "gender",
+        "variable" : "gender"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "gender_concept_id",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "gender"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "gender_source_value",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "gender"
+        },
+        {
+          "valueString" : "string"
+        }]
+      }],
+      "documentation" : "src.id as id -> tgt.person_id = cast(id, \"integer\");"
+    },
+    {
+      "name" : "birthDate",
+      "source" : [{
+        "context" : "src",
+        "element" : "birthDate",
+        "variable" : "bdSrc"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "birth_datetime",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "bdSrc"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "year_of_birth",
+        "transform" : "evaluate",
+        "parameter" : [{
+          "valueString" : "src.birthDate.toString().substring(0, 4)"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "month_of_birth",
+        "transform" : "evaluate",
+        "parameter" : [{
+          "valueString" : "src.birthDate.toString().substring(5, 2)"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "day_of_birth",
+        "transform" : "evaluate",
+        "parameter" : [{
+          "valueString" : "src.birthDate.toString().substring(8, 2)"
+        }]
+      }]
+    }]
+  }]
+}

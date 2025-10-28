@@ -1,0 +1,396 @@
+{
+  "resourceType" : "StructureMap",
+  "id" : "MeasurementMap",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: StructureMap MeasurementMap</b></p><a name=\"MeasurementMap\"> </a><a name=\"hcMeasurementMap\"> </a><pre class=\"fml\">\r\n<span style=\"color: #cc00cc\">/// <b>url</b> = </span><span style=\"color: blue\">'http://hl7.org/fhir/uv/omop/StructureMap/MeasurementMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>name</b> = </span><span style=\"color: blue\">'MeasurementMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>title</b> = </span><span style=\"color: blue\">'Mapping Observation resource to Measurement  OMOP Domain'</span>\r\n<span style=\"color: #cc00cc\">/// <b>status</b> = </span><span style=\"color: blue\">'draft'</span>\r\n\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"http://hl7.org/fhir/R5/observation.html\" title=\"Observation\">http://hl7.org/fhir/StructureDefinition/Observation</a><span style=\"color: navy\">&quot; </span><b>alias </b>Observation <b>as </b><b>source</b>\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"StructureDefinition-Measurement.html\" title=\"Measurement OMOP Table\">http://hl7.org/fhir/uv/omop/StructureDefinition/Measurement</a><span style=\"color: navy\">&quot; </span><b>alias </b>MeasureTable <b>as </b><b>target</b>\r\n\r\n<b>group </b>Measures<span style=\"color: navy\">(</span><b>source</b> <span style=\"color: maroon\">src</span><span style=\"color: navy\"> : </span>Observation, <b>target</b> <span style=\"color: maroon\">tgt</span><span style=\"color: navy\"> : </span>MeasureTable<span style=\"color: navy\">)</span><span style=\"color: navy\"> {\r\n</span>  src<b> where </b>('vital-signs' | 'laboratory').supersetOf(Observation.category.coding.code)<b> then</b><span style=\"color: navy\"> {\r\n</span>    src.code<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>        sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.measurement_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n      <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.id as id -&gt; tgt.measurement_id = cast(id, &quot;integer&quot;);</span>\r\n    src.effective<span style=\"color: navy\"> : </span>dateTime<b> as </b><span style=\"color: maroon\">edt</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.measurement_datetime = <span style=\"color: maroon\">edt</span><span style=\"color: navy\">, </span> tgt.measurement_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">edt</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.subject as s -&gt; tgt then {</span>\r\n    src.effective<span style=\"color: navy\"> : </span>instant<b> as </b><span style=\"color: maroon\">einst</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.measurement_datetime = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">einst</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'dateTime'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.measurement_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">einst</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n    src.effective<span style=\"color: navy\"> : </span>Period<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      s.start<b> as </b><span style=\"color: maroon\">eps</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.measurement_datetime = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">eps</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'dateTime'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.measurement_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">eps</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    src.issued<b> as </b><span style=\"color: maroon\">s</span><b> where </b>(src.issued.toDate != src.effectiveDateTime)<span style=\"color: navy\"><b> -&gt; </b></span>tgt.measurement_source_value = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">s</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'string'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n    src.value<span style=\"color: navy\"> : </span>Quantity<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      s.value<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.value_as_number = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n      s.unit<b> as </b><span style=\"color: maroon\">b</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.unit_concept_id = <span style=\"color: maroon\">b</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.performer as s -&gt; tgt then {</span>\r\n    src.value<span style=\"color: navy\"> : </span>CodeableConcept<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>        sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.value_as_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n      <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    src.value<span style=\"color: navy\"> : </span>string<b> as </b><span style=\"color: maroon\">b</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.value_source_value = <span style=\"color: maroon\">b</span><span style=\"color: navy\">;</span>\r\n    src.interpretation<b> as </b><span style=\"color: maroon\">c</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.value_as_concept_id = <span style=\"color: maroon\">c</span><span style=\"color: navy\">;</span>\r\n    src.note<b> as </b><span style=\"color: maroon\">d</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.measurement_source_value = <span style=\"color: maroon\">d</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span> <i>&quot;OnlyMeasures&quot;</i><span style=\"color: navy\">;</span>\r\n<span style=\"color: navy\">}\r\n\r\n</span></pre></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "brr"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1,
+    "_valueInteger" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "informative",
+    "_valueCode" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  }],
+  "url" : "http://hl7.org/fhir/uv/omop/StructureMap/MeasurementMap",
+  "version" : "1.0.0-ballot",
+  "name" : "MeasurementMap",
+  "title" : "Mapping Observation resource to Measurement  OMOP Domain",
+  "status" : "draft",
+  "date" : "2025-07-29T17:40:15+00:00",
+  "publisher" : "HL7 International / Biomedical Research and Regulation",
+  "contact" : [{
+    "name" : "HL7 International / Biomedical Research and Regulation",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/rcrim"
+    }]
+  }],
+  "description" : "This mapping maps FHIR Observation instances that are considered measurements to OMOP Measurement Table objects.  Currently, this is done by considering the category code and mapping 'vital-signs' and 'laboratory' Observations.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "structure" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/Observation",
+    "mode" : "source",
+    "alias" : "Observation"
+  },
+  {
+    "url" : "http://hl7.org/fhir/uv/omop/StructureDefinition/Measurement",
+    "mode" : "target",
+    "alias" : "MeasureTable"
+  }],
+  "group" : [{
+    "name" : "Measures",
+    "input" : [{
+      "name" : "src",
+      "type" : "Observation",
+      "mode" : "source"
+    },
+    {
+      "name" : "tgt",
+      "type" : "MeasureTable",
+      "mode" : "target"
+    }],
+    "rule" : [{
+      "name" : "OnlyMeasures",
+      "source" : [{
+        "context" : "src",
+        "condition" : "('vital-signs' | 'laboratory').supersetOf(Observation.category.coding.code)"
+      }],
+      "rule" : [{
+        "name" : "code",
+        "source" : [{
+          "context" : "src",
+          "element" : "code",
+          "variable" : "s"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "coding",
+          "source" : [{
+            "context" : "s",
+            "element" : "coding",
+            "variable" : "sc"
+          }],
+          "target" : [{
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "tgt"
+            }]
+          }],
+          "rule" : [{
+            "name" : "code",
+            "source" : [{
+              "context" : "sc",
+              "element" : "code",
+              "variable" : "a"
+            }],
+            "target" : [{
+              "context" : "tgt",
+              "element" : "measurement_concept_id",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "a"
+              }]
+            }]
+          }]
+        }],
+        "documentation" : "src.id as id -> tgt.measurement_id = cast(id, \"integer\");"
+      },
+      {
+        "name" : "effectiveDateTime",
+        "source" : [{
+          "context" : "src",
+          "type" : "dateTime",
+          "element" : "effective",
+          "variable" : "edt"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "measurement_datetime",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "edt"
+          }]
+        },
+        {
+          "context" : "tgt",
+          "element" : "measurement_date",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "edt"
+          },
+          {
+            "valueString" : "date"
+          }]
+        }],
+        "documentation" : "src.subject as s -> tgt then {"
+      },
+      {
+        "name" : "effectiveInstant",
+        "source" : [{
+          "context" : "src",
+          "type" : "instant",
+          "element" : "effective",
+          "variable" : "einst"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "measurement_datetime",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "einst"
+          },
+          {
+            "valueString" : "dateTime"
+          }]
+        },
+        {
+          "context" : "tgt",
+          "element" : "measurement_date",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "einst"
+          },
+          {
+            "valueString" : "date"
+          }]
+        }]
+      },
+      {
+        "name" : "effectivePeriod",
+        "source" : [{
+          "context" : "src",
+          "type" : "Period",
+          "element" : "effective",
+          "variable" : "s"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "start",
+          "source" : [{
+            "context" : "s",
+            "element" : "start",
+            "variable" : "eps"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "measurement_datetime",
+            "transform" : "cast",
+            "parameter" : [{
+              "valueId" : "eps"
+            },
+            {
+              "valueString" : "dateTime"
+            }]
+          },
+          {
+            "context" : "tgt",
+            "element" : "measurement_date",
+            "transform" : "cast",
+            "parameter" : [{
+              "valueId" : "eps"
+            },
+            {
+              "valueString" : "date"
+            }]
+          }]
+        }]
+      },
+      {
+        "name" : "issued",
+        "source" : [{
+          "context" : "src",
+          "element" : "issued",
+          "variable" : "s",
+          "condition" : "(src.issued.toDate != src.effectiveDateTime)"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "measurement_source_value",
+          "transform" : "cast",
+          "parameter" : [{
+            "valueId" : "s"
+          },
+          {
+            "valueString" : "string"
+          }]
+        }]
+      },
+      {
+        "name" : "valueQuantity",
+        "source" : [{
+          "context" : "src",
+          "type" : "Quantity",
+          "element" : "value",
+          "variable" : "s"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "value",
+          "source" : [{
+            "context" : "s",
+            "element" : "value",
+            "variable" : "a"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "value_as_number",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          }]
+        },
+        {
+          "name" : "unit",
+          "source" : [{
+            "context" : "s",
+            "element" : "unit",
+            "variable" : "b"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "unit_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "b"
+            }]
+          }]
+        }],
+        "documentation" : "src.performer as s -> tgt then {"
+      },
+      {
+        "name" : "valueCodeableConcept",
+        "source" : [{
+          "context" : "src",
+          "type" : "CodeableConcept",
+          "element" : "value",
+          "variable" : "s"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "coding",
+          "source" : [{
+            "context" : "s",
+            "element" : "coding",
+            "variable" : "sc"
+          }],
+          "target" : [{
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "tgt"
+            }]
+          }],
+          "rule" : [{
+            "name" : "code",
+            "source" : [{
+              "context" : "sc",
+              "element" : "code",
+              "variable" : "a"
+            }],
+            "target" : [{
+              "context" : "tgt",
+              "element" : "value_as_concept_id",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "a"
+              }]
+            }]
+          }]
+        }]
+      },
+      {
+        "name" : "valueString",
+        "source" : [{
+          "context" : "src",
+          "type" : "string",
+          "element" : "value",
+          "variable" : "b"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "value_source_value",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "b"
+          }]
+        }]
+      },
+      {
+        "name" : "interpretation",
+        "source" : [{
+          "context" : "src",
+          "element" : "interpretation",
+          "variable" : "c"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "value_as_concept_id",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "c"
+          }]
+        }]
+      },
+      {
+        "name" : "note",
+        "source" : [{
+          "context" : "src",
+          "element" : "note",
+          "variable" : "d"
+        }],
+        "target" : [{
+          "context" : "tgt",
+          "element" : "measurement_source_value",
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "d"
+          }]
+        }]
+      }]
+    }]
+  }]
+}

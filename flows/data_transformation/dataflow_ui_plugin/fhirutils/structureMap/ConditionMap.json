@@ -1,0 +1,352 @@
+{
+  "resourceType" : "StructureMap",
+  "id" : "ConditionMap",
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: StructureMap ConditionMap</b></p><a name=\"ConditionMap\"> </a><a name=\"hcConditionMap\"> </a><pre class=\"fml\">\r\n<span style=\"color: #cc00cc\">/// <b>url</b> = </span><span style=\"color: blue\">'http://hl7.org/fhir/uv/omop/StructureMap/ConditionMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>name</b> = </span><span style=\"color: blue\">'ConditionMap'</span>\r\n<span style=\"color: #cc00cc\">/// <b>title</b> = </span><span style=\"color: blue\">'Mapping Condition resource to Condition Occurrence OMOP Domain'</span>\r\n<span style=\"color: #cc00cc\">/// <b>status</b> = </span><span style=\"color: blue\">'draft'</span>\r\n\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"http://hl7.org/fhir/R5/condition.html\" title=\"Condition\">http://hl7.org/fhir/StructureDefinition/Condition</a><span style=\"color: navy\">&quot; </span><b>alias </b>Condition <b>as </b><b>source</b>\r\n<b>uses</b><span style=\"color: navy\"> &quot;</span><a href=\"StructureDefinition-ConditionOccurrence.html\" title=\"Condition Occurrence OMOP Table\">http://hl7.org/fhir/uv/omop/StructureDefinition/ConditionOccurrence</a><span style=\"color: navy\">&quot; </span><b>alias </b>ConOccTable <b>as </b><b>target</b>\r\n\r\n<b>group </b>ConditionOccurrence<span style=\"color: navy\">(</span><b>source</b> <span style=\"color: maroon\">src</span><span style=\"color: navy\"> : </span>Condition, <b>target</b> <span style=\"color: maroon\">tgt</span><span style=\"color: navy\"> : </span>ConOccTable<span style=\"color: navy\">)</span><span style=\"color: navy\"> {\r\n</span>  src.code<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.condition_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.id as id -&gt; tgt.condition_occurrence_id = cast(id, &quot;integer&quot;);</span>\r\n  src.recordedDate<b> as </b><span style=\"color: maroon\">rd</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.condition_start_datetime = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">rd</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'dateTime'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">, </span> tgt.condition_start_date = <span style=\"color: maroon\">rd</span><span style=\"color: navy\">;</span>\r\n  src.onset<span style=\"color: navy\"> : </span>dateTime<b> as </b><span style=\"color: maroon\">osd</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.condition_start_datetime = <span style=\"color: maroon\">osd</span><span style=\"color: navy\">, </span> tgt.condition_start_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">osd</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n  src.abatement<span style=\"color: navy\"> : </span>dateTime<b> as </b><span style=\"color: maroon\">abdt</span><span style=\"color: navy\"><b> -&gt; </b></span> tgt.condition_end_datetime = <span style=\"color: maroon\">adt</span><span style=\"color: navy\">, </span> tgt.condition_end_date = <b>cast</b><span style=\"color: navy\">(</span><span style=\"color: maroon\">abdt</span><span style=\"color: navy\">, </span><span style=\"color: blue\">'date'</span><span style=\"color: navy\">)</span><span style=\"color: navy\">;</span>\r\n  src.category<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.condition_type_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.clinicalStatus<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.coding<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.condition_status_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  src.evidence<b> as </b><span style=\"color: maroon\">s</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>    s.concept<b> as </b><span style=\"color: maroon\">sc</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>      sc.coding<b> as </b><span style=\"color: maroon\">sci</span><span style=\"color: navy\"><b> -&gt; </b></span><span style=\"color: maroon\">tgt</span><b> then</b><span style=\"color: navy\"> {\r\n</span>        sci.code<b> as </b><span style=\"color: maroon\">a</span><span style=\"color: navy\"><b> -&gt; </b></span>tgt.condition_source_concept_id = <span style=\"color: maroon\">a</span><span style=\"color: navy\">;</span>\r\n      <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n    <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span>\r\n  <span style=\"color: navy\">}</span><span style=\"color: navy\">;</span> <span style=\"color: navy\">// </span><span style=\"color: green\">src.encounter as s -&gt; tgt then {</span>\r\n<span style=\"color: navy\">}\r\n\r\n</span></pre></div>"
+  },
+  "extension" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-wg",
+    "valueCode" : "brr"
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-fmm",
+    "valueInteger" : 1,
+    "_valueInteger" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  },
+  {
+    "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-standards-status",
+    "valueCode" : "informative",
+    "_valueCode" : {
+      "extension" : [{
+        "url" : "http://hl7.org/fhir/StructureDefinition/structuredefinition-conformance-derivedFrom",
+        "valueCanonical" : "http://hl7.org/fhir/uv/omop/ImplementationGuide/hl7.fhir.uv.omop"
+      }]
+    }
+  }],
+  "url" : "http://hl7.org/fhir/uv/omop/StructureMap/ConditionMap",
+  "version" : "1.0.0-ballot",
+  "name" : "ConditionMap",
+  "title" : "Mapping Condition resource to Condition Occurrence OMOP Domain",
+  "status" : "draft",
+  "date" : "2025-07-29T17:40:15+00:00",
+  "publisher" : "HL7 International / Biomedical Research and Regulation",
+  "contact" : [{
+    "name" : "HL7 International / Biomedical Research and Regulation",
+    "telecom" : [{
+      "system" : "url",
+      "value" : "http://www.hl7.org/Special/committees/rcrim"
+    }]
+  }],
+  "description" : "This mapping maps FHIR Condition instances to OMOP Condition Occurence Table objects.",
+  "jurisdiction" : [{
+    "coding" : [{
+      "system" : "http://unstats.un.org/unsd/methods/m49/m49.htm",
+      "code" : "001",
+      "display" : "World"
+    }]
+  }],
+  "structure" : [{
+    "url" : "http://hl7.org/fhir/StructureDefinition/Condition",
+    "mode" : "source",
+    "alias" : "Condition"
+  },
+  {
+    "url" : "http://hl7.org/fhir/uv/omop/StructureDefinition/ConditionOccurrence",
+    "mode" : "target",
+    "alias" : "ConOccTable"
+  }],
+  "group" : [{
+    "name" : "ConditionOccurrence",
+    "input" : [{
+      "name" : "src",
+      "type" : "Condition",
+      "mode" : "source"
+    },
+    {
+      "name" : "tgt",
+      "type" : "ConOccTable",
+      "mode" : "target"
+    }],
+    "rule" : [{
+      "name" : "code",
+      "source" : [{
+        "context" : "src",
+        "element" : "code",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code",
+            "variable" : "a"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "condition_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          }]
+        }]
+      }],
+      "documentation" : "src.id as id -> tgt.condition_occurrence_id = cast(id, \"integer\");"
+    },
+    {
+      "name" : "recordedDate",
+      "source" : [{
+        "context" : "src",
+        "element" : "recordedDate",
+        "variable" : "rd"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "condition_start_datetime",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "rd"
+        },
+        {
+          "valueString" : "dateTime"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "condition_start_date",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "rd"
+        }]
+      }]
+    },
+    {
+      "name" : "onsetDateTime",
+      "source" : [{
+        "context" : "src",
+        "type" : "dateTime",
+        "element" : "onset",
+        "variable" : "osd"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "condition_start_datetime",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "osd"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "condition_start_date",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "osd"
+        },
+        {
+          "valueString" : "date"
+        }]
+      }]
+    },
+    {
+      "name" : "abatementDateTime",
+      "source" : [{
+        "context" : "src",
+        "type" : "dateTime",
+        "element" : "abatement",
+        "variable" : "abdt"
+      }],
+      "target" : [{
+        "context" : "tgt",
+        "element" : "condition_end_datetime",
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "adt"
+        }]
+      },
+      {
+        "context" : "tgt",
+        "element" : "condition_end_date",
+        "transform" : "cast",
+        "parameter" : [{
+          "valueId" : "abdt"
+        },
+        {
+          "valueString" : "date"
+        }]
+      }]
+    },
+    {
+      "name" : "category",
+      "source" : [{
+        "context" : "src",
+        "element" : "category",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code",
+            "variable" : "a"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "condition_type_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "clinicalStatus",
+      "source" : [{
+        "context" : "src",
+        "element" : "clinicalStatus",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "coding",
+        "source" : [{
+          "context" : "s",
+          "element" : "coding",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "code",
+          "source" : [{
+            "context" : "sc",
+            "element" : "code",
+            "variable" : "a"
+          }],
+          "target" : [{
+            "context" : "tgt",
+            "element" : "condition_status_concept_id",
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "a"
+            }]
+          }]
+        }]
+      }]
+    },
+    {
+      "name" : "evidence",
+      "source" : [{
+        "context" : "src",
+        "element" : "evidence",
+        "variable" : "s"
+      }],
+      "target" : [{
+        "transform" : "copy",
+        "parameter" : [{
+          "valueId" : "tgt"
+        }]
+      }],
+      "rule" : [{
+        "name" : "concept",
+        "source" : [{
+          "context" : "s",
+          "element" : "concept",
+          "variable" : "sc"
+        }],
+        "target" : [{
+          "transform" : "copy",
+          "parameter" : [{
+            "valueId" : "tgt"
+          }]
+        }],
+        "rule" : [{
+          "name" : "coding",
+          "source" : [{
+            "context" : "sc",
+            "element" : "coding",
+            "variable" : "sci"
+          }],
+          "target" : [{
+            "transform" : "copy",
+            "parameter" : [{
+              "valueId" : "tgt"
+            }]
+          }],
+          "rule" : [{
+            "name" : "code",
+            "source" : [{
+              "context" : "sci",
+              "element" : "code",
+              "variable" : "a"
+            }],
+            "target" : [{
+              "context" : "tgt",
+              "element" : "condition_source_concept_id",
+              "transform" : "copy",
+              "parameter" : [{
+                "valueId" : "a"
+              }]
+            }]
+          }]
+        }]
+      }],
+      "documentation" : "src.encounter as s -> tgt then {"
+    }]
+  }]
+}
