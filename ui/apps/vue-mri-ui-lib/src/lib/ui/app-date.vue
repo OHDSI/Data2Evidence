@@ -1,10 +1,9 @@
 <template>
   <div class="app-date form-group">
     <app-label v-if="text" :text="text" />
-    <span v-if="!isValid || errMsg" class="errortext">{{ errMsg }}</span>
     <div
       class="d-flex form-control form-control-sm date-container"
-      :class="{ invalidDate: !isValid || errMsg, MriHilite: isActive }"
+      :class="{ invalidDate: !isValid || errMsg, MriHilite: isActive && isValid, activeError: isActive && !isValid }"
     >
       <div class="app-date__trigger">
         <input
@@ -16,6 +15,7 @@
           @keyup.enter="onKeyEnter"
           @focus="onInputFocus"
           @blur="onInputBlur"
+          @input="clearError"
         />
         <div ref="calendarButton" class="app-date__icon" @click="togglePicker">
           <appIcon icon="calendar" />
@@ -32,6 +32,9 @@
         class="dp-hidden-input"
         :dark="false"
       />
+    </div>
+    <div v-if="!isValid || errMsg" class="error-container">
+      <span class="errortext">{{ errMsg }}</span>
     </div>
   </div>
 </template>
@@ -51,7 +54,9 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import moment from 'moment'
 import appIcon from './app-icon.vue'
 import appLabel from './app-label.vue'
+import { useStore } from 'vuex' 
 
+const store = useStore()
 // Component configuration
 defineOptions({
   name: 'AppDate',
@@ -157,6 +162,7 @@ const isValid = ref(true)
 const isActive = ref(false)
 const tempDate = ref<Date | string | null>(null)
 const datepicker = ref()
+const errMsg = computed(() => props.errMsg || (isValid.value ? '' : store.getters['getText']('MRI_PA_INVALID_DATE')))
 
 // Computed properties
 const defaultConfig = computed(() => ({
@@ -321,7 +327,6 @@ const commitDate = (dateVal: string) => {
       emit('update', { date, isEmpty: false })
     } else {
       isValid.value = false
-      emit('update', { date: dateVal, isEmpty: false })
     }
   }
 }
@@ -335,6 +340,10 @@ const onCleared = () => {
   displayValue.value = ''
   isValid.value = true
   emit('update', { date: '', isEmpty: true })
+}
+
+const clearError = () => {
+  isValid.value = true
 }
 
 const togglePicker = () => {
@@ -402,19 +411,29 @@ defineExpose({
     }
 
     &.invalidDate {
-      border-color: #dc3545;
+      border-color: var(--color-mri-error);
     }
 
     &.MriHilite {
       border-color: var(--color-app-date-border, #007bff);
       box-shadow: 0 0 0 0.2rem var(--color-app-date-highlight, rgba(0, 123, 255, 0.25));
     }
+
+    &.activeError {
+      border-color: var(--color-mri-error);
+      box-shadow: 0 0 0 0.1rem var(--color-mri-error);
+    }
   }
 
-  .errortext {
-    color: #dc3545;
-    font-size: 0.875rem;
+  .error-container {
     margin-top: 0.25rem;
+    margin-left: 0.25rem;
+    height: 1rem;
+    position: relative;
+    .errortext {
+      color: var(--color-mri-error);
+      font-size: 0.7rem;
+    }
   }
 }
 </style>
@@ -450,3 +469,4 @@ defineExpose({
   }
 }
 </style>
+

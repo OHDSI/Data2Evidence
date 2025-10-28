@@ -9,7 +9,6 @@ import { z } from 'zod'
 export const bookmarkIdSchema = z.object({
   query: z.object({
     paConfigId: z.string().optional(),
-    r: z.string(),
   }),
 })
 

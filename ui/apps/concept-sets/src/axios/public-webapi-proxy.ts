@@ -14,9 +14,7 @@ export class PublicWebapiProxyAPI {
 
   constructor() {
     this.baseURL = getPortalAPI()?.REACT_APP_PUBLIC_WEBAPI_PROXY_URL as string;
-    if (!this.baseURL) {
-      throw new Error("No url is set for PublicWebapiProxyAPI");
-    }
+    // Origin url will be used automatically if REACT_APP_PUBLIC_WEBAPI_PROXY_URL is not present
   }
 
   private async getRequestConfig() {
@@ -109,7 +107,8 @@ export class PublicWebapiProxyAPI {
     standardConcept: string[],
     validity: string[]
   ): Promise<[IWebapiConcept[], number]> {
-    if (searchText === "") {
+    // Allow search if there are domain filters, even with empty search text
+    if (searchText === "" && (!domainId || domainId.length === 0)) {
       return [[], 0];
     }
 
@@ -131,10 +130,7 @@ export class PublicWebapiProxyAPI {
       });
 
       // Truncate results based on pagination parameters
-      return [
-        result.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-        result.length,
-      ];
+      return [result, result.length];
     } catch (error) {
       console.error(error);
       throw new Error(`Error while getting concepts from public webapi`);
