@@ -162,7 +162,7 @@ export class CohortEndpoint {
                 TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
                 cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
-                COUNT(c.COHORT_DEFINITION_ID) AS "count"
+                COUNT(DISTINCT c.SUBJECT_ID) AS "count"
             FROM ${this.schemaName}.COHORT_DEFINITION cd
             LEFT JOIN ${this.schemaName}.COHORT c 
                 ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
