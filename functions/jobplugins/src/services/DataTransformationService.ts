@@ -852,6 +852,7 @@ export class TransformationService {
           url: gitRemoteUrl,
           singleBranch: true,
           depth: 1,
+          ref: defaultBranch,
           ...authConfig,
         });
         this.logger.info(`Successfully cloned repository`);
@@ -867,24 +868,25 @@ export class TransformationService {
           http,
           dir: repoDir,
           remote: "origin",
+          ref: defaultBranch,
           ...authConfig,
         });
         this.logger.info(`Successfully fetched from remote`);
 
         // Get current branch
         const currentBranch = await git.currentBranch({ fs, dir: repoDir });
-        this.logger.info(`Current branch: ${currentBranch}`);
+        this.logger.info(`Current branch: ${defaultBranch}`);
 
         // Reset to match remote current branch
         if (currentBranch) {
           await git.checkout({
             fs,
             dir: repoDir,
-            ref: `origin/${currentBranch}`,
+            ref: `origin/${defaultBranch}`,
             force: true,
           });
           this.logger.info(
-            `Updated local repository to match origin/${currentBranch}`
+            `Updated local repository to match origin/${defaultBranch}`
           );
         }
       } catch (updateError) {
