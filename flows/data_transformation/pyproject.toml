@@ -26,6 +26,7 @@ dependencies = [
     "s3fs==2023.1.0",
     "sqlalchemy==2.0.38",
     "xmltodict==0.14.2",
+    "xvfbwrapper>=0.2.15",
 ]
 
 [project.optional-dependencies]
