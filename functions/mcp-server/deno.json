@@ -1,0 +1,50 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "express": "npm:express@^4.19.2",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "axios": "npm:axios@^1.7.7",
+    "./src/mcp-server/routes": "./src/mcp-server/routes.ts",
+    "./src/mcp-server/server": "./src/mcp-server/server.ts",
+    "./src/utils/utils": "./src/utils/utils.ts",
+    "./env": "./.env.ts",
+    "@modelcontextprotocol/sdk/server/index.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/index.js",
+    "@modelcontextprotocol/sdk/server/streamableHttp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/streamableHttp.js",
+    "@modelcontextprotocol/sdk/types.js": "npm:@modelcontextprotocol/sdk@^1.20.2/types.js",
+    "@langchain/core": "npm:@langchain/core@^0.3.40",
+    "@langchain/openai": "npm:@langchain/openai@^0.4.4",
+    "@langchain/core/messages": "npm:@langchain/core/messages",
+    "@langchain/core/output_parsers": "npm:@langchain/core/output_parsers",
+    "@modelcontextprotocol/sdk/server/mcp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/mcp.js",
+    "cross-fetch": "npm:cross-fetch",
+    "papaparse": "npm:papaparse",
+    "zod": "npm:zod@^3.25.76",
+    "winston": "npm:winston",
+    "async": "npm:async",
+    "bcryptjs": "npm:bcryptjs",
+    "pako": "npm:pako",
+    "http": "node:http",
+    "https": "node:https",
+    "fs": "node:fs",
+    "path": "node:path",
+    "crypto": "node:crypto",
+    "url": "node:url",
+    "util": "node:util",
+    "os": "node:os",
+    "events": "node:events",
+    "stream": "node:stream",
+    "buffer": "node:buffer",
+    "process": "node:process",
+    "assert": "node:assert",
+    "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk"
+  }
+}

@@ -131,6 +131,12 @@
           "env": "code-suggestion"
         },
         {
+          "source": "/mcp",
+          "function": "/mcp-server",
+          "imports": "/mcp-server/deno.json",
+          "env": "mcp-server"
+        },
+        {
           "source": "/data-mapping",
           "function": "/data-mapping",
           "imports": "/data-mapping/deno.json",
@@ -773,6 +779,7 @@
           "portal.dataset.release.list.read",
           "portal.config.read",
           "codesuggestion.tenantview.read",
+          "mcpchat.tenantview.read",
           "d2e.webapi.public"
         ],
         "RESEARCHER": [
@@ -798,6 +805,7 @@
           "gateway.terminology.concept.hierarchy.read",
           "gateway.terminology.fhir.read",
           "codesuggestion.read",
+          "mcpchat.read",
           "portal.userArtifact.bookmarks.read",
           "portal.userArtifact.bookmarks.write",
           "portal.userArtifact.bookmarks.delete",
@@ -2670,6 +2678,16 @@
           "scopes": [
             "codesuggestion.read",
             "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/mcp/chat",
+          "scopes": [
+            "mcpchat.read",
+            "mcpchat.tenantview.read"
           ],
           "httpMethods": [
             "POST"
