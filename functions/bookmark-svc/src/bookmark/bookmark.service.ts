@@ -465,6 +465,7 @@ export async function queryBookmarks(
     let cdmConfigVersion: string = requestParameters.cdmConfigVersion
     let shareBookmark: boolean = requestParameters.shareBookmark
     let datasetId: string = requestParameters.datasetId
+    let trimmedBookmarkName: string = requestParameters.bookmarkname?.trim() || requestParameters.newName?.trim() || ''
 
     let cb = (err, result) => {
       if (err) {
@@ -477,8 +478,13 @@ export async function queryBookmarks(
     switch (cmd) {
       case 'insert':
         // 'this' has to be used so we can use spyON in the tests
+
+        if (!trimmedBookmarkName.length) {
+          cb('Bookmark name cannot be empty', null)
+          return
+        }
         _insertBookmark(
-          requestParameters.bookmarkname,
+          trimmedBookmarkName,
           bookmark,
           userName,
           paConfigId,
@@ -507,9 +513,13 @@ export async function queryBookmarks(
         )
         break
       case 'rename':
+        if (!trimmedBookmarkName.length) {
+          cb('Bookmark name cannot be empty', null)
+          return
+        }
         _renameBookmark(
           bookmarkId,
-          requestParameters.newName,
+          trimmedBookmarkName,
           paConfigId,
           cdmConfigId,
           cdmConfigVersion,
@@ -593,7 +603,7 @@ const _filterUntaggedMaterializedCohorts = (
   return filteredMaterializedCohorts
 }
 
-const _getBookmarkMaterializedCohortDefinitionId   = (
+const _getBookmarkMaterializedCohortDefinitionId = (
   bookmarkId: string,
   materializedCohorts: IMaterializedCohort[]
 ): number | undefined => {
