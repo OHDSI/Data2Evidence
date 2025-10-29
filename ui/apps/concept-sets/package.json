@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "vite",
-    "dev": "concurrently \"yarn build:watch\" \"yarn preview\"",
+    "dev": "concurrently \"bun build:watch\" \"bun preview\"",
     "build": "vite build",
     "build:dev": "vite build --mode=development",
     "build:watch": "vite build --mode=development --watch",

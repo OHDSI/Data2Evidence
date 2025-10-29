@@ -27,5 +27,5 @@ test('test', async ({ page }) => {
   await page.getByLabel('Show version history').getByRole('button').click()
   await page.getByRole('button', { name: 'View' }).nth(1).click()
   await page.waitForTimeout(1000)
-  await expect(page.getByRole('button', { name: 'new_data_flow (Version #1)' })).toBeVisible()
+  await expect(page.getByRole('combobox', { name: 'new_data_flow (Version #1)' })).toBeVisible()
 })
