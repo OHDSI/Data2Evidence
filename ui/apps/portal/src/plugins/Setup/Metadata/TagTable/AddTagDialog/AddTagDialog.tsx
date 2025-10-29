@@ -1,5 +1,5 @@
 import Divider from "@mui/material/Divider";
-import { Box, Button, Dialog, TextField } from "@portal/components";
+import { Button, Dialog, TextField } from "@portal/components";
 import React, { FC, FormEvent, useCallback, useState } from "react";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
@@ -77,7 +77,7 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
       <Divider />
       <form onSubmit={handleSave}>
         <div className="add-tag-dialog__content">
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               label={getText(i18nKeys.ADD_TAG_DIALOG__TAG_NAME)}
               variant="standard"
@@ -85,17 +85,17 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
               value={formData.name}
               onChange={(event) => handleFormDataChange({ name: event.target?.value })}
             />
-          </Box>
+          </div>
         </div>
         <div className="add-tag-dialog__footer">
-          <Box display="flex" gap={1} className="add-tag-dialog__footer-actions">
+          <div style={{ display: "flex", gap: "8px" }} className="add-tag-dialog__footer-actions">
             <Button
               text={getText(i18nKeys.ADD_TAG_DIALOG__CANCEL)}
               variant="outlined"
               onClick={() => handleClose("cancelled")}
             />
             <Button type="submit" text={getText(i18nKeys.ADD_TAG_DIALOG__SAVE)} loading={saving} />
-          </Box>
+          </div>
         </div>
       </form>
     </Dialog>

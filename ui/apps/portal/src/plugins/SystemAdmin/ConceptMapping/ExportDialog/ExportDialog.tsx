@@ -220,10 +220,10 @@ const ExportDialog: FC<ExportDialogProps> = ({ open, onClose, loading, setLoadin
           />
         </div>
         <div className="export-dialog__form">
-          <Box mt={4} fontWeight="bold">
+          <div style={{ marginTop: "32px", fontWeight: "bold" }}>
             {getText(i18nKeys.EXPORT_MAPPING_DIALOG__FORM_TITLE)}
-          </Box>
-          <Box mb={4}>
+          </div>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               fullWidth
               variant="standard"
@@ -238,7 +238,7 @@ const ExportDialog: FC<ExportDialogProps> = ({ open, onClose, loading, setLoadin
             {formError.source_vocabulary_id.required && (
               <FormHelperText error={true}>{getText(i18nKeys.EXPORT_MAPPING_DIALOG__REQUIRED)}</FormHelperText>
             )}
-          </Box>
+          </div>
         </div>
       </div>
       <Divider />
