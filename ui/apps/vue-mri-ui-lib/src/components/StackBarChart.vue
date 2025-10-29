@@ -321,6 +321,10 @@ export default {
         // Persist selection across Plotly react
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
         this.dataToTraces(this.chartData, selectedPoints, selectedCount)
+
+        stackBarChart.removeAllListeners('plotly_selected')
+        stackBarChart.removeAllListeners('plotly_deselect')
+
         Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
       }
 
@@ -331,3 +335,4 @@ export default {
   },
 }
 </script>
+

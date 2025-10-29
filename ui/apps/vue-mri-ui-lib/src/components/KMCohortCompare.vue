@@ -21,7 +21,7 @@
                   <input
                     v-model="cachedRangeSliderValue[tooltip.index]"
                     v-on:click.stop="onInputClick"
-                    v-on:keypress="sliderInputCheck(event, tooltip.index)"
+                    v-on:keypress="sliderInputCheck($event, tooltip.index)"
                     v-on:mousedown.stop="onInputClick"
                     @focus="tooltipFocus(tooltip.index)"
                     @blur="tooltipBlur(tooltip.index)"
@@ -128,6 +128,7 @@
         :arrow="'arrowUp'"
         :arrowPosition="kmLogRankHelpArrowPosition"
         dialogWidth="300px"
+        :dim="false"
       >
         <template v-slot:header>
           <span class="km-logrank-help-popover-header">{{
@@ -496,7 +497,7 @@ const updateUnit = (event: any) => {
   const newUnit = getUnitInfo(event.newKey)
   if (kmInterval.value) {
     const oldUnit = getUnitInfo(event.oldKey)
-    kmInterval.value *= newUnit.avgDaysInUnit / oldUnit.avgDaysInUnit
+    kmInterval.value = String((+kmInterval.value * newUnit.avgDaysInUnit) / oldUnit.avgDaysInUnit)
   }
   cachedRangeSliderValue.value[0] = Math.round((rangeSliderValue.value[0] * 100) / newUnit.avgDaysInUnit) / 100
   cachedRangeSliderValue.value[1] = Math.round((rangeSliderValue.value[1] * 100) / newUnit.avgDaysInUnit) / 100
@@ -551,7 +552,7 @@ const updateSliderValue = (sliderIndex: number) => {
     (cachedRangeSliderValue.value[sliderIndex] || cachedRangeSliderValue.value[sliderIndex] === 0) &&
     !isNaN(cachedRangeSliderValue.value[sliderIndex])
   ) {
-    newValue = parseFloat(cachedRangeSliderValue.value[sliderIndex])
+    newValue = parseFloat(cachedRangeSliderValue.value[String(sliderIndex)])
 
     const currentUnitInfo = getOptimalUnitInfo(minDay.value, maxDay.value)
     newValue *= currentUnitInfo.avgDaysInUnit
@@ -1393,7 +1394,7 @@ const fireCompareRequest = () => {
     setCurrentPatientCount({
       currentPatientCount: data.totalPatientCount,
     })
-    errorMessage.value = '' || chartData.value.noDataReason
+    errorMessage.value = chartData.value.noDataReason ?? ''
 
     if (!errorMessage.value) {
       if (
