@@ -463,7 +463,9 @@
           "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
           "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
-          "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}"
+          "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}",
+          "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
+          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}"
         },
         "files-manager": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -672,6 +674,7 @@
           "portal.supabaseStorage.delete",
           "portal.notebook.systemAdmin.write",
           "portal.gitStudies.read",
+          "portal.gitDashboard.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
           "dataflowmgmt.dataflow.add",
@@ -1873,6 +1876,15 @@
           "path": "^/system-portal/git-studies/study/strategus",
           "scopes": [
             "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-dashboards",
+          "scopes": [
+            "portal.gitDashboard.read"
           ],
           "httpMethods": [
             "GET"
