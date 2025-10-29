@@ -17,7 +17,6 @@ from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMode
 
 os.environ["plugin_name"] = "dqd_plugin"
-c
 
 @flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
