@@ -252,7 +252,7 @@ export class DataTransformationController {
 
   private async getFhirStructureMapTemplates(req: Request, res: Response) {
     try {
-      const result = await this.dataTransformationService.getTemplates(GIT_REPO_CONSTANTS.FHIR_SUBDIR);
+      const result = await this.dataTransformationService.getFhirTemplates();
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in getTemplates: ", error);

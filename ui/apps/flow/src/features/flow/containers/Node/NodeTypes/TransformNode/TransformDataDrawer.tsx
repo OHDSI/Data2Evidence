@@ -29,6 +29,7 @@ const EMPTY_FORM_DATA: FormData = {
   structure_map: "",
   output_omop_data: "",
   dataframe: "",
+  id:""
 };
 
 export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
@@ -41,18 +42,30 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
-  const { data: structureMaps = [], isLoading: structureMapsLoading } =
+  const { data: structureMapTemplates = [], isLoading: structureMapTemplatesLoading } =
     useGetFhirStructureMapTemplatesQuery(undefined, {
       skip: false,
     });
   useEffect(() => {
     if (node.data) {
+        if (node.data.id) {
+          const structureMapTemplate = structureMapTemplates.find(
+            (map) => map.id === node.data.id
+          );
+          if (structureMapTemplate) {
+            setFormData((prev) => ({
+              ...prev,
+              structure_map: structureMapTemplate.structureMap,
+            }));
+          }
+        }
       setFormData({
         name: node.data.name,
         description: node.data.description,
         structure_map: node.data.structure_map,
         dataframe: node.data.dataframe,
         output_omop_data: node.data.output_omop_data,
+        id: node.data.id,
       });
     } else {
       setFormData({
@@ -107,17 +120,25 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
           <Select
             sx={{ width: "100%" }}
             variant="standard"
-            value={formData.structure_map}
-            onChange={(e: SelectChangeEvent) =>
-              onFormDataChange({ structure_map: e.target.value })
-            }
+            value={formData.id}
+            onChange={(e: SelectChangeEvent) => {
+                const selectedId = e.target.value;
+                const selectedTemplate = structureMapTemplates.find(
+                  (template) => template.id === selectedId
+                );
+
+                onFormDataChange({
+                  id: selectedTemplate?.id || "",
+                  structure_map: selectedTemplate?.structureMap || "",
+                });
+              }}
             displayEmpty
-            disabled={structureMapsLoading}
+            disabled={structureMapTemplatesLoading}
           >
             <MenuItem value="">
               <em>No Structure Map</em>
             </MenuItem>
-            {structureMaps.map((template) => (
+            {structureMapTemplates.map((template) => (
               <MenuItem key={template.id} value={template.id}>
                 {template.name}
               </MenuItem>

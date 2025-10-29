@@ -11,6 +11,7 @@ import "./TransformDataNode.scss";
 
 export interface TransformNodeData extends NodeDataState {
   structure_map: string;
+  id?: string;
   output_omop_data: string;
   dataframe: string;
 }

@@ -19,6 +19,7 @@ import {
   SaveDataflowDto,
   SaveDataflowResponseDto,
   TemplateDto,
+  TemplateFhirDto,
   TestDataflowDto,
 } from "../types";
 import { createBaseQueryFn } from "./base-query";
@@ -228,7 +229,7 @@ export const dataflowApiSlice = createApi({
       query: () => "dataflow/templates",
       providesTags: ["Template"],
     }),
-    getFhirStructureMapTemplates: builder.query<TemplateDto[], void>({
+    getFhirStructureMapTemplates: builder.query<TemplateFhirDto[], void>({
       query: () => "dataflow/templates/fhir",
       providesTags: ["Template"],
     }),

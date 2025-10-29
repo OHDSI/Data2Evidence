@@ -17,6 +17,7 @@ import {
   IDataflowDuplicateDto,
   NodeData,
   TemplateDto,
+  TemplateFhirDto,
 } from "../types.ts";
 
 export class TransformationService {
@@ -862,6 +863,8 @@ export class TransformationService {
       }
     } else {
       this.logger.info(`Updating existing repository`);
+      this.logger.info(`Fetching latest changes from ${defaultBranch}`);
+      this.logger.info(`Repo directory: ${repoDir}`);
       try {
         await git.fetch({
           fs,
@@ -1106,19 +1109,10 @@ export class TransformationService {
     }
   }
 
-  async getTemplates(subdir?: string) {
-    let templateRepoUrl,templateBranch, subDir='';
-    
-    if(subdir && subdir === GIT_REPO_CONSTANTS.FHIR_SUBDIR){
-      this.logger.info('Fetching FHIR Structure Map templates');
-      templateRepoUrl = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL;
-      templateBranch = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH;
-      subDir = GIT_REPO_CONSTANTS.FHIR_SUBDIR;
-    }else{
-      templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
-      templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
-      subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    }
+  async getTemplates() {
+    const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
+    const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
+    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
   
     const repoDir = this.templateRepoPath;
     const subDirPath = path.join(repoDir, subDir);
@@ -1155,6 +1149,61 @@ export class TransformationService {
             description: templateData.description || `Template: ${templateId}`,
             nodes: templateData.nodes || [],
             edges: templateData.edges || [],
+          });
+        } catch (fileError) {
+          this.logger.error(
+            `Failed to process template file ${fileName}: ${fileError.message}`
+          );
+        }
+      }
+
+      this.logger.info(`Found ${templates.length} templates`);
+      return templates;
+    } catch (error) {
+      this.logger.error(`Failed to fetch templates: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getFhirTemplates() {
+    this.logger.info('Fetching FHIR Structure Map templates');
+    const templateRepoUrl = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL;
+    const templateBranch = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH;
+    const subDir = GIT_REPO_CONSTANTS.FHIR_SUBDIR;
+
+    const repoDir = this.templateRepoPath;
+    const subDirPath = path.join(repoDir, subDir);
+    try {
+      await this.ensureLatestFromGitRemote(
+        repoDir,
+        templateRepoUrl,
+        templateBranch
+      );
+
+      let files: string[] = [];
+      if (fs.existsSync(subDirPath)) {
+        files = fs
+          .readdirSync(subDirPath)
+          .filter((file) => file.endsWith(".json"));
+      } else {
+        this.logger.info(`templates folder does not exist in repository`);
+        return [];
+      }
+
+      const templates: TemplateFhirDto[] = [];
+      
+      for (const fileName of files) {
+        const templateId = fileName.replace(".json", "");
+        const filePath = path.join(subDirPath, fileName);
+
+        try {
+          const templateData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+          templates.push({
+            id: templateId,
+            name: templateData.name || templateId,
+            description: templateData.description || `Template: ${templateId}`,
+            structureMap: templateData || '',
           });
         } catch (fileError) {
           this.logger.error(

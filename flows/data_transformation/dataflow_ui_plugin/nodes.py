@@ -1,6 +1,6 @@
 from io import StringIO
 import os
-from flows._shared_flow_utils.api.FhirAPI import FhirAPI
+from _shared_flow_utils.api.FhirAPI import FhirAPI
 import ibis
 import json
 import duckdb
@@ -345,27 +345,33 @@ class TransformDataNode(Node):
             response_json = {}
         return response_json
     
-    def get_omop_structure_definition(self, alias: str) -> dict:
-        folder = "/Users/afreen.sikandara/Documents/Data2Evidence/d2e/flows/data_transformation/dataflow_ui_plugin/fhirutils/omop_structureDefinition"
+    def get_omop_structure_definition_by_url(self, folder: str, incoming_url: str) -> dict:
         for fname in os.listdir(folder):
-            if fname.startswith(alias.lower()) and fname.endswith('.json'):
+            if fname.endswith('.json'):
                 file_path = os.path.join(folder, fname)
                 with open(file_path, "r", encoding="utf8") as f:
-                    omop_def = json.load(f)
-                return omop_def
+                    try:
+                        data = json.load(f)
+                    except Exception:
+                        continue
+                    if data.get("url") == incoming_url:
+                        return data
+        return {}
 
     def transform_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
         print("Starting FHIR Transform")
         source_structure_definition_url = ""
-        target_structure_definition_alias = ""
-        for struct in self.structureMap.structure:
+        target_structure_definition_url = ""
+        structure_list = self.structure_map.get("structure", [])
+        for struct in structure_list:
             if struct['mode'] == 'source':
                 source_structure_definition_url = struct['url']
             elif struct['mode'] == 'target':
-                target_structure_definition_alias = struct['alias']
+                target_structure_definition_url = struct['url']
         # Call FHIR server to get source structure definition
         source_structure_definition = self.get_fhir_structure_definition(source_structure_definition_url)
-        target_structure_definition = self.get_omop_structure_definition(target_structure_definition_alias)
+        folder = "/app/flows/dataflow_ui_plugin/fhirutils/omop_structureDefinition"
+        target_structure_definition = self.get_omop_structure_definition_by_url(folder, target_structure_definition_url)
         transformed_omop = []
         if input_fhir_df is not None and "content" in input_fhir_df.columns:
             content_list = input_fhir_df["content"].tolist()
@@ -373,28 +379,31 @@ class TransformDataNode(Node):
         else:
             fhir_resource = None
         script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
-        
-        for key in fhir_resource:
-            process = Popen(
-                [
-                    'node',
-                    script_path,
-                    self.structure_map,
-                    json.dumps(fhir_resource),
-                    source_structure_definition,
-                    target_structure_definition
-                ],
-                stdout=PIPE,
-                stderr=STDOUT,
-                text=True
-            )
-            stdout, _ = process.communicate()
-            if process.returncode != 0:
-                raise Exception(f"FHIR Transform failed with error: {stdout}")
-            transformed_data = json.loads(stdout)
-            print(json.loads(stdout))
-            transformed_omop.append(transformed_data)
-        df = pd.json_normalize(transformed_omop)
+        if fhir_resource:
+            for key in fhir_resource:
+                process = Popen(
+                    [
+                        'node',
+                        script_path,
+                        json.dumps(self.structure_map),
+                        json.dumps(key),
+                        json.dumps(source_structure_definition),
+                        json.dumps(target_structure_definition)
+                    ],
+                    stdout=PIPE,
+                    stderr=STDOUT,
+                    text=True
+                )
+                stdout, _ = process.communicate()
+                if process.returncode != 0:
+                    raise Exception(f"FHIR Transform failed with error: {stdout}")
+                transformed_data = json.loads(stdout)
+                print(json.loads(stdout))
+                transformed_omop.append(transformed_data)
+            df = pd.json_normalize(transformed_omop)
+        else:
+            df = None
+            print("Invalid Input dataframe")
         return df
 
     def test(self, task_run_context) -> Result:
