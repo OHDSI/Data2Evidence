@@ -13,11 +13,10 @@ from .types import DqdOptionsType, DqdParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
-from _shared_flow_utils.rutils import set_trex_env_var
+from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMode
 
 os.environ["plugin_name"] = "dqd_plugin"
-
 
 @flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
@@ -96,7 +95,7 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
             verboseMode = dqd_params.verboseMode,
             checkLevels = robjects.StrVector(dqd_params.checkLevels),
             checkNames = robjects.StrVector(dqd_params.checkNames) if dqd_params.checkNames else robjects.NULL,
-            cohortDefinitionId = robjects.StrVector(dqd_params.cohortDefinitionId) if dqd_params.cohortDefinitionId else robjects.NULL,
+            cohortDefinitionId = convert_to_int_vector(dqd_params.cohortDefinitionId),
             cdmVersion = dqd_params.cdmVersionNumber,
             cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
             cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",
