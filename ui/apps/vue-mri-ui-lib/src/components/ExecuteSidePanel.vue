@@ -2,14 +2,34 @@
 import bsCard from '../lib/ui/bs-card.vue'
 import appTab from '@/lib/ui/app-tab.vue'
 import { ref } from 'vue'
+import InclusionReport from './InclusionReport.vue'
 
 const props = defineProps<{
+  cohortDefinitionId: number
   availableSources: any[]
   patientCounts?: Record<string, number | null>
   isGeneratingCohort?: boolean
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
   currentGeneratingSourceKey?: string
 }>()
+
+const tabList = [
+  {
+    text: 'Inclusion report',
+    value: 'inclusion_report',
+  },
+  {
+    text: 'Analysis',
+    value: 'analysis',
+  },
+  {
+    text: 'Sample',
+    value: 'sample',
+  },
+]
+
+const selectedView = ref('inclusion_report')
+const activeDataset = ref(props.availableSources[0].sourceKey)
 
 // Emit an event to parent to trigger cohort generation for a source
 const emit = defineEmits(['generate-cohort'])
@@ -32,24 +52,6 @@ const handleGenerateCohort = (sourceKey: string) => {
 const isGeneratingForSource = (sourceKey: string) => {
   return props.isGeneratingCohort && props.currentGeneratingSourceKey === sourceKey
 }
-
-const tabList = [
-  {
-    text: 'Inclusion report',
-    value: 'inclusion_report',
-  },
-  {
-    text: 'Analysis',
-    value: 'analysis',
-  },
-  {
-    text: 'Sample',
-    value: 'sample',
-  },
-]
-
-const selectedView = ref('inclusion_report')
-const activeDataset = ref(props.availableSources[0].sourceKey)
 </script>
 
 <template>
@@ -100,7 +102,15 @@ const activeDataset = ref(props.availableSources[0].sourceKey)
     <section class="main-content">
       <appTab class="tabs" :tabItems="tabList" :value="selectedView" @onSelectedChange="selectedView = $event" />
       <div class="tab-content">
-        <h3 v-if="selectedView === 'inclusion_report'">Attrition</h3>
+        <InclusionReport
+          v-if="selectedView === 'inclusion_report'"
+          :cohort-definition-id="cohortDefinitionId"
+          :source-key="activeDataset"
+          dataset-id="STARTHERE"
+          :modeId="0"
+        >
+          <h3>Inclusion report</h3></InclusionReport
+        >
         <h3 v-if="selectedView === 'analysis'">Analysis</h3>
         <h3 v-if="selectedView === 'sample'">Sample</h3>
         <div>{{ activeDataset }}</div>
