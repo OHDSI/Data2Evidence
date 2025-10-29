@@ -307,4 +307,12 @@ export class SystemPortal {
       params: { studyId },
     });
   }
+
+  public getDashboardTemplatesFromRepo() {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "git-dashboards",
+      method: "GET",
+    });
+  }
 }

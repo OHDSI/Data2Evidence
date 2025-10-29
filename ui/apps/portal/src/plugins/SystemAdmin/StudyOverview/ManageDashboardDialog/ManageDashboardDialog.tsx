@@ -1,12 +1,13 @@
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useState, useEffect } from "react";
 import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import { PlayCircleFilled, StopCircle } from "@mui/icons-material";
-import { Button, Dialog, Select, MenuItem } from "@portal/components";
+import { Button, Dialog, Select, MenuItem, InputLabel } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
-import { Study, CloseDialogType } from "../../../../types";
+import { Study, CloseDialogType, StudyDashboardTemplateData } from "../../../../types";
 import { useKernelViewer } from "../../../../hooks";
+import { api } from "../../../../axios/api";
 import "./ManageDashboardDialog.scss";
 
 interface ManageDashboardDialogProps {
@@ -20,8 +21,19 @@ const SafeEditor = Editor as any;
 const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, onClose }) => {
   loader.config({ monaco });
   const [dashboardCode, setDashboardCode] = useState<string>("print('Hello, World!')");
+  const [templates, setTemplates] = useState<StudyDashboardTemplateData[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
 
   const [viewerStatus, startViewer, stopViewer] = useKernelViewer(study?.id!, study?.id!);
+
+  const getTemplates = useCallback(async () => {
+    const templates = await api.systemPortal.getDashboardTemplatesFromRepo();
+    setTemplates(templates);
+  }, []);
+
+  useEffect(() => {
+    getTemplates();
+  }, [getTemplates]);
 
   const handleStartViewer = useCallback(async () => {
     try {
@@ -59,8 +71,35 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       <Divider />
 
       <div className="manage-dashboard-dialog__header">
-        {/* TODO: add git template support */}
-
+        <div>
+          <InputLabel sx={{ mb: 1 }}>Template</InputLabel>
+          <Select
+            sx={{ width: "100%" }}
+            variant="standard"
+            value={selectedTemplate}
+            onChange={(event) => {
+              const filename = event.target.value;
+              setSelectedTemplate(filename);
+              if (filename === "default") {
+                setDashboardCode("print('Hello, World!')");
+              } else {
+                const tmpl = templates.find((t) => t.filename === filename);
+                if (tmpl?.content) {
+                  setDashboardCode(tmpl.content);
+                }
+              }
+            }}
+          >
+            <MenuItem value="default">
+              <em>Default</em>
+            </MenuItem>
+            {templates.map((template) => (
+              <MenuItem key={template.filename} value={template.filename}>
+                {template?.filename}
+              </MenuItem>
+            ))}
+          </Select>
+        </div>
         <div className="manage-dashboard-dialog__header__content">
           <Button
             onClick={handleStartViewer}
