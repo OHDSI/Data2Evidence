@@ -31,7 +31,6 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
 import ExecuteSidePanel from '@/components/ExecuteSidePanel.vue'
 import Drawer from '@/components/Drawer.vue'
-import bsCard from '@/lib/ui/bs-card.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiveIcon.vue'
@@ -1466,6 +1465,7 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
     <!-- Execute Drawer -->
     <Drawer v-if="showExecuteDrawer" :width="'85vw'" :title="'Cohort Actions'" @close="showExecuteDrawer = false">
       <ExecuteSidePanel
+        :cohort-definition-id="store?.getters?.getActiveBookmark.bmkId"
         :available-sources="availableSources"
         :is-generating-cohort="isGeneratingCohort"
         :generation-status="generationStatus"

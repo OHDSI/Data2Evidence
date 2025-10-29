@@ -654,7 +654,7 @@ const setupWebapiRoutes = app => {
       const allSources = sourceMap
 
       // Filter to return only the source matching the SOURCE env var
-      const filteredSources = allSources.filter(source => source.sourceKey === SOURCE)
+      const filteredSources = allSources //allSources.filter(source => source.sourceKey === SOURCE)
 
       if (filteredSources.length === 0) {
         console.warn(`No source found with sourceKey matching SOURCE env var: ${SOURCE}`)
@@ -684,6 +684,33 @@ const setupWebapiRoutes = app => {
         return res.json(response.data)
       } catch (err) {
         console.error('Error fetching cohort info from WebAPI:', err)
+        const status =
+          err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
+        // Return empty array if cohort hasn't been generated yet (404)
+        if (status === 404) {
+          return res.json([])
+        }
+        return res.status(status).send()
+      }
+    }
+  )
+
+  // GET /cohortdefinition/:cohortDefinitionId/report/:sourceKey - Returns cohort inclusion report for a specific source
+    app.get(
+    '/d2e-webapi/cohortdefinition/:cohortDefinitionId/report/:sourceKey',
+    validateId('cohortDefinitionId'),
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId, sourceKey } = req.params
+      const {mode: modeId} = req.query
+
+      try {
+        // Forward to external WebAPI, using hardcoded sourceKey 
+        const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + SOURCE + '?mode=' + modeId
+        const response = await api.get(endpoint)
+        return res.json(response.data)
+      } catch (err) {
+        console.error('Error fetching cohort inclusion report from WebAPI:', err)
         const status =
           err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
         // Return empty array if cohort hasn't been generated yet (404)
