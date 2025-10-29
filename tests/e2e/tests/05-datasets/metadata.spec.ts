@@ -14,7 +14,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Select action' }).first().click()
+  await page.getByText('Select action').first().click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await page.getByRole('textbox', { name: 'Type' }).click()
   await page.getByRole('textbox', { name: 'Type' }).fill('test')
