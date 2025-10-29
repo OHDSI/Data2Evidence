@@ -606,6 +606,30 @@
                     "default": null,
                     "title": "Vocab Schema"
                   },
+                  "cache_schema_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Cache Schema Name"
+                  },
+                  "result_schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Result Schema"
+                  },
                   "datasets": {
                     "anyOf": [
                       {
