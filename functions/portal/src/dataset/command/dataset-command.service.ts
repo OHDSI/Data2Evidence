@@ -145,7 +145,7 @@ export class DatasetCommandService {
         dialect,
         schemaName,
         vocabSchemaName: schemaName,
-        resultSchemaName,
+        resultSchemaName: schemaName || resultSchemaName,
         tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim()}`,
         paConfigId,
         dataModel,

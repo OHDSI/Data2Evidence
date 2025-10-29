@@ -129,7 +129,7 @@ export class DemoService {
     const dqdFlowRun = await jobPluginsAPI.createDqdFlowRun({
       datasetId,
       releaseId: "",
-      vocabSchemaName,
+      vocabSchemaName: datasetId,
       comment: "Demo setup",
     });
 
