@@ -263,7 +263,7 @@ export class DemoService {
       flowRunName: `cache-get_version_info`,
       options: {
         options: {
-          flow_action_type: "get_version_info",
+          flowActionType: "get_version_info",
           token: "",
           database_code: "",
           data_model: "",
