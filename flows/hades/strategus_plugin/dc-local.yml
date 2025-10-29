@@ -9,6 +9,7 @@ services:
     environment:
       - PREFECT_API_URL=http://dataflow-gen-1:41120/api
       - IS_DEV_ENV=true
+      - PYTHONPATH=/app
     ports:
       - 9234:9234
     volumes:
