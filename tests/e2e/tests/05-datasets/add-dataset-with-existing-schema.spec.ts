@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test'
 const TEST_NAME = 'add-dataset-with-existing-schema'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+const randomString = Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(120 * 1000)
@@ -61,7 +62,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
-  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('new_test_result_new_schema')
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.locator('#mui-component-select-dataModelOption').click()
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
@@ -97,7 +98,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#mui-component-select-databaseOption').click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
   await page.getByRole('textbox', { name: 'Schema name', exact: true }).fill('demo_cdm')
-  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('new_test_result_existing_schema')
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.locator('#mui-component-select-dataModelOption').click()
   await expect(page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' })).toBeVisible({ timeout: 1000 })
   await page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' }).click()
