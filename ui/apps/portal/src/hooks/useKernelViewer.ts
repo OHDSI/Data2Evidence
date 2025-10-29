@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../axios/api";
 
-export type ViewerStatus = "starting" | "up" | "stopping" | "down" | "failed" | "idle";
+export type ViewerStatus = "starting" | "up" | "stopping" | "down" | "failed" | "loading";
 
 type UseKernelViewerResponse = [
   viewerStatus: ViewerStatus,
@@ -10,7 +10,7 @@ type UseKernelViewerResponse = [
 ];
 
 export const useKernelViewer = (id: string, selectedDatasetId: string = ""): UseKernelViewerResponse => {
-  const [viewerStatus, setViewerStatus] = useState<ViewerStatus>("idle");
+  const [viewerStatus, setViewerStatus] = useState<ViewerStatus>("loading");
 
   const fetchViewerStatus = useCallback(async () => {
     try {
@@ -20,7 +20,11 @@ export const useKernelViewer = (id: string, selectedDatasetId: string = ""): Use
       } else {
         setViewerStatus("down");
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error.status === 404) {
+        setViewerStatus("down");
+        return;
+      }
       console.error("Error fetching viewer status:", error);
       setViewerStatus("failed");
     }
@@ -28,7 +32,7 @@ export const useKernelViewer = (id: string, selectedDatasetId: string = ""): Use
 
   useEffect(() => {
     fetchViewerStatus();
-  }, [fetchViewerStatus]);
+  }, []);
 
   const startViewer = useCallback(
     async (viewerCode: string) => {
