@@ -1,6 +1,6 @@
 import React, { FC, useCallback } from "react";
 import { CloseDialogType, Study } from "../../../../types";
-import { Dialog, Button, Box } from "@portal/components";
+import { Dialog, Button } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import "./SourceInformationDialog.scss";
@@ -34,19 +34,15 @@ const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, op
     >
       <Divider />
       <div className="source-information-dialog__content">
-        <Box mt={4} fontWeight="bold">
-          Dataset Name
-        </Box>
-        <Box mb={4}>
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>Dataset Name</div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField disabled fullWidth variant="standard" value={dataset?.studyDetail?.name} />
-        </Box>
+        </div>
 
-        <Box mt={4} fontWeight="bold">
-          Database Code
-        </Box>
-        <Box mb={4}>
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>Database Code</div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField disabled fullWidth variant="standard" value={dataset?.databaseCode} />
-        </Box>
+        </div>
       </div>
 
       <Divider />
