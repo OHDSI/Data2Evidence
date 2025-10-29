@@ -700,7 +700,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 variant="standard"
                 label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}
                 value={formData.cdmSchemaValue}
-                onChange={(event) => handleFormDataChange({ cdmSchemaValue: event.target.value })}
+                onChange={(event) =>
+                  handleFormDataChange({ cdmSchemaValue: event.target.value, vocabSchemaValue: event.target.value })
+                }
                 error={formError.cdmSchemaValue.required}
               />
               {formError.cdmSchemaValue.required && (
