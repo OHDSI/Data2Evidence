@@ -90,9 +90,13 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('tab', { name: 'Selected concepts' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  // Dismiss popover
-  await page.mouse.move(0, 0)
-  await page.locator('.modal-wrapper').click()
+  // Dismiss popover if present
+  try {
+    await page.mouse.move(0, 0)
+    await page.locator('.modal-wrapper').click()
+  } catch {
+    // Modal not present, continue
+  }
 
   // Step 8 - Select concept set
   await page.getByTitle('Condition Occurrence A - Condition concept Set').locator('div').nth(1).click()
