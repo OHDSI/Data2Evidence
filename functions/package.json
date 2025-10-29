@@ -573,7 +573,12 @@
           "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
           "PG_SCHEMA": "strategus",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+          "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+          "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
+          "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}"
         }
       },
       "roles": {
