@@ -417,6 +417,8 @@ class TransformDataNode(Node):
         try:
             df_to_write = _input[self.dataframe].result
             df = self.transform_data(df_to_write)
+            df = df.drop(columns=["meta.profile"], errors='ignore')
+            df = df.drop(columns=["resourceType"], errors='ignore')
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)

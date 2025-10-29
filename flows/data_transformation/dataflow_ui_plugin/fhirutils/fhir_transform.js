@@ -1,8 +1,4 @@
-const fs = require('fs');
-const path = require('path');
-// const r4 = require('@types/fhir');
 const fhirTransform = require('@synanetics/fhir-transform');
-const { url } = require('inspector');
 const transform = fhirTransform.default;
 
 let structureDefinitions = {}
@@ -32,7 +28,6 @@ async function main() {
       structureMap = structureMapObj;
       structureMap.structure.forEach((struct) => {
         if(struct.mode == 'source'){
-          //Call fhir server to get source structure definition
           structureDefinitions[struct.url] = JSON.parse(sourceStructureDefinition)
         }
         else if (struct.mode == 'target' && struct.url === targetStructureDefinition.url) {
