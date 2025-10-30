@@ -114,7 +114,7 @@ describe('QueryFilterCriteriaManager', () => {
       const json = manager.toJSON()
 
       expect(json.inclusionCriteria).toBeDefined()
-      expect(json.inclusionCriteria.qualifyingEventsLimit).toBe('ALL')
+      expect(json.inclusionCriteria.qualifyingEventsLimit).toBe('EARLIEST')
       expect(json.inclusionCriteria.criteria).toHaveLength(1)
       expect(json.inclusionCriteria.criteria[0].title).toBe('Test Group')
     })

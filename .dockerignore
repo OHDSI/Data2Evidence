@@ -8,6 +8,8 @@ docs
 jenkinsfile
 node_modules
 tests
+ui/apps/vue-mri-ui-lib/src/query-filter/mock-server/static
 
 #Exclude specific files/folders
 !build/hana
+!ui/apps/vue-mri-ui-lib/.env

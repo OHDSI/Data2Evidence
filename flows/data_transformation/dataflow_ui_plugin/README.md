@@ -15,8 +15,16 @@
       test_value = myinput.get("sql_node_1").result
       return test_value + 1
   ```
-    - `myinput` is a dictionary mapping input node names to a `Result` object.
-    - Use `myinput.get(input_node_name).result` to access the data of a `Result` object.
+  or
+
+  ```
+  async def exec(myinput)
+    test_value = myinput.get("sql_node_1").result
+    result = await test_function(test_value)
+    return result
+  ```
+- `myinput` is a dictionary mapping input node names to a `Result` object.
+- Use `myinput.get(input_node_name).result` to access the data of a `Result` object.
 
 
 

@@ -639,7 +639,7 @@ const getTrexDbConnection = ({
         let direct_connection_suffix;
         switch (analyticsCredentials.dialect) {
             case ANALYTICS_DB_DIALECTS.POSTGRES:
-                direct_connection_suffix = "_trexpg";
+                direct_connection_suffix = "__srcdb";
                 break;
             case ANALYTICS_DB_DIALECTS.BIGQUERY:
                 // For bigquery, do not execute any queries on sourcedb
@@ -655,8 +655,9 @@ const getTrexDbConnection = ({
 
         const parseSql = (
             temp: string,
-            schemaNames: string,
-            vocabSchemaNames: string,
+            schemaName: string,
+            vocabSchemaName: string,
+            resultSchemaName: string,
             parameters: any
         ): string => {
             // Specifically for trex db connection, direct connection alias is different from cachedb.
@@ -667,8 +668,9 @@ const getTrexDbConnection = ({
             );
             return translateHanaToDuckdb(
                 temp,
-                schemaNames,
-                vocabSchemaNames,
+                schemaName,
+                vocabSchemaName,
+                resultSchemaName,
                 parameters
             );
         };
@@ -676,6 +678,7 @@ const getTrexDbConnection = ({
             analyticsCredentials.code,
             analyticsCredentials.schema,
             analyticsCredentials.vocabSchema,
+            analyticsCredentials.resultSchema,
             { duckdb: parseSql }
         );
 
@@ -786,6 +789,7 @@ const getDBConnections = async ({
                 credentials: analyticsCredentials,
                 schemaName: analyticsCredentials.schema,
                 vocabSchemaName: analyticsCredentials.vocabSchema,
+                resultSchemaName: analyticsCredentials.resultSchema,
                 userObj,
             });
     }

@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   // Select the demo dataset and update it to show request access button
   await page.getByRole('link', { name: 'Datasets' }).click();
   const demoRow = await page.locator('tr', { hasText: 'Demo dataset' }).first();
-  await demoRow.getByRole('button', { name: 'Select action' }).click();
+  await demoRow.getByText('Select action').click();
   await page.getByRole('option', { name: 'Update dataset' }).click();
   await page.getByText('Show request access button').click();
   await page.getByRole('button', { name: 'Save' }).click();
@@ -58,9 +58,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'Datasets' }).click();
-  await demoRow.getByRole('button', { name: 'Select action' }).click();
+  await demoRow.getByText('Select action').click();
   await page.getByRole('option', { name: 'Permissions' }).click();
-  await page.getByRole('button', { name: 'Select action' }).click();
+  await page.getByTestId('dialog').getByText('Select action').click();
   await page.getByRole('option', { name: 'Approve' }).click();
   await page.getByRole('button', { name: 'Save' }).click();
   await page.getByRole('button', { name: 'Close', exact: true }).click();
