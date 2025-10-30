@@ -33,10 +33,40 @@ export class DBDAO {
         });
     };
 
+    private _clearTrexPgCache = async (): Promise<boolean> => {
+        return new Promise((resolve, reject) => {
+            if (this.connection.constructor.name === "TrexConnection") {
+                const sql = "CALL pg_clear_cache();";
+                this.connection.executeQuery(
+                    sql,
+                    [],
+                    (err: any, result: string) => {
+                        if (err) {
+                            logger.info(err);
+                            return reject(err);
+                        } else {
+                            if (result.length > 0) {
+                                resolve(true);
+                            } else {
+                                resolve(true);
+                            }
+                        }
+                    }
+                );
+            } else {
+                // do nothing
+            }
+        });
+    };
+
     public checkIfSchemaExists = async (
         databaseName: string,
         schemaName: string
     ): Promise<boolean> => {
+        // TODO: Remove this._clearTrexPgCache(). Currently this hotfix works for postgres but not bigquery
+        // https://github.com/OHDSI/Data2Evidence/issues/1149
+        // This is currently required as __srcdb connections in trex sql is not aware of schemas created after its ATTACH
+        await this._clearTrexPgCache();
         return new Promise((resolve, reject) => {
             let sql, sqlParams;
             if (this.connection.constructor.name === "TrexConnection") {
