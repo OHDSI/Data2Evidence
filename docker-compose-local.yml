@@ -27,7 +27,7 @@ services:
       PLUGINS_DEV_PATH: "./plugins"
       WATCH: |-
         {
-          "analytics-svc": false,
+          "analytics-svc": true,
           "mri-pg-config": false,
           "alp-fhir-gateway": false,
           "alp-dataflow-gen-init": false,
