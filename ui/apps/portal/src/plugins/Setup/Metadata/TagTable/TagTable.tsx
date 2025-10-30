@@ -1,5 +1,4 @@
 import React, { FC, useState, useCallback } from "react";
-import { Box } from "@portal/components";
 import { useDatasetTagConfigs, useDialogHelper } from "../../../../hooks";
 import { TableContainer, Table, TableHead, TableBody, Alert } from "@mui/material";
 import { Button, IconButton, Loader, TableCell, TableRow, TrashIcon } from "@portal/components";
@@ -42,7 +41,7 @@ const TagTable: FC = () => {
 
   return (
     <>
-      <Box>
+      <div>
         <div className="metadata-tag-table__add-button">
           <Button text={getText(i18nKeys.TAG_TABLE__ADD_TAG)} onClick={handleAdd} />
         </div>
@@ -72,7 +71,7 @@ const TagTable: FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      </Box>
+      </div>
       <AddTagDialog open={showAddTagDialog} onClose={closeAddTagDialog} setRefetch={setRefetch} />
       <DeleteTagDialog
         open={showDeleteTagDialog}
