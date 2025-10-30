@@ -288,6 +288,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     [onClose, setFeedback]
   );
 
+  const displayCacheConfiguration = useMemo(() => {
+    return formData.dialect !== "hana";
+  }, [formData.dialect]);
+
   const getDataModels = useCallback(async () => {
     try {
       const dataModelResult: Datamodel[] = await api.dataflow.getDatamodels();
@@ -970,53 +974,56 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </div>
 
-        <div style={{ marginBottom: "32px", fontWeight: "bold" }}>Cache dataset configuration</div>
+        {displayCacheConfiguration && (
+          <>
+            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>Cache dataset configuration</div>
 
-        <div style={{ marginBottom: "32px" }}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label="Cache Dataset Name"
-            value={formData.cacheDatasetName}
-            onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
-            error={formError.cacheDatasetName.required}
-          />
-          {formError.cacheDatasetName.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-        </div>
-
-        <div style={{ marginBottom: "32px" }}>
-          <FormControl
-            sx={styles}
-            className="select"
-            variant="standard"
-            fullWidth
-            {...(formError.vocabSchemaValue.required ? { error: true } : {})}
-          >
-            <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
-            <Select
-              sx={styles}
-              value={formData.cacheDatasetType}
-              onChange={(event: SelectChangeEvent<string>) =>
-                handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
-              }
-              inputProps={{
-                name: "cacheDatasetType",
-                id: "cache-dataset-option",
-              }}
-            >
-              {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
-                <MenuItem sx={styles} key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
-            {formError.cacheDatasetType.required && (
-              <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-            )}
-          </FormControl>
-        </div>
+            <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label="Cache Dataset Name"
+                value={formData.cacheDatasetName}
+                onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+                error={formError.cacheDatasetName.required}
+              />
+              {formError.cacheDatasetName.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+            </div>
+            <div style={{ marginBottom: "32px" }}>
+              <FormControl
+                sx={styles}
+                className="select"
+                variant="standard"
+                fullWidth
+                {...(formError.vocabSchemaValue.required ? { error: true } : {})}
+              >
+                <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+                <Select
+                  sx={styles}
+                  value={formData.cacheDatasetType}
+                  onChange={(event: SelectChangeEvent<string>) =>
+                    handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
+                  }
+                  inputProps={{
+                    name: "cacheDatasetType",
+                    id: "cache-dataset-option",
+                  }}
+                >
+                  {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
+                    <MenuItem sx={styles} key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {formError.cacheDatasetType.required && (
+                  <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                )}
+              </FormControl>
+            </div>
+          </>
+        )}
       </div>
       <Divider />
       <div className="button-group-actions">
