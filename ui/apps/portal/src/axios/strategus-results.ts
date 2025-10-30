@@ -1,6 +1,7 @@
 import { request } from "./request";
+import { API_PATHS } from "../constants/api";
 
-const STRATEGUS_RESULTS_URL = "strategus-results";
+const STRATEGUS_RESULTS_URL = API_PATHS.STRATEGUS_RESULTS;
 
 export class StrategusResults {
   public startStrategusResultViewer(studyId: string, datasetId: string, viewerCode: string) {

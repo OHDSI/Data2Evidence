@@ -11,8 +11,9 @@ import {
 } from "../plugins/Researcher/Terminology/utils/types";
 
 import { RowObject } from "../plugins/SystemAdmin/ConceptMapping/types";
+import { API_PATHS } from "../constants/api";
 
-const TERMINOLOGY_BASE_URL = "terminology";
+const TERMINOLOGY_BASE_URL = API_PATHS.TERMINOLOGY;
 
 export class Terminology {
   public getTerminologies(

@@ -2,8 +2,9 @@ import { STUDY_ROLES } from "../config";
 import { UserGroup, UserWithRoles, UserWithRolesInfo } from "../types";
 import { request } from "./request";
 import { UserGroupMetadata } from "../contexts/app-context/states";
+import { API_PATHS } from "../constants/api";
 
-const USER_MGMT_BASE_URL = "usermgmt/api/";
+const USER_MGMT_BASE_URL = API_PATHS.USER_MGMT;
 
 export class UserMgmt {
   public getUserGroupList(userId: string, sync?: boolean): Promise<UserGroupMetadata> {

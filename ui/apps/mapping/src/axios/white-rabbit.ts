@@ -3,9 +3,10 @@ import { EtlModel } from "../utils/etl-transformer";
 import request from "./request";
 import pako from "pako";
 import { Buffer } from "buffer";
+import { API_PATHS } from "../constants/api";
 
-const WHITE_RABBIT_BASE_ENDPOINT = `white-rabbit/api/`;
-const JOBPLUGINS_BASE_ENDPOINT = `jobplugins/white-rabbit/`;
+const WHITE_RABBIT_BASE_ENDPOINT = `${API_PATHS.WHITE_RABBIT}api/`;
+const JOBPLUGINS_BASE_ENDPOINT = `${API_PATHS.JOBPLUGINS_PERSEUS.replace('/perseus/', '/white-rabbit/')}`;
 
 export interface WhiteRabbitJobStatus {
   state_name: string;

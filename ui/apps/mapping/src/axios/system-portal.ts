@@ -1,6 +1,7 @@
 import request from "./request";
+import { API_PATHS } from "../constants/api";
 
-const SYSTEM_PORTAL_URL = "system-portal/";
+const SYSTEM_PORTAL_URL = API_PATHS.SYSTEM_PORTAL;
 
 export class SystemPortal {
   public getDatasets() {

@@ -13,8 +13,9 @@ import { api } from "./api";
 import { request } from "./request";
 
 import env from "../env";
+import { API_PATHS } from "../constants/api";
 
-const JOBPLUGIN_URL = "jobplugins/";
+const JOBPLUGIN_URL = API_PATHS.JOBPLUGINS;
 
 export class Dataflow {
   public getFlows() {

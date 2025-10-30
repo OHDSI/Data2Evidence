@@ -8,8 +8,9 @@ import {
   NewFhirProjectInput,
 } from "../types";
 import { request } from "./request";
+import { API_PATHS } from "../constants/api";
 
-const GATEWAY_BASE_URL = "gateway/api";
+const GATEWAY_BASE_URL = API_PATHS.GATEWAY;
 
 export class Gateway {
   public createDataset(input: NewStudyInput): Promise<Study> {

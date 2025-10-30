@@ -1,7 +1,8 @@
 import { CohortMapping } from "../types";
 import { request } from "./request";
+import { API_PATHS } from "../constants/api";
 
-const MRI_BASE_URL = "analytics-svc";
+const MRI_BASE_URL = API_PATHS.ANALYTICS_SVC;
 
 export class CohortSurvival {
   constructor(public datasetId: string) {}

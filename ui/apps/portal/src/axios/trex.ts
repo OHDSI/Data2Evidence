@@ -1,8 +1,9 @@
 import { request } from "./request";
 import { TrexPlugin } from "../types";
 import { LogResponseType } from "../constant";
+import { API_PATHS } from "../constants/api";
 
-const TREX_URL = "trex/";
+const TREX_URL = API_PATHS.TREX;
 
 export class Trex {
   public getPlugins() {

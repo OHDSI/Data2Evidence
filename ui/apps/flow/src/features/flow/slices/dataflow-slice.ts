@@ -27,10 +27,11 @@ import {
   ScannedSchemaState,
 } from "~/features/flow/types/white-rabbit";
 import { csvToJSON } from "~/utils";
+import { API_PATHS } from "~/constants/api";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
-  baseQuery: createBaseQueryFn("jobplugins/"),
+  baseQuery: createBaseQueryFn(API_PATHS.JOBPLUGINS),
   tagTypes: [
     "Dataflow",
     "DataflowRevision",

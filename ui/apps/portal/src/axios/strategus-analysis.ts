@@ -1,6 +1,7 @@
 import { request } from "./request";
 import { NetworkStrategusStudy } from "../types";
-const STRATEGUS_ANALYSIS_URL = "strategus/analysis";
+import { API_PATHS } from "../constants/api";
+const STRATEGUS_ANALYSIS_URL = API_PATHS.STRATEGUS_ANALYSIS;
 
 export class StrategusAnalysis {
   public getAllStrategusAnalysis(): Promise<NetworkStrategusStudy[]> {

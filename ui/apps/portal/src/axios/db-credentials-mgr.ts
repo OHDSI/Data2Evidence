@@ -10,9 +10,10 @@ import {
   ITestConnectionResult,
 } from "../types";
 import omit from "lodash/omit";
+import { API_PATHS } from "../constants/api";
 
-const TREX_BASE_URL = "trex/";
-const DB_BASE_URL = "gateway/api/db/";
+const TREX_BASE_URL = API_PATHS.TREX;
+const DB_BASE_URL = API_PATHS.GATEWAY_API_DB;
 
 export class DbCredentialsMgr {
   public async getDbList(): Promise<IDatabase[]> {

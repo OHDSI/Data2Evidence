@@ -1,8 +1,9 @@
 import request from "./request";
 import { LookupListItem, TableSchemaState } from "../contexts";
+import { API_PATHS } from "../constants/api";
 
-const PERSEUS_BACKEND_BASE_ENDPOINT = `backend/api/`;
-const JOBPLUGINS_BASE_ENDPOINT = `jobplugins/perseus/`;
+const PERSEUS_BACKEND_BASE_ENDPOINT = API_PATHS.BACKEND;
+const JOBPLUGINS_BASE_ENDPOINT = API_PATHS.JOBPLUGINS_PERSEUS;
 
 export class Backend {
   public getCDMVersions(): Promise<string[]> {

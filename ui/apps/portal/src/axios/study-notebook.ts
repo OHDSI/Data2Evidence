@@ -1,7 +1,8 @@
 import { StarboardNotebook } from "../plugins/Starboard/utils/notebook";
 import { request } from "./request";
+import { API_PATHS } from "../constants/api";
 
-const STUDY_NOTEBOOK_BASE_URL = "system-portal/notebook";
+const STUDY_NOTEBOOK_BASE_URL = API_PATHS.STUDY_NOTEBOOK;
 
 export interface RemoteDiffCheckResponse {
   hasDifferences: boolean;

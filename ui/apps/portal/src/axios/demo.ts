@@ -1,7 +1,8 @@
 import { IProgressResponse, ISetupResponse } from "../types";
 import { request } from "./request";
+import { API_PATHS } from "../constants/api";
 
-const DEMO_BASE_URL = "demo/";
+const DEMO_BASE_URL = API_PATHS.DEMO;
 
 export class Demo {
   public setup(encryptionKeys: string): Promise<ISetupResponse> {

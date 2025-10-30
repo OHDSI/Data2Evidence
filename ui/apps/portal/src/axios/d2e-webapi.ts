@@ -8,8 +8,9 @@ import {
 } from "../plugins/Researcher/Terminology/utils/types";
 import { api } from "./api";
 import env from "../env";
+import { API_PATHS } from "../constants/api";
 
-const D2E_WEBAPI_BASE_URL = "d2e-webapi";
+const D2E_WEBAPI_BASE_URL = API_PATHS.D2E_WEBAPI;
 
 export class D2eWebapi {
   public getTerminologies(

@@ -17,7 +17,8 @@ import {
   Config,
 } from "../types";
 import { ConfigTypes } from "../constant";
-const SYSTEM_PORTAL_URL = "system-portal/";
+import { API_PATHS } from "../constants/api";
+const SYSTEM_PORTAL_URL = API_PATHS.SYSTEM_PORTAL;
 
 export class SystemPortal {
   public getTenants() {

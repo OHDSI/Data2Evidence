@@ -16,10 +16,11 @@ import {
   TestDataflowDto,
 } from "../types";
 import { createBaseQueryFn } from "./base-query";
+import { API_PATHS } from "~/constants/api";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
-  baseQuery: createBaseQueryFn("jobplugins/"),
+  baseQuery: createBaseQueryFn(API_PATHS.JOBPLUGINS),
   tagTypes: ["Dataflow", "DataflowRevision", "DataflowResult", "DataflowState"],
   endpoints: (builder) => ({
     getDataflows: builder.query<DataflowDto[], void>({
