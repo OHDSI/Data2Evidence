@@ -736,40 +736,30 @@ export class NotebookService {
       console.log(`Successfully cloned repository`);
     } else {
       try {
-        await git.fetch({
-          fs,
-          http,
-          dir: repoDir,
-          remote: "origin",
-          ref: defaultBranch,
-          onAuth: () => ({
-            username: gitCredentials,
-          }),
-        });
+        const remotes = await git.listRemotes({ fs, dir: repoDir });
+        const hasOrigin = remotes.some((r) => r.remote === "origin");
 
-        const remoteCommit = await git.resolveRef({
-          fs,
-          dir: repoDir,
-          ref: `origin/${defaultBranch}`,
-        });
+        if (hasOrigin) {
+          console.log(
+            `Fetching latest changes from origin/${defaultBranch}...`
+          );
+          await git.fetch({
+            fs,
+            http,
+            dir: repoDir,
+            remote: "origin",
+            ref: defaultBranch,
+          });
 
-        // Update the local branch ref to match remote and checkout
-        await git.writeRef({
-          fs,
-          dir: repoDir,
-          ref: `refs/heads/${defaultBranch}`,
-          value: remoteCommit,
-          force: true,
-        });
+          await git.checkout({
+            fs,
+            dir: repoDir,
+            ref: `origin/${defaultBranch}`,
+            force: true,
+          });
 
-        await git.checkout({
-          fs,
-          dir: repoDir,
-          ref: defaultBranch,
-          force: true,
-        });
-
-        console.log(`Updated local repository to match origin/${defaultBranch}`);
+          console.log(`Updated local repository to match origin/${defaultBranch}`);
+        }
       } catch (fetchError) {
         console.error(`Failed to fetch from remote: ${fetchError.message}`);
         throw new Error(`Failed to fetch from remote: ${fetchError.message}`);
