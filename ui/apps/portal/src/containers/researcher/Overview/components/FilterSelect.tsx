@@ -20,7 +20,7 @@ const StyledSelect = styled(Select)(() => ({
   },
 }));
 
-export interface FilterSelectProps extends SelectProps {}
+export type FilterSelectProps = SelectProps;
 
 export const FilterSelect: FC<FilterSelectProps> = ({ placeholder, ...props }) => {
   return (

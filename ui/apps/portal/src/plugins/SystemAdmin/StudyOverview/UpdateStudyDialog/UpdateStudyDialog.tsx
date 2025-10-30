@@ -14,7 +14,7 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import { SxProps } from "@mui/system";
 import SimpleMdeReact from "react-simplemde-editor";
-import { AddSquareIcon, Box, Button, Checkbox, Dialog, Feedback, IconButton } from "@portal/components";
+import { AddSquareIcon, Button, Checkbox, Dialog, Feedback, IconButton } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { NewStudyMetadataInput, CloseDialogType, UpdateStudyMetadataInput, Study } from "../../../../types";
 import { usePaConfigs, useDatasetTagConfigs, useDatasetAttributeConfigs } from "../../../../hooks";
@@ -29,7 +29,7 @@ interface UpdateStudyDialogProps {
 }
 
 const mdeOptions = {
-  hideIcons: ["side-by-side", "fullscreen"],
+  hideIcons: ["side-by-side", "fullscreen"] as readonly ("side-by-side" | "fullscreen")[],
   maxHeight: "150px",
 };
 
@@ -287,10 +287,10 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
     >
       <Divider />
       <div className="update-study-dialog__content">
-        <Box mt={4} fontWeight="bold">
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>
           {getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_INFO_CONFIG)}
-        </Box>
-        <Box mb={4}>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -302,8 +302,8 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
           {formError.name.required && (
             <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
-        </Box>
-        <Box mb={4}>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -311,7 +311,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
             value={formData.summary}
             onChange={(event) => handleFormDataChange({ summary: event.target.value })}
           />
-        </Box>
+        </div>
         <div>
           <Checkbox
             checked={formData.showRequestAccess}
@@ -330,7 +330,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
           style={{ marginTop: "11px" }}
         />
 
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -338,9 +338,9 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
             value={formData.type}
             onChange={(event) => handleFormDataChange({ type: event.target.value })}
           />
-        </Box>
+        </div>
 
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -356,9 +356,9 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
             <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
           )}
           <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
-        </Box>
+        </div>
 
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <FormControl
             sx={styles}
             className="select"
@@ -389,10 +389,10 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
               <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
-        </Box>
+        </div>
 
-        <Box mb={4}>
-          <Box fontWeight="bold">{getText(i18nKeys.UPDATE_STUDY_DIALOG__METADATA)}</Box>
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__METADATA)}</div>
           {attributeConfigs.length !== 0 &&
             studyMetadata.map((data, index) => (
               <MetadataForm
@@ -412,10 +412,10 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
             title={getText(i18nKeys.UPDATE_STUDY_DIALOG__ADD_METADATA)}
             onClick={handleAddMetadataForm}
           />
-        </Box>
+        </div>
 
-        <Box fontWeight="bold">{getText(i18nKeys.UPDATE_STUDY_DIALOG__TAGS)}</Box>
-        <Box mb={4}>
+        <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__TAGS)}</div>
+        <div style={{ marginBottom: "32px" }}>
           <Autocomplete
             multiple
             sx={styles}
@@ -430,9 +430,9 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
             value={studyTagsData}
             onChange={handleTagChange}
           />
-        </Box>
+        </div>
 
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <FormControl component="fieldset">
             <FormLabel component="legend">{getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_VISIBILITY)}</FormLabel>
             <RadioGroup
@@ -459,7 +459,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
               />
             </RadioGroup>
           </FormControl>
-        </Box>
+        </div>
       </div>
 
       <Divider />

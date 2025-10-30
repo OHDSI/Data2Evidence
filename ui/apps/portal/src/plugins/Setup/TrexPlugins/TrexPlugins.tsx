@@ -1,7 +1,6 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Table, TableBody, TableContainer, TableHead, TablePagination } from "@mui/material";
 import {
-  Box,
   Button,
   IconButton,
   Loader,
@@ -140,12 +139,12 @@ export const TrexPlugins: FC = () => {
 
   return (
     <div className="trex-plugins">
-      <Box display="flex" alignItems="baseline" paddingLeft="50px" paddingRight="50px" paddingBottom="10px">
-        <Box flex="1">
+      <div style={{ display: "flex", alignItems: "baseline", paddingLeft: "50px", paddingRight: "50px", paddingBottom: "10px" }}>
+        <div style={{ flex: "1" }}>
           <Title>{getText(i18nKeys.TREX_PLUGINS__TITLE)}</Title>
-        </Box>
+        </div>
         <Button text={getText(i18nKeys.TREX_PLUGINS__INSTALL_NEW_PLUGIN)} onClick={openInstallDialog} />
-      </Box>
+      </div>
       <TableContainer className="trex-plugins__table">
         <Table>
           <colgroup>

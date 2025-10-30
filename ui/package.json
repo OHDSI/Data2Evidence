@@ -8,32 +8,23 @@
   },
   "license": "Apache-2.0",
   "scripts": {
-    "build-all": "npx nx run-many --targets=build --projects=@portal/components,@portal/plugin && npx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin && yarn build-ui5 && yarn build-starboard && yarn build-gateway",
-    "build-all-skip-cache": "npx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && npx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin --skip-nx-cache && yarn build-ui5",
-    "build-ui5": "yarn ui5 build -a --clean-dest --dest ./resources/ui5",
-    "build-gateway": "cd apps/gateway-proxy && yarn build && cd ../../",
+    "build-all": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin && bun build-ui5 && bun build-starboard && bun build-gateway",
+    "build-all-skip-cache": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin --skip-nx-cache && bun build-ui5",
+    "build-ui5": "bunx ui5 build -a --clean-dest --dest ./resources/ui5",
+    "build-gateway": "cd apps/gateway-proxy && bun run build",
     "build-starboard": "node scripts/build-starboard.js",
-    "mri-vue": "yarn; nx build vue-mri",
-    "portal-ui": "yarn; nx build @portal/plugin; nx build @portal/components; nx build portal; nx build-mri portal",
-    "flow": "yarn; nx build @portal/plugin; nx build @portal/components; nx build flow",
-    "analysis": "yarn; nx build @portal/plugin; nx build @portal/components; nx build analysis_flow",
-    "prepack": "yarn build-all"
+    "mri-vue": "bun install; bunx nx build vue-mri",
+    "portal-ui": "bun install; bunx nx build @portal/plugin; bunx nx build @portal/components; bunx nx build portal; bunx nx build-mri portal",
+    "flow": "bun install; bunx nx build @portal/plugin; bunx nx build @portal/components; bunx nx build flow",
+    "analysis": "bun install; bunx nx build @portal/plugin; bunx nx build @portal/components; bunx nx build analysis_flow",
+    "prepack": "bun build-all"
   },
-  "workspaces": {
-    "packages": [
-      "libs/*",
-      "apps/*"
-    ],
-    "nohoist": [
-      "**/@vue",
-      "**/@vue/**",
-      "**/@babel/**",
-      "**/babel-**",
-      "**/webpack-manifest-plugin",
-      "**/webpack-manifest-plugin/**"
-    ]
-  },
+  "workspaces": [
+    "libs/*",
+    "apps/*"
+  ],
   "devDependencies": {
+    "@parcel/transformer-sass": "^2.9.2",
     "@ui5/cli": "^2.12.0",
     "nx": "^18.0.0"
   },
