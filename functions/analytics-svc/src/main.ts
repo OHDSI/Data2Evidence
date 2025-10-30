@@ -191,6 +191,10 @@ const initRoutes = async (app: express.Application) => {
                         parseValueForPrototypePollutingAssignment(
                             req.query.databaseCode as string
                         );
+                    if (req.query.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
+                        // Skip as bigquery currently always returns hardcoded value from env
+                        next();
+                    }
                     credentials =
                         req.dbCredentials.analyticsCredentials[databaseCode];
                     if (!credentials) {
