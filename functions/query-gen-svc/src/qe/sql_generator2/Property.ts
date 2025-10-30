@@ -256,7 +256,7 @@ export class Property extends AstElement {
 
                     //Build Concept Relationship
                     const conceptRelationshipPlaceholder = "@REF0";
-                    attrConfig.placeholderMap[conceptRelationshipPlaceholder] = `$$SCHEMA$$.concept_relationship`;
+                    attrConfig.placeholderMap[conceptRelationshipPlaceholder] = `$$VOCAB_SCHEMA$$.CONCEPT_RELATIONSHIP`;
                     attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.CODE`] = attrConfig.placeholderMap["@REF.CODE"];
                     attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.TEXT`] = attrConfig.placeholderMap["@REF.TEXT"];
                     attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.VOCABULARY_ID`] = attrConfig.placeholderMap["@REF.VOCABULARY_ID"];
