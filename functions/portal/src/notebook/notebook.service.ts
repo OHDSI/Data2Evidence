@@ -747,24 +747,29 @@ export class NotebookService {
           }),
         });
 
-        const currentBranch = await git.currentBranch({ fs, dir: repoDir });
-        if (currentBranch !== defaultBranch) {
-          await git.checkout({ fs, dir: repoDir, ref: defaultBranch });
-        }
+        const remoteCommit = await git.resolveRef({
+          fs,
+          dir: repoDir,
+          ref: `origin/${defaultBranch}`,
+        });
 
-        // Force update to match remote exactly
-        try {
-          await git.checkout({
-            fs,
-            dir: repoDir,
-            ref: `origin/${defaultBranch}`,
-            force: true,
-          });
-          console.log(`Force updated local repository to match remote`);
-        } catch (checkoutError) {
-          console.error(`Failed to force checkout: ${checkoutError.message}`);
-          throw new Error(`Failed to force checkout: ${checkoutError.message}`);
-        }
+        // Update the local branch ref to match remote and checkout
+        await git.writeRef({
+          fs,
+          dir: repoDir,
+          ref: `refs/heads/${defaultBranch}`,
+          value: remoteCommit,
+          force: true,
+        });
+
+        await git.checkout({
+          fs,
+          dir: repoDir,
+          ref: defaultBranch,
+          force: true,
+        });
+
+        console.log(`Updated local repository to match origin/${defaultBranch}`);
       } catch (fetchError) {
         console.error(`Failed to fetch from remote: ${fetchError.message}`);
         throw new Error(`Failed to fetch from remote: ${fetchError.message}`);

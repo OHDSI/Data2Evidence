@@ -851,6 +851,7 @@ export class TransformationService {
           dir: repoDir,
           url: gitRemoteUrl,
           singleBranch: true,
+          ref: defaultBranch,
           depth: 1,
           ...authConfig,
         });
@@ -871,22 +872,31 @@ export class TransformationService {
         });
         this.logger.info(`Successfully fetched from remote`);
 
-        // Get current branch
-        const currentBranch = await git.currentBranch({ fs, dir: repoDir });
-        this.logger.info(`Current branch: ${currentBranch}`);
+        const remoteCommit = await git.resolveRef({
+          fs,
+          dir: repoDir,
+          ref: `origin/${defaultBranch}`,
+        });
 
-        // Reset to match remote current branch
-        if (currentBranch) {
-          await git.checkout({
-            fs,
-            dir: repoDir,
-            ref: `origin/${currentBranch}`,
-            force: true,
-          });
-          this.logger.info(
-            `Updated local repository to match origin/${currentBranch}`
-          );
-        }
+        // Update the local branch ref to match remote and checkout
+        await git.writeRef({
+          fs,
+          dir: repoDir,
+          ref: `refs/heads/${defaultBranch}`,
+          value: remoteCommit,
+          force: true,
+        });
+
+        await git.checkout({
+          fs,
+          dir: repoDir,
+          ref: defaultBranch,
+          force: true,
+        });
+
+        this.logger.info(
+          `Updated local repository to match origin/${defaultBranch}`
+        );
       } catch (updateError) {
         this.logger.error(
           `Failed to update repository: ${updateError.message}`
