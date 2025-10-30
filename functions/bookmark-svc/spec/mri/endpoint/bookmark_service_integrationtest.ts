@@ -523,6 +523,27 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE BOOKMARK ENDPOINT', () => {
         )
       })
     })
+
+    it('rejects an empty bookmark name', done => {
+      fillInTestData(testBookmarkData, (err, numLines) => {
+        bookmarkServiceLib._insertBookmark(
+          '',
+          '{smt: 1}',
+          'userId3',
+          'paConfigId',
+          'cdmConfigId',
+          'cdmConfigVersion1',
+          0,
+          bookmarksTable,
+          connection,
+          (err, data) => {
+            if (!err) return done.fail('Expected an error when inserting empty bookmark name')
+            expect(err).toBeDefined()
+            done()
+          }
+        )
+      })
+    })
   })
 
   describe('deleteBookmark()...', () => {

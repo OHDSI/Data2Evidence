@@ -2,7 +2,7 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { OidcProvider, useOidc } from "@axa-fr/react-oidc";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { Feedback, Snackbar } from "@portal/components";
 import { PublicApp } from "../../../apps/PublicApp";
 import { PrivateApp } from "../../../apps/PrivateApp";
@@ -97,7 +97,7 @@ export const OidcApp: FC = () => {
       sessionLostComponent={OidcSessionLost}
       onEvent={handleOidcEvent}
     >
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
         <AppProvider>
           <Snackbar
             type={feedback?.type}

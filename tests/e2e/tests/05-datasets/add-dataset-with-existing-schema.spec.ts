@@ -29,7 +29,7 @@ test(TEST_NAME, async ({ page }) => {
     if (await page.locator('tr', { hasText: `${dataset}` }).isVisible({ timeout: 1000 })) {
       await page
         .locator('tr', { hasText: `${dataset}` })
-        .getByRole('button', { name: 'Select action' })
+        .getByText('Select action')
         .click()
       await page.getByRole('option', { name: 'Delete dataset' }).click()
       await page.getByRole('button', { name: 'Yes, delete' }).click()
@@ -78,7 +78,7 @@ test(TEST_NAME, async ({ page }) => {
   const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
   // Delete the newly created dataset
-  await page.locator('tr', { hasText: datasetNewSchema }).getByRole('button', { name: 'Select action' }).click()
+  await page.locator('tr', { hasText: datasetNewSchema }).getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 
@@ -104,7 +104,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('cell', { name: `${datasetExistingSchema}` })).toBeVisible({ timeout: 10000 })
 
   // Clean up
-  await page.locator('tr', { hasText: datasetExistingSchema }).getByRole('button', { name: 'Select action' }).click()
+  await page.locator('tr', { hasText: datasetExistingSchema }).getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 })
