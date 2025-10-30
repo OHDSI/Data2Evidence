@@ -29,7 +29,7 @@ from .types import (NodeType,
 
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
-
+from .fhirutils.utils import omop_transform_utils
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 from subprocess import Popen, PIPE, STDOUT
@@ -358,8 +358,11 @@ class TransformDataNode(Node):
                         return data
         return {}
 
+    def omop_table_name(self, target_structure_definition_url: str) -> str:
+        omop_table = omop_transform_utils.omop_tables[target_structure_definition_url]
+        return omop_table
+
     def transform_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
-        print("Starting FHIR Transform")
         source_structure_definition_url = ""
         target_structure_definition_url = ""
         structure_list = self.structure_map.get("structure", [])
@@ -379,6 +382,7 @@ class TransformDataNode(Node):
         else:
             fhir_resource = None
         script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
+        omop_table_name = self.omop_table_name(target_structure_definition_url)
         if fhir_resource:
             for key in fhir_resource:
                 process = Popen(
@@ -398,7 +402,7 @@ class TransformDataNode(Node):
                 if process.returncode != 0:
                     raise Exception(f"FHIR Transform failed with error: {stdout}")
                 transformed_data = json.loads(stdout)
-                print(json.loads(stdout))
+                transformed_data = omop_transform_utils.apply_casts(transformed_data, omop_transform_utils.target_field_types.get(omop_table_name, {}))
                 transformed_omop.append(transformed_data)
             df = pd.json_normalize(transformed_omop)
         else:

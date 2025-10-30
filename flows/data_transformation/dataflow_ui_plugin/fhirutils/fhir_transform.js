@@ -8,62 +8,40 @@ const _structureDefinitionResolver = async (url) => {
 };
 
 async function main() {
-  const [,, structureMapJsonString, resourceJsonString, sourceStructureDefinition, targetStructureDefinition] = process.argv;
-  if (!structureMapJsonString || !resourceJsonString) {
-    console.error('Usage: node fhir_transform.js <structureMapJsonString> <resourceJsonString>');
-    process.exit(1);
-  }
-    let resource, structureMap;
+    const [,, structureMapJsonString, resourceJsonString, sourceStructureDefinition, targetStructureDefinition] = process.argv;
+    if (!structureMapJsonString || !resourceJsonString || !sourceStructureDefinition || !targetStructureDefinition) {
+      console.error('Invalid input arguments. Please provide structure map, resource, source structure definition, and target structure definition.');
+      process.exit(1);
+    }
     try {
-      const structureMapObj = JSON.parse(structureMapJsonString);
-      let structureList;
-      if (Array.isArray(structureMapObj.structure)) {
-        structureList = structureMapObj.structure;
-      } else if (typeof structureMapObj.structure === 'object') {
-        structureList = [structureMapObj.structure];
-      } else {
-        structureList = [];
-      }
-      structureMapObj.structure = structureList;
-      structureMap = structureMapObj;
+      const structureMap = JSON.parse(structureMapJsonString);
+      const resource = JSON.parse(resourceJsonString);
       structureMap.structure.forEach((struct) => {
         if(struct.mode == 'source'){
           structureDefinitions[struct.url] = JSON.parse(sourceStructureDefinition)
         }
-        else if (struct.mode == 'target' && struct.url === targetStructureDefinition.url) {
+        else if (struct.mode == 'target' && struct.url === JSON.parse(targetStructureDefinition).url) {
           structureDefinitions[struct.url] = JSON.parse(targetStructureDefinition)
         }
       })
+      const result = await transform({
+        content: JSON.parse(resource),
+        structureMap: structureMap,
+        structureDefinitionResolver: _structureDefinitionResolver,
+      });
+      process.stdout.write(JSON.stringify(result));
     } catch (err) {
-      console.error('Invalid structureMap JSON string or StructureMap parse error:', err);
+      let errorMsg;
+      if (err && typeof err === 'object' && err.default) {
+        errorMsg = `Transform failed: ${err.default}`;
+        console.error(errorMsg);
+      } else {
+        errorMsg = `Transform failed: ${err}`;
+        console.error(errorMsg);
+      }
+      process.stdout.write(JSON.stringify({ error: true }));
       process.exit(1);
     }
-  try {
-    resource = JSON.parse(resourceJsonString);
-  } catch (err) {
-    console.error('Invalid resource JSON string:', err);
-    process.exit(1);
-  }
-  try {
-    const result = await transform({
-      content: resource,
-      structureMap: structureMap,
-      structureDefinitionResolver: _structureDefinitionResolver
-    });
-    process.stdout.write(JSON.stringify(result));
-  } catch (err) {
-    let errorMsg;
-    if (err && typeof err === 'object' && err.default) {
-      errorMsg = `Transform failed: ${err.default}`;
-      console.error(errorMsg);
-    } else {
-      errorMsg = `Transform failed: ${err}`;
-      console.error(errorMsg);
-    }
-    // Always output a valid JSON error to stdout
-    process.stdout.write(JSON.stringify({ error: true }));
-    process.exit(1);
-  }
 }
 
 main();

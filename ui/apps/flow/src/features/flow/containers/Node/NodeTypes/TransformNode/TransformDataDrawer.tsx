@@ -15,6 +15,7 @@ import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "..";
 import { TransformNodeData } from "./TransformDataNode";
 import { useGetFhirStructureMapTemplatesQuery } from "~/features/flow/slices";
+import { Editor } from "~/components/Editor/Editor";
 
 export interface TransformDataDrawerProps extends Omit<NodeDrawerProps, "children"> {
   node: NodeProps<TransformNodeData>;
@@ -47,35 +48,24 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
       skip: false,
     });
   useEffect(() => {
-    if (node.data) {
-        if (node.data.id) {
-          const structureMapTemplate = structureMapTemplates.find(
-            (map) => map.id === node.data.id
-          );
-          if (structureMapTemplate) {
-            setFormData((prev) => ({
-              ...prev,
-              structure_map: structureMapTemplate.structureMap,
-            }));
-          }
-        }
-      setFormData({
-        name: node.data.name,
-        description: node.data.description,
-        structure_map: node.data.structure_map,
-        dataframe: node.data.dataframe,
-        output_omop_data: node.data.output_omop_data,
-        id: node.data.id,
-      });
-    } else {
-      setFormData({
-        ...EMPTY_FORM_DATA,
-        ...NodeChoiceMap["python_node"].defaultData,
-      });
-    }
-  }, [node.data]);
+    if (!node?.data) return;
+
+    const structureMapTemplate = node.data.id
+      ? structureMapTemplates.find((map) => map.id === node.data.id)
+      : undefined;
+
+    setFormData((prev) => ({
+      ...prev,
+      ...node.data,
+      structure_map:
+        structureMapTemplate?.structureMap ?? node.data.structure_map ?? "",
+    }));
+  }, [node.data, structureMapTemplates]);
+
+
 
   const handleOk = useCallback(() => {
+    if (!nodeState) return;
     const updated: NodeState<TransformNodeData> = {
       ...nodeState,
       data: formData,
@@ -84,7 +74,7 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, nodeState, onClose, dispatch]);
 
   return (
     <NodeDrawer {...props} onOk={handleOk} onClose={onClose}>
@@ -144,6 +134,15 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
               </MenuItem>
             ))}
           </Select>
+        </Box>
+        <Box mb={4}>
+          <TextInput
+            label="Structure Map"
+            value={JSON.stringify(formData.structure_map)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              onFormDataChange({ structure_map: JSON.parse(e.target.value) })
+            }
+          />
         </Box>
     </NodeDrawer>
   );
