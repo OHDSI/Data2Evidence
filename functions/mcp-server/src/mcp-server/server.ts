@@ -38,7 +38,7 @@ server.registerTool(
       content: [
         {
           type: "text",
-          text: `Here is the list of cohorts name and ids definition with description of '${cohort_info}' found from the Phenotype Library: ${JSON.stringify(
+          text: `Here is the list of cohort names and ids definition with description of '${cohort_info}' found from the Phenotype Library: ${JSON.stringify(
             cohortData
           )}`,
         },
@@ -50,11 +50,11 @@ server.registerTool(
   }
 );
 
-// Register Prompt for Getting Cohort Info
+// Register Prompt for getting Cohort Info
 server.registerPrompt(
   "prompt_for_get_cohort_id",
   {
-    title: "Prompt for after Getting cohort info from User Query",
+    title: "Prompt after getting cohort info from User Query",
     description:
       "This prompt should be used to understand the user's initial query.",
     argsSchema: {
