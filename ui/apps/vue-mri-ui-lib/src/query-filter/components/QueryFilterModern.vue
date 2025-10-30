@@ -39,6 +39,7 @@ import * as types from '../../store/mutation-types'
 import { useCriteriaManager } from '../composables/useCriteriaManager'
 import { d2eWebapiService } from '../services/D2eWebapiService'
 import { QueryFilterEvent } from '../types/QueryFilterTypes'
+import { useValidationNotifications } from '../composables/useValidationNotifications'
 
 // Interface for close callback values from terminology modal
 interface TerminologyCloseValues {
@@ -345,6 +346,40 @@ const {
   loadConceptSetDetailsForEvent,
   updateEventConceptSet,
 } = useCriteriaManager(getDatasetId, allConceptSets, clearConceptSets)
+
+// Initialize validation composable
+const {
+  warnings,
+  isValidating,
+  error: validationError,
+  hasCriticalWarnings,
+  hasWarnings,
+  hasInfo,
+  totalCount,
+  criticalCount,
+  warningCount,
+  infoCount,
+  criticalWarnings,
+  warningLevelWarnings,
+  infoWarnings,
+  lastValidated,
+  validate: runValidation,
+  clear: clearValidation,
+} = useValidationNotifications(
+  () => criteriaManager.getCriteria(), // Current cohort definition
+  computed(() => 'd2e-webapi') // WebAPI base URL
+)
+
+// Expose validation function for console testing (development only)
+if (debug.value) {
+  ;(window as any).__qfValidation = {
+    validate: runValidation,
+    warnings,
+    isValidating,
+    hasCriticalWarnings,
+    totalCount,
+  }
+}
 
 watch(
   selectedConceptSets,
