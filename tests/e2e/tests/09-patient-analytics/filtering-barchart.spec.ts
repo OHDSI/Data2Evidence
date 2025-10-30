@@ -46,6 +46,15 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
   await expect(page.getByText('1132 / 2694')).toBeVisible()
+
+  // Dismiss popover if present
+  try {
+    await page.mouse.move(0, 0)
+    await page.locator('.modal-wrapper').click()
+  } catch {
+    // Modal not present, continue
+  }
+
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Set X1-axis to condition concept name

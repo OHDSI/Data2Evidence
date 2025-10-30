@@ -1,7 +1,7 @@
 import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import { Box, Button, Dialog, FormControl, InputLabel, TextField } from "@portal/components";
+import { Button, Dialog, FormControl, InputLabel, TextField } from "@portal/components";
 import React, { FC, FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
@@ -102,7 +102,7 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
       <Divider />
       <form onSubmit={handleSave}>
         <div className="save-attribute-dialog__content">
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               label={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__ATTRIBUTE_ID)}
               variant="standard"
@@ -111,8 +111,8 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
               value={formData.id}
               onChange={(event) => handleFormDataChange({ id: event.target?.value })}
             />
-          </Box>
-          <Box mb={4}>
+          </div>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               label={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__ATTRIBUTE_NAME)}
               variant="standard"
@@ -120,8 +120,8 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
               value={formData.name}
               onChange={(event) => handleFormDataChange({ name: event.target?.value })}
             />
-          </Box>
-          <Box mb={4}>
+          </div>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl fullWidth>
               <InputLabel id="category-select-label">{getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__CATEGORY)}</InputLabel>
               <Select
@@ -138,8 +138,8 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
                 ))}
               </Select>
             </FormControl>
-          </Box>
-          <Box mb={4}>
+          </div>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl fullWidth>
               <InputLabel id="datatype-select-label">{getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__DATATYPE)}</InputLabel>
               <Select
@@ -156,17 +156,17 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
                 ))}
               </Select>
             </FormControl>
-          </Box>
+          </div>
         </div>
         <div className="save-attribute-dialog__footer">
-          <Box display="flex" gap={1} className="save-attribute-dialog__footer-actions">
+          <div style={{ display: "flex", gap: "8px" }} className="save-attribute-dialog__footer-actions">
             <Button
               text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__CANCEL)}
               variant="outlined"
               onClick={() => handleClose("cancelled")}
             />
             <Button type="submit" text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SAVE)} loading={saving} />
-          </Box>
+          </div>
         </div>
       </form>
     </Dialog>

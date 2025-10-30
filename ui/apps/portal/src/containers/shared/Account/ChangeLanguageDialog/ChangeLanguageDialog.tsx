@@ -1,5 +1,5 @@
 import React, { FC, useState, useCallback } from "react";
-import { Box, Dialog, FormControl, Button, Select, MenuItem, SelectChangeEvent } from "@portal/components";
+import { Dialog, FormControl, Button, Select, MenuItem, SelectChangeEvent } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import { Feedback } from "../../../../types";
 import { useTranslation } from "../../../../contexts";
@@ -65,7 +65,7 @@ export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onCl
       <div className="change-language-dialog__content">
         <div className="u-padding-vertical-normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <Select fullWidth value={language} label="Language" onChange={handleLanguageChange}>
                 {SUPPORTED_LANGUAGES.map((language) => (
                   <MenuItem key={language.name} value={language.value}>
@@ -73,7 +73,7 @@ export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onCl
                   </MenuItem>
                 ))}
               </Select>
-            </Box>
+            </div>
           </FormControl>
         </div>
       </div>
