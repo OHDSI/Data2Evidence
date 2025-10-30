@@ -38,6 +38,10 @@ def strategus_plugin(json_graph, options):
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
     upload_results = _options.get('uploadResults', False)
+    databaseCode = options.get('databaseCode', None)
+    datasetId = options.get('datasetId', None)
+    studyName = options.get("studyName", "")
+    studyId = options.get('studyId', None)
 
     generate_nodes_flow_wo = generate_nodes_flow.with_options(
         on_completion=[
@@ -73,9 +77,9 @@ def strategus_plugin(json_graph, options):
         )
         if(upload_results):
             result_db_settings = {
-                'database_code': get_study_results_db_code(),
-                "dataset_id": options.get('datasetId', None),
-                "study_id": options.get('studyId', None)
+                'database_code': databaseCode,
+                "dataset_id": datasetId,
+                "study_id": studyId
             }
             upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
 
@@ -83,8 +87,8 @@ def strategus_plugin(json_graph, options):
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
     finally:
         strategus_api = StrategusAnalysisAPI()
-        study_name = options.get("studyName", "")
-        study_id = options.get("studyId", "")
+        study_name = studyName
+        study_id = studyId
         if(strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)):
             logger.info(f"Successfully updated strategus analysis specification for study '{study_id}'")
 
@@ -261,12 +265,6 @@ def drop_strategus_results(options):
         'dataset_id': datasetId,
         'study_id': study_id
     })
-
-def get_study_results_db_code():
-    """
-    Returns the database code for the Strategus results database.
-    """
-    return "study_results"
 
 # Following __main__ is meant for development purposes
 # Enables to run the flow as a simple method, and not a prefect flow 
