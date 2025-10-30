@@ -33,7 +33,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis')
+    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Chronic sinusitis')
     try {
       await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 10000 })
       await page.getByText('Chronic sinusitis').click()
@@ -51,8 +51,8 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Chronic sinusitis')
       await page.getByText('Chronic sinusitis').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })

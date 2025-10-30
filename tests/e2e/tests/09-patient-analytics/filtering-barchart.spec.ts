@@ -66,7 +66,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Filter condition concept name to chronic sinusitis
   await page.getByText('All').nth(2).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis')
+  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Chronic sinusitis')
   await page.getByText('Chronic sinusitis - Chronic sinusitis').click()
   await expect(page.getByText('812 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
