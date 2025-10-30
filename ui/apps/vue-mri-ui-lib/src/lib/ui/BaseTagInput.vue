@@ -448,7 +448,7 @@ export default {
         if (spaceBelow < 300) {
           if (content) {
             // Calculate expected height based on filteredList (each item is 40px)
-            const expectedHeight = this.filteredList.length * 40
+            const expectedHeight = (this.filteredList.length - this.selectedValues.length) * 40
             const minHeight = Math.min(expectedHeight, 200)
             dropdown.style.minHeight = `${minHeight}px`
           } else {
