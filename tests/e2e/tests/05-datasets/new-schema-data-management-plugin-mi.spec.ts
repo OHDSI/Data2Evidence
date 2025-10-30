@@ -44,12 +44,8 @@ test(TEST_NAME, async ({ page }) => {
     await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });
     // Clean up - delete the created dataset
     await page.getByRole('link', { name: 'Datasets' }).click()
-    await page
-        .getByRole('row', { name: /Test Study/ })
-        .filter({ hasText: 'Not Available' })
-        .getByRole('button')
-        .nth(2)
-        .click()
+    const testStudyDataset = await page.locator('tr', { hasText: 'Test Study' }).getByText('Select action')
+    await testStudyDataset.click()
     await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
     await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 });
 });
