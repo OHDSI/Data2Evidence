@@ -222,11 +222,23 @@ export class Property extends AstElement {
                     }
                 }
 
-                //If including descendants, then its an inner join between Concept and Concept Ancestor Table with the joining keys as 
-                // 1 - CONCEPT.CONCEPT_ID = CONCEPT_ANCESTOR.ANCESTOR_CONCEPT_ID and 
-                // 2 - CONCEPT_ANCESTOR.DESCENDANT_CONCEPT_ID = @INTERACTION.<ANY_CONCEPT_ID_COLUMN>
+                //If including descendants, then its an inner join between Concept, Concept relationship and Concept Ancestor Table with the joining keys as 
+                // 1 - CONCEPT_RELATIONSHIP.CONCEPT_ID_1 = CONCEPT.CONCEPT_ID and CONCEPT_RELATIONSHIP.RELATIONSHIP_ID = 'Maps to'
+                // 2 - CONCEPT_RELATIONSHIP.CONCEPT_ID_2 = CONCEPT_ANCESTOR.ANCESTOR_CONCEPT_ID and 
+                // 3 - CONCEPT_ANCESTOR.DESCENDANT_CONCEPT_ID = @INTERACTION.<ANY_CONCEPT_ID_COLUMN>
                 // The only Pre-requisite is @REF/Concept must be defined in the Data source expression.
                 if (attrConfig.__config.includeDescendants) {
+
+                    //Please dont change the order of these joins as they are dependent on each other
+                    //Add Concept Relationship
+                    this.scopeEntityDef.addTableAlias(
+                        { baseEntity: "@REF0", table: `$$VOCAB_SCHEMA$$.CONCEPT_RELATIONSHIP` },
+                        false,
+                        "INNER JOIN",
+                        true
+                    );
+
+                    //Add Concept Ancestor
                     this.scopeEntityDef.addTableAlias(
                         { baseEntity: "@TEXT", table: attrConfig.placeholderMap["@TEXT"] },
                         false,
@@ -241,11 +253,29 @@ export class Property extends AstElement {
                         throw new Error("@REF undefined in the Data Source (Expression)!")
                     }
 
+
+                    //Build Concept Relationship
+                    const conceptRelationshipPlaceholder = "@REF0";
+                    attrConfig.placeholderMap[conceptRelationshipPlaceholder] = `$$SCHEMA$$.concept_relationship`;
+                    attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.CODE`] = attrConfig.placeholderMap["@REF.CODE"];
+                    attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.TEXT`] = attrConfig.placeholderMap["@REF.TEXT"];
+                    attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.VOCABULARY_ID`] = attrConfig.placeholderMap["@REF.VOCABULARY_ID"];
+
+                    // const ref0AliasObj = this.scopeEntityDef.getTableAliasByBaseEntity("@REF0");
+                    const ref0AliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@REF0"]);
+                    ref0AliasObj.on = []; //initialize
+                    this.pushOnCondition(
+                        ref0AliasObj.on,
+                        QueryObject.format("%UNSAFE", 
+                                            `${ref0AliasObj.alias}.relationship_id = 'Maps to' AND 
+                                             ${ref0AliasObj.alias}.concept_id_1 = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
+                    )
+
                     this.pushOnCondition(
                         textAliasObj.on,
                         QueryObject.format("%UNSAFE", 
                                             `${textAliasObj.alias}.ANCESTOR_CONCEPT_ID 
-                                              = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
+                                              = ${ref0AliasObj.alias}.concept_id_2`)
                     )
                     
                     let descendantsFilterExpression = attrConfig.__config.includeDescendantsExpression;
@@ -277,9 +307,7 @@ export class Property extends AstElement {
                             groupByNode.attrConfig = JSON.parse(JSON.stringify(attrConfig))
                         }
                         groupByNode.attrConfig.baseEntity = newRefPlaceholder;
-
                         groupByNode.attrConfig.__config.expression = groupByNode.attrConfig.__config.expression.replaceAll("@REF", newRefPlaceholder);
-
                         groupByNode.attrConfig.__config.defaultFilter = groupByNode.attrConfig.__config.defaultFilter.replaceAll("@REF", newRefPlaceholder);
                         
                         this.scopeEntityDef.addTableAlias(
