@@ -18,10 +18,12 @@ const post = async <T = any>(
 @Injectable({ scope: SCOPE.REQUEST })
 export class UserMgmtApi {
   private readonly url: string;
+  private readonly channel;
 
   constructor() {
     if (services.usermgmt) {
       this.url = services.usermgmt;
+      this.channel = Trex.tokioChannel("d2e-functions/alp-usermgmt");
     } else {
       throw new Error("No url is set for UserMgmtApi");
     }
@@ -29,9 +31,10 @@ export class UserMgmtApi {
 
   async getUserGroups(userId: string, jwt: string) {
     const requestConfig = this.getRequestConfig(jwt);
-    const body = { userId };
+    const body = JSON.stringify({ userId });
     const url = `${this.url}/user-group/list`;
-    return await post<UserGroup>(url, body, requestConfig);
+    const result = await this.channel.post(url, body, requestConfig);
+    return result.data;
   }
 
   private getRequestConfig(jwt: string): RequestInit {
