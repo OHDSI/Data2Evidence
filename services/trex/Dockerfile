@@ -19,7 +19,7 @@ COPY Trex/ext/bao/scripts/install_onnx.sh ./scripts
 
 RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime
 
-FROM oven/bun:1-debian AS base
+FROM oven/bun:1.3.1-debian AS base
 
 COPY --from=ort /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
 
