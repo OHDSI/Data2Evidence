@@ -7,28 +7,10 @@ class omop_transform_utils:
         "http://hl7.org/fhir/uv/omop/StructureDefinition/Person": "person",
         "http://hl7.org/fhir/uv/omop/StructureDefinition/VisitOccurrence": "visit_occurrence",
         "http://hl7.org/fhir/uv/omop/StructureDefinition/ConditionOccurrence": "condition_occurrence",
+        "http://hl7.org/fhir/uv/omop/StructureDefinition/DrugExposure": "drug_exposure",
+        "http://hl7.org/fhir/uv/omop/StructureDefinition/Measurement": "measurement",
     }
-    
-    table_keys = {
-        "observation": "observation_id",
-        "person": "person_id",
-        "visit_occurrence": "visit_occurrence_id",
-        "condition_occurrence": "condition_occurrence_id",
-        "drug_exposure": "drug_exposure_id",
-        "procedure_occurrence": "procedure_occurrence_id",
-        "measurement": "measurement_id",
-        "device_exposure": "device_exposure_id",
-        "death": "death_id",
-        "location": "location_id",
-        "provider": "provider_id",
-        "care_site": "care_site_id",
-        "observation_period": "observation_period_id",
-        "specimen": "specimen_id",
-        "note": "note_id",
-        "note_nlp": "note_nlp_id",
-        "visit_detail": "visit_detail_id",
-    }
-    
+
     target_field_types = {
         "observation": {
             "observation_date": "date",
@@ -51,8 +33,37 @@ class omop_transform_utils:
         },
         "visit_occurrence": {
             "visit_occurrence_id": "id",
-            "person_id": "referenceToId"
+            "person_id": "referenceToId",
+            "visit_concept_id": "map",
+            "visit_source_concept_id": "map",
+            "visit_end_date": "date",
+            "visit_start_date": "date",
+            "visit_type_concept_id": "map",
         },
+        "drug_exposure":{
+            "drug_exposure_id": "id",
+            "person_id": "referenceToId",
+            "drug_concept_id": "map",
+            "drug_exposure_start_date": "date",
+            "drug_exposure_end_date": "date",
+            "drug_type_concept_id": "map",
+            "quantity": "decimal",
+            "dose_unit_source_value": "string",
+            "route_source_value": "string",
+            "lot_number": "string",
+            "drug_source_concept_id": "map",
+        },
+        "measurement":{
+            "measurement_id": "id",
+            "person_id": "referenceToId",
+            "measurement_concept_id": "map",
+            "measurement_date": "date",
+            "measurement_datetime": "datetime",
+            "measurement_type_concept_id": "map",
+            "measurement_source_value": "string",
+            "unit_concept_id": "map",
+            "value_as_concept_id": "map",
+        }
     }
     def apply_casts(target_data, field_types):
         for field, target_type in field_types.items():

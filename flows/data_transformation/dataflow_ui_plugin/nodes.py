@@ -435,7 +435,11 @@ class TransformDataNode(Node):
     def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
             df_to_write = _input[self.dataframe].result
+            if df_to_write is None:
+                raise Exception("Input dataframe is None")
             df = self.transform_data(df_to_write)
+            if df is None:
+                raise Exception("Transformation resulted in empty dataframe")
             df = df.drop(columns=["meta.profile"], errors='ignore')
             df = df.drop(columns=["resourceType"], errors='ignore')
             return Result(False,  df, self, task_run_context)
