@@ -363,6 +363,11 @@ class TransformDataNode(Node):
         return omop_table
 
     def transform_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
+        if(input_fhir_df is None):
+            raise Exception("Input FHIR Dataframe is None")
+        elif self.structure_map is None or self.structure_map.get("structure") is None:
+            raise Exception("Structure map is not defined")
+        
         source_structure_definition_url = ""
         target_structure_definition_url = ""
         structure_list = self.structure_map.get("structure", [])
@@ -383,6 +388,16 @@ class TransformDataNode(Node):
             fhir_resource = None
         script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
         omop_table_name = self.omop_table_name(target_structure_definition_url)
+
+        if source_structure_definition_url == "" or target_structure_definition_url == "":
+            raise Exception("Source or Target Structure Definition URL is missing in structure map")
+        elif not source_structure_definition:
+            raise Exception(f"Source Structure Definition not found for url: {source_structure_definition_url}")
+        elif not target_structure_definition:   
+            raise Exception(f"Target Structure Definition not found for url: {target_structure_definition_url}")
+        elif omop_table_name is None:
+            raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
+        
         if fhir_resource:
             for key in fhir_resource:
                 process = Popen(

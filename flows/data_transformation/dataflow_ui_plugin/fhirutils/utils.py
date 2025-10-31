@@ -6,6 +6,7 @@ class omop_transform_utils:
         "http://hl7.org/fhir/uv/omop/StructureDefinition/Observation": "observation",
         "http://hl7.org/fhir/uv/omop/StructureDefinition/Person": "person",
         "http://hl7.org/fhir/uv/omop/StructureDefinition/VisitOccurrence": "visit_occurrence",
+        "http://hl7.org/fhir/uv/omop/StructureDefinition/ConditionOccurrence": "condition_occurrence",
     }
     
     table_keys = {
@@ -34,9 +35,25 @@ class omop_transform_utils:
             "observation_id": "id",
             "person_id": "referenceToId",
             "observation_type_concept_id": "determineObservationType"
-        }
+        },
+        "person": {
+            "person_id": "id",
+            "gender_concept_id": "map",
+            "race_concept_id": "map",
+            "ethnicity_concept_id": "map",
+        },
+        "condtion_occurrence": {
+            "condition_occurrence_id": "id",
+            "person_id": "referenceToId",
+            "condition_start_datetime": "datetime",
+            "condition_start_date": "date",
+            "condition_end_date": "date",
+        },
+        "visit_occurrence": {
+            "visit_occurrence_id": "id",
+            "person_id": "referenceToId"
+        },
     }
-    
     def apply_casts(target_data, field_types):
         for field, target_type in field_types.items():
             if field in target_data:
@@ -82,6 +99,8 @@ class omop_transform_utils:
                     return value.split("/")[-1]
             elif target_type == "determineObservationType":
                 return 38000280; # EHR observation type concept id
+            elif target_type == "map":
+                return 38000280  # Placeholder for mapping logic
             else:
                 return value
         except Exception as e:
