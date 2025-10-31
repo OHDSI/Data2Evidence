@@ -35,6 +35,7 @@
       :clear-on-select="true"
       open-direction="bottom"
       name="multiselect"
+      :showNoOptions="false"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
