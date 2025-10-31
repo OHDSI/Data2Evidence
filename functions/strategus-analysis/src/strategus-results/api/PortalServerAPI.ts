@@ -3,6 +3,7 @@ import { services } from "../../env.ts";
 export class PortalServerAPI {
   private readonly baseURL: string;
   private readonly token: string;
+  private readonly channel;
 
   constructor(token: string) {
     this.token = token;
@@ -11,24 +12,9 @@ export class PortalServerAPI {
     }
     if (services.portalServer) {
       this.baseURL = services.portalServer;
+      this.channel = Trex.tokioChannel("d2e-functions/portal");
     } else {
       throw new Error("No url is set for PortalServerAPI");
-    }
-  }
-
-  async getDataset(datasetId: string) {
-    try {
-      const url = `${this.baseURL}/dataset`;
-      const queryParams = new URLSearchParams({ datasetId });
-      const options = this.createOptions("GET");
-      const result = await fetch(`${url}?${queryParams.toString()}`, options);
-      if (!result.ok) {
-        throw new Error("Error while getting dataset by datasetId");
-      }
-      return await result.json();
-    } catch (error) {
-      console.error(`Error while getting dataset by datasetId: ${error}`);
-      throw error;
     }
   }
 
@@ -36,13 +22,13 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/git-studies/studies`;
       const options = this.createOptions("GET");
-      const result = await fetch(url, options);
-      if (!result.ok) {
+      const result = await this.channel.get(url, options);
+      if (result.status !== 200) {
         throw new Error(
           `Error while getting git studies: ${result.status} ${result.statusText}`
         );
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while getting git studies: ${error}`);
       throw error;

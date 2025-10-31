@@ -627,7 +627,7 @@ export class CachedbDAO {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
       // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-      // https://github.com/alp-os/internal/issues/1411
+      // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
         select concept_id_1, concept_id_2, relationship_id from ${
           this.vocabSchemaName
@@ -651,7 +651,7 @@ export class CachedbDAO {
     const client = this.getDuckdbConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
     // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-    // https://github.com/alp-os/internal/issues/1411
+    // https://github.com/OHDSI/Data2Evidence/issues/1057
     try {
       const sql = `
       select ancestor_concept_id, descendant_concept_id, min_levels_of_separation, max_levels_of_separation from ${
@@ -678,7 +678,7 @@ export class CachedbDAO {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
       // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-      // https://github.com/alp-os/internal/issues/1411
+      // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
         select concept_id_1, concept_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason from ${
           this.vocabSchemaName

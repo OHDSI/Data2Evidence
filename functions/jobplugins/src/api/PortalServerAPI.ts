@@ -5,6 +5,7 @@ import { CsvFileOperationResponse } from "../types.ts";
 export class PortalServerAPI {
   private readonly baseURL: string;
   private readonly token: string;
+  private readonly channel;
 
   constructor(token: string) {
     this.token = token;
@@ -13,6 +14,7 @@ export class PortalServerAPI {
     }
     if (services.portalServer) {
       this.baseURL = services.portalServer;
+      this.channel = Trex.tokioChannel("d2e-functions/portal");
     } else {
       throw new Error("No url is set for PortalServerAPI");
     }
@@ -33,11 +35,11 @@ export class PortalServerAPI {
         releaseId
       )}`;
       const options = this.createOptions("GET");
-      const result = await fetch(url, options);
-      if (!result.ok) {
+      const result = this.channel.get(url, options);
+      if (result.status !== 200) {
         throw new Error("Error while getting dataset release by id");
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while getting dataset release by id: ${error}`);
       throw error;
@@ -49,11 +51,14 @@ export class PortalServerAPI {
       const url = `${this.baseURL}/dataset`;
       const queryParams = new URLSearchParams({ datasetId });
       const options = this.createOptions("GET");
-      const result = await fetch(`${url}?${queryParams.toString()}`, options);
-      if (!result.ok) {
+      const result = await this.channel.get(
+        `${url}?${queryParams.toString()}`,
+        options
+      );
+      if (result.status !== 200) {
         throw new Error("Error while getting dataset by datasetId");
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while getting dataset by datasetId: ${error}`);
       throw error;
@@ -64,12 +69,12 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/config/secret/${type}`;
       const options = this.createOptions("GET");
-      const result = await fetch(url, options);
-      if (!result.ok) {
+      const result = await this.channel.get(url, options);
+      if (result.status !== 200) {
         console.log(`Config type '${type}' not found or inaccessible`);
         return null;
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while getting system config: ${error}`);
       return null;
@@ -90,17 +95,20 @@ export class PortalServerAPI {
         headers: {
           Authorization: this.token,
         },
-        body: formData,
       };
 
-      const result = await fetch(`${url}?nodeId=${nodeId}`, options);
-      if (!result.ok) {
-        const errorText = await result.text();
+      const result = await this.channel.post(
+        `${url}?nodeId=${nodeId}`,
+        formData,
+        options
+      );
+      if (result.status !== 200) {
+        const errorText = result.statusText;
         throw new Error(
           `Error while uploading CSV file: ${result.status} - ${errorText}`
         );
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while uploading CSV file: ${error}`);
       throw error;
@@ -114,17 +122,17 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/supabase-storage/delete/csv`;
       const options = this.createOptions("DELETE");
-      const result = await fetch(
+      const result = this.channel.delete(
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
-      if (!result.ok) {
-        const errorText = await result.text();
+      if (result.status !== 200) {
+        const errorText = await result.statusText;
         throw new Error(
           `Error while deleting CSV file: ${result.status} - ${errorText}`
         );
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while deleting CSV file: ${error}`);
       throw error;

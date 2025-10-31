@@ -6,6 +6,7 @@ import { IUserArtifactAtlasCohortDefinitionDto } from "../dto/cohortdefinition.t
 export class PortalServerAPI {
   private readonly baseURL: string;
   private readonly token: string;
+  // deno-lint-ignore no-explicit-any
   private portalapi: any;
 
   constructor(token: string) {
@@ -20,6 +21,7 @@ export class PortalServerAPI {
       console.error("No url is set for PortalServerAPI");
       throw new Error("No url is set for PortalServerAPI");
     }
+    // @ts-ignore To ignore Cannot find name 'Trex'
     this.portalapi = Trex.tokioChannel("d2e-functions/portal");
   }
 
@@ -193,11 +195,7 @@ export class PortalServerAPI {
     }
   }
 
-  private async getDataset(datasetId: string): Promise<{
-    dialect: string;
-    vocabSchemaName: string;
-    schemaName: string;
-  }> {
+  async getDataset(datasetId: string): Promise<IDataset> {
     console.info(`Portal request to get dataset info for id : ${datasetId}`);
     const errorMessage = `Error while getting dataset info for id : ${datasetId}`;
     try {
@@ -211,33 +209,6 @@ export class PortalServerAPI {
       console.error(`${errorMessage}: ${error}`);
       throw new Error(errorMessage);
     }
-  }
-
-  async getDatasetDetails(datasetId: string) {
-    const dataset = await this.getDataset(datasetId);
-    if (!dataset) {
-      throw new Error(`Could not find dataset with datasetId: ${datasetId}`);
-    }
-
-    if (!dataset.dialect) {
-      throw new Error(`Dialect does not exist for datasetId: ${datasetId}`);
-    }
-
-    if (!dataset.schemaName) {
-      throw new Error(`Schema Name does not exist for datasetId: ${datasetId}`);
-    }
-
-    if (!dataset.vocabSchemaName) {
-      throw new Error(
-        `vocabSchemaName does not exist for datasetId: ${datasetId}`
-      );
-    }
-
-    return {
-      dialect: dataset.dialect,
-      vocabSchemaName: dataset.vocabSchemaName,
-      schemaName: dataset.schemaName,
-    };
   }
 
   private getRequestConfig() {
