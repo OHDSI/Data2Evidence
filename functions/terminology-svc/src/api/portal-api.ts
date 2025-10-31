@@ -47,7 +47,6 @@ export class SystemPortalAPI {
         datasetId
       )}`;
       const result = await this.portalapi.get(url, options);
-      console.log("findme, result", result);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
@@ -114,7 +113,6 @@ export class SystemPortalAPI {
         datasetId
       )}`;
       const result = await this.portalapi.get(url, options);
-      console.log("findme, result.data", result.data);
       return result.data as ConceptSet;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);

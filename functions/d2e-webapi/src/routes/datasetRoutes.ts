@@ -3,6 +3,7 @@ import fastify from "fastify";
 import { cohortdefinition } from "./cohortdefinition.ts";
 import { conceptset } from "./conceptset.ts";
 import { vocabulary } from "./vocabulary.ts";
+import { cdmresults } from "./cdmresults.ts";
 
 export default (app: fastify.FastifyInstance) => {
   // Add hook to pull datasetId from req header
@@ -23,5 +24,8 @@ export default (app: fastify.FastifyInstance) => {
   });
   app.register(vocabulary, {
     prefix: "/vocabulary",
+  });
+  app.register(cdmresults, {
+    prefix: "/cdmresults",
   });
 };
