@@ -36,6 +36,15 @@ jobs:
           docker-images: true
           swap-storage: true
 
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
