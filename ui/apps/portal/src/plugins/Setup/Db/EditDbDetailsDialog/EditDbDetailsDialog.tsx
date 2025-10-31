@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import Divider from "@mui/material/Divider";
 import { SxProps } from "@mui/material";
-import { Autocomplete, Box, Button, Chip, Dialog, TextArea, TextField } from "@portal/components";
+import { Autocomplete, Button, Chip, Dialog, TextArea, TextField } from "@portal/components";
 import isEqual from "lodash/isEqual";
 import pick from "lodash/pick";
 import { CloseDialogType, DB_DIALECTS, Feedback, IDatabase, IDbPublication } from "../../../../types";
@@ -165,10 +165,10 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
     >
       <Divider />
       <div className="edit-db-dialog__content">
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <label className="database-code__label">{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__DATABASE_ID)}</label>
           <label className="database-code-value__label">{db.code}</label>
-        </Box>
+        </div>
         {db.dialect === DB_DIALECTS.BIG_QUERY ? (
           <>
             <BigQueryForm
@@ -180,38 +180,38 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
           </>
         ) : (
           <>
-            <Box mb={4}>
-              <Box mb={2}>
+            <div style={{ marginBottom: "32px" }}>
+              <div style={{ marginBottom: "16px" }}>
                 <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__DATABASE_NAME)}</b>
-              </Box>
-              <Box mb={4}>
+              </div>
+              <div style={{ marginBottom: "32px" }}>
                 <TextField
                   fullWidth
                   variant="standard"
                   value={formData.name}
                   onChange={(event) => handleFormDataChange({ name: event.target.value })}
                 />
-              </Box>
+              </div>
 
-              <Box mb={2} display="flex" gap={4}>
-                <Box sx={{ width: "100%" }}>
-                  <Box mb={2}>
+              <div style={{ marginBottom: "16px", display: "flex", gap: "32px" }}>
+                <div style={{ width: "100%" }}>
+                  <div style={{ marginBottom: "16px" }}>
                     <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__HOST)}</b>
-                  </Box>
-                  <Box mb={4}>
+                  </div>
+                  <div style={{ marginBottom: "32px" }}>
                     <TextField
                       fullWidth
                       variant="standard"
                       value={formData.host}
                       onChange={(event) => handleFormDataChange({ host: event.target.value })}
                     />
-                  </Box>
-                </Box>
-                <Box>
-                  <Box mb={2}>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ marginBottom: "16px" }}>
                     <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__PORT)}</b>
-                  </Box>
-                  <Box mb={4}>
+                  </div>
+                  <div style={{ marginBottom: "32px" }}>
                     <TextField
                       variant="standard"
                       type="number"
@@ -219,14 +219,14 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
                       value={formData.port}
                       onChange={(event) => handleFormDataChange({ port: Number(event.target.value) })}
                     />
-                  </Box>
-                </Box>
-              </Box>
+                  </div>
+                </div>
+              </div>
 
-              <Box mb={2}>
+              <div style={{ marginBottom: "16px" }}>
                 <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__VOCAB_SCHEMA)}</b>
-              </Box>
-              <Box mb={4}>
+              </div>
+              <div style={{ marginBottom: "32px" }}>
                 <Autocomplete
                   multiple
                   freeSolo
@@ -245,25 +245,25 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
                   value={formData.vocabSchemas}
                   onChange={(event, vocabSchemas) => handleFormDataChange({ vocabSchemas })}
                 />
-              </Box>
-            </Box>
-            <Box mb={4}>
-              <Box mb={2}>
+              </div>
+            </div>
+            <div style={{ marginBottom: "32px" }}>
+              <div style={{ marginBottom: "16px" }}>
                 <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__EXTRA)}</b>
-              </Box>
-              <Box>
+              </div>
+              <div>
                 <TextArea
                   rows={10}
                   value={formData.extra}
                   onChange={(event) => handleFormDataChange({ extra: event.target.value })}
                 />
-              </Box>
-            </Box>
-            <Box mb={4} hidden={dialect !== DB_DIALECTS.POSTGRES}>
-              <Box mb={2}>
+              </div>
+            </div>
+            <div style={{ marginBottom: "32px" }} hidden={dialect !== DB_DIALECTS.POSTGRES}>
+              <div style={{ marginBottom: "16px" }}>
                 <b>{getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__CACHE_REPLICATION)}</b>
-              </Box>
-              <Box mb={1} display="flex" gap={4}>
+              </div>
+              <div style={{ marginBottom: "8px", display: "flex", gap: "32px" }}>
                 <TextField
                   label={getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__PUBLICATION)}
                   variant="standard"
@@ -271,15 +271,15 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
                   value={formData.publication}
                   onChange={(event) => handleFormDataChange({ publication: event.target?.value })}
                 />
-              </Box>
-            </Box>
+              </div>
+            </div>
           </>
         )}
       </div>
       <Divider />
 
       <div className="edit-db-dialog__footer">
-        <Box display="flex" gap={1} className="edit-db-dialog__footer-actions">
+        <div style={{ display: "flex", gap: "8px" }} className="edit-db-dialog__footer-actions">
           <Button
             text={getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__CANCEL)}
             variant="outlined"
@@ -292,7 +292,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
             loading={loading}
             disabled={!hasChanges}
           />
-        </Box>
+        </div>
       </div>
     </Dialog>
   );

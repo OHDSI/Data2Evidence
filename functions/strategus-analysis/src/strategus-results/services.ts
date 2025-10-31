@@ -24,7 +24,7 @@ export const startStrategusResultsViewer = async (
     const manager = new KernelManager({
       standby: "when-hidden",
       serverSettings: ServerConnection.makeSettings({
-        baseUrl: services["jupyter-gateway"],
+        baseUrl: services["jupyter-gateway-viewer"],
         token: token,
         appendToken: true,
       }),
@@ -97,7 +97,7 @@ export const stopStrategusResultsViewer = async (
     const manager = new KernelManager({
       standby: "when-hidden",
       serverSettings: ServerConnection.makeSettings({
-        baseUrl: services["jupyter-gateway"],
+        baseUrl: services["jupyter-gateway-viewer"],
         token: token,
         appendToken: true,
       }),

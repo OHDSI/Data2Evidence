@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Checkbox } from "@portal/components";
+import { Checkbox } from "@portal/components";
 import { AutocompleteOption, FilterAutocomplete } from "./FilterAutocomplete";
 import { FilterNumberRange } from "./FilterNumberRange";
 import { FilterNumberSlider } from "./FilterNumberSlider";
@@ -116,7 +116,7 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
           <span className="dataset-filter__description">
             {getText(i18nKeys.DATASET_FILTERS__SELECT_APPLICABLE_FILTERS)}:
           </span>
-          <Box display="flex" flexDirection="column" gap={1}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             <Checkbox
               checked={filterByAge}
               label={getText(i18nKeys.DATASET_FILTERS__AGE_RANGE)}
@@ -170,7 +170,7 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
                 handleFormDataChange({ cumulativeObservationMonths });
               }}
             />
-          </Box>
+          </div>
         </div>
       </div>
     </div>

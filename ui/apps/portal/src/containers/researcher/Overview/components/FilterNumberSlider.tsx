@@ -1,6 +1,6 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { styled } from "@mui/material/styles";
-import { Box, InputLabel, Slider, TextInput } from "@portal/components";
+import { InputLabel, Slider, TextInput } from "@portal/components";
 import "./FilterNumberSlider.scss";
 
 interface FilterNumberSliderProps {
@@ -70,7 +70,7 @@ export const FilterNumberSlider: FC<FilterNumberSliderProps> = ({ label, value: 
 
   return (
     <div className="filter-number-slider">
-      <Box display="flex" gap={1}>
+      <div style={{ display: "flex", gap: "8px" }}>
         {label && <StyledInputLabel>{label}</StyledInputLabel>}
         <TextInput
           type="number"
@@ -78,7 +78,7 @@ export const FilterNumberSlider: FC<FilterNumberSliderProps> = ({ label, value: 
           value={value}
           onChange={(e: ChangeEvent<HTMLInputElement>) => handleValueChange(parseInt(e.target.value))}
         />
-      </Box>
+      </div>
       <StyledSlider
         value={from}
         valueLabelFormat={(value: number) => <div>{value}</div>}
