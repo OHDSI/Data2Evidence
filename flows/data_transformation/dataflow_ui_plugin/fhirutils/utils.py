@@ -9,6 +9,7 @@ class omop_transform_utils:
         "http://hl7.org/fhir/uv/omop/StructureDefinition/ConditionOccurrence": "condition_occurrence",
         "http://hl7.org/fhir/uv/omop/StructureDefinition/DrugExposure": "drug_exposure",
         "http://hl7.org/fhir/uv/omop/StructureDefinition/Measurement": "measurement",
+        "http://hl7.org/fhir/uv/omop/StructureDefinition/ProcedureOccurrence": "procedure_occurrence",
     }
 
     target_field_types = {
@@ -16,7 +17,9 @@ class omop_transform_utils:
             "observation_date": "date",
             "observation_id": "id",
             "person_id": "referenceToId",
-            "observation_type_concept_id": "determineObservationType"
+            "observation_type_concept_id": "determineObservationType",
+            "observation_concept_id": "map",
+            "unit_concept_id": "map",
         },
         "person": {
             "person_id": "id",
@@ -63,6 +66,13 @@ class omop_transform_utils:
             "measurement_source_value": "string",
             "unit_concept_id": "map",
             "value_as_concept_id": "map",
+        },
+        "procedure_occurrence":{
+            "procedure_occurrence_id": "id",
+            "person_id": "referenceToId",
+            "procedure_concept_id": "map",
+            "procedure_date": "date",
+            "procedure_type_concept_id": "map",
         }
     }
     def apply_casts(target_data, field_types):
