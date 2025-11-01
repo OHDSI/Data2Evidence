@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import bsCard from '../lib/ui/bs-card.vue'
+import bsCard from '@/lib/ui/bs-card.vue'
 import appTab from '@/lib/ui/app-tab.vue'
 import { ref } from 'vue'
 import InclusionReport from './InclusionReport.vue'
