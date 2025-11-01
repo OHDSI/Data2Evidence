@@ -28,8 +28,8 @@ const tabList = [
   },
 ]
 
-const selectedView = ref('inclusion_report')
-const activeDataset = ref(props.availableSources[0].sourceKey)
+const selectedView = ref<'inclusion_report' | 'analysis' | 'sample'>('inclusion_report')
+const activeDataset = ref<string>(props.availableSources[0].sourceKey)
 
 // Emit an event to parent to trigger cohort generation for a source
 const emit = defineEmits(['generate-cohort'])
@@ -106,11 +106,12 @@ const isGeneratingForSource = (sourceKey: string) => {
           v-if="selectedView === 'inclusion_report'"
           :cohort-definition-id="cohortDefinitionId"
           :source-key="activeDataset"
-          dataset-id="STARTHERE"
-          :modeId="0"
+          :modeId="1"
+          :generation-status="generationStatus"
+          :patient-count="patientCounts?.[activeDataset]"
         >
-          <h3>Inclusion report</h3></InclusionReport
-        >
+          <h3>Inclusion report</h3>
+        </InclusionReport>
         <h3 v-if="selectedView === 'analysis'">Analysis</h3>
         <h3 v-if="selectedView === 'sample'">Sample</h3>
         <div>{{ activeDataset }}</div>
