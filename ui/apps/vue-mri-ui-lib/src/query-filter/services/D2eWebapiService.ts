@@ -200,14 +200,13 @@ export class D2eWebapiService {
   public async getInclusionReport(
     cohortDefinitionId: number,
     sourceKey: string,
-    modeId: number,
-    datasetId: string
+    modeId: number
   ): Promise<InclusionReportResponse> {
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
       url: `/cohortdefinition/${cohortDefinitionId}/report/${sourceKey}?mode=${modeId}`,
       method: 'GET',
-      headers: { datasetid: datasetId },
+      headers: { datasetid: sourceKey },
     })
     return response.data
   }
