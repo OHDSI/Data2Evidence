@@ -197,6 +197,7 @@ services:
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
+      TPM_REGISTRY_URL: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: "${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}" #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PLUGINS_INFORMATION_URL: ${PLUGINS_INFORMATION_URL:-https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true}
