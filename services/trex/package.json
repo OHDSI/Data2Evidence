@@ -4,10 +4,10 @@
   "description": "",
   "main": "lib/trex.js",
   "scripts": {
-    "start": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && bao --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5432 --main-path /usr/src/core/server --event-worker-path /usr/src/core/event",
-    "startdev": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && bao --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5432 --main-path /usr/src/core/server --event-worker-path /usr/src/core/event --enable-inspector --inspector-host 0.0.0.0 --inspector-port 9229",
-    "watch": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && npx nodemon --watch /usr/src/core -e ts --exec bao --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5432 --main-path /usr/src/core/server --event-worker-path /usr/src/core/event --enable-inspector --inspector-host 0.0.0.0 --inspector-port 9229",
-    "starttest": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && bao --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5432 --main-path /usr/src/main --event-worker-path /usr/src/event-worker",
+    "start": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && trex --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5433 --main-path /usr/src/core/server --event-worker-path /usr/src/core/event",
+    "startdev": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && trex --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5433 --main-path /usr/src/core/server --event-worker-path /usr/src/core/event --enable-inspector --inspector-host 0.0.0.0 --inspector-port 9229",
+    "watch": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && npx nodemon --watch /usr/src/core -e ts --exec trex --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5433 --main-path /usr/src/core/server --event-worker-path /usr/src/core/event --enable-inspector --inspector-host 0.0.0.0 --inspector-port 9229",
+    "starttest": "mkdir -p /usr/src/cert && echo \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && echo \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && trex --tls-cert /usr/src/cert/cert.pem --tls-key /usr/src/cert/key.pem --tls-port 33000 --trexas-port 33001 --pgwire-port 5433 --main-path /usr/src/main --event-worker-path /usr/src/event-worker",
     "health": "curl -f http://localhost:33001/_internal/health || exit 1",
     
     "xstart": "mkdir -p ./cert ; echo \"$TLS__INTERNAL__CRT\" > ./cert/cert.pem & echo \"$TLS__INTERNAL__KEY\" > ./cert/key.pem & ./trex start --tls 33000 -p 33001 --key /usr/src/cert/key.pem --cert /usr/src/cert/cert.pem --sql 5432 --main-service /usr/src/core/server/index.eszip --event-worker /usr/src/core/event/index.eszip",
@@ -35,6 +35,6 @@
     "nodemon": "^3.1.4"
   },
   "dependencies": {
-    "@trex/bao": "^0.5.0-1762002678-a95d8004f573fcde74f1dee9ee02bc105435ee1a"
+    "@trex/cli": "latest"
   }
 }
