@@ -226,6 +226,13 @@ jobs:
         with:
           name: error-context
           path: tests/e2e/test-results/**/*
+          
+      - name: Upload Playwright Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-screenshots
+          path: tests/e2e/test-results/screenshots/**
 
       - name: Logs
         if: success() || failure()
