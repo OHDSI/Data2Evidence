@@ -9577,7 +9577,7 @@ export const cdwConfig = {
             "@PROC.START": "\"PROCEDURE_DATE\"",
             "@PROC.END": "\"PROCEDURE_DATE\"",
             "@PROC.INTERACTION_TYPE": "\"PROCEDURE_TYPE_CONCEPT_ID\"",
-            "@COHORT": "$$SCHEMA$$.\"COHORT\"",
+            "@COHORT": "$$RESULT_SCHEMA$$.\"COHORT\"",
             "@COHORT.PATIENT_ID": "\"SUBJECT_ID\"",
             "@COHORT.INTERACTION_ID": "\"COHORT_DEFINITION_ID\"",
             "@COHORT.CONDITION_ID": "\"COHORT_DEFINITION_ID\"",
@@ -35848,8 +35848,10 @@ const omopHanaLeanCdwConfig = {
 								"visible": true
 							}
 						],
-						"type": "num",
+						"type": "text",
 						"expression": "@COHORT.cohort_definition_id",
+                        "referenceFilter": "CONTAINS (@COHORT_DEF.cohort_definition_name, '%@SEARCH_QUERY%', FUZZY (0.5))",
+                        "referenceExpression": "@COHORT_DEF.COHORT_DEFINITION_ID",
 						"order": 0,
 						"domainFilter": "",
 						"includeDescendants": false,
@@ -36762,7 +36764,7 @@ const omopHanaLeanCdwConfig = {
 			"@PROC.START": "\"PROCEDURE_DATE\"",
 			"@PROC.END": "\"PROCEDURE_DATE\"",
 			"@PROC.INTERACTION_TYPE": "\"PROCEDURE_TYPE_CONCEPT_ID\"",
-			"@COHORT": "$$SCHEMA$$.\"COHORT\"",
+			"@COHORT": "$$RESULT_SCHEMA$$.\"COHORT\"",
 			"@COHORT.PATIENT_ID": "\"SUBJECT_ID\"",
 			"@COHORT.INTERACTION_ID": "\"COHORT_DEFINITION_ID\"",
 			"@COHORT.CONDITION_ID": "\"COHORT_DEFINITION_ID\"",
@@ -37490,20 +37492,20 @@ const omopHanaLeanPAConfig = {
         },
         {
             "source": "patient.interactions.cohort",
-            "visible": false,
+            "visible": true,
             "order": 8,
             "initial": false,
             "attributes": [
                 {
                     "source": "patient.interactions.cohort.attributes.cohortdefinitionid",
-                    "ordered": true,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
+                    "ordered": false,
+                    "cached": false,
+                    "useRefText": true,
+                    "useRefValue": true,
                     "category": true,
-                    "measure": true,
+                    "measure": false,
                     "filtercard": {
-                        "initial": false,
+                        "initial": true,
                         "visible": true,
                         "order": 1
                     },
@@ -37520,11 +37522,11 @@ const omopHanaLeanPAConfig = {
                     "cached": true,
                     "useRefText": false,
                     "useRefValue": false,
-                    "category": true,
-                    "measure": true,
+                    "category": false,
+                    "measure": false,
                     "filtercard": {
                         "initial": false,
-                        "visible": true,
+                        "visible": false,
                         "order": 2
                     },
                     "patientlist": {
@@ -37540,7 +37542,7 @@ const omopHanaLeanPAConfig = {
                     "cached": true,
                     "useRefText": false,
                     "useRefValue": false,
-                    "category": true,
+                    "category": false,
                     "measure": false,
                     "filtercard": {
                         "initial": false,
@@ -37560,7 +37562,7 @@ const omopHanaLeanPAConfig = {
                     "cached": true,
                     "useRefText": false,
                     "useRefValue": false,
-                    "category": true,
+                    "category": false,
                     "measure": false,
                     "filtercard": {
                         "initial": false,
@@ -37720,7 +37722,7 @@ const omopHanaLeanPAConfig = {
     },
     "panelOptions": {
         "addToCohorts": true,
-        "domainValuesLimit": 5000,
+        "domainValuesLimit": 50000,
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,

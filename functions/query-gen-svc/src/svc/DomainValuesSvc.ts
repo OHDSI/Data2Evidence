@@ -398,10 +398,18 @@ function getDistinctValuesFromReference(
         ? configAttrObj.referenceFilter
         : "";
 
+    const baseEntity = attrRefExpression.match(/@REF|@COHORT_DEF/g)?.[0] || "@REF";
+
     let placeholderAliasMap = <PholderTableMapType>{
         "@REF": "R",
         "@SEARCH_QUERY": searchQuery,
+        "@COHORT_DEF": "CD",
     };
+
+    placeholderTableMap["@COHORT_DEF"] = `$$RESULT_SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@COHORT_DEF.TEXT"] = `cohort_definition_name`;
+
+    const objDescriptionExpression = getDescriptionExpression(baseEntity, placeholderTableMap);
 
     let sQuery;
     const aliasedRefExpression = replacePlaceholderWithCustomString(
@@ -415,13 +423,25 @@ function getDistinctValuesFromReference(
           )} `
         : "";
     const refTextSelect = useRefText
-        ? ` , R.${placeholderTableMap["@REF.TEXT"]} as "text" `
+        ? ` , ${objDescriptionExpression.descSelectText} as "text" `
         : "";
 
     sQuery = QueryObject.format(
-        `SELECT DISTINCT  ( %UNSAFE )  AS "value" ${refTextSelect} FROM ${placeholderTableMap["@REF"]} R %UNSAFE ORDER BY "value" ASC `,
+        `SELECT DISTINCT  ( %UNSAFE )  AS "value" ${refTextSelect} FROM ${objDescriptionExpression.descFromText} %UNSAFE ORDER BY "value" ASC `,
         aliasedRefExpression,
         aliasedRefFilter
     );
     return sQuery;
 }
+
+function getDescriptionExpression(baseEntity: string, placeholderTableMap: PholderTableMapType) {
+    if (baseEntity === "@COHORT_DEF") {
+        return {"descSelectText": `CD.${placeholderTableMap["@COHORT_DEF.TEXT"]}`, 
+                "descFromText": ` ${placeholderTableMap["@COHORT_DEF"]} CD `};
+    }
+    return {"descSelectText": `R.${placeholderTableMap["@REF.TEXT"]}`, 
+            "descFromText": ` ${placeholderTableMap["@REF"]} R `};
+}
+
+
+
