@@ -22,15 +22,15 @@ test(TEST_NAME, async ({ page }) => {
   //Add Age filter
   await test.step('Add Age filter', async () => {
     await page.getByTitle('Basic Data - Age').click()
-    await page.getByRole('textbox').fill('>114')
-    await page.getByRole('textbox').press('Enter')
+    await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>114')
+    await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
     await expect(page.getByText('27 / 2694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Gender filter
   await test.step('Add Gender - Male filter', async () => {
     await page.getByText('All').click()
-    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Male')
+    await page.getByPlaceholder('Enter search term').fill('Male')
     await page.getByText('MALE - MALE').click()
     await expect(page.getByText('5 / 2694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -40,7 +40,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Chronic sinusitis')
+    await page.getByPlaceholder('Enter search term').fill('Chronic sinusitis')
     try {
       await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 10000 })
       await page.getByText('Chronic sinusitis').click()
@@ -122,7 +122,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Add Gender - Male filter', async () => {
     await page.getByTitle('Basic Data - Gender').locator('i').click()
     await page.getByText('Enter search term').click()
-    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Female')
+    await page.getByPlaceholder('Enter search term').fill('Female')
     await page.getByText('FEMALE - FEMALE').click({ timeout: 40000 })
     await expect(page.getByText('8 / 2694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -217,8 +217,8 @@ test(TEST_NAME, async ({ page }) => {
           .filter({ hasText: 'Condition concept set All' })
           .nth(1)
           .click()
-        await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-        await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Viral sinusitis')
+        await page.getByPlaceholder('Enter search term').fill('')
+        await page.getByPlaceholder('Enter search term').fill('Viral sinusitis')
         await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 })
         await page.getByText('Viral sinusitis').click({ timeout: 10000 })
         await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })

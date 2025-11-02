@@ -47,20 +47,18 @@ test(TEST_NAME, async ({ browser }) => {
 
   // Step 8 - Show that there are no elements found
   await page.getByTitle('Condition Occurrence A -').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('abc')
-  await expect(page.locator('[id="patient.interactions.conditionoccurrence.1"]')).toMatchAriaSnapshot(
-    `- text: abc No suggestions available`
-  )
+  await page.getByPlaceholder('Enter search term').fill('abc')
+  await expect(page.getByRole('option', { name: 'abc No suggestions available' })).toBeVisible()
 
   // Step 4&5 - Searching term for a given substring
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('nemi')
+  await page.getByPlaceholder('Enter search term').fill('nemi')
   await expect(page.getByText('Anemia - Anemia')).toBeVisible()
 
   // Step 6 - Full term search
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Hypothyroidism')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('Hypothyroidism')
   await expect(page.getByText('Hypothyroidism - Hypothyroidism')).toBeVisible()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).press('Escape')
+  await page.getByPlaceholder('Enter search term').press('Escape')
 
   // Step 7 - Validate supported syntax help appears
   await page.getByText('Supported SyntaxEnter a').click()
@@ -100,16 +98,16 @@ test(TEST_NAME, async ({ browser }) => {
 
   // Step 8 - Select concept set
   await page.getByTitle('Condition Occurrence A - Condition concept Set').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('test_concept_set')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('test_concept_set')
   await expect(page.getByText('test_concept_set', { exact: false }).first()).toBeVisible()
   await page.getByText('test_concept_set', { exact: false }).first().click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).press('Escape')
+  await page.getByPlaceholder('Enter search term').press('Escape')
 
   // Step 8 - Entering incorrect condition occurrence concept
   await page.getByTitle('Condition Occurrence A - Condition concept Name').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('abc')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('abc')
   await page.getByText('abc').click()
   const conditionOccuErrorBgcolor = await page
     .getByText('abc')
@@ -150,8 +148,8 @@ test(TEST_NAME, async ({ browser }) => {
 
   // Step 12 - Basic data filter for gender
   await page.getByTitle('Basic Data - Gender').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Female')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('Female')
   await page.getByText('FEMALE - FEMALE').click()
   await page.getByRole('button', { name: '' }).click()
 
@@ -160,8 +158,8 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByText('Gender concept id').click()
   await page.getByText('Select an AttributeSelect').click()
   await page.getByTitle('Basic Data - Gender concept id').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('8532')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('8532')
   await page.getByText('- FEMALE').click()
 
   // Step 13 - Add filter card for Measurement concept name
@@ -180,8 +178,8 @@ test(TEST_NAME, async ({ browser }) => {
     .click()
   await page.locator('#stacked-chart').click()
   await page.getByTitle('Measurement A - Measurement concept name').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('glucose')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('glucose')
   await page.getByText('Glucose lab - Glucose lab').click()
   await page.locator('#stacked-chart').click()
 
@@ -196,8 +194,8 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('menu').getByText('Observation concept set').click()
   await page.locator('#stacked-chart').click()
   await page.getByTitle('Observation A - Observation').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Shell')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('Shell')
   await page.getByText('Shellfish allergy - Shellfish').click()
 
   // Reset filters

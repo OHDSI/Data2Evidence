@@ -23,8 +23,8 @@ test(TEST_NAME, async ({ page }) => {
   //Add Age filter
   await test.step('Add Age filter', async () => {
     await page.getByTitle('Basic Data - Age').click()
-    await page.getByRole('textbox').fill('>55')
-    await page.getByRole('textbox').press('Enter')
+    await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>55')
+    await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
     await expect(page.getByText('1971 / 2694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -33,7 +33,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Chronic sinusitis')
+    await page.getByPlaceholder('Enter search term').fill('Chronic sinusitis')
     try {
       await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 10000 })
       await page.getByText('Chronic sinusitis').click()
