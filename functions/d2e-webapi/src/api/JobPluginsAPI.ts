@@ -44,6 +44,39 @@ export class JobPluginsAPI {
     }
   }
 
+  async getLatestSuccessfulDataCharacterizationResultsSchemaName(
+    datasetId: string
+  ): Promise<string> {
+    try {
+      const options = await this.getRequestConfig();
+      options.params = { datasetId };
+      const url = `${this.baseURL}/dqd/data-characterization/flow-run/latest`;
+
+      const result = await axios.get(url, options);
+
+      if (!result.data) {
+        return "";
+      }
+
+      if (result.data.state_type === "COMPLETED") {
+        return result.data.parameters.options.resultsSchema;
+      } else {
+        return "";
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        // Error 404 means no flow run found for datasetId
+        if (error.status === 404) {
+          return "";
+        }
+      }
+      console.error(
+        `Error getting latest sucucessful data characterization results schema name: ${error}`
+      );
+      throw error;
+    }
+  }
+
   private getRequestConfig() {
     let options: AxiosRequestConfig = {};
 
