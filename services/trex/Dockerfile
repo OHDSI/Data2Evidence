@@ -1,18 +1,15 @@
 # syntax=docker/dockerfile:1.4
 
-FROM rust:1.84.0-bookworm AS ort
+#FROM rust:1.84.0-bookworm AS ort
+FROM node:24-bookworm AS base
+
 ENV ONNXRUNTIME_VERSION=1.20.1
 ENV DENO_VERSION=2.1.4
 
 RUN mkdir -p ./scripts
-
 COPY install_onnx.sh ./scripts
-
 RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime
-
-FROM node:24-bookworm AS base
-
-COPY --from=ort /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
+RUN cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
 
 RUN echo "deb http://deb.debian.org/debian testing main" >> /etc/apt/sources.list && \
 apt-get update && apt-get install -y \
@@ -33,6 +30,8 @@ RUN mkdir -p /usr/local/lib && \
 RUN curl -sL https://lib.chdb.io | bash
 
 RUN mkdir -p /usr/src
+RUN mkdir -p /usr/src/data/cache
+RUN mkdir -p /usr/src/data/plugins
 
 WORKDIR /usr/src
 
