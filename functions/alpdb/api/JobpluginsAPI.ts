@@ -10,6 +10,7 @@ export class JobpluginsAPI {
   private readonly baseURL: string;
   private readonly token: string;
   private readonly endpoint: string = "/jobplugins";
+  private readonly channel;
 
   constructor(token: string) {
     this.token = token;
@@ -18,6 +19,7 @@ export class JobpluginsAPI {
     }
     if (services.jobplugins) {
       this.baseURL = services.jobplugins + this.endpoint;
+      this.channel = Trex.tokioChannel("d2e-functions/jobplugins");
       // this.httpsAgent = new Agent({
       //   rejectUnauthorized: true,
       //   ca: env.GATEWAY_CA_CERT,
@@ -74,7 +76,7 @@ export class JobpluginsAPI {
         vocabSchema: vocabSchema,
       },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
@@ -104,7 +106,7 @@ export class JobpluginsAPI {
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshot/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
       requestBody: { snapshotCopyConfig: snapshotCopyConfig },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
@@ -136,7 +138,7 @@ export class JobpluginsAPI {
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshotparquet/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
       requestBody: { snapshotCopyConfig: snapshotCopyConfig },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
@@ -161,7 +163,7 @@ export class JobpluginsAPI {
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}?schema=${schemaName}`,
       requestBody: { vocabSchema },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
@@ -181,7 +183,7 @@ export class JobpluginsAPI {
       options,
       flowRunName,
     };
-    const result = await post(url, body, postOptions);
+    const result = await this.channel.post(url, body, postOptions);
 
     if (result.data) {
       return result.data;
@@ -193,7 +195,7 @@ export class JobpluginsAPI {
     this.logger.info(`Getting datamodels`);
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/datamodel/list`;
-    const result = await get(url, options);
+    const result = await this.channel.get(url, options);
     if (result.data) {
       return result.data;
     }
