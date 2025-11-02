@@ -1,6 +1,6 @@
 services:
   trex:
-    command: bun run startdev
+    command: npm run startdev
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile

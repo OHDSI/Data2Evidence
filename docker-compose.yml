@@ -76,7 +76,7 @@ services:
   trex:
     container_name: &c84 ${PROJECT_NAME:-d2e}-trex
     init: true
-    command: bun run start
+    command: npm run start
     depends_on:
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
@@ -106,7 +106,7 @@ services:
       start_period: 60s
       test:
         - CMD
-        - bun
+        - npm
         - run
         - health
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
