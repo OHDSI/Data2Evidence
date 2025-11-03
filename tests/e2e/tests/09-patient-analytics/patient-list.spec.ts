@@ -50,9 +50,14 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Create' }).click()
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-      await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
-      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Chronic sinusitis')
+      await page
+        .getByTitle('Condition Occurrence A - Condition concept set')
+        .getByPlaceholder('Enter search term')
+        .fill('')
+      await page
+        .getByTitle('Condition Occurrence A - Condition concept set')
+        .getByPlaceholder('Enter search term')
+        .fill('Chronic sinusitis')
       await page.getByText('Chronic sinusitis').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
