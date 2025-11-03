@@ -52,16 +52,16 @@ server.registerPrompt(
   {
     title: "Organize Cohort IDs and Names List",
     description:
-      "Rank and organize the cohort_ids and names based on relevance of cohort_info and clinical practices.",
-    argsSchema: { cohorts_id_name: z.array() },
+      "Rank and order the cohort_ids and names based on relevance of cohort_info and clinical practices.",
+    argsSchema: { cohort_info: z.string() },
   },
-  ({ cohorts_id_name }) => ({
+  ({ cohort_info }) => ({
     messages: [
       {
         role: "user",
         content: {
           type: "text",
-          text: `Please rank and organize the ${cohort_id_name_list} output schema from tool <get_cohort_id_name_list> based on relevance of cohort_info and clinical practices.`,
+          text: `Please rank and organize the output after getting cohort id and names based on relevance of ${cohort_info} with clinical practices. Output in format of cohortId: cohortName.`,
         },
       },
     ],
