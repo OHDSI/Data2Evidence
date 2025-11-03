@@ -268,7 +268,7 @@ export class Property extends AstElement {
                     this.pushOnCondition(
                         ref0AliasObj.on,
                         QueryObject.format("%UNSAFE", 
-                                            `${ref0AliasObj.alias}.relationship_id in ${relationships} AND 
+                                            `${ref0AliasObj.alias}.relationship_id in (${relationships}) AND 
                                              ${ref0AliasObj.alias}.concept_id_1 = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
                     )
 
