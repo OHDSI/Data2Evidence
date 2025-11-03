@@ -44,7 +44,7 @@ test(TEST_NAME, async ({ page }) => {
   // Use attribute in dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page.waitForTimeout(3000) // Wait for the datasets table to load
-  await page.getByRole('button', { name: 'Select action' }).click()
+  await page.getByText('Select action').click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await page.getByRole('button', { name: 'add metadata' }).click()
   await page.getByLabel('', { exact: true }).nth(2).click()
@@ -77,7 +77,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Verify attribute deletion
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Select action' }).click()
+  await page.getByText('Select action').click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await expect(page.getByRole('option', { name: 'Test Display' })).not.toBeVisible()
   await expect(page.getByRole('option', { name: 'Test value' })).not.toBeVisible()

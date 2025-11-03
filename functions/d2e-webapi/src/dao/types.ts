@@ -19,18 +19,13 @@ export interface IAncestorsLookup {
   descendant_id: number;
 }
 
-export enum CachedbDialect {
-  DUCKDB = "duckdb",
-  POSTGRES = "postgresql",
-}
-
-export interface ICachedbConceptRecommended {
+export interface IConceptRecommended {
   concept_id_1: number;
   concept_id_2: number;
   relationship_id: string;
 }
 
-export interface ICachedbConcept {
+export interface IConcept {
   concept_id: number;
   concept_name: string;
   domain_id: string;
@@ -43,13 +38,13 @@ export interface ICachedbConcept {
   valid_end_date?: string;
 }
 
-export interface ICachedbDomain {
+export interface IDomain {
   domain_id: string;
   domain_name: string;
   domain_concept_id: number;
 }
 
-export interface ICachedbVocabulary {
+export interface IVocabulary {
   vocabulary_id: string;
   vocabulary_name: string;
   vocabulary_reference: string;
@@ -57,7 +52,7 @@ export interface ICachedbVocabulary {
   vocabulary_concept_id: number;
 }
 
-export interface ICachedbRelatedConceptsFromIdentifier {
+export interface IRelatedConceptsFromIdentifier {
   concept_id: number;
   concept_name: string;
   standard_concept: string;
@@ -70,4 +65,12 @@ export interface ICachedbRelatedConceptsFromIdentifier {
   valid_end_date: string;
   relationship_name: string;
   relationship_distance: number;
+}
+
+export interface IConceptRecordCount {
+  CONCEPT_ID: number;
+  RECORD_COUNT: number;
+  DESCENDANT_RECORD_COUNT: number;
+  PERSON_COUNT: number;
+  DESCENDANT_PERSON_COUNT: number;
 }
