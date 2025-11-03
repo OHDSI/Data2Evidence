@@ -138,12 +138,11 @@ const getters = {
       !isEqual(newBookmarksAxisSelection, currentBookmarksAxisSelection)
     )
   },
-  getDisplayBookmarks: (modulestate, rootGetters) => (showSharedBookmarks, username) => {
+  getDisplayBookmarks: modulestate => (showSharedBookmarks, username) => {
     try {
       const bookmarks: FormattedBookmark[] = modulestate.bookmarks
       const materializedCohorts: FormattedMaterializedCohort[] = modulestate.materializedCohorts
       const atlasCohortDefinitions: FormattedAtlasCohortDefinition[] = modulestate.atlasCohortDefinitions
-      const isAtlasEnabled = rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition
 
       let displayBookmarks = []
 
@@ -180,7 +179,7 @@ const getters = {
             })
           }
         }
-        if (atlasCohortDefinition && isAtlasEnabled) {
+        if (atlasCohortDefinition) {
           displayBookmarks.push({
             displayName: atlasCohortDefinition.name,
             cohortDefinition: formatCohortDefinition(cohortDefinition),
@@ -190,17 +189,15 @@ const getters = {
       })
 
       // Atlas Cohort Definitions without a materialized cohort
-      if (isAtlasEnabled) {
-        atlasCohortDefinitions
-          .filter(cd => !materializedCohorts.find(mc => mc.id === cd.cohortDefinitionId))
-          .forEach(cd => {
-            displayBookmarks.push({
-              displayName: cd.name,
-              cohortDefinition: null,
-              atlasCohortDefinition: formatAtlasCohortDefinition(cd),
-            })
+      atlasCohortDefinitions
+        .filter(cd => !materializedCohorts.find(mc => mc.id === cd.cohortDefinitionId))
+        .forEach(cd => {
+          displayBookmarks.push({
+            displayName: cd.name,
+            cohortDefinition: null,
+            atlasCohortDefinition: formatAtlasCohortDefinition(cd),
           })
-      }
+        })
 
       // bookmarks without a materialized cohort
       bookmarks.forEach(bookmark => {
@@ -453,5 +450,6 @@ export default {
   getters,
   actions,
   mutations,
+
 
 }
