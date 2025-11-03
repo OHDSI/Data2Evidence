@@ -3,6 +3,7 @@ import {
   ConceptSet,
   ConceptSetConcept,
   IWebapiConcept,
+  IWebapiConceptRecordCount,
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
 } from "../plugins/Researcher/Terminology/utils/types";
@@ -40,6 +41,16 @@ export class D2eWebapi {
       url: `/vocabulary/${datasetId}/search?${params}`,
       method: "POST",
       data,
+      headers: { datasetid: datasetId },
+    });
+  }
+
+  public getConceptRecordCounts(datasetId: string, conceptIds: number[]) {
+    return request<IWebapiConceptRecordCount[]>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/cdmresults/${datasetId}/conceptRecordCount`,
+      method: "POST",
+      data: conceptIds,
       headers: { datasetid: datasetId },
     });
   }

@@ -385,6 +385,11 @@
                   "resultsSchema": {
                     "title": "Resultsschema",
                     "type": "string"
+                  },
+                  "executeConceptRecordCount": {
+                    "default": true,
+                    "title": "executeConceptRecordCount",
+                    "type": "boolean"
                   }
                 },
                 "required": [
