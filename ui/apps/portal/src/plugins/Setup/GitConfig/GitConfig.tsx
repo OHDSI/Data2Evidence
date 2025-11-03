@@ -1,4 +1,4 @@
-import { Box, Button, Loader, TextField, Title } from "@portal/components";
+import { Button, Loader, TextField, Title } from "@portal/components";
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../axios/api";
 import { ConfigTypes } from "../../../constant";
@@ -229,11 +229,11 @@ export const GitConfig: FC = () => {
           </div>
 
           <div className="git-config__content">
-            <Box mb={4} fontWeight="bold">
+            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>
               {getText(i18nKeys.GIT_CONFIG__DATAFLOW_SECTION)}
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.GIT_CONFIG__REPO_URL_LABEL)}
                 variant="standard"
@@ -241,9 +241,9 @@ export const GitConfig: FC = () => {
                 value={formData.dataflow.repoUrl}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleDataflowChange("repoUrl", event.target.value)}
               />
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.GIT_CONFIG__PAT_LABEL)}
                 variant="standard"
@@ -252,9 +252,9 @@ export const GitConfig: FC = () => {
                 value={formData.dataflow.pat}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleDataflowChange("pat", event.target.value)}
               />
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.GIT_CONFIG__BRANCH_LABEL)}
                 variant="standard"
@@ -262,9 +262,9 @@ export const GitConfig: FC = () => {
                 value={formData.dataflow.branch}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleDataflowChange("branch", event.target.value)}
               />
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <Button
                 text={getText(i18nKeys.GIT_CONFIG__SYNC_ALL_FLOWS)}
                 variant="contained"
@@ -273,13 +273,13 @@ export const GitConfig: FC = () => {
                 disabled={!isDataflowConfigValid || isOverwriting}
                 loading={isOverwriting}
               />
-            </Box>
+            </div>
 
-            <Box mt={4} mb={4} fontWeight="bold">
+            <div style={{ marginTop: "32px", marginBottom: "32px", fontWeight: "bold" }}>
               {getText(i18nKeys.GIT_CONFIG__NOTEBOOK_SECTION)}
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.GIT_CONFIG__REPO_URL_LABEL)}
                 variant="standard"
@@ -287,9 +287,9 @@ export const GitConfig: FC = () => {
                 value={formData.notebook.repoUrl}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleNotebookChange("repoUrl", event.target.value)}
               />
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.GIT_CONFIG__PAT_LABEL)}
                 variant="standard"
@@ -298,9 +298,9 @@ export const GitConfig: FC = () => {
                 value={formData.notebook.pat}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleNotebookChange("pat", event.target.value)}
               />
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.GIT_CONFIG__BRANCH_LABEL)}
                 variant="standard"
@@ -308,9 +308,9 @@ export const GitConfig: FC = () => {
                 value={formData.notebook.branch}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => handleNotebookChange("branch", event.target.value)}
               />
-            </Box>
+            </div>
 
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <Button
                 text={getText(i18nKeys.GIT_CONFIG__SYNC_ALL_NOTEBOOKS)}
                 variant="contained"
@@ -319,13 +319,13 @@ export const GitConfig: FC = () => {
                 disabled={!isNotebookConfigValid || isOverwritingNotebooks}
                 loading={isOverwritingNotebooks}
               />
-            </Box>
+            </div>
           </div>
 
           <div className="git-config__footer">
-            <Box display="flex" gap={1} className="git-config__footer-actions">
+            <div style={{ display: "flex", gap: "8px" }} className="git-config__footer-actions">
               <Button text={getText(i18nKeys.GIT_CONFIG__SAVE)} onClick={handleSave} loading={saving} />
-            </Box>
+            </div>
           </div>
         </div>
       )}

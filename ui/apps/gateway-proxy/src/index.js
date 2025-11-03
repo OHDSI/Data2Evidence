@@ -9,7 +9,7 @@ import {
 import { endpoint, appId, resourceScopes } from './consts';
 import Home from './pages/Home';
 
-import './index.scss';
+import './index.css';
 
 const fetcher = createRequester(async (...args) => {
   const [input, init] = args;

@@ -4,7 +4,6 @@ import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import FormHelperText from "@mui/material/FormHelperText";
 import {
-  Box,
   Button,
   Dialog,
   Feedback,
@@ -161,7 +160,7 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
         </div>
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <TextField
                 fullWidth
                 type={passwordShown ? "text" : "password"}
@@ -188,7 +187,7 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
                 variant="text"
                 onClick={handleGeneratePassword}
               />
-            </Box>
+            </div>
           </FormControl>
           {formError.password.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_USER_DIALOG__REQUIRED)}</FormHelperText>
