@@ -50,7 +50,7 @@ services:
           "perseus": false,
           "white-rabbit": false,
           "strategus-analysis": false,
-          "mcp-server": true
+          "mcp-server": false
         }
 
   alp-caddy:
