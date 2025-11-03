@@ -4,6 +4,7 @@ import {
   CdmresultsConceptRecordCountDto,
   CdmresultsConceptRecordCountResponseDto,
 } from "../dto/cdmresults.ts";
+import { getConceptRecordCount } from "../services/cdmresults.service.ts";
 
 // deno-lint-ignore require-await
 export const cdmresults: FastifyPluginAsyncZod = async function (app) {
@@ -25,25 +26,13 @@ export const cdmresults: FastifyPluginAsyncZod = async function (app) {
         ],
       },
     },
-    (_req, res) => {
-      // select concept_id, record_count, descendant_record_count, person_count, descendant_person_count
-      // from @resultTableQualifier.achilles_result_concept_count
-      // where concept_id IN (@conceptIdentifiers)
-
-      const dummyresponse: z.infer<
-        typeof CdmresultsConceptRecordCountResponseDto
-      > = [
-        {
-          "2106236": [10579512, 10579512, 0, 0],
-        },
-        {
-          "2106238": [5756362, 5756362, 0, 0],
-        },
-        {
-          "2106252": [3356284, 3356284, 0, 0],
-        },
-      ];
-      res.send(dummyresponse);
+    async (req, res) => {
+      const result = await getConceptRecordCount(
+        req.token,
+        req.datasetId,
+        req.body
+      );
+      res.send(result);
     }
   );
 };
