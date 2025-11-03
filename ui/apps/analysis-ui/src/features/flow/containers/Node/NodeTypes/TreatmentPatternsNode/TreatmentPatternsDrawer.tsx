@@ -3,8 +3,6 @@ import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import {
   Box,
-  Button,
-  IconButton,
   TextInput,
   InputLabel,
   MenuItem,
@@ -12,7 +10,6 @@ import {
   Select,
   SelectChangeEvent,
 } from "@portal/components";
-import ClearIcon from "@mui/icons-material/Clear";
 import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,

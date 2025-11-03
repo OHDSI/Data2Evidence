@@ -5,7 +5,6 @@ import {
   DrawerProps,
   CloseIcon,
   IconButton,
-  Switch,
 } from "@portal/components";
 import "./FlowSettingsDrawer.scss";
 import { TestModeSwitch } from "../../TestMode/TestModeSwitch";

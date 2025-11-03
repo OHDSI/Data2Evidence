@@ -3,7 +3,6 @@ import { Box, Checkbox, Dialog, DialogProps } from "@portal/components";
 import { NodeTypeSelection } from "./NodeTypeSelection";
 import {
   NodeChoiceMap,
-  NodeType,
   inputHandleTypeMap,
   outputHandleTypeMap,
 } from "../index";

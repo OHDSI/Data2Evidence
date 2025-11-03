@@ -67,7 +67,7 @@ export default defineConfig(({ command, mode }) => {
       rollupOptions: {
         treeshake: true,
         onwarn(warning, warn) {
-          // Suppress warnings about /*@__PURE__*/ comments in @d4l/web-components-library
+          // Suppress warnings about /* @__PURE__*/ comments in @d4l/web-components-library
           if (
             warning.code === "INVALID_ANNOTATION" &&
             warning.loc?.file?.includes("@d4l/web-components-library")
