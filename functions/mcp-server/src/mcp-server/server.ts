@@ -9,18 +9,18 @@ export const server = new McpServer({
 
 // Register Get Cohorts ID Name List Tool
 server.registerTool(
-  "get_cohorts_id_name_list",
+  "get_cohort_id_name_list",
   {
-    title: "Get Cohorts ID Name List",
+    title: "Get Cohort ID and Name List",
     description:
-      "Get all the cohort names and ids from OHDSI Phenotype Library",
+      "Rank the cohort ids and names for the relevant cohort description extracted from the user query. Return the list of cohort ids and names in structured content. Automatically invoked when user query is related to cohort id information.",
     inputSchema: {
       cohort_info: z
         .string()
         .describe("The cohort description extracted from user query"),
     },
     outputSchema: {
-      cohorts: z.array(
+      cohorts_id_name: z.array(
         z.object({
           cohortId: z.string(),
           cohortName: z.string(),
@@ -31,44 +31,37 @@ server.registerTool(
       ),
     },
   },
-  async ({ cohort_info }) => {
+  async () => {
     const cohortData = await fetchCohortData();
-
     return {
       content: [
         {
           type: "text",
-          text: `Here is the list of cohort names and ids definition with description of '${cohort_info}' found from the Phenotype Library: ${JSON.stringify(
-            cohortData
-          )}`,
+          text: `Here is the list of cohort ids and names for all cohort description.`,
         },
       ],
       structuredContent: {
-        cohorts: cohortData,
+        cohorts_id_name: cohortData,
       },
     };
   }
 );
 
-// Register Prompt for getting Cohort Info
 server.registerPrompt(
-  "prompt_for_get_cohort_id",
+  "organize_cohort_ids_names_list",
   {
-    title: "Prompt after getting cohort info from User Query",
+    title: "Organize Cohort IDs and Names List",
     description:
-      "This prompt should be used to understand the user's initial query.",
-    argsSchema: {
-      cohort_info: z.string(),
-      cohort_name_id_list: z.string(),
-    },
+      "Rank and organize the cohort_ids and names based on relevance of cohort_info and clinical practices.",
+    argsSchema: { cohorts_id_name: z.array() },
   },
-  ({ cohort_info, cohort_name_id_list }) => ({
+  ({ cohorts_id_name }) => ({
     messages: [
       {
         role: "user",
         content: {
           type: "text",
-          text: `match ${cohort_info} with ${cohort_name_id_list} to list all the relevant cohort ids and names (as much as possible), and finally rank the result with confidence score. Answer in the format of 'cohort id: <cohort id>, cohort name: <cohort name>, confidence score: <score>'.`,
+          text: `Please rank and organize the ${cohort_id_name_list} output schema from tool <get_cohort_id_name_list> based on relevance of cohort_info and clinical practices.`,
         },
       },
     ],

@@ -49,7 +49,8 @@ services:
           "d2e-webapi": false,
           "perseus": false,
           "white-rabbit": false,
-          "strategus-analysis": false
+          "strategus-analysis": false,
+          "mcp-server": true
         }
 
   alp-caddy:
