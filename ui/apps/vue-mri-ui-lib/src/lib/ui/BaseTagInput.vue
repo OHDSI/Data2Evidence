@@ -218,6 +218,9 @@ export default {
     selectedValues() {
       return this.formatValues(this.value)
     },
+    allOptionsSelected() {
+      return this.filteredList.length > 0 && this.filteredList.length === this.selectedValues.length
+    },
     isLoading() {
       return this.domainValues.isLoading
     },
@@ -329,6 +332,11 @@ export default {
       // dropdown is still used to select existing concept sets
       if (this.componentType === 'concept') {
         this.handleConceptSetAction(null)
+        return
+      }
+
+      // Don't open dropdown if all options are already selected
+      if (this.allOptionsSelected) {
         return
       }
 
