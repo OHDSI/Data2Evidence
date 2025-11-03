@@ -157,7 +157,7 @@ if (progress_status == "completed") {
         var data = resp[i];
         var databaseName = data['databaseName'];
         var studyName = data['studyDetail']['name'];
-        if (databaseName == "demo_database" && studyName == "Demo Study") {
+        if (databaseName == "demo_database" && studyName == "Demo dataset") {
             var studyId = data['id'];
             var tenantId = data['tenant']['id'];
         }
