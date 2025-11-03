@@ -107,12 +107,6 @@ jobs:
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
-          - PKGPATH: ./services/trex/ext/circe
-            RUNNER: ubuntu-24.04
-          - PKGPATH: ./services/trex/ext/hana
-          - PKGPATH: ./services/trex/ext/llama
-            RUNNER: ubuntu-24.04
-          - PKGPATH: ./services/trex/ext/pgwire
 
     runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
 
@@ -217,7 +211,7 @@ jobs:
           CI: ${{ matrix.NPM != 'bun' }}
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
-          NPM_CONFIG_TOKEN:: ${{ secrets.NPM_PROJECT_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then

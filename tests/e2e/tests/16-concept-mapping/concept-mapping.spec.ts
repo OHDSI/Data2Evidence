@@ -74,19 +74,19 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(2000)
 
   // First dropdown - Source code column (keep as Source)
-  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).first().click()
+  await page.locator('[role="button"]').filter({ hasText: 'Source' }).first().click()
   await page.getByRole('option', { name: 'Source' }).click()
 
   // Second dropdown - Source name column
-  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
   await page.getByRole('option', { name: 'Name', exact: true }).click()
 
   // Third dropdown - Source frequency column
-  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
   await page.getByRole('option', { name: 'Frequency' }).click()
 
   // Fourth dropdown - Additional info column
-  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
   await page.getByRole('option', { name: 'Description' }).click()
 
   await page.waitForTimeout(1000) // Wait for dropdown to fully open
