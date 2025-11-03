@@ -156,7 +156,8 @@ if (progress_status == "completed") {
     for (var i = 0; i < resp.length; i++) {
         var data = resp[i];
         var databaseName = data['databaseName'];
-        if (databaseName == "demo_database") {
+        var studyName = data['studyDetail']['name'];
+        if (databaseName == "demo_database" && studyName == "Demo Study") {
             var studyId = data['id'];
             var tenantId = data['tenant']['id'];
         }
