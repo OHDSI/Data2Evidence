@@ -138,11 +138,12 @@ const getters = {
       !isEqual(newBookmarksAxisSelection, currentBookmarksAxisSelection)
     )
   },
-  getDisplayBookmarks: modulestate => (showSharedBookmarks, username) => {
+  getDisplayBookmarks: (modulestate, rootGetters) => (showSharedBookmarks, username) => {
     try {
       const bookmarks: FormattedBookmark[] = modulestate.bookmarks
       const materializedCohorts: FormattedMaterializedCohort[] = modulestate.materializedCohorts
       const atlasCohortDefinitions: FormattedAtlasCohortDefinition[] = modulestate.atlasCohortDefinitions
+      const isAtlasEnabled = rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition
 
       let displayBookmarks = []
 
@@ -179,7 +180,7 @@ const getters = {
             })
           }
         }
-        if (atlasCohortDefinition) {
+        if (atlasCohortDefinition && isAtlasEnabled) {
           displayBookmarks.push({
             displayName: atlasCohortDefinition.name,
             cohortDefinition: formatCohortDefinition(cohortDefinition),
@@ -189,15 +190,17 @@ const getters = {
       })
 
       // Atlas Cohort Definitions without a materialized cohort
-      atlasCohortDefinitions
-        .filter(cd => !materializedCohorts.find(mc => mc.id === cd.cohortDefinitionId))
-        .forEach(cd => {
-          displayBookmarks.push({
-            displayName: cd.name,
-            cohortDefinition: null,
-            atlasCohortDefinition: formatAtlasCohortDefinition(cd),
+      if (isAtlasEnabled) {
+        atlasCohortDefinitions
+          .filter(cd => !materializedCohorts.find(mc => mc.id === cd.cohortDefinitionId))
+          .forEach(cd => {
+            displayBookmarks.push({
+              displayName: cd.name,
+              cohortDefinition: null,
+              atlasCohortDefinition: formatAtlasCohortDefinition(cd),
+            })
           })
-        })
+      }
 
       // bookmarks without a materialized cohort
       bookmarks.forEach(bookmark => {
@@ -268,13 +271,15 @@ const actions = {
       .then(({ data }) => {
         let toastMessage = ''
         if (params.cmd === 'loadAll') {
+          commit(types.RESET_ALL_BOOKMARKS)
           const { bookmarks, materializedCohorts, atlasCohortDefinitions } = processBookmarksData(
             data,
             rootGetters.getMriFrontendConfig.getPaConfigId()
           )
+          const isAtlasEnabled = rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition
           commit(types.SET_BOOKMARKS, bookmarks)
           commit(types.SET_MATERIALIZED_COHORTS, materializedCohorts)
-          if (rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition) {
+          if (isAtlasEnabled) {
             commit(types.SET_ATLAS_COHORT_DEFINITIONS, atlasCohortDefinitions)
           }
         }
@@ -436,6 +441,11 @@ const mutations = {
   [types.SET_ADD_NEW_COHORT](modulestate, { addNewCohort }) {
     modulestate.addNewCohort = addNewCohort
   },
+  [types.RESET_ALL_BOOKMARKS](modulestate) {
+    modulestate.bookmarks = []
+    modulestate.materializedCohorts = []
+    modulestate.atlasCohortDefinitions = []
+  },
 }
 
 export default {
@@ -443,4 +453,5 @@ export default {
   getters,
   actions,
   mutations,
+
 }
