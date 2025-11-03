@@ -31,9 +31,8 @@ import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
 import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
-import ExecuteSidePanel from '@/components/ExecuteSidePanel.vue'
+import ExecuteSidePanel from './ExecuteSidePanel.vue'
 import Drawer from '@/components/Drawer.vue'
-import bsCard from '@/lib/ui/bs-card.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiveIcon.vue'
@@ -1468,14 +1467,11 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
 
     <!-- Execute Drawer -->
     <Drawer v-if="showExecuteDrawer" :width="'85vw'" :title="'Cohort Actions'" @close="showExecuteDrawer = false">
-      <ExecuteSidePanel
-        :available-sources="availableSources"
-        :is-generating-cohort="isGeneratingCohort"
-        :generation-status="generationStatus"
-        :patient-counts="patientCountsBySource"
-        :current-generating-source-key="selectedDatasetForGeneration"
-        @generate-cohort="handleExecutePanelGenerateCohort"
-      />
+      <ExecuteSidePanel <<<<<<< HEAD ======= :cohort-definition-id="store?.getters?.getActiveBookmark.bmkId" >>>>>>>
+      99d7ce4416177eef832a1a606b423bafde02eb0c :available-sources="availableSources"
+      :is-generating-cohort="isGeneratingCohort" :generation-status="generationStatus"
+      :patient-counts="patientCountsBySource" :current-generating-source-key="selectedDatasetForGeneration"
+      @generate-cohort="handleExecutePanelGenerateCohort" />
     </Drawer>
   </div>
 </template>

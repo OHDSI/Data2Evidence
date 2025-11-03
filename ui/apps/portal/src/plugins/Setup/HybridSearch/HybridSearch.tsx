@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
-import { Box, Button, Checkbox, Loader, TextField, Title } from "@portal/components";
+import { Button, Checkbox, Loader, TextField, Title } from "@portal/components";
 import { api } from "../../../axios/api";
 import { useConfigsByTypes } from "../../../hooks";
 import { useFeedback, useTranslation } from "../../../contexts";
@@ -85,7 +85,7 @@ export const HybridSearch: FC = () => {
             <Title>{getText(i18nKeys.HYBRID_SEARCH__CONFIGURATION)}</Title>
           </div>
           <div className="hybrid-search__content">
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <Checkbox
                 checked={formData.isEnabled}
                 label={getText(i18nKeys.HYBRID_SEARCH__ENABLE)}
@@ -93,8 +93,8 @@ export const HybridSearch: FC = () => {
                   handleFormDataChange({ isEnabled: event.target.checked })
                 }
               />
-            </Box>
-            <Box mb={4}>
+            </div>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.HYBRID_SEARCH__SEMANTIC_RATIO)}
                 variant="standard"
@@ -104,12 +104,12 @@ export const HybridSearch: FC = () => {
                 error={semanticRatioError}
                 helperText={semanticRatioError && getText(i18nKeys.HYBRID_SEARCH__SEMANTIC_RATIO_ERROR)}
               />
-            </Box>
+            </div>
           </div>
           <div className="hybrid-search__footer">
-            <Box display="flex" gap={1} className="hybrid-search__footer-actions">
+            <div style={{ display: "flex", gap: "8px" }} className="hybrid-search__footer-actions">
               <Button text={getText(i18nKeys.HYBRID_SEARCH__SAVE)} onClick={handleSave} loading={saving} />
-            </Box>
+            </div>
           </div>
         </div>
       )}

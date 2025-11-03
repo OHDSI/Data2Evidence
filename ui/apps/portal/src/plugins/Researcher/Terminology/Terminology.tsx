@@ -89,17 +89,23 @@ const NameSection = ({
 }) => {
   const { getText, i18nKeys } = useTranslation();
 
+  const borderBoxStyle = { borderBottom: "1px solid #d4d4d4" };
+  const headerBoxStyle = {
+    height: "60px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  };
+  const actionBoxStyle = {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "32px",
+  };
+
   return (
-    <Box sx={{ borderBottom: "1px solid #d4d4d4" }}>
-      <Box
-        sx={{
-          height: "60px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          "& .MuiTextField-root": { width: "50%" },
-        }}
-      >
+    <div style={borderBoxStyle}>
+      <div style={headerBoxStyle}>
         <Typography>{getText(i18nKeys.TERMINOLOGY__NAME)}:</Typography>
         <TextField
           placeholder={getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME)}
@@ -110,17 +116,7 @@ const NameSection = ({
           onChange={(e) => setConceptSetName(e.target.value)}
           disabled={isLoading}
         />
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "32px",
-            "& .button.alp-button.sc-d4l-button": {
-              width: `120px`,
-            },
-          }}
-        >
+        <div style={actionBoxStyle} className="action-box-with-button-width">
           <div style={{ marginBottom: -15, marginLeft: 10 }}>
             <Checkbox
               checked={conceptSetShared}
@@ -145,10 +141,10 @@ const NameSection = ({
             style={{ marginLeft: 10 }}
             onClick={onClickClose}
           />
-        </Box>
-      </Box>
+        </div>
+      </div>
       {errorMsg ? <div style={{ color: "red", textAlign: "center" }}>{errorMsg}</div> : null}
-    </Box>
+    </div>
   );
 };
 const TabSection = ({
