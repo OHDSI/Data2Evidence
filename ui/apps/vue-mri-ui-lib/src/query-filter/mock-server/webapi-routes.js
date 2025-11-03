@@ -189,6 +189,7 @@ const ALLOWED_ENDPOINTS = {
   conceptset: '/conceptset/',
   vocabulary: `/vocabulary/${SOURCE}/search`,
   concept: `/vocabulary/${SOURCE}/concept/`,
+  cohortsample: '/cohortsample/',
 }
 
 // server has 20,000
@@ -665,17 +666,18 @@ const setupWebapiRoutes = app => {
   )
 
   // GET /cohortdefinition/:cohortDefinitionId/report/:sourceKey - Returns cohort inclusion report for a specific source
-    app.get(
+  app.get(
     '/d2e-webapi/cohortdefinition/:cohortDefinitionId/report/:sourceKey',
     validateId('cohortDefinitionId'),
     async (req, res) => {
       logRequest(req)
       const { cohortDefinitionId, sourceKey } = req.params
-      const {mode: modeId} = req.query
+      const { mode: modeId } = req.query
 
       try {
-        // Forward to external WebAPI, using hardcoded sourceKey 
-        const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + SOURCE + '?mode=' + modeId
+        // Forward to external WebAPI, using hardcoded sourceKey
+        const endpoint =
+          ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + SOURCE + '?mode=' + modeId
         const response = await api.get(endpoint)
         return res.json(response.data)
       } catch (err) {
@@ -744,6 +746,67 @@ const setupWebapiRoutes = app => {
       }
     }
   )
+
+  app.get('/d2e-webapi/cohortsample', async (req, res) => {
+    logRequest(req)
+    console.log('hallo')
+
+    return res.send()
+  })
+
+  app.get(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source',
+    validateId('cohortDefinitionId'),
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId, source } = req.params
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source
+      const response = await api.get(endpoint)
+      console.log(response)
+
+      const { data } = response
+      return res.send(data)
+    }
+  )
+
+  app.get(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source/:sampleId',
+    validateId('cohortDefinitionId'),
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId, source, sampleId } = req.params
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source + '/' + sampleId
+      const response = await api.get(endpoint)
+      const { data } = response
+      return res.send(data)
+    }
+  )
+
+  app.post(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source',
+    validateId('cohortDefinitionId'),
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId, source } = req.params
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source
+      const response = await api.post(endpoint, req.body)
+      const { data } = response
+      return res.send(data)
+    }
+  )
+
+  app.delete(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source/:sampleId',
+    validateId('cohortDefinitionId'),
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId, source, sampleId } = req.params
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source + '/' + sampleId
+      const response = await api.delete(endpoint)
+      const { data } = response
+      return res.send(data)
+    }
+  )
 }
 
 module.exports = setupWebapiRoutes
@@ -759,4 +822,5 @@ const _mapConceptSet = conceptSet => {
     shared: true,
     userName: 'admin',
   }
+
 }
