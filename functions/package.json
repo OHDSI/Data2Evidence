@@ -1001,7 +1001,7 @@
           ]
         },
         {
-          "path": "^/analytics-svc/api/services/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/exists",
+          "path": "^/analytics-svc/api/services/alpdb/schema/exists",
           "scopes": [
             "dbSvc.schema.exists.read"
           ],

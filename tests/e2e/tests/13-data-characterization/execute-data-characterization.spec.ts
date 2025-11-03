@@ -73,7 +73,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(10000)
 
   // Load Charts
-  await page.getByRole('combobox', { name: 'Select Data Characterization' }).click()
+  await page.getByRole('button', { name: 'Select Data Characterization' }).click()
   await page.getByRole('option', { name: 'Show All Reports' }).click()
 
   // Verify if Dashboard results are rendered
