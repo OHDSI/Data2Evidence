@@ -240,11 +240,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 sqlOnly=achilles_params.sqlOnly,
                 numThreads=achilles_params.numThreads,
                 verboseMode=achilles_params.verboseMode,
-                excludeAnalysisIds=(
-                    robjects.StrVector([achilles_params.excludeAnalysisIds])
-                    if achilles_params.excludeAnalysisIds
-                    else robjects.NULL
-                ),
+                excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
             )
 
