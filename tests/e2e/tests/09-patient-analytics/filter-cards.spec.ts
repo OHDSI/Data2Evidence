@@ -97,17 +97,21 @@ test(TEST_NAME, async ({ browser }) => {
   }
 
   // Step 8 - Select concept set
-  await page.getByTitle('Condition Occurrence A - Condition concept Set').locator('div').nth(1).click()
-  await page.getByPlaceholder('Enter search term').fill('')
-  await page.getByPlaceholder('Enter search term').fill('test_concept_set')
+  const conditionOccConceptSet = page.getByTitle('Condition Occurrence A - Condition concept Set')
+  const conceptSetTextbox = conditionOccConceptSet.getByPlaceholder('Enter search term')
+  await conditionOccConceptSet.locator('div').nth(1).click()
+  await conceptSetTextbox.fill('')
+  await conceptSetTextbox.fill('test_concept_set')
   await expect(page.getByText('test_concept_set', { exact: false }).first()).toBeVisible()
   await page.getByText('test_concept_set', { exact: false }).first().click()
-  await page.getByPlaceholder('Enter search term').press('Escape')
+  await conceptSetTextbox.press('Escape')
 
   // Step 8 - Entering incorrect condition occurrence concept
-  await page.getByTitle('Condition Occurrence A - Condition concept Name').locator('div').nth(1).click()
-  await page.getByPlaceholder('Enter search term').fill('')
-  await page.getByPlaceholder('Enter search term').fill('abc')
+  const conditionOccConceptName = page.getByTitle('Condition Occurrence A - Condition concept Name')
+  const conceptNameTextbox = conditionOccConceptName.getByPlaceholder('Enter search term')
+  await conditionOccConceptName.locator('div').nth(1).click()
+  await conceptNameTextbox.fill('')
+  await conceptNameTextbox.fill('abc')
   await page.getByText('abc').click()
   const conditionOccuErrorBgcolor = await page
     .getByText('abc')
@@ -120,13 +124,13 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByText('Month of Birth').click()
   await page.getByText('Select an AttributeSelect').click()
   await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByRole('textbox').fill('[1-10]')
-  await page.getByRole('textbox').press('Enter')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('[1-10]')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
 
   // Step 8 - Entering month of birth with incorrect input
   await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByRole('textbox').fill('5.x')
-  await page.getByRole('textbox').press('Enter')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('5.x')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
   await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card
@@ -148,8 +152,8 @@ test(TEST_NAME, async ({ browser }) => {
 
   // Step 12 - Basic data filter for gender
   await page.getByTitle('Basic Data - Gender').locator('div').nth(1).click()
-  await page.getByPlaceholder('Enter search term').fill('')
-  await page.getByPlaceholder('Enter search term').fill('Female')
+  await page.getByTitle('Basic Data - Gender').getByPlaceholder('Enter search term').fill('')
+  await page.getByTitle('Basic Data - Gender').getByPlaceholder('Enter search term').fill('Female')
   await page.getByText('FEMALE - FEMALE').click()
   await page.getByRole('button', { name: '' }).click()
 
@@ -158,8 +162,8 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByText('Gender concept id').click()
   await page.getByText('Select an AttributeSelect').click()
   await page.getByTitle('Basic Data - Gender concept id').locator('div').nth(1).click()
-  await page.getByPlaceholder('Enter search term').fill('')
-  await page.getByPlaceholder('Enter search term').fill('8532')
+  await page.getByTitle('Basic Data - Gender concept id').getByPlaceholder('Enter search term').fill('')
+  await page.getByTitle('Basic Data - Gender concept id').getByPlaceholder('Enter search term').fill('8532')
   await page.getByText('- FEMALE').click()
 
   // Step 13 - Add filter card for Measurement concept name
@@ -178,8 +182,11 @@ test(TEST_NAME, async ({ browser }) => {
     .click()
   await page.locator('#stacked-chart').click()
   await page.getByTitle('Measurement A - Measurement concept name').locator('div').nth(1).click()
-  await page.getByPlaceholder('Enter search term').fill('')
-  await page.getByPlaceholder('Enter search term').fill('glucose')
+  await page.getByTitle('Measurement A - Measurement concept name').getByPlaceholder('Enter search term').fill('')
+  await page
+    .getByTitle('Measurement A - Measurement concept name')
+    .getByPlaceholder('Enter search term')
+    .fill('glucose')
   await page.getByText('Glucose lab - Glucose lab').click()
   await page.locator('#stacked-chart').click()
 
@@ -194,8 +201,8 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('menu').getByText('Observation concept set').click()
   await page.locator('#stacked-chart').click()
   await page.getByTitle('Observation A - Observation').locator('div').nth(1).click()
-  await page.getByPlaceholder('Enter search term').fill('')
-  await page.getByPlaceholder('Enter search term').fill('Shell')
+  await page.getByTitle('Observation A - Observation').getByPlaceholder('Enter search term').fill('')
+  await page.getByTitle('Observation A - Observation').getByPlaceholder('Enter search term').fill('Shell')
   await page.getByText('Shellfish allergy - Shellfish').click()
 
   // Reset filters
