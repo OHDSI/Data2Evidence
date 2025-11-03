@@ -47,6 +47,60 @@ server.registerTool(
   }
 );
 
+// Tool for ATLAS Cohort Definition: Step 1 - Get Ranked Cohort IDs and Names
+server.registerTool(
+  "create_cohort_definition_step1",
+  {
+    title: "Create Cohort Definition: Get Ranked Cohort IDs and Names",
+    description:
+      "Get relevant cohort id and names for user provided cohort info",
+    inputSchema: {
+      cohort_details: z
+        .string()
+        .describe("The cohort description extracted from user query"),
+    },
+  },
+  async ({ cohort_details }) => {
+    `Calling the tool <get_cohort_id_name_list> to get cohorts_id_name, then pass ranked_cohort_id that are relavant to cohort_details to this tool`;
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Get the ranked cohort ids and names list relevant to user provided cohort details: ${cohort_details}`,
+        },
+      ],
+    };
+  }
+);
+
+// Tool for ATLAS Cohort Definition: Step 2 - Create Standardized OHDSI ATLAS Cohort Definition JSON
+server.registerTool(
+  "Create_cohort_definition_step2",
+  {
+    title:
+      "Create Cohort Definition: Create Standardized ATLAS Cohort Definition",
+    description:
+      "Get relevant cohort id and names for user provided cohort info",
+    inputSchema: {
+      cohort_details: z
+        .string()
+        .describe("The cohort description extracted from user query"),
+    },
+  },
+  async ({ cohort_details }) => {
+    `got the cohort ids and names from tool <create_cohort_definition_step1>, and now create the standardized OHDSI ATLAS cohort definition in json format based on user provided ${cohort_details} and ranked cohort id and names from previous tool.`;
+    return {
+      content: [
+        {
+          type: "text",
+          text: `The standardized OHDSI ATLAS cohort definition in json format is`,
+        },
+      ],
+    };
+  }
+);
+
+// Prompt to format and organize cohort ids and names list
 server.registerPrompt(
   "organize_cohort_ids_names_list",
   {
@@ -58,7 +112,7 @@ server.registerPrompt(
   ({ cohort_info }) => ({
     messages: [
       {
-        role: "user",
+        role: "system",
         content: {
           type: "text",
           text: `Please rank and organize the output after getting cohort id and names based on relevance of ${cohort_info} with clinical practices. Output in format of cohortId: cohortName.`,
