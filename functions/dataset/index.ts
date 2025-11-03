@@ -242,16 +242,19 @@ export class DatasetRouter {
 
           this.logger.info("Creating cache dataset in Portal");
 
-          const snapshotRequest = {
-            id: uuidv4(),
-            sourceDatasetId: id,
-            newDatasetName: cacheDatasetName,
-            schemaName: parsedNewCacheSchemaName,
-            timestamp: new Date(),
-            type: cacheDatasetType,
-          };
+          let newCacheDataset: any = {};
 
-          const newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
+          if (cacheDatasetName && cacheDatasetType) {
+            const snapshotRequest = {
+              id: uuidv4(),
+              sourceDatasetId: id,
+              newDatasetName: cacheDatasetName,
+              schemaName: parsedNewCacheSchemaName,
+              timestamp: new Date(),
+              type: cacheDatasetType,
+            };
+            newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
+          }
 
           return res
             .status(200)

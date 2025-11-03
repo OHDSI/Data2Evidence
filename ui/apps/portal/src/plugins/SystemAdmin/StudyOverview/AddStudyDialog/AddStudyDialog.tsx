@@ -46,6 +46,11 @@ const customDataModelOption: Datamodel = {
   flowId: "",
 };
 
+const cacheDatasetTypeOptions: { title: string; type: CacheDatasetType }[] = [
+  { title: "OMOP", type: CacheDatasetType.OMOP },
+  { title: "Other datamodel", type: CacheDatasetType.NON_OMOP },
+];
+
 interface FormData {
   type: string;
   tokenStudyCode: string;
@@ -362,6 +367,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       databaseCode,
       paConfigId,
       name,
+      dialect,
 
       cacheDatasetName,
       cacheDatasetType,
@@ -424,11 +430,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, name: { required: true } };
     }
 
-    if (!cacheDatasetName) {
+    if (!cacheDatasetName && dialect !== "hana") {
       formError = { ...formError, cacheDatasetName: { required: true } };
     }
 
-    if (!cacheDatasetType) {
+    if (!cacheDatasetType && dialect !== "hana") {
       formError = { ...formError, cacheDatasetType: { required: true } };
     }
 
@@ -448,7 +454,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, []);
 
   const handleSubmit = useCallback(async () => {
+    console.log("Submitting form data:", formData);
     if (isFormError()) {
+      console.error("Form has errors:", formError);
       return;
     }
 
@@ -477,13 +485,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cacheDatasetName,
       cacheDatasetType,
     } = formData;
-
     const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
 
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
       dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
     let fhirProjectId;
+
+    const parsedDatasetType = dialect === "hana" ? `hana__${type}` : type;
 
     const input: NewStudyInput = {
       tenantId: tenant?.id || "",
@@ -493,7 +502,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         description,
         showRequestAccess,
       },
-      type,
+      type: parsedDatasetType,
       tokenStudyCode,
       schemaOption,
       cdmSchemaValue,
@@ -506,7 +515,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       dialect,
       paConfigId,
       fhirProjectId,
-      visibilityStatus,
+      visibilityStatus: dialect === "hana" ? "DEFAULT" : visibilityStatus,
       attributes: [],
       tags: [],
       dashboards: [],
@@ -636,18 +645,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             )}
           </FormControl>
         </div>
-
-        {/*source dataset type */}
-        <div style={{ marginBottom: "32px" }}>
-          <TextField
-            disabled
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__TYPE)}
-            value={formData.type}
-          />
-        </div>
-
         {/* DB Input */}
         {displayDatabases && (
           <div style={{ marginBottom: "32px" }}>
@@ -689,6 +686,48 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               {formError.databaseCode.required && (
                 <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
+            </FormControl>
+          </div>
+        )}
+
+        {/*source dataset type */}
+        {formData.dialect !== "hana" ? (
+          <div style={{ marginBottom: "32px" }}>
+            <TextField
+              disabled
+              fullWidth
+              variant="standard"
+              label={getText(i18nKeys.ADD_STUDY_DIALOG__TYPE)}
+              value={formData.type}
+            />
+          </div>
+        ) : (
+          <div style={{ marginBottom: "32px" }}>
+            <FormControl
+              sx={styles}
+              className="select"
+              variant="standard"
+              disabled={formData.dialect !== "hana"}
+              fullWidth
+            >
+              <InputLabel htmlFor="type-option">Type</InputLabel>
+              <Select
+                sx={styles}
+                value={formData.type}
+                onChange={(event: SelectChangeEvent<string>) =>
+                  handleFormDataChange({ type: event.target.value as CacheDatasetType })
+                }
+                inputProps={{
+                  name: "type",
+                  id: "type-option",
+                }}
+              >
+                {cacheDatasetTypeOptions.map((option) => (
+                  <MenuItem sx={styles} key={option.type} value={option.type}>
+                    {option.title}
+                  </MenuItem>
+                ))}
+              </Select>
             </FormControl>
           </div>
         )}
@@ -773,7 +812,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               </div>
             )
           ))}
-
         {displaySameCdmVocabSchemaCheckbox && (
           <div style={{ marginBottom: "32px" }}>
             <Checkbox
@@ -792,7 +830,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             />
           </div>
         )}
-
         {/* Vocab Schema Dropdown */}
         {displayVocabSchemaDropdown ? (
           <div style={{ marginBottom: "32px" }}>
@@ -850,7 +887,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             </div>
           )
         )}
-
         <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
@@ -864,7 +900,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
         </div>
-
         {/* Data Model Options */}
         {displayDataModels && (
           <div style={{ marginBottom: "32px" }}>
@@ -903,7 +938,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             </FormControl>
           </div>
         )}
-
         {/* Custom Data Model Options */}
         {displayCustomDataModelInput && (
           <div style={{ marginBottom: "32px" }}>
@@ -921,7 +955,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             )}
           </div>
         )}
-
         <div style={{ marginBottom: "32px" }}>
           <FormControl
             sx={styles}
@@ -954,7 +987,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             )}
           </FormControl>
         </div>
-
         <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
@@ -973,7 +1005,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           )}
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </div>
-
         {displayCacheConfiguration && (
           <>
             <div style={{ marginBottom: "32px", fontWeight: "bold" }}>Cache dataset configuration</div>
@@ -1011,9 +1042,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     id: "cache-dataset-option",
                   }}
                 >
-                  {DatasetMap[formData.type as SourceDatasetType]?.map((type) => (
-                    <MenuItem sx={styles} key={type} value={type}>
-                      {type}
+                  {cacheDatasetTypeOptions.map((option) => (
+                    <MenuItem sx={styles} key={option.type} value={option.type}>
+                      {option.title}
                     </MenuItem>
                   ))}
                 </Select>

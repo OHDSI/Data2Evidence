@@ -70,7 +70,7 @@ export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
   hana__non_omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
 };
 
-export const ResearcherFeatureMap: Record<DatasetType, typeof ResearcherFeatures[number][]> = {
+export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeatures)[number][]> = {
   source: [],
   fhir: [],
   non_omop: ["Cohorts", "Notebooks", "Concepts"],
