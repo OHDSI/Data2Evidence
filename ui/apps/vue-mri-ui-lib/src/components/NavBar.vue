@@ -106,7 +106,6 @@ export default {
   padding-right: 2rem;
 
   > img {
-    padding: 0.5rem 0;
     cursor: pointer;
   }
 }
