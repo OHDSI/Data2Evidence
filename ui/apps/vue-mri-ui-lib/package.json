@@ -11,7 +11,7 @@
     "start:mock": "cd src/query-filter/mock-server && SERVER_URL=${SERVER_URL:-http://localhost:3131} USE_CACHE=${USE_CACHE:-true} npm start",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit",
-    "test:ci": "vue-cli-service test:unit --maxWorkers=4 --coverage --reporters=\"jest-junit\""
+    "test:ci": "vue-cli-service test:unit --maxWorkers=4 --reporters=\"jest-junit\""
   },
   "dependencies": {
     "@d4l/web-components-library": "3.15.1",
