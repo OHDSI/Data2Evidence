@@ -2,15 +2,14 @@
 import bsCard from '@/lib/ui/bs-card.vue'
 import appTab from '@/lib/ui/app-tab.vue'
 import { ref } from 'vue'
-import InclusionReport from './InclusionReport.vue'
+import InclusionReport from './InclusionReport/index.vue'
 
 const props = defineProps<{
   cohortDefinitionId: number
   availableSources: any[]
   patientCounts?: Record<string, number | null>
   isGeneratingCohort?: boolean
-  generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
-  currentGeneratingSourceKey?: string
+  generationStatus: Record<string, 'idle' | 'pending' | 'complete' | 'failed'>
 }>()
 
 const tabList = [
@@ -34,15 +33,34 @@ const activeDataset = ref<string>(props.availableSources[0].sourceKey)
 // Emit an event to parent to trigger cohort generation for a source
 const emit = defineEmits(['generate-cohort'])
 
-const getDisplayPatientCount = (sourceKey: string) => {
-  if (props.generationStatus === 'pending' && props.currentGeneratingSourceKey === sourceKey) {
-    return 'Pending'
-  }
-  if (props.generationStatus === 'failed' && props.currentGeneratingSourceKey === sourceKey) {
-    return 'Failed'
-  }
+const getPatientCountStatus = (sourceKey: string) => {
+  const status = props.generationStatus[sourceKey]
   const count = props.patientCounts?.[sourceKey]
-  return count !== null && count !== undefined ? count.toLocaleString() : '-'
+
+  if (status === 'pending') return 'pending'
+  if (status === 'failed') return 'failed'
+  if (count !== null && count !== undefined) return 'success'
+  return 'not-generated'
+}
+
+const getDisplayPatientCount = (sourceKey: string) => {
+  const countStatus = getPatientCountStatus(sourceKey)
+
+  switch (countStatus) {
+    case 'pending':
+      return 'Pending'
+    case 'failed':
+      return 'Failed'
+    case 'success':
+      return props.patientCounts![sourceKey].toLocaleString()
+    case 'not-generated':
+    default:
+      return 'Not generated'
+  }
+}
+
+const shouldShowPatientLabel = (sourceKey: string) => {
+  return getPatientCountStatus(sourceKey) === 'success'
 }
 
 const handleGenerateCohort = (sourceKey: string) => {
@@ -50,7 +68,7 @@ const handleGenerateCohort = (sourceKey: string) => {
 }
 
 const isGeneratingForSource = (sourceKey: string) => {
-  return props.isGeneratingCohort && props.currentGeneratingSourceKey === sourceKey
+  return props.generationStatus[sourceKey] === 'pending'
 }
 </script>
 
@@ -58,6 +76,7 @@ const isGeneratingForSource = (sourceKey: string) => {
   <div class="execute-content">
     <aside class="side">
       <!-- dataset list -->
+      <h3 class="sidepanel-title">Datasets</h3>
       <div v-for="source in availableSources" :key="source.sourceId">
         <bsCard
           class="dataset-card"
@@ -67,36 +86,43 @@ const isGeneratingForSource = (sourceKey: string) => {
           <template v-slot:header>
             <div class="card-header-content">
               <h3>{{ source.sourceName }}</h3>
-              <div class="card-header-controls">
-                <div class="generate-spinner-container" v-if="isGeneratingForSource(source.sourceKey)">
-                  <d4l-spinner class="generate-spinner" size="1" />
-                </div>
-
-                <button
-                  v-else
-                  @click.stop="handleGenerateCohort(source.sourceKey)"
-                  :disabled="isGeneratingForSource(source.sourceKey)"
-                  class="btn btn-primary generate-cohort-btn"
-                >
-                  Generate
-                </button>
-              </div>
             </div>
           </template>
-          <div>
+          <div class="card-body">
             <div class="patient-count-display">
               <div v-if="isGeneratingForSource(source.sourceKey)" class="patient-count-label generating-label">
                 Generating...
               </div>
               <div v-else>
                 <!-- "Uninitialised" or something when it's never been generated? -->
-                <div class="patient-count-value">{{ getDisplayPatientCount(source.sourceKey) }}</div>
-                <div class="patient-count-label">Patients</div>
+                <div
+                  class="patient-count-value"
+                  :class="{ 'patient-count-actual': getPatientCountStatus(source.sourceKey) === 'success' }"
+                >
+                  {{ getDisplayPatientCount(source.sourceKey) }}
+                </div>
+                <div v-if="shouldShowPatientLabel(source.sourceKey)" class="patient-count-label">Patients</div>
               </div>
+            </div>
+            <div class="card-controls">
+              <div class="generate-spinner-container" v-if="isGeneratingForSource(source.sourceKey)">
+                <d4l-spinner class="generate-spinner" size="1" />
+              </div>
+
+              <button
+                v-else
+                @click.stop="handleGenerateCohort(source.sourceKey)"
+                :disabled="isGeneratingForSource(source.sourceKey)"
+                class="btn btn-primary generate-cohort-btn"
+              >
+                Generate cohort
+              </button>
             </div>
           </div>
         </bsCard>
       </div>
+
+      <div style="height: 24px"></div>
     </aside>
     <!-- Main content -->
     <section class="main-content">
@@ -107,14 +133,11 @@ const isGeneratingForSource = (sourceKey: string) => {
           :cohort-definition-id="cohortDefinitionId"
           :source-key="activeDataset"
           :modeId="1"
-          :generation-status="generationStatus"
+          :generation-status="generationStatus[activeDataset]"
           :patient-count="patientCounts?.[activeDataset]"
-        >
-          <h3>Inclusion report</h3>
-        </InclusionReport>
+        />
         <h3 v-if="selectedView === 'analysis'">Analysis</h3>
         <h3 v-if="selectedView === 'sample'">Sample</h3>
-        <div>{{ activeDataset }}</div>
       </div>
     </section>
   </div>
@@ -134,8 +157,17 @@ const isGeneratingForSource = (sourceKey: string) => {
   border: 2px solid var(--color-primary);
 }
 
+.card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .main-content {
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
   .tabs {
     width: 100%;
@@ -164,34 +196,26 @@ const isGeneratingForSource = (sourceKey: string) => {
     background-color: white;
     height: 100%;
     border-radius: 8px;
+    overflow-y: scroll;
+    // height: 100%;
   }
 }
+
 .generate-spinner-container {
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: end;
-  .generate-spinner {
-    :global(.spinner) {
-      width: 22px;
-      height: 22px;
-      border-width: 4px;
-    }
+
+  :global(.generate-spinner .spinner) {
+    width: 22px;
+    height: 22px;
+    border-width: 4px;
   }
-}
-.sidepanel-title {
-  text-align: center;
-  margin-bottom: 1rem;
 }
 
 .card-header-content {
-  display: grid;
-  align-items: center;
-  justify-content: space-between;
-  grid-template-columns: 3fr 1fr;
-  gap: 1rem;
   width: 100%;
-
   h3 {
     margin: 0;
     flex: 1;
@@ -199,60 +223,60 @@ const isGeneratingForSource = (sourceKey: string) => {
     color: var(--color-support-soft-red);
     font-weight: normal;
   }
+}
 
-  .card-header-controls {
-    display: flex;
-    justify-content: end;
-    gap: 12px;
-    flex-shrink: 0;
-    white-space: nowrap;
+.card-controls {
+  display: flex;
+  justify-content: end;
+  gap: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
 
-    .generate-cohort-btn {
-      gap: 6px;
-      padding: 6px 12px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      width: fit-content;
-      &.btn-primary {
-        background-color: var(--color-primary);
-        color: #fff;
+  .generate-cohort-btn {
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: fit-content;
+    &.btn-primary {
+      background-color: var(--color-primary);
+      color: #fff;
 
-        &:hover:not(:disabled) {
-          background-color: var(--color-primary-light);
-        }
-
-        &:disabled {
-          background-color: #e0e0e0;
-          color: #9e9e9e;
-          cursor: not-allowed;
-        }
+      &:hover:not(:disabled) {
+        background-color: var(--color-primary-light);
       }
 
-      .btn-icon {
+      &:disabled {
+        background-color: #e0e0e0;
+        color: #9e9e9e;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-icon {
+      width: 14px;
+      height: 14px;
+
+      :deep(svg) {
         width: 14px;
         height: 14px;
+      }
+    }
 
-        :deep(svg) {
-          width: 14px;
-          height: 14px;
-        }
+    &.btn-primary .btn-icon {
+      :deep(svg) {
+        fill: white !important;
       }
 
-      &.btn-primary .btn-icon {
-        :deep(svg) {
-          fill: white !important;
-        }
+      :deep(path) {
+        fill: white !important;
+      }
 
-        :deep(path) {
-          fill: white !important;
-        }
-
-        :deep(g) {
-          fill: white !important;
-        }
+      :deep(g) {
+        fill: white !important;
       }
     }
   }
@@ -265,40 +289,52 @@ const isGeneratingForSource = (sourceKey: string) => {
 
   .patient-count-label {
     font-size: 16px;
-    color: #666;
+    color: var(--color-neutral);
     letter-spacing: 0.5px;
     &.generating-label {
       min-height: 50px;
+      display: flex;
+      align-items: center;
     }
   }
 
   .patient-count-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--color-primary);
+    font-size: 16px;
+    color: var(--color-neutral);
     min-width: 40px;
-    text-align: right;
+
+    &.patient-count-actual {
+      font-size: 20px;
+      color: var(--color-primary);
+      font-weight: 700;
+    }
   }
 }
 .side {
+  padding-right: 1rem;
+  height: 100%;
+  overflow-y: auto;
+
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  position: sticky;
   align-self: start;
-  max-height: 80vh;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  padding-right: 1rem;
-  padding-top: 40px;
+
+  .sidepanel-title {
+    text-align: center;
+    margin-bottom: 1rem;
+    font-weight: normal;
+  }
 }
 
 .execute-content {
-  margin: 0 auto;
-  padding: 1rem 0 1rem;
-  display: grid;
-  grid-template-columns: 1fr 2fr;
+  // margin: 0 auto;
+  padding: 0 1rem;
+  display: flex;
+  // display: grid;
+  // grid-template-columns: 1fr 2fr;
   gap: 1.5rem;
+  height: calc(100vh - 49px - 16px);
 }
 </style>
 
