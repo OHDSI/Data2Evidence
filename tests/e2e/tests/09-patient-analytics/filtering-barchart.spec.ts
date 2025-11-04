@@ -134,8 +134,8 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set month of birth to 11 in filter card
   await page.getByTitle('Basic Data - Month of Birth').first().click()
-  await page.getByRole('textbox').fill('11')
-  await page.getByRole('textbox').press('Enter')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('11')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
   await expect(page.getByText('115 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
