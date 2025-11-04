@@ -75,4 +75,4 @@ jobs:
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       run: |
         bun install
-        bunx nx run vue-mri:test:ci
+        bunx nx run vue-mri:test:unit
