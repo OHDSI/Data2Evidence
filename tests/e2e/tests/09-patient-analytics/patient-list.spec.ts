@@ -58,7 +58,7 @@ test(TEST_NAME, async ({ page }) => {
         .getByTitle('Condition Occurrence A - Condition concept set')
         .getByPlaceholder('Enter search term')
         .fill('Chronic sinusitis')
-      await page.getByText('Chronic sinusitis').click()
+      await page.getByText('Chronic sinusitis -').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     await expect(page.getByText('629 / 2694')).toBeVisible()
