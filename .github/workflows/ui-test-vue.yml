@@ -46,17 +46,8 @@ jobs:
       # Give an id to the step, so we can reference it later
       id: check_vue_files_changed
       run: |
-        # Fetch develop & get file changes from feature branch
-        git fetch origin develop
-
-        # Diff HEAD with the last commit of develop & filter for 'apps/vue-mri-ui-lib'
-        diff=$(git diff --name-only origin/develop HEAD | grep '^apps/vue-mri-ui-lib' || :)
-
-        # Check if a file under apps/vue-mri-ui-lib has changed (added, modified, deleted)
-        hasDiff=$(if [ ${#diff} -gt 0 ] ; then echo "True" ; else echo "False"; fi)
-
         # Set the output named "vue_mri_ui_lib_changed"
-        echo "vue_mri_ui_lib_changed=$hasDiff" >> $GITHUB_OUTPUT
+        echo "vue_mri_ui_lib_changed=True" >> $GITHUB_OUTPUT
         echo "Files changed: $diff"
         echo "vue-mri-ui-lib changed: $hasDiff"
 
