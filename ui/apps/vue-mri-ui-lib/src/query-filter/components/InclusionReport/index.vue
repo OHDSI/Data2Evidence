@@ -2,64 +2,36 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { InclusionReportResponse } from '@/query-filter/types/ConceptSetTypes'
 import plotly from '@/lib/CustomPlotly'
+import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
+import { computeAttritionStats } from './computeAttrtionStats'
 
 const props = defineProps<{
   cohortDefinitionId: number
   sourceKey: string
   modeId?: number
   patientCount: number | null
-  generationStatus: 'idle' | 'pending' | 'complete' | 'failed'
+  generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
 }>()
 
 const isLoadingInclusionReport = ref<boolean>(false)
 const inclusionReportResponse = ref<InclusionReportResponse | null>(null)
+const funnelChartRef = ref<HTMLElement | null>(null)
+
+// helper to simulate loading
+const sleep = (milliseconds: number) => {
+  return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
 
 const hasCohortGenerated = computed(() => {
-  return props.patientCount !== null
+  return props.patientCount !== null && props.patientCount !== undefined
 })
 
 const shouldFetchInclusionReport = computed(() => {
   return props.patientCount !== null && !(props.generationStatus === 'pending' || props.generationStatus === 'failed')
 })
 
-// Helper function to count matches in treemap data
-const countMatch = (node: any, mask: string): number => {
-  let count = 0
-  if (node.hasOwnProperty('children')) {
-    node.children.forEach((c: any) => {
-      count += countMatch(c, mask)
-    })
-  } else {
-    count = node.name.startsWith(mask) ? node.size : 0
-  }
-  return count
-}
-
-// Compute attrition statistics from treemap data
 const attritionStats = computed(() => {
-  if (!inclusionReportResponse.value) return []
-
-  const report = inclusionReportResponse.value
-  const treemapData = JSON.parse(report.treemapData)
-  const baseCount = report.summary.baseCount
-
-  let priorPct = 1.0
-  const stats = report.inclusionRuleStats.map((rule: any, i: number) => {
-    const countSatisfying = countMatch(treemapData, '1'.repeat(i + 1))
-    const percentSatisfying = baseCount !== 0 ? countSatisfying / baseCount : 0
-    const pctDiff = priorPct - percentSatisfying
-    priorPct = percentSatisfying
-
-    return {
-      id: rule.id,
-      name: rule.name,
-      countSatisfying,
-      percentSatisfying: (percentSatisfying * 100).toFixed(2) + '%',
-      pctDiff: (pctDiff * 100).toFixed(2) + '%',
-    }
-  })
-
-  return stats
+  return computeAttritionStats(inclusionReportResponse.value)
 })
 
 const funnelChartData = computed(() => {
@@ -89,22 +61,23 @@ const funnelChartData = computed(() => {
   }
 })
 
-const funnelChartLayout = computed(() => ({
-  height: 800,
-  // margin: { r: 20 },
-  yaxis: { automargin: true },
-  xaxis: { automargin: true },
-}))
-
-const funnelChartConfig = computed(() => ({
-  responsive: true,
-  displayModeBar: true,
-}))
-
-const funnelChartRef = ref<HTMLElement | null>(null)
-
 const renderFunnelChart = () => {
   if (!funnelChartRef.value || !funnelChartData.value) return
+
+  // Define thresholds and colors (hex codes from ohdsi atlas)
+  const thresholds = [0.1, 0.25, 0.5, 0.75]
+  const colors = ['#fabfb4', '#fcdab6', '#dedcab', '#cdd99e', '#53bead']
+
+  // Compute ratios relative to previous layer
+  const ratios = funnelChartData.value.values.map((v, i) => (i === 0 ? 1 : v / funnelChartData.value.values[i - 1]))
+
+  // Map each ratio to a color based on thresholds
+  const layerColors = ratios.map(ratio => {
+    for (let i = 0; i < thresholds.length; i++) {
+      if (ratio <= thresholds[i]) return colors[i]
+    }
+    return colors[colors.length - 1]
+  })
 
   const trace = {
     type: 'funnel',
@@ -113,25 +86,31 @@ const renderFunnelChart = () => {
     text: funnelChartData.value.hoverTexts,
     hoverinfo: 'text',
     textposition: 'inside',
+    texttemplate: '%{x}<br>%{percentInitial:.2%}',
     constraintext: 'outside',
     textinfo: 'value+percent initial',
     marker: {
-      color: 'rgba(31, 119, 180, 0.7)',
+      color: layerColors,
     },
   }
 
-  plotly.newPlot(funnelChartRef.value, [trace], funnelChartLayout.value, funnelChartConfig.value)
-}
-
-watch(
-  () => props.sourceKey,
-  newSourceKey => {
-    fetchInclusionReport(props.cohortDefinitionId, newSourceKey, props.modeId)
+  const layout = {
+    height: 800,
+    yaxis: { automargin: true },
+    xaxis: { automargin: true },
   }
-)
+
+  const chartConfig = {
+    responsive: true,
+    displayModeBar: true,
+  }
+
+  plotly.newPlot(funnelChartRef.value, [trace], layout, chartConfig)
+}
 
 const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: string, modeId: number) => {
   isLoadingInclusionReport.value = true
+  await sleep(1500)
   try {
     if (!modeId) modeId = 1
     // inclusionReportResponse.value = await d2eWebapiService.getInclusionReport(cohortDefinitionId, sourceKey, modeId)
@@ -168,41 +147,49 @@ const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: strin
     isLoadingInclusionReport.value = false
   }
 }
+watch(
+  () => props.sourceKey,
+  newSourceKey => {
+    if (shouldFetchInclusionReport.value) {
+      fetchInclusionReport(props.cohortDefinitionId, newSourceKey, props.modeId)
+    } else {
+      inclusionReportResponse.value = null
+    }
+  }
+)
 
 onMounted(() => {
-  fetchInclusionReport(props.cohortDefinitionId, props.sourceKey, props.modeId)
+  inclusionReportResponse.value = null
+  isLoadingInclusionReport.value = false
+  if (shouldFetchInclusionReport.value) {
+    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey, props.modeId)
+  }
 })
-
+watch(shouldFetchInclusionReport, shouldFetch => {
+  if (shouldFetch) {
+    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey, props.modeId)
+  } else {
+    inclusionReportResponse.value = null
+  }
+})
 watch(
   () => funnelChartData.value,
   () => {
-    console.log('funnelChartData changed, rendering funnel chart...')
-    // Ensure the DOM has updated and the <div ref="funnelChartRef"> exists
-    // by running this watcher after component updates (flush: 'post').
     renderFunnelChart()
   },
-  { flush: 'post' }
+  { flush: 'post' } // Ensure <div ref="funnelChartRef"> exists
 )
-
-// const data = [
-//   {
-//     type: 'funnel',
-//     y: ['Website visit', 'Downloads', 'Potential customers', 'Invoice sent', 'Closed delas'],
-//     x: [13873, 10533, 5443, 2703, 908],
-//     hoverinfo: 'x+percent previous+percent initial',
-//   },
-// ]
-// const layout = { margin: { l: 150 }, width: 600, height: 500 }
-// onMounted(() => {
-//   plotly.newPlot(funnelChartRef.value, data, layout)
-// })
 </script>
 
 <template>
   <slot />
 
-  <div v-if="isLoadingInclusionReport" class="loading">Loading inclusion report...</div>
-
+  <div v-if="generationStatus === 'pending'" class="status-message pending">Generating cohort... Please wait</div>
+  <div v-else-if="generationStatus === 'failed'" class="status-message error">
+    Cohort generation failed. Please try again.
+  </div>
+  <div v-else-if="!hasCohortGenerated" class="status-message">Please generate the cohort first</div>
+  <div v-else-if="isLoadingInclusionReport" class="status-message loading">Loading inclusion report...</div>
   <div v-else-if="inclusionReportResponse" class="inclusion-report-container">
     <p>using 1 event per person</p>
     <!-- Summary Table -->
@@ -270,6 +257,7 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  height: 100%;
 }
 
 .summary-section,
@@ -320,11 +308,11 @@ h4 {
   background-color: #f9f9f9;
 }
 
-.loading,
+.status-message,
 .no-data {
   padding: 2rem;
   text-align: center;
-  color: #999;
+  color: var(--color-neutral);
 }
 
 .funnel-chart-section {
