@@ -9,6 +9,7 @@ class DCOptionsType(BaseModel):
     vocabSchemaName: str
     releaseDate: Optional[str] = None
     resultsSchema: str
+    executeConceptRecordCount: Optional[bool] = True
 
     @property
     def use_cache_db(self) -> bool:

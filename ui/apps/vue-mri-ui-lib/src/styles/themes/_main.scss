@@ -1,5 +1,11 @@
 @import '~@d4l/web-components-library/dist/d4l-ui/d4l-ui.css';
 
+// Fix for d4l-button not respecting inline styles after pnpm migration
+// Shadow DOM components need explicit display mode to accept margin properties
+d4l-button {
+  display: inline-block;
+}
+
 .theme-d2e {
   --color-ui-medium-border-rgb: 204, 204, 204;
   --color-mri-brand: var(--color-primary, #000080);

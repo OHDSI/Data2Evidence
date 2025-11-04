@@ -1,5 +1,5 @@
 //import { Service } from 'typedi'
-import axios, { AxiosRequestConfig } from "npm:axios";
+import { AxiosRequestConfig } from "npm:axios";
 //import { createLogger } from '../Logger'
 import https from "node:https";
 import { env, services } from "../env.ts";
@@ -46,6 +46,7 @@ export class PortalAPI {
   private readonly httpsAgent: any;
   private readonly logger = console; //createLogger(this.constructor.name)
   private readonly token: string;
+  private readonly channel;
 
   constructor(token: string) {
     this.token = token;
@@ -54,6 +55,7 @@ export class PortalAPI {
     }
     if (services.portalServer) {
       this.baseURL = services.portalServer;
+      this.channel = Trex.tokioChannel("d2e-functions/portal");
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: true,
       //   ca: env.GATEWAY_CA_CERT
@@ -79,7 +81,7 @@ export class PortalAPI {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/tenant/list`;
-      const result = await axios.get(url, options);
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       this.logger.error("Error getting tenants");
@@ -91,7 +93,7 @@ export class PortalAPI {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dataset/list`;
-      const result = await axios.get(url, options);
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       this.logger.error("Error while getting datasets");
@@ -102,9 +104,8 @@ export class PortalAPI {
   async getDataset(id: string): Promise<Dataset> {
     try {
       const options = await this.getRequestConfig();
-      options.params = { datasetId: id };
-      const url = `${this.baseURL}/dataset`;
-      const result = await axios.get(url, options);
+      const url = `${this.baseURL}/dataset?datasetId=${id}`;
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       this.logger.error(`Error while getting dataset ${id}`);
@@ -116,7 +117,7 @@ export class PortalAPI {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dataset/list/systemadmin`;
-      const result = await axios.get(url, options);
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       this.logger.error("Error getting studies");
@@ -127,9 +128,8 @@ export class PortalAPI {
   async hasDataset(tokenDatasetCode: string) {
     try {
       const options = await this.getRequestConfig();
-      options.params = { tokenDatasetCode };
-      const url = `${this.baseURL}/dataset/exist`;
-      const result = await axios.get(url, options);
+      const url = `${this.baseURL}/dataset/exist?tokenDatasetCode=${tokenDatasetCode}`;
+      const result = await this.channel.get(url, options);
       return result.data.exist;
     } catch (error) {
       const errorMessage = `Error while finding dataset with token dataset code ${tokenDatasetCode}`;
@@ -138,11 +138,11 @@ export class PortalAPI {
     }
   }
 
-  async createDataset(input: CreateDatasetInput) {
+  async createDataset(data: CreateDatasetInput) {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dataset`;
-      const result = await axios.post(url, input, options);
+      const result = await this.channel.post(url, data, options);
       return result.data;
     } catch (error) {
       this.logger.error(`Error creating dataset. ${error}`);
@@ -150,11 +150,11 @@ export class PortalAPI {
     }
   }
 
-  async copyDataset(input: CopyDatasetInput) {
+  async copyDataset(data: CopyDatasetInput) {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dataset/snapshot`;
-      const result = await axios.post(url, input, options);
+      const result = await this.channel.post(url, data, options);
       return result.data;
     } catch (error) {
       this.logger.error(`Error copying dataset. ${error}`);

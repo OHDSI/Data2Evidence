@@ -21,7 +21,7 @@ from prefect.runtime import flow_run
 from prefect.context import TaskRunContext
 from prefect.artifacts import create_markdown_artifact
 
-from .types import CohortNodeType, USE_TREX_CONNECTION
+from .custom_types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json
 
@@ -501,6 +501,8 @@ class CMOutcomes(Node):
                 ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
                 self.cohortId = cohortDefNodes[0].cohortId if cohortDefNodes else None
+                if(not self.cohortId):
+                    raise ValueError("CohortDefinitionSharedResource is required as input to Outcomes node")
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rlapply = ro.r['lapply']
                 kwargs = {i[0]: i[1] for i in self.config.items() if (i[1] != "" or i[1] is False)}

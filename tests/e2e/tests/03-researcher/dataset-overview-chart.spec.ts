@@ -72,7 +72,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Account').click()
       await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
       await page.getByRole('link', { name: 'Datasets' }).click()
-      await page.getByRole('button', { name: 'Select action' }).first().click()
+      await page.getByText('Select action').click()
       await page.getByRole('option', { name: 'Update dataset' }).click()
       await page
         .locator('div')
