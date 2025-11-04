@@ -7,6 +7,7 @@ const props = withDefaults(
   defineProps<{
     side?: Side
     width?: string | number
+    height?: string | number
     title?: string
     ariaLabel?: string
     lockScroll?: boolean
@@ -30,37 +31,22 @@ const emit = defineEmits<{
   (e: 'afterOpen'): void
 }>()
 
-/**
- * Local reactive state:
- * - panelRef points to the <section> (the actual drawer panel).
- * - previouslyFocused stores the element that had focus before opening,
- *   so we can return focus back to it when the drawer closes.
- */
 const panelRef = ref<HTMLElement | null>(null)
 const previouslyFocused = ref<HTMLElement | null>(null)
 
-/**
- * When the component is mounted, store the currently focused element
- * and lock body scroll if needed.
- */
+//  When the component is mounted, store the currently focused element and lock body scroll if needed.
 onMounted(() => {
   previouslyFocused.value = (document.activeElement as HTMLElement) ?? null
   if (props.lockScroll) lockBody()
 })
 
-/**
- * When the component is removed from the page, make sure the body scroll
- * is unlocked (cleanup) and focus is restored.
- */
+// When the component is removed from the page, make sure the body scroll is unlocked (cleanup) and focus is restored.
+
 onUnmounted(() => {
   if (props.lockScroll) unlockBody()
   previouslyFocused.value?.focus?.()
 })
 
-/**
- * Helper: close the drawer by emitting the close event.
- * The parent component is responsible for hiding the drawer via v-if.
- */
 function close() {
   emit('close')
 }
@@ -117,7 +103,7 @@ function unlockBody() {
 
 /**
  * Return all focusable elements inside a root node.
- * Used for focus trapping and focusing the first control on open.
+ * for focus trapping and focusing the first control on open.
  */
 function focusableEls(root: HTMLElement | null) {
   if (!root) return [] as HTMLElement[]
@@ -134,9 +120,8 @@ function focusableEls(root: HTMLElement | null) {
   )
 }
 
-/**
- * Focus the first focusable child, or the panel itself if none.
- */
+//Focus the first focusable child, or the panel itself if none.
+
 function focusFirst(root: HTMLElement | null) {
   const els = focusableEls(root)
   if (els.length) els[0].focus()
@@ -179,9 +164,8 @@ function trapFocus(e: KeyboardEvent) {
           <section
             class="drawer-panel"
             :style="{
-            width: typeof width === 'number' ? width + 'px' : (width as string),
-            [side === 'left' ? 'left' : 'right']: 0
-          }"
+              [side === 'left' ? 'left' : 'right']: 0,
+            }"
             role="dialog"
             :aria-label="ariaLabel || title || 'Drawer'"
             aria-modal="true"
@@ -226,7 +210,11 @@ function trapFocus(e: KeyboardEvent) {
   bottom: 0;
   background: var(--color-table-row-bg, #edf2f7);
   outline: none;
+  width: 85vw;
   max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
@@ -241,7 +229,7 @@ function trapFocus(e: KeyboardEvent) {
 }
 .drawer-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: normal;
 }
 .drawer-close {
@@ -254,7 +242,8 @@ function trapFocus(e: KeyboardEvent) {
 
 .drawer-content {
   padding: 16px;
-  overflow: auto;
+  height: 100%;
+  /* overflow: hidden; */
 }
 
 .drawer-backdrop-enter-active,
