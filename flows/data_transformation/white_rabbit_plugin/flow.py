@@ -7,6 +7,8 @@ from .tasks import *
 from .data_mapping_tasks import *
 from .types import WhiteRabbitRequestType, WhiteRabbitRunType
 
+from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
+
 
 @flow(log_prints=True)
 def white_rabbit_plugin(options: WhiteRabbitRequestType):
@@ -27,25 +29,29 @@ def white_rabbit_plugin(options: WhiteRabbitRequestType):
 
 def scan_report_flow(options: WhiteRabbitRequestType):
     scan_type = options.run_type
+    node_id = options.data.node_id
+
+    supabase_api = SupabaseStorageAPI()
 
     config_ini_path, scan_report_path = create_white_rabbit_settings(scan_type, options.data)
 
-    # Todo: Update to read csv from supabase storage
     if scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES:
-        # Todo: To remove, hardcoded for testing
-        node_id = "eb56c955-440d-4d6f-a2f4-143470ec0d9b"
-        file_name = "dm.csv"
-        file_downloaded = download_file_from_supabase_storage(node_id, file_name)
+        # files_to_scan = [x["fileName"] for x in options.data.get("files", [])]
+        files_to_scan = options.data.files
+    
+        files_downloaded = download_files_from_supabase_storage(node_id, files_to_scan, supabase_api)
 
-    if (scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES and file_downloaded) \
+    if (scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES and files_downloaded) \
         or scan_type == WhiteRabbitRunType.SCAN_REPORT_DB:
         scan_report_path = create_scan_report(config_ini_path, scan_report_path)
 
-    # Todo: Upload to supabase storage under node id
-    # save_response = save_scan_report_conversion(options.username, scan_report_path)
+        
+        upload_scan_report_to_supabase_storage(node_id, scan_report_path, supabase_api)
 
-    # Todo: Refactor 
-    # process_scan_report(save_response, scan_report_path, options.username)
+        # Todo: Remove if downloading scan report from supabase
+        save_response = save_scan_report_conversion(options.username, scan_report_path)
+
+        process_scan_report(save_response, scan_report_path, options.username)
     
     
 
