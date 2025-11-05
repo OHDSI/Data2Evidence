@@ -305,10 +305,12 @@ class CsvNode(Node):
 
 
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        csv_response = SupabaseStorageAPI().get_csv_file(self.id, self.file)
+        supabase_api = SupabaseStorageAPI()
+
+        csv_content = supabase_api.decode_csv_data(supabase_api.get_file(self.id, self.file))
 
         return convert_csv_to_dataframe(
-            csv_response, 
+            csv_content, 
             hasheader=self.hasheader, 
             delimiter=self.delimiter, 
             names=self.names, 
