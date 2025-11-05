@@ -13,9 +13,11 @@ from prefect.artifacts import create_markdown_artifact
 from .types import INISettings, FileSaveResponse, WhiteRabbitRunType
 from .types import WHITERABBIT_BIN_PATH, WHITERABBIT_CSV_DIR, WHITERABBIT_DIR_PATH  
 
+from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.WhiteRabbitAPI import WhiteRabbitAPI
 from _shared_flow_utils.api.FilesManagerAPI import FilesManagerAPI
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
+
 
 
 @task(log_prints=True)
@@ -31,10 +33,35 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
 
     match scan_type:
         case WhiteRabbitRunType.SCAN_REPORT_DB: 
-            # Todo: Generate from database credentials
+
+            # Todo: Use database code
+            # database_credentials = DBDao(use_cache_db=False,
+            #                              database_code=scan_settings.database_code)
+            
+            # ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB,
+            #                           server_location=f"{database_credentials.host}:{database_credentials.port}/{database_credentials.databaseName}",
+            #                           user_name=database_credentials.readUser,
+            #                           password=database_credentials.readPassword,
+            #                           database_name=database_credentials.schema,
+            #                           data_type=database_credentials.dialect,
+            #                           tables_to_scan=scan_settings.tables_to_scan or "*"
+            #                           )
+
             ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB, **scan_settings)
+        
         case WhiteRabbitRunType.SCAN_REPORT_FILES:
-            ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_FILES, **scan_settings.get('settings', {}))
+            
+            # Todo: Use database code
+            # ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_FILES,
+            #                           delimiter=scan_settings.settings.delimiter,
+            #                           tables_to_scan=",".join(scan_settings.files),
+            #                           )
+
+            table_names = [x["fileName"] for x in scan_settings.get("files", [])]
+            ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_FILES,
+                                      delimiter=scan_settings["settings"]["delimiter"],
+                                      tables_to_scan=",".join(table_names),
+                                      )
 
     config["settings"] = ini_content.dump_settings_json()
 
@@ -50,7 +77,7 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
         logger.error(f"Failed to create file config.ini")
         raise FileNotFoundError(f"File config.ini not found at {config_path}")
 
-    logger.info(f"Successfully created file config.ini!")
+    logger.info(f"Successfully created file config.ini")
     logger.debug(f"File config.ini can be found at {config_path}")
 
     scan_report_path = ini_content.working_folder + "/ScanReport.xlsx"
@@ -112,7 +139,6 @@ def generate_etl_word_document(input_file: str = "data.json", output_file: str =
             file_content = file.read()
             encoded_word_file = b64encode(file_content).decode("utf-8")
 
-        logger.info("Storing Base64-encoded Word file as artifact")
         create_markdown_artifact(
             key=f"{runtime.flow_run.id}-word-report",
             markdown=encoded_word_file,
@@ -125,69 +151,65 @@ def generate_etl_word_document(input_file: str = "data.json", output_file: str =
     except Exception as e:
         raise Exception(f"Error processing word document: {str(e)}")
 
-# Todo: Remove this task, not used
-# @task(log_prints=True)
-# def generate_csv_files_from_json(file_contents: list = None):
-#     logger = get_run_logger()
-#     logger.info("Generating CSV files from JSON...")
-#     logger.info(f"Number of files to process: {len(file_contents)}")
-
-#     for file_data in file_contents:
-#         logger.info(file_data['fileName'])
-#         if not file_data['fileContent']:
-#             continue
-
-#         # Clean escaped quotes from keys and values
-#         cleaned_data = []
-#         for row in file_data['fileContent']:
-#             cleaned_row = {}
-#             for key, value in row.items():
-#                 # Remove escaped quotes from keys and values
-#                 clean_key = key.strip('"') if isinstance(key, str) else key
-#                 clean_value = value.strip('"') if isinstance(value, str) else value
-#                 cleaned_row[clean_key] = clean_value
-#             cleaned_data.append(cleaned_row)
-
-#         headers = cleaned_data[0].keys()
-
-#         # Create full path for the CSV file
-#         csv_file_path = f"{WHITERABBIT_CSV_DIR}/{file_data['fileName']}"
-        
-#         with open(csv_file_path, 'w', newline='', encoding='utf-8') as csvfile:
-#             writer = DictWriter(csvfile, fieldnames=headers)
-#             writer.writeheader()
-#             writer.writerows(cleaned_data)
-#             logger.info(f"Successfully saved {csv_file_path}")
-
-#     logger.info(f"Successfully generated {len(file_contents)} files in {WHITERABBIT_CSV_DIR}")
 
 @task(log_prints=True)
-def download_file_from_supabase_storage(node_id: str, filename: str) -> bool:
+def download_files_from_supabase_storage(node_id: str, filenames: list[str], supabase_api: SupabaseStorageAPI) -> bool:
     '''
-    Downloads a CSV file from Supabase Storage using the provided node ID and filename.
-    Saves the file to the WHITERABBIT_CSV_DIR directory.
+    Downloads multiple CSV files from Supabase Storage using the provided node ID and filenames.
+    Saves the files to the WHITERABBIT_CSV_DIR directory.
     '''
     logger = get_run_logger()
-    logger.info(f"Downloading file {filename} from Supabase Storage for node ID: {node_id}...")
+    logger.info(f"Downloading {len(filenames)} files from Supabase Storage for node ID: {node_id}")
 
-    try:
-        supabase_api = SupabaseStorageAPI()
-        csv_content = supabase_api.get_csv_content(node_id, filename)
-
+    downloaded_files = []
+    
+    for filename in filenames:
+        logger.debug(f"Downloading file: {filename}")
+        csv_content = supabase_api.decode_csv_data(supabase_api.get_file(node_id, filename))
         csv_file_path = f"{WHITERABBIT_CSV_DIR}/{filename}"
+        
         with open(csv_file_path, 'w', encoding='utf-8') as csvfile:
             csvfile.write(csv_content)
 
-        logger.info(f"Successfully downloaded and saved file to {csv_file_path}")
-    except Exception as e:
-        logger.error(f"Failed to download file from Supabase Storage: {str(e)}")
-        raise e
-    else:
+        downloaded_files.append(filename)
+        logger.info(f"Successfully downloaded and saved file: {filename}")
+
+
+    logger.info(f"Successfully downloaded {len(downloaded_files)} files")
+    return True
+        
+
+@task(log_prints=True)
+def upload_scan_report_to_supabase_storage(node_id: str, filepath: str, supabase_api: SupabaseStorageAPI) -> bool:
+    '''
+    Uploads the scan report file to Supabase Storage under the specified node ID.
+    '''
+    logger = get_run_logger()
+    logger.info(f"Uploading scan report at '{filepath}' to Supabase Storage for node ID: {node_id}")
+
+    filename = Path(filepath).name
+    content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    try:
+        # Delete existing file so uploading a new one doesn't throw an error
+        existing_files = supabase_api.list_files(node_id)
+        file_exists = next(filter(lambda x: x["name"] == filename, existing_files), None)
+
+        if file_exists:
+            logger.info(f"Scan report '{file_exists['name']}' already exists in Supabase Storage. Deleting existing file...")
+            supabase_api.delete_file(node_id, filename)
+        
+        supabase_api.upload_file(node_id, filepath, content_type)
+
+        logger.info(f"Successfully uploaded scan report at '{filepath}' to Supabase Storage")
         return True
+        
+    except Exception as e:
+        logger.error(f"Failed to upload scan report at '{filepath}' to Supabase Storage: {str(e)}")
+        raise
 
 
-
-# Todo: Change to upload to supabase storage and remove filesmanagerapi
+# Todo: Remove if downloading scan report from supabase storage
 @task(log_prints=True)
 def save_scan_report_conversion(username: str, scan_report_path: str) -> FileSaveResponse:
     '''
