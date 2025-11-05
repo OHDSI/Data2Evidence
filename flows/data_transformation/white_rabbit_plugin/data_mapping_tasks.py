@@ -95,9 +95,7 @@ def process_scan_report(save_response: FileSaveResponse, scan_report_path: str, 
                     if column_type == 'TIMESTAMP(P) WITH TIME ZONE':
                         column_type = column_type.replace(
                             '(P)', f'({max_length})')
-                    elif column_type == 'TEXT':
-                        column_type = column_type
-                    else:
+                    elif column_type != 'TEXT':
                         column_type = f'{column_type}({max_length})'
 
                 column_list.append({
