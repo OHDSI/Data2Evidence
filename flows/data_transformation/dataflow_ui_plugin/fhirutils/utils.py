@@ -77,6 +77,8 @@ class omop_transform_utils:
         }
     }
     def apply_casts(target_data, field_types):
+        if not isinstance(target_data, dict):
+             return target_data
         for field, target_type in field_types.items():
             if field in target_data:
                 target_data[field] = omop_transform_utils.cast_value(target_data[field], target_type)

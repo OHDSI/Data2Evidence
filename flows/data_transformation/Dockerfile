@@ -79,7 +79,7 @@ RUN apt-get update && \
     npm \
     && apt-get clean
 
-RUN npm install @synanetics/fhir-transform
+RUN npm install @synanetics/fhir-transform@0.8.2
 
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
@@ -131,5 +131,7 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
+
+USER docker
 
 ENTRYPOINT []
