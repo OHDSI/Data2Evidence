@@ -244,7 +244,7 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken }) =
   }, [fetchNotebooks]);
 
   useEffect(() => {
-    if (notebooks?.length !== 0 && activeNotebook && activeNotebook !== undefined) {
+    if (notebooks?.length !== 0 && activeNotebook) {
       const notebookContent = activeNotebook?.notebookContent || "";
       loadNotebookContent(notebookContent);
     }
