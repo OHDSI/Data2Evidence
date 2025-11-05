@@ -87,7 +87,7 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
       <Divider />
 
       <div className="study-template-dialog__content">
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <InputLabel sx={{ mb: 1 }}>Template</InputLabel>
           <Select
             sx={{ width: "100%" }}
@@ -115,7 +115,7 @@ const StudyTemplateDialog: FC<StudyTemplateDialogProps> = ({ study, open, onClos
               </MenuItem>
             ))}
           </Select>
-        </Box>
+        </div>
 
         <SafeEditor
           height="60vh"
