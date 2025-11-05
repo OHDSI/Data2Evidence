@@ -122,7 +122,7 @@ RUN pip install https://github.com/explosion/spacy-models/releases/download/en_c
 WORKDIR /app
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-# COPY --chown=docker:docker --chmod=711 ./data_transformation flows
+COPY --chown=docker:docker --chmod=711 ./data_transformation flows
 
 RUN chmod -R 755 /app
 
