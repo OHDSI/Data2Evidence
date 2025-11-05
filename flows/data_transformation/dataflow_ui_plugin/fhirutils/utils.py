@@ -33,6 +33,7 @@ class omop_transform_utils:
             "condition_start_datetime": "datetime",
             "condition_start_date": "date",
             "condition_end_date": "date",
+            "condition_type_concept_id": "map",
         },
         "visit_occurrence": {
             "visit_occurrence_id": "id",

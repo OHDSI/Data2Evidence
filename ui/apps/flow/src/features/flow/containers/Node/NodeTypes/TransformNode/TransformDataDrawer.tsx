@@ -12,7 +12,6 @@ import {
 import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
-import { NodeChoiceMap } from "..";
 import { TransformNodeData } from "./TransformDataNode";
 import { useGetFhirStructureMapTemplatesQuery } from "~/features/flow/slices";
 import { Editor } from "~/components/Editor/Editor";
@@ -135,15 +134,12 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
             ))}
           </Select>
         </Box>
-        <Box mb={4}>
-          <TextInput
-            label="Structure Map"
-            value={JSON.stringify(formData.structure_map)}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({ structure_map: JSON.parse(e.target.value) })
-            }
-          />
-        </Box>
+        <Editor
+          language="plaintext"
+          value={formData.structure_map}
+          onChange={(structure_map: string) => onFormDataChange({ structure_map })}
+          label="Structure Map"
+        /> 
     </NodeDrawer>
   );
 };
