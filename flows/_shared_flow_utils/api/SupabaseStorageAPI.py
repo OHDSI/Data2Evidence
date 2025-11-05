@@ -1,15 +1,69 @@
 import base64
 import requests
-
-from prefect.variables import Variable
-from prefect.blocks.system import Secret
+from pathlib import Path
+from typing import Union
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 
 class SupabaseStorageAPI(BaseAPI):
     def __init__(self):
         super().__init__()
-        self.url = self.get_service_route("jobplugins")
+        self.url = f"{self.get_service_route("jobplugins")}jobplugins/dataflow/node/file"
+
+
+    def list_files(self, node_id: str) -> list[dict]:
+        request_url = f"{self.url}/list?nodeId={node_id}"
+
+        response = requests.get(
+            request_url,
+            headers=self.get_options(),
+            verify=self.get_verify_value()
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
+
+    def delete_file(self, node_id: str, filename: str) -> dict:
+        request_url = f"{self.url}?nodeId={node_id}&fileName={filename}"
+
+        response = requests.delete(
+            request_url,
+            headers=self.get_options(),
+            verify=self.get_verify_value()
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+        
+
+
+    def upload_file(self, node_id: str, file_path: Union[str, Path], content_type: str) -> dict:
+        file_path_obj = Path(file_path)
+        filename = file_path_obj.name
+
+        request_url = f"{self.url}?nodeId={node_id}"
+
+        files = {
+            "file": (filename, open(file_path, "rb"), content_type)
+        }
+
+        headers = self.get_options()
+        headers.pop("Content-Type", None)
+        
+        response = requests.post(
+            request_url,
+            headers=headers,
+            files=files,
+            verify=self.get_verify_value()
+        )
+
+        response.raise_for_status()
+
+        return response.json()
+
 
     def decode_csv_data(self, response_data: dict) -> str:
         encoded_data = response_data.get("data", "")
@@ -24,8 +78,8 @@ class SupabaseStorageAPI(BaseAPI):
             raise ValueError(f"Failed to decode CSV data: {str(e)}")
 
 
-    def get_csv_content(self, node_id: str, filename: str) -> str:
-        request_url = f"{self.url}jobplugins/dataflow/file/csv?nodeId={node_id}&fileName={filename}"
+    def get_file(self, node_id: str, filename: str) -> dict:
+        request_url = f"{self.url}?nodeId={node_id}&fileName={filename}"
 
         response = requests.get(
             request_url, 
@@ -33,7 +87,6 @@ class SupabaseStorageAPI(BaseAPI):
             verify=self.get_verify_value()
         )
 
-        # raise error if status code is >400
         response.raise_for_status()
-
-        return self.decode_csv_data(response)
+        
+        return response.json()
