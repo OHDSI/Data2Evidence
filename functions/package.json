@@ -1843,16 +1843,7 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/upload/csv",
-          "scopes": [
-            "portal.supabaseStorage.write"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/system-portal/supabase-storage/get/csv",
+          "path": "^/system-portal/supabase-storage/list/file",
           "scopes": [
             "portal.supabaseStorage.read"
           ],
@@ -1861,7 +1852,25 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/delete/csv",
+          "path": "^/system-portal/supabase-storage/upload/file",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/get/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/file",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
@@ -2080,7 +2089,7 @@
           ]
         },
         {
-          "path": "^/jobplugins/dataflow/file/csv$",
+          "path": "^/jobplugins/dataflow/node/file/list$",
           "scopes": [
             "portal.supabaseStorage.read"
           ],
@@ -2089,7 +2098,25 @@
           ]
         },
         {
-          "path": "^/jobplugins/dataflow/file/csv$",
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],

@@ -392,7 +392,7 @@ export type CanvasResult =
       error: string;
     };
 
-export interface CsvFileOperationResponse {
+export interface FileOperationResponse {
   status: "success";
   filePath: string;
   bucket: string;

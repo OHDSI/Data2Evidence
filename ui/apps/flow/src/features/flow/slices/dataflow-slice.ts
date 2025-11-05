@@ -186,7 +186,7 @@ export const dataflowApiSlice = createApi({
         formData.append("file", file);
 
         return {
-          url: `dataflow/file/csv?nodeId=${nodeId}`,
+          url: `dataflow/node/file?nodeId=${nodeId}`,
           method: "POST",
           body: formData,
         };
@@ -198,7 +198,7 @@ export const dataflowApiSlice = createApi({
       { nodeId: string; fileName: string }
     >({
       query: ({ nodeId, fileName }) => ({
-        url: `dataflow/file/csv?nodeId=${nodeId}&fileName=${fileName}`,
+        url: `dataflow/node/file?nodeId=${nodeId}&fileName=${fileName}`,
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],

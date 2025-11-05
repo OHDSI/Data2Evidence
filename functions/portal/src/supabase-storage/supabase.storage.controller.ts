@@ -14,7 +14,20 @@ import { SupabaseStorageClient } from "./supabase.storage.client.ts";
 export class SupabaseStorageController {
   constructor(private readonly storageClient: SupabaseStorageClient) {}
 
-  @Post("upload/csv")
+  @Get("list/file")
+  async listFiles(@Query("nodeId") nodeId: string) {
+    if (!nodeId) {
+      throw new HttpException(400, "nodeId query parameter is required");
+    }
+
+    return await this.storageClient.list(
+      nodeId,
+      "data-transformation",
+      "data-transformation"
+    );
+  }
+
+  @Post("upload/file")
   async uploadFile(@Query("nodeId") nodeId: string, @Req() request: Request) {
     if (!nodeId) {
       throw new HttpException(400, "nodeId query parameter is required");
@@ -25,11 +38,6 @@ export class SupabaseStorageController {
 
     if (!file) {
       throw new HttpException(400, "No file provided");
-    }
-
-    // Validate CSV file type
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      throw new HttpException(400, "Only CSV files are allowed");
     }
 
     const uploadedFile = {
@@ -46,7 +54,7 @@ export class SupabaseStorageController {
     );
   }
 
-  @Get("get/csv")
+  @Get("get/file")
   async getFile(
     @Query("nodeId") nodeId: string,
     @Query("fileName") fileName: string
@@ -82,7 +90,7 @@ export class SupabaseStorageController {
     };
   }
 
-  @Delete("delete/csv")
+  @Delete("delete/file")
   async deleteFile(
     @Query("nodeId") nodeId: string,
     @Query("fileName") fileName: string
