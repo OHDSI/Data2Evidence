@@ -91,7 +91,11 @@ class INISettings(BaseModel):
         if self.scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES:
             return "Delimited text files"
         elif self.scan_type == WhiteRabbitRunType.SCAN_REPORT_DB:
+            if not self.data_type:
+                raise ValueError(f"data_type is required for scan type {self.scan_type}")
             return self.data_type
+        else:
+            raise ValueError(f"Unsupported scan type: {self.scan_type}")
 
     def dump_settings_json(self) -> dict:
         '''
