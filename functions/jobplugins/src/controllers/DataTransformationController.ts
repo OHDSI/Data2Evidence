@@ -180,7 +180,7 @@ export class DataTransformationController {
 
       return res.status(200).json(result);
     } catch (error) {
-      console.error("Error in listCsvFiles: ", error);
+      console.error("Error in listFiles: ", error);
       return res.status(500).json({ message: error.message });
     }
   }
