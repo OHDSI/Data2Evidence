@@ -2,7 +2,6 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import FormControl from "@mui/material/FormControl";
 import Divider from "@mui/material/Divider";
 import {
-  Box,
   Button,
   Dialog,
   IconButton,
@@ -94,7 +93,7 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
       <div className="change-my-password-dialog__content">
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <TextField
                 fullWidth
                 type="password"
@@ -103,12 +102,12 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
                 value={formData.oldPassword}
                 onChange={(event) => setFormData((formData) => ({ ...formData, oldPassword: event.target.value }))}
               />
-            </Box>
+            </div>
           </FormControl>
         </div>
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <TextField
                 fullWidth
                 type={passwordShown ? "text" : "password"}
@@ -134,7 +133,7 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
                 variant="text"
                 onClick={handleGeneratePassword}
               />
-            </Box>
+            </div>
           </FormControl>
         </div>
       </div>

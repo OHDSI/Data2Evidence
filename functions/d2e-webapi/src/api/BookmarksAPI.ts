@@ -20,11 +20,10 @@ export class BookmarksAPI {
     }
   }
 
-  async getAllBookmarks(datasetId): Promise<IBookmarks> {
+  async getAllBookmarks(datasetId: string): Promise<IBookmarks> {
     const options = await this.getRequestConfig();
     const params = new URLSearchParams();
     params.append("datasetId", datasetId);
-    params.append("r", Math.random().toString());
     const result = await axios.get(`${this.baseURL}`, { params, ...options });
     return result.data;
   }

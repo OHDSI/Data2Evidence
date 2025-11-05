@@ -3,6 +3,7 @@ networks:
   alp:
   data:
   enterprise-gateway:
+  enterprise-gateway-viewer:
 
 volumes:
   caddy:
@@ -54,6 +55,22 @@ x-envs:
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
     TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
+  enterprise-gateway: &x-enterprise-gateway
+    EG_KERNEL_LAUNCH_TIMEOUT:  ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
+    EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
+    EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
+    # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
+    EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
+    EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
+    EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
+    KG_PORT: ${KG_PORT:-8888}
+    EG_BASE_URL: /jupyter
+    EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
+    EG_DOCKER_MODE: docker
+    EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+    TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+    EG_ENV_WHITELIST: "KERNEL_USERNAME"
+    EG_MAX_KERNELS_PER_USER: 1
 
 services:
   trex:
@@ -77,6 +94,8 @@ services:
       data:
         priority: 10
       enterprise-gateway:
+        priority: 20
+      enterprise-gateway-viewer:
         priority: 20
     volumes:
       - trex:/usr/src/data
@@ -126,6 +145,7 @@ services:
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
+        "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
         "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/supabase-storage",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
@@ -173,10 +193,11 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage"]}'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "storage"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
+      TPM_REGISTRY_URL: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: "${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}" #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PLUGINS_INFORMATION_URL: ${PLUGINS_INFORMATION_URL:-https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true}
@@ -577,6 +598,9 @@ services:
       LOGTO__ADMIN_SERVER__FQDN_URL: "http://${PROJECT_NAME:-d2e}-logto-1:3002"
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO__ALP_ADMIN_APP: '{"application": {"id": "${LOGTO_API_M2M_CLIENT_ID}", "name":"alp-admin","description":"alp-admin", "secret": "${LOGTO_API_M2M_CLIENT_SECRET}"}, "role": { "name":"api-access","description":"Logto API access"}}'
+      LOGTO__TERM_OF_USE_URL: ${LOGTO__TERM_OF_USE_URL:-}
+      LOGTO__PRIVACY_POLICY_URL: ${LOGTO__PRIVACY_POLICY_URL:-}
+      LOGTO__CUSTOM_CSS: ${LOGTO__CUSTOM_CSS:-}
       CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
 
   alp-logto:
@@ -656,6 +680,8 @@ services:
       data:
         priority: 10
       enterprise-gateway:
+        priority: 10
+      enterprise-gateway-viewer:
         priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     command:
@@ -774,6 +800,12 @@ services:
   enterprise-gateway:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
     container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     platform: linux/amd64
     logging:
       options:
@@ -782,22 +814,9 @@ services:
       enterprise-gateway:
     user: root # Run as root
     environment:
+      <<:
+        - *x-enterprise-gateway
       EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
-      EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
-      EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
-      EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
-      # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
-      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
-      EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
-      EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
-      KG_PORT: ${KG_PORT:-8888}
-      EG_BASE_URL: /jupyter
-      EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
-      EG_DOCKER_MODE: docker
-      EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
-      TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
-      EG_ENV_WHITELIST: "KERNEL_USERNAME"
-      EG_MAX_KERNELS_PER_USER: 1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     labels:
@@ -809,6 +828,38 @@ services:
       labels:
         app: "enterprise-gateway"
         component: "enterprise-gateway"
+
+  enterprise-gateway-viewer:
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
+    container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-viewer
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    platform: linux/amd64
+    logging:
+      options:
+        tag: *c29
+    networks:
+      enterprise-gateway-viewer:
+    user: root # Run as root
+    environment:
+      <<:
+        - *x-enterprise-gateway
+      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway-viewer}
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+      app: "enterprise-gateway-viewer"
+      component: "enterprise-gateway-viewer"
+    deploy:
+      replicas: 1
+      endpoint_mode: dnsrr
+      labels:
+        app: "enterprise-gateway-viewer"
+        component: "enterprise-gateway-viewer"
 
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.0.0

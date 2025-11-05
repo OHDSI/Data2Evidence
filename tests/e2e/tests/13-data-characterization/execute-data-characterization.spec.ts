@@ -20,9 +20,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Trigger data characterization from Datasets page for demo dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
-  const demoDataset = await page
-    .locator('tr', { hasText: 'Demo dataset' })
-    .getByRole('button', { name: 'Select action' })
+  const demoDataset = await page.locator('tr', { hasText: 'Demo dataset' }).getByText('Select action')
   await demoDataset.click()
   await page.getByRole('option', { name: 'Run data characterization' }).click()
   await page.getByRole('button', { name: 'Run Analysis' }).click()

@@ -7,6 +7,7 @@ export class DatasetAPI {
   private readonly httpsAgent: any;
   private readonly logger = console; //createLogger(this.constructor.name)
   private readonly token: string;
+  private readonly channel;
 
   constructor(token: string) {
     this.token = token;
@@ -16,6 +17,7 @@ export class DatasetAPI {
 
     if (services.dataset) {
       this.baseURL = services.dataset;
+      this.channel = Trex.tokioChannel("d2e-functions/dataset");
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: true,
       //   ca: env.GATEWAY_CA_CERT
@@ -31,7 +33,7 @@ export class DatasetAPI {
       this.logger.info("Create dataset");
       const options = await this.getRequestConfig();
       const url = this.baseURL;
-      const result = await post(url, dto, options);
+      const result = await this.channel.post(url, dto, options);
       return result.data;
     } catch (error) {
       console.error(`Error while creating dataset: ${error}`);

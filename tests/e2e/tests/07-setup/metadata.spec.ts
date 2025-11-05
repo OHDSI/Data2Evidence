@@ -35,7 +35,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('row', { name: 'test Testing DATASET STRING' }).getByRole('button').first().click()
   await page.getByRole('textbox', { name: 'Attribute Name' }).click()
   await page.getByRole('textbox', { name: 'Attribute Name' }).fill('Testing edited')
-  await page.getByRole('button', { name: 'Category DATASET' }).click()
+  await page.getByRole('button', { name: 'Category DATASET' }).click();
   await page.getByRole('option', { name: 'FILE' }).click()
   await page.getByRole('button', { name: 'Datatype STRING' }).click()
   await page.getByRole('option', { name: 'NUMBER' }).click()

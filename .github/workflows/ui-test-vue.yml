@@ -60,30 +60,28 @@ jobs:
         echo "Files changed: $diff"
         echo "vue-mri-ui-lib changed: $hasDiff"
 
-    - name: Setup node if vue files have changed
-      uses: actions/setup-node@v4
+    - name: Setup bun if vue files have changed
+      uses: oven-sh/setup-bun@v2
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       with:
-        node-version: '18.14.0'
+        bun-version: 1.2.23
 
-    - name: Get yarn cache directory path
+    - name: Get bun cache directory path
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
-      id: yarn-cache-dir-path
-      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+      id: bun-cache-dir-path
+      run: echo "dir=$(bun pm cache)" >> $GITHUB_OUTPUT
 
     - uses: actions/cache@v4
-      id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+      id: bun-cache # use this to check for `cache-hit` (`steps.bun-cache.outputs.cache-hit != 'true'`)
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ hashFiles('./yarn.lock') }}
+        path: ${{ steps.bun-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-bun-${{ hashFiles('./bun.lock') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-
+          ${{ runner.os }}-bun-
 
     - name: Build Project
       if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       run: |
-        cd apps/vue-mri-ui-lib
-        yarn
-        yarn test:ci
-        cd -
+        bun install
+        bunx nx run vue-mri:test:ci

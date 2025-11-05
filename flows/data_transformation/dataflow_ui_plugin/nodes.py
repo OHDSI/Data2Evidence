@@ -10,6 +10,7 @@ import traceback as tb
 from rpy2 import robjects
 from functools import partial
 from jsonpath_ng import parse
+from asyncio import iscoroutine, run
 from pydantic import ValidationError
 
 import pandas as pd
@@ -259,6 +260,10 @@ class PythonNode(Node):
             code = compile(self.source_code, '<string>', 'exec')
 
             data = exec(code, params)
+            output = params["output"]
+            # If python code was async, output will be a coroutine
+            if iscoroutine(output):
+                params["output"] = run(output)
             return Result(False,  params["output"], self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
