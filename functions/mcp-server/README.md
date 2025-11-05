@@ -6,7 +6,7 @@ This guide will help you set up the MCP server for local development and integra
 To enable secure communication, you need to set up the CA certificate:
 
 ```sh
-docker exec alp-caddy cat /data/caddy/pki/authorities/local/root.crt > //path/to/ca_cert.pem
+docker exec alp-caddy cat /data/caddy/pki/authorities/local/root.crt > /path/to/ca_cert.pem
 ```
 ```sh
 export NODE_EXTRA_CA_CERTS="/path/to/ca_cert.pem"
@@ -22,6 +22,7 @@ Provide the JWT in your MCP client config file. Example config:
 	"type": "http",
 	"headers": {
 		"Authorization": "Bearer xxx",
+		"datasetId": "xyz",
 		"Content-Type": "application/json",
 		"Accept": "application/json, text/event-stream"
 	}

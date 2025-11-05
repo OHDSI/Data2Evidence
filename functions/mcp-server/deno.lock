@@ -4,7 +4,6 @@
     "npm:@modelcontextprotocol/sdk@*": "1.20.2_express@5.1.0_zod@3.25.76",
     "npm:@modelcontextprotocol/sdk@^1.20.2": "1.20.2_express@5.1.0_zod@3.25.76",
     "npm:express@^4.19.2": "4.21.2",
-    "npm:papaparse@5.5.3": "5.5.3",
     "npm:zod@^3.25.76": "3.25.76"
   },
   "npm": {
@@ -461,9 +460,6 @@
         "wrappy"
       ]
     },
-    "papaparse@5.5.3": {
-      "integrity": "sha512-5QvjGxYVjxO59MGU2lHVYpRWBBtKHnlIAcSe1uNFCkkptUh63NFRj0FJQm7nR67puEruUci/ZkjmEFrjCAyP4A=="
-    },
     "parseurl@1.3.3": {
       "integrity": "sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ=="
     },
@@ -698,7 +694,6 @@
       "npm:@modelcontextprotocol/sdk@*",
       "npm:@modelcontextprotocol/sdk@^1.20.2",
       "npm:express@^4.19.2",
-      "npm:papaparse@5.5.3",
       "npm:zod@^3.25.76"
     ]
   }

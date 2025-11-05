@@ -2,14 +2,14 @@ import { env } from "../env";
 
 export class WebAPIAPI {
   private readonly token: string;
-  private readonly webapiapi: any;
+  private readonly channel: any;
   private readonly baseURL: string;
   private readonly datasetId: string;
 
   constructor(token: string, datasetId: string) {
     this.token = token;
     this.datasetId = datasetId;
-    this.webapiapi = Trex.tokioChannel("d2e-functions/d2e-webapi");
+    this.channel = Trex.tokioChannel("d2e-functions/d2e-webapi");
     this.baseURL = env.SERVICE_ROUTES["d2e-webapi"];
     if (!token) {
       throw new Error("No token passed for WebAPIAPI!");
@@ -33,7 +33,7 @@ export class WebAPIAPI {
 
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cohortdefinition`;
-      const response = await this.webapiapi.get(url, options);
+      const response = await this.channel.get(url, options);
       return response.data;
     } catch (error) {
       console.error(error);
