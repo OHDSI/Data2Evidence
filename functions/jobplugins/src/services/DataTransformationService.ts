@@ -863,8 +863,6 @@ export class TransformationService {
       }
     } else {
       this.logger.info(`Updating existing repository`);
-      this.logger.info(`Fetching latest changes from ${defaultBranch}`);
-      this.logger.info(`Repo directory: ${repoDir}`);
       try {
         await git.fetch({
           fs,
@@ -878,7 +876,7 @@ export class TransformationService {
 
         // Get current branch
         const currentBranch = await git.currentBranch({ fs, dir: repoDir });
-        this.logger.info(`Current branch: ${defaultBranch}`);
+        this.logger.info(`Current branch: ${currentBranch}`);
 
         // Reset to match remote current branch
         if (currentBranch) {
@@ -1116,7 +1114,6 @@ export class TransformationService {
   
     const repoDir = this.templateRepoPath;
     const subDirPath = path.join(repoDir, subDir);
-    this.logger.info(`Fetching templates from ${repoDir} in subdirectory ${subDir} branch ${templateBranch}`);
     try {
       await this.ensureLatestFromGitRemote(
         repoDir,
