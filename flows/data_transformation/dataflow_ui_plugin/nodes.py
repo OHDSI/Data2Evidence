@@ -299,9 +299,9 @@ class CsvNode(Node):
         self.file = _node["file"]
         self.delimiter = _node["delimiter"]
 
-        self.names = _node["columns"] # Todo: Not inside payload from backend
-        self.hasheader = _node["hasheader"] # Todo: Not inside payload from backend
-        self.encoding = _node.get("encoding", "utf8") # Todo: Not inside payload from backend
+        self.names = _node["columns"]
+        self.hasheader = _node["hasheader"]
+        self.encoding = _node.get("encoding", "utf8")
 
 
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
