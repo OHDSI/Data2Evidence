@@ -46,19 +46,20 @@ class SupabaseStorageAPI(BaseAPI):
 
         request_url = f"{self.url}?nodeId={node_id}"
 
-        files = {
-            "file": (filename, open(file_path, "rb"), content_type)
-        }
-
         headers = self.get_options()
         headers.pop("Content-Type", None)
         
-        response = requests.post(
-            request_url,
-            headers=headers,
-            files=files,
-            verify=self.get_verify_value()
-        )
+        with open(file_path, "rb") as file:
+            files = {
+                "file": (filename, file, content_type)
+            }
+            
+            response = requests.post(
+                request_url,
+                headers=headers,
+                files=files,
+                verify=self.get_verify_value()
+            )
 
         response.raise_for_status()
 
