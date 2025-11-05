@@ -5,6 +5,9 @@ import {
   IWebapiConceptRelated,
   IWebapiConceptSet,
   ConceptSet,
+  IWebapiConceptRecordCount,
+  TerminologyTableConcept,
+  ConceptRecordCount,
 } from "./types";
 
 export const mapd2eWebapiConcept = (concept: IWebapiConcept): Concept => {
@@ -25,6 +28,40 @@ export const mapd2eWebapiConcept = (concept: IWebapiConcept): Concept => {
     validity: concept.INVALID_REASON_CAPTION,
     score: concept.SCORE,
   };
+};
+
+export const combinedConceptAndConceptRecordCounts = (
+  concepts: Concept[],
+  conceptRecordCounts: IWebapiConceptRecordCount[]
+): TerminologyTableConcept[] => {
+  const mappedConceptRecordCounts = _mapd2eWebapiConceptRecordCount(conceptRecordCounts);
+
+  return concepts.map((concept) => {
+    const conceptRecordCount = mappedConceptRecordCounts.find(
+      (e) => e.conceptId === concept.conceptId
+    ) as ConceptRecordCount;
+    return {
+      ...concept,
+      recordCount: conceptRecordCount.recordCount.toLocaleString(),
+      descendantRecordCount: conceptRecordCount.descendantRecordCount.toLocaleString(),
+      personCount: conceptRecordCount.personCount.toLocaleString(),
+      descendantPersonCount: conceptRecordCount.descendantPersonCount.toLocaleString(),
+    };
+  });
+};
+
+const _mapd2eWebapiConceptRecordCount = (conceptRecordCounts: IWebapiConceptRecordCount[]): ConceptRecordCount[] => {
+  return conceptRecordCounts.map((e) => {
+    const conceptId = Object.keys(e)[0];
+    const values = Object.values(e)[0];
+    return {
+      conceptId: Number(conceptId),
+      recordCount: values[0],
+      descendantRecordCount: values[1],
+      personCount: values[2],
+      descendantPersonCount: values[3],
+    };
+  });
 };
 
 // TODO: Discuss implementation

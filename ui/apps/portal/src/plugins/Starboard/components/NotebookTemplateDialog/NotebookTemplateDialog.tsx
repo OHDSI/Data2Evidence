@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@portal/components";
+import { Button, Dialog, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@portal/components";
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../axios/api";
 import { NotebookTemplateDto } from "../../../../axios/study-notebook";
@@ -106,7 +106,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       maxWidth="md"
     >
       <div className="notebook-template-dialog__content">
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             label={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_LABEL)}
             sx={{ width: "100%" }}
@@ -120,8 +120,8 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
               {getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME__ALREADY_EXISTS)}
             </div>
           )}
-        </Box>
-        <Box mb={4}>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
           <InputLabel sx={{ mb: 1 }}>{getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_TEMPLATE_LABEL)}</InputLabel>
           <Select
             sx={{ width: "100%" }}
@@ -140,17 +140,17 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
               </MenuItem>
             ))}
           </Select>
-        </Box>
+        </div>
       </div>
       <div className="notebook-template-dialog__footer">
-        <Box display="flex" gap={1} className="notebook-template-dialog__footer-actions">
+        <div style={{ display: "flex", gap: "8px" }} className="notebook-template-dialog__footer-actions">
           <Button text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CANCEL)} variant="outlined" onClick={handleClose} />
           <Button
             text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CREATE)}
             onClick={handleCreate}
             disabled={!formData.name.trim()}
           />
-        </Box>
+        </div>
       </div>
     </Dialog>
   );

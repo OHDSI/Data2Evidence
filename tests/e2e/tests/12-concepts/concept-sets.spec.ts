@@ -91,5 +91,14 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Close' }).click()
 
   await expect(page.getByText('1836 / 2694')).toBeVisible({ timeout: 10000 })
+
+  // Dismiss popover if present
+  try {
+    await page.mouse.move(0, 0)
+    await page.locator('.modal-wrapper').click()
+  } catch {
+    // Modal not present, continue
+  }
+
   await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
 })

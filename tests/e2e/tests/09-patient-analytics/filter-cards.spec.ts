@@ -90,6 +90,14 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('tab', { name: 'Selected concepts' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
+  // Dismiss popover if present
+  try {
+    await page.mouse.move(0, 0)
+    await page.locator('.modal-wrapper').click()
+  } catch {
+    // Modal not present, continue
+  }
+
   // Step 8 - Select concept set
   await page.getByTitle('Condition Occurrence A - Condition concept Set').locator('div').nth(1).click()
   await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
@@ -116,30 +124,20 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByTitle('Basic Data - Month of Birth').click()
   await page.getByRole('textbox').fill('[1-10]')
   await page.getByRole('textbox').press('Enter')
-  const monthOfBirthBgcolor = await page
-    .getByText('[1-10]')
-    .locator('..')
-    .evaluate(el => window.getComputedStyle(el).backgroundColor)
-  expect(monthOfBirthBgcolor).toBe('rgb(143, 219, 254)')
 
   // Step 8 - Entering month of birth with incorrect input
   await page.getByTitle('Basic Data - Month of Birth').click()
   await page.getByRole('textbox').fill('5.x')
   await page.getByRole('textbox').press('Enter')
-  const monthOfBirthErrorBgcolor = await page
-    .getByText('5.x')
-    .locator('..')
-    .evaluate(el => window.getComputedStyle(el).backgroundColor)
-  expect(monthOfBirthErrorBgcolor).toBe('rgb(226, 49, 1)')
-  await page
-    .locator('div')
-    .filter({ hasText: /^5\.x$/ })
-    .locator('span')
-    .nth(1)
-    .click()
+  await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card
   await page.getByRole('button', { name: '' }).nth(1).click()
+  let menuVisible = await page.getByRole('menu').isVisible()
+  if (!menuVisible) {
+    await page.getByRole('button', { name: '' }).nth(1).click()
+    await expect(page.getByRole('menu')).toBeVisible()
+  }
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await page.waitForSelector('.loading-animation-component', { state: 'hidden' })
   await page.getByText('Select an AttributeSelect').click()

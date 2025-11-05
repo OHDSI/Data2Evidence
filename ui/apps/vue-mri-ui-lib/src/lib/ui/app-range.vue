@@ -1,36 +1,46 @@
 <template>
-  <div
-    tabindex="0"
-    :class="['app-range', 'form-control', 'form-control-sm', isActive ? 'MriHilite' : '']"
-    ref="container"
-    @click="openInput"
-    @focus="openInput"
-  >
-    <template v-for="item in tokens" :key="item">
-      <div
-        :ref="`item-${item.id}`"
-        tabindex="0"
-        :class="getClass(item)"
-        @keyup.right="rangeNavHandler(item, $event)"
-        @keyup.left="rangeNavHandler(item, $event)"
-        @keydown.stop.prevent.delete="tagKeyUpHandler(item)"
-        @click.stop.prevent="tagClickHandler(item)"
-      >
-        <span class="tokenText">{{ item.text }}</span>
-        <span class="tokenIcon" @click="removeTag(item)">
-          <appIcon icon="decline"></appIcon>
-        </span>
-      </div>
-    </template>
-    <input
-      v-if="inputVisible"
-      type="text"
-      v-on:keyup.delete="focusTag"
-      v-on:keyup.enter="addTagEvent"
-      ref="textControl"
-      @blur="isActive = false"
-      @focus="isActive = true"
-    />
+  <div>
+    <div
+      tabindex="0"
+      :class="[
+        'app-range',
+        'form-control',
+        'form-control-sm',
+        isActive && !errorMsg ? 'MriHilite' : '',
+        errorMsg ? 'error-border' : '',
+      ]"
+      ref="container"
+      @click="openInput"
+      @focus="openInput"
+    >
+      <template v-for="item in tokens" :key="item">
+        <div
+          :ref="`item-${item.id}`"
+          tabindex="0"
+          :class="getClass(item)"
+          @keyup.right="rangeNavHandler(item, $event)"
+          @keyup.left="rangeNavHandler(item, $event)"
+          @keydown.stop.prevent.delete="tagKeyUpHandler(item)"
+          @click.stop.prevent="tagClickHandler(item)"
+        >
+          <span class="tokenText">{{ item.text }}</span>
+          <span class="tokenIcon" @click="removeTag(item)">
+            <appIcon icon="decline"></appIcon>
+          </span>
+        </div>
+      </template>
+      <input
+        v-if="inputVisible"
+        type="text"
+        v-on:keyup.delete="focusTag"
+        v-on:keyup.enter="addTagEvent"
+        ref="textControl"
+        @blur="onInputBlur"
+        @focus="isActive = true"
+        @input="errorMsg = ''"
+      />
+    </div>
+    <div v-if="errorMsg" class="input-error">{{ errorMsg }}</div>
   </div>
 </template>
 <script lang="ts">
@@ -62,6 +72,7 @@ export default {
       inputVisible: false,
       tagId: 0,
       isActive: false,
+      errorMsg: '',
     }
   },
   watch: {
@@ -96,20 +107,20 @@ export default {
       this.tokens.push(addThis)
       this.tagId++
     },
-    addFailFilter(text) {
-      const addThis = {
-        text,
-        valid: false,
-        id: this.tagId,
-      }
-      this.tokens.push(addThis)
-      this.tagId++
+    addFailFilter() {
+      this.errorMsg = this.getText('MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT')
     },
     async openInput() {
       this.inputVisible = true
       await this.$nextTick()
       this.$refs.textControl.focus()
       this.isActive = true
+      this.errorMsg = ''
+    },
+    onInputBlur(event) {
+      this.isActive = false
+      this.errorMsg = ''
+      event.target.value = ''
     },
     getClass(item) {
       return ['MriPaToken', item.valid ? 'MriPaValidToken' : 'MriPaFailToken']
@@ -140,11 +151,14 @@ export default {
         constraintId: this.model.id,
         value: [...this.mapFilters()],
       }
-      this.updateConstraintValue(payload)
-      event.target.value = ''
+      if (!this.errorMsg) {
+        this.updateConstraintValue(payload)
+        event.target.value = ''
+      }
     },
     addTag(sUnvalidatedFilterString: string) {
       parser.parseInput(sUnvalidatedFilterString, this.addFilter.bind(this), this.addFailFilter.bind(this))
+      this.errorMsg = ''
     },
     removeTag(item) {
       this.tokens.splice(this.tokens.indexOf(item), 1)
@@ -234,8 +248,20 @@ export default {
       }
     },
   },
+  computed: {
+    ...mapGetters(['getText']),
+  },
   components: {
     appIcon,
   },
 }
 </script>
+<style lang="scss" scoped>
+.input-error {
+  margin-top: 0.25rem;
+  margin-left: 0.25rem;
+  height: 1rem;
+  color: var(--color-mri-error);
+  font-size: 0.7rem;
+}
+</style>

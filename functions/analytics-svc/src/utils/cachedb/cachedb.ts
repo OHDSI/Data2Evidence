@@ -4,7 +4,7 @@ import {
     CachedbDBConnectionUtil,
     getCachedbDatabaseFormatProtocolA,
 } from "@alp/alp-base-utils";
-import { DB } from "../DBSvcConfig";
+import { ANALYTICS_DB_DIALECTS } from "../../types";
 
 export const getCachedbDbConnections = async ({
     analyticsCredentials,
@@ -15,19 +15,16 @@ export const getCachedbDbConnections = async ({
 }): Promise<{
     analyticsConnection: Connection.ConnectionInterface;
 }> => {
-    let dialect = analyticsCredentials.dialect
-    if(dialect === "postgresql") {
-        dialect = "duckdb" //TODO: CONSUME from Portal metadata
+    let dialect = analyticsCredentials.dialect;
+    if (dialect === "postgresql") {
+        dialect = "duckdb"; //TODO: CONSUME from Portal metadata
     }
-    let cachedbDatabase = getCachedbDatabaseFormatProtocolA(
-        dialect,
-        datasetId
-    );
+    let cachedbDatabase = getCachedbDatabaseFormatProtocolA(dialect, datasetId);
     // IF use duckdb is true change dialect from postgres -> duckdb
     if (
         replacePostgresWithDuckdb &&
         env.USE_DUCKDB === "true" &&
-        analyticsCredentials.dialect !== DB.HANA
+        analyticsCredentials.dialect !== ANALYTICS_DB_DIALECTS.HANA
     ) {
         cachedbDatabase = cachedbDatabase.replace(
             analyticsCredentials.dialect,

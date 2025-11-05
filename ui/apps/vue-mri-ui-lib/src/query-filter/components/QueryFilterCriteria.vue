@@ -26,7 +26,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  criteriaData: () => ({ criteriaType: 'ALL', criteria: [] }),
+  criteriaData: () => ({ qualifyingEventsLimit: 'ALL', criteria: [] }),
   conceptSets: () => [],
   readonly: false,
 })
@@ -39,6 +39,7 @@ const emit = defineEmits<{
   'update-criteria-group': [index: number, groupData: any]
   'remove-criteria-group': [index: number]
   'concept-set-action': [action: any]
+  'search-change': [searchQuery: string]
 }>()
 
 const currentCriteriaData = computed(() => props.criteriaData)
@@ -56,7 +57,7 @@ const qualifyingEventsOptions = [
 ]
 
 const currentQualifyingLimit = computed(() => {
-  return currentCriteriaData.value.criteriaType || 'ALL'
+  return currentCriteriaData.value.qualifyingEventsLimit || 'ALL'
 })
 
 const addNewGroup = () => {
@@ -134,6 +135,7 @@ const handleGroupRemove = (groupIndex: number) => {
           :readonly="readonly"
           @update-group="handleGroupUpdate(index, $event)"
           @remove-group="handleGroupRemove(index)"
+          @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
           @concept-set-action="action => $emit('concept-set-action', action)"
         />
       </div>

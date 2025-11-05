@@ -21,6 +21,7 @@ dependencies = [
     "pydicom==2.4.4",
     "pyjwt==2.10.1",
     "pymssql==2.3.4",
+    "pyomop==6.1.0",
     "python-calamine==0.3.1",
     "rpy2==3.5.13",
     "s3fs==2023.1.0",
