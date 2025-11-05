@@ -77,13 +77,6 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       port: 8084,
-      proxy: {
-        "/api": {
-          target: process.env.VITE_API_URL || "https://localhost:8443",
-          changeOrigin: true,
-          secure: false,
-        },
-      },
     },
     preview: {
       port: 8084,

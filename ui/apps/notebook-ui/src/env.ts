@@ -3,8 +3,7 @@
 // In development, they can be set via .env files
 
 const env = {
-  REACT_APP_DN_BASE_URL: import.meta.env.VITE_API_URL || "/",
-  REACT_APP_API_BASE_URL: import.meta.env.VITE_API_BASE_URL || "/api",
+  REACT_APP_DN_BASE_URL: "/",
 };
 
 export default env;
