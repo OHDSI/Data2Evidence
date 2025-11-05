@@ -1,30 +1,22 @@
-import Papa from "papaparse";
+import { WebAPIAPI } from "../api/WebAPIAPI";
 
 interface CohortData {
   cohortId: string;
   cohortName: string;
-  cohortNameFormatted: string;
-  cohortNameLong: string;
-  logicDescription: string;
+  cohortDescription: string;
 }
 
-export async function fetchCohortData(): Promise<CohortData[]> {
-  const url =
-    "https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/Cohorts.csv";
-  const response = await fetch(url);
-  const csvText = await response.text();
+export async function fetchCohortData(
+  authToken: string,
+  datasetID: string
+): Promise<CohortData[]> {
+  const webapi = new WebAPIAPI(authToken, datasetID);
+  const data = await webapi.getAtlasCohortDefinitionList();
 
-  const { data } = Papa.parse(csvText, {
-    header: true,
-    skipEmptyLines: true,
-  });
-
-  // Extract only the columns we need and ensure type safety
-  return (data as any[]).map((row) => ({
-    cohortId: String(row.cohortId || ""),
-    cohortName: String(row.cohortName || ""),
-    cohortNameFormatted: String(row.cohortNameFormatted || ""),
-    cohortNameLong: String(row.cohortNameLong || ""),
-    logicDescription: String(row.logicDescription || ""),
+  // Data is already JSON array, map to correct field names
+  return (data as any[]).map((cohort) => ({
+    cohortId: String(cohort.id), // Field is 'id', not 'cohortId'
+    cohortName: cohort.name, // Field is 'name', not 'cohortName'
+    cohortDescription: cohort.description || "", // Field is 'description', not 'logicDescription'
   }));
 }

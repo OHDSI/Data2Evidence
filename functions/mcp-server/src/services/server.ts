@@ -7,7 +7,7 @@ export const server = new McpServer({
   version: "1.0.0",
 });
 
-// Register Get Cohorts ID Name List Tool
+// Tool Get Cohorts ID Name List Tool from Phenotype Library
 server.registerTool(
   "get_cohort_id_name_list",
   {
@@ -15,24 +15,27 @@ server.registerTool(
     description:
       "Rank the cohort ids and names for the relevant cohort description extracted from the user query. Return the list of cohort ids and names in structured content. Automatically invoked when user query is related to cohort id information.",
     inputSchema: {
-      cohort_info: z
+      cohortInfo: z
         .string()
         .describe("The cohort description extracted from user query"),
     },
     outputSchema: {
-      cohorts_id_name: z.array(
+      cohortsId: z.array(
         z.object({
           cohortId: z.string(),
           cohortName: z.string(),
-          cohortNameFormatted: z.string(),
-          cohortNameLong: z.string(),
-          logicDescription: z.string(),
+          cohortDescription: z.string(),
         })
       ),
     },
   },
-  async () => {
-    const cohortData = await fetchCohortData();
+  async ({}, { requestInfo }) => {
+    const authorization = requestInfo?.headers?.authorization;
+    const datasetId = requestInfo?.headers?.datasetid;
+    if (!authorization || !datasetId) {
+      throw new Error("Missing required headers: authorization or datasetid");
+    }
+    const cohortData = await fetchCohortData(authorization, datasetId);
     return {
       content: [
         {
@@ -41,7 +44,7 @@ server.registerTool(
         },
       ],
       structuredContent: {
-        cohorts_id_name: cohortData,
+        cohortsId: cohortData,
       },
     };
   }
@@ -52,16 +55,16 @@ server.registerPrompt(
   {
     title: "Organize Cohort IDs and Names List",
     description:
-      "Rank and order the cohort_ids and names based on relevance of cohort_info and clinical practices.",
-    argsSchema: { cohort_info: z.string() },
+      "Rank and order the cohort_ids and names based on relevance of cohortInfo and clinical practices.",
+    argsSchema: { cohortInfo: z.string() },
   },
-  ({ cohort_info }) => ({
+  ({ cohortInfo }) => ({
     messages: [
       {
         role: "user",
         content: {
           type: "text",
-          text: `Please rank and organize the output after getting cohort id and names based on relevance of ${cohort_info} with clinical practices. Output in format of cohortId: cohortName.`,
+          text: `Please rank and organize the output after getting cohort id and names based on relevance of ${cohortInfo} with clinical practices. Output in format of cohortId: cohortName.`,
         },
       },
     ],

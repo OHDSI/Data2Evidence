@@ -11,13 +11,14 @@
   },
   "imports": {
     "express": "npm:express@^4.19.2",
-    "./src/mcp-server/routes": "./src/mcp-server/routes.ts",
-    "./src/mcp-server/server": "./src/mcp-server/server.ts",
+    "./src/routes/routes": "./src/routes/routes.ts",
+    "./src/services/server": "./src/services/server.ts",
     "./src/utils/utils": "./src/utils/utils.ts",
+    "./src/env": "./src/env.ts",
+    "./src/api/WebAPIAPI": "./src/api/WebAPIAPI.ts",
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk",
     "@modelcontextprotocol/sdk/server/streamableHttp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/streamableHttp.js",
     "@modelcontextprotocol/sdk/server/mcp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/mcp.js",
-    "papaparse": "npm:papaparse@5.5.3",
     "zod": "npm:zod@^3.25.76"
   }
 }

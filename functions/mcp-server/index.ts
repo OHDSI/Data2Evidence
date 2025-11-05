@@ -1,5 +1,5 @@
 import express, { Application } from "express";
-import { mcpServerRouter } from "./src/mcp-server/routes";
+import { mcpServerRouter } from "./src/routes/routes";
 
 export class App {
   private app: Application;
