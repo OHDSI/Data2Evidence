@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 WHITERABBIT_DIR_PATH = '/app/whiterabbit'
@@ -14,10 +14,42 @@ class WhiteRabbitRunType(str, Enum):
     GENERATE_ETL_REPORT = 'GENERATE_ETL_REPORT'
 
 
+class CSVSettingsType(BaseModel):
+    delimiter: str = ','
+    # Add other CSV-specific settings as needed
+
+
+class WhiteRabbitDataType(BaseModel):
+    # For retrieving CSV, uploading scan report
+    node_id: str
+
+    # For scanning CSV files
+    settings: Optional[CSVSettingsType] = None
+    files: Optional[list[str]] = None
+
+    # For scanning source database
+    database_code: Optional[str] = None
+    tables_to_scan: Optional[str] = None # Comma-separated list of tables to scan
+
+    # Todo: Remove when switching to database code
+    port: Optional[str] = None
+    schema: Optional[str] = None
+    server: Optional[str] = None
+    database: Optional[str] = None
+    password: Optional[str] = None
+    data_type: Optional[str] = None
+    user_name: Optional[str] = None
+    server_location: Optional[str] = None
+
+
 class WhiteRabbitRequestType(BaseModel):
     run_type: WhiteRabbitRunType
-    data: Optional[dict] = None
+    data: WhiteRabbitDataType
     username: Optional[str] = None
+
+    class Config:
+        # Make model store raw values instead of enum object
+        use_enum_values = True
 
 
 class INISettings(BaseModel):
@@ -82,7 +114,7 @@ class INISettings(BaseModel):
             "numeric_stats_sampler_size": self.numeric_stats_sampler_size,
         }
 
-# Todo: Check if need to remove
+# Todo: Remove if getting scan report from supabase storage
 class FileSaveResponse(BaseModel):
     id: int
     username: str
