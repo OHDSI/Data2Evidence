@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from csv import DictWriter
 from base64 import b64encode
 from configparser import ConfigParser
 
@@ -47,19 +46,12 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
             #                           tables_to_scan=scan_settings.tables_to_scan or "*"
             #                           )
 
-            ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB, **scan_settings)
+            ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB, **scan_settings.model_dump())
         
         case WhiteRabbitRunType.SCAN_REPORT_FILES:
-            
-            # Todo: Use database code
-            # ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_FILES,
-            #                           delimiter=scan_settings.settings.delimiter,
-            #                           tables_to_scan=",".join(scan_settings.files),
-            #                           )
-
-            table_names = [x["fileName"] for x in scan_settings.get("files", [])]
+            table_names = scan_settings.files
             ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_FILES,
-                                      delimiter=scan_settings["settings"]["delimiter"],
+                                      delimiter=scan_settings.settings.delimiter,
                                       tables_to_scan=",".join(table_names),
                                       )
 
