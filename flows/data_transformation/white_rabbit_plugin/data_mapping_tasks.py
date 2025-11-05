@@ -1,12 +1,14 @@
+import json
+import pandas as pd
+from pandasql import sqldf
 from typing import List, Dict
-from pathlib import Path
+
 from prefect import task, runtime
 from prefect.artifacts import create_markdown_artifact
 from prefect.logging import get_run_logger
-import pandas as pd
-from pandasql import sqldf
-import json
-import os
+
+from .types import FileSaveResponse
+
 
 POSTGRES_TYPES_MAPPING = {
     'BINARY': 'BYTEA',
@@ -54,13 +56,15 @@ def convert_column_type(column_type: str) -> str:
     return column_type
 
 
-@task(name="process_scan_report")
-def process_scan_report(file_id: int, file_name: str, username: str, scan_report_path: Path = "ScanReport.xlsx") -> List[Dict]:
+@task(log_prints=True)
+def process_scan_report(save_response: FileSaveResponse, scan_report_path: str, username: str) -> List[Dict]:
+    '''
+    Processes the scan report Excel file to extract source table and column information.
+    '''
+    
     logger = get_run_logger()
-    logger.info(f"Starting to process scan report: {scan_report_path}")
-
-    if not os.path.exists(scan_report_path):
-        raise FileNotFoundError("Scan report does not exist")
+    logger.info(f"Starting to process scan report...")
+    logger.debug(f"Scan report path found at : {scan_report_path}")
 
     try:
         logger.info("Opening scan report workbook...")
@@ -111,10 +115,10 @@ def process_scan_report(file_id: int, file_name: str, username: str, scan_report
         result = {
             "etl_mapping": {
                 "cdm_version": None,
-                "id": file_id,
-                "scan_report_id": file_id,
-                "scan_report_name": file_name,
-                "source_schema_name": f"scan-report-{file_id}",
+                "id": save_response.id,
+                "scan_report_id": save_response.id,
+                "scan_report_name": save_response.fileName,
+                "source_schema_name": f"scan-report-{save_response.id}",
                 "username": username
             },
             "source_tables": source_tables
