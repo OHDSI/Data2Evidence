@@ -6,18 +6,17 @@ export class WebAPIAPI {
   private readonly baseURL: string;
   private readonly datasetId: string;
 
-  constructor(token: string, datasetId: string) {
-    this.token = token;
-    this.datasetId = datasetId;
+  constructor() {
+    // Initialize with default token and datasetId for internal service communication
+    this.token = "bearer";
+    this.datasetId = "id";
+    // @ts-ignore To ignore Cannot find name 'Trex'
     this.channel = Trex.tokioChannel("d2e-functions/d2e-webapi");
     this.baseURL = env.SERVICE_ROUTES["d2e-webapi"];
-    if (!token) {
-      throw new Error("No token passed for WebAPIAPI!");
-    }
   }
 
   private async getRequestConfig() {
-    const options = {
+    let options = {
       headers: {
         Authorization: this.token,
         datasetId: this.datasetId,
@@ -29,8 +28,6 @@ export class WebAPIAPI {
 
   async getAtlasCohortDefinitionList(): Promise<any> {
     try {
-      // @ts-ignore To ignore Cannot find name 'Trex'
-
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cohortdefinition`;
       const response = await this.channel.get(url, options);

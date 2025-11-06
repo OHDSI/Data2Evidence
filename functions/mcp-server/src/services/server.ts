@@ -29,13 +29,9 @@ server.registerTool(
       ),
     },
   },
-  async ({}, { requestInfo }) => {
-    const authorization = requestInfo?.headers?.authorization;
-    const datasetId = requestInfo?.headers?.datasetid;
-    if (!authorization || !datasetId) {
-      throw new Error("Missing required headers: authorization or datasetid");
-    }
-    const cohortData = await fetchCohortData(authorization, datasetId);
+  async ({}) => {
+    // Fetch d2e cohort list
+    const cohortData = await fetchCohortData();
     return {
       content: [
         {

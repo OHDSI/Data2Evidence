@@ -6,17 +6,15 @@ interface CohortData {
   cohortDescription: string;
 }
 
-export async function fetchCohortData(
-  authToken: string,
-  datasetID: string
-): Promise<CohortData[]> {
-  const webapi = new WebAPIAPI(authToken, datasetID);
+export async function fetchCohortData(): Promise<CohortData[]> {
+  // Fetch cohort data from d2e-webapi service
+  const webapi = new WebAPIAPI();
   const data = await webapi.getAtlasCohortDefinitionList();
 
-  // Data is already JSON array, map to correct field names
+  // Map to correct field names
   return (data as any[]).map((cohort) => ({
-    cohortId: String(cohort.id), // Field is 'id', not 'cohortId'
-    cohortName: cohort.name, // Field is 'name', not 'cohortName'
-    cohortDescription: cohort.description || "", // Field is 'description', not 'logicDescription'
+    cohortId: String(cohort.id),
+    cohortName: cohort.name,
+    cohortDescription: cohort.description || "",
   }));
 }
