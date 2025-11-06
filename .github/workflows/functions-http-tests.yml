@@ -13,6 +13,8 @@ on:
 
 env:
   VERSION: develop
+  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+
 jobs:
   pick_runner:
     runs-on: ubuntu-latest
@@ -126,7 +128,9 @@ jobs:
         run: |
           grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
           echo "USE_TREX_DB_CONN=true" >> $DOTENV_FILE
+          echo "NODE_ENV=production" >> $DOTENV_FILE
           USE_TREX_DB_CONN=true
+          NODE_ENV=production
 
       - name: Build system services
         run: |
