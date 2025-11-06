@@ -206,7 +206,7 @@ export class StrategusResultsRouter {
           `[Strategus Viewer] Connected to Strategus WS for study ${studyId}`
         );
 
-        this.wss.handleUpgrade(req, socket, head, (clientWS: any) => {
+        this.wss.handleUpgrade(req, socket, head, (clientWS: WebSocket) => {
           this.wss.emit("connection", clientWS, req);
           console.log(
             `[Strategus Viewer] Client connected for study ${studyId}`
