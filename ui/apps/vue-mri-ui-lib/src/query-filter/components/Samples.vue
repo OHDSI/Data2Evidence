@@ -19,7 +19,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="sample in samples" :key="sample.id" @click="selectSample(sample)">
+          <tr v-for="sample in samples" :key="sample.id" @click="selectSample(sample.id)">
             <td>{{ sample.id }}</td>
             <td>{{ sample.name }}</td>
             <td>{{ sample.size }}</td>
@@ -35,7 +35,8 @@
       </table>
     </div>
     <div class="samples__sample-entry-table">
-      <div v-if="activeSample">
+      <SplashScreen v-if="isLoadingSample" />
+      <div v-else-if="activeSample">
         <h3>Active Sample Details</h3>
         <table class="samples__table">
           <tr>
@@ -103,12 +104,11 @@ const store = useStore()
 const createSampleDialogOpen = ref(false)
 const newSampleName = ref('')
 const newSampleSize = ref(0)
-const activeSample = ref(null)
 
 const samples = computed(() => store.getters.getSamples)
 const isLoading = computed(() => store.getters.isLoadingSamples)
-
-console.log(samples.value)
+const isLoadingSample = computed(() => store.getters.isLoadingSampleById)
+const activeSample = computed(() => store.getters.getActiveSample)
 
 onMounted(() => {
   store.dispatch('fetchSamples', {
@@ -117,8 +117,8 @@ onMounted(() => {
   })
 })
 
-const resetSamplesState = () => {
-  activeSample.value = null
+const resetState = () => {
+  store.dispatch('resetSamplesState')
   newSampleName.value = ''
   newSampleSize.value = 0
 }
@@ -126,11 +126,11 @@ const resetSamplesState = () => {
 watch(
   () => props.sourceKey,
   newSourceKey => {
+    resetState()
     store.dispatch('fetchSamples', {
       cohortDefinitionId: props.cohortDefinitionId,
       sourceKey: newSourceKey,
     })
-    resetSamplesState()
   }
 )
 
@@ -158,8 +158,11 @@ const deleteSample = (sampleId: number) => {
   })
 }
 
-const selectSample = (sample: any) => {
-  activeSample.value = sample
+const selectSample = (sampleId: number) => {
+  store.dispatch('fetchSampleById', {
+    cohortDefinitionId: props.cohortDefinitionId,
+    sampleId,
+  })
 }
 </script>
 <style lang="scss">

@@ -6,15 +6,17 @@ let cancel
 const state = {
   samples: [],
   error: null,
-  isLoading: false,
-  currentSample: null,
+  isLoadingSamples: false,
+  isLoadingSampleById: false,
+  activeSample: null,
 }
 
 const getters = {
   getSamples: state => state.samples,
-  getCurrentSample: state => state.currentSample,
+  getActiveSample: state => state.activeSample,
   error: state => state.error,
-  isLoadingSamples: state => state.isLoading,
+  isLoadingSamples: state => state.isLoadingSamples,
+  isLoadingSampleById: state => state.isLoadingSampleById,
 }
 
 const actions = {
@@ -30,7 +32,7 @@ const actions = {
     const cancelToken = new axios.CancelToken(c => {
       cancel = c
     })
-    commit(types.SAMPLES_SET_IS_LOADING, true)
+    commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, true)
     try {
       const { data } = await dispatch('ajaxAuth', {
         url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${sourceKey}`,
@@ -43,7 +45,7 @@ const actions = {
         commit(types.SAMPLES_SET_ERROR, error)
       }
     } finally {
-      commit(types.SAMPLES_SET_IS_LOADING, false)
+      commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, false)
     }
   },
 
@@ -54,20 +56,20 @@ const actions = {
     const cancelToken = new axios.CancelToken(c => {
       cancel = c
     })
-    commit(types.SAMPLES_SET_IS_LOADING, true)
+    commit(types.SAMPLES_SET_IS_LOADING_SAMPLE_BY_ID, true)
     try {
       const { data } = await dispatch('ajaxAuth', {
         url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${sourceKey}/${sampleId}`,
         method: 'GET',
         cancelToken,
       })
-      commit(types.SAMPLES_SET_CURRENT_SAMPLES, data)
+      commit(types.SAMPLES_SET_ACTIVE_SAMPLE, data)
     } catch (error) {
       if (!axios.isCancel(error)) {
         commit(types.SAMPLES_SET_ERROR, error)
       }
     } finally {
-      commit(types.SAMPLES_SET_IS_LOADING, false)
+      commit(types.SAMPLES_SET_IS_LOADING_SAMPLE_BY_ID, false)
     }
   },
 
@@ -78,7 +80,7 @@ const actions = {
     const cancelToken = new axios.CancelToken(c => {
       cancel = c
     })
-    commit(types.SAMPLES_SET_IS_LOADING, true)
+    commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, true)
     const source = rootGetters.getSelectedDataset.sourceKey
     try {
       const { data } = await dispatch('ajaxAuth', {
@@ -96,7 +98,7 @@ const actions = {
         commit(types.SAMPLES_SET_ERROR, error)
       }
     } finally {
-      commit(types.SAMPLES_SET_IS_LOADING, false)
+      commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, false)
     }
   },
 
@@ -107,7 +109,7 @@ const actions = {
     const cancelToken = new axios.CancelToken(c => {
       cancel = c
     })
-    commit(types.SAMPLES_SET_IS_LOADING, true)
+    commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, true)
     const source = rootGetters.getSelectedDataset.sourceKey
     try {
       await dispatch('ajaxAuth', {
@@ -121,8 +123,11 @@ const actions = {
         commit(types.SAMPLES_SET_ERROR, error)
       }
     } finally {
-      commit(types.SAMPLES_SET_IS_LOADING, false)
+      commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, false)
     }
+  },
+  resetSamplesState({ commit }) {
+    commit(types.SAMPLES_RESET_STATE)
   },
 }
 
@@ -130,8 +135,8 @@ const mutations = {
   [types.SAMPLES_SET_SAMPLES](state, samples) {
     state.samples = samples
   },
-  [types.SAMPLES_SET_CURRENT_SAMPLES](state, sample) {
-    state.currentSample = sample
+  [types.SAMPLES_SET_ACTIVE_SAMPLE](state, sample) {
+    state.activeSample = sample
   },
   [types.SAMPLES_ADD_SAMPLE](state, sample) {
     state.samples.push(sample)
@@ -142,8 +147,18 @@ const mutations = {
   [types.SAMPLES_SET_ERROR](state, error) {
     state.error = error
   },
-  [types.SAMPLES_SET_IS_LOADING](state, isLoading) {
-    state.isLoading = isLoading
+  [types.SAMPLES_SET_IS_LOADING_SAMPLES](state, isLoading) {
+    state.isLoadingSamples = isLoading
+  },
+  [types.SAMPLES_SET_IS_LOADING_SAMPLE_BY_ID](state, isLoading) {
+    state.isLoadingSampleById = isLoading
+  },
+  [types.SAMPLES_RESET_STATE](state) {
+    state.samples = []
+    state.error = null
+    state.isLoading = false
+    state.isLoadingSampleById = false
+    state.activeSample = null
   },
 }
 
@@ -152,5 +167,5 @@ export default {
   getters,
   actions,
   mutations,
-}
 
+}
