@@ -20,7 +20,7 @@ class FilesManagerAPI(BaseAPI):
 
         return response.content
 
-    def save_file(self, username: str, file_path: str, dataKey: str = "scan-report"):
+    def save_file(self, username: str, file_path: str, data_key: str = "scan-report"):
         url = f"{self.url}/"
         headers = self.headers
         # Remove Content-Type header - requests will set it automatically with the correct boundary
@@ -39,7 +39,7 @@ class FilesManagerAPI(BaseAPI):
 
             data = {
                 'username': username,
-                'dataKey': dataKey
+                'dataKey': data_key
             }
             result = requests.post(url,
                                    headers=headers,
