@@ -194,68 +194,83 @@ export class StrategusResultsRouter {
 
       const strategusWS = new WebSocket(targetUrl);
 
+      strategusWS.on("error", (err: Error) => {
+        console.error(`[Strategus Viewer] Strategus WS error:`, err);
+        socket.write("HTTP/1.1 502 Bad Gateway\r\n\r\n");
+        socket.destroy();
+      });
+
+      // Complete upgrade only after successful connection to Strategus
       strategusWS.on("open", () => {
         console.log(
           `[Strategus Viewer] Connected to Strategus WS for study ${studyId}`
         );
-      });
 
-      strategusWS.on("error", (err) => {
-        console.error(`[Strategus Viewer] Strategus WS error:`, err);
-        if (strategusWS.readyState === WebSocket.OPEN) {
-          strategusWS.close(1011, "Strategus WS error");
-        }
-      });
-
-      // Complete upgrade
-      this.wss.handleUpgrade(req, socket, head, (clientWS) => {
-        this.wss.emit("connection", clientWS, req);
-        console.log(`[Strategus Viewer] Client connected for study ${studyId}`);
-
-        // Client → Strategus
-        clientWS.on("message", (msg) => {
-          if (strategusWS.readyState === WebSocket.OPEN) {
-            strategusWS.send(msg);
-          } else {
-            console.error(
-              `[Strategus Viewer] Strategus WS is not open; dropping client message`
-            );
-          }
-        });
-
-        // Strategus → Client
-        strategusWS.on("message", (msg) => {
-          if (clientWS.readyState === WebSocket.OPEN) {
-            clientWS.send(msg);
-          } else {
-            console.error(
-              `[Strategus Viewer] Client WS is not open; dropping Strategus message`
-            );
-          }
-        });
-
-        clientWS.on("close", () => {
+        this.wss.handleUpgrade(req, socket, head, (clientWS: any) => {
+          this.wss.emit("connection", clientWS, req);
           console.log(
-            `[Strategus Viewer] Client WS closed; closing Strategus WS`
+            `[Strategus Viewer] Client connected for study ${studyId}`
           );
-          strategusWS.close();
-        });
 
-        strategusWS.on("close", () => {
-          console.log(
-            `[Strategus Viewer] Strategus WS closed; closing client WS`
-          );
-          clientWS.close();
-        });
+          // Client → Strategus
+          clientWS.on("message", (msg: any, isBinary: boolean) => {
+            if (strategusWS.readyState === WebSocket.OPEN) {
+              try {
+                strategusWS.send(msg, { binary: isBinary });
+              } catch (error) {
+                console.error(
+                  `[Strategus Viewer] Error sending message to Strategus:`,
+                  error
+                );
+              }
+            } else {
+              console.error(
+                `[Strategus Viewer] Strategus WS is not open; dropping client message`
+              );
+            }
+          });
 
-        clientWS.on("error", (err) => {
-          console.error(`[Strategus Viewer] Client WS error:`, err);
-          if (clientWS.readyState === WebSocket.OPEN) {
-            clientWS.close(1011, "Client WS error");
-          }
-          if (strategusWS.readyState === WebSocket.OPEN) {
-            strategusWS.close(1011, "Client WS error");
-          }
+          // Strategus → Client
+          strategusWS.on("message", (msg: any, isBinary: boolean) => {
+            if (clientWS.readyState === WebSocket.OPEN) {
+              try {
+                clientWS.send(msg, { binary: isBinary });
+              } catch (error) {
+                console.error(
+                  `[Strategus Viewer] Error sending message to client:`,
+                  error
+                );
+              }
+            } else {
+              console.error(
+                `[Strategus Viewer] Client WS is not open; dropping Strategus message`
+              );
+            }
+          });
+
+          clientWS.on("close", () => {
+            console.log(
+              `[Strategus Viewer] Client WS closed; closing Strategus WS`
+            );
+            strategusWS.close();
+          });
+
+          strategusWS.on("close", () => {
+            console.log(
+              `[Strategus Viewer] Strategus WS closed; closing client WS`
+            );
+            clientWS.close();
+          });
+
+          clientWS.on("error", (err: Error) => {
+            console.error(`[Strategus Viewer] Client WS error:`, err);
+            if (clientWS.readyState === WebSocket.OPEN) {
+              clientWS.close(1011, "Client WS error");
+            }
+            if (strategusWS.readyState === WebSocket.OPEN) {
+              strategusWS.close(1011, "Client WS error");
+            }
+          });
         });
       });
     });
