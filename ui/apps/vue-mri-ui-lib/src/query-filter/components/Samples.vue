@@ -23,7 +23,7 @@
             <td>{{ sample.id }}</td>
             <td>{{ sample.name }}</td>
             <td>{{ sample.size }}</td>
-            <td>{{ sample.selectionCriteria }}</td>
+            <td>{{ generateCriteria(sample) }}</td>
             <td>{{ new Date(sample.createdDate).toLocaleString() }}</td>
             <td>
               <button class="btn-remove-sample" @click="deleteSample(sample.id)" title="Remove this sample">
@@ -92,6 +92,15 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import TrashIcon from '@/query-filter/components/icons/TrashIcon.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useStore } from 'vuex'
+
+type AgeMode = 'between' | 'notBetween' | 'lessThan' | 'lessThanOrEqual' | 'equalTo' | 'greaterThan' | 'greaterThanOrEqual'
+
+interface Age {
+  mode: AgeMode
+  value?: number
+  min?: number
+  max?: number
+}
 
 const props = defineProps<{
   cohortDefinitionId: number
@@ -164,6 +173,67 @@ const selectSample = (sampleId: number) => {
     sampleId,
   })
 }
+
+const generateCriteria = (sample: any) => {
+  const criteriaString = []
+  const { gender, age } = sample
+  
+  const genderCriteria = getGenderCriteria(gender)
+  if (genderCriteria) {
+    criteriaString.push(genderCriteria)
+  }
+  
+  const ageCriteria = getAgeCriteria(age)
+  criteriaString.push(ageCriteria)
+  
+  return criteriaString.join(', ')
+}
+
+const getAgeCriteria = (age: Age | null | undefined): string => {
+  if (!age) return 'Any Age'
+  
+  const { mode, value, min, max } = age
+  
+  switch (mode) {
+    case 'between':
+      return `Between ${min} and ${max}`
+    case 'notBetween':
+      return `Not Between ${min} and ${max}`
+    case 'lessThan':
+      return `Less Than ${value}`
+    case 'lessThanOrEqual':
+      return `Less Than Or Equal To ${value}`
+    case 'equalTo':
+      return `Equal to ${value}`
+    case 'greaterThan':
+      return `Greater Than ${value}`
+    case 'greaterThanOrEqual':
+      return `Greater Than Or Equal To ${value}`
+    default:
+      return 'Any Age'
+  }
+}
+
+const getGenderCriteria = (gender: any) => {
+  if (!gender) return ''
+  
+  const { otherNonBinary, conceptIds } = gender
+  const hasMale = conceptIds.includes(8507)
+  const hasFemale = conceptIds.includes(8532)
+  const genderCount = conceptIds.length
+  
+  if (otherNonBinary) {
+    if (genderCount === 0) return 'Other'
+    if (genderCount === 2) return 'Any Gender'
+    return hasMale ? 'Other, Male' : 'Other, Female'
+  }
+  
+  if (genderCount === 2) return 'Male, Female'
+  if (genderCount === 1) return hasMale ? 'Male' : 'Female'
+  
+  return ''
+}
+
 </script>
 <style lang="scss">
 .samples {
