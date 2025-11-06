@@ -4,7 +4,8 @@ const { default: axios } = require('axios')
 const _ = require('lodash')
 
 const api = axios.create({
-  baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
+  // baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
+  baseURL: process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI',
 })
 
 const SOURCE = process.env.SOURCE || 'EUNOMIA'
@@ -822,5 +823,4 @@ const _mapConceptSet = conceptSet => {
     shared: true,
     userName: 'admin',
   }
-
 }
