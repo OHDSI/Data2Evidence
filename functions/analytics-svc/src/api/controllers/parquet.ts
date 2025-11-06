@@ -3,13 +3,14 @@ import { Logger } from "@alp/alp-base-utils";
 import * as Minio from "minio";
 import PortalServerAPI from "../PortalServerAPI";
 import { env } from "../../env";
+import { validateIdentifierForSchemaOrTableName } from "../_shared/alp-base-utils/src/utils";
 
 const log = Logger.CreateLogger("analytics-log");
 
 export async function retrieveParquetStream(req: IMRIRequest, res) {
-    const datasetId = req.params.datasetId;
-    const tableName = req.params.tableName;
     try {
+        const datasetId = req.params.datasetId;
+        const tableName = validateIdentifierForSchemaOrTableName(req.params.tableName);
         const studies = await new PortalServerAPI().getStudies(
             req.headers.authorization
         );
