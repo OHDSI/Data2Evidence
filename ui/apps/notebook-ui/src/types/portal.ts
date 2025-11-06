@@ -7,4 +7,5 @@ export interface PortalProps extends Partial<ParcelProps> {
   locale?: string;
   isActiveRoute?: boolean;
   isAtlas?: boolean;
+  uiFilesUrl?: string;
 }

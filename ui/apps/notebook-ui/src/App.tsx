@@ -1,7 +1,12 @@
 import React, { FC, useEffect } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { PortalProps } from "./types/portal";
-import { TranslationProvider, FeedbackProvider, ConversationHistoryProvider, UserProvider } from "./contexts";
+import {
+  TranslationProvider,
+  FeedbackProvider,
+  ConversationHistoryProvider,
+  UserProvider,
+} from "./contexts";
 import { setTokenProvider } from "./api";
 import { setFetchTokenProvider } from "./utils/fetchRequest";
 import { Starboard } from "./components/Starboard/Starboard";
@@ -30,6 +35,7 @@ const App: FC<PortalProps> = (props) => {
                 datasetId={props.datasetId}
                 userId={props.username}
                 getToken={props.getToken}
+                uiFilesUrl={props.uiFilesUrl || "/"}
               />
             </UserProvider>
           </ConversationHistoryProvider>

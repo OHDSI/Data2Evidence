@@ -16,18 +16,16 @@ import Chat from "../Chat/Chat";
 import ChatIcon from "@mui/icons-material/Chat";
 import Fab from "@mui/material/Fab";
 import { ChatItem } from "@nlux/react";
-import env from "../../env";
 import "./Starboard.scss";
-
-const uiFilesUrl = env.REACT_APP_DN_BASE_URL;
 
 interface StarboardProps {
   datasetId?: string;
   userId?: string;
   getToken?: () => Promise<string>;
+  uiFilesUrl?: string;
 }
 
-export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken }) => {
+export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiFilesUrl }) => {
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
