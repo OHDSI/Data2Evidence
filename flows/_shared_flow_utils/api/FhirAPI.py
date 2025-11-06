@@ -17,8 +17,8 @@ class FhirAPI(BaseAPI):
             "Content-Type": "application/json"
         }
     
-    def post(self, studyToken: str, resourceType: str, resource):
-        url = f"{self.url}project/{studyToken}/{resourceType}"
+    def post(self, study_token: str, resource_type: str, resource):
+        url = f"{self.url}project/{study_token}/{resource_type}"
         result = requests.post(
             url,
             headers=self.get_headers(),
@@ -31,8 +31,8 @@ class FhirAPI(BaseAPI):
         else:
             return True
 
-    def get(self, studyToken: str, resourceType: str, query: str):
-        url = f"{self.url}project/{studyToken}/{resourceType}{query}"
+    def get(self, study_token: str, resource_type: str, query: str):
+        url = f"{self.url}project/{study_token}/{resource_type}{query}"
         result = requests.get(
             url,
             headers=self.get_headers(),
