@@ -117,24 +117,6 @@ jobs:
         run: |
           ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
-      - name: Setupdemo
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: setupdemo
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 1
-          retry_on: any
-          command: |
-            cp .env.local .env
-            ls -al
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions setupdemo
-            DC_EXIT_CODE=$?
-            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
-            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
       # - name: Initialise HANA
       #   if: success() || failure()
       #   id: inithana
@@ -166,6 +148,24 @@ jobs:
           echo "Waiting 120 secs for services to start..."
           sleep 120
           
+      - name: Setupdemo
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            cp .env.local .env
+            ls -al
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions setupdemo
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
       - name: Check status of docker containers
         run: |
           docker ps -a
