@@ -1172,7 +1172,14 @@ export class TransformationService {
     const repoDir = this.templateRepoPath;
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
     const fileName = `${templateId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
+    const subDirPath = path.join(repoDir, subDir);
+    const filePath = path.resolve(subDirPath, fileName);
+    if (!filePath.startsWith(subDirPath)) {
+      this.logger.error(
+        `Invalid template id detected: ${templateId} leads to path traversal`
+      );
+      throw new Error('Invalid template id: path traversal attempt detected');
+    }
 
     try {
       await this.ensureLatestFromGitRemote(
