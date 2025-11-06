@@ -37,24 +37,28 @@
     <div class="samples__sample-entry-table">
       <SplashScreen v-if="isLoadingSample" />
       <div v-else-if="activeSample">
-        <h3>Active Sample Details</h3>
+        <h3>{{ activeSample.name }}</h3>
         <table class="samples__table">
-          <tr>
-            <td>ID:</td>
-            <td>{{ activeSample.id }}</td>
-          </tr>
-          <tr>
-            <td>Name:</td>
-            <td>{{ activeSample.name }}</td>
-          </tr>
-          <tr>
-            <td>Size:</td>
-            <td>{{ activeSample.size }}</td>
-          </tr>
+          <thead>
+            <tr>
+              <th>Person ID</th>
+              <th>Gender</th>
+              <th>Age at index</th>
+            </tr>
+          </thead>
+          <tbody v-if="activeSample.elements.length > 0">
+            <tr v-for="element in activeSample.elements" :key="element.personId">
+              <td>{{ element.personId }}</td>
+              <td>{{ getGenderFromId(element.genderConceptId) }}</td>
+              <td>{{ element.age }}</td>
+            </tr>
+          </tbody>
+          <tbody v-else class="no-data">
+            <tr>
+              <td colspan="3">No data available</td>
+            </tr>
+          </tbody>
         </table>
-      </div>
-      <div v-else>
-        <p>Click on a sample to see details</p>
       </div>
     </div>
     <MessageBox
@@ -92,15 +96,7 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import TrashIcon from '@/query-filter/components/icons/TrashIcon.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useStore } from 'vuex'
-
-type AgeMode = 'between' | 'notBetween' | 'lessThan' | 'lessThanOrEqual' | 'equalTo' | 'greaterThan' | 'greaterThanOrEqual'
-
-interface Age {
-  mode: AgeMode
-  value?: number
-  min?: number
-  max?: number
-}
+import { AgeFilter, GenderFilter, Sample, SampleElement } from '../types/SamplesTypes'
 
 const props = defineProps<{
   cohortDefinitionId: number
@@ -114,10 +110,10 @@ const createSampleDialogOpen = ref(false)
 const newSampleName = ref('')
 const newSampleSize = ref(0)
 
-const samples = computed(() => store.getters.getSamples)
-const isLoading = computed(() => store.getters.isLoadingSamples)
-const isLoadingSample = computed(() => store.getters.isLoadingSampleById)
-const activeSample = computed(() => store.getters.getActiveSample)
+const samples = computed<Sample[]>(() => store.getters.getSamples)
+const isLoading = computed<boolean>(() => store.getters.isLoadingSamples)
+const isLoadingSample = computed<boolean>(() => store.getters.isLoadingSampleById)
+const activeSample = computed<Sample | null>(() => store.getters.getActiveSample)
 
 onMounted(() => {
   store.dispatch('fetchSamples', {
@@ -174,26 +170,26 @@ const selectSample = (sampleId: number) => {
   })
 }
 
-const generateCriteria = (sample: any) => {
+const generateCriteria = (sample: Sample) => {
   const criteriaString = []
   const { gender, age } = sample
-  
+
   const genderCriteria = getGenderCriteria(gender)
   if (genderCriteria) {
     criteriaString.push(genderCriteria)
   }
-  
+
   const ageCriteria = getAgeCriteria(age)
   criteriaString.push(ageCriteria)
-  
+
   return criteriaString.join(', ')
 }
 
-const getAgeCriteria = (age: Age | null | undefined): string => {
+const getAgeCriteria = (age: AgeFilter): string => {
   if (!age) return 'Any Age'
-  
+
   const { mode, value, min, max } = age
-  
+
   switch (mode) {
     case 'between':
       return `Between ${min} and ${max}`
@@ -214,26 +210,33 @@ const getAgeCriteria = (age: Age | null | undefined): string => {
   }
 }
 
-const getGenderCriteria = (gender: any) => {
+const getGenderCriteria = (gender: GenderFilter) => {
   if (!gender) return ''
-  
+
   const { otherNonBinary, conceptIds } = gender
   const hasMale = conceptIds.includes(8507)
   const hasFemale = conceptIds.includes(8532)
   const genderCount = conceptIds.length
-  
+
   if (otherNonBinary) {
     if (genderCount === 0) return 'Other'
     if (genderCount === 2) return 'Any Gender'
     return hasMale ? 'Other, Male' : 'Other, Female'
   }
-  
+
   if (genderCount === 2) return 'Male, Female'
   if (genderCount === 1) return hasMale ? 'Male' : 'Female'
-  
+
   return ''
 }
 
+const getGenderFromId = (conceptId: number) => {
+  const maleConceptId = 8507
+  const femaleConceptId = 8532
+  if (conceptId === maleConceptId) return 'Male'
+  if (conceptId === femaleConceptId) return 'Female'
+  return 'Other'
+}
 </script>
 <style lang="scss">
 .samples {
@@ -281,6 +284,10 @@ const getGenderCriteria = (gender: any) => {
       border-radius: 4px;
       font-size: 14px;
       cursor: pointer;
+    }
+    .no-data {
+      text-align: center;
+      font-weight: bold;
     }
   }
 }

@@ -1,9 +1,18 @@
 import axios from 'axios'
 import * as types from '../mutation-types'
+import { Sample } from '@/query-filter/types/SamplesTypes'
 
 let cancel
 
-const state = {
+interface SamplesState {
+  samples: Sample[]
+  error: Error | null
+  isLoadingSamples: boolean
+  isLoadingSampleById: boolean
+  activeSample: Sample | null
+}
+
+const state: SamplesState = {
   samples: [],
   error: null,
   isLoadingSamples: false,
@@ -12,11 +21,11 @@ const state = {
 }
 
 const getters = {
-  getSamples: state => state.samples,
-  getActiveSample: state => state.activeSample,
-  error: state => state.error,
-  isLoadingSamples: state => state.isLoadingSamples,
-  isLoadingSampleById: state => state.isLoadingSampleById,
+  getSamples: (state: SamplesState) => state.samples,
+  getActiveSample: (state: SamplesState) => state.activeSample,
+  error: (state: SamplesState) => state.error,
+  isLoadingSamples: (state: SamplesState) => state.isLoadingSamples,
+  isLoadingSampleById: (state: SamplesState) => state.isLoadingSampleById,
 }
 
 const actions = {
@@ -167,5 +176,6 @@ export default {
   getters,
   actions,
   mutations,
+
 
 }
