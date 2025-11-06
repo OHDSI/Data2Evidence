@@ -243,7 +243,67 @@ async function _callWorker (req: any, servicePath: string, imports: any, fncfg: 
 
 function _addFunction(app: Hono, url: string, path: string, imports: any, fncfg: any, dir: string, name: string, xenv: any) {
 	fnmap[`${name}${fncfg.function}`] = (req) => _callWorker(req, `${path}`, imports, fncfg, dir, xenv);
-	app.all(url+"/*", authn, authz, (c: Context) =>  _callWorker(c.req.raw, `${path}`, imports, fncfg, dir, xenv));
+	app.all(url+"/*", authn, authz, (c: Context) =>  {
+		const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
+		const urlObj = new URL(c.req.raw.url);
+		const match = urlObj.pathname.match(
+        /^\/strategus-results\/([^/]+)\/websocket\/?$/
+      );
+		if (isWs && match) {
+			const req = c.req.raw;
+			const studyId = match[1];
+			const { socket, response } = Deno.upgradeWebSocket(req);
+			const serviceUrl = `ws://${encodeURIComponent(studyId)}:3838/websocket`;
+			const serviceWebSocketConnection = new WebSocket(serviceUrl);
+
+			socket.onmessage = (event) => {
+				if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+				serviceWebSocketConnection.send(event.data);
+				}
+			};
+
+			socket.onclose = () => {
+				if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+				serviceWebSocketConnection.close();
+				}
+			};
+
+			socket.onerror = (event) => {
+				logger.error(`WebSocket connection request failed: ${event}`);
+				if (serviceWebSocketConnection.readyState === WebSocket.OPEN) {
+				serviceWebSocketConnection.close(1011, "Client socket error");
+				}
+				if (socket.readyState === WebSocket.OPEN) {
+				socket.close();
+				}
+			};
+
+			serviceWebSocketConnection.onclose = () => {
+				if (socket.readyState === WebSocket.OPEN) {
+				socket.close();
+				}
+			};
+
+			serviceWebSocketConnection.onmessage = (event) => {
+				if (socket.readyState === WebSocket.OPEN) {
+				socket.send(event.data);
+				}
+			};
+
+			serviceWebSocketConnection.onerror = (event) => {
+				logger.error(`WebSocket connection to service failed: ${event}`);
+				if (
+				socket.readyState === WebSocket.OPEN ||
+				socket.readyState === WebSocket.CONNECTING
+				) {
+				socket.close(1011, "Service WebSocket connection error");
+				}
+			};
+
+      		return response;
+		}
+		return _callWorker(c.req.raw, `${path}`, imports, fncfg, dir, xenv)
+	});
 }
 
 function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
