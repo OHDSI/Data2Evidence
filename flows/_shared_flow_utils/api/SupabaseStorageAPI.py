@@ -1,7 +1,7 @@
-import base64
 import requests
 from pathlib import Path
 from typing import Union
+from base64 import b64decode
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 
@@ -72,7 +72,7 @@ class SupabaseStorageAPI(BaseAPI):
             raise ValueError("No data found in response")
         
         try:
-            decoded_bytes = base64.b64decode(encoded_data)
+            decoded_bytes = b64decode(encoded_data)
             csv_content = decoded_bytes.decode('utf-8')
             return csv_content
         except Exception as e:
