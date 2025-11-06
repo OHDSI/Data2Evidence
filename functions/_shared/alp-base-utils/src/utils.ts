@@ -106,6 +106,13 @@ export function validateRequestPath(path) {
   }
 }
 
+export function validateIdentifierForSchemaOrTableName(identifier: string): void {
+  // Adjust regex as per your system's schema naming rules, here allow only alphanumerics and underscore, must start with letter or underscore
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+    throw new Error(`Invalid identifier: ${identifier}`);
+  }
+}
+
 export function isEmptyObject(o) {
   return Object.keys(o).length === 0;
 }

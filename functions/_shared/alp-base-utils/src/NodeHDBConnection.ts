@@ -9,6 +9,7 @@ import {
 } from "./Connection";
 import { CreateLogger } from "./Logger";
 import { DBError } from "./DBError";
+import { validateIdentifierForSchemaOrTableName } from "./utils";
 const logger = CreateLogger();
 export class NodeHDBConnection implements ConnectionInterface {
 
@@ -19,6 +20,15 @@ export class NodeHDBConnection implements ConnectionInterface {
     resultSchemaName = schemaName,
     callback,
   ) {
+    try {
+      validateIdentifierForSchemaOrTableName(schemaName);
+      validateIdentifierForSchemaOrTableName(vocabSchemaName);
+      validateIdentifierForSchemaOrTableName(resultSchemaName);
+    } catch (error) {
+      logger.error(`Invalid schema name: ${error.message}`);
+      callback(new DBError(logger.error(error), error.message), null);
+      return;
+    }
     const conn = new NodeHDBConnection(client, schemaName, vocabSchemaName, resultSchemaName);
     const sql = 'SET SCHEMA "' + schemaName + '"';
     conn.execute(sql, [], (err, data) => {
@@ -461,6 +471,14 @@ export class NodeHDBConnection implements ConnectionInterface {
     cohortSchemaName: string,
     sql: string,
   ): string {
+    try {
+      validateIdentifierForSchemaOrTableName(schemaName);
+      validateIdentifierForSchemaOrTableName(vocabSchemaName);
+      validateIdentifierForSchemaOrTableName(cohortSchemaName);
+    } catch (error) {
+      logger.error(`Invalid schema name: ${error.message}`);
+      throw error;
+    }
     const replacement = schemaName === "" ? "" : `${schemaName}.`;
     sql = sql.replace(
             /\$\$SCHEMA\$\$."?COHORT_DEFINITION"?/g,
