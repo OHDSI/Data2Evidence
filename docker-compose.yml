@@ -83,7 +83,7 @@ services:
       alp-logto-post-init:
         condition: service_completed_successfully
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex@sha256:45b84ecac4d2d4b2367df21a38ba224e1fd70dbf03675f6a95edfa489b311cd9
     platform: linux/amd64
     logging:
       options:
