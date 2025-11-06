@@ -746,7 +746,6 @@
           "whiteRabbit.post",
           "demo.setup",
           "gateway.external.dashboards.read",
-          "strategus.results.read",
           "strategus.results.write",
           "strategus.results.delete",
           "mlflow",
@@ -847,6 +846,9 @@
           "jobplugins.cohortDqd.researcher.execute",
           "jobplugins.analysisUi.researcher.execute",
           "portal.dataset.read"
+        ],
+        "STUDY_RESULTS_READ_RESEARCHER": [
+          "strategus.results.read"
         ]
       },
       "scopes": [
@@ -2733,9 +2735,21 @@
         {
           "path": "^/strategus-results",
           "scopes": [
-            "strategus.results.read",
+            "strategus.results.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/strategus-results",
+          "scopes": [
             "strategus.results.write",
             "strategus.results.delete"
+          ],
+          "httpMethods": [
+            "POST",
+            "DELETE"
           ]
         },
         {

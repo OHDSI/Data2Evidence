@@ -20,6 +20,7 @@ export const ROLES = {
   RESEARCHER: "RESEARCHER",
   STUDY_RESEARCHER: "RESEARCHER",
   STUDY_WRITE_DQD_RESEARCHER: "STUDY_WRITE_DQD_RESEARCHER",
+  STUDY_RESULTS_READ_RESEARCHER: "STUDY_RESULTS_READ_RESEARCHER",
   VALIDATE_TOKEN_ROLE: "VALIDATE_TOKEN",
   ADMIN_DATA_READER_ROLE: "ADMIN_DATA_READER",
   BI_DATA_READER_ROLE: "BI_DATA_READER",
@@ -137,6 +138,9 @@ const buildUserFromToken = (
     }
     if (userMgmtGroups.alp_role_study_write_dqd_researcher === true) {
       roles.push(ROLES.STUDY_WRITE_DQD_RESEARCHER);
+    }
+    if (userMgmtGroups.alp_role_study_results_read_researcher === true) {
+      roles.push(ROLES.STUDY_RESULTS_READ_RESEARCHER);
     }
     if (userMgmtGroups.alp_role_tenant_viewer?.length > 0) {
       roles.push(ROLES.TENANT_VIEWER);

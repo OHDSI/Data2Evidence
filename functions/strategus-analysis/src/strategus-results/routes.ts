@@ -22,6 +22,11 @@ export class StrategusResultsRouter {
   }
 
   private registerRoutes() {
+    this.router.get("/", (req: Request, res: Response) => {
+      // This endpoint is for testing purposes only - STUDY_RESULTS_READ_RESEARCHER can access this endpoint
+      res.status(200).send("Hello, world!");
+    });
+
     this.router.post("/", async (req: Request, res: Response) => {
       try {
         const token = req.headers["authorization"];
