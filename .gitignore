@@ -30,8 +30,8 @@ deploy/**/generated
 
 **/.env*
 **/*private*
-!ui/**/.env*
-!ui/**/*private*
+!plugins/ui/**/.env*
+!plugins/ui/**/*private*
 
 .cubestore
 
@@ -49,24 +49,24 @@ flows/.env
 flows/**/*private*
 flows/**/.env*
 
-ui/resources/*
-!ui/resources/img
-!ui/resources/authenticate.js
-!ui/resources/msal-browser.min.js
-!ui/.vscode/settings.json
-ui/node_modules
-ui/npm-debug.log
-ui/*.tmp*
-ui/target
-ui/package-lock.json
-ui/pnpm-lock.yaml
-ui/yarn-error.log
-ui/run_ssh.sh
-ui/.DS_Store
-ui/dist
-ui/**/*-dbg*.js
-ui/**/*-preload*.js
-ui/**/library-parameters.json
-ui/**/*private*
-ui/.nx
-ui/pyqetest
+plugins/ui/resources/*
+!plugins/ui/resources/img
+!plugins/ui/resources/authenticate.js
+!plugins/ui/resources/msal-browser.min.js
+!plugins/ui/.vscode/settings.json
+plugins/ui/node_modules
+plugins/ui/npm-debug.log
+plugins/ui/*.tmp*
+plugins/ui/target
+plugins/ui/package-lock.json
+plugins/ui/pnpm-lock.yaml
+plugins/ui/yarn-error.log
+plugins/ui/run_ssh.sh
+plugins/ui/.DS_Store
+plugins/ui/dist
+plugins/ui/**/*-dbg*.js
+plugins/ui/**/*-preload*.js
+plugins/ui/**/library-parameters.json
+plugins/ui/**/*private*
+plugins/ui/.nx
+plugins/ui/pyqetest

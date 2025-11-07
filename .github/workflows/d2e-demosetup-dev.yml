@@ -71,7 +71,7 @@ jobs:
             flow_data_management:
               - "flows/data_management/**"
             ui: 
-              - "ui/**"
+              - "plugins/ui/**"
 
       - name: Build Flow base docker image
         if: steps.file_changes.outputs.flow_base == 'true'
@@ -177,7 +177,7 @@ jobs:
           bun-version: 1.2.23
       - name: UI Build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
-        working-directory: ./ui
+        working-directory: ./plugins/ui
         env:
           CI: false
         run: |
@@ -190,11 +190,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ui-build-logs
-          path: ui/build-logs.txt
+          path: plugins/ui/build-logs.txt
       - name: UI docker-compose-local
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
-          sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
+          sed -i 's|# - ./plugins/ui/resources:/usr/src/local-resources|- ./plugins/ui/resources:/usr/src/local-resources|' docker-compose-local.yml
 
       - name: Restart d2e services
         if: success() || failure()
