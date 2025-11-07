@@ -1,5 +1,9 @@
 <template>
   <SplashScreen v-if="isLoading" />
+  <div v-else-if="generationStatus !== 'COMPLETE'" class="status-message">
+    Cohort should be generated before creating samples
+  </div>
+
   <div v-else class="samples">
     <div class="samples__action">
       <ButtonMaterial class="samples-actions-btn" color="primary" @button-click="openCreateSampleDialog"
@@ -79,9 +83,7 @@
         <div class="sample-dialog">
           <form @submit.prevent="createSample" class="sample-form">
             <div class="form-group">
-              <label for="sampleName" class="form-label">
-                Name <span class="required">*</span>
-              </label>
+              <label for="sampleName" class="form-label"> Name <span class="required">*</span> </label>
               <input
                 type="text"
                 id="sampleName"
@@ -92,15 +94,11 @@
                 @blur="touched.name = true"
                 required
               />
-              <p v-if="hasNameError" class="validation-message">
-                Name is required
-              </p>
+              <p v-if="hasNameError" class="validation-message">Name is required</p>
             </div>
 
             <div class="form-group">
-              <label for="sampleSize" class="form-label">
-                Size <span class="required">*</span>
-              </label>
+              <label for="sampleSize" class="form-label"> Size <span class="required">*</span> </label>
               <input
                 type="number"
                 id="sampleSize"
@@ -112,9 +110,7 @@
                 @blur="touched.size = true"
                 required
               />
-              <p v-if="hasSizeError" class="validation-message">
-                Size must be at least 1
-              </p>
+              <p v-if="hasSizeError" class="validation-message">Size must be at least 1</p>
             </div>
 
             <div class="form-group">
@@ -168,9 +164,7 @@
                     />
                   </div>
                 </div>
-                <p v-if="hasAgeError" class="validation-message">
-                  Min age must be less than max age
-                </p>
+                <p v-if="hasAgeError" class="validation-message">Min age must be less than max age</p>
               </div>
               <div v-else class="form-group">
                 <label for="ageValue" class="form-label">Age Value</label>
@@ -185,41 +179,22 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">
-                  Gender Criteria
-                </label>
+                <label class="form-label"> Gender Criteria </label>
                 <div class="checkbox-group" @change="touched.gender = true">
                   <div class="checkbox-item">
-                    <input
-                      type="checkbox"
-                      id="genderMale"
-                      value="male"
-                      v-model="genderCriteria"
-                    />
+                    <input type="checkbox" id="genderMale" value="male" v-model="genderCriteria" />
                     <label for="genderMale">Male</label>
                   </div>
                   <div class="checkbox-item">
-                    <input
-                      type="checkbox"
-                      id="genderFemale"
-                      value="female"
-                      v-model="genderCriteria"
-                    />
+                    <input type="checkbox" id="genderFemale" value="female" v-model="genderCriteria" />
                     <label for="genderFemale">Female</label>
                   </div>
                   <div class="checkbox-item">
-                    <input
-                      type="checkbox"
-                      id="genderOther"
-                      value="other"
-                      v-model="genderCriteria"
-                    />
+                    <input type="checkbox" id="genderOther" value="other" v-model="genderCriteria" />
                     <label for="genderOther">Other</label>
                   </div>
                 </div>
-                <p v-if="hasGenderError" class="validation-message">
-                  Please select at least one gender option
-                </p>
+                <p v-if="hasGenderError" class="validation-message">Please select at least one gender option</p>
               </div>
             </div>
           </form>
@@ -276,6 +251,7 @@ const isLoadingSample = computed<boolean>(() => store.getters.isLoadingSampleByI
 const isCreatingSample = computed<boolean>(() => store.getters.isCreatingSample)
 const deletingSampleId = computed<number | null>(() => store.getters.getDeletingSampleId)
 const activeSample = computed<Sample | null>(() => store.getters.getActiveSample)
+const generationStatus = computed<string | null>(() => store.getters.getSampleGenerationStatus)
 
 // Form validation - only for enabling/disabling submit button
 const isFormValid = computed(() => {
@@ -299,7 +275,7 @@ const hasGenderError = computed(() => {
 
 const hasAgeError = computed(() => {
   if (samplingMethod.value !== 'stratified' || !touched.value.age) return false
-  
+
   if (ageCriteria.value === 'between' || ageCriteria.value === 'notBetween') {
     return ageMinValue.value >= ageMaxValue.value
   }
@@ -370,9 +346,9 @@ const closeCreateSampleDialog = () => {
 
 const handleCreateSample = async () => {
   if (!isFormValid.value) return
-  
+
   const payload = buildCreateSampleDTO()
-  
+
   try {
     await store.dispatch('createSample', {
       cohortDefinitionId: props.cohortDefinitionId,
@@ -515,7 +491,18 @@ const getGenderFromId = (conceptId: number) => {
   return 'Other'
 }
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
+.status-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ui-darkest-text);
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  min-height: 100px;
+}
+
 .samples {
   display: flex;
   flex-direction: column;
@@ -624,38 +611,38 @@ const getGenderFromId = (conceptId: number) => {
     .form-label {
       font-weight: 600;
       font-size: 0.875rem;
-      color: var(--color-ui-darkest-text, #333);
+      color: var(--color-ui-darkest-text);
 
       .required {
-        color: var(--color-feedback-error, #dc3545);
+        color: var(--color-feedback-error);
       }
     }
 
     .form-control {
       padding: 0.625rem 0.75rem;
-      border: 1px solid var(--color-ui-medium-border, #d1d5db);
+      border: 1px solid var(--color-ui-medium-border);
       border-radius: 4px;
       font-size: 0.875rem;
       transition: border-color 0.2s, box-shadow 0.2s;
-      background-color: var(--color-ui-lightest-bg, #fff);
+      background-color: var(--color-ui-lightest-bg);
 
       &:focus {
         outline: none;
-        border-color: var(--color-form-control-focus, var(--color-primary, #0066cc));
+        border-color: var(--color-form-control-focus, var(--color-primary));
         box-shadow: 0 0 0 3px var(--color-primary-extra-lightest, rgba(0, 102, 204, 0.1));
       }
 
       &::placeholder {
-        color: var(--color-ui-light-text, #9ca3af);
+        color: var(--color-ui-light-text);
       }
 
       &:disabled {
-        background-color: var(--color-ui-light-bg, #f3f4f6);
+        background-color: var(--color-ui-light-bg);
         cursor: not-allowed;
       }
 
       &.has-error {
-        border-color: var(--color-feedback-error, #dc3545);
+        border-color: var(--color-feedback-error);
       }
     }
 
@@ -668,8 +655,8 @@ const getGenderFromId = (conceptId: number) => {
       flex-direction: column;
       gap: 1rem;
       padding: 1rem;
-      background-color: var(--color-ui-extra-light-bg, #f9fafb);
-      border: 1px solid var(--color-ui-light-border, #e5e5e5);
+      background-color: var(--color-ui-extra-light-bg);
+      border: 1px solid var(--color-ui-light-border);
       border-radius: 6px;
       margin-top: 0.5rem;
     }
@@ -677,7 +664,7 @@ const getGenderFromId = (conceptId: number) => {
     .validation-message {
       margin: 0.25rem 0 0 0;
       font-size: 0.75rem;
-      color: var(--color-feedback-error, #dc3545);
+      color: var(--color-feedback-error);
       font-style: italic;
     }
 
@@ -709,7 +696,7 @@ const getGenderFromId = (conceptId: number) => {
         font-size: 0.875rem;
         cursor: pointer;
         margin: 0;
-        color: var(--color-ui-dark-text, #333);
+        color: var(--color-ui-dark-text);
       }
     }
   }

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import * as types from '../mutation-types'
 import { Sample } from '@/query-filter/types/SamplesTypes'
+import { get } from 'underscore'
 
 let cancel
 
@@ -12,6 +13,7 @@ interface SamplesState {
   isCreatingSample: boolean
   deletingSampleId: number | null
   activeSample: Sample | null
+  generationStatus: string | null
 }
 
 const state: SamplesState = {
@@ -22,6 +24,7 @@ const state: SamplesState = {
   isCreatingSample: false,
   deletingSampleId: null,
   activeSample: null,
+  generationStatus: null,
 }
 
 const getters = {
@@ -32,6 +35,7 @@ const getters = {
   isLoadingSampleById: (state: SamplesState) => state.isLoadingSampleById,
   isCreatingSample: (state: SamplesState) => state.isCreatingSample,
   getDeletingSampleId: (state: SamplesState) => state.deletingSampleId,
+  getSampleGenerationStatus: (state: SamplesState) => state.generationStatus,
 }
 
 const actions = {
@@ -55,6 +59,7 @@ const actions = {
         cancelToken,
       })
       commit(types.SAMPLES_SET_SAMPLES, data.samples)
+      commit(types.SAMPLES_SET_GENERATION_STATUS, data.generationStatus)
     } catch (error) {
       if (!axios.isCancel(error)) {
         commit(types.SAMPLES_SET_ERROR, error)
@@ -173,6 +178,9 @@ const mutations = {
   [types.SAMPLES_SET_DELETING_SAMPLE_ID](state, sampleId) {
     state.deletingSampleId = sampleId
   },
+  [types.SAMPLES_SET_GENERATION_STATUS](state, status) {
+    state.generationStatus = status
+  },
   [types.SAMPLES_RESET_STATE](state) {
     state.samples = []
     state.error = null
@@ -181,6 +189,7 @@ const mutations = {
     state.isCreatingSample = false
     state.deletingSampleId = null
     state.activeSample = null
+    state.generationStatus = null
   },
 }
 
@@ -189,6 +198,7 @@ export default {
   getters,
   actions,
   mutations,
+
 
 
 }
