@@ -76,20 +76,157 @@
     >
       <template v-slot:header>Create Sample</template>
       <template v-slot:body>
-        <form @submit.prevent="createSample">
-          <div>
-            <label for="sampleName">Name:</label>
-            <input type="text" id="sampleName" v-model="newSampleName" />
-          </div>
-          <div>
-            <label for="sampleSize">Size:</label>
-            <input type="number" id="sampleSize" v-model="newSampleSize" />
-          </div>
-        </form>
+        <div class="sample-dialog">
+          <form @submit.prevent="createSample" class="sample-form">
+            <div class="form-group">
+              <label for="sampleName" class="form-label">
+                Name <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="sampleName"
+                class="form-control"
+                :class="{ 'has-error': hasNameError }"
+                v-model="newSampleName"
+                placeholder="Enter sample name"
+                @blur="touched.name = true"
+                required
+              />
+              <p v-if="hasNameError" class="validation-message">
+                Name is required
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label for="sampleSize" class="form-label">
+                Size <span class="required">*</span>
+              </label>
+              <input
+                type="number"
+                id="sampleSize"
+                class="form-control"
+                :class="{ 'has-error': hasSizeError }"
+                v-model.number="newSampleSize"
+                placeholder="Enter sample size"
+                min="1"
+                @blur="touched.size = true"
+                required
+              />
+              <p v-if="hasSizeError" class="validation-message">
+                Size must be at least 1
+              </p>
+            </div>
+
+            <div class="form-group">
+              <label for="samplingMethod" class="form-label">Sampling Method</label>
+              <select id="samplingMethod" class="form-control" v-model="samplingMethod">
+                <option value="random">Random</option>
+                <option value="stratified">Stratified</option>
+              </select>
+            </div>
+
+            <div class="stratified-section" v-if="samplingMethod === 'stratified'">
+              <div class="form-group">
+                <label for="ageCriteria" class="form-label">Age Criteria</label>
+                <select id="ageCriteria" class="form-control" v-model="ageCriteria">
+                  <option value="between">Between</option>
+                  <option value="notBetween">Not Between</option>
+                  <option value="lessThan">Less Than</option>
+                  <option value="lessThanOrEqual">Less Than Or Equal To</option>
+                  <option value="equalTo">Equal to</option>
+                  <option value="greaterThan">Greater Than</option>
+                  <option value="greaterThanOrEqual">Greater Than Or Equal To</option>
+                </select>
+              </div>
+
+              <div v-if="ageCriteria === 'between' || ageCriteria === 'notBetween'" class="age-range-group">
+                <div class="form-group form-group-inline">
+                  <label for="ageMinValue" class="form-label">Min Age</label>
+                  <input
+                    type="number"
+                    id="ageMinValue"
+                    class="form-control"
+                    :class="{ 'has-error': hasAgeError }"
+                    v-model.number="ageMinValue"
+                    placeholder="Min"
+                    min="0"
+                    @blur="touched.age = true"
+                  />
+                </div>
+                <div class="form-group form-group-inline">
+                  <label for="ageMaxValue" class="form-label">Max Age</label>
+                  <input
+                    type="number"
+                    id="ageMaxValue"
+                    class="form-control"
+                    :class="{ 'has-error': hasAgeError }"
+                    v-model.number="ageMaxValue"
+                    placeholder="Max"
+                    min="0"
+                    @blur="touched.age = true"
+                  />
+                </div>
+              </div>
+              <p v-if="hasAgeError" class="validation-message">
+                Min age must be less than max age
+              </p>
+              <div v-else class="form-group">
+                <label for="ageValue" class="form-label">Age Value</label>
+                <input
+                  type="number"
+                  id="ageValue"
+                  class="form-control"
+                  v-model.number="ageValue"
+                  placeholder="Enter age value"
+                  min="0"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Gender Criteria
+                </label>
+                <div class="checkbox-group" @change="touched.gender = true">
+                  <div class="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="genderMale"
+                      value="male"
+                      v-model="genderCriteria"
+                    />
+                    <label for="genderMale">Male</label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="genderFemale"
+                      value="female"
+                      v-model="genderCriteria"
+                    />
+                    <label for="genderFemale">Female</label>
+                  </div>
+                  <div class="checkbox-item">
+                    <input
+                      type="checkbox"
+                      id="genderOther"
+                      value="other"
+                      v-model="genderCriteria"
+                    />
+                    <label for="genderOther">Other</label>
+                  </div>
+                </div>
+                <p v-if="hasGenderError" class="validation-message">
+                  Please select at least one gender option
+                </p>
+              </div>
+            </div>
+          </form>
+        </div>
       </template>
       <template v-slot:footer>
-        <button @click="createSample">Create</button>
-        <button @click="closeCreateSampleDialog">Cancel</button>
+        <div class="flex-spacer"></div>
+        <AppButton :click="closeCreateSampleDialog" text="Cancel" />
+        <AppButton :click="handleCreateSample" text="Create" :disabled="!isFormValid" />
       </template>
     </MessageBox>
   </div>
@@ -103,6 +240,7 @@ import TrashIcon from '@/query-filter/components/icons/TrashIcon.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import { AgeFilter, GenderFilter, Sample, SampleElement } from '../types/SamplesTypes'
+import AppButton from '@/lib/ui/app-button.vue'
 
 const props = defineProps<{
   cohortDefinitionId: number
@@ -115,12 +253,55 @@ const store = useStore()
 const createSampleDialogOpen = ref(false)
 const newSampleName = ref('')
 const newSampleSize = ref(0)
+const samplingMethod = ref('random')
+const ageCriteria = ref('lessThan')
+const ageValue = ref(0)
+const ageMinValue = ref(0)
+const ageMaxValue = ref(0)
+const genderCriteria = ref<Array<string>>([])
+
+// Track if user has interacted with fields
+const touched = ref({
+  name: false,
+  size: false,
+  gender: false,
+  age: false,
+})
 
 const samples = computed<Sample[]>(() => store.getters.getSamples)
 const isLoading = computed<boolean>(() => store.getters.isLoadingSamples)
 const isLoadingSample = computed<boolean>(() => store.getters.isLoadingSampleById)
 const deletingSampleId = computed<number | null>(() => store.getters.getDeletingSampleId)
 const activeSample = computed<Sample | null>(() => store.getters.getActiveSample)
+
+// Form validation - only for enabling/disabling submit button
+const isFormValid = computed(() => {
+  if (!newSampleName.value.trim()) return false
+  if (!newSampleSize.value || newSampleSize.value < 1) return false
+  return true
+})
+
+// Validation errors - only shown after user interaction
+const hasNameError = computed(() => {
+  return touched.value.name && !newSampleName.value.trim()
+})
+
+const hasSizeError = computed(() => {
+  return touched.value.size && (!newSampleSize.value || newSampleSize.value < 1)
+})
+
+const hasGenderError = computed(() => {
+  return samplingMethod.value === 'stratified' && touched.value.gender && genderCriteria.value.length === 0
+})
+
+const hasAgeError = computed(() => {
+  if (samplingMethod.value !== 'stratified' || !touched.value.age) return false
+  
+  if (ageCriteria.value === 'between' || ageCriteria.value === 'notBetween') {
+    return ageMinValue.value >= ageMaxValue.value
+  }
+  return false
+})
 
 onMounted(() => {
   store.dispatch('fetchSamples', {
@@ -146,21 +327,57 @@ watch(
   }
 )
 
+// Reset stratified criteria when switching between sampling methods
+watch(samplingMethod, (newMethod, oldMethod) => {
+  if (oldMethod === 'stratified' && newMethod === 'random') {
+    // Reset stratified fields when switching away from stratified
+    ageCriteria.value = 'lessThan'
+    ageValue.value = 0
+    ageMinValue.value = 0
+    ageMaxValue.value = 0
+    genderCriteria.value = []
+    touched.value.gender = false
+    touched.value.age = false
+  }
+})
+
 const openCreateSampleDialog = () => {
   createSampleDialogOpen.value = true
 }
 
 const closeCreateSampleDialog = () => {
   createSampleDialogOpen.value = false
+  // Reset form
+  newSampleName.value = ''
+  newSampleSize.value = 0
+  samplingMethod.value = 'random'
+  ageCriteria.value = 'lessThan'
+  ageValue.value = 0
+  ageMinValue.value = 0
+  ageMaxValue.value = 0
+  genderCriteria.value = []
+  // Reset touched state
+  touched.value = {
+    name: false,
+    size: false,
+    gender: false,
+    age: false,
+  }
 }
 
-const createSample = () => {
+const handleCreateSample = () => {
+  if (!isFormValid.value) return
+  
   store.dispatch('createSample', {
     cohortDefinitionId: props.cohortDefinitionId,
-    name: newSampleName.value,
+    name: newSampleName.value.trim(),
     size: newSampleSize.value,
   })
   closeCreateSampleDialog()
+}
+
+const createSample = () => {
+  handleCreateSample()
 }
 
 const deleteSample = (sampleId: number) => {
@@ -331,6 +548,122 @@ const getGenderFromId = (conceptId: number) => {
     justify-content: center;
     flex: 1;
     min-height: 400px;
+  }
+
+  .sample-dialog {
+    padding: 1.5rem;
+
+    .sample-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      &.form-group-inline {
+        flex: 1;
+      }
+    }
+
+    .form-label {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--color-ui-darkest-text, #333);
+
+      .required {
+        color: var(--color-feedback-error, #dc3545);
+      }
+    }
+
+    .form-control {
+      padding: 0.625rem 0.75rem;
+      border: 1px solid var(--color-ui-medium-border, #d1d5db);
+      border-radius: 4px;
+      font-size: 0.875rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: var(--color-ui-lightest-bg, #fff);
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-form-control-focus, var(--color-primary, #0066cc));
+        box-shadow: 0 0 0 3px var(--color-primary-extra-lightest, rgba(0, 102, 204, 0.1));
+      }
+
+      &::placeholder {
+        color: var(--color-ui-light-text, #9ca3af);
+      }
+
+      &:disabled {
+        background-color: var(--color-ui-light-bg, #f3f4f6);
+        cursor: not-allowed;
+      }
+
+      &.has-error {
+        border-color: var(--color-feedback-error, #dc3545);
+      }
+    }
+
+    select.form-control {
+      cursor: pointer;
+    }
+
+    .stratified-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem;
+      background-color: var(--color-ui-extra-light-bg, #f9fafb);
+      border: 1px solid var(--color-ui-light-border, #e5e5e5);
+      border-radius: 6px;
+      margin-top: 0.5rem;
+    }
+
+    .validation-message {
+      margin: 0.25rem 0 0 0;
+      font-size: 0.75rem;
+      color: var(--color-feedback-error, #dc3545);
+      font-style: italic;
+    }
+
+    .age-range-group {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      input[type='checkbox'] {
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+        accent-color: var(--color-primary);
+      }
+
+      label {
+        font-weight: 400;
+        font-size: 0.875rem;
+        cursor: pointer;
+        margin: 0;
+        color: var(--color-ui-dark-text, #333);
+      }
+    }
+  }
+
+  .flex-spacer {
+    flex: 1;
   }
 }
 
