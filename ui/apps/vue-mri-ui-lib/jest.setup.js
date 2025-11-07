@@ -10,7 +10,3 @@ config.global.config = {
     isCustomElement: tag => tag.startsWith('d4l-')
   }
 }
-
-// Suppress Vue warnings in tests
-config.global.config.warnHandler = () => null
-config.global.config.errorHandler = () => null
