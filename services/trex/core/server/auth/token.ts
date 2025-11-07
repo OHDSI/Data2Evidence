@@ -48,7 +48,7 @@ export const exchangeToken = async (params: URLSearchParams) => {
 
   const response = await post(tokenUrl, params, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    httpsAgent: new https.Agent({ rejectUnauthorized: false })
+    httpsAgent: new https.Agent({ rejectUnauthorized: true })
   })
 
   if (response.data?.error) {
