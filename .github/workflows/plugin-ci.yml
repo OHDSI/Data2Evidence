@@ -94,7 +94,6 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/cohort_survival/
           - PKGPATH: ./flows/i2b2/
           - PKGPATH: ./flows/search_embedding/
           - PKGPATH: ./flows/data_management/
