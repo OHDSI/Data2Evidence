@@ -22,7 +22,10 @@ sap.ui.define([
     }
 
     function _escapeHtmlCharacters(sValue) {
-        return sValue.replace("\"", "&quot;").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return sValue.replace(/&/g, "&amp;")
+            .replace(/"/g, "&quot;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
     }
 
     function _checkValidStrings(sItem) {
