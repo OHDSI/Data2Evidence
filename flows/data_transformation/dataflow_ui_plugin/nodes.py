@@ -343,7 +343,7 @@ class TransformFhirDataNode(Node):
     def get_fhir_structure_definition(self, url: str) -> dict:
         fhir_api = FhirAPI()
         query = f"?url={url}"
-        response = fhir_api.get(studyToken="fds1", resourceType="StructureDefinition", query=query)
+        response = fhir_api.get(study_token="fds1", resource_type="StructureDefinition", query=query)
         if(response):
             response_json = response.get("entry", [])[0].get("resource", {})
         else:
@@ -373,12 +373,11 @@ class TransformFhirDataNode(Node):
     def transform_fhir_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
         if(input_fhir_df is None):
             raise Exception("Input FHIR Dataframe is None")
-        elif self.structure_map is None or self.structure_map.get("structure") is None:
+        elif self.structure_map is None:
             raise Exception("Structure map is not defined")
-        
         source_structure_definition_url = ""
         target_structure_definition_url = ""
-        structure_list = self.structure_map.get("structure", [])
+        structure_list = json.loads(self.structure_map).get("structure", [])
         for struct in structure_list:
             if struct['mode'] == 'source':
                 source_structure_definition_url = struct['url']
@@ -396,7 +395,6 @@ class TransformFhirDataNode(Node):
             fhir_resource = None
         script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
         omop_table_name = self.omop_table_name(target_structure_definition_url)
-
         if source_structure_definition_url is None or source_structure_definition_url == "":
             raise Exception("Source Structure Definition URL is missing in structure map")
         elif target_structure_definition_url is None or target_structure_definition_url == "":
@@ -407,14 +405,14 @@ class TransformFhirDataNode(Node):
             raise Exception(f"Target Structure Definition not found for url: {target_structure_definition_url}")
         elif omop_table_name is None:
             raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
-        
+        print("Starting FHIR Transform...")
         if fhir_resource:
             for key in fhir_resource:
                 with Popen(
                     [
                         'node',
                         script_path,
-                        json.dumps(self.structure_map),
+                        self.structure_map,
                         json.dumps(key),
                         json.dumps(source_structure_definition),
                         json.dumps(target_structure_definition)
@@ -766,7 +764,7 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = DataMappingNode(nodename, node)
         case NodeType.CONCEPTMAPPING:
             nodeobj = ConceptMappingNode(nodename, node)
-        case NodeType.TRANSFORMDATA:
+        case NodeType.TRANSFORMFHIRDATA:
             nodeobj = TransformFhirDataNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])

@@ -31,7 +31,7 @@ export const NODE_TYPES: {
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
   white_rabbit_node: WhiteRabbitNode,
-  transform_data_node: TransformDataNode,
+  transform_fhir_data_node: TransformDataNode,
 };
 
 export const NODE_COLORS: {
@@ -49,7 +49,7 @@ export const NODE_COLORS: {
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
   white_rabbit_node: "#999fcb",
-  transform_data_node: "#999fcb",
+  transform_fhir_data_node: "#999fcb",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -138,7 +138,7 @@ test_exec <- function(myinput) {
       encoding: "utf-8",
     },
   },
-  transform_data_node: {
+  transform_fhir_data_node: {
     title: "Transform Data",
     description: "Transform data from one format to another using mapping rules.",
     tag: NodeTag.Experimental,

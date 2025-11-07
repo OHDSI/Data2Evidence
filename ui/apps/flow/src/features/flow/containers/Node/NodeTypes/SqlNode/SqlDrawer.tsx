@@ -32,7 +32,7 @@ const EMPTY_FORM_DATA: FormData = {
 
 const sourceOptions: SourceOptions = {
   csv_node: [SourceTypes.NODE],
-  transform_data_node: [SourceTypes.NODE],
+  transform_fhir_data_node: [SourceTypes.NODE],
   python_node: [SourceTypes.SCRIPT_NODE],
   python_notebook_node: [SourceTypes.SCRIPT_NODE],
   r_node: [SourceTypes.SCRIPT_NODE],

@@ -17,7 +17,7 @@ class omop_transform_utils:
             "observation_date": "date",
             "observation_id": "id",
             "person_id": "referenceToId",
-            "observation_type_concept_id": "determineObservationType",
+            "observation_type_concept_id": "map",
             "observation_concept_id": "map",
             "unit_concept_id": "map",
         },
@@ -33,7 +33,7 @@ class omop_transform_utils:
             "condition_start_datetime": "datetime",
             "condition_start_date": "date",
             "condition_end_date": "date",
-            "condition_type_concept_id": "map",
+            "condition_type_concept_id": "map", #To-do: There can be multiple entries in category/coding.
         },
         "visit_occurrence": {
             "visit_occurrence_id": "id",
@@ -109,7 +109,7 @@ class omop_transform_utils:
                 elif isinstance(value, datetime):
                     return value
             elif target_type == "id":
-                random_number = random.randint(0, 100)
+                random_number = random.randint(0, 100) * random.randint(0, 100)
                 return random_number
             elif target_type == "referenceToId":
                 print("Reference value:", value)
@@ -121,8 +121,6 @@ class omop_transform_utils:
                 # Handle string, e.g. "Patient/1234" or "Patient/example"
                 if isinstance(value, str) and "/" in value:
                     return value.split("/")[-1]
-            elif target_type == "determineObservationType":
-                return 38000280; # EHR observation type concept id
             elif target_type == "map":
                 return 38000280  # Placeholder for mapping logic
             else:

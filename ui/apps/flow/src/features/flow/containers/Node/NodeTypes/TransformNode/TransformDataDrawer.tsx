@@ -52,12 +52,13 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
     const structureMapTemplate = node.data.id
       ? structureMapTemplates.find((map) => map.id === node.data.id)
       : undefined;
-
     setFormData((prev) => ({
       ...prev,
       ...node.data,
       structure_map:
-        structureMapTemplate?.structureMap ?? node.data.structure_map ?? "",
+        typeof structureMapTemplate?.structureMap === "string"
+          ? structureMapTemplate?.structureMap
+          : JSON.stringify(structureMapTemplate?.structureMap ?? "") ?? node.data.structure_map ?? "",
     }));
   }, [node.data, structureMapTemplates]);
 
@@ -118,7 +119,9 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
 
                 onFormDataChange({
                   id: selectedTemplate?.id || "",
-                  structure_map: selectedTemplate?.structureMap || "",
+                  structure_map: typeof selectedTemplate?.structureMap === "string"
+                    ? selectedTemplate?.structureMap
+                    : JSON.stringify(selectedTemplate?.structureMap ?? ""),
                 });
               }}
             displayEmpty
@@ -134,8 +137,17 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
             ))}
           </Select>
         </Box>
+        {/* <Box mb={4}>
+          <TextInput
+            label="Structure Map"
+            value={formData.structure_map}
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+              onFormDataChange({ structure_map: e.target.value })
+            }
+          />
+        </Box> */}
         <Editor
-          language="plaintext"
+          language="sql"
           value={formData.structure_map}
           onChange={(structure_map: string) => onFormDataChange({ structure_map })}
           label="Structure Map"
