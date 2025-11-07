@@ -4,8 +4,7 @@ const { default: axios } = require('axios')
 const _ = require('lodash')
 
 const api = axios.create({
-  // baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
-  baseURL: process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI',
+  baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
 })
 
 const SOURCE = process.env.SOURCE || 'EUNOMIA'
@@ -760,13 +759,6 @@ const setupWebapiRoutes = app => {
     }
   )
 
-  app.get('/d2e-webapi/cohortsample', async (req, res) => {
-    logRequest(req)
-    console.log('hallo')
-
-    return res.send()
-  })
-
   app.get(
     '/d2e-webapi/cohortsample/:cohortDefinitionId/:source',
     validateId('cohortDefinitionId'),
@@ -775,8 +767,6 @@ const setupWebapiRoutes = app => {
       const { cohortDefinitionId, source } = req.params
       const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source
       const response = await api.get(endpoint)
-      console.log(response)
-
       const { data } = response
       return res.send(data)
     }
