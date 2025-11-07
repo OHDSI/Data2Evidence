@@ -7,8 +7,8 @@ import type {
   IWebapiSource,
   CohortInfoResponse,
   NotificationsResponse,
-  InclusionReportResponse,
 } from '../types/ConceptSetTypes'
+import type { InclusionReportResponse } from '../types/QueryFilterTypes'
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
 

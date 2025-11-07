@@ -1233,7 +1233,7 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
               variant="outlined"
               @button-click="openExecuteDrawer"
             >
-              More
+              View more
             </ButtonMaterial>
           </div>
         </div>

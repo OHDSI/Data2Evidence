@@ -1,4 +1,4 @@
-import { InclusionReportResponse } from '@/query-filter/types/ConceptSetTypes'
+import type { InclusionReportResponse } from '@/query-filter/types/QueryFilterTypes'
 
 type AttritionStat = {
   id: number
