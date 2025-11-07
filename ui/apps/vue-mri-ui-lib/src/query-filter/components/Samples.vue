@@ -324,6 +324,14 @@ const getGenderFromId = (conceptId: number) => {
       font-weight: bold;
     }
   }
+
+  &__sample-entry-table {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1;
+    min-height: 400px;
+  }
 }
 
 @keyframes spin {
