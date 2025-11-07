@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import bsCard from '@/lib/ui/bs-card.vue'
 import appTab from '@/lib/ui/app-tab.vue'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import InclusionReport from './InclusionReport/index.vue'
-import Samples from './Samples.vue';
 
 const props = defineProps<{
   cohortDefinitionId: number
@@ -71,6 +70,9 @@ const handleGenerateCohort = (sourceKey: string) => {
 const isGeneratingForSource = (sourceKey: string) => {
   return props.generationStatus[sourceKey] === 'pending'
 }
+const hasCohortGenerated = computed(() => {
+  return props.patientCounts?.[activeDataset.value] !== null && props.patientCounts?.[activeDataset.value] !== undefined
+})
 </script>
 
 <template>
@@ -89,7 +91,7 @@ const isGeneratingForSource = (sourceKey: string) => {
               <h3>{{ source.sourceName }}</h3>
             </div>
           </template>
-          <div class="card-body">
+          <div class="card-body-content">
             <div class="patient-count-display">
               <div v-if="isGeneratingForSource(source.sourceKey)" class="patient-count-label generating-label">
                 Generating...
@@ -129,36 +131,67 @@ const isGeneratingForSource = (sourceKey: string) => {
     <section class="main-content">
       <appTab class="tabs" :tabItems="tabList" :value="selectedView" @onSelectedChange="selectedView = $event" />
       <div class="tab-content">
-        <InclusionReport
-          v-if="selectedView === 'inclusion_report'"
-          :cohort-definition-id="cohortDefinitionId"
-          :source-key="activeDataset"
-          :modeId="1"
-          :generation-status="generationStatus[activeDataset]"
-          :patient-count="patientCounts?.[activeDataset]"
-        />
-        <h3 v-if="selectedView === 'analysis'">Analysis</h3>
-        <Samples v-if="selectedView === 'sample'" :cohort-definition-id="cohortDefinitionId" :source-key="activeDataset" :patient-count="patientCounts?.[activeDataset]" />
+        <div v-if="generationStatus[activeDataset] === 'pending'" class="status-message pending">
+          Generating cohort... Please wait
+        </div>
+        <div v-else-if="generationStatus[activeDataset] === 'failed'" class="status-message error">
+          Cohort generation failed. Please try again.
+        </div>
+        <div v-else-if="!hasCohortGenerated" class="status-message">Please generate the cohort first</div>
+        <div v-else>
+          <InclusionReport
+            v-if="selectedView === 'inclusion_report'"
+            :cohort-definition-id="cohortDefinitionId"
+            :source-key="activeDataset"
+            :modeId="1"
+            :generation-status="generationStatus[activeDataset]"
+            :patient-count="patientCounts?.[activeDataset]"
+          />
+          <h3 v-if="selectedView === 'analysis'">Analysis</h3>
+          <Samples
+            v-if="selectedView === 'sample'"
+            :cohort-definition-id="cohortDefinitionId"
+            :source-key="activeDataset"
+            :patient-count="patientCounts?.[activeDataset]"
+          />
+        </div>
       </div>
     </section>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.dataset-card {
-  :global(.card-header) {
-    background-color: transparent;
-    border-bottom: none;
+:global(.dataset-card .card-header) {
+  background-color: transparent;
+  border-bottom: none;
+  padding: 12px;
+}
+
+.status-message {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-neutral);
+
+  &.error {
+    color: var(--color-feedback-error);
   }
+}
+
+.dataset-card {
   border-radius: 8px;
   background-color: white;
   border: none;
 }
 .active-dataset {
   border: 2px solid var(--color-primary);
+  box-sizing: border-box;
+}
+:global(.dataset-card .card-body) {
+  padding-top: 8px;
+  padding-bottom: 16px;
 }
 
-.card-body {
+.card-body-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -170,6 +203,7 @@ const isGeneratingForSource = (sourceKey: string) => {
   display: flex;
   flex-grow: 1;
   flex-direction: column;
+  width: 70%;
   .tabs {
     width: 100%;
     margin-bottom: -5px;
@@ -287,6 +321,7 @@ const isGeneratingForSource = (sourceKey: string) => {
   align-items: center;
   justify-content: end;
   gap: 4px;
+  min-height: 36px;
 
   .patient-count-label {
     font-size: 16px;
@@ -315,6 +350,7 @@ const isGeneratingForSource = (sourceKey: string) => {
   padding-right: 1rem;
   height: 100%;
   overflow-y: auto;
+  width: 30%;
 
   display: flex;
   flex-direction: column;

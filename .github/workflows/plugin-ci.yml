@@ -94,7 +94,6 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/cohort_survival/
           - PKGPATH: ./flows/i2b2/
           - PKGPATH: ./flows/search_embedding/
           - PKGPATH: ./flows/data_management/
@@ -211,13 +210,12 @@ jobs:
           CI: ${{ matrix.NPM != 'bun' }}
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
-          NPM_CONFIG_TOKEN:: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then
-             ${{ matrix.NPM || 'npm' }} publish
+            npm publish
           else
-             ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
           fi
 
   success:
