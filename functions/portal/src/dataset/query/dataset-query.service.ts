@@ -6,7 +6,7 @@ import { IDataset, IDatasetQueryDto, IDatasetResponseDto, IDatasetSearchDto, ITe
 import { UserMgmtService } from '../../user-mgmt/user-mgmt.service.ts'
 import { DatasetFilterService } from '../dataset-filter.service.ts'
 import { Dataset } from '../entity/index.ts'
-import { DatasetDashboardRepository, DatasetReleaseRepository, DatasetRepository } from '../repository/index.ts'
+import { DatasetDashboardRepository, DatasetReleaseRepository, DatasetRepository, DatasetCodeRepository } from '../repository/index.ts'
 import { RequestContextService } from '../../common/request-context.service.ts'
 
 const SWAP_TO = {
@@ -24,6 +24,7 @@ export class DatasetQueryService {
     private readonly datasetRepo: DatasetRepository,
     private readonly releaseRepo: DatasetReleaseRepository,
     private readonly dashboardRepo: DatasetDashboardRepository,
+    private readonly datasetCodeRepo: DatasetCodeRepository,
     private readonly datasetFilterService: DatasetFilterService,
     private readonly userMgmtService: UserMgmtService,
     private readonly requestContextService: RequestContextService
@@ -221,6 +222,15 @@ export class DatasetQueryService {
       id: dashboard?.id,
       name: dashboard?.name,
       url: dashboard?.url
+    }
+  }
+
+  async getDatasetCode(datasetId: string, type: string) {
+    const datasetCode = await this.datasetCodeRepo.getDatasetCode(datasetId, type)
+    return {
+      datasetId: datasetCode.datasetId,
+      code: datasetCode.code,
+      type: datasetCode.type
     }
   }
 
