@@ -18,6 +18,7 @@ describe('Search.vue', () => {
   const createGetters = (results = [], query = '') => ({
     getText: (_, __) => (key, args) => args,
     getIFR: jest.fn(),
+    getPLRequest: jest.fn(() => ({})),
     notesCount: () => results.reduce((acc, patientNote) => acc + patientNote.notes.length, 0),
     patientCount: () => results.length,
     resultsPage: state => state.resultsPage,
@@ -86,7 +87,7 @@ describe('Search.vue', () => {
       },
     })
 
-    expect(wrapper.find('d4l-search-stub').exists()).toBe(true)
+    expect(wrapper.find('d4l-search').exists()).toBe(true)
     expect(wrapper.findComponent(MicroscopeSvg).exists()).toBe(true)
   })
 
@@ -97,7 +98,7 @@ describe('Search.vue', () => {
     const wrapper = mount(Search as any, {
       global: {
         plugins: [store],
-        stubs: ['Pager', 'd4l-search', 'd4l-icon-arrow-back'],
+        stubs: ['Pager', 'd4l-search', 'd4l-icon-arrow-back', 'loading-animation', 'app-icon'],
       },
     })
 
@@ -112,7 +113,7 @@ describe('Search.vue', () => {
     const wrapper = mount(Search as any, {
       global: {
         plugins: [store],
-        stubs: ['Pager', 'd4l-search', 'd4l-icon-arrow-back'],
+        stubs: ['Pager', 'd4l-search', 'd4l-icon-arrow-back', 'loading-animation', 'app-icon'],
       },
     })
 
@@ -132,7 +133,7 @@ describe('Search.vue', () => {
     const wrapper = mount(Search as any, {
       global: {
         plugins: [store],
-        stubs: ['d4l-search', 'd4l-icon-arrow-back'],
+        stubs: ['d4l-search', 'd4l-icon-arrow-back', 'loading-animation', 'app-icon'],
       },
     })
 
@@ -152,7 +153,7 @@ describe('Search.vue', () => {
     const wrapper = mount(Search as any, {
       global: {
         plugins: [store],
-        stubs: ['Pager', 'd4l-search', 'd4l-icon-arrow-back'],
+        stubs: ['Pager', 'd4l-search', 'd4l-icon-arrow-back', 'loading-animation', 'app-icon'],
       },
     })
 
