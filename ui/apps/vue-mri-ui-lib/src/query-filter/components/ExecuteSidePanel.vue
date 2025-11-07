@@ -3,6 +3,7 @@ import bsCard from '@/lib/ui/bs-card.vue'
 import appTab from '@/lib/ui/app-tab.vue'
 import { ref, computed } from 'vue'
 import InclusionReport from './InclusionReport/index.vue'
+import Samples from './Samples.vue'
 
 const props = defineProps<{
   cohortDefinitionId: number

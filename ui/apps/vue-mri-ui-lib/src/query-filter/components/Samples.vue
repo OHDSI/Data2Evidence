@@ -107,10 +107,11 @@
                 v-model.number="newSampleSize"
                 placeholder="Enter sample size"
                 min="1"
+                :max="props.patientCount"
                 @blur="touched.size = true"
                 required
               />
-              <p v-if="hasSizeError" class="validation-message">Size must be at least 1</p>
+              <p v-if="hasSizeError" class="validation-message">{{ sizeErrorMessage }}</p>
             </div>
 
             <div class="form-group">
@@ -257,6 +258,7 @@ const generationStatus = computed<string | null>(() => store.getters.getSampleGe
 const isFormValid = computed(() => {
   if (!newSampleName.value.trim()) return false
   if (!newSampleSize.value || newSampleSize.value < 1) return false
+  if (props.patientCount && newSampleSize.value > props.patientCount) return false
   return true
 })
 
@@ -266,7 +268,20 @@ const hasNameError = computed(() => {
 })
 
 const hasSizeError = computed(() => {
-  return touched.value.size && (!newSampleSize.value || newSampleSize.value < 1)
+  if (!touched.value.size) return false
+  if (!newSampleSize.value || newSampleSize.value < 1) return true
+  if (props.patientCount && newSampleSize.value > props.patientCount) return true
+  return false
+})
+
+const sizeErrorMessage = computed(() => {
+  if (!newSampleSize.value || newSampleSize.value < 1) {
+    return 'Size must be at least 1'
+  }
+  if (props.patientCount && newSampleSize.value > props.patientCount) {
+    return `Size cannot exceed patient count (${props.patientCount})`
+  }
+  return ''
 })
 
 const hasGenderError = computed(() => {
