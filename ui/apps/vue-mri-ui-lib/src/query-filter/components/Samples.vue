@@ -372,7 +372,6 @@ const handleCreateSample = async () => {
   if (!isFormValid.value) return
   
   const payload = buildCreateSampleDTO()
-  console.log('Creating sample with payload:', payload)
   
   try {
     await store.dispatch('createSample', {
@@ -380,7 +379,6 @@ const handleCreateSample = async () => {
       payload,
       sourceKey: props.sourceKey,
     })
-    console.log('Sample created successfully')
     closeCreateSampleDialog()
   } catch (error) {
     console.error('Failed to create sample:', error)

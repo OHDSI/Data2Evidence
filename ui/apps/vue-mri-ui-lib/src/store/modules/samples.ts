@@ -97,20 +97,14 @@ const actions = {
     })
     commit(types.SAMPLES_SET_IS_CREATING_SAMPLE, true)
     try {
-      console.log('Sending POST request to create sample:', {
-        url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${sourceKey}`,
-        payload,
-      })
       const response = await dispatch('ajaxAuth', {
         url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${sourceKey}`,
         method: 'POST',
         params: payload,
         cancelToken,
       })
-      console.log('Sample created, response:', response)
       commit(types.SAMPLES_ADD_SAMPLE, response.data)
     } catch (error) {
-      console.error('Error creating sample:', error)
       if (!axios.isCancel(error)) {
         commit(types.SAMPLES_SET_ERROR, error)
       }
@@ -195,5 +189,6 @@ export default {
   getters,
   actions,
   mutations,
+
 
 }
