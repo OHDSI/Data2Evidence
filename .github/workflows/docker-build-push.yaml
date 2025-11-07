@@ -92,9 +92,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-base
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-i2b2
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
@@ -122,9 +119,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-cachedb
-            DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: .
           - AZ_REG_REPOSITORY: d2e-enterprise-gateway
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/enterprise-gateway
