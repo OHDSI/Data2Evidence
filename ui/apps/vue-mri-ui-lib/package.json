@@ -104,13 +104,6 @@
       "node_modules/(?!(axios)/)"
     ],
     "globals": {
-      "vue-jest": {
-        "compilerOptions": {
-          "compatConfig": {
-            "MODE": 2
-          }
-        }
-      },
       "ts-jest": {
         "isolatedModules": true
       }
