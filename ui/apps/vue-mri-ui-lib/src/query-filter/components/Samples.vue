@@ -601,7 +601,6 @@ const getGenderFromId = (conceptId: number) => {
     flex-direction: column;
     justify-content: center;
     flex: 1;
-    min-height: 400px;
   }
 
   .sample-dialog {
