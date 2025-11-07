@@ -18,6 +18,7 @@ import {
   NodeData,
   TemplateDto,
 } from "../types.ts";
+import { sanitizeFileName } from "../utils/utils.ts";
 
 export class TransformationService {
   private readonly logger = console;
@@ -328,7 +329,8 @@ export class TransformationService {
     }
     const repoDir = this.gitRepoPath; // Use a single repository for all flows
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`; // Each flow gets its own file
+    const safeCanvasId = sanitizeFileName(canvasId);
+    const fileName = `${safeCanvasId}.json`; // Each flow gets its own file
     const filePath = path.join(repoDir, subDir, fileName);
     const gitConfigValue = JSON.parse(gitConfig.value);
     const defaultBranch = gitConfigValue.branch;
@@ -572,14 +574,15 @@ export class TransformationService {
       return;
     }
 
-    const repoDir = this.gitRepoPath;
-    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
-
-    const author = this.gitConfig.defaultAuthor;
-
     try {
+      const repoDir = this.gitRepoPath;
+      const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
+      const safeCanvasId = sanitizeFileName(canvasId);
+      const fileName = `${safeCanvasId}.json`;
+      const filePath = path.join(repoDir, subDir, fileName);
+
+      const author = this.gitConfig.defaultAuthor;
+
       let isGitRepo = false;
       try {
         await git.resolveRef({ fs, dir: repoDir, ref: "HEAD" });
@@ -710,13 +713,13 @@ export class TransformationService {
     if (!gitRemoteUrl || !defaultBranch) {
       throw new Error("Git remote URL or default branch not configured");
     }
-
-    const repoDir = this.gitRepoPath;
-    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
-
     try {
+      const repoDir = this.gitRepoPath;
+      const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
+      const safeCanvasId = sanitizeFileName(canvasId);
+      const fileName = `${safeCanvasId}.json`;
+      const filePath = path.join(repoDir, subDir, fileName);
+
       await this.ensureLatestFromGitRemote(
         repoDir,
         gitRemoteUrl,
@@ -919,8 +922,15 @@ export class TransformationService {
 
     const repoDir = this.gitRepoPath;
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
+    const safeTemplateId = sanitizeFileName(canvasId);
+    const fileName = `${safeTemplateId}.json`;
+    const filePath = path.resolve(path.join(repoDir, subDir, fileName));
+    if (!filePath.startsWith(path.join(repoDir, subDir))) {
+      this.logger.error(
+        `Invalid canvas id detected: ${canvasId} leads to path traversal`
+      );
+      throw new Error('Invalid canvas id: path traversal attempt detected');
+    }
 
     try {
       await this.ensureLatestFromGitRemote(
@@ -1166,22 +1176,23 @@ export class TransformationService {
     comment: string,
     token: string
   ) {
-    const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
-    const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
-
-    const repoDir = this.templateRepoPath;
-    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${templateId}.json`;
-    const subDirPath = path.join(repoDir, subDir);
-    const filePath = path.resolve(subDirPath, fileName);
-    if (!filePath.startsWith(subDirPath)) {
-      this.logger.error(
-        `Invalid template id detected: ${templateId} leads to path traversal`
-      );
-      throw new Error('Invalid template id: path traversal attempt detected');
-    }
-
     try {
+      const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
+      const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
+
+      const repoDir = this.templateRepoPath;
+      const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
+      const safeTemplateId = sanitizeFileName(templateId);
+      const fileName = `${safeTemplateId}.json`;
+      const subDirPath = path.join(repoDir, subDir);
+      const filePath = path.resolve(subDirPath, fileName);
+      if (!filePath.startsWith(subDirPath)) {
+        this.logger.error(
+          `Invalid template id detected: ${templateId} leads to path traversal`
+        );
+        throw new Error('Invalid template id: path traversal attempt detected');
+      }
+
       await this.ensureLatestFromGitRemote(
         repoDir,
         templateRepoUrl,
