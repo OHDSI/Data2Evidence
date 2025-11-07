@@ -675,7 +675,7 @@ const setupWebapiRoutes = app => {
 
       try {
         // Forward to external WebAPI, using hardcoded sourceKey 
-        const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + SOURCE + '?mode=' + modeId
+        const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + sourceKey + '?mode=' + modeId
         const response = await api.get(endpoint)
         return res.json(response.data)
       } catch (err) {

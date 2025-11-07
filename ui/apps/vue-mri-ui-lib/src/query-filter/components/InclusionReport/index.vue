@@ -1,30 +1,35 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { InclusionReportResponse } from '@/query-filter/types/ConceptSetTypes'
+import type { InclusionReportResponse } from '@/query-filter/types/QueryFilterTypes'
 import plotly from '@/lib/CustomPlotly'
 import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
 import { computeAttritionStats } from './computeAttrtionStats'
+import GroupButtons from '../GroupButtons.vue'
 
 const props = defineProps<{
   cohortDefinitionId: number
   sourceKey: string
-  modeId?: number
   patientCount: number | null
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
 }>()
 
 const isLoadingInclusionReport = ref<boolean>(false)
-const inclusionReportResponse = ref<InclusionReportResponse | null>(null)
 const funnelChartRef = ref<HTMLElement | null>(null)
+const selectedPersonEventView = ref<'PERSON' | 'EVENT'>('PERSON')
 
-// helper to simulate loading
-const sleep = (milliseconds: number) => {
-  return new Promise(resolve => setTimeout(resolve, milliseconds))
-}
+const inclusionReportPersonResponse = ref<InclusionReportResponse | null>(null)
+const inclusionReportEventResponse = ref<InclusionReportResponse | null>(null)
 
-const hasCohortGenerated = computed(() => {
-  return props.patientCount !== null && props.patientCount !== undefined
+const inclusionReportResponse = computed(() => {
+  return selectedPersonEventView.value === 'PERSON'
+    ? inclusionReportPersonResponse.value
+    : inclusionReportEventResponse.value
 })
+
+const personEventOptions = [
+  { value: 'PERSON', label: 'By person' },
+  { value: 'EVENT', label: 'By event' },
+]
 
 const shouldFetchInclusionReport = computed(() => {
   return props.patientCount !== null && !(props.generationStatus === 'pending' || props.generationStatus === 'failed')
@@ -48,7 +53,7 @@ const funnelChartData = computed(() => {
   // Add each inclusion rule with calculated statistics
   stats.forEach(stat => {
     const name = stat.name.length > 30 ? stat.name.slice(0, 30) + '...' : stat.name
-    labels.push(`${stat.id} - ${name}`)
+    labels.push(`${stat.id + 1} - ${name}`)
     values.push(stat.countSatisfying)
     hoverTexts.push(
       `${stat.name}<br>Count: ${stat.countSatisfying.toLocaleString()}<br>Percent: ${stat.percentSatisfying}`
@@ -102,76 +107,98 @@ const renderFunnelChart = () => {
 
   const chartConfig = {
     responsive: true,
-    displayModeBar: true,
+    displayModeBar: false,
   }
 
   plotly.newPlot(funnelChartRef.value, [trace], layout, chartConfig)
 }
 
-const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: string, modeId: number) => {
+const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: string) => {
   isLoadingInclusionReport.value = true
-  await sleep(1500)
+
+  const modeId = selectedPersonEventView.value === 'PERSON' ? 1 : 0
   try {
-    if (!modeId) modeId = 1
-    // inclusionReportResponse.value = await d2eWebapiService.getInclusionReport(cohortDefinitionId, sourceKey, modeId)
-    // mock data
-    inclusionReportResponse.value = {
-      summary: {
-        baseCount: 4035,
-        finalCount: 23,
-        lostCount: 0,
-        percentMatched: '0.57%',
-      },
-      inclusionRuleStats: [
-        {
-          id: 0,
-          name: 'Cancer surgery within 30 days before dx and no radio- or systemic treatment before surgery',
-          percentExcluded: '40.45%',
-          percentSatisfying: '1.36%',
-          countSatisfying: 55,
-        },
-        {
-          id: 1,
-          name: 'no other malignancies ',
-          percentExcluded: '0.79%',
-          percentSatisfying: '41.02%',
-          countSatisfying: 1655,
-        },
-      ],
-      treemapData:
-        '{"name" : "Everyone", "children" : [{"name" : "Group 2", "children" : [{"name": "11", "size": 23},{"name" : "Group 1", "children" : [{"name": "01", "size": 1632},{"name": "10", "size": 32},{"name" : "Group 0", "children" : [{"name": "00", "size": 2348}]}]}]}]}',
+    if (selectedPersonEventView.value === 'PERSON' && !inclusionReportPersonResponse.value) {
+      inclusionReportPersonResponse.value = await d2eWebapiService.getInclusionReport(
+        cohortDefinitionId,
+        sourceKey,
+        modeId
+      )
+    } else if (selectedPersonEventView.value === 'EVENT' && !inclusionReportEventResponse.value) {
+      inclusionReportEventResponse.value = await d2eWebapiService.getInclusionReport(
+        cohortDefinitionId,
+        sourceKey,
+        modeId
+      )
     }
+    // mock data
+    // inclusionReportResponse.value = {
+    //   summary: {
+    //     baseCount: 4035,
+    //     finalCount: 23,
+    //     lostCount: 0,
+    //     percentMatched: '0.57%',
+    //   },
+    //   inclusionRuleStats: [
+    //     {
+    //       id: 0,
+    //       name: 'Cancer surgery within 30 days before dx and no radio- or systemic treatment before surgery',
+    //       percentExcluded: '40.45%',
+    //       percentSatisfying: '1.36%',
+    //       countSatisfying: 55,
+    //     },
+    //     {
+    //       id: 1,
+    //       name: 'no other malignancies ',
+    //       percentExcluded: '0.79%',
+    //       percentSatisfying: '41.02%',
+    //       countSatisfying: 1655,
+    //     },
+    //   ],
+    //   treemapData:
+    //     '{"name" : "Everyone", "children" : [{"name" : "Group 2", "children" : [{"name": "11", "size": 23},{"name" : "Group 1", "children" : [{"name": "01", "size": 1632},{"name": "10", "size": 32},{"name" : "Group 0", "children" : [{"name": "00", "size": 2348}]}]}]}]}',
+    // }
   } catch (error) {
     console.error('Error fetching inclusion report:', error)
   } finally {
     isLoadingInclusionReport.value = false
   }
 }
+
+onMounted(() => {
+  inclusionReportPersonResponse.value = null
+  inclusionReportEventResponse.value = null
+  isLoadingInclusionReport.value = false
+
+  if (shouldFetchInclusionReport.value) {
+    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey)
+  }
+})
+
+// Watch for changes in sourceKey and decide whether to fetch inclusion report
 watch(
   () => props.sourceKey,
   newSourceKey => {
+    console.log('props.sourceKey changed', inclusionReportPersonResponse.value)
+    inclusionReportPersonResponse.value = null
+    inclusionReportEventResponse.value = null
     if (shouldFetchInclusionReport.value) {
-      fetchInclusionReport(props.cohortDefinitionId, newSourceKey, props.modeId)
-    } else {
-      inclusionReportResponse.value = null
+      fetchInclusionReport(props.cohortDefinitionId, newSourceKey)
     }
   }
 )
 
-onMounted(() => {
-  inclusionReportResponse.value = null
-  isLoadingInclusionReport.value = false
-  if (shouldFetchInclusionReport.value) {
-    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey, props.modeId)
-  }
-})
+// Watch for changes in shouldFetchInclusionReport and decide whether to fetch inclusion report
 watch(shouldFetchInclusionReport, shouldFetch => {
   if (shouldFetch) {
-    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey, props.modeId)
+    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey)
   } else {
-    inclusionReportResponse.value = null
+    inclusionReportPersonResponse.value = null
+    inclusionReportEventResponse.value = null
   }
 })
+
+// Watch for changes in funnelChartData to render funnel chart
 watch(
   () => funnelChartData.value,
   () => {
@@ -179,19 +206,28 @@ watch(
   },
   { flush: 'post' } // Ensure <div ref="funnelChartRef"> exists
 )
+
+function handlePersonEventViewChange(newView: 'PERSON' | 'EVENT') {
+  selectedPersonEventView.value = newView
+  if (shouldFetchInclusionReport.value) {
+    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey)
+  }
+}
 </script>
 
 <template>
-  <slot />
-
-  <div v-if="generationStatus === 'pending'" class="status-message pending">Generating cohort... Please wait</div>
-  <div v-else-if="generationStatus === 'failed'" class="status-message error">
-    Cohort generation failed. Please try again.
+  <div class="person-event-view-buttons-container">
+    <group-buttons
+      :options="personEventOptions"
+      :limit-value="selectedPersonEventView"
+      @update-limit-value="handlePersonEventViewChange($event as 'PERSON' | 'EVENT')"
+      class="person-event-view-buttons"
+    />
+    <p v-if="selectedPersonEventView === 'PERSON'">using 1 event per person</p>
+    <p v-else>using all events</p>
   </div>
-  <div v-else-if="!hasCohortGenerated" class="status-message">Please generate the cohort first</div>
-  <div v-else-if="isLoadingInclusionReport" class="status-message loading">Loading inclusion report...</div>
+  <div v-if="isLoadingInclusionReport" class="status-message loading">Loading inclusion report...</div>
   <div v-else-if="inclusionReportResponse" class="inclusion-report-container">
-    <p>using 1 event per person</p>
     <!-- Summary Table -->
     <div class="summary-section">
       <h4>Summary</h4>
@@ -231,8 +267,8 @@ watch(
         </thead>
         <tbody>
           <tr v-for="stat in attritionStats" :key="stat.id">
-            <td>{{ stat.id }}</td>
-            <td>{{ stat.name }}</td>
+            <td>{{ stat.id + 1 }}</td>
+            <td class="rule-name">{{ stat.name }}</td>
             <td>{{ stat.countSatisfying.toLocaleString() }}</td>
             <td>{{ stat.percentSatisfying }}</td>
             <td>{{ stat.pctDiff }}</td>
@@ -242,7 +278,7 @@ watch(
 
       <!-- Plotly Funnel chart -->
       <div class="funnel-chart-section">
-        <h4>Inclusion Funnel</h4>
+        <h4>Attrition visualization</h4>
         <div ref="funnelChartRef" class="funnel-chart"></div>
       </div>
     </div>
@@ -252,6 +288,24 @@ watch(
 </template>
 
 <style scoped>
+.person-event-view-buttons-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+  .person-event-view-buttons {
+    width: 80%;
+  }
+}
+table {
+  font-size: 16px;
+}
+.rule-name {
+  max-width: 70ch;
+}
+
 .inclusion-report-container {
   padding: 1rem;
   display: flex;
@@ -279,7 +333,6 @@ h4 {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid #ddd;
-  font-size: 0.9rem;
 }
 
 .summary-table thead,
@@ -291,7 +344,7 @@ h4 {
 .rules-table th {
   padding: 0.75rem;
   text-align: left;
-  font-weight: 600;
+  font-weight: 500;
   border-bottom: 2px solid #ddd;
   color: #333;
 }
