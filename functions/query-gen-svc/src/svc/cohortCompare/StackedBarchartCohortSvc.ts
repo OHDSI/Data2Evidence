@@ -31,7 +31,7 @@ export class StackedBarChartCohortSvc extends BaseCohortSvc {
                 const column = token.split(".")[1];
                 //magic code to get the alias
                 const regex = new RegExp(
-                    `\.${column} AS (\"[a-zA-Z0-9_.]+\")`,
+                    `.${column} AS (\"[a-zA-Z0-9_.]+\")`,
                     "g"
                 );
                 const alias = regex.exec(query);
