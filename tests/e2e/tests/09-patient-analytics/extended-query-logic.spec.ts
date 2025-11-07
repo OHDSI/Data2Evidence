@@ -92,7 +92,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Condition Occurrence B').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  //await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Reload saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()

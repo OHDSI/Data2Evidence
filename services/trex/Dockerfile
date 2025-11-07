@@ -8,6 +8,7 @@ ENV DENO_VERSION=2.1.4
 
 RUN mkdir -p ./scripts
 COPY install_onnx.sh ./scripts
+COPY install_libchdb.sh ./scripts
 RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime
 RUN cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
 
@@ -27,7 +28,7 @@ RUN mkdir -p /usr/local/lib && \
     rm -rf /tmp/libduckdb-linux-amd64.zip /tmp/duckdb && \
     ldconfig
 
-RUN curl -sL https://lib.chdb.io | bash
+RUN bash ./scripts/install_libchdb.sh
 
 RUN mkdir -p /usr/src
 RUN mkdir -p /usr/src/data/cache
