@@ -243,6 +243,19 @@ const validateDatasetId = (req, res, next) => {
   next()
 }
 
+// Validate sourceKey against allowed sources to prevent SSRF
+const validateSourceKey = (req, res, next) => {
+  const { sourceKey } = req.params
+  const allowedSourceKeys = sourceMap.map(source => source.sourceKey)
+
+  if (!sourceKey || !allowedSourceKeys.includes(sourceKey)) {
+    return res
+      .status(400)
+      .json({ error: `Invalid sourceKey: must be one of ${allowedSourceKeys.join(', ')}` })
+  }
+  next()
+}
+
 /**
  * @param {import('express').Application} app
  */
@@ -699,13 +712,14 @@ const setupWebapiRoutes = app => {
     app.get(
     '/d2e-webapi/cohortdefinition/:cohortDefinitionId/report/:sourceKey',
     validateId('cohortDefinitionId'),
+    validateSourceKey,
     async (req, res) => {
       logRequest(req)
       const { cohortDefinitionId, sourceKey } = req.params
       const {mode: modeId} = req.query
 
       try {
-        // Forward to external WebAPI, using hardcoded sourceKey 
+        // Forward to external WebAPI
         const endpoint = ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + sourceKey + '?mode=' + modeId
         const response = await api.get(endpoint)
         return res.json(response.data)
