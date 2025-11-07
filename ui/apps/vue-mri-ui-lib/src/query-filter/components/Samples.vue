@@ -26,8 +26,14 @@
             <td>{{ generateCriteria(sample) }}</td>
             <td>{{ new Date(sample.createdDate).toLocaleString() }}</td>
             <td>
-              <button class="btn-remove-sample" @click="deleteSample(sample.id)" title="Remove this sample">
-                <TrashIcon />
+              <button
+                class="btn-remove-sample"
+                @click.stop="deleteSample(sample.id)"
+                title="Remove this sample"
+                :disabled="deletingSampleId === sample.id"
+              >
+                <span v-if="deletingSampleId === sample.id" class="spinner"></span>
+                <TrashIcon v-else />
               </button>
             </td>
           </tr>
@@ -113,6 +119,7 @@ const newSampleSize = ref(0)
 const samples = computed<Sample[]>(() => store.getters.getSamples)
 const isLoading = computed<boolean>(() => store.getters.isLoadingSamples)
 const isLoadingSample = computed<boolean>(() => store.getters.isLoadingSampleById)
+const deletingSampleId = computed<number | null>(() => store.getters.getDeletingSampleId)
 const activeSample = computed<Sample | null>(() => store.getters.getActiveSample)
 
 onMounted(() => {
@@ -160,6 +167,7 @@ const deleteSample = (sampleId: number) => {
   store.dispatch('deleteSample', {
     cohortDefinitionId: props.cohortDefinitionId,
     sampleId,
+    sourceKey: props.sourceKey,
   })
 }
 
@@ -284,11 +292,46 @@ const getGenderFromId = (conceptId: number) => {
       border-radius: 4px;
       font-size: 14px;
       cursor: pointer;
+      padding: 4px 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      min-height: 32px;
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      &:not(:disabled):hover {
+        svg {
+          fill: var(--color-feedback-error);
+        }
+      }
+
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--color-neutral-lightest);
+        border-top: 2px solid var(--color-primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
     }
     .no-data {
       text-align: center;
       font-weight: bold;
     }
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
   }
 }
 </style>

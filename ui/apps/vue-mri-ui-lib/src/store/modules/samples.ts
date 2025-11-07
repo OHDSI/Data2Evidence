@@ -9,6 +9,7 @@ interface SamplesState {
   error: Error | null
   isLoadingSamples: boolean
   isLoadingSampleById: boolean
+  deletingSampleId: number | null
   activeSample: Sample | null
 }
 
@@ -17,6 +18,7 @@ const state: SamplesState = {
   error: null,
   isLoadingSamples: false,
   isLoadingSampleById: false,
+  deletingSampleId: null,
   activeSample: null,
 }
 
@@ -26,6 +28,7 @@ const getters = {
   error: (state: SamplesState) => state.error,
   isLoadingSamples: (state: SamplesState) => state.isLoadingSamples,
   isLoadingSampleById: (state: SamplesState) => state.isLoadingSampleById,
+  getDeletingSampleId: (state: SamplesState) => state.deletingSampleId,
 }
 
 const actions = {
@@ -111,28 +114,30 @@ const actions = {
     }
   },
 
-  async deleteSample({ commit, rootGetters, dispatch }, { cohortDefinitionId, sampleId }) {
+  async deleteSample({ commit, dispatch, getters }, { cohortDefinitionId, sampleId, sourceKey }) {
     if (cancel) {
       cancel('cancel')
     }
     const cancelToken = new axios.CancelToken(c => {
       cancel = c
     })
-    commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, true)
-    const source = rootGetters.getSelectedDataset.sourceKey
+    commit(types.SAMPLES_SET_DELETING_SAMPLE_ID, sampleId)
     try {
       await dispatch('ajaxAuth', {
-        url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${source}/${sampleId}`,
+        url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${sourceKey}/${sampleId}`,
         method: 'DELETE',
         cancelToken,
       })
       commit(types.SAMPLES_REMOVE_SAMPLE, sampleId)
+      if (getters.getActiveSample && getters.getActiveSample.id === sampleId) {
+        commit(types.SAMPLES_SET_ACTIVE_SAMPLE, null)
+      }
     } catch (error) {
       if (!axios.isCancel(error)) {
         commit(types.SAMPLES_SET_ERROR, error)
       }
     } finally {
-      commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, false)
+      commit(types.SAMPLES_SET_DELETING_SAMPLE_ID, null)
     }
   },
   resetSamplesState({ commit }) {
@@ -162,11 +167,15 @@ const mutations = {
   [types.SAMPLES_SET_IS_LOADING_SAMPLE_BY_ID](state, isLoading) {
     state.isLoadingSampleById = isLoading
   },
+  [types.SAMPLES_SET_DELETING_SAMPLE_ID](state, sampleId) {
+    state.deletingSampleId = sampleId
+  },
   [types.SAMPLES_RESET_STATE](state) {
     state.samples = []
     state.error = null
-    state.isLoading = false
+    state.isLoadingSamples = false
     state.isLoadingSampleById = false
+    state.deletingSampleId = null
     state.activeSample = null
   },
 }
@@ -176,6 +185,5 @@ export default {
   getters,
   actions,
   mutations,
-
 
 }
