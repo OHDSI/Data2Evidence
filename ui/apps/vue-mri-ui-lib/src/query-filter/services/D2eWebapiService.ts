@@ -7,7 +7,6 @@ import type {
   IWebapiSource,
   CohortInfoResponse,
   NotificationsResponse,
-  InclusionReportResponse,
 } from '../types/ConceptSetTypes'
 import type { InclusionReportResponse } from '../types/QueryFilterTypes'
 
@@ -214,4 +213,5 @@ export class D2eWebapiService {
 }
 
 export const d2eWebapiService = new D2eWebapiService()
+
 
