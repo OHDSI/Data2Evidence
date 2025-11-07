@@ -9,6 +9,7 @@ interface SamplesState {
   error: Error | null
   isLoadingSamples: boolean
   isLoadingSampleById: boolean
+  isCreatingSample: boolean
   deletingSampleId: number | null
   activeSample: Sample | null
 }
@@ -18,6 +19,7 @@ const state: SamplesState = {
   error: null,
   isLoadingSamples: false,
   isLoadingSampleById: false,
+  isCreatingSample: false,
   deletingSampleId: null,
   activeSample: null,
 }
@@ -28,6 +30,7 @@ const getters = {
   error: (state: SamplesState) => state.error,
   isLoadingSamples: (state: SamplesState) => state.isLoadingSamples,
   isLoadingSampleById: (state: SamplesState) => state.isLoadingSampleById,
+  isCreatingSample: (state: SamplesState) => state.isCreatingSample,
   getDeletingSampleId: (state: SamplesState) => state.deletingSampleId,
 }
 
@@ -85,32 +88,35 @@ const actions = {
     }
   },
 
-  async createSample({ commit, rootGetters, dispatch }, { cohortDefinitionId, name, size }) {
+  async createSample({ commit, dispatch }, { cohortDefinitionId, payload, sourceKey }) {
     if (cancel) {
       cancel('cancel')
     }
     const cancelToken = new axios.CancelToken(c => {
       cancel = c
     })
-    commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, true)
-    const source = rootGetters.getSelectedDataset.sourceKey
+    commit(types.SAMPLES_SET_IS_CREATING_SAMPLE, true)
     try {
-      const { data } = await dispatch('ajaxAuth', {
-        url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${source}`,
+      console.log('Sending POST request to create sample:', {
+        url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${sourceKey}`,
+        payload,
+      })
+      const response = await dispatch('ajaxAuth', {
+        url: `/d2e-webapi/cohortsample/${cohortDefinitionId}/${sourceKey}`,
         method: 'POST',
-        data: {
-          name,
-          size,
-        },
+        params: payload,
         cancelToken,
       })
-      commit(types.SAMPLES_ADD_SAMPLE, data)
+      console.log('Sample created, response:', response)
+      commit(types.SAMPLES_ADD_SAMPLE, response.data)
     } catch (error) {
+      console.error('Error creating sample:', error)
       if (!axios.isCancel(error)) {
         commit(types.SAMPLES_SET_ERROR, error)
       }
+      throw error
     } finally {
-      commit(types.SAMPLES_SET_IS_LOADING_SAMPLES, false)
+      commit(types.SAMPLES_SET_IS_CREATING_SAMPLE, false)
     }
   },
 
@@ -167,6 +173,9 @@ const mutations = {
   [types.SAMPLES_SET_IS_LOADING_SAMPLE_BY_ID](state, isLoading) {
     state.isLoadingSampleById = isLoading
   },
+  [types.SAMPLES_SET_IS_CREATING_SAMPLE](state, isCreating) {
+    state.isCreatingSample = isCreating
+  },
   [types.SAMPLES_SET_DELETING_SAMPLE_ID](state, sampleId) {
     state.deletingSampleId = sampleId
   },
@@ -175,6 +184,7 @@ const mutations = {
     state.error = null
     state.isLoadingSamples = false
     state.isLoadingSampleById = false
+    state.isCreatingSample = false
     state.deletingSampleId = null
     state.activeSample = null
   },

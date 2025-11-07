@@ -46,3 +46,12 @@ export interface FetchSamplesResponse {
   valid: boolean
 }
 
+export interface CreateSampleDTO {
+  name: string
+  size: number
+  age: AgeFilter | null
+  gender: GenderFilter
+}     
+
+
+

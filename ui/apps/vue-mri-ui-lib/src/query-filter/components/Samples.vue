@@ -139,37 +139,39 @@
                 </select>
               </div>
 
-              <div v-if="ageCriteria === 'between' || ageCriteria === 'notBetween'" class="age-range-group">
-                <div class="form-group form-group-inline">
-                  <label for="ageMinValue" class="form-label">Min Age</label>
-                  <input
-                    type="number"
-                    id="ageMinValue"
-                    class="form-control"
-                    :class="{ 'has-error': hasAgeError }"
-                    v-model.number="ageMinValue"
-                    placeholder="Min"
-                    min="0"
-                    @blur="touched.age = true"
-                  />
+              <div v-if="ageCriteria === 'between' || ageCriteria === 'notBetween'">
+                <div class="age-range-group">
+                  <div class="form-group form-group-inline">
+                    <label for="ageMinValue" class="form-label">Min Age</label>
+                    <input
+                      type="number"
+                      id="ageMinValue"
+                      class="form-control"
+                      :class="{ 'has-error': hasAgeError }"
+                      v-model.number="ageMinValue"
+                      placeholder="Min"
+                      min="0"
+                      @blur="touched.age = true"
+                    />
+                  </div>
+                  <div class="form-group form-group-inline">
+                    <label for="ageMaxValue" class="form-label">Max Age</label>
+                    <input
+                      type="number"
+                      id="ageMaxValue"
+                      class="form-control"
+                      :class="{ 'has-error': hasAgeError }"
+                      v-model.number="ageMaxValue"
+                      placeholder="Max"
+                      min="0"
+                      @blur="touched.age = true"
+                    />
+                  </div>
                 </div>
-                <div class="form-group form-group-inline">
-                  <label for="ageMaxValue" class="form-label">Max Age</label>
-                  <input
-                    type="number"
-                    id="ageMaxValue"
-                    class="form-control"
-                    :class="{ 'has-error': hasAgeError }"
-                    v-model.number="ageMaxValue"
-                    placeholder="Max"
-                    min="0"
-                    @blur="touched.age = true"
-                  />
-                </div>
+                <p v-if="hasAgeError" class="validation-message">
+                  Min age must be less than max age
+                </p>
               </div>
-              <p v-if="hasAgeError" class="validation-message">
-                Min age must be less than max age
-              </p>
               <div v-else class="form-group">
                 <label for="ageValue" class="form-label">Age Value</label>
                 <input
@@ -225,8 +227,8 @@
       </template>
       <template v-slot:footer>
         <div class="flex-spacer"></div>
-        <AppButton :click="closeCreateSampleDialog" text="Cancel" />
-        <AppButton :click="handleCreateSample" text="Create" :disabled="!isFormValid" />
+        <AppButton :click="closeCreateSampleDialog" text="Cancel" :disabled="isCreatingSample" />
+        <AppButton :click="handleCreateSample" text="Create" :disabled="!isFormValid || isCreatingSample" />
       </template>
     </MessageBox>
   </div>
@@ -239,7 +241,7 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import TrashIcon from '@/query-filter/components/icons/TrashIcon.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useStore } from 'vuex'
-import { AgeFilter, GenderFilter, Sample, SampleElement } from '../types/SamplesTypes'
+import { AgeFilter, GenderFilter, Sample, SampleElement, CreateSampleDTO } from '../types/SamplesTypes'
 import AppButton from '@/lib/ui/app-button.vue'
 
 const props = defineProps<{
@@ -271,6 +273,7 @@ const touched = ref({
 const samples = computed<Sample[]>(() => store.getters.getSamples)
 const isLoading = computed<boolean>(() => store.getters.isLoadingSamples)
 const isLoadingSample = computed<boolean>(() => store.getters.isLoadingSampleById)
+const isCreatingSample = computed<boolean>(() => store.getters.isCreatingSample)
 const deletingSampleId = computed<number | null>(() => store.getters.getDeletingSampleId)
 const activeSample = computed<Sample | null>(() => store.getters.getActiveSample)
 
@@ -365,15 +368,66 @@ const closeCreateSampleDialog = () => {
   }
 }
 
-const handleCreateSample = () => {
+const handleCreateSample = async () => {
   if (!isFormValid.value) return
   
-  store.dispatch('createSample', {
-    cohortDefinitionId: props.cohortDefinitionId,
-    name: newSampleName.value.trim(),
-    size: newSampleSize.value,
-  })
-  closeCreateSampleDialog()
+  const payload = buildCreateSampleDTO()
+  console.log('Creating sample with payload:', payload)
+  
+  try {
+    await store.dispatch('createSample', {
+      cohortDefinitionId: props.cohortDefinitionId,
+      payload,
+      sourceKey: props.sourceKey,
+    })
+    console.log('Sample created successfully')
+    closeCreateSampleDialog()
+  } catch (error) {
+    console.error('Failed to create sample:', error)
+  }
+}
+
+const buildCreateSampleDTO = (): CreateSampleDTO => {
+  if (samplingMethod.value === 'random') {
+    // Random sample
+    return {
+      name: newSampleName.value.trim(),
+      size: newSampleSize.value,
+      age: null,
+      gender: {
+        otherNonBinary: true,
+        conceptIds: [8507, 8532],
+      },
+    }
+  } else {
+    // Stratified sample
+    const ageFilter: AgeFilter = {
+      mode: ageCriteria.value as AgeFilter['mode'],
+      min: ageCriteria.value === 'between' || ageCriteria.value === 'notBetween' ? ageMinValue.value : null,
+      max: ageCriteria.value === 'between' || ageCriteria.value === 'notBetween' ? ageMaxValue.value : null,
+      value: ageCriteria.value !== 'between' && ageCriteria.value !== 'notBetween' ? ageValue.value : null,
+    }
+
+    const conceptIds: number[] = []
+    if (genderCriteria.value.includes('male')) {
+      conceptIds.push(8507)
+    }
+    if (genderCriteria.value.includes('female')) {
+      conceptIds.push(8532)
+    }
+
+    const genderFilter: GenderFilter = {
+      otherNonBinary: genderCriteria.value.includes('other'),
+      conceptIds,
+    }
+
+    return {
+      name: newSampleName.value.trim(),
+      size: newSampleSize.value,
+      age: ageFilter,
+      gender: genderFilter,
+    }
+  }
 }
 
 const createSample = () => {
