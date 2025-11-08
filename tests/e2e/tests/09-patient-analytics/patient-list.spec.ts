@@ -58,6 +58,8 @@ test(TEST_NAME, async ({ page }) => {
         .getByTitle('Condition Occurrence A - Condition concept set')
         .getByPlaceholder('Enter search term')
         .fill('Chronic sinusitis')
+      //Dummy click to remove patient count overlay
+      await page.mouse.click(500, 500)
       await page.getByText('Chronic sinusitis -').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
