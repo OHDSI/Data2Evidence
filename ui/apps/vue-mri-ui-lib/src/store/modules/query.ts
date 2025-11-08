@@ -1050,11 +1050,11 @@ const actions = {
             const andContainer = []
             const filterVal1 = {
               op: '>',
-              value: matchIntervals[0],
+              value: parseInt(matchIntervals[0]),
             }
             const filterVal2 = {
               op: '<',
-              value: matchIntervals[1],
+              value: parseInt(matchIntervals[1]),
             }
 
             andContainer.push(filterVal1)
@@ -1071,7 +1071,7 @@ const actions = {
             const andContainer = []
             const filterVal1 = {
               op: '=',
-              value: matchIntervals[0],
+              value: parseInt(matchIntervals[0]),
             }
             collectedConstraints[oData.id].filterValues.push(filterVal1)
           }

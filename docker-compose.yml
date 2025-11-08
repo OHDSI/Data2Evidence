@@ -103,7 +103,7 @@ services:
     healthcheck:
       interval: 60s
       retries: 30
-      start_period: 60s
+      start_period: 180s
       test:
         - CMD
         - npm
@@ -237,7 +237,7 @@ services:
       AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-}
       AZURE_OPENAI_API_INSTANCE_NAME: ${AZURE_OPENAI_API_INSTANCE_NAME:-}
       AI_MODEL: ${AI_MODEL:-azure:gpt-4o}
-      BIGQUERY_CDM_VERSION: ${BIGQUERY_CDM_VERSION:-5.3}
+      BIGQUERY_CDM_VERSION: ${BIGQUERY_CDM_VERSION:-5.3.1}
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
