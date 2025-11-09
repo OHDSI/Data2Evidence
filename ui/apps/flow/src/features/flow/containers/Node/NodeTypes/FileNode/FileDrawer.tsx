@@ -201,13 +201,6 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
           }
         />
       </Box>
-      <Box mb={4}>
-        <Autocomplete<string, false, undefined, true>
-          options={["json", "ndjson", "zip", "rar"]}
-          onChange={(event, value) => onFormDataChange({ file_type: value || "json" })}
-          renderInput={(params) => <TextField {...params} label="File Type" variant="standard" />}
-        />
-      </Box>
       <Box mb={4} display="flex" alignItems="center">
         <Button
           type="button"
