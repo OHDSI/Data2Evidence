@@ -3,7 +3,6 @@ import requests
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
-from prefect.logging import get_run_logger
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 
@@ -27,20 +26,6 @@ class SupabaseStorageAPI(BaseAPI):
         # raise error if status code is >400
         response.raise_for_status()
         return response.text
-    
-    def get_file(self, node_id: str, filename: str) -> bytes:
-        """
-        Fetch a file from Supabase Storage as bytes.
-        """
-        logger = get_run_logger()
-        bucket = Variable.get("data_transformation_bucket")
-        request_url = f"{self.url}object/{bucket}/data-transformation/{node_id}/{filename}"
-        logger.info(f"Fetching file from URL: {request_url}")
-        response = requests.get(request_url)
-        logger.info(f"Response status code: {response.status_code}")
-        response.raise_for_status()
-        return response.content
-    
     
     def get_file(self, node_id: str, filename: str) -> bytes:
         """
