@@ -9,7 +9,6 @@ from functools import partial
 from jsonpath_ng import parse
 from asyncio import iscoroutine, run
 from pydantic import ValidationError
-from pathlib import Path
 
 import pandas as pd
 from pandas.api.types import is_scalar, is_list_like, is_dict_like
@@ -17,7 +16,7 @@ from pandas.api.types import is_scalar, is_list_like, is_dict_like
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
-from prefect import task, flow, get_run_logger
+from prefect import task, flow
 
 from .hooks import *
 from .flowutils import *
@@ -339,7 +338,6 @@ class GenericFileNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
         self.file = _node["file"]
-        self.encoding = _node.get("encoding", "utf8")
         logging.info(f"GenericFileNode: file={self.file}")
 
     def task(self, task_run_context) -> Result:
