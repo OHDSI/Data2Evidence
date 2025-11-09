@@ -28,7 +28,6 @@ export const NODE_TYPES: {
   concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
   file_node: FileNode,
-  file_node: FileNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
