@@ -352,7 +352,7 @@ class GenericFileNode(Node):
             return Result(False, result, self, task_run_context)
 
         except Exception as e:
-            return Result(True, tb.format_exc(), task_run_context)
+            return Result(True, tb.format_exc(), self, task_run_context)
     
         
 class DbWriter(Node):
