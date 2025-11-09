@@ -3,7 +3,6 @@ import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
 import { CsvNode } from "./CsvNode/CsvNode";
 import { FileNode } from "./FileNode/FileNode";
-import { FileNode } from "./FileNode/FileNode";
 import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
