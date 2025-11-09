@@ -86,12 +86,11 @@
 
 ## File Node (Experimental)
 
-- **Description:** Upload Generic File to Supabase storage, store and return a local address.
+- **Description:** Upload a file of any datatype to Supabase Storage and return the node_id and the filename.
 - **Input Nodes:** This node does not accept any input nodes.
-- **Output Data:** Returns only 1 String where the file is stored. 
+- **Output Data:** Returns an python dictionary object containing the nodeid and filename.
 - **How To Use:** 
-    - Choose File: Name of the file to upload.
-
+    - The sample output will look like {"node_id" : "node_id"; "filename" : "filename.filetype"}
 
 ## Data Mapping Node (Experimental)
 
