@@ -49,7 +49,6 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   file: "",
-  file_type: "",
   encoding: "utf-8",
 };
 
