@@ -1,7 +1,6 @@
 import { services } from "../env.ts";
 import { OpenIDAPI } from "./OpenIDAPI.ts";
-import { CsvFileOperationResponse, FileOperationResponse } from "../types.ts";
-import { CsvFileOperationResponse, FileOperationResponse } from "../types.ts";
+import { CsvFileOperationResponse } from "../types.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
@@ -141,7 +140,7 @@ export class PortalServerAPI {
   }
 
   async uploadFile(nodeId: string, file: File) {
-    const url = `${this.baseURL}/supabase-storage/upload/file`; // make sure endpoint exists
+    const url = `${this.baseURL}/supabase-storage/upload/file`;
     const formData = new FormData();
     formData.append("file", file, file.name);
 
