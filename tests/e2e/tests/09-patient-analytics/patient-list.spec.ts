@@ -50,6 +50,8 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Create' }).click()
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+      // Click modal backdrop to dismiss it
+      await page.locator('.modal-wrapper').click()
       await page
         .getByTitle('Condition Occurrence A - Condition concept set')
         .getByPlaceholder('Enter search term')
