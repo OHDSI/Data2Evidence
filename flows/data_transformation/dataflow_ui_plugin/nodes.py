@@ -2,8 +2,6 @@ import ibis
 import json
 import duckdb
 import logging
-import os
-import time
 from typing import Any
 import traceback as tb
 from rpy2 import robjects
@@ -11,7 +9,6 @@ from functools import partial
 from jsonpath_ng import parse
 from asyncio import iscoroutine, run
 from pydantic import ValidationError
-from pathlib import Path
 from pathlib import Path
 
 import pandas as pd
@@ -31,7 +28,6 @@ from .types import (NodeType,
 
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
-from .nodeutils.fileutils import process_zip, process_ndjson
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
@@ -338,52 +334,27 @@ class CsvNode(Node):
 
 class GenericFileNode(Node):
     """
-    Loads a file or a folder of JSON files into pandas DataFrames or reads single CSV/Excel file.
-    Attributes:
-        files (list[str]): List of file to load.
-        file_type (str): File type (csv, json, xlsx, etc.).
-        encoding (str): Optional file encoding.
-        output_folder (str): Folder to store multiple files.
+    Loads a file or a zip file and return its address.
     """
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        logger = get_run_logger()
         self.file = _node["file"]
-        self.file_type = _node.get("file_type", Path(self.file).suffix.lower())
         self.encoding = _node.get("encoding", "utf8")
-        logger.info(f"GenericFileNode: file={self.file}, file_type={self.file_type}, encoding={self.encoding}")
-        self.output_folder = Path(_node.get("output_folder", f"./{self.id}_files"))
-        self.output_folder.mkdir(exist_ok=True)
-
-    def _fetch_file(self, file_path):
-        logger = get_run_logger()
-        logger.info(f"Fetching file: {file_path}")
-        # fetch file from Supabase or local
-        try:
-            return SupabaseStorageAPI().get_file(self.id, file_path)
-        except Exception:
-            # raise error if file not found
-            raise FileNotFoundError(f"File not found: {file_path}")
+        logging.info(f"GenericFileNode: file={self.file}")
 
     def task(self, task_run_context) -> Result:
-        logger = get_run_logger()
         try:
-            raw_data = self._fetch_file(self.file)
-            file_name = Path(self.file).name
-            file_type = (self.file_type or Path(self.file).suffix[1:]).lower()
-
-            if file_type == ".zip":
-                process_zip(raw_data, self.output_folder)
-            elif file_type == ".ndjson":
-                process_ndjson(raw_data, self.output_folder, file_name, self.encoding)
-            else:
-                save_path = self.output_folder / file_name
-                save_path.write_bytes(raw_data)
-            # Return folder path (or list of files if you prefer)
-            return Result(False, str(self.output_folder), self, task_run_context)
+            node_id = self.id
+            filename = self.file
+            # since two parameter needed for SupabaseStorageAPI().get_file(self.id, self.file)
+            result = {
+                "node_id": node_id,
+                "filename": filename
+            }
+            return Result(False, result, self, task_run_context)
 
         except Exception as e:
-            return Result(True, str(e), self, task_run_context)
+            return Result(True, tb.format_exc(), task_run_context)
     
         
 class DbWriter(Node):
@@ -679,8 +650,6 @@ def generate_node_task(nodename, node, nodetype):
     match nodetype:
         case NodeType.CSV:
             nodeobj = CsvNode(nodename, node)
-        case NodeType.FILE:
-            nodeobj = GenericFileNode(nodename, node)
         case NodeType.FILE:
             nodeobj = GenericFileNode(nodename, node)
         case NodeType.SQL:
