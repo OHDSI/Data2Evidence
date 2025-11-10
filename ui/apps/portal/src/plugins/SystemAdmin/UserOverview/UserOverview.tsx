@@ -14,9 +14,9 @@ import {
   ALP_USER_ADMIN,
   DATA_ADMIN_ROLES,
   STUDY_WRITE_DQD_RESEARCHER,
-  STUDY_READ_RESEARCHER,
   TENANT_ROLES,
   ALP_DASHBOARD_VIEWER,
+  STUDY_RESULTS_READ_RESEARCHER,
 } from "../../../config";
 import { useTenants, useGroupCleanUp, useDialogHelper } from "../../../hooks";
 import { useFeedback, useTranslation, useUser } from "../../../contexts";
@@ -166,8 +166,8 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       roleList.push(ALP_ROLES[STUDY_WRITE_DQD_RESEARCHER]);
     }
     
-    if(roles.includes(STUDY_READ_RESEARCHER)) {
-      roleList.push(ALP_ROLES[STUDY_READ_RESEARCHER]);
+    if(roles.includes(STUDY_RESULTS_READ_RESEARCHER)) {
+      roleList.push(ALP_ROLES[STUDY_RESULTS_READ_RESEARCHER]);
     }
 
     return roleList;
