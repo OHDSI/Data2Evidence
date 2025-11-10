@@ -146,7 +146,7 @@ export class DatasetCommandService {
         schemaName,
         vocabSchemaName: schemaName,
         resultSchemaName: schemaName || resultSchemaName,
-        tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim()}`,
+        tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim().replace(/\s+/g, '_')}`,
         paConfigId,
         dataModel,
         plugin,
