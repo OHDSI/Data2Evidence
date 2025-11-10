@@ -49,10 +49,16 @@ export const DuplicateFlowRevisionDialog: FC<
   }, [dataflow]);
 
   const handleDuplicate = useCallback(async () => {
+    const trimmedName = formData.name.trim();
+    
+    if (!trimmedName) {
+      return;
+    }
+    
     const dataflow: DuplicateDataflowDto = {
       id: dataflowId,
       revisionId,
-      name: formData.name,
+      name: trimmedName,
     };
     const payload = await duplicateDataflow(dataflow);
 
@@ -65,7 +71,7 @@ export const DuplicateFlowRevisionDialog: FC<
     dispatch(setRevisionId(undefined));
     dispatch(clearStatus());
     typeof onClose === "function" && onClose();
-  }, [dataflowId, revisionId, formData.name, onClose]);
+  }, [dataflowId, revisionId, formData.name, onClose, duplicateDataflow]);
 
   const handleClose = useCallback(() => {
     typeof onClose === "function" && onClose();
@@ -111,6 +117,7 @@ export const DuplicateFlowRevisionDialog: FC<
               onClick={handleDuplicate}
               loading={isLoading}
               type="submit"
+              disabled={!formData.name.trim()}
             />
           </Box>
         </div>

@@ -22,6 +22,7 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
 
   const handleNotebookChanges = (e: any) => {
     setNotebookTitle(e.target.value);
+    setShowErrorMessage(false);
   };
 
   const handleClose = useCallback(
@@ -33,12 +34,13 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
 
   const handleRename = useCallback(async () => {
     try {
-      if (notebookTitle) {
-        if (notebooks?.some((nb) => nb.name.toUpperCase() === notebookTitle.toUpperCase())) {
+      const trimmedTitle = notebookTitle?.trim();
+      if (trimmedTitle) {
+        if (notebooks?.some((nb) => nb.name.toUpperCase() === trimmedTitle.toUpperCase())) {
           setShowErrorMessage(true);
           return;
         }
-        await renameNotebook(notebookTitle);
+        await renameNotebook(trimmedTitle);
       }
       handleClose("success");
     } catch (err: any) {
@@ -85,7 +87,13 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
             variant="outlined"
             block
           />
-          <Button text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)} onClick={handleRename} block type="submit" />
+          <Button 
+            text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)} 
+            onClick={handleRename} 
+            block 
+            type="submit"
+            disabled={!notebookTitle?.trim()}
+          />
         </div>
       </form>
     </Dialog>

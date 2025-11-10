@@ -113,12 +113,18 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   }, [props.open, dataflow, nameRef, commentRef]);
 
   const handleSave = useCallback(async () => {
+    const trimmedName = formData.name.trim();
+    
+    if (!trimmedName) {
+      return;
+    }
+    
     if (isNew && formData.selectedTemplate) {
       // Create from template
       const response = await createFromTemplate({
         templateId: formData.selectedTemplate,
-        name: formData.name,
-        comment: formData.comment,
+        name: trimmedName,
+        comment: formData.comment.trim(),
       });
 
       if ("error" in response) {
@@ -136,16 +142,16 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       // Without template
       const dataflow: SaveDataflowDto = {
         id: saveFlowDialog.dataflowId,
-        name: formData.name,
+        name: trimmedName,
         dataflow: isNew
           ? {
               nodes: [],
               edges: [],
               variables: [],
               importLibs: [],
-              comment: formData.comment,
+              comment: formData.comment.trim(),
             }
-          : { nodes, edges, variables, importLibs, comment: formData.comment },
+          : { nodes, edges, variables, importLibs, comment: formData.comment.trim() },
       };
       const response = await saveDataflow(dataflow);
 
@@ -174,6 +180,8 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     variables,
     importLibs,
     createFromTemplate,
+    saveDataflow,
+    onClose,
   ]);
 
   const handleClose = useCallback(() => {
@@ -277,6 +285,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
               onClick={handleSave}
               loading={isLoading || createFromTemplateLoading}
               type="submit"
+              disabled={!formData.name.trim()}
             />
           </Box>
         </div>

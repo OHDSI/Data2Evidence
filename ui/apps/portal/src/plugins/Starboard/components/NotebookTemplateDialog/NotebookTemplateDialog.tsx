@@ -61,6 +61,9 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
 
   const onFormDataChange = useCallback((updates: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
+    if (updates.name !== undefined) {
+      setShowErrorMessage(false);
+    }
   }, []);
 
   const isDuplicateName = useCallback(
@@ -71,26 +74,28 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
   );
 
   const handleCreate = useCallback(() => {
-    if (!formData.name.trim()) {
+    const trimmedName = formData.name.trim();
+    
+    if (!trimmedName) {
       setFeedback({
         type: "error",
         message: getText(i18nKeys.STARBOARD__ERROR_NOTEBOOK_NAME_REQUIRED),
       });
       return;
     }
-    if (isDuplicateName(formData.name)) {
+    if (isDuplicateName(trimmedName)) {
       setShowErrorMessage(true);
       return;
     }
 
     if (formData.selectedTemplate) {
-      onCreateFromTemplate(formData.selectedTemplate, formData.name.trim());
+      onCreateFromTemplate(formData.selectedTemplate, trimmedName);
     } else {
       // Create blank notebook with custom name
-      onCreateBlank(formData.name.trim());
+      onCreateBlank(trimmedName);
     }
     onClose();
-  }, [formData, onCreateFromTemplate, onCreateBlank, onClose, setFeedback, isDuplicateName]);
+  }, [formData, onCreateFromTemplate, onCreateBlank, onClose, setFeedback, isDuplicateName, getText, i18nKeys]);
 
   const handleClose = useCallback(() => {
     onClose();
