@@ -21,3 +21,8 @@ export enum StrategusStudyType {
   LOCAL = "local",
   NETWORK = "network",
 }
+
+export type StrategusResultViewerTemplateData = {
+  filename: string;
+  content: string;
+};
