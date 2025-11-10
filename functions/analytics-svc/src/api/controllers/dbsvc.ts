@@ -1,5 +1,5 @@
 import { Logger } from "@alp/alp-base-utils";
-import * as config from "../../utils/DBSvcConfig";
+import { ANALYTICS_DB_DIALECTS } from "../../types";
 import * as dbUtils from "../../utils/DBSvcDBUtils";
 import { DBDAO } from "../../dao/DBDAO";
 import PortalServerAPI from "../PortalServerAPI";
@@ -9,32 +9,25 @@ const logger = Logger.CreateLogger("analytics-log");
 
 export async function getCDMVersion(req, res, next) {
     const datasetId = req.query.datasetId;
-
-    const { dialect, databaseCode, schemaName } =
-        await new PortalServerAPI().getStudy(
-            req.headers.authorization,
-            datasetId
-        );
+    const { dialect, schemaName } = await new PortalServerAPI().getStudy(
+        req.headers.authorization,
+        datasetId
+    );
 
     // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
-    // Always send 5.3.1 if dialect is bigquery
-    if (dialect === config.DB.BIGQUERY) {
+    // Always send hardcoded value from env if dialect is bigquery
+    if (dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
         return res.status(200).send(env.BIGQUERY_CDM_VERSION);
     }
 
     try {
-        let dbDao = new DBDAO(dialect, databaseCode);
-        const dbConnection = await dbDao.getDBConnectionByTenantPromise(
-            databaseCode,
-            req,
-            res
-        );
-
-        const cdmVersion = await dbDao.getCDMVersion(dbConnection, schemaName);
+        const { analyticsConnection } = req.dbConnections;
+        let dbDao = new DBDAO(analyticsConnection);
+        const cdmVersion = await dbDao.getCDMVersion(schemaName);
 
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =
-            dialect === config.DB.HANA
+            dialect === ANALYTICS_DB_DIALECTS.HANA
                 ? hanaKey
                 : dbUtils.convertNameToPg(hanaKey);
         let cdmVersionValue = cdmVersion[0][cdmVersionKey];
@@ -59,26 +52,22 @@ export async function getCDMVersion(req, res, next) {
 }
 
 export async function checkIfSchemaExists(req, res, next) {
-    const dialect: string = req.params.databaseType;
-    const tenant: string = req.params.tenant;
-    const schema: string = req.params.schemaName;
+    const dialect: string = req.query.dialect;
+    const databaseCode: string = req.query.databaseCode;
+    const schemaName: string = req.query.schemaName;
 
     // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
     // Always send true if dialect is bigquery
-    if (dialect === config.DB.BIGQUERY) {
+    if (dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
         return res.status(200).send(true);
     }
 
     try {
-        const dbDao = new DBDAO(dialect, tenant);
-        const dbConnection = await dbDao.getDBConnectionByTenantPromise(
-            tenant,
-            req,
-            res
-        );
+        const { analyticsConnection } = req.dbConnections;
+        const dbDao = new DBDAO(analyticsConnection);
         const schemaExists = await dbDao.checkIfSchemaExists(
-            dbConnection,
-            schema
+            databaseCode,
+            schemaName
         );
         res.status(200).send(schemaExists);
     } catch (err) {
@@ -93,23 +82,14 @@ export async function checkIfSchemaExists(req, res, next) {
 }
 
 export async function getSnapshotSchemaMetadata(req, res, next) {
-    const datasetId = req.query.datasetId;
-
-    const { dialect, databaseCode, schemaName } =
-        await new PortalServerAPI().getStudy(
-            req.headers.authorization,
-            datasetId
-        );
+    const { schema: schemaName, code: databaseName } =
+        req.dbCredentials.studyAnalyticsCredential;
 
     try {
-        let dbDao = new DBDAO(dialect, databaseCode);
-        const dbConnection = await dbDao.getDBConnectionByTenantPromise(
-            databaseCode,
-            req,
-            res
-        );
+        const { analyticsConnection } = req.dbConnections;
+        const dbDao = new DBDAO(analyticsConnection);
         const results = await dbDao.getSnapshotSchemaMetadata(
-            dbConnection,
+            databaseName,
             schemaName
         );
         res.status(200).json(results);

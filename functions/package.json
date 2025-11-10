@@ -131,6 +131,12 @@
           "env": "code-suggestion"
         },
         {
+          "source": "/mcp",
+          "function": "/mcp-server",
+          "imports": "/mcp-server/deno.json",
+          "env": "mcp-server"
+        },
+        {
           "source": "/data-mapping",
           "function": "/data-mapping",
           "imports": "/data-mapping/deno.json",
@@ -223,6 +229,11 @@
         {
           "source": "/jupyter",
           "service": "jupyter-gateway",
+          "rmsrc": true
+        },
+        {
+          "source": "/jupyter-viewer",
+          "service": "jupyter-gateway-viewer",
           "rmsrc": true
         },
         {
@@ -546,7 +557,7 @@
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
-          "GOOGLE_APPLICATION_CREDENTIALS": "/app/google-credentials.json",
+          "GOOGLE_APPLICATION_CREDENTIALS": "/tmp/google-credentials.json",
           "PREFECT__LOCAL_DEBUG": "${PREFECT__LOCAL_DEBUG:-false}",
           "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}",
           "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
@@ -556,6 +567,7 @@
           "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}"
         },
         "jupyter-gateway": {},
+        "jupyter-gateway-viewer": {},
         "mlflow": {},
         "strategus-analysis": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -570,7 +582,9 @@
           "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
-          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}"
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }
       },
       "roles": {
@@ -770,6 +784,7 @@
           "portal.dataset.release.list.read",
           "portal.config.read",
           "codesuggestion.tenantview.read",
+          "mcpchat.tenantview.read",
           "d2e.webapi.public"
         ],
         "RESEARCHER": [
@@ -795,6 +810,7 @@
           "gateway.terminology.concept.hierarchy.read",
           "gateway.terminology.fhir.read",
           "codesuggestion.read",
+          "mcpchat.read",
           "portal.userArtifact.bookmarks.read",
           "portal.userArtifact.bookmarks.write",
           "portal.userArtifact.bookmarks.delete",
@@ -990,7 +1006,7 @@
           ]
         },
         {
-          "path": "^/analytics-svc/api/services/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/exists",
+          "path": "^/analytics-svc/api/services/alpdb/schema/exists",
           "scopes": [
             "dbSvc.schema.exists.read"
           ],
@@ -2673,6 +2689,16 @@
           ]
         },
         {
+          "path": "^/mcp/chat",
+          "scopes": [
+            "mcpchat.read",
+            "mcpchat.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/data-mapping",
           "scopes": [
             "datamapping.post"
@@ -2727,6 +2753,12 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ]
+        },
+        {
+          "path": "^/strategus/template",
+          "scopes": [
+            "strategus.results.read"
           ]
         },
         {

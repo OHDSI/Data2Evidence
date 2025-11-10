@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { Box, TextArea, TextField } from "@portal/components";
+import { TextArea, TextField } from "@portal/components";
 import { useTranslation } from "../../../../contexts";
 
 interface FormData {
@@ -20,7 +20,7 @@ export const BigQueryForm: FC<BigQueryFormProps> = ({ data, onChange, renderExtr
 
   return (
     <>
-      <Box mb={4} display="flex" gap={4}>
+      <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>
         <TextField
           label={getText(i18nKeys.BIG_QUERY_FORM__PROJECT)}
           variant="standard"
@@ -35,20 +35,20 @@ export const BigQueryForm: FC<BigQueryFormProps> = ({ data, onChange, renderExtr
           value={data.name}
           onChange={(event) => onChange({ name: event.target?.value })}
         />
-      </Box>
+      </div>
       {renderExtra && (
-        <Box mb={4}>
-          <Box mb={2}>
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <b>{extraLabel || getText(i18nKeys.EDIT_DB_DETAILS_DIALOG__EXTRA)}</b>
-          </Box>
-          <Box>
+          </div>
+          <div>
             <TextArea
               rows={10}
               value={data.extra || ""}
               onChange={(event) => onChange({ extra: event.target.value })}
             />
-          </Box>
-        </Box>
+          </div>
+        </div>
       )}
     </>
   );
