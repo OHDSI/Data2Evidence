@@ -101,7 +101,7 @@ services:
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated # Volume for dynamically generated cdw-config duckdb file
-      - supabase-storage-data:/usr/src/supabase_storage # Volume for supabase storage data
+      - supabase-storage-data:/usr/src/data/storage # Volume for supabase storage data
     healthcheck:
       interval: 60s
       retries: 30
@@ -216,7 +216,7 @@ services:
       PG_STUDY_RESULTS_ADMIN_PASSWORD: ${PG_STUDY_RESULTS_ADMIN_PASSWORD}
       SUPABASE_STORAGE_JWT_TOKEN: ${SUPABASE_STORAGE_JWT_TOKEN}
       SUPABASE_STORAGE_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET}
-      STORAGE_FILE_BACKEND_PATH: /usr/src/supabase_storage
+      STORAGE_FILE_BACKEND_PATH: /usr/src/data/storage
       PERSEUS__FILES_MANAGER_HOST: trex
       isHttpTestRun: ${isHttpTestRun:-false}
       isTestEnv: ${isTestEnv:-false}
