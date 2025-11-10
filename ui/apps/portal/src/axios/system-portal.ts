@@ -15,6 +15,7 @@ import {
   DatasetAttributeConfig,
   FeatureInput,
   Config,
+  ViewerCode,
 } from "../types";
 import { ConfigTypes } from "../constant";
 const SYSTEM_PORTAL_URL = "system-portal/";
@@ -313,6 +314,24 @@ export class SystemPortal {
       baseURL: SYSTEM_PORTAL_URL,
       url: "git-dashboards",
       method: "GET",
+    });
+  }
+
+  public getDashboardCode(datasetId: string, type: string): Promise<ViewerCode> {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "dataset/dashboard-code",
+      method: "GET",
+      params: { datasetId, type },
+    });
+  }
+
+  public upsertDashboardCode(dashboardCode: ViewerCode) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "dataset/dashboard-code",
+      method: "PUT",
+      data: dashboardCode,
     });
   }
 }

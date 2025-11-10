@@ -9,6 +9,7 @@ import { Study, CloseDialogType, StudyDashboardTemplateData } from "../../../../
 import { useKernelViewer } from "../../../../hooks";
 import { api } from "../../../../axios/api";
 import "./ManageDashboardDialog.scss";
+import { set } from "lodash";
 
 interface ManageDashboardDialogProps {
   study?: Study;
@@ -20,9 +21,11 @@ const SafeEditor = Editor as any;
 
 const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, onClose }) => {
   loader.config({ monaco });
-  const [dashboardCode, setDashboardCode] = useState<string>("print('Hello, World!')");
+  const [dashboardCode, setDashboardCode] = useState<string>("");
+  const [defaultDashboardCode, setDefaultDashboardCode] = useState<string>("");
   const [templates, setTemplates] = useState<StudyDashboardTemplateData[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
+  const [loading, setLoading] = useState(false);
 
   const [viewerStatus, startViewer, stopViewer] = useKernelViewer(study?.id!, study?.id!);
 
@@ -31,9 +34,21 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
     setTemplates(templates);
   }, []);
 
+  const getDefaultDashboardCode = useCallback(async () => {
+    try {
+      const defaultCode = await api.systemPortal.getDashboardCode(study?.id!, "dashboard");
+      setDashboardCode(defaultCode.code);
+      setDefaultDashboardCode(defaultCode.code);
+    } catch (error) {
+      console.error("Failed to fetch default dashboard code:", error);
+      setDefaultDashboardCode("");
+    }
+  }, [study?.id]);
+
   useEffect(() => {
     getTemplates();
-  }, [getTemplates]);
+    getDefaultDashboardCode();
+  }, [getTemplates, getDefaultDashboardCode]);
 
   const handleStartViewer = useCallback(async () => {
     try {
@@ -58,6 +73,22 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
     [onClose]
   );
 
+  const handleSave = useCallback(async () => {
+    try {
+      setLoading(true);
+      await api.systemPortal.upsertDashboardCode({
+        datasetId: study?.id!,
+        code: dashboardCode,
+        type: "dashboard",
+      });
+      setSelectedTemplate("default");
+    } catch (error) {
+      console.error("Failed to save dashboard code:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [dashboardCode, study?.id]);
+
   return (
     <Dialog
       className="manage-dashboard-dialog"
@@ -81,7 +112,7 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
               const filename = event.target.value;
               setSelectedTemplate(filename);
               if (filename === "default") {
-                setDashboardCode("print('Hello, World!')");
+                setDashboardCode(defaultDashboardCode);
               } else {
                 const tmpl = templates.find((t) => t.filename === filename);
                 if (tmpl?.content) {
@@ -149,7 +180,7 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
 
       <div className="button-group-actions">
         <Button text="Cancel" onClick={() => handleClose("cancelled")} variant="outlined" block />
-        <Button text="Save" block />
+        <Button text="Save" onClick={handleSave} block loading={loading} />
       </div>
     </Dialog>
   );

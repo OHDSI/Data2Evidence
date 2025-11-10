@@ -345,7 +345,6 @@ export class DatasetCommandService {
       const isNewEntity = !datasetCode
 
       const datasetCodeEntity = this.addOwner(
-        datasetCode ||
         this.datasetCodeRepo.create({
           datasetId: dto.datasetId,
           type: dto.type,
