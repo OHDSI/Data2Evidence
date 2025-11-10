@@ -7,18 +7,6 @@ from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.schema import Table, Column
 from sqlalchemy.schema import CreateSchema, DropSchema, DropTable
 
-class DropTableCascade(DropTable):
-    def __init__(self, table, cascade=False):
-        super().__init__(table)
-        self.cascade = cascade
-
-@compiles(DropTableCascade)
-def _compile_drop_table_cascade(element, compiler, **kwargs):
-    sql_str = compiler.visit_drop_table(element)
-    if getattr(element, 'cascade', False):
-        sql_str += " CASCADE"
-    return sql_str
-
 from _shared_flow_utils.dao.daobase import DaoBase
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType
 
@@ -269,7 +257,15 @@ class SqlAlchemyDao(DaoBase):
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
-            connection.execute(DropTableCascade(table_obj, cascade=cascade))
+            
+            @compiles(DropTable, connection.dialect.name)
+            def _compile_drop_table(element, compiler, **kwargs):
+                sql_str = compiler.visit_drop_table(element)
+                if cascade:
+                    sql_str += " CASCADE"
+                return sql_str
+    
+            table_obj.drop(connection)
             connection.commit()
 
     def drop_schema(self, schema: str, cascade: bool = False):
