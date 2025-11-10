@@ -73,9 +73,14 @@ RUN apt-get update && \
     xvfb \
     libpq5 \
     python3-pip \
-    openjdk-17-jdk \
-    && apt-get clean
-
+    openjdk-17-jdk && \
+    wget -O packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends dotnet-sdk-6.0 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
@@ -132,5 +137,3 @@ ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
 
 USER docker
-
-ENTRYPOINT []
