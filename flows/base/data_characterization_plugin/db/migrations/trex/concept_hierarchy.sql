@@ -95,10 +95,10 @@ CREATE TABLE IF NOT EXISTS ${DATA_CHARACTERIZATION_SCHEMA}.heracles_analysis
 	analysis_type varchar(255)
 );
 
-CREATE TABLE IF NOT EXISTS ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_HEEL_results 
+CREATE TABLE IF NOT EXISTS ${DATA_CHARACTERIZATION_SCHEMA}.heracles_heel_results 
  (cohort_definition_id int, 
   analysis_id INT, 
-  HERACLES_HEEL_warning VARCHAR(255) 
+  heracles_heel_warning VARCHAR(255) 
 );
 
 --HINT PARTITION(cohort_definition_id int)

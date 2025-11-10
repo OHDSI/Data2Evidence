@@ -109,7 +109,7 @@ CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.heracles_analysis
 );
 
 
-CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_HEEL_results 
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.heracles_heel_results 
  (cohort_definition_id int, 
   analysis_id INT, 
   HERACLES_HEEL_warning VARCHAR(255) 
