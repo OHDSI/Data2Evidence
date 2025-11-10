@@ -352,7 +352,12 @@ export class DatasetCommandService {
         }),
         isNewEntity
       )
-    
+
+      // Add previous user to created entity if is not new entity
+      if (!isNewEntity) {
+        datasetCodeEntity.createdBy = datasetCode.createdBy
+      }
+      
       const result = await this.datasetCodeRepo.upsert(datasetCodeEntity, ['datasetId', 'type'])
       return result.identifiers[0].id
     }

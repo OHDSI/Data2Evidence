@@ -46,7 +46,7 @@ export const useKernelViewer = (id: string, selectedDatasetId: string = ""): Use
         throw error;
       }
     },
-    [selectedDatasetId]
+    [selectedDatasetId, id]
   );
 
   const stopViewer = useCallback(async () => {
@@ -59,7 +59,7 @@ export const useKernelViewer = (id: string, selectedDatasetId: string = ""): Use
       setViewerStatus("failed");
       throw error;
     }
-  }, [selectedDatasetId, id]);
+  }, [id]);
 
   return [viewerStatus, startViewer, stopViewer];
 };

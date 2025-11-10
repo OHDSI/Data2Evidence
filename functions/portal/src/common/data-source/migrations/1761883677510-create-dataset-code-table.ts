@@ -26,8 +26,5 @@ export class createDatasetCodeTable1761883677510 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE "portal"."dataset_code"`);
-    await queryRunner.query(
-      `ALTER TABLE "portal"."dataset_code" DROP CONSTRAINT "datasetId_type"`
-    );
   }
 }

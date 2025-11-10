@@ -74,7 +74,7 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       setFeedback({});
       typeof onClose === "function" && onClose(type);
     },
-    [onClose, setFeedback]
+    [onClose]
   );
 
   const handleSave = useCallback(async () => {
@@ -101,7 +101,7 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
     } finally {
       setLoading(false);
     }
-  }, [dashboardCode, study?.id]);
+  }, [dashboardCode, study?.id, getText]);
 
   return (
     <Dialog
@@ -150,14 +150,14 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
           <Button
             onClick={handleStartViewer}
             startIcon={
-              viewerStatus == "starting" ? (
+              viewerStatus === "starting" ? (
                 <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
               ) : (
                 <PlayCircleFilled className="study-card__action-icon" />
               )
             }
             text={
-              viewerStatus == "starting"
+              viewerStatus === "starting"
                 ? getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__STARTING_VIEWER)
                 : getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__START_VIEWER)
             }
@@ -167,14 +167,14 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
 
           <Button
             startIcon={
-              viewerStatus == "stopping" ? (
+              viewerStatus === "stopping" ? (
                 <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
               ) : (
                 <StopCircle className="study-card__action-icon" />
               )
             }
             text={
-              viewerStatus == "stopping"
+              viewerStatus === "stopping"
                 ? getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__STOPPING_VIEWER)
                 : getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__STOP_VIEWER)
             }
