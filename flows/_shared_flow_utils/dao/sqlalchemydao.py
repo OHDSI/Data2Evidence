@@ -258,12 +258,13 @@ class SqlAlchemyDao(DaoBase):
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
 
-            if cascade:
-                @compiles(DropTable, connection.dialect.name)
-                def _compile_drop_table(element, compiler, **kwargs):
-                    return compiler.visit_drop_table(element) + " CASCADE"
+            @compiles(DropTable, connection.dialect.name)
+            def _compile_drop_table(element, compiler, **kwargs):
+                sql_str = compiler.visit_drop_table(element)
+                if cascade:
+                    sql_str += " CASCADE"
+                return sql_str
     
-
             table_obj.drop(connection)
             connection.commit()
 
