@@ -5,11 +5,12 @@ import { PlayCircleFilled, StopCircle } from "@mui/icons-material";
 import { Button, Dialog, Select, MenuItem, InputLabel } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
-import { Study, CloseDialogType, StudyDashboardTemplateData } from "../../../../types";
+import { Study, CloseDialogType, StudyDashboardTemplateData, Feedback } from "../../../../types";
 import { useKernelViewer } from "../../../../hooks";
+import { useTranslation } from "../../../../contexts";
 import { api } from "../../../../axios/api";
 import "./ManageDashboardDialog.scss";
-import { set } from "lodash";
+import { i18nKeys } from "../../../../contexts/app-context/states";
 
 interface ManageDashboardDialogProps {
   study?: Study;
@@ -21,11 +22,13 @@ const SafeEditor = Editor as any;
 
 const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, onClose }) => {
   loader.config({ monaco });
+  const { getText } = useTranslation();
   const [dashboardCode, setDashboardCode] = useState<string>("");
   const [defaultDashboardCode, setDefaultDashboardCode] = useState<string>("");
   const [templates, setTemplates] = useState<StudyDashboardTemplateData[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback>({});
 
   const [viewerStatus, startViewer, stopViewer] = useKernelViewer(study?.id!, study?.id!);
 
@@ -68,12 +71,14 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
+      setFeedback({});
       typeof onClose === "function" && onClose(type);
     },
-    [onClose]
+    [onClose, setFeedback]
   );
 
   const handleSave = useCallback(async () => {
+    setFeedback({});
     try {
       setLoading(true);
       await api.systemPortal.upsertDashboardCode({
@@ -81,9 +86,18 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
         code: dashboardCode,
         type: "dashboard",
       });
+      setFeedback({
+        type: "success",
+        message: getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__SAVE_SUCCESS),
+        autoClose: 6000,
+      });
       setSelectedTemplate("default");
     } catch (error) {
       console.error("Failed to save dashboard code:", error);
+      setFeedback({
+        type: "error",
+        message: getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__SAVE_ERROR, [study?.id!]),
+      });
     } finally {
       setLoading(false);
     }
@@ -92,12 +106,13 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
   return (
     <Dialog
       className="manage-dashboard-dialog"
-      title={"Manage Dashboard"}
+      title={getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__TITLE, [study?.id!])}
       closable
       fullWidth
       maxWidth="lg"
       open={open}
       onClose={() => handleClose("cancelled")}
+      feedback={feedback}
     >
       <Divider />
 
@@ -141,7 +156,11 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
                 <PlayCircleFilled className="study-card__action-icon" />
               )
             }
-            text={viewerStatus == "starting" ? "Starting Viewer..." : "Start Viewer"}
+            text={
+              viewerStatus == "starting"
+                ? getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__STARTING_VIEWER)
+                : getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__START_VIEWER)
+            }
             disabled={viewerStatus !== "down" && viewerStatus !== "failed"}
             variant="text"
           />
@@ -154,13 +173,19 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
                 <StopCircle className="study-card__action-icon" />
               )
             }
-            text={viewerStatus == "stopping" ? "Stopping Viewer..." : "Stop Viewer"}
+            text={
+              viewerStatus == "stopping"
+                ? getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__STOPPING_VIEWER)
+                : getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__STOP_VIEWER)
+            }
             disabled={viewerStatus !== "up"}
             variant="text"
             onClick={handleStopViewer}
           />
         </div>
-        <div className="manage-dashboard-dialog__header__content">Viewer Status: {viewerStatus}</div>
+        <div className="manage-dashboard-dialog__header__content">
+          {getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__VIEWER_STATUS, [viewerStatus])}
+        </div>
       </div>
       <Divider />
 
@@ -179,8 +204,13 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       <Divider />
 
       <div className="button-group-actions">
-        <Button text="Cancel" onClick={() => handleClose("cancelled")} variant="outlined" block />
-        <Button text="Save" onClick={handleSave} block loading={loading} />
+        <Button
+          text={getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__CANCEL)}
+          onClick={() => handleClose("cancelled")}
+          variant="outlined"
+          block
+        />
+        <Button text={getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__SAVE)} onClick={handleSave} block loading={loading} />
       </div>
     </Dialog>
   );
