@@ -190,7 +190,7 @@ def execute_node_task(nodename, node_type, node, input, shared_variables, import
     else:
         match node_type:
             # Nodes that do not accept input
-            case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING | NodeType.CONCEPTMAPPING:
+            case NodeType.CSV | NodeType.DBREADER | NodeType.DATAMAPPING | NodeType.CONCEPTMAPPING | NodeType.FILE:
                 result = _node.task(task_run_context)
             case NodeType.PYTHON:
                 result = _node.task(input, shared_variables, importlibs, task_run_context)
