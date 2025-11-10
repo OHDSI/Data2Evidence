@@ -341,11 +341,9 @@ def drop_existing_achilles_tables(results_schema: str, dbdao):
                 f"Dropping existing Achilles table '{results_schema}.{table}'.."
             )
             dbdao.drop_table(results_schema, table, cascade=True)
-            logger.debug(
+            logger.info(
                 f"Successfully dropped existing Achilles table '{results_schema}.{table}'"
             )
-
-    logger.info(f"Successfully dropped existing Achilles tables in schema '{results_schema}': {tables}")
 
 
 @task(log_prints=True, task_run_name="execute_achilles_{achilles_params.schemaName}")
