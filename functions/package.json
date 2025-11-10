@@ -585,7 +585,9 @@
           "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
           "PG_SCHEMA": "strategus",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }
       },
       "roles": {
@@ -1875,6 +1877,24 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/upload/file",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/file",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
           "path": "^/system-portal/git-studies/studies",
           "scopes": [
             "portal.gitStudies.read"
@@ -2754,6 +2774,12 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ]
+        },
+        {
+          "path": "^/strategus/template",
+          "scopes": [
+            "strategus.results.read"
           ]
         },
         {

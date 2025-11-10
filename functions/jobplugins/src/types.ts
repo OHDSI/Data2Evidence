@@ -398,6 +398,12 @@ export interface CsvFileOperationResponse {
   bucket: string;
 }
 
+export interface FileOperationResponse {
+  status: "success";
+  filePath: string;
+  bucket: string;
+}
+
 export interface TemplateDto {
   id: string;
   name: string;
