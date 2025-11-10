@@ -340,7 +340,6 @@ def drop_existing_achilles_tables(results_schema: str, dbdao):
     for table in tables:
         # Check if table exists
         if dbdao.check_table_exists(results_schema, table):
-            logger = get_run_logger()
             logger.debug(
                 f"Dropping existing Achilles table '{results_schema}.{table}'.."
             )
