@@ -331,7 +331,30 @@ class CsvNode(Node):
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
+class GenericFileNode(Node):
+    """
+    Loads a file or a zip file and return its address.
+    """
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.file = _node["file"]
+        logging.info(f"GenericFileNode: file={self.file}")
 
+    def task(self, task_run_context) -> Result:
+        try:
+            node_id = self.id
+            filename = self.file
+            # since two parameter needed for SupabaseStorageAPI().get_file(self.id, self.file)
+            result = {
+                "node_id": node_id,
+                "filename": filename
+            }
+            return Result(False, result, self, task_run_context)
+
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+    
+        
 class DbWriter(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
@@ -625,6 +648,8 @@ def generate_node_task(nodename, node, nodetype):
     match nodetype:
         case NodeType.CSV:
             nodeobj = CsvNode(nodename, node)
+        case NodeType.FILE:
+            nodeobj = GenericFileNode(nodename, node)
         case NodeType.SQL:
             nodeobj = SqlNode(nodename, node)
         case NodeType.PYTHON:
