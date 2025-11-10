@@ -47,6 +47,14 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
     }
   }, [notebookTitle, renameNotebook, handleClose, notebooks]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleRename();
+    },
+    [handleRename]
+  );
+
   return (
     <Dialog
       className="edit-title-dialog"
@@ -55,28 +63,31 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
       open={open}
       onClose={() => handleClose("cancelled")}
     >
-      <div className="edit-title-dialog__content">
-        <TextField
-          id="standard-helperText"
-          label={getText(i18nKeys.EDIT_TITLE_DIALOG__NOTEBOOK_TITLE)}
-          defaultValue={notebookTitle}
-          variant="standard"
-          onChange={handleNotebookChanges}
-        />
-        {showErrorMessage && (
-          <div className="edit-title-dialog__content__error">{getText(i18nKeys.EDIT_TITLE_DIALOG__ALREADY_EXISTS)}</div>
-        )}
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.EDIT_TITLE_DIALOG__CANCEL)}
-          onClick={() => handleClose("cancelled")}
-          variant="outlined"
-          block
-        />
-        <Button text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)} onClick={handleRename} block />
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="edit-title-dialog__content">
+          <TextField
+            id="standard-helperText"
+            label={getText(i18nKeys.EDIT_TITLE_DIALOG__NOTEBOOK_TITLE)}
+            defaultValue={notebookTitle}
+            variant="standard"
+            onChange={handleNotebookChanges}
+            autoFocus
+          />
+          {showErrorMessage && (
+            <div className="edit-title-dialog__content__error">{getText(i18nKeys.EDIT_TITLE_DIALOG__ALREADY_EXISTS)}</div>
+          )}
+        </div>
+        <Divider />
+        <div className="button-group-actions">
+          <Button
+            text={getText(i18nKeys.EDIT_TITLE_DIALOG__CANCEL)}
+            onClick={() => handleClose("cancelled")}
+            variant="outlined"
+            block
+          />
+          <Button text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)} onClick={handleRename} block type="submit" />
+        </div>
+      </form>
     </Dialog>
   );
 };

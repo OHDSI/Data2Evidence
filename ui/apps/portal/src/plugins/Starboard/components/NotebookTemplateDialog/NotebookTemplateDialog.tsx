@@ -96,6 +96,14 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
     onClose();
   }, [onClose]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleCreate();
+    },
+    [handleCreate]
+  );
+
   return (
     <Dialog
       className="notebook-template-dialog"
@@ -105,7 +113,8 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       onClose={onClose}
       maxWidth="md"
     >
-      <div className="notebook-template-dialog__content">
+      <form onSubmit={handleSubmit}>
+        <div className="notebook-template-dialog__content">
         <div style={{ marginBottom: "32px" }}>
           <TextField
             label={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_LABEL)}
@@ -114,6 +123,7 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
             value={formData.name}
             onChange={(e: ChangeEvent<HTMLInputElement>) => onFormDataChange({ name: e.target.value })}
             placeholder={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_PLACEHOLDER)}
+            autoFocus
           />
           {showErrorMessage && (
             <div className="notebook-template-dialog__content__error">
@@ -141,17 +151,19 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
             ))}
           </Select>
         </div>
-      </div>
-      <div className="notebook-template-dialog__footer">
-        <div style={{ display: "flex", gap: "8px" }} className="notebook-template-dialog__footer-actions">
-          <Button text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CANCEL)} variant="outlined" onClick={handleClose} />
-          <Button
-            text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CREATE)}
-            onClick={handleCreate}
-            disabled={!formData.name.trim()}
-          />
         </div>
-      </div>
+        <div className="notebook-template-dialog__footer">
+          <div style={{ display: "flex", gap: "8px" }} className="notebook-template-dialog__footer-actions">
+            <Button text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CANCEL)} variant="outlined" onClick={handleClose} />
+            <Button
+              text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CREATE)}
+              onClick={handleCreate}
+              disabled={!formData.name.trim()}
+              type="submit"
+            />
+          </div>
+        </div>
+      </form>
     </Dialog>
   );
 };
