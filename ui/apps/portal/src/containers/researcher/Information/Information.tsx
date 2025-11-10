@@ -64,6 +64,9 @@ export const Information: FC = () => {
 
   const attributes = useMemo(() => dataset?.attributes || [], [dataset]);
   const tags = useMemo(() => dataset?.tags || [], [dataset]);
+
+  const canAccessResearcherInfo = useMemo(() => user.canAccessResearcherPortal, [user.canAccessResearcherPortal]);
+
   const isUserResearcher = useMemo(
     () => !!user.isDatasetResearcher?.[activeDatasetId],
     [user.isDatasetResearcher, activeDatasetId]
@@ -75,8 +78,8 @@ export const Information: FC = () => {
   }, [dataset?.type]);
 
   const showDatasetInfo = useMemo(
-    () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DatasetInfo),
-    [isUserResearcher, availableTabs]
+    () => (canAccessResearcherInfo || isUserResearcher) && availableTabs.includes(DatasetInfoTab.DatasetInfo),
+    [canAccessResearcherInfo, isUserResearcher, availableTabs]
   );
 
   const showDataQuality = useMemo(
