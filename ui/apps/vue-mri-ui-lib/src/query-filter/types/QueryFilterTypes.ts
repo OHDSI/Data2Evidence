@@ -208,12 +208,6 @@ export interface InclusionRuleStat {
   countSatisfying: number
 }
 
-export interface TreemapNode {
-  name: string
-  size?: number
-  children?: TreemapNode[]
-}
-
 export interface InclusionReportResponse {
   summary: Summary
   inclusionRuleStats: InclusionRuleStat[]
