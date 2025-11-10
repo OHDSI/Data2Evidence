@@ -227,6 +227,11 @@ export class DatasetQueryService {
 
   async getDatasetCode(datasetId: string, type: string) {
     const datasetCode = await this.datasetCodeRepo.getDatasetCode(datasetId, type)
+    
+    if (!datasetCode) {
+      throw new HttpException(404, `Dataset code of type ${type} for dataset id ${datasetId} not found`)
+    }
+    
     return {
       datasetId: datasetCode.datasetId,
       code: datasetCode.code,
