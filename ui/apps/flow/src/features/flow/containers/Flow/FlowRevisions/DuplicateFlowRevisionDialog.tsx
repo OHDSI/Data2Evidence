@@ -71,6 +71,14 @@ export const DuplicateFlowRevisionDialog: FC<
     typeof onClose === "function" && onClose();
   }, [onClose]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleDuplicate();
+    },
+    [handleDuplicate]
+  );
+
   return (
     <Dialog
       className="duplicate-flow-revision-dialog"
@@ -78,31 +86,35 @@ export const DuplicateFlowRevisionDialog: FC<
       onClose={handleClose}
       {...props}
     >
-      <div className="duplicate-flow-revision-dialog__content">
-        <Box mb={4}>
-          <TextInput
-            label="Name"
-            value={formData.name}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({ name: e.target.value })
-            }
-          />
-        </Box>
-      </div>
-      <div className="duplicate-flow-revision-dialog__footer">
-        <Box
-          display="flex"
-          gap={1}
-          className="duplicate-flow-revision-dialog__footer-actions"
-        >
-          <Button text="Cancel" variant="outlined" onClick={handleClose} />
-          <Button
-            text="Duplicate"
-            onClick={handleDuplicate}
-            loading={isLoading}
-          />
-        </Box>
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="duplicate-flow-revision-dialog__content">
+          <Box mb={4}>
+            <TextInput
+              label="Name"
+              value={formData.name}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                onFormDataChange({ name: e.target.value })
+              }
+              autoFocus
+            />
+          </Box>
+        </div>
+        <div className="duplicate-flow-revision-dialog__footer">
+          <Box
+            display="flex"
+            gap={1}
+            className="duplicate-flow-revision-dialog__footer-actions"
+          >
+            <Button text="Cancel" variant="outlined" onClick={handleClose} />
+            <Button
+              text="Duplicate"
+              onClick={handleDuplicate}
+              loading={isLoading}
+              type="submit"
+            />
+          </Box>
+        </div>
+      </form>
     </Dialog>
   );
 };

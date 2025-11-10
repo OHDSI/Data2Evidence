@@ -180,6 +180,14 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     typeof onClose === "function" && onClose();
   }, [onClose]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleSave();
+    },
+    [handleSave]
+  );
+
   return (
     <Dialog
       className="save-flow-dialog"
@@ -187,7 +195,8 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       onClose={handleClose}
       {...props}
     >
-      <div className="save-flow-dialog__content">
+      <form onSubmit={handleSubmit}>
+        <div className="save-flow-dialog__content">
         <Snackbar
           type="error"
           message={error?.message}
@@ -255,21 +264,23 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
             </Select>
           </Box>
         )}
-      </div>
-      <div className="save-flow-dialog__footer">
-        <Box
-          display="flex"
-          gap={1}
-          className="save-flow-dialog__footer-actions"
-        >
-          <Button text="Cancel" variant="outlined" onClick={handleClose} />
-          <Button
-            text={isNew ? "Create" : !!revisionId ? "Overwrite latest" : "Save"}
-            onClick={handleSave}
-            loading={isLoading || createFromTemplateLoading}
-          />
-        </Box>
-      </div>
+        </div>
+        <div className="save-flow-dialog__footer">
+          <Box
+            display="flex"
+            gap={1}
+            className="save-flow-dialog__footer-actions"
+          >
+            <Button text="Cancel" variant="outlined" onClick={handleClose} />
+            <Button
+              text={isNew ? "Create" : !!revisionId ? "Overwrite latest" : "Save"}
+              onClick={handleSave}
+              loading={isLoading || createFromTemplateLoading}
+              type="submit"
+            />
+          </Box>
+        </div>
+      </form>
     </Dialog>
   );
 };
