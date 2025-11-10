@@ -145,7 +145,7 @@ export class DataTransformationController {
       }
 
       const file = new File([req.file.buffer], req.file.originalname, {
-        type: req.file.mimetype || "text/csv",
+        type: req.file.mimetype || "application/octet-stream",
       });
 
       const portalAPI = new PortalServerAPI(authHeader);
@@ -153,7 +153,7 @@ export class DataTransformationController {
 
       return res.status(200).json(result);
     } catch (error) {
-      console.error("Error in uploadCsvFile: ", error);
+      console.error("Error in uploadFile: ", error);
       return res.status(500).json({ message: error.message });
     }
   }
@@ -237,62 +237,6 @@ export class DataTransformationController {
         nodeId as string,
         fileName as string
       );
-
-      return res.status(200).json(result);
-    } catch (error) {
-      console.error("Error in deleteCsvFile: ", error);
-      return res.status(500).json({ message: error.message });
-    }
-  }
-
-  private async uploadFile(req: Request, res: Response) {
-    try {
-      const { nodeId } = req.query;
-      const authHeader = req.headers["authorization"];
-
-      if (!authHeader) {
-        return res.status(401).json({ message: "Authorization header is required" });
-      }
-
-      if (!nodeId) {
-        return res.status(400).json({ message: "nodeId query parameter is required" });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({ message: "No file provided" });
-      }
-
-      const file = new File([req.file.buffer], req.file.originalname, {
-        type: req.file.mimetype || "application/octet-stream",
-      });
-
-      const portalAPI = new PortalServerAPI(authHeader);
-      const result = await portalAPI.uploadFile(nodeId as string, file);
-
-      return res.status(200).json(result);
-    } catch (error) {
-      console.error("Error in uploadFile: ", error);
-      return res.status(500).json({ message: error.message });
-    }
-  }
-
-  private async deleteFile(req: Request, res: Response) {
-    try {
-      const { nodeId, fileName } = req.query;
-      const authHeader = req.headers["authorization"];
-
-      if (!authHeader) {
-        return res.status(401).json({ message: "Authorization header is required" });
-      }
-
-      if (!nodeId || !fileName) {
-        return res.status(400).json({
-          message: "nodeId and fileName query parameters are required",
-        });
-      }
-
-      const portalAPI = new PortalServerAPI(authHeader);
-      const result = await portalAPI.deleteFile(nodeId as string, fileName as string);
 
       return res.status(200).json(result);
     } catch (error) {

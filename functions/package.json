@@ -1895,24 +1895,6 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/upload/file",
-          "scopes": [
-            "portal.supabaseStorage.write"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/system-portal/supabase-storage/delete/file",
-          "scopes": [
-            "portal.supabaseStorage.delete"
-          ],
-          "httpMethods": [
-            "DELETE"
-          ]
-        },
-        {
           "path": "^/system-portal/git-studies/studies",
           "scopes": [
             "portal.gitStudies.read"

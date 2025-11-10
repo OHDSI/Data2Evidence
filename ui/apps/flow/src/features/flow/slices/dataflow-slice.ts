@@ -205,14 +205,14 @@ export const dataflowApiSlice = createApi({
     }),
     uploadNodeFile: builder.mutation<
       { status: string },
-      { nodeId: string; file: File, file_type?: string}
+      { nodeId: string; file: File; file_type?: string }
     >({
       query: ({ nodeId, file }) => {
         const formData = new FormData();
         formData.append("file", file);
 
         return {
-          url: `dataflow/file/generic?nodeId=${nodeId}`,
+          url: `dataflow/node/file?nodeId=${nodeId}`,
           method: "POST",
           body: formData,
         };
@@ -221,10 +221,10 @@ export const dataflowApiSlice = createApi({
     }),
     deleteNodeFile: builder.mutation<
       { status: string },
-      { nodeId: string; fileName: string, file_type?: string}
+      { nodeId: string; fileName: string; file_type?: string }
     >({
       query: ({ nodeId, fileName }) => ({
-        url: `dataflow/file/generic?nodeId=${nodeId}&fileName=${fileName}`,
+        url: `dataflow/node/file?nodeId=${nodeId}&fileName=${fileName}`,
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],

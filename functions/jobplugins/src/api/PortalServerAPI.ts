@@ -85,16 +85,13 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/supabase-storage/list/file`;
       const options = this.createOptions("GET");
-      const result = await fetch(`${url}?nodeId=${nodeId}`, options);
-      if (!result.ok) {
-        const errorText = await result.text();
-        throw new Error(
-          `Error while listing files: ${result.status} - ${errorText}`
-        );
+      const result = await this.channel.get(`${url}?nodeId=${nodeId}`, options);
+      if (result.status !== 200) {
+        throw new Error(`Error while listing files for nodeId ${nodeId}`);
       }
-      return await result.json();
+      return result.json();
     } catch (error) {
-      console.error(`Error while listing files: ${error}`);
+      console.error(`Error while listing files for nodeId ${nodeId}: ${error}`);
       throw error;
     }
   }
@@ -117,15 +114,18 @@ export class PortalServerAPI {
         formData,
         options
       );
+
       if (result.status !== 200) {
         const errorText = result.statusText;
         throw new Error(
-          `Error while uploading file: ${result.status} - ${errorText}`
+          `Error while uploading file ${file.name} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
       return result.data;
     } catch (error) {
-      console.error(`Error while uploading file: ${error}`);
+      console.error(
+        `Error while uploading file ${file.name} for nodeId ${nodeId}: ${error}`
+      );
       throw error;
     }
   }
@@ -134,19 +134,22 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/supabase-storage/get/file`;
       const options = this.createOptions("GET");
-      const result = await fetch(
+      const result = await this.channel.get(
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
 
-      if (!result.ok) {
+      if (result.status !== 200) {
         const errorText = await result.text();
         throw new Error(
-          `Error while downloading file: ${result.status} - ${errorText}`
+          `Error while downloading file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
       return await result.json();
     } catch (error) {
+      console.error(
+        `Error while downloading file ${fileName} for nodeId ${nodeId}: ${error}`
+      );
       throw error;
     }
   }
@@ -165,46 +168,16 @@ export class PortalServerAPI {
       if (result.status !== 200) {
         const errorText = await result.statusText;
         throw new Error(
-          `Error while deleting file: ${result.status} - ${errorText}`
+          `Error while deleting file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
       return result.data;
     } catch (error) {
-      console.error(`Error while deleting file: ${error}`);
+      console.error(
+        `Error while deleting file ${fileName} for nodeId ${nodeId}: ${error}`
+      );
       throw error;
     }
-  }
-
-  async uploadFile(nodeId: string, file: File) {
-    const url = `${this.baseURL}/supabase-storage/upload/file`;
-    const formData = new FormData();
-    formData.append("file", file, file.name);
-
-    const res = await fetch(`${url}?nodeId=${nodeId}`, {
-      method: "POST",
-      headers: { Authorization: this.token },
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Upload failed: ${res.status} - ${err}`);
-    }
-    return await res.json();
-  }
-
-  async deleteFile(nodeId: string, fileName: string) {
-    const url = `${this.baseURL}/supabase-storage/delete/file`;
-    const res = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, {
-      method: "DELETE",
-      headers: { Authorization: this.token },
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Delete failed: ${res.status} - ${err}`);
-    }
-    return await res.json();
   }
 
   private createOptions(method: string, token = this.token): RequestInit {

@@ -43,7 +43,7 @@ export class SupabaseStorageController {
     const uploadedFile = {
       originalname: file.name,
       buffer: await file.arrayBuffer(),
-      mimetype: file.type || "text/csv",
+      mimetype: file.type || "application/octet-stream",
     };
 
     return await this.storageClient.upload(
@@ -109,46 +109,5 @@ export class SupabaseStorageController {
       "data-transformation",
       "data-transformation"
     );
-  }
-  
-  @Post("upload/file")
-  async uploadAnyFile(
-    @Query("nodeId") nodeId: string,
-    @Req() request: Request
-  ) {
-    if (!nodeId) {
-      throw new HttpException(400, "nodeId query parameter is required");
-    }
-
-    const formData = await request.formData();
-    const file = formData.get("file") as File;
-
-    if (!file) {
-      throw new HttpException(400, "No file provided");
-    }
-
-    const uploadedFile = {
-      originalname: file.name,
-      buffer: await file.arrayBuffer(),
-      mimetype: file.type || 'application/octet-stream',
-    };
-
-    return await this.storageClient.upload(nodeId, uploadedFile, "data-transformation", "data-transformation");
-  }
-
-  @Delete("delete/file")
-  async deleteAnyFile(
-    @Query("nodeId") nodeId: string,
-    @Query("fileName") fileName: string
-  ) {
-    if (!nodeId) {
-      throw new HttpException(400, "nodeId query parameter is required");
-    }
-
-    if (!fileName) {
-      throw new HttpException(400, "fileName query parameter is required");
-    }
-
-    return await this.storageClient.delete(nodeId, fileName, "data-transformation", "data-transformation");
   }
 }
