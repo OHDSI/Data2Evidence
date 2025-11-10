@@ -359,7 +359,7 @@ class TransformFhirDataNode(Node):
                     try:
                         data = json.load(f)
                     except Exception:
-                        continue
+                        raise Exception("Target omop structure definition file not found")
                     if data.get("url") == incoming_url:
                         omop_structureDefinition = data
         if omop_structureDefinition == {}:
