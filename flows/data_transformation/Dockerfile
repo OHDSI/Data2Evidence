@@ -79,11 +79,11 @@ RUN apt-get update && \
     npm \
     && apt-get clean
 
-RUN npm install @synanetics/fhir-transform@0.8.2
+COPY ./data_transformation/package.json /app/package.json
+RUN npm install
 
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
-
 
 # Create folders and set ownership
 RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data \

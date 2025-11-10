@@ -26,10 +26,10 @@ interface FormData extends TransformNodeData {}
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
+  dataframe: "",
+  id: "",
   structure_map: "",
   output_omop_data: "",
-  dataframe: "",
-  id:""
 };
 
 export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
@@ -52,17 +52,18 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
     const structureMapTemplate = node.data.id
       ? structureMapTemplates.find((map) => map.id === node.data.id)
       : undefined;
-    setFormData((prev) => ({
-      ...prev,
-      ...node.data,
-      structure_map:
-        typeof structureMapTemplate?.structureMap === "string"
-          ? structureMapTemplate?.structureMap
-          : JSON.stringify(structureMapTemplate?.structureMap ?? "") ?? node.data.structure_map ?? "",
-    }));
+
+    setFormData((prev) => {
+      // If form data already has structure_map, don't replace it
+      const existingStructureMap = prev.structure_map && prev.structure_map !== "" ? prev.structure_map : null;
+
+      return {
+        ...prev,
+        ...node.data,
+        structure_map: existingStructureMap || structureMapTemplate?.structureMap || node.data.structure_map || "",
+      };
+    });
   }, [node.data, structureMapTemplates]);
-
-
 
   const handleOk = useCallback(() => {
     if (!nodeState) return;
@@ -137,19 +138,19 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
             ))}
           </Select>
         </Box>
-        {/* <Box mb={4}>
-          <TextInput
-            label="Structure Map"
-            value={formData.structure_map}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              onFormDataChange({ structure_map: e.target.value })
-            }
-          />
-        </Box> */}
         <Editor
-          language="sql"
+          language="json"
           value={formData.structure_map}
-          onChange={(structure_map: string) => onFormDataChange({ structure_map })}
+          onChange={(value: string) => {
+            try {
+              // Try to parse and beautify JSON
+              const parsed = JSON.parse(value);
+              onFormDataChange({ structure_map: JSON.stringify(parsed, null, 2) });
+            } catch {
+              // If not valid JSON, store as-is
+              onFormDataChange({ structure_map: value });
+            }
+          }}
           label="Structure Map"
         /> 
     </NodeDrawer>

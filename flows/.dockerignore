@@ -10,7 +10,6 @@
 **/dist/
 **/*.log
 **/.python-version
-**/package.json
 .github
 .gitignore
 .npmignore
