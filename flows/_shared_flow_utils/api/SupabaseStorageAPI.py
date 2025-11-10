@@ -37,7 +37,6 @@ class SupabaseStorageAPI(BaseAPI):
         response.raise_for_status()
 
         return response.json()
-        
 
 
     def upload_file(self, node_id: str, file_path: Union[str, Path], content_type: str) -> dict:
@@ -64,20 +63,36 @@ class SupabaseStorageAPI(BaseAPI):
         response.raise_for_status()
 
         return response.json()
+    
 
-
-    def decode_csv_data(self, response_data: dict) -> str:
+    def download_file_to_path(self, node_id: str, filename: str, filepath: str = "/app/downloads") -> str:
+        response_data = self.get_file(node_id, filename)
         encoded_data = response_data.get("data", "")
         if not encoded_data:
             raise ValueError("No data found in response")
-        
-        try:
-            decoded_bytes = b64decode(encoded_data)
-            csv_content = decoded_bytes.decode('utf-8')
-            return csv_content
-        except Exception as e:
-            raise ValueError(f"Failed to decode CSV data: {str(e)}")
 
+        try:
+            file_bytes = b64decode(encoded_data)
+        except Exception as e:
+            raise ValueError(f"Failed to decode file data: {str(e)}")
+
+        file_path = str(Path(filepath) / filename)
+        ext = Path(filename).suffix.lower()
+
+        
+        if ext in {".csv", ".txt", ".json", ".md", ".log"}:
+            # Handle text files
+            try:
+                file_content = file_bytes.decode("utf-8")
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(file_content)
+            except Exception as e:
+                raise ValueError(f"Failed to decode text file '{filename}': {str(e)}")
+        else:
+            with open(file_path, "wb") as f:
+                f.write(file_bytes)
+
+        return file_path
 
     def get_file(self, node_id: str, filename: str) -> dict:
         request_url = f"{self.url}?nodeId={node_id}&fileName={filename}"

@@ -67,33 +67,33 @@ RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    wget \
-    xvfb \
-    libpq5 \
-    python3-pip \
-    openjdk-17-jdk && \
-    wget -O packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
+        git \
+        curl \
+        wget \
+        xvfb \
+        libpq5 \
+        python3-pip \
+        openjdk-17-jdk \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install Microsoft package and .NET SDK
+RUN wget -O packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
     dpkg -i packages-microsoft-prod.deb && \
     rm packages-microsoft-prod.deb && \
     apt-get update && \
     apt-get install -y --no-install-recommends dotnet-sdk-6.0 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
 
 # Create folders and set ownership
-RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data /app/whiterabbit \
+RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data /app/whiterabbit /app/downloads \
     && mkdir -p /app/whiterabbit/csvfiles \
-    && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/whiterabbit \
+    && chown -R docker:docker /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/whiterabbit /app/downloads \
     && chown docker:alp /app/duckdb_data \
-    && chmod -R 711 /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/whiterabbit /app/duckdb_data
-
-
+    && chmod -R 711 /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/whiterabbit /app/duckdb_data /app/downloads
 # Copy the entire WhiteRabbit distribution
 COPY --chown=docker:docker --from=whiterabbit_base /dist /app/whiterabbit/dist
 

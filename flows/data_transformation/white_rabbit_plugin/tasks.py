@@ -157,12 +157,7 @@ def download_files_from_supabase_storage(node_id: str, filenames: list[str], sup
     
     for filename in filenames:
         logger.debug(f"Downloading file: {filename}")
-        csv_content = supabase_api.decode_csv_data(supabase_api.get_file(node_id, filename))
-        csv_file_path = f"{WHITERABBIT_CSV_DIR}/{filename}"
-        
-        with open(csv_file_path, 'w', encoding='utf-8') as csvfile:
-            csvfile.write(csv_content)
-
+        supabase_api.download_file_to_path(node_id, filename, WHITERABBIT_CSV_DIR)
         downloaded_files.append(filename)
         logger.info(f"Successfully downloaded and saved file: {filename}")
 

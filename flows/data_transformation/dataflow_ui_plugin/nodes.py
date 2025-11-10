@@ -8,10 +8,9 @@ from rpy2 import robjects
 from functools import partial
 from jsonpath_ng import parse
 from asyncio import iscoroutine, run
-from pydantic import ValidationError
 
 import pandas as pd
-from pandas.api.types import is_scalar, is_list_like, is_dict_like
+from pandas.api.types import is_list_like, is_dict_like
 
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
@@ -312,10 +311,12 @@ class CsvNode(Node):
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
         supabase_api = SupabaseStorageAPI()
 
-        csv_content = supabase_api.decode_csv_data(supabase_api.get_file(self.id, self.file))
+        downloads_dir = "/app/downloads"
 
+        csv_file_path = supabase_api.download_file_to_path(self.id, self.file, downloads_dir)   
+        
         return convert_csv_to_dataframe(
-            csv_content, 
+            csv_file_path, 
             hasheader=self.hasheader, 
             delimiter=self.delimiter, 
             names=self.names, 
@@ -346,7 +347,7 @@ class GenericFileNode(Node):
         try:
             node_id = self.id
             filename = self.file
-            # since two parameter needed for SupabaseStorageAPI().get_file(self.id, self.file)
+
             result = {
                 "node_id": node_id,
                 "filename": filename
