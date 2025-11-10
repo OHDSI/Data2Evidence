@@ -89,7 +89,6 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       setFeedback({
         type: "success",
         message: getText(i18nKeys.MANAGE_DASHBOARD_DIALOG__SAVE_SUCCESS),
-        autoClose: 6000,
       });
       setSelectedTemplate("default");
     } catch (error) {
@@ -103,6 +102,10 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
     }
   }, [dashboardCode, study?.id, getText]);
 
+  const clearFeedback = useCallback(() => {
+    setFeedback({});
+  }, []);
+
   return (
     <Dialog
       className="manage-dashboard-dialog"
@@ -113,6 +116,7 @@ const ManageDashboardDialog: FC<ManageDashboardDialogProps> = ({ study, open, on
       open={open}
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
+      onCloseFeedback={clearFeedback}
     >
       <Divider />
 
