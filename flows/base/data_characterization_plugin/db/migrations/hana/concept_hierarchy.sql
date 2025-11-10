@@ -2696,23 +2696,23 @@ DROP TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#temp_period;
 
 
 
-CREATE INDEX HRD_IDX_COHORT_DEF_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS_DIST (cohort_definition_id);
+CREATE INDEX hrd_idx_cohort_def_id ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results_dist (cohort_definition_id);
 
-CREATE INDEX HRD_IDX_COHORT_ID_ANALYSIS_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS_DIST (cohort_definition_id, analysis_id);
+CREATE INDEX hrd_idx_cohort_id_analysis_id ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results_dist (cohort_definition_id, analysis_id);
 
-CREATE INDEX HRD_IDX_COHORT_DEF_ID_DT ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS_DIST (cohort_definition_id, last_update_time);
+CREATE INDEX hrd_idx_cohort_def_id_DT ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results_dist (cohort_definition_id, last_update_time);
 
-CREATE INDEX HRD_IDX_COHORT_ID_FIRST_RES ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS_DIST (cohort_definition_id, analysis_id, count_value, stratum_1);
+CREATE INDEX hrd_idx_cohort_id_first_res ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results_dist (cohort_definition_id, analysis_id, count_value, stratum_1);
 
-CREATE INDEX HR_IDX_COHORT_DEF_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS (cohort_definition_id);
+CREATE INDEX hrd_idx_cohort_def_id ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results (cohort_definition_id);
 
-CREATE INDEX HR_IDX_COHORT_ID_ANALYSIS_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS (cohort_definition_id, analysis_id);
+CREATE INDEX hrd_idx_cohort_id_analysis_id ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results (cohort_definition_id, analysis_id);
 
-CREATE INDEX HR_IDX_COHORT_DEF_ID_DT ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS (cohort_definition_id, last_update_time);
+CREATE INDEX hrd_idx_cohort_def_id_dt ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results (cohort_definition_id, last_update_time);
 
-CREATE INDEX HR_IDX_COHORT_ID_FIRST_RES ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS (cohort_definition_id, analysis_id, count_value, stratum_1);
+CREATE INDEX hrd_idx_cohort_id_first_res ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results (cohort_definition_id, analysis_id, count_value, stratum_1);
 
-CREATE INDEX HH_IDX_COHORT_ID_ANALYSIS_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_HEEL_RESULTS (cohort_definition_id, analysis_id);
+CREATE INDEX hrd_idx_cohort_id_analysis_id ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_results_results (cohort_definition_id, analysis_id);
 
 
 CREATE INDEX idx_heracles_periods_startdate ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_periods (period_start_date);
