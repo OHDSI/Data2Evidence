@@ -17,8 +17,9 @@ from .types import DCOptionsType, AchillesParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-from _shared_flow_utils.rutils import set_trex_env_var
+
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
+from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
 
 
 os.environ["plugin_name"] = "data_characterization_plugin"
@@ -239,11 +240,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 sqlOnly=achilles_params.sqlOnly,
                 numThreads=achilles_params.numThreads,
                 verboseMode=achilles_params.verboseMode,
-                excludeAnalysisIds=(
-                    robjects.StrVector([achilles_params.excludeAnalysisIds])
-                    if achilles_params.excludeAnalysisIds
-                    else robjects.NULL
-                ),
+                excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
             )
 
