@@ -8,6 +8,8 @@ export interface NavigationItem {
   visible?: boolean
   active?: boolean
   type?: 'app' | 'component'
+  alwaysActive?: boolean
+  customProps?: Record<string, unknown>
 }
 
 export interface InternalNavigationEvent {

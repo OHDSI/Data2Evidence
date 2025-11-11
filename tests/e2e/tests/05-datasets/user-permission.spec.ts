@@ -32,10 +32,10 @@ test(TEST_NAME, async ({ page }) => {
 
   // Go to Datasets
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.getByRole('button', { name: 'Select action' }).first()).toBeVisible()
+  await expect(page.getByText('Select action').first()).toBeVisible()
 
   // Manage dataset permissions
-  await page.getByRole('button', { name: 'Select action' }).first().click()
+  await page.getByText('Select action').first().click()
   await page.getByRole('option', { name: 'Permissions' }).click()
   await page.getByRole('tab', { name: 'Access' }).click()
 

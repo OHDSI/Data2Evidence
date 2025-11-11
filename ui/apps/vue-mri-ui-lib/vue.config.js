@@ -64,6 +64,9 @@ module.exports = {
       })
   },
   configureWebpack: {
+    entry: {
+      preload: path.resolve(__dirname, 'src/preload.ts'),
+    },
     resolve: {
       preferRelative: true,
       fallback: {
@@ -93,3 +96,4 @@ module.exports = {
     devtool: 'source-map',
   },
 }
+

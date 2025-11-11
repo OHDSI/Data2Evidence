@@ -38,6 +38,7 @@ import { getDuckdbDBConnection } from "./utils/DuckdbConnection";
 import { getCachedbDbConnections } from "./utils/cachedb/cachedb.ts";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
+import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
 dotenv.config();
 const log = console; //Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
@@ -176,19 +177,34 @@ const initRoutes = async (app: express.Application) => {
                     log.debug(`No user found in request:${err.stack}`);
                 }
 
-                // Skip getting db connections if request starts with "/analytics-svc/api/services/alpdb/", as these requests are all in dbsvc.ts and uses a separate implementation for database connection
+                let credentials;
+                // If request starts with "/analytics-svc/api/services/alpdb/schema/exists", as this request is seeking information where a dataset might not exist yet, get database credentials directly from incoming databaseCode
                 if (
                     req.originalUrl.startsWith(
-                        "/analytics-svc/api/services/alpdb/"
+                        "/analytics-svc/api/services/alpdb/schema/exists"
                     )
                 ) {
                     log.info(
-                        "Skipping middleware to get req.dbConnections for /alpdb/* requests"
+                        "Getting credentials from analyticsCredentials for /alpdb/schema/exists requests"
                     );
-                    return next();
+                    const databaseCode =
+                        parseValueForPrototypePollutingAssignment(
+                            req.query.databaseCode as string
+                        );
+                    if (req.query.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
+                        // Skip as bigquery currently always returns hardcoded value from env
+                        next();
+                    }
+                    credentials =
+                        req.dbCredentials.analyticsCredentials[databaseCode];
+                    if (!credentials) {
+                        throw new Error(
+                            `Database code:${databaseCode} not found in analyticsCredentials`
+                        );
+                    }
+                } else {
+                    credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
-
-                const credentials = req.dbCredentials.studyAnalyticsCredential;
 
                 // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
