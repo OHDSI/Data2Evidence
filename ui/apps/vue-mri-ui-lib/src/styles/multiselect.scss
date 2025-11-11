@@ -58,6 +58,10 @@
     .icon {
       transform: rotate(180deg);
     }
+
+    .multiselect__input {
+      width: auto !important;
+    }
   }
 
   .multiselect__content {
