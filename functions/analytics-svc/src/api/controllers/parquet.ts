@@ -10,7 +10,6 @@ const log = Logger.CreateLogger("analytics-log");
 export async function retrieveParquetStream(req: IMRIRequest, res) {
     try {
         const datasetId = req.params.datasetId;
-        validateIdentifierForSchemaOrTableName(req.params.tableName);
         const tableName = req.params.tableName;
         const studies = await new PortalServerAPI().getStudies(
             req.headers.authorization
@@ -64,6 +63,7 @@ export async function retrieveParquetStream(req: IMRIRequest, res) {
             });
         });
 
+        validateIdentifierForSchemaOrTableName(tableName);
         const searchString = `^(${schemaName}-${tableName}).*$`;
         const re = new RegExp(searchString);
         const match = objects.find((file) => re.test(file.name));
