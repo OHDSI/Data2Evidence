@@ -7,6 +7,7 @@ export type NodeType =
   | "rabbit_in_a_hat"
   | "concept_mapping_node"
   | "csv_node"
+  | "file_node"
   | "db_reader_node"
   | "db_writer_node"
   | "subflow"
