@@ -1185,9 +1185,9 @@ export class TransformationService {
       const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
       const safeTemplateId = sanitizeFileName(templateId);
       const fileName = `${safeTemplateId}.json`;
-      const subDirPath = path.join(repoDir, subDir);
-      const filePath = path.resolve(subDirPath, fileName);
-      if (!filePath.startsWith(subDirPath)) {
+      const resolvedSubDir = path.resolve(repoDir, subDir);
+      const filePath = path.resolve(resolvedSubDir, fileName);
+      if (!filePath.startsWith(resolvedSubDir + path.sep)) {
         this.logger.error(
           `Invalid template id detected: ${templateId} leads to path traversal`
         );
