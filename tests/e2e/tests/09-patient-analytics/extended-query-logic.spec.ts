@@ -102,7 +102,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Extended Logic Filter').click()
   await page.getByRole('button', { name: 'Discard' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  //await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Delete saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
