@@ -32,7 +32,7 @@ test(TEST_NAME, async ({ page }) => {
     `)
   await page.getByRole('button', { name: 'D2E' }).click()
   await page.getByText('All').click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('MALE')
+  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.getByText('MALE - MALE').click()
   await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`
     - text: MALE
@@ -65,7 +65,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText('Test cohort 1')
   await page.getByRole('button', { name: 'D2E' }).click()
   await page.getByText('All').click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('FEMALE')
+  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
   await page.getByText('FEMALE').click()
   await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`- text: Gender  Clear All FEMALE`)
   await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`
