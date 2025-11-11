@@ -1,6 +1,6 @@
 import { services } from "../env.ts";
 import { OpenIDAPI } from "./OpenIDAPI.ts";
-import { CsvFileOperationResponse } from "../types.ts";
+import { FileOperationResponse } from "../types.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
@@ -81,12 +81,24 @@ export class PortalServerAPI {
     }
   }
 
-  async uploadCsvFile(
-    nodeId: string,
-    file: File
-  ): Promise<CsvFileOperationResponse> {
+  async listFiles(nodeId: string): Promise<any> {
     try {
-      const url = `${this.baseURL}/supabase-storage/upload/csv`;
+      const url = `${this.baseURL}/supabase-storage/list/file`;
+      const options = this.createOptions("GET");
+      const result = await this.channel.get(`${url}?nodeId=${nodeId}`, options);
+      if (result.status !== 200) {
+        throw new Error(`Error while listing files for nodeId ${nodeId}`);
+      }
+      return result.json();
+    } catch (error) {
+      console.error(`Error while listing files for nodeId ${nodeId}: ${error}`);
+      throw error;
+    }
+  }
+
+  async uploadFile(nodeId: string, file: File): Promise<FileOperationResponse> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/upload/file`;
       const formData = new FormData();
       formData.append("file", file, file.name);
 
@@ -102,25 +114,52 @@ export class PortalServerAPI {
         formData,
         options
       );
+
       if (result.status !== 200) {
         const errorText = result.statusText;
         throw new Error(
-          `Error while uploading CSV file: ${result.status} - ${errorText}`
+          `Error while uploading file ${file.name} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
       return result.data;
     } catch (error) {
-      console.error(`Error while uploading CSV file: ${error}`);
+      console.error(
+        `Error while uploading file ${file.name} for nodeId ${nodeId}: ${error}`
+      );
       throw error;
     }
   }
 
-  async deleteCsvFile(
+  async getFile(nodeId: string, fileName: string): Promise<any> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/get/file`;
+      const options = this.createOptions("GET");
+      const result = await this.channel.get(
+        `${url}?nodeId=${nodeId}&fileName=${fileName}`,
+        options
+      );
+
+      if (result.status !== 200) {
+        const errorText = await result.text();
+        throw new Error(
+          `Error while downloading file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
+        );
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(
+        `Error while downloading file ${fileName} for nodeId ${nodeId}: ${error}`
+      );
+      throw error;
+    }
+  }
+
+  async deleteFile(
     nodeId: string,
     fileName: string
-  ): Promise<CsvFileOperationResponse> {
+  ): Promise<FileOperationResponse> {
     try {
-      const url = `${this.baseURL}/supabase-storage/delete/csv`;
+      const url = `${this.baseURL}/supabase-storage/delete/file`;
       const options = this.createOptions("DELETE");
       const result = this.channel.delete(
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
@@ -129,46 +168,16 @@ export class PortalServerAPI {
       if (result.status !== 200) {
         const errorText = await result.statusText;
         throw new Error(
-          `Error while deleting CSV file: ${result.status} - ${errorText}`
+          `Error while deleting file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
       return result.data;
     } catch (error) {
-      console.error(`Error while deleting CSV file: ${error}`);
+      console.error(
+        `Error while deleting file ${fileName} for nodeId ${nodeId}: ${error}`
+      );
       throw error;
     }
-  }
-
-  async uploadFile(nodeId: string, file: File) {
-    const url = `${this.baseURL}/supabase-storage/upload/file`;
-    const formData = new FormData();
-    formData.append("file", file, file.name);
-
-    const res = await fetch(`${url}?nodeId=${nodeId}`, {
-      method: "POST",
-      headers: { Authorization: this.token },
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Upload failed: ${res.status} - ${err}`);
-    }
-    return await res.json();
-  }
-
-  async deleteFile(nodeId: string, fileName: string) {
-    const url = `${this.baseURL}/supabase-storage/delete/file`;
-    const res = await fetch(`${url}?nodeId=${nodeId}&fileName=${fileName}`, {
-      method: "DELETE",
-      headers: { Authorization: this.token },
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(`Delete failed: ${res.status} - ${err}`);
-    }
-    return await res.json();
   }
 
   private createOptions(method: string, token = this.token): RequestInit {
