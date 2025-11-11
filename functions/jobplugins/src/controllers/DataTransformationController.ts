@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 import multer from "multer";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { TransformationService as DataTransformationService } from "../services/DataTransformationService.ts";
+import { GIT_REPO_CONSTANTS } from "../const.ts";
 
 const upload = multer({ storage: multer.memoryStorage() });
 export class DataTransformationController {
@@ -305,6 +306,16 @@ export class DataTransformationController {
     }
   }
 
+  private async getFhirStructureMapTemplates(req: Request, res: Response) {
+    try {
+      const result = await this.dataTransformationService.getFhirTemplates();
+      return res.status(200).send(result);
+    } catch (error) {
+      console.error("Error in getTemplates: ", error);
+      return res.status(500).send({ message: error.message });
+    }
+  }
+
   private async createCanvasFromTemplate(req: Request, res: Response) {
     try {
       const { templateId } = req.params;
@@ -333,6 +344,7 @@ export class DataTransformationController {
 
   private registerRoutes() {
     this.router.get("/templates", this.getTemplates.bind(this));
+    this.router.get("/templates/fhir", this.getFhirStructureMapTemplates.bind(this));
     this.router.post(
       "/templates/:templateId",
       this.createCanvasFromTemplate.bind(this)

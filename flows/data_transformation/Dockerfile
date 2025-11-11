@@ -48,7 +48,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=./data_transformation/pyproject.toml,target=pyproject.toml \
     uv sync --all-extras --frozen --no-install-project --no-dev --no-editable
 
-
 FROM rocker/r-ver:${R_VERSION} AS runtime
 
 
@@ -75,6 +74,8 @@ RUN apt-get update && \
     wget \
     libpq5 \
     python3-pip \
+    nodejs \
+    npm \
     openjdk-17-jdk && \
     wget -O packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
     dpkg -i packages-microsoft-prod.deb && \
@@ -84,9 +85,11 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+COPY ./data_transformation/package.json /app/package.json
+RUN npm install
+
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
-
 
 # Create folders and set ownership
 RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data /app/workdir \
@@ -134,5 +137,7 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
+
+USER docker
 
 ENTRYPOINT []
