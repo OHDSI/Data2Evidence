@@ -1184,7 +1184,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
-            rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
             databaseConnectorJarFolder = '/app/inst/drivers'
@@ -1195,6 +1194,8 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
                 database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
+            print(f"Connecting to database...: {dbdao.get_database_connector_connection_string()}")
+            print(f"Using schema: {db_credentials.adminUser} {db_credentials.adminPassword.get_secret_value()}")
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms=dbdao.get_database_connector_dbms_val(), 
                 connectionString=dbdao.get_database_connector_connection_string(),

@@ -11,7 +11,7 @@ from prefect.context import TaskRunContext, FlowRunContext, get_run_context
 from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
-from .flowutils import get_node_list, get_incoming_edges
+from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
@@ -20,6 +20,10 @@ from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
 @flow(log_prints=True)
 def strategus_plugin(json_graph, options):
     logger = Logger()
+
+    # TODO: use prefect variable instead of hardcoding
+    lockfile_location = "/app/renv.lock"
+    install_r_packages_from_lockfile(lockfile_location)
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
