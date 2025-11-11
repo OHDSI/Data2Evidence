@@ -5,6 +5,7 @@ import plotly from '@/lib/CustomPlotly'
 import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
 import { computeAttritionStats } from './computeAttritionStats'
 import { convertTreemapData } from './computeTreemapStats'
+import { shouldIncludeRect, calculateFilteredSummary } from './ruleSelectionFilter'
 import GroupButtons from '../GroupButtons.vue'
 import * as echarts from 'echarts'
 
@@ -23,6 +24,9 @@ const selectedVisualization = ref<'ATTRITION' | 'INTERSECT'>('ATTRITION')
 const inclusionReportPersonResponse = ref<InclusionReportResponse | null>(null)
 const inclusionReportEventResponse = ref<InclusionReportResponse | null>(null)
 const echartsTreemap = ref<any>(null)
+const allAnyOption = ref<'ALL' | 'ANY'>('ANY')
+const passedFailedOption = ref<'PASSED' | 'FAILED'>('PASSED')
+const checkedRulesIds = ref<number[]>([])
 
 const personEventOptions = [
   { value: 'PERSON', label: 'By person' },
@@ -32,6 +36,8 @@ const visualizationOptions = [
   { value: 'ATTRITION', label: 'Attrition' },
   { value: 'INTERSECT', label: 'Intersect' },
 ]
+
+const colors = ['#fabfb4', '#fcdab6', '#dedcab', '#cdd99e', '#53bead']
 
 const inclusionReportResponse = computed(() => {
   return selectedPersonEventView.value === 'PERSON'
@@ -47,6 +53,23 @@ const treemapData = computed(() => {
 
 const attritionStats = computed(() => {
   return computeAttritionStats(inclusionReportResponse.value)
+})
+
+const filteredSummary = computed(() => {
+  if (!treemapData.value || checkedRulesIds.value.length === 0) {
+    return { value: 0, percent: '0%' }
+  }
+
+  const { value } = calculateFilteredSummary(
+    treemapData.value,
+    checkedRulesIds.value,
+    allAnyOption.value,
+    passedFailedOption.value
+  )
+  const baseCount = inclusionReportResponse.value?.summary.baseCount || 1
+  const percent = ((value / baseCount) * 100).toFixed(2) + '%'
+
+  return { value, percent }
 })
 
 const shouldFetchInclusionReport = computed(() => {
@@ -85,7 +108,6 @@ const renderFunnelChart = () => {
 
   // Define thresholds and colors (hex codes from ohdsi atlas)
   const thresholds = [0.1, 0.25, 0.5, 0.75]
-  const colors = ['#fabfb4', '#fcdab6', '#dedcab', '#cdd99e', '#53bead']
 
   // Compute ratios relative to previous layer
   const ratios = funnelChartData.value.values.map((v, i) => (i === 0 ? 1 : v / funnelChartData.value.values[i - 1]))
@@ -127,17 +149,25 @@ const renderFunnelChart = () => {
   plotly.newPlot(funnelChartRef.value, [trace], layout, chartConfig)
 }
 
+const disposeTreemap = () => {
+  if (echartsTreemap.value) {
+    echartsTreemap.value.dispose()
+    echartsTreemap.value = null
+  }
+}
+
 const renderTreemap = async () => {
   if (!treemapChartRef.value || !treemapData.value) return
 
   await nextTick()
-  console.log('available width', treemapChartRef.value.parentElement, treemapChartRef.value.parentElement.clientWidth)
   avaiableWidth.value = treemapChartRef.value.clientWidth
-  // Initialize chart if not already done
-  if (!echartsTreemap.value) {
-    echartsTreemap.value = echarts.init(treemapChartRef.value)
-  }
-  console.log('treemapData.value', treemapData.value)
+  // Dispose and reinitialize chart
+  disposeTreemap()
+  echartsTreemap.value = echarts.init(treemapChartRef.value)
+
+  // Always apply filtering to treemap data
+  const dataToRender = applyFiltering(treemapData.value)
+
   const option: echarts.EChartsOption = {
     tooltip: {
       show: true,
@@ -146,17 +176,52 @@ const renderTreemap = async () => {
     series: [
       {
         type: 'treemap',
-        data: [treemapData.value],
+        data: [dataToRender],
         roam: 'move',
         nodeClick: false,
         breadcrumb: {
           show: false,
+        },
+        label: {
+          show: false,
+        },
+        itemStyle: {
+          borderColor: '#000',
+          borderWidth: 0.3,
         },
       },
     ],
   }
 
   echartsTreemap.value.setOption(option)
+}
+
+const applyFiltering = (node: any): any => {
+  const newNode: any = {
+    name: node.name,
+    value: node.value,
+    tooltip: node.tooltip,
+    itemStyle: node.itemStyle ? { ...node.itemStyle } : {},
+  }
+
+  // Process children first
+  if (node.children && node.children.length > 0) {
+    newNode.children = node.children.map((child: any) => applyFiltering(child))
+  }
+
+  // Check if this node should be included based on filtering criteria
+  // Only apply gray color to leaf nodes (nodes without children)
+  const isLeafNode = !node.children || node.children.length === 0
+  const isIncluded = shouldIncludeRect(node.name, checkedRulesIds.value, allAnyOption.value, passedFailedOption.value)
+
+  if (isLeafNode && !isIncluded) {
+    // Gray out excluded leaf nodes
+    newNode.itemStyle = {
+      color: '#CCCCCC', // gray out excluded rect in treemap
+    }
+  }
+
+  return newNode
 }
 
 function handlePersonEventViewChange(newView: 'PERSON' | 'EVENT') {
@@ -169,6 +234,45 @@ function handlePersonEventViewChange(newView: 'PERSON' | 'EVENT') {
 
 function handleVisualizationChange(newView: 'ATTRITION' | 'INTERSECT') {
   selectedVisualization.value = newView
+}
+
+function handleAllAnyChange(newValue: 'ALL' | 'ANY') {
+  allAnyOption.value = newValue
+}
+
+function handlePassedFailedChange(newValue: 'PASSED' | 'FAILED') {
+  passedFailedOption.value = newValue
+}
+
+function toggleRuleSelection(ruleId: number) {
+  const index = checkedRulesIds.value.indexOf(ruleId)
+  if (index > -1) {
+    checkedRulesIds.value.splice(index, 1)
+  } else {
+    checkedRulesIds.value.push(ruleId)
+  }
+}
+
+function isRuleChecked(ruleId: number): boolean {
+  return checkedRulesIds.value.includes(ruleId)
+}
+
+function areAllRulesChecked(): boolean {
+  if (!inclusionReportResponse.value || !inclusionReportResponse.value.inclusionRuleStats) return false
+  const totalRules = inclusionReportResponse.value.inclusionRuleStats.length
+  return checkedRulesIds.value.length === totalRules
+}
+
+function toggleAllRules() {
+  if (!inclusionReportResponse.value || !inclusionReportResponse.value.inclusionRuleStats) return
+
+  if (areAllRulesChecked()) {
+    // Uncheck all
+    checkedRulesIds.value = []
+  } else {
+    // Check all
+    checkedRulesIds.value = inclusionReportResponse.value.inclusionRuleStats.map(r => r.id)
+  }
 }
 
 const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: string) => {
@@ -235,12 +339,27 @@ onMounted(() => {
   }
 })
 
+watch(
+  () => inclusionReportResponse.value,
+  newResponse => {
+    if (newResponse && newResponse.inclusionRuleStats) {
+      // Initialize checkedRulesIds with all rule IDs
+      checkedRulesIds.value = newResponse.inclusionRuleStats.map(r => r.id)
+    }
+  }
+)
+
+onUnmounted(() => {
+  disposeTreemap()
+})
+
 // Watch for changes in sourceKey and decide whether to fetch inclusion report
 watch(
   () => props.sourceKey,
   newSourceKey => {
     inclusionReportPersonResponse.value = null
     inclusionReportEventResponse.value = null
+    disposeTreemap()
     if (shouldFetchInclusionReport.value) {
       fetchInclusionReport(props.cohortDefinitionId, newSourceKey)
     }
@@ -278,18 +397,16 @@ watch(
   { flush: 'post' } // Ensure <div ref="treemapChartRef"> exists
 )
 
-// Watch for visualization changes to resize treemap when switching to INTERSECT view
-// watch(
-//   () => selectedVisualization.value,
-//   async newViz => {
-//     if (newViz === 'INTERSECT' && echartsTreemap.value) {
-//       // Wait for the element to become visible
-//       await nextTick()
-//       // Resize the chart to fit the now-visible container
-//       echartsTreemap.value.resize()
-//     }
-//   }
-// )
+watch(
+  () => [allAnyOption.value, passedFailedOption.value, checkedRulesIds.value],
+  () => {
+    // Re-render treemap when filtering options change
+    if (selectedVisualization.value === 'INTERSECT' && treemapData.value) {
+      renderTreemap()
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <template>
@@ -335,11 +452,34 @@ watch(
         class="person-event-view-buttons"
       />
     </div>
+
+    <!-- Any/All Rule Selector (only show in INTERSECT view) -->
+    <div v-if="selectedVisualization === 'INTERSECT'" class="all-any-selector">
+      <span>Having</span>
+      <select v-model="allAnyOption" @change="handleAllAnyChange(allAnyOption)">
+        <option value="ALL">ALL</option>
+        <option value="ANY">ANY</option>
+      </select>
+      <span>of selected criteria</span>
+      <select v-model="passedFailedOption" @change="handlePassedFailedChange(passedFailedOption)">
+        <option value="PASSED">PASSED</option>
+        <option value="FAILED">FAILED</option>
+      </select>
+    </div>
+
     <div class="rules-section">
       <h4>Inclusion Rules</h4>
       <table class="rules-table">
         <thead>
           <tr>
+            <th v-if="selectedVisualization === 'INTERSECT'">
+              <input
+                type="checkbox"
+                :checked="areAllRulesChecked()"
+                @change="toggleAllRules()"
+                title="Select/unselect all rules"
+              />
+            </th>
             <th>ID</th>
             <th>Inclusion rule</th>
             <!-- count satisfying -->
@@ -363,6 +503,9 @@ watch(
         </tbody>
         <tbody v-else>
           <tr v-for="stat in inclusionReportResponse.inclusionRuleStats" :key="stat.id">
+            <td>
+              <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />
+            </td>
             <td>{{ stat.id + 1 }}</td>
             <td class="rule-name">{{ stat.name }}</td>
             <td>{{ stat.countSatisfying.toLocaleString() }}</td>
@@ -371,6 +514,10 @@ watch(
           </tr>
         </tbody>
       </table>
+
+      <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
+        <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
+      </div>
 
       <!-- Plotly Funnel chart -->
       <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
@@ -469,6 +616,52 @@ h4 {
   padding: 2rem;
   text-align: center;
   color: var(--color-neutral);
+}
+
+.all-any-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0.75rem;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+
+  span {
+    font-size: 0.95rem;
+    color: #333;
+  }
+
+  select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #999;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: #0066cc;
+      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+    }
+  }
+}
+
+.filtered-summary {
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #333;
+  }
 }
 
 .chart-section {
