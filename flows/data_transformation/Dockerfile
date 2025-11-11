@@ -74,9 +74,9 @@ RUN apt-get update && \
     wget \
     libpq5 \
     python3-pip \
-    openjdk-17-jdk \
     nodejs \
     npm \
+    openjdk-17-jdk && \
     wget -O packages-microsoft-prod.deb https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && \
     dpkg -i packages-microsoft-prod.deb && \
     rm packages-microsoft-prod.deb && \

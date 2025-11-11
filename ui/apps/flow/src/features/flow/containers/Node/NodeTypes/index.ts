@@ -154,6 +154,7 @@ test_exec <- function(myinput) {
     defaultData: {
       file: "",
       encoding: "utf-8"
+    },
   },
   db_reader_node: {
     title: "Database query",
