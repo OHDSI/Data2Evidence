@@ -1,0 +1,71 @@
+/* latin */
+@font-face {
+  font-display: swap;
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: 400;
+  src: local('GT-America'), local('GT-America-Regular'),
+    url(../fonts/gtamerica/GT-America-Standard-Regular.woff2) format('woff2');
+}
+/* latin */
+@font-face {
+  font-display: swap;
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: 500;
+  src: local('GT-America Medium'), local('GT-America-Medium'),
+    url(../fonts/gtamerica/GT-America-Standard-Medium.woff2) format('woff2');
+}
+/* latin */
+@font-face {
+  font-display: swap;
+  font-family: 'GT-America';
+  font-style: italic;
+  font-weight: 400;
+  src: local('GT-America Italic'), local('GT-America-Italic'),
+    url(../fonts/gtamerica/GT-America-Standard-Regular-Italic.woff2) format('woff2');
+}
+/* latin */
+@font-face {
+  font-family: 'GT-America';
+  font-style: italic;
+  font-weight: 500;
+  src: local('GT-America Medium Italic'), local('GT-America-Medium-Italic'),
+    url(../fonts/gtamerica/GT-America-Standard-Medium-Italic.woff2) format('woff2');
+}
+/* latin */
+@font-face {
+  font-display: swap;
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: 600;
+  src: local('GT-America Bold'), local('GT-America-Bold'),
+    url(../fonts/gtamerica/GT-America-Standard-Bold.woff2) format('woff2');
+}
+/* latin */
+@font-face {
+  font-display: swap;
+  font-family: 'GT-America';
+  font-style: italic;
+  font-weight: 600;
+  src: local('GT-America Bold Italic'), local('GT-America-Bold-Italic'),
+    url(../fonts/gtamerica/GT-America-Standard-Bold-Italic.woff2) format('woff2');
+}
+/* latin */
+@font-face {
+  font-display: swap;
+  font-family: 'GT-America';
+  font-style: normal;
+  font-weight: 300;
+  src: local('GT-America Thin'), local('GT-America-Thin'),
+    url(../fonts/gtamerica/GT-America-Standard-Thin.woff2) format('woff2');
+}
+/* latin */
+@font-face {
+  font-display: swap;
+  font-family: 'GT-America';
+  font-style: italic;
+  font-weight: 300;
+  src: local('GT-America Thin Italic'), local('GT-America-Thin-Italic'),
+    url(../fonts/gtamerica/GT-America-Standard-Thin-Italic.woff2) format('woff2');
+}

@@ -1,4 +1,4 @@
-import { Loader, MenuItem, Select, SelectChangeEvent, Box } from "@portal/components";
+import { Loader, MenuItem, Select, SelectChangeEvent } from "@portal/components";
 import { PageProps, SystemAdminPageMetadata } from "@portal/plugin";
 import React, { FC, useCallback, useEffect, useState } from "react";
 import Tab from "@mui/material/Tab";
@@ -31,6 +31,10 @@ export const StudyPage: FC<StudyPageProps> = () => {
   const [strategusStudies, setStrategusStudies] = useState<StrategusStudy[]>([]);
   const [loadingStudies, setLoadingStudies] = useState<boolean>(false);
   const [studiesError, setStudiesError] = useState<string | null>(null);
+
+  const handleUpdateStudyViewerCode = useCallback((studyId: string, newCode: string) => {
+    setStrategusStudies((prev) => prev.map((s) => (s.id === studyId ? { ...s, viewerCode: newCode } : s)));
+  }, []);
 
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);
@@ -139,12 +143,12 @@ export const StudyPage: FC<StudyPageProps> = () => {
         </div>
       </div>
 
-      <Box className="study-page__tabs">
+      <div className="study-page__tabs">
         <Tabs value={tabValue} onChange={handleTabSelectionChange}>
           <Tab label={getText(i18nKeys.STUDY_PAGE__TAB_LOCAL_STUDIES)} value={StudyLocationTab.Local} />
           <Tab label={getText(i18nKeys.STUDY_PAGE__TAB_NETWORK_STUDIES)} value={StudyLocationTab.Network} />
         </Tabs>
-      </Box>
+      </div>
 
       <div className="study-page__content">
         <h2 className="study-page__section-title">{getText(i18nKeys.STUDY_PAGE__STUDY_LIST)}</h2>
@@ -163,6 +167,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
                   study={study}
                   selectedDatasetId={selectedDatasetId}
                   setFeedback={setFeedback}
+                  onUpdateStudyViewerCode={handleUpdateStudyViewerCode}
                 />
               ))
             ) : (

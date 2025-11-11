@@ -1,6 +1,0 @@
-*
-!.gitignore
-!.npmignore
-!package.json
-!*_extension
-!build.sh
