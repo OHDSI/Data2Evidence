@@ -3,6 +3,7 @@ import bsCard from '@/lib/ui/bs-card.vue'
 import appTab from '@/lib/ui/app-tab.vue'
 import { ref, computed } from 'vue'
 import InclusionReport from './InclusionReport/index.vue'
+import Samples from './Samples.vue'
 
 const props = defineProps<{
   cohortDefinitionId: number
@@ -148,7 +149,12 @@ const hasCohortGenerated = computed(() => {
             :patient-count="patientCounts?.[activeDataset]"
           />
           <h3 v-if="selectedView === 'analysis'">Analysis</h3>
-          <h3 v-if="selectedView === 'sample'">Sample</h3>
+          <Samples
+            v-if="selectedView === 'sample'"
+            :cohort-definition-id="cohortDefinitionId"
+            :source-key="activeDataset"
+            :patient-count="patientCounts?.[activeDataset]"
+          />
         </div>
       </div>
     </section>
@@ -311,7 +317,6 @@ const hasCohortGenerated = computed(() => {
     }
   }
 }
-
 .patient-count-display {
   display: flex;
   align-items: center;
