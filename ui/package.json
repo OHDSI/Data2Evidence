@@ -56,6 +56,10 @@
           "target": "/resources/concept-sets"
         },
         {
+          "source": "/resources/notebook-ui",
+          "target": "/resources/notebook-ui"
+        },
+        {
           "source": "/resources/analysis-ui",
           "target": "/resources/analysis-ui"
         },
