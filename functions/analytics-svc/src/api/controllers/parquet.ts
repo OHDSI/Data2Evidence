@@ -10,7 +10,8 @@ const log = Logger.CreateLogger("analytics-log");
 export async function retrieveParquetStream(req: IMRIRequest, res) {
     try {
         const datasetId = req.params.datasetId;
-        const tableName = validateIdentifierForSchemaOrTableName(req.params.tableName);
+        validateIdentifierForSchemaOrTableName(req.params.tableName);
+        const tableName = req.params.tableName;
         const studies = await new PortalServerAPI().getStudies(
             req.headers.authorization
         );

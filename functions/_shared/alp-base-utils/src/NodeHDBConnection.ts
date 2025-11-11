@@ -25,7 +25,6 @@ export class NodeHDBConnection implements ConnectionInterface {
       validateIdentifierForSchemaOrTableName(vocabSchemaName);
       validateIdentifierForSchemaOrTableName(resultSchemaName);
     } catch (error) {
-      logger.error(`Invalid schema name: ${error.message}`);
       callback(new DBError(logger.error(error), error.message), null);
       return;
     }
