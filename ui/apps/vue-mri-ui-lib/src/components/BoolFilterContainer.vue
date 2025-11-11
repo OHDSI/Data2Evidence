@@ -7,18 +7,14 @@
       </button>
     </div>
     <div class="boolfiltercontainer-content" :class="{ tinted: showBackground }">
-      <draggable :list="nonBasicCards" @change="rearrangeFilterCard" :v-bind="dragOptions">
-        <transition-group>
-          <template v-for="id in nonBasicCards" :key="id">
-            <filtercard
-              :id="id"
-              :parentId="boolFilterContainerModel.id"
-              :showBooleanCondition="!isFirstFilterCard(id)"
-              @renameModalShown="renameModalShown"
-            ></filtercard>
-          </template>
-        </transition-group>
-      </draggable>
+      <template v-for="id in nonBasicCards" :key="id">
+        <filtercard
+          :id="id"
+          :parentId="boolFilterContainerModel.id"
+          :showBooleanCondition="!isFirstFilterCard(id)"
+          @renameModalShown="renameModalShown"
+        ></filtercard>
+      </template>
     </div>
   </div>
 </template>
@@ -27,7 +23,6 @@ import { mapActions, mapGetters } from 'vuex'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import FilterCard from './FilterCard.vue'
-import draggable from 'vuedraggable'
 
 export default {
   name: 'boolfiltercontainer',
@@ -133,7 +128,6 @@ export default {
   components: {
     appLabel,
     appIcon,
-    draggable,
     filtercard: FilterCard,
   },
 }
@@ -149,3 +143,4 @@ export default {
   font-weight: bold !important;
 }
 </style>
+
