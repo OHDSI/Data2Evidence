@@ -1,0 +1,16 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    "outDir": "./dist",
+    "module": "commonjs",
+    "noImplicitAny": false,
+    "esModuleInterop": true,
+    "removeComments": false,
+    "skipLibCheck": true,
+    "preserveConstEnums": true,
+    "target": "es2019",
+    "types": ["node"],
+    "sourceMap": true,
+    "declaration": true,
+  }
+}
