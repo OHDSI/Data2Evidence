@@ -1,6 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { fetchCohortData } from "../utils/utils";
+import {
+  fetchCohortData,
+  fetchCohortDefinitionTemplate,
+  fetchPhenotypeData,
+} from "../utils/utils";
 
 export const server = new McpServer({
   name: "example-server",
@@ -46,6 +50,94 @@ server.registerTool(
   }
 );
 
+server.registerTool(
+  "search_phenotype_library",
+  {
+    title: "Search OHDSI Phenotype Library",
+    description:
+      "Returns phenotypes from OHDSI Phenotype Library with IDs, names, and logic descriptions. Use this to find phenotype IDs that are relevant to the user's cohort requirements.",
+    inputSchema: {}, // No input - returns everything for LLM to analyze
+  },
+  async () => {
+    const phenotypeData = await fetchPhenotypeData();
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Retrieved phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.`,
+        },
+      ],
+      structuredContent: {
+        phenotypes: phenotypeData,
+      },
+    };
+  }
+);
+
+server.registerTool(
+  "fetch_templates_for_cohort_generation",
+  {
+    title: "Fetch Cohort Templates for Generation",
+    description:
+      "Fetches ATLAS cohort definition templates from OHDSI Phenotype Library for specified phenotype ID. The template serve as example to create a new cohort definition.",
+    inputSchema: {
+      phenotypeId: z
+        .number()
+        .describe("Most relevant phenotype ID to use as template examples"),
+      userCohortDescription: z
+        .string()
+        .describe("The user's description of the cohort they want to create"),
+    },
+  },
+  async ({ phenotypeId, userCohortDescription }) => {
+    // Fetch templates for the selected phenotype ID
+    const template = await fetchCohortDefinitionTemplate(phenotypeId);
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Fetched cohort definition template. User Requirements: ${userCohortDescription} Example Templates Retrieved: - Phenotype ID ${phenotypeId}. Continue to generate a complete ATLAS cohort definition JSON using these templates as structural examples.`,
+        },
+      ],
+      structuredContent: {
+        userRequirements: userCohortDescription,
+        exampleTemplates: template,
+      },
+    };
+  }
+);
+
+server.registerTool(
+  "generate_cohort_definition_instruction",
+  {
+    title: "Instruction to Generate Cohort Definition",
+    description:
+      "Instruction must follow when generate cohort definition for user description.",
+    inputSchema: {
+      cohortDescription: z
+        .string()
+        .describe("User's description of the desired cohort"),
+    },
+  },
+  async ({ cohortDescription }) => {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Create a standardized OHDSI ATLAS cohort definition for: "${cohortDescription}"
+          Workflow:
+            1. First, call search_phenotype_library to get the available phenotypes
+            2. Identify a most relevant phenotype ID based on names and logic descriptions
+            3. Call fetch_templates_for_cohort_generation with phenotype ID
+            4. Generate the final cohort definition JSON, adapting the templates to match cohort description.
+            Output: Complete, valid ATLAS cohort definition in JSON format. The final reply of cohort definition must without any additional explanation, and without generating new file.`,
+        },
+      ],
+    };
+  }
+);
+
+// Prompt to format and organize cohort ids and names list
 server.registerPrompt(
   "organize_cohort_ids_names_list",
   {
@@ -61,6 +153,37 @@ server.registerPrompt(
         content: {
           type: "text",
           text: `Please rank and organize the output after getting cohort id and names based on relevance of ${cohortInfo} with clinical practices. Output in format of cohortId: cohortName.`,
+        },
+      },
+    ],
+  })
+);
+
+server.registerPrompt(
+  "generate_cohort_definition",
+  {
+    title: "Generate ATLAS Cohort Definition",
+    description:
+      "Guides the complete workflow for generating an ATLAS cohort definition from a user description using OHDSI templates",
+    argsSchema: {
+      cohortDescription: z
+        .string()
+        .describe("User's natural language description of the desired cohort"),
+    },
+  },
+  ({ cohortDescription }) => ({
+    messages: [
+      {
+        role: "user",
+        content: {
+          type: "text",
+          text: `Create a standardized OHDSI ATLAS cohort definition for: "${cohortDescription}"
+          Workflow:
+            1. First, call search_phenotype_library to get the available phenotypes
+            2. Identify one most relevant phenotype IDs based on their names and logic descriptions
+            3. Call fetch_templates_for_cohort_generation with those IDs and my description
+            4. Generate the final cohort definition JSON, adapting the templates to match my specific requirements
+            Output the complete and valid ATLAS cohort definition in JSON format. Without any additional explanation. Without generating new file`,
         },
       },
     ],

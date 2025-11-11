@@ -19,6 +19,7 @@
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk",
     "@modelcontextprotocol/sdk/server/streamableHttp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/streamableHttp.js",
     "@modelcontextprotocol/sdk/server/mcp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/mcp.js",
-    "zod": "npm:zod@^3.25.76"
+    "zod": "npm:zod@^3.25.76",
+    "papaparse": "npm:papaparse@^5.4.1"
   }
 }
