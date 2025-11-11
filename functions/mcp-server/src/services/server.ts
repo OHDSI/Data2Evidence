@@ -158,34 +158,3 @@ server.registerPrompt(
     ],
   })
 );
-
-server.registerPrompt(
-  "generate_cohort_definition",
-  {
-    title: "Generate ATLAS Cohort Definition",
-    description:
-      "Guides the complete workflow for generating an ATLAS cohort definition from a user description using OHDSI templates",
-    argsSchema: {
-      cohortDescription: z
-        .string()
-        .describe("User's natural language description of the desired cohort"),
-    },
-  },
-  ({ cohortDescription }) => ({
-    messages: [
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text: `Create a standardized OHDSI ATLAS cohort definition for: "${cohortDescription}"
-          Workflow:
-            1. First, call search_phenotype_library to get the available phenotypes
-            2. Identify one most relevant phenotype IDs based on their names and logic descriptions
-            3. Call fetch_templates_for_cohort_generation with those IDs and my description
-            4. Generate the final cohort definition JSON, adapting the templates to match my specific requirements
-            Output the complete and valid ATLAS cohort definition in JSON format. Without any additional explanation. Without generating new file`,
-        },
-      },
-    ],
-  })
-);
