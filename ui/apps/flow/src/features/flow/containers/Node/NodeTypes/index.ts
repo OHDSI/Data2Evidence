@@ -2,6 +2,7 @@ import { ComponentType } from "react";
 import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
 import { CsvNode } from "./CsvNode/CsvNode";
+import { FileNode } from "./FileNode/FileNode";
 import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
@@ -27,6 +28,7 @@ export const NODE_TYPES: {
   rabbit_in_a_hat: DataMappingNode,
   concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
+  file_node: FileNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
@@ -45,11 +47,12 @@ export const NODE_COLORS: {
   rabbit_in_a_hat: "#999fcb",
   concept_mapping_node: "#999fcb",
   csv_node: "#999fcb",
+  file_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
   white_rabbit_node: "#999fcb",
-  transform_fhir_data_node: "#999fcb",
+  transform_fhir_data_node: "#999fcb"
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -142,7 +145,15 @@ test_exec <- function(myinput) {
     title: "Transform Data",
     description: "Transform data from one format to another using mapping rules.",
     tag: NodeTag.Experimental,
-    defaultData: {},
+    defaultData: {}
+   },
+  file_node: {
+    title: "Generic File",
+    description: "Read file of a general type from a path.",
+    tag: NodeTag.Experimental,
+    defaultData: {
+      file: "",
+      encoding: "utf-8"
   },
   db_reader_node: {
     title: "Database query",

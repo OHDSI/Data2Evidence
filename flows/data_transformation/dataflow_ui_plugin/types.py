@@ -6,6 +6,7 @@ from typing import Annotated, Union, Literal, Optional
 
 class NodeType(str, Enum):
     CSV = "csv_node"
+    FILE = "file_node"
     SQL = "sql_node"
     PYTHON = "python_node"
     PY2TABLE = "py2table_node"
