@@ -106,8 +106,17 @@
       data-sap-ui-resourceroots='{"sap.hc": "/sap/hc","hc.mri":"/hc/mri","hc.hph":"hc/hph"}'
     ></script>
 
+    <!-- Load preload script FIRST to ensure import-map-overrides is available -->
+    <% if (htmlWebpackPlugin.files.js.find(f => f.includes('preload'))) { %>
+      <% var preloadScript = htmlWebpackPlugin.files.js.find(f => f.includes('preload')); %>
+      <script type="text/javascript" src="<%= preloadScript %>"></script>
+    <% } %>
+
+    <!-- Then load remaining scripts -->
     <% for (key in htmlWebpackPlugin.files.js) { %>
-    <script type="text/javascript" src="<%= htmlWebpackPlugin.files.js[key] %>"></script>
+      <% if (!htmlWebpackPlugin.files.js[key].includes('preload')) { %>
+        <script type="text/javascript" src="<%= htmlWebpackPlugin.files.js[key] %>"></script>
+      <% } %>
     <% } %>
 
     <script type="text/javascript">
