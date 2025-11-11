@@ -90,4 +90,5 @@ export enum FlowRunState {
 
 export const GIT_REPO_CONSTANTS = {
   FLOWS_SUBDIR: "flows",
+  FHIR_SUBDIR: "fhir",
 };
