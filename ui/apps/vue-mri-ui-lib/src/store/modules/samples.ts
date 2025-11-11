@@ -1,7 +1,6 @@
 import axios from 'axios'
 import * as types from '../mutation-types'
 import { Sample } from '@/query-filter/types/SamplesTypes'
-import { get } from 'underscore'
 
 let cancel
 
@@ -198,6 +197,7 @@ export default {
   getters,
   actions,
   mutations,
+
 
 
 
