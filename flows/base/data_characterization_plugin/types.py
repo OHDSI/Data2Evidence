@@ -20,7 +20,7 @@ class DCOptionsType(BaseModel):
         """
         Whether to use the TREX sql connection or direct database connection.
         """
-        return True
+        return False
 
 
 class AchillesParams(DCOptionsType):
