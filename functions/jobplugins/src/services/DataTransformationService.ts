@@ -924,8 +924,9 @@ export class TransformationService {
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
     const safeTemplateId = sanitizeFileName(canvasId);
     const fileName = `${safeTemplateId}.json`;
-    const filePath = path.resolve(path.join(repoDir, subDir, fileName));
-    if (!filePath.startsWith(path.join(repoDir, subDir))) {
+    const resolvedSubDir = path.resolve(repoDir, subDir);
+    const filePath = path.resolve(resolvedSubDir, fileName);
+    if (!filePath.startsWith(resolvedSubDir + path.sep)) {
       this.logger.error(
         `Invalid canvas id detected: ${canvasId} leads to path traversal`
       );
