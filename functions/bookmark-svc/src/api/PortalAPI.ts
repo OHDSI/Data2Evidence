@@ -139,34 +139,22 @@ export class PortalAPI {
     }
   }
 
-  async getDatasetDialect(datasetId: string): Promise<string> {
+  async getDatasetPaConfigId(datasetId: string): Promise<string> {
     try {
       const options = await this.getRequestConfig()
       const url = `${this.baseURL}/dataset?datasetId=${encodeURIComponent(datasetId)}`
       const result = await this.portalapi.get(url, options)
-      return result.data.dialect
-    } catch (error) {
-      console.error(error)
-      this.logger.error(`Error while dialect from datasetId:${datasetId}`)
-      throw new Error(`Error while dialect from datasetId:${datasetId}`)
-    }
-  }
 
-  async getDatasetViaSystemAdmin(datasetId: string) {
-    try {
-      const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/dataset/list/systemadmin`
-      const result = await this.portalapi.get(url, options)
-      const dataset = result.data.find(e => e.id === datasetId)
-
-      if (!dataset) {
-        throw new Error(`Unable to find dataset with datasetId:${datasetId}`)
+      const paConfigId = result.data.paConfigId
+      if (!paConfigId) {
+        throw new Error(`paConfigId does not exist for dataset with datasetId:${datasetId}`)
       }
-      return dataset
+
+      return paConfigId
     } catch (error) {
       console.error(error)
-      this.logger.error(`Error getting dataset with datasetId:${datasetId}`)
-      throw new Error(`Error getting dataset with datasetId:${datasetId}`)
+      this.logger.error(`Error while paConfigId from datasetId:${datasetId}`)
+      throw new Error(`Error while paConfigId from datasetId:${datasetId}`)
     }
   }
 }

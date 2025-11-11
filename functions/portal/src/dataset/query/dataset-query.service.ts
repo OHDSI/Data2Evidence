@@ -151,6 +151,7 @@ export class DatasetQueryService {
       'dataset.resultSchemaName',
       'dataset.dataModel',
       'dataset.plugin',
+      'dataset.paConfigId',
       'datasetDetail.name',
       'datasetDetail.description',
       'datasetDetail.summary',
@@ -172,7 +173,7 @@ export class DatasetQueryService {
   private getDatasetsColumns(role?: string) {
     const baseColumns = [...this.getDatasetBaseColumns(), 'dataset.tokenDatasetCode']
     if (role === 'systemAdmin') {
-      return baseColumns.concat(['dataset.paConfigId', 'dataset.type', 'dataset.visibilityStatus', 'dataset.fhir_project_id'])
+      return baseColumns.concat(['dataset.type', 'dataset.visibilityStatus', 'dataset.fhir_project_id'])
     }
     return baseColumns
   }
