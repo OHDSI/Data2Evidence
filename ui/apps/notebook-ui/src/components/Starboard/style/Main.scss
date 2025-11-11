@@ -1,0 +1,14 @@
+.notebook-main {
+  text-align: center;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .button-import {
+    background-color: transparent;
+    color: var(--color-primary);
+    margin-left: 3px;
+  }
+}
+
