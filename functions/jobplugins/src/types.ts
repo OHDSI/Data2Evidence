@@ -405,3 +405,10 @@ export interface TemplateDto {
   nodes: IReactFlowNode[];
   edges: IReactFlowEdge[];
 }
+
+export interface TemplateFhirDto {
+  id: string;
+  name: string;
+  description: string;
+  structureMap: string;
+}

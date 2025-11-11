@@ -48,7 +48,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=./data_transformation/pyproject.toml,target=pyproject.toml \
     uv sync --all-extras --frozen --no-install-project --no-dev --no-editable
 
-
 FROM rocker/r-ver:${R_VERSION} AS runtime
 
 
@@ -71,6 +70,8 @@ RUN apt-get update && \
         curl \
         wget \
         xvfb \
+        nodejs \
+        npm \
         libpq5 \
         python3-pip \
         openjdk-17-jdk \
@@ -84,9 +85,11 @@ RUN wget -O packages-microsoft-prod.deb https://packages.microsoft.com/config/de
     apt-get install -y --no-install-recommends dotnet-sdk-6.0 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+COPY ./data_transformation/package.json /app/package.json
+RUN npm install
+
 COPY --chown=docker:docker  ./__init__.py /app/__init__.py
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
-
 
 # Create folders and set ownership
 RUN mkdir -p /app/synpuf1k /app/vocab /app/data_load /app/mimic_omop /app/duckdb_data /app/whiterabbit /app/downloads \
