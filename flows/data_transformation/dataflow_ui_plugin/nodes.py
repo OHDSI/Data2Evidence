@@ -11,10 +11,9 @@ from rpy2 import robjects
 from functools import partial
 from jsonpath_ng import parse
 from asyncio import iscoroutine, run
-from pydantic import ValidationError
 
 import pandas as pd
-from pandas.api.types import is_scalar, is_list_like, is_dict_like
+from pandas.api.types import is_list_like, is_dict_like
 
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
@@ -307,16 +306,20 @@ class CsvNode(Node):
         self.file = _node["file"]
         self.delimiter = _node["delimiter"]
 
-        self.names = _node["columns"] # Todo: Not inside payload from backend
-        self.hasheader = _node["hasheader"] # Todo: Not inside payload from backend
-        self.encoding = _node.get("encoding", "utf8") # Todo: Not inside payload from backend
+        self.names = _node["columns"]
+        self.hasheader = _node["hasheader"]
+        self.encoding = _node.get("encoding", "utf8")
 
 
     def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        csv_response = SupabaseStorageAPI().get_csv_file(self.id, self.file)
+        supabase_api = SupabaseStorageAPI()
 
+        downloads_dir = "/app/downloads"
+
+        csv_file_path = supabase_api.download_file_to_path(self.id, self.file, downloads_dir)   
+        
         return convert_csv_to_dataframe(
-            csv_response, 
+            csv_file_path, 
             hasheader=self.hasheader, 
             delimiter=self.delimiter, 
             names=self.names, 
@@ -470,7 +473,7 @@ class GenericFileNode(Node):
         try:
             node_id = self.id
             filename = self.file
-            # since two parameter needed for SupabaseStorageAPI().get_file(self.id, self.file)
+
             result = {
                 "node_id": node_id,
                 "filename": filename
