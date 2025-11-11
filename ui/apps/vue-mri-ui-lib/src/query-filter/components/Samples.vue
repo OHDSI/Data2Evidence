@@ -83,7 +83,7 @@
         <div class="sample-dialog">
           <form @submit.prevent="createSample" class="sample-form">
             <div class="form-group">
-              <label for="sampleName" class="form-label"> Name <span class="required">*</span> </label>
+              <label for="sampleName" class="form-label">Name<span class="required">*</span> </label>
               <input
                 type="text"
                 id="sampleName"
@@ -98,7 +98,7 @@
             </div>
 
             <div class="form-group">
-              <label for="sampleSize" class="form-label"> Size <span class="required">*</span> </label>
+              <label for="sampleSize" class="form-label">Size<span class="required">*</span> </label>
               <input
                 type="number"
                 id="sampleSize"
