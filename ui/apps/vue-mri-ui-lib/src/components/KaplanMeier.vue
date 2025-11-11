@@ -150,7 +150,6 @@
 
 <script lang="ts">
 import d3 from 'd3'
-import VueSlider from 'vue-slider-component'
 import { mapActions, mapGetters } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
@@ -1564,7 +1563,6 @@ export default {
     },
   },
   components: {
-    VueSlider,
     ChartPopover,
     KMStartEventMenu,
     KMEndEventMenu,

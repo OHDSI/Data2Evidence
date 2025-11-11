@@ -34,7 +34,7 @@
                   :options="originSelectionOptions"
                   track-by="key"
                   label="text"
-                  @input="e => updateOriginSelection(e, index)"
+                  @update:modelValue="e => updateOriginSelection(e, index)"
                   selectLabel
                   selectedLabel
                   deselectLabel
@@ -72,7 +72,7 @@
                     :options="targetSelectionOptions"
                     track-by="key"
                     label="text"
-                    @input="e => updateTargetSelection(e, index)"
+                    @update:modelValue="e => updateTargetSelection(e, index)"
                     selectLabel
                     selectedLabel
                     deselectLabel
@@ -93,7 +93,7 @@
                   :placeholder="getText('MRI_PA_FILTERCARD_SELECTION_NONE')"
                   :searchable="false"
                   :options="getList"
-                  @input="e => updateTargetInteraction(e, index)"
+                  @update:modelValue="e => updateTargetInteraction(e, index)"
                   track-by="key"
                   label="text"
                   selectLabel
