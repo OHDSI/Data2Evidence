@@ -6,7 +6,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   // Sign in
-  await page.goto(`https://localhost:4000/portal`)
+  await page.goto(`/portal`)
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -32,10 +32,9 @@ test(TEST_NAME, async ({ page }) => {
 
   // Go to Datasets
   await page.getByRole('link', { name: 'Datasets' }).click()
-  const demoRow = await page.locator('tr', { hasText: 'Demo dataset' }).first()
+  await expect(page.getByText('Select action').first()).toBeVisible()
 
   // Manage dataset permissions
-  await demoRow.getByText('Select action').click()
   await page.getByText('Select action').first().click()
   await page.getByRole('option', { name: 'Permissions' }).click()
   await page.getByRole('tab', { name: 'Access' }).click()
