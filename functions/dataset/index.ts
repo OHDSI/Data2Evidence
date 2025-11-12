@@ -32,7 +32,7 @@ export class DatasetRouter {
 
   private flowSnapshotType(snapshotLocation: string) {
     if (snapshotLocation === "DB") {
-      return "create_snapshot";
+      return "create_datamart_cache";
     } else {
       return "create_parquet_snapshot";
     }
@@ -281,8 +281,9 @@ export class DatasetRouter {
         dataModel,
         type,
       } = req.body;
-      const { dialect, databaseCode, schemaName, resultSchemaName } =
-        await portalAPI.getDataset(sourceStudyId);
+      const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
+        sourceStudyId
+      );
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
@@ -307,6 +308,9 @@ export class DatasetRouter {
           type,
         };
 
+        this.logger.info("Copying dataset in Portal");
+        const newDataset = await portalAPI.copyDataset(snapshotRequest);
+
         // Copy schema if it exist
         if (sourceHasSchema) {
           this.logger.info(
@@ -316,20 +320,10 @@ export class DatasetRouter {
           );
 
           try {
-            const options = {
-              options: {
-                flow_action_type: this.flowSnapshotType(snapshotLocation),
-                database_code: databaseCode,
-                schema_name: parsedNewSchemaName,
-                source_schema: schemaName,
-                results_schema: resultSchemaName,
-                dialect: dialect,
-                snapshot_copy_config: snapshotCopyConfig,
-              },
-            };
-
-            await jobpluginsAPI.createDatamartFlowRun(
-              options,
+            await jobpluginsAPI.createDatamartCacheFlowRun(
+              sourceStudyId,
+              newDataset.id,
+              snapshotCopyConfig,
               dataModelInfo.flowId,
               `datamart-snapshot-${schemaName}`
             );
@@ -339,14 +333,12 @@ export class DatasetRouter {
           }
         }
 
-        this.logger.info("Copying dataset in Portal");
-        const newDataset = await portalAPI.copyDataset(snapshotRequest);
         return res.status(200).json(newDataset);
       } catch (error) {
         this.logger.error(
           `Error when copying dataset: ${JSON.stringify(error)}`
         );
-        res.status(500).send("Error when copying dataset");
+        res.status(500).send(`Error when copying dataset: ${error}`);
       }
     });
 

@@ -340,6 +340,7 @@ export interface ICreateCachedbFileFlowRunDto {
   schemaName: string;
   snapshotSchemaName?: string;
   resultsSchemaName?: string;
+  snapshotCopyConfig?: object;
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {
