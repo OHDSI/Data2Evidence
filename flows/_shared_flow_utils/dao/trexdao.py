@@ -153,9 +153,14 @@ class TrexDao(DaoBase):
         except psycopg2.Error as e:
             raise
 
-    def list_tables(self) -> bool:
+    def list_tables(self, schema: str) -> bool:
         try:
-            sql_query = pg_sql.SQL("""SELECT * FROM information_schema.tables;""")
+            sql_query = pg_sql.SQL("""
+                                    SELECT table_name FROM information_schema.tables
+                                    WHERE table_schema = {schema};""")\
+                                .format(
+                                    schema = pg_sql.Literal(schema)
+                                )
                 
             result = self.execute_sql(sql_query, fetch=True)
             return result
