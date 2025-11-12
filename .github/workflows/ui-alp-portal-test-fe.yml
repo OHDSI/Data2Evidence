@@ -50,7 +50,7 @@ jobs:
         with:
           filters: |
             portal_fe_changed:
-              - 'apps/portal/**'
+              - './ui/apps/portal/**'
               - '.github/workflows/ui-alp-portal-test-fe.yml'
 
       - name: Setup node if files have changed
