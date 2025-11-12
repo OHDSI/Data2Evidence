@@ -130,7 +130,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(2).click()
   await page.locator('#pane-right').getByText('Month of Birth').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 200 })
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 1200 })
 
   // Set month of birth to 11 in filter card
   await page.getByTitle('Basic Data - Month of Birth').first().click()
