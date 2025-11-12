@@ -331,7 +331,14 @@ export class TransformationService {
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
     const safeCanvasId = sanitizeFileName(canvasId);
     const fileName = `${safeCanvasId}.json`; // Each flow gets its own file
-    const filePath = path.join(repoDir, subDir, fileName);
+    const resolvedSubDir = path.resolve(repoDir, subDir);
+    const filePath = path.resolve(resolvedSubDir, fileName);
+    if (!filePath.startsWith(resolvedSubDir + path.sep)) {
+      this.logger.error(
+        `Invalid canvas id detected: ${canvasId} leads to path traversal`
+      );
+      throw new Error('Invalid canvas id: path traversal attempt detected');
+    }
     const gitConfigValue = JSON.parse(gitConfig.value);
     const defaultBranch = gitConfigValue.branch;
     const gitRemoteUrl = gitConfigValue.repoUrl;
@@ -579,7 +586,11 @@ export class TransformationService {
       const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
       const safeCanvasId = sanitizeFileName(canvasId);
       const fileName = `${safeCanvasId}.json`;
-      const filePath = path.join(repoDir, subDir, fileName);
+      const resolvedSubDir = path.resolve(repoDir, subDir);
+      const filePath = path.join(resolvedSubDir, fileName);
+      if(!filePath.startsWith(resolvedSubDir + path.sep)) {
+        throw new Error('Invalid canvas id: path traversal attempt detected');
+      }
 
       const author = this.gitConfig.defaultAuthor;
 
@@ -1188,9 +1199,6 @@ export class TransformationService {
       const resolvedSubDir = path.resolve(repoDir, subDir);
       const filePath = path.resolve(resolvedSubDir, fileName);
       if (!filePath.startsWith(resolvedSubDir + path.sep)) {
-        this.logger.error(
-          `Invalid template id detected: ${templateId} leads to path traversal`
-        );
         throw new Error('Invalid template id: path traversal attempt detected');
       }
 
