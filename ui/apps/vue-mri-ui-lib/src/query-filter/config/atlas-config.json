@@ -90,7 +90,7 @@
         "all": "Find patients based on specimen."
       }
     },
-    "visit": {
+    "visitOccurrence": {
       "name": "Visit Occurrence",
       "descriptions": {
         "all": "Find patients based on visit information."
@@ -104,6 +104,7 @@
     },
     "demographic": {
       "name": "Demographic",
+      "requiresConceptSet": false,
       "descriptions": {
         "initial": "Find patients based on demographic criteria.",
         "censoring": "Exit cohort based on demographic criteria.",
@@ -123,12 +124,6 @@
       "descriptions": {
         "group": "Add a nested group to combine criteria using and/or relationships."
       }
-    },
-    "fromReusable": {
-      "name": "From Reusable",
-      "descriptions": {
-        "all": "Add criteria from list of reusables."
-      }
     }
   },
   "sections": {
@@ -137,7 +132,8 @@
       "buttonText": "Add Initial Event",
       "excludeTypes": [
         "locationRegion",
-        "group"
+        "group",
+        "demographic"
       ]
     },
     "censoringEvents": {
@@ -157,6 +153,23 @@
   },
   "attributeMapping": {
     "conditionOccurrence": [
+      {
+        "id": "default",
+        "name": "Condition Concept Set",
+        "description": "Select condition concepts",
+        "type": "conceptSet",
+        "domainFilter": "Condition"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Diagnosis",
@@ -209,7 +222,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -236,6 +249,23 @@
       }
     ],
     "conditionEra": [
+      {
+        "id": "default",
+        "name": "Condition Concept Set",
+        "description": "Select condition concepts",
+        "type": "conceptSet",
+        "domainFilter": "Condition"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Diagnosis",
@@ -280,13 +310,13 @@
         "type": "dateAdjustment"
       },
       {
-        "id": "count",
+        "id": "occurrenceCount",
         "name": "Condition Count",
         "description": "Filter by condition count",
         "type": "numericRange"
       },
       {
-        "id": "length",
+        "id": "eraLength",
         "name": "Era Length",
         "description": "Filter by era duration",
         "type": "numericRange"
@@ -299,6 +329,23 @@
       }
     ],
     "drugExposure": [
+      {
+        "id": "default",
+        "name": "Drug Concept Set",
+        "description": "Select drug concepts",
+        "type": "conceptSet",
+        "domainFilter": "Drug"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Exposure",
@@ -344,7 +391,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -375,7 +422,7 @@
         "type": "numericRange"
       },
       {
-        "id": "route",
+        "id": "routeConcept",
         "name": "Route",
         "description": "Filter by route of administration",
         "type": "concept",
@@ -416,6 +463,23 @@
     ],
     "drugEra": [
       {
+        "id": "default",
+        "name": "Drug Concept Set",
+        "description": "Select drug concepts",
+        "type": "conceptSet",
+        "domainFilter": "Drug"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
+      {
         "id": "first",
         "name": "First Exposure",
         "description": "Limit to first exposure in history",
@@ -459,13 +523,13 @@
         "type": "dateAdjustment"
       },
       {
-        "id": "length",
+        "id": "eraLength",
         "name": "Era Length",
         "description": "Filter by era duration",
         "type": "numericRange"
       },
       {
-        "id": "count",
+        "id": "occurrenceCount",
         "name": "Exposure Count",
         "description": "Filter by exposure count",
         "type": "numericRange"
@@ -478,6 +542,23 @@
       }
     ],
     "doseEra": [
+      {
+        "id": "default",
+        "name": "Drug Concept Set",
+        "description": "Select drug concepts",
+        "type": "conceptSet",
+        "domainFilter": "Drug"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Exposure",
@@ -529,13 +610,13 @@
         "domainFilter": "Unit"
       },
       {
-        "id": "length",
+        "id": "eraLength",
         "name": "Era Length",
         "description": "Filter by era duration",
         "type": "numericRange"
       },
       {
-        "id": "value",
+        "id": "doseValue",
         "name": "Dose Value",
         "description": "Filter by dose value",
         "type": "numericRange"
@@ -548,6 +629,23 @@
       }
     ],
     "deviceExposure": [
+      {
+        "id": "default",
+        "name": "Device Concept Set",
+        "description": "Select device concepts",
+        "type": "conceptSet",
+        "domainFilter": "Device"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Exposure",
@@ -593,7 +691,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -633,6 +731,23 @@
     ],
     "measurement": [
       {
+        "id": "default",
+        "name": "Measurement Concept Set",
+        "description": "Select measurement concepts",
+        "type": "conceptSet",
+        "domainFilter": "Measurement"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
+      {
         "id": "first",
         "name": "First Measurement",
         "description": "Limit to first measurement in history",
@@ -670,7 +785,7 @@
         "type": "concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -720,6 +835,18 @@
         "type": "numericRange"
       },
       {
+        "id": "rangeLowRatio",
+        "name": "Range Low Ratio",
+        "description": "Filter by lower range ratio",
+        "type": "numericRange"
+      },
+      {
+        "id": "rangeHighRatio",
+        "name": "Range High Ratio",
+        "description": "Filter by upper range ratio",
+        "type": "numericRange"
+      },
+      {
         "id": "providerSpecialty",
         "name": "Provider Specialty",
         "description": "Filter by provider specialty",
@@ -740,6 +867,23 @@
       }
     ],
     "observation": [
+      {
+        "id": "default",
+        "name": "Observation Concept Set",
+        "description": "Select observation concepts",
+        "type": "conceptSet",
+        "domainFilter": "Observation"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Observation",
@@ -779,7 +923,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -838,6 +982,23 @@
     ],
     "procedureOccurrence": [
       {
+        "id": "default",
+        "name": "Procedure Concept Set",
+        "description": "Select procedure concepts",
+        "type": "conceptSet",
+        "domainFilter": "Procedure"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
+      {
         "id": "first",
         "name": "First Procedure",
         "description": "Limit to first procedure in history",
@@ -876,7 +1037,7 @@
         "domainFilter": "Type Concept"
       },
       {
-        "id": "visit",
+        "id": "visitType",
         "name": "Visit",
         "description": "Filter based on visit occurrence",
         "type": "concept",
@@ -915,6 +1076,23 @@
       }
     ],
     "specimen": [
+      {
+        "id": "default",
+        "name": "Specimen Concept Set",
+        "description": "Select specimen concepts",
+        "type": "conceptSet",
+        "domainFilter": "Specimen"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Occurrence",
@@ -991,7 +1169,24 @@
         "type": "nested"
       }
     ],
-    "visit": [
+    "visitOccurrence": [
+      {
+        "id": "default",
+        "name": "Visit Concept Set",
+        "description": "Select visit concepts",
+        "type": "conceptSet",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Visit",
@@ -1069,6 +1264,23 @@
       }
     ],
     "visitDetail": [
+      {
+        "id": "default",
+        "name": "Visit Detail Concept Set",
+        "description": "Select visit detail concepts",
+        "type": "conceptSet",
+        "domainFilter": "Visit"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Visit",
@@ -1153,6 +1365,23 @@
     ],
     "observationPeriod": [
       {
+        "id": "default",
+        "name": "Observation Period Concept Set",
+        "description": "Select observation period concepts",
+        "type": "conceptSet",
+        "domainFilter": "Observation Period"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
+      {
         "id": "first",
         "name": "First Period",
         "description": "Limit to first period in history",
@@ -1215,6 +1444,23 @@
       }
     ],
     "payerPlanPeriod": [
+      {
+        "id": "default",
+        "name": "Payer Plan Period Concept Set",
+        "description": "Select payer plan period concepts",
+        "type": "conceptSet",
+        "domainFilter": "Payer Plan Period"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
       {
         "id": "first",
         "name": "First Period",
@@ -1321,6 +1567,23 @@
     ],
     "death": [
       {
+        "id": "default",
+        "name": "Death Concept Set",
+        "description": "Select death concepts",
+        "type": "conceptSet",
+        "domainFilter": "Death"
+      },
+      {
+        "id": "temporalRelationship",
+        "name": "Temporal Relationship",
+        "description": "Define when the event occurs relative to the index date",
+        "type": "temporalRelationship",
+        "excludeFromSections": [
+          "initialEvents",
+          "censoringEvents"
+        ]
+      },
+      {
         "id": "age",
         "name": "Age",
         "description": "Filter by age at time of event",
@@ -1392,16 +1655,18 @@
         "type": "dateRange"
       },
       {
-        "id": "raceConcept",
+        "id": "race",
         "name": "Race",
         "description": "Filter by patient race",
-        "type": "concept"
+        "type": "concept",
+        "domainFilter": "Race"
       },
       {
-        "id": "nested",
-        "name": "Nested Criteria",
-        "description": "Add nested criteria group",
-        "type": "nested"
+        "id": "ethnicity",
+        "name": "Ethnicity",
+        "description": "Filter by patient ethnicity",
+        "type": "concept",
+        "domainFilter": "Ethnicity"
       }
     ]
   },

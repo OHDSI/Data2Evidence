@@ -11,6 +11,7 @@ import TablePagination from "@mui/material/TablePagination";
 import {
   MaterialReactTable,
   MRT_ColumnDef,
+  MRT_SortingState,
   useMaterialReactTable,
 } from "material-react-table";
 import { TablePaginationActions } from "@portal/components";
@@ -63,6 +64,7 @@ interface TerminologyListProps {
     | "CONCEPT_SET"
     | "CONCEPT_SEARCH"
     | "CONCEPT_MULTI_SELECT";
+  isAtlas: boolean;
 }
 
 const mapFilterOptions = (options: {
@@ -94,6 +96,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   isDrawer,
   defaultFilters,
   mode = "CONCEPT_SEARCH",
+  isAtlas,
 }) => {
   const { getText } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -117,18 +120,62 @@ const TerminologyList: FC<TerminologyListProps> = ({
     { id: string; value: unknown }[]
   >([]);
   const [useDefaultFilters, setUseDefaultFilters] = useState(true);
+  const [sorting, setSorting] = useState<MRT_SortingState>([]);
   const { setFeedback } = useFeedback();
   const tableRef = useRef<HTMLTableElement>(null);
 
   const listData = useMemo(() => {
     const fullListData =
       tab === tabNames.SELECTED ? selectedConcepts : conceptsResult?.data || [];
-    const listData =
-      tab === tabNames.SELECTED || tab === tabNames.RELATED
-        ? fullListData.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-        : fullListData;
+    // For PA-Atlas, use client-side pagination for all tabs (SEARCH, SELECTED, RELATED)
+    // For regular app, only SELECTED and RELATED tabs use client-side pagination (SEARCH uses server-side)
+    const shouldUseClientSidePagination =
+      tab === tabNames.SELECTED ||
+      tab === tabNames.RELATED ||
+      (isAtlas && tab === tabNames.SEARCH);
+
+    // Apply sorting before pagination (when enabled)
+    let sortedData = fullListData;
+    if (isAtlas && sorting.length > 0) {
+      const sortColumn = sorting[0];
+      const columnId =
+        sortColumn.id as keyof FhirValueSetExpansionContainsWithExt;
+
+      sortedData = [...fullListData].sort((a, b) => {
+        const aValue = a[columnId];
+        const bValue = b[columnId];
+
+        // Handle null/undefined values
+        if (aValue == null && bValue == null) return 0;
+        if (aValue == null) return sortColumn.desc ? 1 : -1;
+        if (bValue == null) return sortColumn.desc ? -1 : 1;
+
+        // Numeric comparison
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          return sortColumn.desc ? bValue - aValue : aValue - bValue;
+        }
+
+        // String comparison
+        const aStr = String(aValue).toLowerCase();
+        const bStr = String(bValue).toLowerCase();
+        const comparison = aStr.localeCompare(bStr);
+        return sortColumn.desc ? -comparison : comparison;
+      });
+    }
+
+    const listData = shouldUseClientSidePagination
+      ? sortedData.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+      : sortedData;
     return listData;
-  }, [tab, conceptsResult, page, rowsPerPage, selectedConcepts]);
+  }, [
+    tab,
+    conceptsResult,
+    page,
+    rowsPerPage,
+    selectedConcepts,
+    isAtlas,
+    sorting,
+  ]);
 
   const updateSearchResult = useCallback((keyword: string) => {
     setSearchText(keyword);
@@ -313,30 +360,19 @@ const TerminologyList: FC<TerminologyListProps> = ({
   }, [columnFilters.length, defaultFilters]);
 
   useEffect(() => {
-    if (
-      useDefaultFilters &&
-      defaultFilters &&
-      filterOptions &&
-      listData.length
-    ) {
-      // Only include valid filters
+    if (useDefaultFilters && defaultFilters) {
+      // Trust defaultFilters from parent component (PA-Atlas)
+      // Apply them immediately without waiting for filterOptions to load
       const filters = JSON.parse(
         JSON.stringify(defaultFilters)
       ) as typeof defaultFilters;
-      const validFilters = filters
-        .map((f) => {
-          const valueKeys = filterOptions[f.id as keyof typeof filterOptions];
-          const valueKeysArr = Object.keys(valueKeys);
-          const value = f.value.filter((v) => valueKeysArr.includes(v));
-          return { ...f, value };
-        })
-        .filter((f) => {
-          // Empty value arrays should be removed as it is not compatible with the react table
-          return Object.keys(filterOptions).includes(f.id) && f.value.length;
-        });
+
+      // Only keep filters with non-empty values
+      const validFilters = filters.filter((f) => f.value.length > 0);
+
       setColumnFilters(validFilters);
     }
-  }, [defaultFilters, filterOptions, listData, useDefaultFilters]);
+  }, [defaultFilters, useDefaultFilters]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
@@ -347,16 +383,28 @@ const TerminologyList: FC<TerminologyListProps> = ({
   }, [setFeedback, userId, searchText, tab, JSON.stringify(columnFilters)]);
 
   useEffect(() => {
-    if (conceptsResult) setTerminologiesCount(conceptsResult.count);
-    else setTerminologiesCount(0);
-  }, [conceptsResult]);
+    if (conceptsResult) {
+      // For PA-Atlas, use actual data length since all results are loaded at once
+      // For regular app, use the count from API (total across all pages)
+      const count =
+        isAtlas && tab === tabNames.SEARCH
+          ? conceptsResult.data.length
+          : conceptsResult.count;
+
+      setTerminologiesCount(count);
+    } else {
+      setTerminologiesCount(0);
+    }
+  }, [conceptsResult, isAtlas, tab]);
 
   useEffect(() => {
-    if (tab === "SEARCH") {
+    // For PA-Atlas, don't fetch on page/rowsPerPage changes (client-side pagination)
+    // For regular app, fetch new data when pagination changes in SEARCH tab
+    if (tab === "SEARCH" && !isAtlas) {
       fetchData(++apiCounter);
       return;
     }
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, isAtlas, tab, fetchData]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
@@ -707,25 +755,34 @@ const TerminologyList: FC<TerminologyListProps> = ({
     layoutMode: "grid",
     columns,
     data: listData,
-    initialState: { density: "compact", showColumnFilters: true },
+    initialState: {
+      density: "compact",
+      // Hide column filters for Atlas when filterOptions are empty
+      showColumnFilters: isAtlas ? false : true,
+    },
     defaultColumn: {
       enableGlobalFilter: false,
       enableHiding: false,
-      enableSorting: false,
+      enableSorting: isAtlas, // Only enable sorting for PA-Atlas (client-side with all data)
       enableColumnFilter: false,
       enableColumnActions: false,
     },
     enableStickyHeader: true,
     onColumnFiltersChange: setColumnFilters,
-    state: { columnFilters, columnOrder, isLoading },
+    onSortingChange: setSorting,
+    manualSorting: isAtlas ? false : true, // Let MRT handle UI, we handle data sorting
+    state: { columnFilters, columnOrder, isLoading, sorting },
     enablePagination: false, // Use TablePagination instead of built in
     muiTableBodyRowProps: ({ row, staticRowIndex }) => ({
       onClick: () => {
+        if (isAtlas) {
+          return;
+        }
         const terminology = row.original;
         onConceptClick(terminology.conceptId);
       },
       sx: {
-        cursor: "pointer", //you might want to change the cursor too when adding an onClick
+        cursor: isAtlas ? "auto" : "pointer", //you might want to change the cursor too when adding an onClick
         "&.MuiTableRow-root": {
           backgroundColor:
             selectedConceptId === row.original.conceptId
@@ -734,7 +791,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
               ? "#fafafa  !important"
               : "white !important",
           cursor:
-            selectedConceptId === row.original.conceptId ? "auto" : "pointer",
+            selectedConceptId === row.original.conceptId || isAtlas
+              ? "auto"
+              : "pointer",
         },
         "&.MuiTableRow-root:hover": {
           backgroundColor: "#f2f0f1 !important",

@@ -31,3 +31,8 @@ export interface IReadCredential {
   readUser: string;
   readPassword: string;
 }
+
+export type ResultViewerTemplateData = {
+  filename: string;
+  content: string;
+};

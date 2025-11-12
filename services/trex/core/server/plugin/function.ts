@@ -211,6 +211,10 @@ async function _callWorker (req: any, servicePath: string, imports: any, fncfg: 
 		cpuTimeSoftLimitMs: 1000000, cpuTimeHardLimitMs: 2000000,
 		decoratorType: "typescript_with_metadata",
 		allowHostFsAccess: true,
+		unstableSloppyImports: true,
+		context: {
+        	unstableSloppyImports: true
+      	},
 	}
 	if(fncfg.eszip) {
 		logger.log(`ESZIP ${dir}${fncfg.eszip} %%% ${options["importMapPath"]}`)

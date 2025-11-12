@@ -82,18 +82,34 @@ function AppContent(props: PortalProps) {
 
   return (
     <>
-      {isActiveRoute && <ConceptSets />}
-      <TerminologyWithEventListener />
+      {isActiveRoute && <ConceptSets isAtlas={!!props.isAtlas} />}
+      <TerminologyWithEventListener isAtlas={!!props.isAtlas} />
     </>
   );
 }
 
 export default function App(props: PortalProps) {
+  const mockGetToken = async () => {
+    // Mock JWT token with sub: 'testuser'
+    const mockPayload = { sub: "testuser" };
+    const mockToken = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.${btoa(
+      JSON.stringify(mockPayload)
+    )}.mock_signature`;
+    return mockToken;
+  };
+
+  const propsWithMock = {
+    ...props,
+    // Use mock getToken only when isAtlas is true (standalone mode)
+    // Otherwise use the actual getToken from portal (no fallback)
+    getToken: props.isAtlas ? mockGetToken : props.getToken,
+  };
+
   const theme = props.isAtlas ? theme_atlas : theme_d2e;
   return (
     <ThemeProvider theme={theme}>
       <ConceptSetsProvider>
-        <AppContent {...props} />
+        <AppContent {...propsWithMock} />
       </ConceptSetsProvider>
     </ThemeProvider>
   );
