@@ -134,7 +134,7 @@ server.registerTool(
             2. Identify a most relevant phenotype ID from 1 that closely matches the cohort description.
             3. Fetch cohort definition template with phenotype ID from 2 using tool **fetch_templates_for_cohort_generation**
             4. Looking at the template from 3 carefully, never use invalid syntax (don't exist in template), understand the cohort description, based on template and cohort information draft a complete and valid ATLAS cohort definition in JSON format, without any additional explanation and without generating new file. Double check to make sure the syntax is valid ATLAS JSON format. 
-            5. Only if user has confirmed your question of "create in D2E" with "y" or "yes", call tool **creat_atlas_cohort_definition** with generated ATLAS cohort definition JSON from 4`,
+            5. Only if user has confirmed your question of "create in D2E" with "y" or "yes", call tool **create_atlas_cohort_definition** with generated ATLAS cohort definition JSON from 4`,
         },
       ],
     };
@@ -142,7 +142,7 @@ server.registerTool(
 );
 
 server.registerTool(
-  "creat_atlas_cohort_definition",
+  "create_atlas_cohort_definition",
   {
     title: "Create Atlas Cohort Definition in D2E",
     description:

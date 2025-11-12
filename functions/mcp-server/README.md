@@ -13,8 +13,8 @@ export NODE_EXTRA_CA_CERTS="/path/to/ca_cert.pem"
 ```
 Replace `/path/to/ca_cert.pem` with the path to your CA certificate 
 
-### 2. Authorization Setup
-Provide the JWT in your MCP client config file. Example config:
+### 2. Authorization Setup:
+Provide the JWT (to only allow authorized user) in your MCP client config file. Example config:
 
 ```json
 "d2e-mcp": {
@@ -22,7 +22,6 @@ Provide the JWT in your MCP client config file. Example config:
 	"type": "http",
 	"headers": {
 		"Authorization": "Bearer xxx",
-		"datasetId": "xyz",
 		"Content-Type": "application/json",
 		"Accept": "application/json, text/event-stream"
 	}
@@ -35,4 +34,3 @@ Start the Data2Evidence
 
 ### 4. Connect with VS Code Copilot
 Once the server is running and the client is configured, you can use MCP features in VS Code Copilot.
-
