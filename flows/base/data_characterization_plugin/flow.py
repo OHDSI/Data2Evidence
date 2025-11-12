@@ -82,7 +82,7 @@ def data_characterization_plugin(options: DCOptionsType):
     )
 
     if dc_schema:
-        tables = dbdao.list_tables()
+        tables = dbdao.list_tables(dc_schema)
 
         logger.info(f"Tables in the database: {tables}")
 
