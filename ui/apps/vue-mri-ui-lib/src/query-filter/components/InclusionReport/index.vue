@@ -171,7 +171,45 @@ const renderTreemap = async () => {
   const option: echarts.EChartsOption = {
     tooltip: {
       show: true,
-      formatter: '{b}<br>{e}',
+      formatter: (params: any) => {
+        if (params.data && params.data.tooltip) {
+          const tooltip = params.data.tooltip
+          let html = `<div style="max-width: 400px; line-height: 1.6; word-wrap: break-word; word-break: break-word; white-space: normal;">`
+
+          // Add count and summary
+          html += `<div>${tooltip.count}</div>`
+          html += `<div>${tooltip.summary}</div>`
+
+          // Add passed criteria
+          if (tooltip.passed && tooltip.passed.length > 0) {
+            html += `<div style="margin-top: 8px; color: #90ee90; font-weight: bold;">Passed:</div>`
+            tooltip.passed.forEach((rule: string) => {
+              html += `<div style="margin-left: 8px;">${rule}</div>`
+            })
+          }
+
+          // Add failed criteria
+          if (tooltip.failed && tooltip.failed.length > 0) {
+            html += `<div style="margin-top: 8px; color: #ff6b6b; font-weight: bold;">Failed:</div>`
+            tooltip.failed.forEach((rule: string) => {
+              html += `<div style="margin-left: 8px;">${rule}</div>`
+            })
+          }
+
+          html += `</div>`
+          return html
+        }
+        return ''
+      },
+      backgroundColor: 'rgba(50, 50, 50, 0.9)',
+      borderColor: '#333',
+      borderWidth: 1,
+      textStyle: {
+        color: '#fff',
+        fontSize: 16,
+      },
+      confine: true,
+      padding: [8, 12],
     },
     series: [
       {
@@ -680,7 +718,7 @@ h4 {
   }
 
   .treemap-chart {
-    height: 600px;
+    height: 500px;
     width: 100%;
     border: 1px solid #ddd;
     border-radius: 4px;

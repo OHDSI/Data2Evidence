@@ -48,10 +48,13 @@ function tooltipFormatter(bits: string, size: number, inclusionReportResponse: I
   const failed = []
 
   for (let b = 0; b < bits.length; b++) {
+    const rule = inclusionReportResponse.inclusionRuleStats[b]
+    if (!rule) continue
+
     if (bits[b] === '1') {
-      passed.push(inclusionReportResponse.inclusionRuleStats[b])
+      passed.push(`${b + 1}. ${rule.name}`)
     } else {
-      failed.push(inclusionReportResponse.inclusionRuleStats[b])
+      failed.push(`${b + 1}. ${rule.name}`)
     }
   }
 
@@ -60,9 +63,12 @@ function tooltipFormatter(bits: string, size: number, inclusionReportResponse: I
     percentage = (size / inclusionReportResponse.summary.baseCount) * 100
   }
 
-  return `${size} ${size === 1 ? 'person' : 'people'} (${percentage.toFixed(
-    2
-  )}%), ${passCount} criteria passed, ${failCount} criteria failed.`
+  return {
+    count: `${size} ${size === 1 ? 'person' : 'people'} (${percentage.toFixed(2)}%)`,
+    summary: `${passCount} criteria passed, ${failCount} criteria failed`,
+    passed,
+    failed,
+  }
 }
 
 // Convert treemap data to format expected by ECharts

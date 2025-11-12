@@ -793,6 +793,7 @@ const setupWebapiRoutes = app => {
   app.get(
     '/d2e-webapi/cohortsample/:cohortDefinitionId/:source',
     validateId('cohortDefinitionId'),
+    validateSourceKey,
     async (req, res) => {
       logRequest(req)
       const { cohortDefinitionId, source } = req.params
@@ -806,6 +807,7 @@ const setupWebapiRoutes = app => {
   app.get(
     '/d2e-webapi/cohortsample/:cohortDefinitionId/:source/:sampleId',
     validateId('cohortDefinitionId'),
+    validateSourceKey,
     async (req, res) => {
       logRequest(req)
       const { cohortDefinitionId, source, sampleId } = req.params
@@ -819,6 +821,7 @@ const setupWebapiRoutes = app => {
   app.post(
     '/d2e-webapi/cohortsample/:cohortDefinitionId/:source',
     validateId('cohortDefinitionId'),
+    validateSourceKey,
     async (req, res) => {
       logRequest(req)
       const { cohortDefinitionId, source } = req.params
