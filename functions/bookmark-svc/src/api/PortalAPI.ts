@@ -153,8 +153,8 @@ export class PortalAPI {
       return paConfigId
     } catch (error) {
       console.error(error)
-      this.logger.error(`Error while paConfigId from datasetId:${datasetId}`)
-      throw new Error(`Error while paConfigId from datasetId:${datasetId}`)
+      this.logger.error(`Error while getting paConfigId from datasetId:${datasetId}`)
+      throw new Error(`Error while getting paConfigId from datasetId:${datasetId}`)
     }
   }
 }
