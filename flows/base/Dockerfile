@@ -174,4 +174,4 @@ WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
 ENV INSTALL_SQLALCHEMY_HANA=true
 
-USER docker
+# USER docker
