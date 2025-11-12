@@ -1,6 +1,7 @@
 import os
 import json
 
+from time import sleep
 from rpy2 import robjects
 from string import Template
 from functools import partial
@@ -244,15 +245,21 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 createIndices=achilles_params.createIndices,
             )
 
-        # Todo: Task will succeed so need to check for error report or analyses
+        # Task will succeed so need to check for error report or analyses
         error_message = get_error_message(
             "errorReportR.txt", achilles_params.outputFolder
         )
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
+
+        logger.error(f"Failed analysis IDs: {failed_analysis_ids}")
+
+        sleep(10000)
+
         if error_message or failed_analysis_ids:
             raise RuntimeError(
                 f"Achilles run failed: Error report or analysis ID exists for flow run {flow_run_id}"
             )
+        
 
     except Exception as e:
         error_file_name = "errorReportR.txt"
@@ -274,6 +281,8 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             "error_message": error_message,
             "failed_analysis_ids": failed_analysis_ids,
         }
+
+        sleep(10000)
 
         # Create an artifact to store the error result
         create_markdown_artifact(
