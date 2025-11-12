@@ -1861,21 +1861,12 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/upload/csv",
+          "path": "^/system-portal/supabase-storage/list/file",
           "scopes": [
-            "portal.supabaseStorage.write"
+            "portal.supabaseStorage.read"
           ],
           "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/system-portal/supabase-storage/delete/csv",
-          "scopes": [
-            "portal.supabaseStorage.delete"
-          ],
-          "httpMethods": [
-            "DELETE"
+            "GET"
           ]
         },
         {
@@ -1885,6 +1876,15 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/get/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {
@@ -2107,7 +2107,34 @@
           ]
         },
         {
-          "path": "^/jobplugins/dataflow/file/csv$",
+          "path": "^/jobplugins/dataflow/node/file/list$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
