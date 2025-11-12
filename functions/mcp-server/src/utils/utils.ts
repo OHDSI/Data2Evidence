@@ -60,3 +60,15 @@ export async function fetchCohortDefinitionTemplate(
   }
   return result;
 }
+
+export async function createCohortDefinition(
+  cohortDefinition: any,
+  authorization: string
+): Promise<void> {
+  const webapi = new WebAPIAPI();
+  const data = await webapi.createAtlasCohortDefinition(
+    cohortDefinition,
+    authorization
+  );
+  return data;
+}

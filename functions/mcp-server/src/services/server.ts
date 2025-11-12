@@ -4,6 +4,7 @@ import {
   fetchCohortData,
   fetchCohortDefinitionTemplate,
   fetchPhenotypeData,
+  createCohortDefinition,
 } from "../utils/utils";
 
 export const server = new McpServer({
@@ -56,7 +57,7 @@ server.registerTool(
   {
     title: "Search OHDSI Phenotype Library",
     description:
-      "Returns phenotypes from OHDSI Phenotype Library with IDs, names, and logic descriptions. Use this to find phenotype IDs that are relevant to the user's cohort requirements.",
+      "Return phenotypes from OHDSI Phenotype Library with IDs, names, and logic descriptions. Use this to find phenotype IDs that are relevant to the user's cohort requirements.",
     inputSchema: {}, // No input - returns everything for LLM to analyze
   },
   async () => {
@@ -109,11 +110,11 @@ server.registerTool(
 );
 
 server.registerTool(
-  "generate_cohort_definition_instruction",
+  "planning_tasks_for_cohort_definition_generation",
   {
     title: "Instruction to Generate Cohort Definition",
     description:
-      "Instruction must follow when generate cohort definition for user description.",
+      "Must follow this instruction when generate/create cohort definition.",
     inputSchema: {
       cohortDescription: z
         .string()
@@ -125,13 +126,55 @@ server.registerTool(
       content: [
         {
           type: "text",
-          text: `Create a standardized OHDSI ATLAS cohort definition for: "${cohortDescription}"
-          Workflow:
-            1. First, call search_phenotype_library to get the available phenotypes
-            2. Identify a most relevant phenotype ID based on names and logic descriptions
-            3. Call fetch_templates_for_cohort_generation with phenotype ID
-            4. Generate the final cohort definition JSON, adapting the templates to match cohort description.
-            Output: Complete, valid ATLAS cohort definition in JSON format. The final reply of cohort definition must without any additional explanation, and without generating new file.`,
+          text: `
+          cohort description: ${cohortDescription}
+
+          When user ask for cohort definition creation, you don't think just strictly follow to-do list below for creatation of ATLAS cohort definition JSON based on user's cohort description:
+            1. Get available phenotypes by caling **search_phenotype_library**
+            2. Identify a most relevant phenotype ID from 1 that closely matches the cohort description.
+            3. Fetch cohort definition template with phenotype ID from 2 using tool **fetch_templates_for_cohort_generation**
+            4. Looking at the template from 3 carefully, never use invalid syntax (don't exist in template), understand the cohort description, based on template and cohort information draft a complete and valid ATLAS cohort definition in JSON format, without any additional explanation and without generating new file. Double check to make sure the syntax is valid ATLAS JSON format. 
+            5. Only if user has confirmed your question of "create in D2E" with "y" or "yes", call tool **creat_atlas_cohort_definition** with generated ATLAS cohort definition JSON from 4`,
+        },
+      ],
+    };
+  }
+);
+
+server.registerTool(
+  "creat_atlas_cohort_definition",
+  {
+    title: "Create Atlas Cohort Definition in D2E",
+    description:
+      "Create the ATLAS cohort definition in D2E using generated json result from conversation.",
+    inputSchema: {
+      atlastCohortDefinition: z
+        .any()
+        .describe("Atlas cohort definition in json to be populated in D2E"),
+      userName: z.string().describe("User name creating the cohort"),
+      cohortInfo: z.string().describe("The cohort description"),
+    },
+  },
+  async ({ atlastCohortDefinition, userName, cohortInfo }, { requestInfo }) => {
+    const cohortDefinition = {
+      expression: atlastCohortDefinition,
+      cohortInfo: cohortInfo,
+      userName: userName,
+    };
+    const authorization = requestInfo?.headers?.authorization;
+    if (!authorization) {
+      throw new Error("Authorization header is missing");
+    }
+    const res = await createCohortDefinition(cohortDefinition, authorization);
+    if (!res) {
+      throw new Error("Failed to create cohort definition in D2E");
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `The cohort definition has been created successfully with ID: ${res.id} and Name: ${res.name}`,
         },
       ],
     };
