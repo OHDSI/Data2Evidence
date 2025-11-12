@@ -4,7 +4,7 @@ import type { InclusionReportResponse } from '@/query-filter/types/QueryFilterTy
 import plotly from '@/lib/CustomPlotly'
 import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
 import { computeAttritionStats } from './computeAttritionStats'
-import { convertTreemapData } from './computeTreemapStats'
+import { convertTreemapData, formatTreemapTooltip } from './computeTreemapStats'
 import { shouldIncludeRect, calculateFilteredSummary } from './ruleSelectionFilter'
 import GroupButtons from '../GroupButtons.vue'
 import * as echarts from 'echarts'
@@ -133,6 +133,9 @@ const renderFunnelChart = () => {
     marker: {
       color: layerColors,
     },
+    hoverlabel: {
+      bgcolor: '#f9f9f9', // css var doesn't work here
+    },
   }
 
   const layout = {
@@ -171,41 +174,10 @@ const renderTreemap = async () => {
   const option: echarts.EChartsOption = {
     tooltip: {
       show: true,
-      formatter: (params: any) => {
-        if (params.data && params.data.tooltip) {
-          const tooltip = params.data.tooltip
-          let html = `<div style="max-width: 400px; line-height: 1.6; word-wrap: break-word; word-break: break-word; white-space: normal;">`
-
-          // Add count and summary
-          html += `<div>${tooltip.count}</div>`
-          html += `<div>${tooltip.summary}</div>`
-
-          // Add passed criteria
-          if (tooltip.passed && tooltip.passed.length > 0) {
-            html += `<div style="margin-top: 8px; color: #90ee90; font-weight: bold;">Passed:</div>`
-            tooltip.passed.forEach((rule: string) => {
-              html += `<div style="margin-left: 8px;">${rule}</div>`
-            })
-          }
-
-          // Add failed criteria
-          if (tooltip.failed && tooltip.failed.length > 0) {
-            html += `<div style="margin-top: 8px; color: #ff6b6b; font-weight: bold;">Failed:</div>`
-            tooltip.failed.forEach((rule: string) => {
-              html += `<div style="margin-left: 8px;">${rule}</div>`
-            })
-          }
-
-          html += `</div>`
-          return html
-        }
-        return ''
-      },
-      backgroundColor: 'rgba(50, 50, 50, 0.9)',
-      borderColor: '#333',
-      borderWidth: 1,
+      formatter: (params: any) => formatTreemapTooltip(params.data?.tooltip),
+      backgroundColor: 'var(--color-ui-extra-light-bg)',
       textStyle: {
-        color: '#fff',
+        color: 'var(--color-text-primary)',
         fontSize: 16,
       },
       confine: true,
@@ -224,7 +196,7 @@ const renderTreemap = async () => {
           show: false,
         },
         itemStyle: {
-          borderColor: '#000',
+          borderColor: '#000', // css var doesn't work here
           borderWidth: 0.3,
         },
       },
@@ -331,33 +303,6 @@ const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: strin
         modeId
       )
     }
-    // mock data
-    // inclusionReportResponse.value = {
-    //   summary: {
-    //     baseCount: 4035,
-    //     finalCount: 23,
-    //     lostCount: 0,
-    //     percentMatched: '0.57%',
-    //   },
-    //   inclusionRuleStats: [
-    //     {
-    //       id: 0,
-    //       name: 'Cancer surgery within 30 days before dx and no radio- or systemic treatment before surgery',
-    //       percentExcluded: '40.45%',
-    //       percentSatisfying: '1.36%',
-    //       countSatisfying: 55,
-    //     },
-    //     {
-    //       id: 1,
-    //       name: 'no other malignancies ',
-    //       percentExcluded: '0.79%',
-    //       percentSatisfying: '41.02%',
-    //       countSatisfying: 1655,
-    //     },
-    //   ],
-    //   treemapData:
-    //     '{"name" : "Everyone", "children" : [{"name" : "Group 2", "children" : [{"name": "11", "size": 23},{"name" : "Group 1", "children" : [{"name": "01", "size": 1632},{"name": "10", "size": 32},{"name" : "Group 0", "children" : [{"name": "00", "size": 2348}]}]}]}]}',
-    // }
   } catch (error) {
     console.error('Error fetching inclusion report:', error)
   } finally {
@@ -519,7 +464,7 @@ watch(
               />
             </th>
             <th>ID</th>
-            <th>Inclusion rule</th>
+            <th class="rule-name">Inclusion rule</th>
             <!-- count satisfying -->
             <th>N</th>
             <!-- percent satisfying -->
@@ -540,12 +485,18 @@ watch(
           </tr>
         </tbody>
         <tbody v-else>
-          <tr v-for="stat in inclusionReportResponse.inclusionRuleStats" :key="stat.id">
+          <tr
+            v-for="stat in inclusionReportResponse.inclusionRuleStats"
+            :key="stat.id"
+            :class="{ 'grayed-out': !isRuleChecked(stat.id) }"
+          >
             <td>
               <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />
             </td>
             <td>{{ stat.id + 1 }}</td>
-            <td class="rule-name">{{ stat.name }}</td>
+            <td class="rule-name">
+              {{ stat.name }}
+            </td>
             <td>{{ stat.countSatisfying.toLocaleString() }}</td>
             <td>{{ stat.percentSatisfying }}</td>
             <td>{{ stat.percentExcluded }}</td>
@@ -590,6 +541,7 @@ table {
 }
 .rule-name {
   max-width: 70ch;
+  text-align: left;
 }
 
 .inclusion-report-container {
@@ -613,40 +565,50 @@ h4 {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--color-primary, #333);
+  color: var(--color-primary);
 }
 
 .summary-table,
 .rules-table {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-ui-light-border, #ddd);
+  text-align: right;
+  .rule-name {
+    text-align: left;
+  }
 }
 
 .summary-table thead,
 .rules-table thead {
-  background-color: #f5f5f5;
+  background-color: var(--color-ui-extra-light-bg, #ddd);
 }
 
 .summary-table th,
 .rules-table th {
   padding: 0.75rem;
-  text-align: left;
   font-weight: 500;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid var(--color-ui-light-border, #ddd);
   color: #333;
 }
 
 .summary-table td,
 .rules-table td {
   padding: 0.75rem;
-  border-bottom: 1px solid #ddd;
-  color: #666;
+  border-bottom: 1px solid var(--color-ui-light-border, #ddd);
+}
+
+.summary-table,
+.rules-table {
+  color: var(--color-ui-medium-text);
+  tr.grayed-out {
+    color: var(--color-mri-disabled-text);
+  }
 }
 
 .summary-table tbody tr:hover,
 .rules-table tbody tr:hover {
-  background-color: #f9f9f9;
+  background-color: var(--color-ui-extra-light-bg, #ddd);
 }
 
 .status-message,
@@ -661,23 +623,19 @@ h4 {
   align-items: center;
   gap: 0.75rem;
   margin: 1rem 0;
-  padding: 0.75rem;
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px;
+  padding-left: 0;
 
   span {
-    font-size: 0.95rem;
-    color: #333;
+    color: var(--color-ui-medium-text);
   }
 
   select {
     padding: 0.5rem 0.75rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-ui-light-border, #ddd);
     border-radius: 4px;
-    background-color: white;
-    font-size: 0.95rem;
     cursor: pointer;
+    color: var(--color-mri-dropdown-label-dark-text);
 
     &:hover {
       border-color: #999;
@@ -685,8 +643,8 @@ h4 {
 
     &:focus {
       outline: none;
-      border-color: #0066cc;
-      box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+      border-color: var(--color-focus, #005483);
+      box-shadow: 0 0 0 2px var(--color-dialog-box-footer-shadow);
     }
   }
 }
@@ -713,14 +671,14 @@ h4 {
   .funnel-chart {
     width: 100%;
     height: fit-content;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-ui-light-border, #ddd);
     border-radius: 4px;
   }
 
   .treemap-chart {
     height: 500px;
     width: 100%;
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-ui-light-border, #ddd);
     border-radius: 4px;
   }
 }

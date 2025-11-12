@@ -1,5 +1,12 @@
 import { InclusionReportResponse } from '@/query-filter/types/QueryFilterTypes'
 
+type TooltipData = {
+  count: string
+  summary: string
+  passed: string[]
+  failed: string[]
+}
+
 // Color mapping based on number of failed rules
 const RULE_FAILURE_COLORS = {
   allFailedOr5Plus: '#fabfb4',
@@ -42,7 +49,7 @@ function getColorByFailureCount(failCount: number): string {
 }
 
 // Helper function to compute and format treemap tooltips
-function tooltipFormatter(bits: string, size: number, inclusionReportResponse: InclusionReportResponse) {
+function computeTooltipData(bits: string, size: number, inclusionReportResponse: InclusionReportResponse) {
   const { passCount, failCount } = calculateRuleCounts(bits)
   const passed = []
   const failed = []
@@ -71,6 +78,36 @@ function tooltipFormatter(bits: string, size: number, inclusionReportResponse: I
   }
 }
 
+// Helper function to format treemap tooltip HTML
+export function formatTreemapTooltip(tooltipData: TooltipData): string {
+  if (!tooltipData) return ''
+
+  let html = `<div style="max-width: 400px; line-height: 1.5; word-wrap: break-word; word-break: break-word; white-space: normal;">`
+
+  // Add count and summary
+  html += `<div>${tooltipData.count}</div>`
+  html += `<div>${tooltipData.summary}</div>`
+
+  // Add passed criteria
+  if (tooltipData.passed && tooltipData.passed.length > 0) {
+    html += `<div style="margin-top: 8px; color: var(--color-feedback-success); font-weight: bold;">Passed:</div>`
+    tooltipData.passed.forEach((rule: string) => {
+      html += `<div style="margin-left: 8px;">${rule}</div>`
+    })
+  }
+
+  // Add failed criteria
+  if (tooltipData.failed && tooltipData.failed.length > 0) {
+    html += `<div style="margin-top: 8px; color: var(--color-feedback-error); font-weight: bold;">Failed:</div>`
+    tooltipData.failed.forEach((rule: string) => {
+      html += `<div style="margin-left: 8px;">${rule}</div>`
+    })
+  }
+
+  html += `</div>`
+  return html
+}
+
 // Convert treemap data to format expected by ECharts
 export function convertTreemapData(data: any, inclusionReportResponse: InclusionReportResponse) {
   if (!data) return null
@@ -90,7 +127,7 @@ export function convertTreemapData(data: any, inclusionReportResponse: Inclusion
         newNode.value = newNode.children.reduce((sum: number, child: any) => sum + child.value, 0)
       }
     }
-    newNode.tooltip = tooltipFormatter(node.name, newNode.value, inclusionReportResponse)
+    newNode.tooltip = computeTooltipData(node.name, newNode.value, inclusionReportResponse)
 
     // Calculate number of failed rules based on the binary string name
     const { failCount } = calculateRuleCounts(node.name)
