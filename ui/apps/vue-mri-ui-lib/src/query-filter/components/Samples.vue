@@ -435,6 +435,7 @@ const selectSample = (sampleId: number) => {
   store.dispatch('fetchSampleById', {
     cohortDefinitionId: props.cohortDefinitionId,
     sampleId,
+    sourceKey: props.sourceKey,
   })
 }
 

@@ -252,6 +252,8 @@ const validateSourceKey = (req, res, next) => {
   if (!sourceKey || !allowedSourceKeys.includes(sourceKey)) {
     return res.status(400).json({ error: `Invalid sourceKey: must be one of ${allowedSourceKeys.join(', ')}` })
   }
+
+  req.safeSourceKey = sourceKey
   next()
 }
 
@@ -714,13 +716,14 @@ const setupWebapiRoutes = app => {
     validateSourceKey,
     async (req, res) => {
       logRequest(req)
-      const { cohortDefinitionId, sourceKey } = req.params
+      const { cohortDefinitionId } = req.params
       const { mode: modeId } = req.query
+      const safeSourceKey = req.safeSourceKey
 
       try {
         // Forward to external WebAPI
         const endpoint =
-          ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + sourceKey + '?mode=' + modeId
+          ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + safeSourceKey + '?mode=' + modeId
         const response = await api.get(endpoint)
         return res.json(response.data)
       } catch (err) {
@@ -791,13 +794,14 @@ const setupWebapiRoutes = app => {
   )
 
   app.get(
-    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source',
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey',
     validateId('cohortDefinitionId'),
     validateSourceKey,
     async (req, res) => {
       logRequest(req)
-      const { cohortDefinitionId, source } = req.params
-      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source
+      const { cohortDefinitionId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey
       const response = await api.get(endpoint)
       const { data } = response
       return res.send(data)
@@ -805,13 +809,15 @@ const setupWebapiRoutes = app => {
   )
 
   app.get(
-    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source/:sampleId',
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey/:sampleId',
     validateId('cohortDefinitionId'),
     validateSourceKey,
     async (req, res) => {
       logRequest(req)
-      const { cohortDefinitionId, source, sampleId } = req.params
-      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source + '/' + sampleId
+      const { cohortDefinitionId, sampleId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      console.log('safeSourceKey', safeSourceKey)
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey + '/' + sampleId
       const response = await api.get(endpoint)
       const { data } = response
       return res.send(data)
@@ -819,13 +825,14 @@ const setupWebapiRoutes = app => {
   )
 
   app.post(
-    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source',
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey',
     validateId('cohortDefinitionId'),
     validateSourceKey,
     async (req, res) => {
       logRequest(req)
-      const { cohortDefinitionId, source } = req.params
-      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source
+      const { cohortDefinitionId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey
       const response = await api.post(endpoint, req.body)
       const { data } = response
       return res.send(data)
@@ -833,12 +840,14 @@ const setupWebapiRoutes = app => {
   )
 
   app.delete(
-    '/d2e-webapi/cohortsample/:cohortDefinitionId/:source/:sampleId',
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey/:sampleId',
     validateId('cohortDefinitionId'),
+    validateSourceKey,
     async (req, res) => {
       logRequest(req)
-      const { cohortDefinitionId, source, sampleId } = req.params
-      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + source + '/' + sampleId
+      const { cohortDefinitionId, sampleId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey + '/' + sampleId
       const response = await api.delete(endpoint)
       const { data } = response
       return res.send(data)
