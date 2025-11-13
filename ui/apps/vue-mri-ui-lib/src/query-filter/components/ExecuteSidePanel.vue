@@ -53,7 +53,15 @@ const getDisplayPatientCount = (sourceKey: string) => {
     case 'failed':
       return 'Failed'
     case 'success':
-      return props.patientCounts![sourceKey].toLocaleString()
+      if (
+        props.patientCounts &&
+        props.patientCounts[sourceKey] !== undefined &&
+        props.patientCounts[sourceKey] !== null
+      ) {
+        return props.patientCounts[sourceKey]!.toLocaleString()
+      } else {
+        return 'Not generated'
+      }
     case 'not-generated':
     default:
       return 'Not generated'
@@ -98,7 +106,6 @@ const hasCohortGenerated = computed(() => {
                 Generating...
               </div>
               <div v-else>
-                <!-- "Uninitialised" or something when it's never been generated? -->
                 <div
                   class="patient-count-value"
                   :class="{ 'patient-count-actual': getPatientCountStatus(source.sourceKey) === 'success' }"

@@ -51,7 +51,4 @@ export interface CreateSampleDTO {
   size: number
   age: AgeFilter | null
   gender: GenderFilter
-}     
-
-
-
+}

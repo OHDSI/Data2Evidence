@@ -668,7 +668,10 @@ const setupWebapiRoutes = app => {
       const allSources = sourceMap
 
       // Filter to return only the source matching the SOURCE env var
-      const filteredSources = allSources //allSources.filter(source => source.sourceKey === SOURCE)
+      // const filteredSources = allSources.filter(source => source.sourceKey === SOURCE)
+
+      // Return all sources for testing
+      const filteredSources = allSources
 
       if (filteredSources.length === 0) {
         console.warn(`No source found with sourceKey matching SOURCE env var: ${SOURCE}`)
