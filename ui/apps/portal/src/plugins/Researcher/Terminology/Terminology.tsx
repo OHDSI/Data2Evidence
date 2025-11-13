@@ -5,12 +5,19 @@ import TerminologyList from "./components/TerminologyList/TerminologyList";
 import TerminologyDetail from "./components/TerminologyDetail/TerminologyDetail";
 import "./Terminology.scss";
 import { Box, Drawer, Tab, Tabs, TextField, Typography } from "@mui/material";
-import { OnCloseReturnValues, FhirValueSetExpansionContainsWithExt, TerminologyResult } from "./utils/types";
+import {
+  OnCloseReturnValues,
+  FhirValueSetExpansionContainsWithExt,
+  TerminologyResult,
+  ConceptSetWithConceptDetails,
+  ConceptSetConcept,
+} from "./utils/types";
 import { tabNames } from "./utils/constants";
 import { TabName, ConceptSet } from "./utils/types";
-import { terminologyApi } from "../../../axios/terminology";
 import { useActiveDataset, useToken, useTranslation, useUser } from "../../../contexts";
 import env from "../../../env";
+import { api } from "../../../axios/api";
+import { mapd2eWebapiConcept, mapd2eWebapiConceptSet } from "./utils/d2eWebapiMappers";
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
@@ -82,17 +89,23 @@ const NameSection = ({
 }) => {
   const { getText, i18nKeys } = useTranslation();
 
+  const borderBoxStyle = { borderBottom: "1px solid #d4d4d4" };
+  const headerBoxStyle = {
+    height: "60px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  };
+  const actionBoxStyle = {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "32px",
+  };
+
   return (
-    <Box sx={{ borderBottom: "1px solid #d4d4d4" }}>
-      <Box
-        sx={{
-          height: "60px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          "& .MuiTextField-root": { width: "50%" },
-        }}
-      >
+    <div style={borderBoxStyle}>
+      <div style={headerBoxStyle}>
         <Typography>{getText(i18nKeys.TERMINOLOGY__NAME)}:</Typography>
         <TextField
           placeholder={getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME)}
@@ -103,17 +116,7 @@ const NameSection = ({
           onChange={(e) => setConceptSetName(e.target.value)}
           disabled={isLoading}
         />
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "32px",
-            "& .button.alp-button.sc-d4l-button": {
-              width: `120px`,
-            },
-          }}
-        >
+        <div style={actionBoxStyle} className="action-box-with-button-width">
           <div style={{ marginBottom: -15, marginLeft: 10 }}>
             <Checkbox
               checked={conceptSetShared}
@@ -138,10 +141,10 @@ const NameSection = ({
             style={{ marginLeft: 10 }}
             onClick={onClickClose}
           />
-        </Box>
-      </Box>
+        </div>
+      </div>
       {errorMsg ? <div style={{ color: "red", textAlign: "center" }}>{errorMsg}</div> : null}
-    </Box>
+    </div>
   );
 };
 const TabSection = ({
@@ -290,6 +293,8 @@ export const Terminology: FC<TerminologyProps> = ({
   const showConceptSetFeatures = isConceptSet;
   const showTabNavigation = isConceptSet || isConceptMultiSelect;
 
+  const userName = idTokenClaims[nameProp];
+
   // Get domain context from default filters for messaging
   const getDomainContextMessage = useCallback(() => {
     if (isConceptMultiSelect && defaultFilters) {
@@ -328,6 +333,28 @@ export const Terminology: FC<TerminologyProps> = ({
     setSelectedConcepts(selectedConceptsCopy);
   }, []);
 
+  const createConceptSet = async (conceptSet: Omit<ConceptSet, "id">, datasetId: string): Promise<number> => {
+    const conceptSetId = await api.d2eWebapi.createConceptSet(conceptSet.name, datasetId);
+
+    if (conceptSet.concepts.length !== 0) {
+      await api.d2eWebapi.updateConceptSetItems(conceptSetId, conceptSet.concepts, datasetId);
+    }
+    return conceptSetId;
+  };
+
+  const updateConceptSet = async (
+    conceptSetId: number,
+    conceptSet: Partial<ConceptSet>,
+    datasetId: string
+  ): Promise<number> => {
+    // Update concept set
+    await api.d2eWebapi.updateConceptSet(conceptSetId, { id: Number(conceptSetId), ...conceptSet }, datasetId);
+    // Update concept set items
+    const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
+    await api.d2eWebapi.updateConceptSetItems(conceptSetId, conceptSetItems, datasetId);
+    return conceptSetId;
+  };
+
   const saveConceptSet = useCallback(async () => {
     const conceptSet = {
       concepts: selectedConcepts.map((concept) => {
@@ -340,31 +367,53 @@ export const Terminology: FC<TerminologyProps> = ({
       }),
       name: conceptSetName,
       shared: conceptSetShared,
-      ...(!conceptSetId && { userName: idTokenClaims[nameProp] }),
+      ...(!conceptSetId && { userName }),
     };
     setIsConceptSetLoading(true);
     try {
       const updatedConceptSetId = conceptSetId
-        ? await terminologyApi.updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
-        : await terminologyApi.createConceptSet(conceptSet, activeDatasetId);
-      if (typeof updatedConceptSetId !== "number") {
-        if (updatedConceptSetId?.statusCode === 500) {
-          setErrorMsg(
-            getText(i18nKeys.TERMINOLOGY__ERROR, [
-              conceptSetId ? getText(i18nKeys.TERMINOLOGY__UPDATING) : getText(i18nKeys.TERMINOLOGY__CREATING),
-            ])
-          );
-        }
-        return;
-      }
+        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
+        : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
       setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
       setConceptSetId(updatedConceptSetId);
       return;
+    } catch {
+      setErrorMsg(
+        getText(i18nKeys.TERMINOLOGY__ERROR, [
+          conceptSetId ? getText(i18nKeys.TERMINOLOGY__UPDATING) : getText(i18nKeys.TERMINOLOGY__CREATING),
+        ])
+      );
     } finally {
       setIsConceptSetLoading(false);
     }
   }, [selectedConcepts, conceptSetName, conceptSetId, conceptSetShared, activeDatasetId]);
+
+  const getConceptSetWithConceptDetails = async (
+    conceptSetId: number,
+    activeDatasetId: string
+  ): Promise<ConceptSetWithConceptDetails> => {
+    const [conceptSet, conceptSetExpression] = await Promise.all([
+      api.d2eWebapi.getConceptSet(conceptSetId, activeDatasetId),
+      api.d2eWebapi.getConceptSetExpression(conceptSetId, activeDatasetId),
+    ]);
+
+    const concepts = conceptSetExpression.items.map((conceptSet) => {
+      return {
+        ...mapd2eWebapiConcept(conceptSet.concept),
+        id: conceptSet.concept.CONCEPT_ID,
+        useMapped: conceptSet.includeMapped,
+        isExcluded: conceptSet.isExcluded,
+        useDescendants: conceptSet.includeDescendants,
+      } as ConceptSetConcept & FhirValueSetExpansionContainsWithExt;
+    });
+    const conceptSetWithConceptDetails: ConceptSetWithConceptDetails = {
+      ...mapd2eWebapiConceptSet(conceptSet),
+      concepts,
+    };
+
+    return conceptSetWithConceptDetails;
+  };
 
   const getConceptSet = useCallback(
     async (conceptSetId: number) => {
@@ -373,12 +422,12 @@ export const Terminology: FC<TerminologyProps> = ({
       }
       setIsConceptSetLoading(true);
       try {
-        const conceptSet = await terminologyApi.getConceptSet(conceptSetId, activeDatasetId);
+        const conceptSet = await getConceptSetWithConceptDetails(conceptSetId, activeDatasetId);
         setConceptSetName(conceptSet.name);
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
-        setIsUserConceptSet(conceptSet.createdBy === user.idpUserId);
+        setIsUserConceptSet(conceptSet.createdBy === userName);
         return;
       } finally {
         setIsConceptSetLoading(false);

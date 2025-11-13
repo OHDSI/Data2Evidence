@@ -1,5 +1,6 @@
 import os
 import re
+import json
 from typing import Optional, Tuple
 from datetime import datetime
 from abc import ABC, abstractmethod
@@ -12,33 +13,42 @@ from _shared_flow_utils.types import UserType
 from _shared_flow_utils.api.PrefectAPI import build_user_from_token, GetAuthTokens
 
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
-from _shared_flow_utils.types import SupportedDatabaseDialects, UserType, DBCredentialsType, CacheDBCredentialsType, AuthMode
+from _shared_flow_utils.types import (
+    SupportedDatabaseDialects,
+    UserType,
+    DBCredentialsType,
+    CacheDBCredentialsType,
+    AuthMode,
+)
 
 # List of system schemas by database
-SYSTEM_SCHEMAS = {
-    "postgres": ["information_schema", "pg_catalog", "public"]
-}
+SYSTEM_SCHEMAS = {"postgres": ["information_schema", "pg_catalog", "public"]}
+
 
 class DialectDrivers(BaseModel):
     class jdbc:
         postgres: str = "jdbc:postgresql"
         hana: str = "jdbc:sap"
         duckdb: str = "jdbc:duckdb"
+        trex: str = "jdbc:postgresql"
 
     class sqlalchemy:
         postgres: str = "postgresql+psycopg2"
         hana: str = "hana+hdbcli"
         duckdb: str = "duckdb"
         bigquery: str = "bigquery"
+        trex: str = "postgresql+psycopg2"
 
     class ibis:
-        # Used for ibis
         postgres: str = "postgres"
         duckdb: str = "duckdb"
+        bigquery: str = "bigquery"
+        trex: str = "postgres"
 
     class database_connector:
         postgres: str = "postgresql"
         hana: str = "hana"
+        trex: str = "postgresql"
 
     class cachedb:
         postgres: str = "postgresql"
@@ -52,25 +62,23 @@ class DaoBase(ABC):
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
     is_study_results_db: bool = False
-    
-    def __init__(self,
-                 use_cache_db: bool,
-                 database_code: str,
-                 user_type: UserType = UserType.ADMIN_USER,
-                 connect_to_duckdb: bool = False,
-                 is_study_results_db: bool = False):
 
+    def __init__(
+        self,
+        use_cache_db: bool,
+        database_code: str,
+        user_type: UserType = UserType.ADMIN_USER,
+        is_study_results_db: bool = False,
+    ):
         secret_block = Secret.load("database-credentials").get()
         if secret_block is None:
-            raise ValueError(
-                "'DATABASE_CREDENTIALS' secret block is undefined!")
+            raise ValueError("'DATABASE_CREDENTIALS' secret block is undefined!")
         self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
-        self.connect_to_duckdb = connect_to_duckdb
         self.is_study_results_db = is_study_results_db
-    # --- Property methods ---
 
+    # --- Property methods ---
     @property
     def dialect(self):
         return self.tenant_configs.dialect
@@ -86,20 +94,25 @@ class DaoBase(ABC):
     @property
     def tenant_configs(self) -> DBCredentialsType | CacheDBCredentialsType:
         return self.__extract_database_credentials()
-        
-    def cachedb_tenant_configs(self,schema_name: str, vocab_schema_name: str) -> DBCredentialsType | CacheDBCredentialsType:
-        database_credentials = self.__extract_database_credentials()
-        if self.connect_to_duckdb == True:
-            database_credentials.dialect = SupportedDatabaseDialects.DUCKDB.value
-            database_credentials.databaseName = self.__create_cachedb_db_name(database_credentials, 
-                                                                              schema_name, 
-                                                                              vocab_schema_name)
-            database_credentials.adminUser = database_credentials.readUser = "Bearer " + \
-                OpenIdAPI().getClientCredentialToken()
-            database_credentials.adminPassword = database_credentials.readPassword = "Qwerty"
-            database_credentials.host = Variable.get("cachedb_host")
-            database_credentials.port = Variable.get("cachedb_port")
-            return CacheDBCredentialsType(**database_credentials.model_dump())
+
+    # def cachedb_tenant_configs(
+    #     self, schema_name: str, vocab_schema_name: str
+    # ) -> DBCredentialsType | CacheDBCredentialsType:
+    #     database_credentials = self.__extract_database_credentials()
+    #     if self.use_cache_db:
+    #         database_credentials.dialect = SupportedDatabaseDialects.DUCKDB.value
+    #         database_credentials.databaseName = self.__create_cachedb_db_name(
+    #             database_credentials, schema_name, vocab_schema_name
+    #         )
+    #         database_credentials.adminUser = database_credentials.readUser = (
+    #             "Bearer " + OpenIdAPI().getClientCredentialToken()
+    #         )
+    #         database_credentials.adminPassword = database_credentials.readPassword = (
+    #             "Qwerty"
+    #         )
+    #         database_credentials.host = Variable.get("cachedb_host")
+    #         database_credentials.port = Variable.get("cachedb_port")
+    #         return CacheDBCredentialsType(**database_credentials.model_dump())
 
     # --- Create methods ---
 
@@ -114,11 +127,11 @@ class DaoBase(ABC):
     # --- Read methods ---
 
     @abstractmethod
-    def check_schema_exists(schema: str) -> bool:
+    def check_schema_exists(self, schema: str) -> bool:
         pass
 
     @abstractmethod
-    def check_empty_schema(schema: str) -> bool:
+    def check_empty_schema(self, schema: str) -> bool:
         pass
 
     @abstractmethod
@@ -168,7 +181,9 @@ class DaoBase(ABC):
         pass
 
     @abstractmethod
-    def insert_values_into_table(self, schema: str, table: str, column_value_mapping: list[dict]):
+    def insert_values_into_table(
+        self, schema: str, table: str, column_value_mapping: list[dict]
+    ):
         pass
 
     # --- Delete methods ---
@@ -184,113 +199,130 @@ class DaoBase(ABC):
 
     # --- User methods ---
 
-    @abstractmethod
+    #@abstractmethod
     def check_user_exists(self, user: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def check_role_exists(self, role_name: str) -> bool:
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_read_role(self, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_user(self, user: str, password: str = None):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def create_and_assign_role(self, user: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_read_privileges(self, schema: str, role_name: str):
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def grant_cohort_write_privileges(self, schema: str, role_name: str):
         pass
 
     # --- Static methods ---
     @staticmethod
     def validate_schema_name(schema_name: str) -> None:
-        if len(schema_name.encode('utf-8')) > 63:
-            raise ValueError(
-                f"Schema name '{schema_name}' should not exceed 63 bytes!")
+        if len(schema_name.encode("utf-8")) > 63:
+            raise ValueError(f"Schema name '{schema_name}' should not exceed 63 bytes!")
 
     @staticmethod
-    def create_ibis_connection_url(dialect: SupportedDatabaseDialects,
-                                   database_name: str = None,
-                                   user: str = None,
-                                   password: str = None,
-                                   host: str = None,
-                                   port: int = None
-                                   ) -> str:
+    def create_ibis_connection_url(
+        dialect: SupportedDatabaseDialects,
+        database_name: str = None,
+        user: str = None,
+        password: str = None,
+        host: str = None,
+        port: int = None,
+    ) -> str:
         match dialect:
             case SupportedDatabaseDialects.DUCKDB:
                 # "duckdb://" will connect to in-memory ephemeral database
                 base_url = f"{getattr(DialectDrivers.ibis, dialect)}://{database_name}"
             case SupportedDatabaseDialects.HANA:
                 raise ValueError(
-                    f"'{SupportedDatabaseDialects.HANA}' database dialect not supported!")
+                    f"'{SupportedDatabaseDialects.HANA}' database dialect not supported!"
+                )
             case _:
                 base_url = f"{getattr(DialectDrivers.ibis, dialect)}://{user}:{password}@{host}:{port}/{database_name}"
         return base_url
 
     @staticmethod
-    def create_sqlalchemy_connection_url(dialect: SupportedDatabaseDialects,
-                                         database_name: str = None,
-                                         auth_mode: AuthMode = AuthMode.PASSWORD,
-                                         user: str = None,
-                                         password: str = None,
-                                         host: str = None,
-                                         port: int = None) -> Tuple[str, dict]:
-
-        connect_args={}
+    def create_sqlalchemy_connection_url(
+        dialect: SupportedDatabaseDialects,
+        database_name: str = None,
+        auth_mode: AuthMode = AuthMode.PASSWORD,
+        user: str = None,
+        password: str = None,
+        host: str = None,
+        port: int = None,
+        db_credentials: DBCredentialsType = None,
+    ) -> Tuple[str, dict]:
+        connect_args = {}
         match dialect:
             case SupportedDatabaseDialects.DUCKDB:
-                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
+                base_url = (
+                    f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{database_name}"
+                )
                 connect_args = {"user": user, "password": password.get_secret_value()}
             case SupportedDatabaseDialects.BIGQUERY:
                 big_query_key_path = Secret.load("google-service-account-json").get()
+                 # Check if file exists
+                if not os.path.isfile(big_query_key_path):
+                    DaoBase.create_service_account_credentials_file(db_credentials)
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={big_query_key_path}"
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
                 if auth_mode == AuthMode.PASSWORD:
-                    connect_args = {"user": user, "password": password.get_secret_value()}
+                    connect_args = {
+                        "user": user,
+                        "password": password.get_secret_value(),
+                    }
                 elif auth_mode == AuthMode.JWT:
                     connect_args = {"user": user}
 
         if dialect == SupportedDatabaseDialects.HANA:
-            hana_connect_args = { "encrypt": True, "sslValidateCertificate": False }
+            hana_connect_args = {"encrypt": True, "sslValidateCertificate": False}
             if auth_mode == AuthMode.JWT:
                 token = GetAuthTokens().get_third_party_token()
                 hana_connect_args["password"] = token.get_secret_value()
-                
-                # Add APPLICATION and APPLICATIONUSER as session variables for JWT
-                app_name = f"d2e-{os.environ.get('plugin_name')}"
-                token_user = build_user_from_token(token)
-                base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
-                return base_url, hana_connect_args
-            if auth_mode == AuthMode.PASSWORD:
-                hana_connect_args.update({"user": user, "password": password.get_secret_value()})
-                return base_url, hana_connect_args
+
+            else:
+                token = GetAuthTokens().get_auth_token()
+                hana_connect_args.update(
+                    {"user": user, "password": password.get_secret_value()}
+                )
+
+            # Add APPLICATION and APPLICATIONUSER as session variables for Hana
+            app_name = f"d2e-{os.environ.get('plugin_name')}"
+            token_user = build_user_from_token(token)
+            base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
+            return base_url, hana_connect_args
 
         return base_url, connect_args
 
-    def create_cachedb_connection_url(self,
-                                      database_name: str = None,
-                                      user: str = None,
-                                      host: str = None,
-                                      port: int = None) -> str:
-        # postgresql used for all cachedb connections
-        base_url = f"postgresql://{user.get_secret_value()}@{host}:{port}/{database_name}"
+    def create_cachedb_connection_url(
+        self,
+        database_name: str = None,
+        user: str = None,
+        password: str = None,
+        host: str = None,
+        port: int = None,
+    ) -> str:
+        # postgresql used for all trex connections
+        base_url = f"postgresql://{user}:{password}@{host}:{port}/{database_name}"
         return base_url
 
-    def get_database_connector_connection_string(
+    def get_r_database_connector_connection_string(
         self,
-        user_type: UserType,
+        user_type: UserType = UserType.READ_USER,
         release_date: str = None,
     ):
         """
@@ -298,8 +330,10 @@ class DaoBase(ABC):
         """
 
         database_credentials = self.tenant_configs
+
         database_connector_dialect = getattr(
-            DialectDrivers.database_connector, database_credentials.dialect)
+            DialectDrivers.database_connector, database_credentials.dialect
+        )
         dialect = database_credentials.dialect
         host = database_credentials.host
         port = database_credentials.port
@@ -310,31 +344,78 @@ class DaoBase(ABC):
                 conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
             case SupportedDatabaseDialects.HANA:
                 encrypt = database_credentials.encrypt or "TRUE"
-                validateCertificate = database_credentials.validateCertificate or "FALSE"
+                validateCertificate = (
+                    database_credentials.validateCertificate or "FALSE"
+                )
                 conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}&encrypt={encrypt}&validateCertificate={validateCertificate}"
-                extra_config = f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}" if release_date else None
+                extra_config = (
+                    f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}"
+                    if release_date
+                    else None
+                )
                 conn_url += extra_config
 
-        if database_credentials.authMode == AuthMode.JWT and dialect == SupportedDatabaseDialects.HANA:
-            user = ""
-            token = GetAuthTokens().get_third_party_token()
-            # Add APPLICATION and APPLICATIONUSER as session variables for JWT
+        match user_type:
+            case UserType.ADMIN_USER:
+                user = database_credentials.adminUser
+                password = database_credentials.adminPassword
+            case UserType.READ_USER:
+                user = database_credentials.readUser
+                password = database_credentials.readPassword
+
+        if dialect == SupportedDatabaseDialects.HANA:
+            if database_credentials.authMode == AuthMode.JWT:
+                token = GetAuthTokens().get_third_party_token()
+                user = ""
+                password = token
+            else:
+                token = GetAuthTokens().get_auth_token()
+
+            # Add APPLICATION and APPLICATIONUSER as session variables for Hana
             app_name = f"d2e-{os.environ.get('plugin_name')}"
             token_user = build_user_from_token(token)
             conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.user_id}"
-            
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{token.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
-        else:
-            match user_type:
-                case UserType.ADMIN_USER:
-                    user = database_credentials.adminUser
-                    password = database_credentials.adminPassword
-                case UserType.READ_USER:
-                    user = database_credentials.readUser
-                    password = database_credentials.readPassword
+        return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
-            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
+    def get_database_connector_connection_string(self) -> str:
+        """
+        Generate JDBC connection string for PostgreSQL database.
+        """
+        database_credentials = self.tenant_configs
+        database_connector_dialect = getattr(
+            DialectDrivers.database_connector, database_credentials.dialect
+        )
+        host = self.tenant_configs.host
+        port = self.tenant_configs.port
+        database_name = database_credentials.databaseName
+        dialect = database_credentials.dialect
+        release_date = None
+
+        match dialect:
+            case SupportedDatabaseDialects.POSTGRES:
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}/{database_name}"
+            case SupportedDatabaseDialects.HANA:
+                encrypt = database_credentials.encrypt or "TRUE"
+                validateCertificate = (
+                    database_credentials.validateCertificate or "FALSE"
+                )
+                conn_url = f"{getattr(DialectDrivers.jdbc, dialect)}://{host}:{port}?databaseName={database_name}&encrypt={encrypt}&validateCertificate={validateCertificate}"
+                extra_config = (
+                    f"&sessionVariable:TEMPORAL_SYSTEM_TIME_AS_OF={release_date}"
+                    if release_date
+                    else None
+                )
+                conn_url += extra_config
+        return conn_url
+
+    def get_database_connector_dbms_val(self) -> str:
+        database_credentials = self.tenant_configs
+        database_connector_dialect = getattr(
+            DialectDrivers.database_connector, database_credentials.dialect
+        )
+        return database_connector_dialect
 
     @staticmethod
     def set_db_driver_env() -> str:
@@ -342,39 +423,50 @@ class DaoBase(ABC):
         Updates path to driver class variable and returns R code
         """
         database_connector_jar_folder = DaoBase.path_to_driver
-        set_jar_file_path = f"Sys.setenv(\'DATABASECONNECTOR_JAR_FOLDER\' = '{database_connector_jar_folder}')"
+        set_jar_file_path = f"Sys.setenv('DATABASECONNECTOR_JAR_FOLDER' = '{database_connector_jar_folder}')"
         return set_jar_file_path
 
     @staticmethod
     def compile_sql_with_params(sqlquery: str, bind_params: dict) -> str:
         """
-        Compiles an sqlalchemy 
+        Compiles an sqlalchemy
 
         e.g. select * from table where id = :id, {"id": 1}
         """
         if not bind_params:
             return sqlquery
-        raw_sql = text(sqlquery).bindparams(
-            **bind_params).compile(compile_kwargs={"literal_binds": True})
+        raw_sql = (
+            text(sqlquery)
+            .bindparams(**bind_params)
+            .compile(compile_kwargs={"literal_binds": True})
+        )
         return str(raw_sql)
 
     # --- Helper methods ---
 
     def __extract_database_credentials(self) -> DBCredentialsType:
-        
         if self.is_study_results_db:
             return self.__extract_study_results_db_credentials()
-        
+
         database_credentials_list = Secret.load("database-credentials").get()
         if not database_credentials_list:
             raise ValueError(f"'DATABASE_CREDENTIALS' secret is empty")
+
         _db = next(filter(lambda x: x["databaseCode"] ==
                    self.database_code, database_credentials_list), None)
+
+        if _db is None:
+            raise ValueError(
+                f"Database code '{self.database_code}' not found in 'DATABASE_CREDENTIALS' secret"
+            )
+
         database_credentials = DBCredentialsType(**_db)
         match database_credentials.dialect:
             case SupportedDatabaseDialects.HANA:
                 database_credentials.readRole = "TENANT_READ_ROLE"
-            case SupportedDatabaseDialects.POSTGRES | SupportedDatabaseDialects.BIGQUERY:
+            case (
+                SupportedDatabaseDialects.POSTGRES | SupportedDatabaseDialects.BIGQUERY
+            ):
                 database_credentials.readRole = "postgres_tenant_read_role"
             case _:
                 dialect_err = f"Dialect {self.values['dialect']} not supported. Unable to find corresponding dialect read role."
@@ -385,14 +477,22 @@ class DaoBase(ABC):
         """
         Extracts study results database credentials from the secret block.
         """
-        study_results_db_credentials = Secret.load("study-results-database-credentials").get()
+        study_results_db_credentials = Secret.load(
+            "study-results-database-credentials"
+        ).get()
         if not study_results_db_credentials:
-            raise ValueError(f"Database code '{self.database_code}' not found in 'study_results_db_credentials'")
+            raise ValueError(
+                f"Database code '{self.database_code}' not found in 'study_results_db_credentials'"
+            )
 
         return DBCredentialsType(**study_results_db_credentials)
 
-    def __create_cachedb_db_name(self, database_credentials: DBCredentialsType, 
-                                 schema_name: str, vocab_schema_name: str) -> str:
+    def __create_cachedb_db_name(
+        self,
+        database_credentials: DBCredentialsType,
+        schema_name: str,
+        vocab_schema_name: str,
+    ) -> str:
         if database_credentials.dialect == SupportedDatabaseDialects.POSTGRES:
             database_credentials.dialect = "postgresql"
         match self.user_type:
@@ -400,7 +500,9 @@ class DaoBase(ABC):
                 connection_type = "read"
             case UserType.ADMIN_USER:
                 connection_type = "write"
-        db_name = f"B|{database_credentials.dialect}|{connection_type}|{self.database_code}"
+        db_name = (
+            f"B|{database_credentials.dialect}|{connection_type}|{self.database_code}"
+        )
         if database_credentials.dialect == SupportedDatabaseDialects.DUCKDB:
             db_name += f"|{schema_name}|{vocab_schema_name}"
         return db_name
@@ -409,10 +511,33 @@ class DaoBase(ABC):
         # Allow only alphanumeric characters, underscores, and periods
         if not all(char.isalnum() or char in ("_", ".") for char in input):
             raise ValueError("Invalid characters in idenitifier")
-        return re.sub(r'[^a-zA-Z0-9_.]', '', input)
+        return re.sub(r"[^a-zA-Z0-9_.]", "", input)
 
     def _casefold(self, obj_name: str) -> str:
         if not obj_name.startswith("GDM."):
             return obj_name.casefold()
         else:
             return obj_name
+        
+    def create_service_account_credentials_file(db_credentials: DBCredentialsType):
+        """
+        Write Google service account credentials to a JSON file and set the environment variable for BigQuery access.
+        """
+        google_service_account_json_path = Secret.load("google-service-account-json").get()
+
+        google_application_credentials = {
+            "type": db_credentials.type,
+            "project_id": db_credentials.project_id,
+            "private_key_id": db_credentials.private_key_id,
+            "private_key": db_credentials.private_key,
+            "client_email": db_credentials.client_email,
+            "client_id": db_credentials.client_id,
+            "auth_uri": db_credentials.auth_uri,
+            "token_uri": db_credentials.token_uri,
+            "auth_provider_x509_cert_url": db_credentials.auth_provider_x509_cert_url,
+            "client_x509_cert_url": db_credentials.client_x509_cert_url,
+            "universe_domain": db_credentials.universe_domain
+        }
+        with open(google_service_account_json_path, "w") as f:
+            json.dump(google_application_credentials, f)
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_service_account_json_path

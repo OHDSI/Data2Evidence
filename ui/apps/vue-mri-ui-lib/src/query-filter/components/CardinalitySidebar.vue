@@ -52,10 +52,10 @@ const handleCardinalityUpdate = (cardinality: QueryFilterCardinality) => {
 // Get sidebar CSS class based on cardinality type
 const getSidebarClass = computed(() => {
   const cardinality = props.cardinality
-  if (!cardinality) return 'event-sidebar--at-least' // Default
+  if (!cardinality) return 'event-sidebar-variant--at-least' // Default
 
   const cardinalityType = cardinality.type.toLowerCase()
-  return `event-sidebar--${cardinalityType}`
+  return `event-sidebar-variant--${cardinalityType}`
 })
 </script>
 
@@ -69,9 +69,12 @@ const getSidebarClass = computed(() => {
       :style="{ cursor: readonly ? 'default' : 'pointer' }"
       :title="readonly ? '' : 'Click to change cardinality'"
     >
-      <span class="sidebar-label">
-        {{ getCardinalityDisplay() }}
-      </span>
+      <div class="event-sidebar-top" :class="getSidebarClass"></div>
+      <div>
+        <span class="sidebar-label" :class="getSidebarClass">
+          {{ getCardinalityDisplay() }}
+        </span>
+      </div>
     </div>
 
     <!-- Cardinality Menu -->
@@ -95,27 +98,18 @@ const getSidebarClass = computed(() => {
   width: 30px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 12px 6px;
   transition: all 0.2s ease;
-  position: relative;
   align-self: stretch; // Makes sidebar match the height of its flex container
-  border-radius: 6px 0 0 6px;
+  border-radius: 5px 0 0 5px;
 
-  // Default styling (AT_LEAST)
-  background: #2686eb;
-
-  // Different colors matching CardinalityMenu
-  &--exactly {
-    background: #000000; // Black
+  &.event-sidebar-variant--exactly {
+    border: 1px solid var(--color-cardinality-exactly);
   }
-
-  &--at_least {
-    background: #2686eb; // Blue
+  &.event-sidebar-variant--at_least {
+    border: 1px solid var(--color-cardinality-at-least);
   }
-
-  &--at_most {
-    background: #fa9087; // Light red
+  &.event-sidebar-variant--at_most {
+    border: 1px solid var(--color-cardinality-at-most);
   }
 
   &:hover:not([style*='cursor: default']) {
@@ -138,6 +132,22 @@ const getSidebarClass = computed(() => {
     width: 2px;
     background: rgba(255, 255, 255, 0.3);
   }
+
+  .event-sidebar-top {
+    width: 30%;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+
+    &.event-sidebar-variant--exactly {
+      background: var(--color-cardinality-exactly);
+    }
+    &.event-sidebar-variant--at_least {
+      background: var(--color-cardinality-at-least);
+    }
+    &.event-sidebar-variant--at_most {
+      background: var(--color-cardinality-at-most);
+    }
+  }
 }
 
 .sidebar-label {
@@ -145,8 +155,17 @@ const getSidebarClass = computed(() => {
   text-orientation: sideways;
   font-size: 14px;
   font-weight: 500;
-  color: white; // White text for all cardinality types
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   user-select: none;
+
+  &.event-sidebar-variant--exactly {
+    color: var(--color-cardinality-exactly);
+  }
+  &.event-sidebar-variant--at_least {
+    color: var(--color-cardinality-at-least);
+  }
+  &.event-sidebar-variant--at_most {
+    color: var(--color-cardinality-at-most);
+  }
 }
 </style>

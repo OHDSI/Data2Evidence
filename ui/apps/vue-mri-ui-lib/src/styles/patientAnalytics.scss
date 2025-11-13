@@ -1,4 +1,4 @@
-@import './mri-variables';
+@import './screen';
 @mixin wrapper-components {
   .fullHeight {
     height: 100%;
@@ -11,7 +11,7 @@
     position: relative;
   }
   .panel-header {
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     top: 0px;
     position: sticky;
     z-index: 1;
@@ -24,12 +24,12 @@
     overflow: hidden;
   }
   .nav {
-    border-bottom: 1px solid $MriNavTab;
+    border-bottom: 1px solid var(--color-mri-nav-tab);
     flex-wrap: nowrap;
     .nav-item {
       overflow: hidden;
       a {
-        color: $MriHeaderTextDark;
+        color: var(--color-mri-header-text-dark);
         display: inline-block;
         width: 100%;
         overflow: hidden;
@@ -39,7 +39,7 @@
       .active {
         font-weight: 500;
         padding-bottom: 5px;
-        border-bottom: 6px solid $MriNavTab;
+        border-bottom: 6px solid var(--color-mri-nav-tab);
       }
     }
   }

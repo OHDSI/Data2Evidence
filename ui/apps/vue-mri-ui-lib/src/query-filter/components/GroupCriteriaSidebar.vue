@@ -41,12 +41,25 @@ const getGroupCriteriaDisplay = () => {
   const criteriaType = props.group.criteriaType || 'ALL'
   const criteriaCount = props.group.criteriaCount
 
-  if (criteriaType === 'AT_LEAST' && criteriaCount) {
+  if (criteriaType === 'AT_LEAST' && criteriaCount !== undefined) {
     return `At least ${criteriaCount}`
-  } else if (criteriaType === 'AT_MOST' && criteriaCount) {
+  } else if (criteriaType === 'AT_MOST' && criteriaCount !== undefined) {
     return `At most ${criteriaCount}`
   }
-  return criteriaType
+
+  // Convert enum to friendly text
+  switch (criteriaType) {
+    case 'ALL':
+      return 'All'
+    case 'ANY':
+      return 'Any'
+    case 'AT_LEAST':
+      return 'At least' // Fallback without count
+    case 'AT_MOST':
+      return 'At most' // Fallback without count
+    default:
+      return criteriaType
+  }
 }
 
 // Handle group criteria changes from menu
@@ -57,7 +70,7 @@ const handleGroupCriteriaUpdate = (groupCriteria: { type: 'ALL' | 'ANY' | 'AT_LE
 // Get sidebar CSS class based on criteria type
 const getSidebarClass = computed(() => {
   const criteriaType = props.group.criteriaType?.toLowerCase() || 'all'
-  return `group-sidebar--${criteriaType}`
+  return `group-sidebar-variant--${criteriaType}`
 })
 </script>
 
@@ -70,7 +83,10 @@ const getSidebarClass = computed(() => {
       :class="getSidebarClass"
       :title="readonly ? '' : 'Click to change match type'"
     >
-      <span class="sidebar-label">{{ getGroupCriteriaDisplay() }}</span>
+      <div class="group-sidebar-top" :class="getSidebarClass"></div>
+      <div class="group-sidebar-label">
+        <span class="sidebar-label" :class="getSidebarClass">{{ getGroupCriteriaDisplay() }}</span>
+      </div>
     </div>
 
     <!-- Group Criteria Menu -->
@@ -93,45 +109,23 @@ const getSidebarClass = computed(() => {
   width: 30px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 12px 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  position: relative;
-  align-self: stretch; // Makes sidebar match the height of its flex container
-  border-radius: 0 0 0 8px; // Round left corners
+  align-self: stretch;
+  border-radius: 0 0 0 8px;
 
-  // Default styling (ALL)
-  background: #000080;
-
-  // Different colors matching GroupCriteriaMenu
-  &--all {
-    background: #000080;
+  &.group-sidebar-variant--all {
+    border: 1px solid var(--color-cardinality-all);
   }
-
-  &--any {
-    background: #e75248;
+  &.group-sidebar-variant--any {
+    border: 1px solid var(--color-cardinality-any);
   }
-
-  &--at_least {
-    background: #2686eb;
+  &.group-sidebar-variant--at_least {
+    border: 1px solid var(--color-cardinality-at-least);
   }
-
-  &--at_most {
-    background: #fa9087;
+  &.group-sidebar-variant--at_most {
+    border: 1px solid var(--color-cardinality-at-most);
   }
-
-  &:hover:not(.readonly) {
-    opacity: 0.9;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active:not(.readonly) {
-    transform: translateX(0);
-    box-shadow: 1px 0 4px rgba(0, 0, 0, 0.1);
-  }
-
-  // Add subtle border to indicate different states
   &::after {
     content: '';
     position: absolute;
@@ -141,6 +135,31 @@ const getSidebarClass = computed(() => {
     width: 2px;
     background: rgba(255, 255, 255, 0.3);
   }
+  .group-sidebar-top {
+    width: 30%;
+    height: 100%;
+    border-radius: 0 0 0 6px;
+    &.group-sidebar-variant--all {
+      background: var(--color-cardinality-all);
+    }
+    &.group-sidebar-variant--any {
+      background: var(--color-cardinality-any);
+    }
+    &.group-sidebar-variant--at_least {
+      background: var(--color-cardinality-at-least);
+    }
+    &.group-sidebar-variant--at_most {
+      background: var(--color-cardinality-at-most);
+    }
+    &:hover:not(.readonly) {
+      opacity: 0.9;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    }
+    &:active:not(.readonly) {
+      transform: translateX(0);
+      box-shadow: 1px 0 4px rgba(0, 0, 0, 0.1);
+    }
+  }
 }
 
 .sidebar-label {
@@ -148,8 +167,19 @@ const getSidebarClass = computed(() => {
   text-orientation: sideways;
   font-size: 14px;
   font-weight: 700;
-  color: white;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   user-select: none;
+  &.group-sidebar-variant--all {
+    color: var(--color-cardinality-all);
+  }
+  &.group-sidebar-variant--any {
+    color: var(--color-cardinality-any);
+  }
+  &.group-sidebar-variant--at_least {
+    color: var(--color-cardinality-at-least);
+  }
+  &.group-sidebar-variant--at_most {
+    color: var(--color-cardinality-at-most);
+  }
 }
 </style>

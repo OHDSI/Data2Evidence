@@ -1,3 +1,4 @@
+import { Box } from "@portal/components";
 import React, {
   CSSProperties,
   FC,
@@ -24,8 +25,8 @@ import ReactFlow, {
   XYPosition,
 } from "reactflow";
 import { v4 as uuidv4 } from "uuid";
-import { Box } from "@portal/components";
 import { isCircular } from "~/utils";
+import { dispatch, RootState } from "../../../../../store";
 import {
   markStatusAsDraft,
   replaceEdges,
@@ -35,18 +36,18 @@ import {
   setEdge,
   setNode,
 } from "../../../reducers";
-import { dispatch, RootState } from "../../../../../store";
 import { selectFlowNodes, selectLastNode } from "../../../selectors";
 import { useGetLatestDataflowByIdQuery } from "../../../slices";
-import { EdgeState, NodeState, AddNodeTypeDialogState } from "../../../types";
+import { EdgeState, NodeState } from "../../../types";
 import {
   getNodeClassName,
   getNodeColors,
-  NodeType,
   NODE_TYPES,
+  NodeChoiceMap,
+  NodeType,
+  NodeTypeChoice,
   SelectNodeTypesDialog,
 } from "../../Node/NodeTypes";
-import { NodeChoiceMap, NodeTypeChoice } from "../../Node/NodeTypes";
 import { RunFlowButton } from "../RunFlow/RunFlowButton";
 import "./FlowPanel.scss";
 
@@ -62,6 +63,35 @@ const defaultPosition = { startX: 100, startY: 100, gapX: 100, gapY: 100 };
 const getHandleType = (handleId: string) => {
   const arr = handleId.split("_");
   return arr[arr.length - 1];
+};
+
+const getCohortTypeFromLabel = (
+  label?: string
+): "event" | "target" | "exit" | "comparator" | "outcome" | "" => {
+  if (!label) return "";
+  const normalized = label.toLowerCase().replace(/_/g, " ");
+  if (normalized.includes("event")) return "event";
+  if (normalized.includes("target")) return "target";
+  if (normalized.includes("exit")) return "exit";
+  if (normalized.includes("comparator")) return "comparator";
+  if (normalized.includes("outcome")) return "outcome";
+  return "";
+};
+
+const getCohortTypeFromTargetHandle = (
+  targetHandle?: string
+): "event" | "target" | "exit" | "comparator" | "outcome" | "" => {
+  if (!targetHandle) return "";
+  const parts = targetHandle.split("_");
+  // Pattern: <nodeId>_<direction>_<label...>_<handleIOType>
+  const labelTokens = parts.slice(2, -1);
+  const handleLabel = labelTokens.join("_").toLowerCase().replace(/_/g, " ");
+  if (handleLabel.includes("event")) return "event";
+  if (handleLabel.includes("target")) return "target";
+  if (handleLabel.includes("exit")) return "exit";
+  if (handleLabel.includes("comparator")) return "comparator";
+  if (handleLabel.includes("outcome")) return "outcome";
+  return "";
 };
 
 export const FlowPanel: FC<FlowPanelProps> = () => {
@@ -147,8 +177,26 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
     (changes: EdgeChange[]) => {
       const updates = applyEdgeChanges(changes, edges);
       dispatch(replaceEdges(updates));
+
+      nodes
+        .filter((n) => n.type === "cohort_node")
+        .forEach((cohortNode) => {
+          const outgoing = updates.find((e) => e.source === cohortNode.id);
+          const nextType = outgoing
+            ? getCohortTypeFromTargetHandle(outgoing.targetHandle as string)
+            : "";
+          const currType = (cohortNode.data as any)?.type || "";
+          if (nextType !== currType) {
+            dispatch(
+              setNode({
+                ...cohortNode,
+                data: { ...cohortNode.data, cohortType: nextType },
+              })
+            );
+          }
+        });
     },
-    [edges]
+    [edges, nodes]
   );
 
   const handleConnect = useCallback(
@@ -156,8 +204,24 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const updates = addEdge(params, edges);
       dispatch(replaceEdges(updates));
       dispatch(markStatusAsDraft());
+
+      // If source is a cohort node, set its type based on target handle
+      const cohortNode = nodes.find(
+        (n) => n.id === params.source && n.type === "cohort_node"
+      );
+      if (cohortNode) {
+        const nextType = getCohortTypeFromTargetHandle(
+          params.targetHandle as string
+        );
+        dispatch(
+          setNode({
+            ...cohortNode,
+            data: { ...cohortNode.data, cohortType: nextType },
+          })
+        );
+      }
     },
-    [edges]
+    [edges, nodes]
   );
 
   const handleConnectStart = useCallback(
@@ -218,29 +282,60 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
 
       let nodePosition = position;
       if (!nodePosition) {
-        const x = lastNode
-          ? lastNode.position.x + defaultPosition.gapX
-          : defaultPosition.startX;
-        const y = lastNode
-          ? lastNode.position.y + defaultPosition.gapY
-          : defaultPosition.startY;
-        nodePosition = { x, y };
+        // Placing relative to the node where the add action originated
+        const baseNode = nodes.find(
+          (n) => n.id === addNodeTypeDialog.selectedNodeId
+        );
+        if (baseNode) {
+          const newX = baseNode.position.x - (450 + defaultPosition.gapX);
+          const newY = baseNode.position.y;
+          nodePosition = { x: newX, y: newY };
+        } else {
+          const x = lastNode
+            ? lastNode.position.x + defaultPosition.gapX
+            : defaultPosition.startX;
+          const y = lastNode
+            ? lastNode.position.y + defaultPosition.gapY
+            : defaultPosition.startY;
+          nodePosition = { x, y };
+        }
       }
 
-      const newNode = createNode(type, nodePosition);
-      dispatch(setNode(newNode));
+      // Deselect all existing nodes before adding the new one
+      dispatch(
+        replaceNodes(nodes.map((node) => ({ ...node, selected: false })))
+      );
 
-      let edge: EdgeState | undefined;
-      edge = {
-        id: uuidv4(),
-        source: newNode.id,
-        target: addNodeTypeDialog.selectedNodeId,
-        sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.selectedNodeHandleType}`,
-        targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.nodeHandleLabel}_${addNodeTypeDialog.selectedNodeHandleType}`,
-      };
+      let newNode = createNode(type, nodePosition);
 
-      if (edge) {
-        dispatch(setEdge(edge));
+      let newEdge: EdgeState | undefined;
+      if (addNodeTypeDialog.selectedNodeId) {
+        newEdge = {
+          id: uuidv4(),
+          source: newNode.id,
+          target: addNodeTypeDialog.selectedNodeId,
+          sourceHandle: `${newNode.id}_source_${addNodeTypeDialog.selectedNodeHandleType}`,
+          targetHandle: `${addNodeTypeDialog.selectedNodeId}_target_${addNodeTypeDialog.nodeHandleLabel}_${addNodeTypeDialog.selectedNodeHandleType}`,
+        };
+      }
+
+      if (newEdge) {
+        // If adding a cohort node via a handle, set its type based on the handle label
+        if (newNode.type === "cohort_node") {
+          const inferredType = getCohortTypeFromLabel(
+            addNodeTypeDialog.nodeHandleLabel
+          );
+          newNode = {
+            ...newNode,
+            data: { ...newNode.data, type: inferredType },
+          } as NodeState;
+        }
+        // Upsert node with possibly updated type before creating edge
+        dispatch(setNode(newNode));
+        dispatch(setEdge(newEdge));
+      } else {
+        // No edge created; just upsert node
+        dispatch(setNode(newNode));
       }
       const { zoom } = getViewport();
       setCenter(
@@ -255,7 +350,15 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       // reset
       connectingNodeId.current = null;
     },
-    [position, createNode, setCenter, getViewport, lastNode, addNodeTypeDialog]
+    [
+      position,
+      createNode,
+      setCenter,
+      getViewport,
+      lastNode,
+      addNodeTypeDialog,
+      nodes,
+    ]
   );
 
   const isValidConnection = useCallback(
@@ -279,7 +382,9 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
       const isValidType = sourceType === targetType;
 
       return (
-        isDifferentNode && !isCircular(routes, source, target) && isValidType
+        isDifferentNode &&
+        !isCircular(routes, source, target) &&
+        isValidType
       );
     },
     [edges, nodes]

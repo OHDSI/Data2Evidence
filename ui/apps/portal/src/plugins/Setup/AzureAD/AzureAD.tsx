@@ -1,5 +1,5 @@
 import React, { FC, useCallback, useEffect, useState } from "react";
-import { Box, Button, Loader, TextField, Title } from "@portal/components";
+import { Button, Loader, TextField, Title } from "@portal/components";
 import { useAzureAdConfigs } from "../../../hooks";
 import { api } from "../../../axios/api";
 import "./AzureAD.scss";
@@ -61,7 +61,7 @@ export const AzureAD: FC = () => {
             <Title>{getText(i18nKeys.AZURE_AD__TITLE)}</Title>
           </div>
           <div className="azure-ad__content">
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.AZURE_AD__TEXT_FIELD_1_LABEL)}
                 variant="standard"
@@ -69,8 +69,8 @@ export const AzureAD: FC = () => {
                 value={formData.tenantViewerGroupId}
                 onChange={(event) => handleFormDataChange({ tenantViewerGroupId: event.target?.value })}
               />
-            </Box>
-            <Box mb={4}>
+            </div>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.AZURE_AD__TEXT_FIELD_2_LABEL)}
                 variant="standard"
@@ -78,8 +78,8 @@ export const AzureAD: FC = () => {
                 value={formData.systemAdminGroupId}
                 onChange={(event) => handleFormDataChange({ systemAdminGroupId: event.target?.value })}
               />
-            </Box>
-            <Box mb={4}>
+            </div>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 label={getText(i18nKeys.AZURE_AD__TEXT_FIELD_3_LABEL)}
                 variant="standard"
@@ -87,12 +87,12 @@ export const AzureAD: FC = () => {
                 value={formData.userAdminGroupId}
                 onChange={(event) => handleFormDataChange({ userAdminGroupId: event.target?.value })}
               />
-            </Box>
+            </div>
           </div>
           <div className="azure-ad__footer">
-            <Box display="flex" gap={1} className="azure-ad__footer-actions">
+            <div style={{ display: "flex", gap: "8px" }} className="azure-ad__footer-actions">
               <Button text={getText(i18nKeys.AZURE_AD__SAVE)} onClick={handleSave} loading={saving} />
-            </Box>
+            </div>
           </div>
         </div>
       )}

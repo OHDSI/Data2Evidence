@@ -10,7 +10,7 @@ import { ConfigTypes } from "../../../constant";
 import "./OverviewDescription.scss";
 
 const mdeOptions = {
-  hideIcons: ["side-by-side", "fullscreen"],
+  hideIcons: ["side-by-side", "fullscreen"] as readonly ("side-by-side" | "fullscreen")[],
   maxHeight: "150px",
 };
 

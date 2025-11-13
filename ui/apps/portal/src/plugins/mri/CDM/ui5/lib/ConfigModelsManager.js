@@ -507,7 +507,9 @@ sap.ui.define([
             return acc;
         }, []);
 
-        return BackendLinker.getColumns(objectList)
+        var datasetId = configForUi.configEditorModelData.settings.datasetId.value;
+
+        return BackendLinker.getColumns(objectList, datasetId)
             .then((function (data) {
                 function set(t) {
                     // update tableTypeplaceholders with columns from db

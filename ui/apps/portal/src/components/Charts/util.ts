@@ -5,7 +5,7 @@ export const parsePieChartData = (data: any) => {
 };
 
 export const parseDrilldownPieChartData = (data: any) => {
-  return data.map((obj: any) => ({ value: obj["COUNT_VALUE"], name: obj["CONCEPT_NAME"] }));
+  return data.map((obj: any) => ({ value: obj["COUNTVALUE"], name: obj["CONCEPTNAME"] }));
 };
 
 export const parseDaysToYears = (data: any) => {
@@ -21,14 +21,14 @@ export const parseDaysToYears = (data: any) => {
 
 export const parseDrilldownBarChartData = (data: any): { data: number[]; labels: string[] } => {
   // Backfill array to replace missing objects in array
-  data = backFillArray(data, "X_COUNT");
-  // Sort data based on X_COUNT
-  data = data.sort((a: any, b: any) => a["X_COUNT"] - b["X_COUNT"]);
+  data = backFillArray(data, "XCOUNT");
+  // Sort data based on XCOUNT
+  data = data.sort((a: any, b: any) => a["XCOUNT"] - b["XCOUNT"]);
   // Parse and format bar chart data
-  const barChartLabels = data.map((obj: any) => obj["X_COUNT"]);
+  const barChartLabels = data.map((obj: any) => obj["XCOUNT"]);
 
   return {
-    data: data.map((obj: any) => Number(obj["Y_NUM_PERSONS"])),
+    data: data.map((obj: any) => Number(obj["YNUMPERSONS"])),
     labels: barChartLabels,
   };
 };
@@ -38,6 +38,13 @@ export const parseBarChartData = (
   intervalOffset = 0,
   parseLabelToYears = false
 ): { data: number[]; labels: string[] } => {
+  if (data.length === 0) {
+    return {
+      data: [],
+      labels: [],
+    };
+  }
+
   // Backfill array to replace missing objects in array
   data = backFillArray(data, "INTERVALINDEX");
   // Sort data based on INTERVALINDEX

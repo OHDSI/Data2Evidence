@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, getCurrentInstance, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { loadConceptSets } from '../utils/QueryFilterModern/loadConceptSets'
@@ -18,6 +18,9 @@ import type {
   ConceptSetAction,
   SelectedConcept,
   StoredConceptItem,
+  IWebapiSource,
+  CohortInfoResponse,
+  Notification,
 } from '../types/ConceptSetTypes'
 import type { AtlasBookmark } from '../types/AtlasTypes'
 import { getTagInputTexts } from '../utils/ConceptSetHelpers'
@@ -30,9 +33,12 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
+import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiveIcon.vue'
 import { loadAtlasCohortDefinition } from '../utils/QueryFilterModern/loadAtlasCohortDefinition'
 import * as types from '../../store/mutation-types'
 import { useCriteriaManager } from '../composables/useCriteriaManager'
+import { d2eWebapiService } from '../services/D2eWebapiService'
+import { QueryFilterEvent } from '../types/QueryFilterTypes'
 
 // Interface for close callback values from terminology modal
 interface TerminologyCloseValues {
@@ -67,9 +73,43 @@ const showSaveDialog = ref(false)
 const cohortName = ref('')
 const shareBookmark = ref(false)
 const isInvalidName = ref(false)
-const maxLength = 40
 
 const isLoading = ref(false)
+
+// Action bar state
+const selectedDatasetForGeneration = ref('')
+const availableSources = ref<IWebapiSource[]>([])
+const patientCount = ref<number | null>(null)
+const isGeneratingCohort = ref(false)
+const cohortInfo = ref<CohortInfoResponse>([])
+const isLoadingCohortInfo = ref(false)
+const generationStatus = ref<'idle' | 'pending' | 'complete' | 'failed'>('idle')
+let pollingInterval: ReturnType<typeof setInterval> | null = null
+const POLLING_INTERVAL_MS = 2000
+
+// Check if running in Atlas mode (standalone mode)
+const isAtlas = computed(() => {
+  const portalAPI = getPortalAPI()
+  return portalAPI?.isLocal === true
+})
+
+// Max length for cohort names - no limit in Atlas mode, 40 chars in D2E Portal mode
+const maxLength = computed(() => {
+  return isAtlas.value ? undefined : 40
+})
+
+// Initialize selectedDatasetForGeneration based on mode
+const initializeDatasetSelection = () => {
+  if (isAtlas.value) {
+    // In Atlas mode, will be set when sources are fetched
+    if (availableSources.value.length > 0) {
+      selectedDatasetForGeneration.value = availableSources.value[0].sourceKey
+    }
+  } else {
+    // In portal mode, use the datasetId from portal context
+    selectedDatasetForGeneration.value = getDatasetId()
+  }
+}
 
 const tagInputModel = computed<TagInputModel>(() => {
   try {
@@ -114,6 +154,7 @@ const {
   allConceptSets,
   conceptSetDomainValues,
   selectedConceptSetValues,
+  loadingConceptDetails,
   loadConceptSetDetails,
   handleConceptSetUpdate,
   handleSearchChange,
@@ -139,7 +180,142 @@ const getText = (key: string, ...args: (string | number)[]) => {
 }
 
 const hasExceededLength = computed(() => {
-  return cohortName.value.length >= maxLength
+  // No length limit in Atlas mode
+  if (maxLength.value === undefined) {
+    return false
+  }
+  return cohortName.value.length >= maxLength.value
+})
+
+const debug = computed(() => {
+  const portalAPI = getPortalAPI()
+  return portalAPI?.debug
+})
+
+// Action bar computed properties
+const displayCohortName = computed(() => {
+  const activeBookmark = store?.getters?.getActiveBookmark
+  return activeBookmark?.bookmarkname || activeBookmark?.name || 'Untitled Cohort'
+})
+
+const displayPatientCount = computed(() => {
+  if (generationStatus.value === 'pending') {
+    return 'Pending'
+  }
+  if (generationStatus.value === 'failed') {
+    return 'Failed'
+  }
+  return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
+})
+
+// Helper to recursively check if event or its nested events are loading
+const isEventOrNestedLoading = (event: QueryFilterEvent): boolean => {
+  // Check if this event is loading
+  if (event.conceptSetLoading) {
+    return true
+  }
+
+  // Check if this event has concept set but missing details
+  if (event.conceptSetId && (!event.conceptSetDetails || event.conceptSetDetails.length === 0)) {
+    return true
+  }
+
+  // Recursively check nested events in nestedCriteria (for groups)
+  if (event.nestedCriteria?.events) {
+    for (const nestedEvent of event.nestedCriteria.events) {
+      if (isEventOrNestedLoading(nestedEvent)) {
+        return true
+      }
+    }
+  }
+
+  // Recursively check nested events in attributes
+  if (event.attributes) {
+    for (const attr of event.attributes) {
+      if (attr.attributeType === 'nested' && attr.nestedCriteria?.events) {
+        for (const nestedEvent of attr.nestedCriteria.events) {
+          if (isEventOrNestedLoading(nestedEvent)) {
+            return true
+          }
+        }
+      }
+    }
+  }
+
+  return false
+}
+
+// Check if all concept details are loaded and ready to save
+const isReadyToSave = computed(() => {
+  // Don't allow save if main component or concept details are loading
+  if (isLoading.value || loadingConceptDetails.value) {
+    return false
+  }
+
+  // Check if all events with concept sets have their details loaded
+  const criteria = criteriaManager.getCriteria()
+
+  // Check entry events (recursively)
+  if (primaryEventsData.value?.events) {
+    for (const event of primaryEventsData.value.events) {
+      if (isEventOrNestedLoading(event)) {
+        return false
+      }
+    }
+  }
+
+  // Check inclusion criteria groups (recursively)
+  for (const group of criteria.criteria) {
+    for (const event of group.events) {
+      if (isEventOrNestedLoading(event)) {
+        return false
+      }
+    }
+  }
+
+  // Check exit events (recursively)
+  if (exitCriteriaData.value?.censoringCriteria) {
+    for (const event of exitCriteriaData.value.censoringCriteria) {
+      if (isEventOrNestedLoading(event)) {
+        return false
+      }
+    }
+  }
+
+  return true
+})
+
+// Get message explaining why save is disabled
+const saveDisabledReason = computed(() => {
+  if (isLoading.value) {
+    return 'Loading cohort definition...'
+  }
+  if (loadingConceptDetails.value) {
+    return 'Loading concept details...'
+  }
+
+  // Check for events still loading
+  const criteria = criteriaManager.getCriteria()
+  const allEvents = [
+    ...(primaryEventsData.value?.events || []),
+    ...criteria.criteria.flatMap(g => g.events),
+    ...(exitCriteriaData.value?.censoringCriteria || []),
+  ]
+
+  const loadingEvent = allEvents.find(e => e.conceptSetLoading)
+  if (loadingEvent) {
+    return `Loading concepts for ${loadingEvent.conceptSet || 'event'}...`
+  }
+
+  // Check for events with concept sets but no details
+  const incompleteEvent = allEvents.find(
+    e => e.conceptSetId && (!e.conceptSetDetails || e.conceptSetDetails.length === 0)
+  )
+  if (incompleteEvent) {
+    return `Missing concept details for ${incompleteEvent.conceptSet || 'event'}`
+  }
+
+  return ''
 })
 
 // Initialize criteria manager composable
@@ -191,38 +367,24 @@ watch(
   { deep: true }
 )
 
-onMounted(() => {
+onMounted(async () => {
   initializeComponent()
+
+  // Fetch sources when in Atlas mode
+  if (isAtlas.value) {
+    try {
+      const sources = await d2eWebapiService.getSources()
+      availableSources.value = sources
+      // Initialize dataset selection after sources are fetched
+      initializeDatasetSelection()
+    } catch (error) {
+      console.error('Error fetching sources:', error)
+    }
+  } else {
+    // Initialize with portal datasetId
+    initializeDatasetSelection()
+  }
 })
-
-const applyFilters = () => {
-  try {
-    console.log('Applying filters:', getAllFilters())
-    alert('Filters applied! Check console for configuration.')
-  } catch (error: unknown) {
-    console.error('Error in applyFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-    alert('Error applying filters! Check console for details.')
-  }
-}
-
-const exportFilters = () => {
-  try {
-    const config = JSON.stringify(getAllFilters(), null, 2)
-    console.log('Exported configuration:', config)
-  } catch (error: unknown) {
-    console.error('Error in exportFilters:', error)
-    console.error(
-      'Error details:',
-      error instanceof Error ? error.message : String(error),
-      error instanceof Error ? error.stack : undefined
-    )
-  }
-}
 
 watch(
   () => {
@@ -239,6 +401,10 @@ watch(
       await loadConceptSets(getDatasetId, allConceptSets, conceptSetDomainValues)
 
       isLoading.value = false
+
+      // Clear cohort info for new cohort
+      cohortInfo.value = []
+      patientCount.value = null
     } else if (newAtlasData) {
       // Load existing Atlas cohort
       await loadAtlasCohortDefinition(
@@ -250,12 +416,25 @@ watch(
         criteriaManager,
         conceptSetsFromCriteria,
         nextTick,
-        selectedConceptSets
+        selectedConceptSets,
+        isAtlas.value
       )
+
+      // Fetch cohort info after loading cohort definition
+      if (newAtlasData.id) {
+        await fetchCohortInfo(newAtlasData.id)
+      }
     }
   },
   { immediate: true }
 )
+
+// Watch for dataset selection changes and update patient count
+watch(selectedDatasetForGeneration, () => {
+  if (cohortInfo.value.length > 0) {
+    updatePatientCountFromInfo()
+  }
+})
 
 // Function to get existing concepts from an attribute for pre-populating the modal
 const getExistingConceptsForAttribute = (targetEventId: string, targetAttributeId: string): SelectedConcept[] => {
@@ -658,6 +837,60 @@ const closeSaveDialog = () => {
   isInvalidName.value = false
 }
 
+// Helper function to check if any events are still loading concept details
+const checkAndWaitForConceptDetails = async (): Promise<boolean> => {
+  const criteria = criteriaManager.getCriteria()
+
+  // Collect all events from all groups
+  const allEvents: QueryFilterEvent[] = []
+
+  // Entry events
+  if (criteriaManager.getPrimaryEvents()?.events) {
+    allEvents.push(...criteriaManager.getPrimaryEvents().events)
+  }
+
+  // Inclusion criteria events
+  for (const group of criteria.criteria) {
+    allEvents.push(...group.events)
+  }
+
+  // Exit events
+  if (criteriaManager.getCensoringCriteria()?.censoringCriteria) {
+    allEvents.push(...criteriaManager.getCensoringCriteria().censoringCriteria)
+  }
+
+  // Check if any event with a concept set is still loading
+  const eventsStillLoading = allEvents.filter(event => event.conceptSetId && event.conceptSetLoading === true)
+
+  if (eventsStillLoading.length > 0) {
+    console.log(`Waiting for ${eventsStillLoading.length} concept set(s) to finish loading...`)
+
+    // Poll every 500ms until all concept details are loaded (max 30 seconds)
+    const maxWaitTime = 30000
+    const pollInterval = 500
+    let elapsed = 0
+
+    while (elapsed < maxWaitTime) {
+      // Re-check if any are still loading
+      const stillLoading = allEvents.some(event => event.conceptSetId && event.conceptSetLoading === true)
+
+      if (!stillLoading) {
+        console.log('All concept details loaded successfully')
+        return true
+      }
+
+      // Wait before next check
+      await new Promise(resolve => setTimeout(resolve, pollInterval))
+      elapsed += pollInterval
+    }
+
+    console.warn('Timeout waiting for concept details to load')
+    return false
+  }
+
+  return true
+}
+
 const saveAtlasCohort = async () => {
   try {
     if (!cohortName.value.trim()) {
@@ -669,6 +902,13 @@ const saveAtlasCohort = async () => {
       return
     }
 
+    // Wait for any pending concept detail loads before converting to Atlas format
+    const allDetailsLoaded = await checkAndWaitForConceptDetails()
+    if (!allDetailsLoaded) {
+      console.error('Some concept details failed to load. Proceeding with save anyway.')
+      // You could show a warning to the user here if desired
+    }
+
     // Get the Atlas format JSON
     const atlasExpression = convertToAtlasFormat()
 
@@ -676,7 +916,6 @@ const saveAtlasCohort = async () => {
     const portalAPI = getPortalAPI()
     const username = portalAPI?.username || 'system'
     const currentDatasetId = getDatasetId()
-
     if (!currentDatasetId) {
       return
     }
@@ -740,6 +979,179 @@ const saveAtlasCohort = async () => {
     console.error('Error saving Atlas cohort:', error)
   }
 }
+
+const copyToClipboard = async (text: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    console.log(`${label} copied to clipboard`)
+  } catch (error) {
+    console.error(`Error copying ${label} to clipboard:`, error)
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    console.log(`${label} copied to clipboard (fallback method)`)
+  }
+}
+
+// Fetch cohort generation info from WebAPI
+const fetchCohortInfo = async (cohortDefinitionId: number) => {
+  try {
+    isLoadingCohortInfo.value = true
+    console.log('Fetching cohort info for cohort definition ID:', cohortDefinitionId)
+    // Use selected dataset from dropdown in Atlas mode, or portal dataset in portal mode
+    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+    if (!datasetId) {
+      console.error('Missing datasetId for fetching cohort info')
+      return
+    }
+    const info = await d2eWebapiService.getCohortInfo(cohortDefinitionId, datasetId)
+    cohortInfo.value = info
+    console.log('Fetched cohort info:', info)
+
+    // Update patient count based on selected dataset
+    updatePatientCountFromInfo()
+  } catch (error) {
+    console.error('Error fetching cohort info:', error)
+    cohortInfo.value = []
+    patientCount.value = null
+  } finally {
+    isLoadingCohortInfo.value = false
+  }
+}
+
+// Update patient count based on selected dataset and available cohort info
+const updatePatientCountFromInfo = () => {
+  // Get the sourceId for the selected dataset
+  const selectedSource = availableSources.value.find(source => source.sourceKey === selectedDatasetForGeneration.value)
+
+  if (!selectedSource) {
+    patientCount.value = null
+    generationStatus.value = 'idle'
+    return
+  }
+
+  // Find cohort info for this source
+  const infoForSource = cohortInfo.value.find(info => info.id.sourceId === selectedSource.sourceId)
+
+  if (infoForSource && infoForSource.status === 'COMPLETE') {
+    patientCount.value = infoForSource.personCount
+    generationStatus.value = 'complete'
+    console.log('Found patient count from cohort info:', infoForSource.personCount)
+  } else {
+    patientCount.value = null
+    generationStatus.value = 'idle'
+  }
+}
+
+// Start polling for generation status
+const startPolling = (cohortDefinitionId: number, sourceId: number) => {
+  console.log('Starting polling for cohort generation', { cohortDefinitionId, sourceId })
+  generationStatus.value = 'pending'
+
+  // Clear any existing polling interval
+  stopPolling()
+
+  // Start new polling interval
+  pollingInterval = setInterval(async () => {
+    try {
+      const notifications = await d2eWebapiService.getNotifications()
+      console.log('Polling notifications:', notifications)
+
+      // Find notification for this cohort and source
+      const relevantNotification = notifications.find(
+        (n: Notification) =>
+          n.jobParameters.cohort_definition_id === cohortDefinitionId.toString() &&
+          n.jobParameters.source_id === sourceId.toString() &&
+          n.jobInstance.name === 'generateCohort'
+      )
+
+      if (relevantNotification) {
+        console.log('Found relevant notification:', relevantNotification)
+
+        if (relevantNotification.status === 'COMPLETED') {
+          console.log('Generation completed, fetching cohort info')
+          generationStatus.value = 'complete'
+
+          // Fetch updated cohort info to get patient count
+          await fetchCohortInfo(cohortDefinitionId)
+
+          // Stop polling
+          stopPolling()
+          isGeneratingCohort.value = false
+        } else if (relevantNotification.status === 'STARTED') {
+          console.log('Generation still in progress')
+          generationStatus.value = 'pending'
+        } else {
+          // Unknown status - treat as potentially failed
+          console.log('Unknown generation status:', relevantNotification.status)
+          generationStatus.value = 'failed'
+          patientCount.value = null
+          stopPolling()
+          isGeneratingCohort.value = false
+        }
+      }
+    } catch (error) {
+      console.error('Error polling notifications:', error)
+    }
+  }, POLLING_INTERVAL_MS)
+}
+
+// Stop polling
+const stopPolling = () => {
+  if (pollingInterval) {
+    console.log('Stopping polling')
+    clearInterval(pollingInterval)
+    pollingInterval = null
+  }
+}
+
+// Cleanup on component unmount
+onBeforeUnmount(() => {
+  stopPolling()
+})
+
+// Action bar methods
+const generateCohort = async () => {
+  try {
+    isGeneratingCohort.value = true
+    patientCount.value = null
+    generationStatus.value = 'pending'
+
+    // Get the active bookmark
+    const activeBookmark = store?.getters?.getActiveBookmark
+    if (!activeBookmark?.bmkId) {
+      return
+    }
+
+    const atlasDefinitionId = parseInt(activeBookmark.bmkId)
+    // Use selected source in Atlas mode, or portal datasetId in portal mode
+    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+
+    // Get the sourceId for polling
+    const selectedSource = availableSources.value.find(source => source.sourceKey === datasetId)
+    if (!selectedSource) {
+      console.error('Could not find source for dataset:', datasetId)
+      return
+    }
+
+    // Call the same API endpoint as AddCohort component
+    await store.dispatch('fireCreateAtlasMaterializedCohortQuery', {
+      url: `/d2e-webapi/cohortdefinition/${atlasDefinitionId}/generate/${datasetId}`,
+    })
+
+    // Start polling to track generation progress
+    startPolling(atlasDefinitionId, selectedSource.sourceId)
+  } catch (error) {
+    console.error('Error generating cohort:', error)
+    patientCount.value = null
+    generationStatus.value = 'failed'
+    isGeneratingCohort.value = false
+  }
+}
 </script>
 
 <template>
@@ -750,10 +1162,43 @@ const saveAtlasCohort = async () => {
     <!-- Main Query Filter Content Container -->
     <div class="query-filter-main-container">
       <div class="query-filter-header-container">
-        <div class="header-container-right"></div>
-        <div class="header-container-left">
-          <div class="left-button-group">
-            <ButtonMaterial @button-click="openSaveDialog">Save</ButtonMaterial>
+        <!-- Left: Cohort Name -->
+        <div class="header-section-left">
+          <div class="cohort-name-display">
+            <span class="cohort-name-label">Cohort Name:</span>
+            <span class="cohort-name-value">{{ displayCohortName }}</span>
+          </div>
+        </div>
+
+        <!-- Middle: Generate Cohort Controls -->
+        <div class="header-section-middle">
+          <div class="generate-cohort-controls">
+            <div v-if="isAtlas" class="dataset-selector">
+              <select v-model="selectedDatasetForGeneration" class="dataset-dropdown" :disabled="isGeneratingCohort">
+                <option v-for="source in availableSources" :key="source.sourceKey" :value="source.sourceKey">
+                  {{ source.sourceName }}
+                </option>
+              </select>
+            </div>
+
+            <button @click="generateCohort" :disabled="isGeneratingCohort" class="btn btn-primary generate-cohort-btn">
+              <GenerateCohortActiveIcon class="btn-icon" />
+              {{ isGeneratingCohort ? 'Generating...' : 'Generate Cohort' }}
+            </button>
+
+            <div class="patient-count-display">
+              <span class="patient-count-label">Patient Count:</span>
+              <span class="patient-count-value">{{ displayPatientCount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Save -->
+        <div class="header-section-right">
+          <div class="right-button-group">
+            <ButtonMaterial @button-click="openSaveDialog" :disabled="!isReadyToSave">
+              {{ isReadyToSave ? 'Save' : 'Loading...' }}
+            </ButtonMaterial>
           </div>
         </div>
       </div>
@@ -768,6 +1213,7 @@ const saveAtlasCohort = async () => {
             @update-limit="handleUpdatePrimaryCriteriaLimit"
             @update-entry-days="handleUpdateEntryDays"
             @update-primary-events="handleUpdatePrimaryEvents"
+            @search-change="handleSearchChange"
             @concept-set-action="handleConceptSetAction"
           />
         </div>
@@ -787,6 +1233,7 @@ const saveAtlasCohort = async () => {
             @add-criteria-group="handleAddCriteriaGroup"
             @update-criteria-group="handleUpdateCriteriaGroup"
             @remove-criteria-group="handleRemoveCriteriaGroup"
+            @search-change="handleSearchChange"
             @concept-set-action="handleConceptSetAction"
           />
         </div>
@@ -802,6 +1249,7 @@ const saveAtlasCohort = async () => {
             :concept-set-texts="tagInputTexts"
             @update-limit="handleUpdateExitStrategy"
             @update-exit-events="handleUpdateExitEvents"
+            @search-change="handleSearchChange"
             @concept-set-action="handleConceptSetAction"
             @update-fixed-duration="handleUpdateFixedDuration"
             @update-cont-drug-settings="handleUpdateContDrugSettings"
@@ -811,7 +1259,7 @@ const saveAtlasCohort = async () => {
     </div>
 
     <!-- Debug Toggle -->
-    <div class="debug-toggle-section">
+    <div class="debug-toggle-section" v-if="debug">
       <label class="debug-toggle">
         <input type="checkbox" v-model="showDebug" class="debug-checkbox" />
         <span class="debug-label">Show Debug Information</span>
@@ -879,9 +1327,7 @@ const saveAtlasCohort = async () => {
 
     <!-- Action Buttons -->
     <div v-if="showDebug" class="query-filter-actions">
-      <button class="btn btn-primary" @click="applyFilters">Apply Filters</button>
       <button class="btn btn-secondary" @click="clearFilters">Clear All</button>
-      <button class="btn btn-link" @click="exportFilters">Export Configuration</button>
     </div>
 
     <!-- Debug Output -->
@@ -889,12 +1335,30 @@ const saveAtlasCohort = async () => {
       <h3>Debug Information</h3>
       <div class="debug-columns">
         <div class="debug-column">
-          <h4>Hierarchical Criteria JSON:</h4>
+          <div class="debug-column-header">
+            <h4>Hierarchical Criteria JSON:</h4>
+            <button
+              class="btn btn-sm btn-outline-primary copy-button"
+              @click="copyToClipboard(JSON.stringify(getAllFilters(), null, 2), 'Hierarchical Criteria JSON')"
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+          </div>
           <pre>{{ JSON.stringify(getAllFilters(), null, 2) }}</pre>
         </div>
 
         <div class="debug-column">
-          <h4>Atlas JSON:</h4>
+          <div class="debug-column-header">
+            <h4>Atlas JSON:</h4>
+            <button
+              class="btn btn-sm btn-outline-primary copy-button"
+              @click="copyToClipboard(JSON.stringify(convertToAtlasFormat(), null, 2), 'Atlas JSON')"
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+          </div>
           <pre>{{ JSON.stringify(convertToAtlasFormat(), null, 2) }}</pre>
         </div>
       </div>
@@ -922,12 +1386,16 @@ const saveAtlasCohort = async () => {
                       v-model="cohortName"
                       tabindex="0"
                       required
-                      :maxlength="maxLength"
+                      v-bind="maxLength !== undefined ? { maxlength: maxLength } : {}"
                     />
                     <div class="invalid-feedback" :style="isInvalidName ? 'display: block' : ''">
                       Please enter a valid name
                     </div>
-                    <div class="invalid-feedback" :style="hasExceededLength ? 'display: block' : ''">
+                    <div
+                      v-if="maxLength !== undefined"
+                      class="invalid-feedback"
+                      :style="hasExceededLength ? 'display: block' : ''"
+                    >
                       Cohort name must not exceed {{ maxLength }} characters
                     </div>
                   </div>
@@ -950,8 +1418,8 @@ const saveAtlasCohort = async () => {
         <appButton
           :click="saveAtlasCohort"
           :text="getText('MRI_PA_BUTTON_SAVE') || 'Save'"
-          :tooltip="getText('MRI_PA_BUTTON_SAVE') || 'Save'"
-          :disabled="hasExceededLength || !cohortName.trim()"
+          :tooltip="!isReadyToSave ? saveDisabledReason : getText('MRI_PA_BUTTON_SAVE') || 'Save'"
+          :disabled="hasExceededLength || !cohortName.trim() || !isReadyToSave"
         ></appButton>
         <appButton
           :click="closeSaveDialog"

@@ -1,5 +1,6 @@
 .study-card {
   height: 176px;
+  width: 820px;
   margin: 2px 0;
   border-radius: 18px;
   box-shadow: 0 3px 12px 0 #dedcda;
@@ -31,6 +32,8 @@
     font-weight: 600;
     color: #e32900;
     flex: 1;
+    display: flex;
+    align-items: center;
   }
 
   &__contact {
@@ -165,7 +168,7 @@
     margin-left: 24px;
     font-size: 18px;
     font-weight: 600;
-    color: #333;
+    color: #000080;
     flex: 1;
   }
 

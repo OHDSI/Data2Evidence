@@ -1,14 +1,18 @@
 <!-- For local development only -->
 <html>
   <head>
+    <title>Atlas</title>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="importmap-type" content="systemjs-importmap" />
+    <link rel="icon" type="image/x-icon" href="favicon-atlas.ico" />
     <script nonce="__NONCE__">
       window.ENV_DATA = __ENV_DATA__
     </script>
     <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
-    <script type="text/javascript" src="authenticate.js"></script>
+    <script type="text/javascript" src="/authenticate.js"></script>
+    <script type="text/javascript" src="/system.min.js"></script>
 
     <% for (key in htmlWebpackPlugin.files.css) { %>
     <link href="<%= htmlWebpackPlugin.files.css[key] %>" rel="stylesheet" />
@@ -22,7 +26,9 @@
     >
       logout
     </button>
-    <div
+
+    <!-- Uncomment the Portal Header when developing without single-spa -->
+    <!-- <div
       style="
         width: 100vw;
         height: 56px;
@@ -35,22 +41,59 @@
       "
     >
       <div>PORTAL HEADER</div>
-    </div>
-    <div class="vue-main" style="height: 100%"></div>
+    </div> -->
+    <div class="vue-main" style="height: calc(100%)"></div>
     <span class="plugin-container"></span>
 
     <script>
-      document.querySelector('.plugin-container').portalAPI = {
-        qeSvcUrl: 'https://localhost:8081',
-        studyId: '963820c6-94b0-42d8-8359-115b2695faf5', // Change to your dev studyID
-        releaseId: '',
-        async getToken() {
-          return localStorage.getItem('msaltoken')
-        },
-        isLocal: true,
-        username: 'admin', // Change to your logto username
-        locale: 'en',
-      }
+      ;(function () {
+        const isLocal = true
+        const defaultDatasource = 'SYNPUF1K' // Default fallback
+
+        // Set portalAPI immediately with default values
+        document.querySelector('.plugin-container').portalAPI = {
+          qeSvcUrl: 'https://localhost:8081',
+          studyId: '963820c6-94b0-42d8-8359-115b2695faf5', // Change to your dev studyID
+          releaseId: '',
+          async getToken() {
+            return localStorage.getItem('msaltoken')
+          },
+          isLocal: isLocal,
+          username: 'admin', // Change to your logto username
+          locale: 'en',
+          debug: false,
+
+          // DEMO
+          // REACT_APP_PUBLIC_WEBAPI_PROXY_URL: 'http://localhost:3001', // only used when different url from website url
+          REACT_APP_USE_PUBLIC_WEBAPI_PROXY: 'true',
+          REACT_APP_PUBLIC_WEBAPI_DATASOURCE: defaultDatasource,
+        }
+
+        console.log('PortalAPI initialized with default datasource:', defaultDatasource)
+
+        // Fetch datasource dynamically when in local mode and update portalAPI
+        if (isLocal) {
+          ;(async function () {
+            try {
+              const token = localStorage.getItem('msaltoken')
+              const response = await fetch('/d2e-webapi/source/sources', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+              })
+              if (response.ok) {
+                const sources = await response.json()
+                if (sources && sources.length > 0 && sources[0].sourceKey) {
+                  const datasource = sources[0].sourceKey
+                  // Update the datasource in portalAPI
+                  document.querySelector('.plugin-container').portalAPI.REACT_APP_PUBLIC_WEBAPI_DATASOURCE = datasource
+                  console.log('PortalAPI datasource updated to:', datasource)
+                }
+              }
+            } catch (error) {
+              console.warn('Failed to fetch datasource, using default:', error)
+            }
+          })()
+        }
+      })()
     </script>
 
     <script
@@ -66,5 +109,22 @@
     <% for (key in htmlWebpackPlugin.files.js) { %>
     <script type="text/javascript" src="<%= htmlWebpackPlugin.files.js[key] %>"></script>
     <% } %>
+
+    <script type="text/javascript">
+      ;(function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            ;(c[a].q = c[a].q || []).push(arguments)
+          }
+        t = l.createElement(r)
+        t.async = 1
+        t.src = 'https://www.clarity.ms/tag/' + i
+        y = l.getElementsByTagName(r)[0]
+        y.parentNode.insertBefore(t, y)
+      })(window, document, 'clarity', 'script', 'tc72b4d5f9')
+    </script>
+
+    <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
   </body>
 </html>

@@ -100,9 +100,17 @@ export default {
             this.setCurrentPatientCount({
               currentPatientCount: '--',
             })
-            this.setAlertMessage({
-              message: this.chartData.noDataReason,
-            })
+
+            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
+              this.setAlertMessage({
+                messageType: 'info',
+                message: this.chartData.noDataReason,
+              })
+            } else {
+              this.setAlertMessage({
+                message: this.chartData.noDataReason,
+              })
+            }
             return
           }
 
@@ -313,6 +321,10 @@ export default {
         // Persist selection across Plotly react
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
         this.dataToTraces(this.chartData, selectedPoints, selectedCount)
+
+        stackBarChart.removeAllListeners('plotly_selected')
+        stackBarChart.removeAllListeners('plotly_deselect')
+
         Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
       }
 
@@ -323,3 +335,4 @@ export default {
   },
 }
 </script>
+

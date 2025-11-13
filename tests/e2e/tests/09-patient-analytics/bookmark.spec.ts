@@ -5,7 +5,7 @@ const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('https://localhost:443/portal')
+  await page.goto('/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -104,6 +104,9 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Filter name must not exceed 40 characters')).toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
     await expect(page.getByText('Filter name must not exceed 40 characters')).not.toBeVisible()
+    await page.getByRole('textbox', { name: 'Enter name' }).fill('  ')
+    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByText('Please enter another name')).toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Test Saved Filters')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
@@ -310,7 +313,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('cell', { name: 'testuserB' })).toBeVisible()
     //Grant permissions to testuserB
     await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.getByRole('button', { name: 'Select action' }).first().click()
+    await page.getByText('Select action').first().click()
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()

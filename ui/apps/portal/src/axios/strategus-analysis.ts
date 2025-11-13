@@ -1,6 +1,7 @@
 import { request } from "./request";
-import { NetworkStrategusStudy } from "../types";
+import { NetworkStrategusStudy, StrategusResultViewerTemplateData } from "../types";
 const STRATEGUS_ANALYSIS_URL = "strategus/analysis";
+const STRATEGUS_TEMPLATE_URL = "strategus/template";
 
 export class StrategusAnalysis {
   public getAllStrategusAnalysis(): Promise<NetworkStrategusStudy[]> {
@@ -15,6 +16,25 @@ export class StrategusAnalysis {
     return request({
       baseURL: STRATEGUS_ANALYSIS_URL,
       url: `/${studyId}`,
+      method: "GET",
+    });
+  }
+
+  public saveStategusAnalysisViewerCode(studyId: string, code: string) {
+    return request({
+      baseURL: STRATEGUS_ANALYSIS_URL,
+      url: "/code",
+      method: "POST",
+      data: {
+        studyId,
+        viewerCode: code,
+      },
+    });
+  }
+
+  public getStudyViewerTemplates(): Promise<StrategusResultViewerTemplateData[]> {
+    return request({
+      baseURL: STRATEGUS_TEMPLATE_URL,
       method: "GET",
     });
   }

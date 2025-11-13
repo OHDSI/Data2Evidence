@@ -1,21 +1,55 @@
-FROM alpine AS builder
+ARG PYTHON_VERSION=3.12
+ARG R_VERSION=4.4.3
 
-# Create .Renviron file with GITHUB_PAT
-ARG GITHUB_PAT
-RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
+FROM rocker/r-ver:${R_VERSION} AS python-dependencies-build
 
-FROM rocker/r-ver:4.4 AS base-build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    cmake \
+    gcc \
+    g++ \
+    software-properties-common \
+    # To build psycopg2-binary
+    libpq-dev \
+    # To build rpy2
+    liblzma-dev \
+    libdeflate-dev \
+    libcairo2-dev \
+    libssl-dev \
+    libxml2-dev \
+    && apt-get clean --yes \
+    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
 
-RUN mkdir -p /app
+ENV UV_LINK_MODE=copy \
+    UV_COMPILE_BYTECODE=1 \
+    # UV_PYTHON_DOWNLOADS=manual
+    # Install managed python which will be copied over to runtime build
+    UV_PYTHON_INSTALL_DIR=/app/python \
+    UV_PYTHON_PREFERENCE=only-managed
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /uvx /bin/
+RUN uv python install ${PYTHON_VERSION}
 
 WORKDIR /app
-# GITHUB_PAT authentication for OHDSI remotes::install_github
-COPY --from=builder .Renviron .
 
-# GitHub deploy key ssh-config authentication for OHDSI remotes::install_github. host ssh-agent supplies private keys
-# COPY .github /root/
+# Install dependencies with uv into a venv
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=./base/uv.lock,target=uv.lock \
+    --mount=type=bind,source=./base/pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev --no-editable
+    
+FROM rocker/r-ver:${R_VERSION} AS r-dependencies-build
 
-# installs
+
+# Create user and group for ownership
+RUN useradd docker -u 1001 \
+    && groupadd alp \
+    && mkdir /home/docker \
+    && chown docker:docker /home/docker \
+    && adduser docker staff \
+    && adduser docker alp
+
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -26,9 +60,10 @@ RUN apt-get update && \
     gcc \
     git \
     less \
+    python3-pip \
+    openjdk-17-jdk \
     libbz2-dev \
     libcairo2-dev \
-    libcurl4-gnutls-dev \
     libfontconfig1-dev \
     libfreetype6-dev \
     libfribidi-dev \
@@ -38,6 +73,7 @@ RUN apt-get update && \
     libjpeg-dev \
     libpng-dev \
     libpq-dev \
+    libpq5 \
     libprotobuf-dev \
     libsodium23 libsodium-dev libsecret-tools \
     libssh2-1-dev \
@@ -46,136 +82,96 @@ RUN apt-get update && \
     libxml2-dev \
     libxt-dev \
     locales \
+    libcurl4-openssl-dev \
     openssh-client \
     protobuf-compiler \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-venv \
     software-properties-common \
-    sqlite3 \
     vim-tiny \
     wget \
-    && apt-get clean
-
-# GitHub setup & test
-RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
-# RUN ssh-add -l # debug only
-RUN git ls-remote https://github.com/data2evidence/d2e-DatabaseConnector.git | grep HEAD || exit 1
-RUN git ls-remote https://github.com/data2evidence/d2e-SqlRender.git | grep HEAD || exit 1
-RUN git config --global advice.detachedHead false
-
-# Python Library Setup
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 20
-RUN python3 -m venv /usr/src/app
-# Enable venv
-ENV PATH="/usr/src/app/bin:$PATH"
+    && apt-get clean --yes \
+    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
 
 # Set environment variables
-ENV JAVA_HOME=/usr/lib/jvm/openjdk-17
-ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
-ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-17/lib/server
-ENV R_REMOTES_UPGRADE="always"
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV LD_LIBRARY_PATH=/usr/lib/jvm/java-17-openjdk-amd64/lib/server:$LD_LIBRARY_PATH
+
 
 ENV APP_VERSION=0.0.0
-ENV PRING_PROFILES_ACTIVE=prod
-
-# OpenJDK 17
-RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_x64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk17-binaries/releases/download/jdk-2021-05-07-13-31/OpenJDK-jdk_aarch64_linux_hotspot_2021-05-06-23-30.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
-
-RUN rm openjdk.tgz*
-
-# Verify the installation
-RUN java -version && R CMD javareconf
-
-# Install Dependencies
-RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
-RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"))'
-RUN Rscript -e 'remotes::install_github("OHDSI/Achilles@v1.7.2")'
-RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.0", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
-RUN Rscript -e 'devtools::install_github("OHDSI/CommonDataModel@v5.4.1", upgrade = "never", verbose = "true")' # https://github.com/OHDSI/CommonDataModel
-RUN Rscript -e 'remotes::install_github("OHDSI/CirceR@v1.3.3", upgrade="never")'
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", upgrade="never")'
-RUN Rscript -e 'remotes::install_github("OHDSI/PhenotypeLibrary@v3.36.0", upgrade="never")'
-
-# D2E packages
-RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-SqlRender.git", ref="alp-dqd", force = TRUE)' # overwrite existing from OHDSI
-RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-DatabaseConnector.git", ref="alp-dqd", force = TRUE)' # overwrite existing from OHDSI
-
-# OHDSI packages and versions - final
-RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+ENV SPRING_PROFILES_ACTIVE=prod   
 
 
-# Verify installation and fail if any are missing
-RUN Rscript -e "required <- c('Achilles', 'DataQualityDashboard', 'CommonDataModel', 'DatabaseConnector', 'SqlRender'); \
-                installed <- rownames(installed.packages()); \
-                missing <- setdiff(required, installed); \
-                if (length(missing) > 0) { \
-                    stop(paste('Missing packages:', paste(missing, collapse = ', '))) \
-                }"
-
-RUN useradd docker -u 1001 \
-    && groupadd alp \
-    && mkdir /home/docker \
-    && chown docker:docker /home/docker \
-    && adduser docker staff \
-    && adduser docker alp
-
-FROM base-build AS dbsvc-build
-
-# Required for RPostgres R package
-RUN apt-get install libpq5 libpq-dev -y --no-install-recommends && apt-get clean
+RUN set -e; \
+    mkdir -p -m 700 ~/.ssh && \
+    # GitHub setup & test
+    ssh-keyscan github.com | tee -a ~/.ssh/known_hosts && \
+    git ls-remote https://github.com/data2evidence/d2e-DatabaseConnector.git | grep HEAD && \
+    git ls-remote https://github.com/data2evidence/d2e-SqlRender.git | grep HEAD && \
+    git config --global advice.detachedHead false
 
 
-ADD https://github.com/liquibase/liquibase/releases/download/v4.5.0/liquibase-4.5.0.tar.gz .
-RUN mkdir -p ./liquibase/
-RUN tar xvf liquibase-4.5.0.tar.gz -C ./liquibase/
-FROM dbsvc-build AS final-build
+ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
+
+COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
+
+RUN \
+    # Create output directory and set ownership
+    mkdir -p /output \
+    && chown -R docker:docker /output \
+    # Create directory for DuckDB extensions
+    && mkdir -p /app/duckdb_extensions \
+    && chmod -R 711 /app/duckdb_extensions \
+    # Make the download script executable
+    && chmod +x /app/download_duckdb_extensions.sh \
+    # Install DuckDB extensions in the duckdb_extensions directory
+    && cd /app/duckdb_extensions \
+    && /app/download_duckdb_extensions.sh "$DUCKDB_VERSION" "$DUCKDB_EXTENSIONS" \
+    && rm -f /app/download_duckdb_extensions.sh
+
+
+COPY --chown=docker:docker  ./__init__.py /app/
+COPY --chown=docker:docker ./drivers /app/inst/drivers/
+
+
+ARG POSIT_DATE=2025-09-22
+ARG CODENAME=noble
+
+
+COPY <<-EOF /usr/local/lib/R/etc/Rprofile.site
+    options(repos=c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
+    options(renv.config.repos.override = c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
+    options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
+    options(download.file.extra = sprintf('--header "User-Agent: R (%s)"', paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
+EOF
+
+# install renv package
+RUN install2.r --error --skipinstalled renv
+
 
 WORKDIR /app
 
-COPY --chown=docker:docker ./_shared_flow_utils/postgresql-42.3.1.jar ./inst/drivers/
-# COPY --chown=docker:docker ./_shared_flow_utils/ngdbc-latest.jar ./inst/drivers/
+COPY ./base/renv.lock ./build/.Rprofile ./build/install_and_verify_r_packages.R /app/
 
-COPY --chown=docker:docker  ./__init__.py .
+# Install R depdendencies in global library
+ARG REQUIRED_R_PACKAGES="Achilles DataQualityDashboard CommonDataModel DatabaseConnector SqlRender CirceR CohortGenerator PhenotypeLibrary"
+RUN chmod +x /app/install_and_verify_r_packages.R && \
+    /app/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" && \
+    R CMD javareconf && \
+    rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
 
-# Grant docker ownership to create properties file
-RUN chown -R docker:docker ./liquibase/
 
-RUN mkdir /output
-RUN chown -R docker:docker /output
+# Copy the Python virtual environment and uv binary from the build stage
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /bin/uv /usr/local/bin/uv
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/python /app/python
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.venv /app/.venv
 
-# Create folder to store duckdb extensions for offline plugins
-# version must match duckdb in requirements.txt
-ENV duckdb_version 1.2.1
-RUN mkdir -p /app/duckdb_extensions
-WORKDIR /app/duckdb_extensions
-RUN wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/postgres_scanner.duckdb_extension.gz \
-    && wget https://extensions.duckdb.org/v${duckdb_version}/linux_amd64_gcc4/fts.duckdb_extension.gz \
-    && gzip -d postgres_scanner.duckdb_extension.gz \
-    && gzip -d fts.duckdb_extension.gz
+
+COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
+COPY --chown=docker:docker --chmod=711 ./base /app/flows/
 
 WORKDIR /app
 
-# Create folder for duckdb database files
-RUN mkdir ./duckdb_data
-RUN chown docker:alp ./duckdb_data
-RUN mkdir -p ./cdw-config/duckdb_data
-RUN chown -R docker:alp ./cdw-config
+ENV PATH="/app/.venv/bin:$PATH"
+ENV INSTALL_SQLALCHEMY_HANA=true
 
-COPY --chown=docker:docker --chmod=711 ./base/requirements_base.txt .
-
-ARG BUILD_TYPE
-ENV RUN_TYPE=$BUILD_TYPE
-RUN if [ $BUILD_TYPE = "OSS" ]; then sed -i '/sqlalchemy-hana/d' /app/requirements*.txt; fi
-RUN pip install -r requirements_base.txt
-
-COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./base flows
-
-# Grant docker user read/write access
-RUN chmod -R 755 /app
-
-RUN rm -rf .Renviron /app/.github/.ssh
-
-# USER docker
+USER docker

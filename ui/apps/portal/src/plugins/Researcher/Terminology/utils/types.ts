@@ -12,6 +12,26 @@ export interface Concept {
   validStartDate: string;
   validEndDate: string;
   validity: string;
+  score?: number;
+  vocabularyId: string;
+  conceptName: string;
+  conceptCode: string;
+}
+
+export interface ConceptRecordCount {
+  conceptId: number;
+  recordCount: number;
+  descendantRecordCount: number;
+  personCount: number;
+  descendantPersonCount: number;
+}
+
+export interface TerminologyTableConcept extends Concept {
+  // Concept record counts
+  recordCount?: string;
+  descendantRecordCount?: string;
+  personCount?: string;
+  descendantPersonCount?: string;
 }
 
 export interface TerminologyDetailsList {
@@ -162,7 +182,7 @@ export interface FhirValueSetExpansion {
   contains: FhirValueSetExpansionContainsWithExt[];
 }
 
-export interface FhirValueSetExpansionContainsWithExt extends Concept {
+export interface FhirValueSetExpansionContainsWithExt extends TerminologyTableConcept {
   id?: string;
   extension?: string;
   abstract?: string;
@@ -182,3 +202,61 @@ export interface StandardConcepts {
   conceptName: string;
   domainId: string;
 }
+
+export interface IWebapiConcept {
+  CONCEPT_CLASS_ID: string;
+  CONCEPT_CODE: string;
+  CONCEPT_ID: number;
+  CONCEPT_NAME: string;
+  DOMAIN_ID: string;
+  INVALID_REASON: string | null;
+  INVALID_REASON_CAPTION: string;
+  STANDARD_CONCEPT: string | null;
+  STANDARD_CONCEPT_CAPTION: string;
+  VOCABULARY_ID: string;
+  VALID_START_DATE: string | number;
+  VALID_END_DATE: string | number;
+  SCORE?: number;
+}
+
+export interface IWebapiConceptRelated extends IWebapiConcept {
+  RELATIONSHIPS: {
+    RELATIONSHIP_NAME: string;
+    RELATIONSHIP_DISTANCE: number;
+  }[];
+  RELATIONSHIP_CAPTION: string;
+}
+
+export interface IWebapiConceptSet {
+  createdDate: number;
+  name: string;
+  id: number;
+  modifiedDate: number;
+  hasWriteAccess: boolean;
+  hasReadAccess: boolean;
+  shared: boolean;
+  createdBy: {
+    name: string;
+    id?: number | undefined;
+    login?: string | undefined;
+  };
+  modifiedBy: {
+    name: string;
+    id?: number | undefined;
+    login?: string | undefined;
+  };
+  description?: string | undefined;
+  tags?: unknown;
+}
+[];
+
+export interface IWebapiConceptSetExpression {
+  items: {
+    concept: IWebapiConcept;
+    isExcluded: boolean;
+    includeDescendants: boolean;
+    includeMapped: boolean;
+  }[];
+}
+
+export type IWebapiConceptRecordCount = Record<string, number[]>;

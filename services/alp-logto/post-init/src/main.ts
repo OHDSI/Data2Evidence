@@ -363,11 +363,15 @@ async function main() {
       isDarkModeEnabled: false,
       darkPrimaryColor: "#0000B3",
     },
-    customCss: `a[aria-label="Powered By Logto"] { display: none; }
+    customCss: process.env.LOGTO__CUSTOM_CSS || `a[aria-label="Powered By Logto"] { display: none; }
 img[alt="app logo"] { height: 80px; }
 button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
+    unknownSessionRedirectUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal`,
+    termsOfUseUrl: process.env.LOGTO__TERM_OF_USE_URL || "",
+    privacyPolicyUrl: process.env.LOGTO__PRIVACY_POLICY_URL || "",
   };
+
   await update("sign-in-exp", headers, signinExperience);
   console.log(
     "*********************************************************************************\n"

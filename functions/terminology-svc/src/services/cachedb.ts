@@ -73,7 +73,7 @@ export class CachedbService {
   private async getCachedbDaoFromDatasetId(
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
-    const { dialect, vocabSchemaName, databaseCode, schemaName } =
+    const { dialect, vocabSchemaName, databaseCode, schemaName, resultSchemaName } =
       this.datasetDB;
     if (dialect === DatasetDialects.HANA) {
       return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
@@ -93,7 +93,8 @@ export class CachedbService {
       vocabSchemaName,
       semanticRatio,
       databaseCode,
-      schemaName
+      schemaName,
+      resultSchemaName
     );
   }
 
@@ -113,6 +114,21 @@ export class CachedbService {
         filters
       );
       return this.duckdbResultMapping(result);
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  async getConceptsCount(
+    datasetId: string,
+    searchText = "",
+    filters: Filters
+  ): Promise<number> {
+    try {
+      const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+      const result = await cachedbDao.getConceptsCount(searchText, filters);
+      return result;
     } catch (err) {
       console.error(err);
       throw err;

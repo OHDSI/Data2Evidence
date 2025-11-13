@@ -39,6 +39,19 @@ export class CachedbController {
         await this.getFlowRunResults(req, res);
       }
     );
+
+    // GET /cachedb/completed/:flowRunId
+    this.router.get(
+      "/completed/:flowRunId",
+      param("flowRunId").isUUID(),
+      async (req: Request, res: Response) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() });
+        }
+        await this.getCompletedFlowRunId(req, res);
+      }
+    );
   }
 
   private async createCachedbFileFlowRun(req: Request, res: Response) {
@@ -47,12 +60,12 @@ export class CachedbController {
       const params = req.body;
 
       const portalServerApi = new PortalServerAPI(token);
-      const { databaseCode, schemaName } = await portalServerApi.getDataset(
-        params.datasetId
-      );
+      const flowActionType = "create_datamart_cache";
+      const { databaseCode, schemaName, resultsSchemaName } =
+        await portalServerApi.getDataset(params.datasetId);
 
       const result = await this.cachedbService.createCachedbFileFlowRun(
-        { databaseCode, schemaName },
+        { flowActionType, databaseCode, schemaName, resultsSchemaName },
         token
       );
       res.send(result);
@@ -73,6 +86,21 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error getting cachedb file results: ${error}`);
+      res.status(500).send(`Error occurs: ${error}`);
+    }
+  }
+
+  private async getCompletedFlowRunId(req: Request, res: Response) {
+    try {
+      const token = req.headers.authorization!;
+      const flowRunId = req.params.flowRunId;
+      const result = await this.cachedbService.getCompletedFlowRunId(
+        flowRunId,
+        token
+      );
+      res.send(result);
+    } catch (error) {
+      console.error(`Error getting completed flow run id: ${error}`);
       res.status(500).send(`Error occurs: ${error}`);
     }
   }

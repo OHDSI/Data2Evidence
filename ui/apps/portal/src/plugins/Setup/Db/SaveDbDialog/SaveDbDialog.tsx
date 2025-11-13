@@ -1,10 +1,9 @@
-import React, { FC, useCallback, useEffect, useState } from "react";
-import omit from "lodash/omit";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningIcon from "@mui/icons-material/Warning";
+import Divider from "@mui/material/Divider";
+import { SxProps } from "@mui/system";
 import {
   Autocomplete,
-  Box,
   Button,
   Chip,
   Dialog,
@@ -15,34 +14,34 @@ import {
   TextField,
   Tooltip,
 } from "@portal/components";
-import Divider from "@mui/material/Divider";
-import { SxProps } from "@mui/system";
+import omit from "lodash/omit";
 import pick from "lodash/pick";
+import React, { FC, useCallback, useEffect, useState } from "react";
+import { api } from "../../../../axios/api";
+import { PUB_SLOT_NAME } from "../../../../constant";
+import { useTranslation } from "../../../../contexts";
 import {
+  AUTHENTICATION_MODES,
   CloseDialogType,
+  CREDENTIAL_SERVICE_SCOPES,
+  CREDENTIAL_USER_SCOPES,
+  DB_DIALECTS,
+  DB_DIALECTS_KEY_VALUE,
   Feedback,
   IDatabase,
-  INewDatabase,
   IDbCredential,
   IDbCredentialAdd,
   IDbExtra,
   IDbExtraAdd,
+  IDbPublication,
+  INewDatabase,
+  ITestConnection,
   SERVICE_SCOPE_TYPES,
   USER_SCOPE_TYPES,
-  CREDENTIAL_USER_SCOPES,
-  CREDENTIAL_SERVICE_SCOPES,
-  AUTHENTICATION_MODES,
-  IDbPublication,
-  ITestConnection,
-  DB_DIALECTS_KEY_VALUE,
-  DB_DIALECTS,
 } from "../../../../types";
-import { api } from "../../../../axios/api";
-import { validateCredentials, isValidDbCode } from "../CredentialValidator";
-import { DbCredentialProcessor } from "../CredentialProcessor";
 import { isValidJson } from "../../../../utils";
-import { useTranslation } from "../../../../contexts";
-import { PUB_SLOT_NAME } from "../../../../constant";
+import { DbCredentialProcessor } from "../CredentialProcessor";
+import { isValidDbCode, validateCredentials } from "../CredentialValidator";
 import { BigQueryForm } from "./BigQueryForm";
 import "./SaveDbDialog.scss";
 
@@ -194,7 +193,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         formData.port = 0;
       }
 
-      if(!isValidDbCode(formData.code, setFeedback)) {
+      if (!isValidDbCode(formData.code, setFeedback)) {
         return;
       }
       const encryptedCredentials = formData.credentials
@@ -331,7 +330,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
     >
       <Divider />
       <div className="save-db-dialog__content">
-        <Box mb={4} display="flex" gap={4}>
+        <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>
           <TextField
             label={getText(i18nKeys.SAVE_DB_DIALOG__DATABASE_ID)}
             variant="standard"
@@ -354,12 +353,12 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               ))}
             </Select>
           </FormControl>
-        </Box>
+        </div>
         {formData.dialect === DB_DIALECTS.BIG_QUERY ? (
           <BigQueryForm data={pick(formData, "host", "name")} onChange={(changes) => handleFormDataChange(changes)} />
         ) : (
           <>
-            <Box mb={4} display="flex" gap={4}>
+            <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>
               <TextField
                 label={getText(i18nKeys.SAVE_DB_DIALOG__HOST)}
                 variant="standard"
@@ -382,10 +381,10 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                 value={formData.name}
                 onChange={(event) => handleFormDataChange({ name: event.target?.value })}
               />
-            </Box>
+            </div>
 
-            <Box fontWeight="bold">{getText(i18nKeys.SAVE_DB_DIALOG__VOCAB_SCHEMAS)}</Box>
-            <Box mb={4}>
+            <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.SAVE_DB_DIALOG__VOCAB_SCHEMAS)}</div>
+            <div style={{ marginBottom: "32px" }}>
               <Autocomplete
                 multiple
                 freeSolo
@@ -404,238 +403,244 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                 value={formData.vocabSchemas}
                 onChange={(_, vocabSchemas) => handleFormDataChange({ vocabSchemas })}
               />
-            </Box>
-            <Box mb={4}>
-              <Box mb={2}>
-                <b>{getText(i18nKeys.SAVE_DB_DIALOG__EXTRA)}</b>
-              </Box>
-              {formData?.extra?.map((extra, index) => (
-                <Box key={index} display="flex" gap={3} mb={1}>
-                  <Box flex="1">
-                    <TextField
-                      label={getText(i18nKeys.SAVE_DB_DIALOG__VALUE)}
-                      variant="standard"
-                      fullWidth
-                      value={extra.value}
-                      onChange={(event) =>
-                        handleFormDataChange({
-                          extra: [
-                            ...formData.extra.slice(0, index),
-                            {
-                              ...formData.extra[index],
-                              value: event.target?.value,
-                            } as IDbExtra,
-                            ...formData.extra.slice(index + 1, formData.extra.length),
-                          ],
-                        })
-                      }
-                    />
-                  </Box>
-                  <Box sx={{ width: "130px" }}>
-                    <FormControl fullWidth variant="standard">
-                      <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
-                      <Select
-                        labelId="service-scope-label"
-                        id="service-scope"
-                        readOnly
-                        inputProps={{
-                          tabIndex: -1,
-                        }}
-                        sx={{
-                          "::before, ::after": {
-                            borderBottom: "0 !important",
-                          },
-                          ".MuiSvgIcon-root": {
-                            display: "none",
-                          },
-                        }}
-                        value={extra.serviceScope}
-                      >
-                        {CREDENTIAL_SERVICE_SCOPES.map((scope) => (
-                          <MenuItem value={scope} key={scope}>
-                            {scope}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-            <Box mb={4} sx={{ width: "250px" }} hidden={formData.dialect !== DB_DIALECTS.HANA}>
-              <FormControl fullWidth variant="standard">
-                <InputLabel id="authentication-mode-select-label">
-                  {getText(i18nKeys.SAVE_DB_DIALOG__AUTHENTICATION_MODE)}
-                </InputLabel>
-                <Select
-                  labelId="authentication-mode-select-label"
-                  id="authentication-mode-select"
-                  value={formData.authenticationMode}
-                  onChange={(event) => handleAuthenticationModeChange(event.target?.value)}
-                >
-                  {Object.values(AUTHENTICATION_MODES).map((authenticationMode) => (
-                    <MenuItem value={authenticationMode} key={authenticationMode}>
-                      {authenticationMode}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-            <Box mb={4} hidden={formData.authenticationMode !== AUTHENTICATION_MODES.PASSWORD}>
-              <Box mb={2}>
-                <b>{getText(i18nKeys.SAVE_DB_DIALOG__CREDENTIALS)}</b>
-              </Box>
-              {formData?.credentials?.map((cred, index) => (
-                <Box key={index} display="flex" gap={3} mb={1}>
-                  <Box sx={{ width: "100px" }}>
-                    <FormControl fullWidth variant="standard">
-                      <InputLabel id="user-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__PRIVILEGE)}</InputLabel>
-                      <Select
-                        labelId="user-scope-label"
-                        id="user-scope"
-                        readOnly
-                        inputProps={{
-                          tabIndex: -1,
-                        }}
-                        sx={{
-                          "::before, ::after": {
-                            borderBottom: "0 !important",
-                          },
-                          ".MuiSvgIcon-root": {
-                            display: "none",
-                          },
-                        }}
-                        value={cred.userScope}
-                        onChange={(event) =>
-                          handleFormDataChange({
-                            credentials: [
-                              ...formData.credentials.slice(0, index),
-                              {
-                                ...formData.credentials[index],
-                                userScope: event.target?.value,
-                              } as IDbCredential,
-                              ...formData.credentials.slice(index + 1, formData.credentials.length),
-                            ],
-                          })
-                        }
-                      >
-                        {CREDENTIAL_USER_SCOPES.map((scope) => (
-                          <MenuItem value={scope} key={scope}>
-                            {scope}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Box>
-                  <Box flex="1">
-                    <TextField
-                      label={getText(i18nKeys.SAVE_DB_DIALOG__USERNAME)}
-                      variant="standard"
-                      fullWidth
-                      value={cred.username}
-                      onChange={(event) =>
-                        handleFormDataChange({
-                          credentials: [
-                            ...formData.credentials.slice(0, index),
-                            {
-                              ...formData.credentials[index],
-                              username: event.target?.value,
-                            } as IDbCredential,
-                            ...formData.credentials.slice(index + 1, formData.credentials.length),
-                          ],
-                        })
-                      }
-                    />
-                  </Box>
-                  <Box sx={{ width: "200px" }}>
-                    <TextField
-                      label={getText(i18nKeys.SAVE_DB_DIALOG__PASSWORD)}
-                      variant="standard"
-                      type="password"
-                      sx={{ width: "200px" }}
-                      value={cred.password}
-                      onChange={(event) =>
-                        handleFormDataChange({
-                          credentials: [
-                            ...formData.credentials.slice(0, index),
-                            {
-                              ...formData.credentials[index],
-                              password: event.target?.value,
-                            } as IDbCredential,
-                            ...formData.credentials.slice(index + 1, formData.credentials.length),
-                          ],
-                        })
-                      }
-                    />
-                  </Box>
-                  <Box sx={{ width: "130px" }}>
-                    <FormControl fullWidth variant="standard">
-                      <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
-                      <Select
-                        labelId="service-scope-label"
-                        id="service-scope"
-                        readOnly
-                        inputProps={{
-                          tabIndex: -1,
-                        }}
-                        sx={{
-                          "::before, ::after": {
-                            borderBottom: "0 !important",
-                          },
-                          ".MuiSvgIcon-root": {
-                            display: "none",
-                          },
-                        }}
-                        value={cred.serviceScope}
-                        onChange={(event) =>
-                          handleFormDataChange({
-                            credentials: [
-                              ...formData.credentials.slice(0, index),
-                              {
-                                ...formData.credentials[index],
-                                serviceScope: event.target?.value,
-                              } as IDbCredential,
-                              ...formData.credentials.slice(index + 1, formData.credentials.length),
-                            ],
-                          })
-                        }
-                      >
-                        {CREDENTIAL_SERVICE_SCOPES.map((scope) => (
-                          <MenuItem value={scope} key={scope}>
-                            {scope}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Box>
-                  <Box sx={{ width: "50px", alignSelf: "flex-end" }}>
-                    {Object.keys(testingResult).includes(cred.username) && (
-                      <Tooltip
-                        title={
-                          testingResult[cred.username]
-                            ? getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_VERIFIED)
-                            : getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_FAILED)
-                        }
-                        placement="top"
-                      >
-                        {testingResult[cred.username] ? (
-                          <CheckCircleIcon sx={{ width: 28, height: 28, color: "green" }} />
-                        ) : (
-                          <WarningIcon sx={{ width: 28, height: 28, color: "red" }} />
-                        )}
-                      </Tooltip>
-                    )}
-                  </Box>
-                </Box>
-              ))}
-            </Box>
+            </div>
           </>
         )}
-        <Box mb={4} hidden={formData.dialect !== DB_DIALECTS.POSTGRES}>
-          <Box mb={2}>
+
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ marginBottom: "16px" }}>
+            <b>{getText(i18nKeys.SAVE_DB_DIALOG__EXTRA)}</b>
+          </div>
+          {formData?.extra?.map((extra, index) => (
+            <div key={index} style={{ display: "flex", gap: "24px", marginBottom: "8px" }}>
+              <div style={{ flex: "1" }}>
+                <TextField
+                  label={getText(i18nKeys.SAVE_DB_DIALOG__VALUE)}
+                  variant="standard"
+                  fullWidth
+                  value={extra.value}
+                  onChange={(event) =>
+                    handleFormDataChange({
+                      extra: [
+                        ...formData.extra.slice(0, index),
+                        {
+                          ...formData.extra[index],
+                          value: event.target?.value,
+                        } as IDbExtra,
+                        ...formData.extra.slice(index + 1, formData.extra.length),
+                      ],
+                    })
+                  }
+                />
+              </div>
+              <div style={{ width: "130px" }}>
+                <FormControl fullWidth variant="standard">
+                  <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
+                  <Select
+                    labelId="service-scope-label"
+                    id="service-scope"
+                    readOnly
+                    inputProps={{
+                      tabIndex: -1,
+                    }}
+                    sx={{
+                      "::before, ::after": {
+                        borderBottom: "0 !important",
+                      },
+                      ".MuiSvgIcon-root": {
+                        display: "none",
+                      },
+                    }}
+                    value={extra.serviceScope}
+                  >
+                    {CREDENTIAL_SERVICE_SCOPES.map((scope) => (
+                      <MenuItem value={scope} key={scope}>
+                        {scope}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginBottom: "32px", width: "250px" }} hidden={formData.dialect !== DB_DIALECTS.HANA}>
+          <FormControl fullWidth variant="standard">
+            <InputLabel id="authentication-mode-select-label">
+              {getText(i18nKeys.SAVE_DB_DIALOG__AUTHENTICATION_MODE)}
+            </InputLabel>
+            <Select
+              labelId="authentication-mode-select-label"
+              id="authentication-mode-select"
+              value={formData.authenticationMode}
+              onChange={(event) => handleAuthenticationModeChange(event.target?.value)}
+            >
+              {Object.values(AUTHENTICATION_MODES).map((authenticationMode) => (
+                <MenuItem value={authenticationMode} key={authenticationMode}>
+                  {authenticationMode}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
+        <div
+          style={{ marginBottom: "32px" }}
+          hidden={
+            formData.authenticationMode !== AUTHENTICATION_MODES.PASSWORD || formData.dialect === DB_DIALECTS.BIG_QUERY
+          }
+        >
+          <div style={{ marginBottom: "16px" }}>
+            <b>{getText(i18nKeys.SAVE_DB_DIALOG__CREDENTIALS)}</b>
+          </div>
+          {formData?.credentials?.map((cred, index) => (
+            <div key={index} style={{ display: "flex", gap: "24px", marginBottom: "8px" }}>
+              <div style={{ width: "100px" }}>
+                <FormControl fullWidth variant="standard">
+                  <InputLabel id="user-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__PRIVILEGE)}</InputLabel>
+                  <Select
+                    labelId="user-scope-label"
+                    id="user-scope"
+                    readOnly
+                    inputProps={{
+                      tabIndex: -1,
+                    }}
+                    sx={{
+                      "::before, ::after": {
+                        borderBottom: "0 !important",
+                      },
+                      ".MuiSvgIcon-root": {
+                        display: "none",
+                      },
+                    }}
+                    value={cred.userScope}
+                    onChange={(event) =>
+                      handleFormDataChange({
+                        credentials: [
+                          ...formData.credentials.slice(0, index),
+                          {
+                            ...formData.credentials[index],
+                            userScope: event.target?.value,
+                          } as IDbCredential,
+                          ...formData.credentials.slice(index + 1, formData.credentials.length),
+                        ],
+                      })
+                    }
+                  >
+                    {CREDENTIAL_USER_SCOPES.map((scope) => (
+                      <MenuItem value={scope} key={scope}>
+                        {scope}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+              <div style={{ flex: "1" }}>
+                <TextField
+                  label={getText(i18nKeys.SAVE_DB_DIALOG__USERNAME)}
+                  variant="standard"
+                  fullWidth
+                  value={cred.username}
+                  onChange={(event) =>
+                    handleFormDataChange({
+                      credentials: [
+                        ...formData.credentials.slice(0, index),
+                        {
+                          ...formData.credentials[index],
+                          username: event.target?.value,
+                        } as IDbCredential,
+                        ...formData.credentials.slice(index + 1, formData.credentials.length),
+                      ],
+                    })
+                  }
+                />
+              </div>
+              <div style={{ width: "200px" }}>
+                <TextField
+                  label={getText(i18nKeys.SAVE_DB_DIALOG__PASSWORD)}
+                  variant="standard"
+                  type="password"
+                  sx={{ width: "200px" }}
+                  value={cred.password}
+                  onChange={(event) =>
+                    handleFormDataChange({
+                      credentials: [
+                        ...formData.credentials.slice(0, index),
+                        {
+                          ...formData.credentials[index],
+                          password: event.target?.value,
+                        } as IDbCredential,
+                        ...formData.credentials.slice(index + 1, formData.credentials.length),
+                      ],
+                    })
+                  }
+                />
+              </div>
+              <div style={{ width: "130px" }}>
+                <FormControl fullWidth variant="standard">
+                  <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
+                  <Select
+                    labelId="service-scope-label"
+                    id="service-scope"
+                    readOnly
+                    inputProps={{
+                      tabIndex: -1,
+                    }}
+                    sx={{
+                      "::before, ::after": {
+                        borderBottom: "0 !important",
+                      },
+                      ".MuiSvgIcon-root": {
+                        display: "none",
+                      },
+                    }}
+                    value={cred.serviceScope}
+                    onChange={(event) =>
+                      handleFormDataChange({
+                        credentials: [
+                          ...formData.credentials.slice(0, index),
+                          {
+                            ...formData.credentials[index],
+                            serviceScope: event.target?.value,
+                          } as IDbCredential,
+                          ...formData.credentials.slice(index + 1, formData.credentials.length),
+                        ],
+                      })
+                    }
+                  >
+                    {CREDENTIAL_SERVICE_SCOPES.map((scope) => (
+                      <MenuItem value={scope} key={scope}>
+                        {scope}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </div>
+              <div style={{ width: "50px", alignSelf: "flex-end" }}>
+                {Object.keys(testingResult).includes(cred.username) && (
+                  <Tooltip
+                    title={
+                      testingResult[cred.username]
+                        ? getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_VERIFIED)
+                        : getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_FAILED)
+                    }
+                    placement="top"
+                  >
+                    {testingResult[cred.username] ? (
+                      <CheckCircleIcon sx={{ width: 28, height: 28, color: "green" }} />
+                    ) : (
+                      <WarningIcon sx={{ width: 28, height: 28, color: "red" }} />
+                    )}
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginBottom: "32px" }} hidden={formData.dialect !== DB_DIALECTS.POSTGRES}>
+          <div style={{ marginBottom: "16px" }}>
             <b>{getText(i18nKeys.SAVE_DB_DIALOG__CACHE_REPLICATION)}</b>
-          </Box>
-          <Box mb={1} display="flex" gap={4}>
+          </div>
+          <div style={{ marginBottom: "8px", display: "flex", gap: "32px" }}>
             <TextField
               label={getText(i18nKeys.SAVE_DB_DIALOG__PUBLICATION)}
               variant="standard"
@@ -643,11 +648,11 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               value={formData.publication}
               onChange={(event) => handleFormDataChange({ publication: event.target?.value })}
             />
-          </Box>
-        </Box>
+          </div>
+        </div>
       </div>
       <div className="save-db-dialog__footer">
-        <Box display="flex" gap={1} className="save-db-dialog__footer-actions">
+        <div style={{ display: "flex", gap: "8px" }} className="save-db-dialog__footer-actions">
           {formData.dialect !== DB_DIALECTS.BIG_QUERY && (
             <Button
               text={getText(i18nKeys.SAVE_DB_DIALOG__TEST_CONNECTION)}
@@ -665,7 +670,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
             onClick={() => handleClose("cancelled")}
           />
           <Button text={getText(i18nKeys.SAVE_DB_DIALOG__SAVE)} onClick={handleSave} loading={saving} />
-        </Box>
+        </div>
       </div>
     </Dialog>
   );

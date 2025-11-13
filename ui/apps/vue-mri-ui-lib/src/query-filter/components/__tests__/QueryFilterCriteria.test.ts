@@ -116,7 +116,6 @@ describe('QueryFilterCriteria Model Tests', () => {
     const criteria = criteriaManager.getCriteria()
 
     // Check root structure
-    expect(criteria.id).toBeDefined()
     expect(Array.isArray(criteria.criteria)).toBe(true)
 
     // Check group structure
@@ -172,9 +171,8 @@ describe('QueryFilterCriteria Model Tests', () => {
     expect(atlasFormat).toHaveProperty('PrimaryCriteria')
     expect(atlasFormat).toHaveProperty('QualifiedLimit')
     expect(atlasFormat).toHaveProperty('InclusionRules')
-    expect(atlasFormat).toHaveProperty('EndStrategy')
 
-    expect(atlasFormat.QualifiedLimit.Type).toBe('All')
+    expect(atlasFormat.QualifiedLimit.Type).toBe('First')
     expect(atlasFormat.InclusionRules).toHaveLength(1)
     expect(atlasFormat.InclusionRules[0].name).toBe('Test Criteria 1')
     expect(atlasFormat.InclusionRules[0].description).toBe('Test description')

@@ -2,7 +2,6 @@ import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { PrefectAPI } from "../api/PrefectAPI.ts";
 import { StrategusAnalysisApi } from "../api/StrategusAnalysis.ts";
 import { PrefectDeploymentName, PrefectFlowName } from "../const.ts";
-import { Canvas } from "../entities/canvas.ts";
 import {
   PrefectAnalysisParamsTransformer,
   PrefectParamsTransformer,
@@ -46,13 +45,14 @@ export class PrefectService {
   public async createAnalysisFlowRun(
     id: string,
     datasetId: string,
+    uploadResults: boolean | undefined,
     token: string
   ) {
     const revision = await this.analysisflowService.getLastAnalysisflowRevision(
       id
     );
     const studyName = revision.canvas.name;
-    const studyId = revision.canvas.id;
+    const studyId = revision.canvas.name;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow
     );
@@ -77,10 +77,28 @@ export class PrefectService {
           schemaName,
           databaseCode,
           studyName,
-          studyId
+          studyId,
+          ...(uploadResults !== undefined ? { uploadResults } : {}),
         },
       }
     );
+    console.log(`creating auth token for flowrun (PrefectService): ${flowRunId}`);
+    await this.prefectApi.createInputAuthToken(flowRunId);
+    Promise.any([
+      new Promise(() => {
+        setTimeout(async () => {
+          const msg = "Prefect input authtoken deletion";
+          try {
+            (await this.prefectApi.deleteInputAuthToken(flowRunId))
+              ? console.log(`${msg} successful`)
+              : console.log(`${msg} failed`);
+          } catch (error) {
+            console.log(`${msg} failed`);
+            console.error(error);
+          }
+        }, 1000 * 60 * 5);
+      }),
+    ]);
     await this.analysisflowService.createAnalysisflowRun(id, flowRunId);
     return flowRunId;
   }
@@ -98,7 +116,7 @@ export class PrefectService {
 
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
     await this.strategusAnalysisApi.saveAnalysis(
-      options["study_id"],
+      options["studyId"],
       options["notebookName"],
       json_graph["analysisSpecification"]
     );

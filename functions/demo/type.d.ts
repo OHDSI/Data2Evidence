@@ -62,12 +62,21 @@ export interface ICacheCreateFlowRun {
   datasetId: string;
 }
 
+export interface ICacheStatusFlowRun {
+  flowRunId: string;
+}
+
 export interface IDqdCreateFlowRun {
   datasetId: string | undefined;
   comment?: string;
   vocabSchemaName?: string;
   cohortDefinitionId?: string;
   releaseId?: string;
+}
+
+export interface IDQDResultFlowRun {
+  datasetId: string;
+  flowRunId: string;
 }
 
 export interface IDcCreateFlowRun {

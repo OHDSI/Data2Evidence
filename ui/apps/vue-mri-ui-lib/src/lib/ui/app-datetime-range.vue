@@ -5,7 +5,8 @@
       :text="getText('MRI_PA_DATE_FROM_LABEL')"
       @update="updateFrom"
       :config="dateControlConfig"
-      :placeholder="getText('MRI_PA_INPUT_PLACEHOLDER_ALL')"
+      :config-format="dateControlConfig.format"
+      :placeholder="dateFormatPlaceholder"
       datetype="from"
       :errMsg="errTextFrom"
     ></appDate>
@@ -14,7 +15,8 @@
       :text="getText('MRI_PA_DATE_TO_LABEL')"
       @update="updateTo"
       :config="dateControlConfig"
-      :placeholder="getText('MRI_PA_INPUT_PLACEHOLDER_TODAY')"
+      :config-format="dateControlConfig.format"
+      :placeholder="dateFormatPlaceholder"
       datetype="to"
       :errMsg="errTextTo"
     ></appDate>
@@ -24,16 +26,13 @@
 import { mapGetters, mapActions } from 'vuex'
 import DateUtils from '../../utils/DateUtils'
 import appDate from './app-date.vue'
+import moment from 'moment'
 
 export default {
   name: 'app-datetime-range',
   props: ['model'],
   data() {
     return {
-      dateControlConfig: {
-        format: 'YYYY-MM-DD HH:mm:ss',
-        sideBySide: true,
-      },
       errTextFrom: '',
       errTextTo: '',
       fromDate: '',
@@ -55,7 +54,39 @@ export default {
     },
   },
   computed: {
-    ...mapGetters(['getText', 'getConstraint']),
+    ...mapGetters(['getText', 'getConstraint', 'getMriFrontendConfig']),
+    dateControlConfig() {
+      try {
+        const configFormat = this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat
+        // For datetime, append time format to the config date format as it does not have time format included
+        const baseFormat = configFormat || 'YYYY-MM-DD'
+        const format = `${baseFormat} HH:mm:ss`
+        return {
+          format,
+          sideBySide: true,
+        }
+      } catch (error) {
+        console.warn('Could not access MRI frontend config for date format, using default:', error)
+        return {
+          format: 'YYYY-MM-DD HH:mm:ss',
+          sideBySide: true,
+        }
+      }
+    },
+    dateFormatPlaceholder() {
+      try {
+        const configFormat =
+          this.getMriFrontendConfig?._internalConfig?.panelOptions?.settings?.dateFormat || 'YYYY-MM-DD'
+        const format = `${configFormat} HH:mm:ss`
+        // Use September 30, 2025 14:30:00 - makes it clear which is month (09) vs day (30)
+        const exampleDate = moment('2025-09-30 14:30:00')
+        const formattedExample = exampleDate.format(format)
+        return `e.g., ${formattedExample}`
+      } catch (error) {
+        console.warn('Could not access MRI frontend config for date format, using default:', error)
+        return 'e.g., 2025-09-30 14:30:00'
+      }
+    },
   },
   methods: {
     ...mapActions(['updateDateConstraintValue']),

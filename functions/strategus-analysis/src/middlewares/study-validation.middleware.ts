@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { PortalServerAPI } from "../strategus-results/api/PortalServerAPI.ts";
+import StrategusAnalysisService from "../analysis/services.ts";
 
 export const validateStudyIdMiddleware = async (
   req: Request,
@@ -33,7 +34,7 @@ export const validateStudyIdMiddleware = async (
   }
 };
 
-async function validateStudyId(
+export async function validateStudyId(
   studyId: string,
   token?: string
 ): Promise<boolean> {
@@ -47,6 +48,11 @@ async function validateStudyId(
 
     try {
       const portalAPI = new PortalServerAPI(token);
+      const analysisService = new StrategusAnalysisService();
+      const existingAnalysis = await analysisService.getStudyAnalysis(studyId);
+
+      if (existingAnalysis) return true;
+
       const studiesData = await portalAPI.getGitStudies();
       return studyId in studiesData;
     } catch (apiError: any) {

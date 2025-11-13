@@ -8,7 +8,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { EntryEvent, ExitEvent, QueryFilterEvent } from '../types/QueryFilterTypes'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
@@ -38,9 +38,16 @@ const emit = defineEmits<{
   'update-entry-days': [type: 'PRIOR' | 'POST', days: number]
   'concept-set-action': [action: ConceptSetAction]
   'update-fixed-duration': [eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number]
-  'update-cont-drug-settings': [conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number]
+  'update-cont-drug-settings': [
+    conceptSetId: string,
+    conceptSetName: string,
+    gapDays: number,
+    offset: number,
+    daysSupplyOverride: number
+  ]
   'update-primary-events': [events: QueryFilterEvent[]]
   'update-exit-events': [events: QueryFilterEvent[]]
+  'search-change': [searchQuery: string]
 }>()
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
@@ -57,14 +64,19 @@ const updateLimitValue = (value: string) => {
   if (isValidLimit(value)) {
     emit('update-limit', value)
 
-    // Emit default values when switching to FIXED or CONT_DRUG
-    if (!isEntry.value) {
+    // Only emit settings when user actively switches mode (not during initialization)
+    // Check if the value is different from current prop to detect user action
+    const currentStrategy = props.exitCriteriaData?.endStrategy
+    const isUserAction = currentStrategy && currentStrategy !== value
+
+    if (!isEntry.value && isUserAction) {
       if (value === 'FIXED') {
         emit('update-fixed-duration', selectedEventDateOffset.value, selectedDaysOffset.value)
       } else if (value === 'CONT_DRUG') {
         emit(
           'update-cont-drug-settings',
           selectedConceptSet.value?.value.toString() || '',
+          selectedConceptSet.value?.text || selectedConceptSet.value?.display_value || '',
           selectedGapDays.value,
           selectedOffset.value,
           selectedDaysSupplyOverride.value
@@ -138,6 +150,15 @@ const daysOffsetOptions = ['1', '2', '3', '4', '5', '6', '7', '14', '21', '30', 
 const selectedEventDateOffset = ref<'StartDate' | 'EndDate'>('StartDate')
 const selectedDaysOffset = ref<number>(30)
 
+// Initialize fixed duration settings from exitCriteriaData when component mounts or data changes
+const initializeFixedDurationSettings = () => {
+  if (props.exitCriteriaData?.fixedDuration) {
+    const settings = props.exitCriteriaData.fixedDuration
+    selectedEventDateOffset.value = settings.dateField || 'StartDate'
+    selectedDaysOffset.value = settings.offset ?? 30
+  }
+}
+
 // Show fixed duration inputs only when limit is FIXED and not ENTRY
 const showFixedDurationInputs = computed(() => {
   return !isEntry.value && initialEventsLimit.value === 'FIXED'
@@ -173,6 +194,62 @@ const selectedConceptSet = ref<ConceptSetItemDisplay | null>(null)
 const selectedGapDays = ref<number>(30)
 const selectedOffset = ref<number>(0)
 const selectedDaysSupplyOverride = ref<number>(1)
+
+// Initialize CONT_DRUG settings from exitCriteriaData when component mounts or data changes
+const initializeContDrugSettings = () => {
+  if (props.exitCriteriaData?.contDrugSettings) {
+    const settings = props.exitCriteriaData.contDrugSettings
+
+    // Set numeric values
+    selectedGapDays.value = settings.gapDays ?? 30
+    selectedOffset.value = settings.offset ?? 0
+    selectedDaysSupplyOverride.value = settings.daysSupplyOverride ?? 1
+
+    // Find and set the concept set from the available concept sets
+    if (settings.conceptSetId && props.conceptSets) {
+      const conceptSet = props.conceptSets.find(cs => cs.value.toString() === settings.conceptSetId)
+      if (conceptSet) {
+        selectedConceptSet.value = conceptSet
+      }
+    }
+  }
+}
+
+// Initialize on mount
+onMounted(() => {
+  initializeFixedDurationSettings()
+  initializeContDrugSettings()
+})
+
+// Watch for changes to exitCriteriaData.fixedDuration and re-initialize
+watch(
+  () => props.exitCriteriaData?.fixedDuration,
+  () => {
+    initializeFixedDurationSettings()
+  },
+  { deep: true, immediate: true }
+)
+
+// Watch for changes to exitCriteriaData.contDrugSettings and re-initialize
+watch(
+  () => props.exitCriteriaData?.contDrugSettings,
+  () => {
+    initializeContDrugSettings()
+  },
+  { deep: true, immediate: true }
+)
+
+// Also watch for conceptSets to become available (they may load after the component mounts)
+watch(
+  () => props.conceptSets,
+  () => {
+    // Re-initialize to pick up the concept set once it's loaded
+    if (props.exitCriteriaData?.contDrugSettings?.conceptSetId && !selectedConceptSet.value) {
+      initializeContDrugSettings()
+    }
+  },
+  { deep: true }
+)
 
 // Show CONT_DRUG inputs only when limit is CONT_DRUG and not ENTRY
 const showContDrugInputs = computed(() => {
@@ -234,9 +311,13 @@ const updateDaysSupplyOverride = (value: string) => {
 }
 
 const emitContDrugUpdate = () => {
+  const conceptSetId = selectedConceptSet.value?.value.toString() || ''
+  const conceptSetName = selectedConceptSet.value?.text || selectedConceptSet.value?.display_value || ''
+
   emit(
     'update-cont-drug-settings',
-    selectedConceptSet.value?.value.toString() || '',
+    conceptSetId,
+    conceptSetName,
     selectedGapDays.value,
     selectedOffset.value,
     selectedDaysSupplyOverride.value
@@ -369,7 +450,10 @@ const activeTooltipKey = computed(() => {
     </div>
 
     <div class="events-container">
-      <div class="sidebar">ALL</div>
+      <div class="sidebar">
+        <div class="sidebar-top"></div>
+        <div class="sidebar-label">ALL</div>
+      </div>
       <QueryFilterEventContainer
         :events="eventsData"
         :event-type="type"
@@ -380,6 +464,7 @@ const activeTooltipKey = computed(() => {
         :concept-set-texts="props.conceptSetTexts || {}"
         :readonly="readonly"
         @update-events="handleEventsUpdate"
+        @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
         @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
       />
     </div>
@@ -454,7 +539,7 @@ const activeTooltipKey = computed(() => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #000080;
+    color: var(--color-primary, #000080);
   }
 
   .events-container {
@@ -463,13 +548,26 @@ const activeTooltipKey = computed(() => {
       width: 30px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 12px 6px;
-      background: #000080; // Blue to match other sidebars
-      position: relative;
       border-radius: 0 0 0 8px;
-      color: white;
-      writing-mode: sideways-lr;
+      border: 1px solid var(--color-primary);
+
+      .sidebar-top {
+        background-color: var(--color-primary);
+        width: 30%;
+        height: 100%;
+        border-radius: 0 0 0 6px;
+      }
+      .sidebar-label {
+        writing-mode: sideways-lr;
+        text-orientation: sideways;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--color-primary);
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        user-select: none;
+      }
     }
     .query-filter-event-container {
       flex: 1;
@@ -489,11 +587,11 @@ const activeTooltipKey = computed(() => {
     background: transparent;
     border-radius: 6px;
     &:not(:first-child) {
-      border-left: #000080 2px solid;
+      border-left: var(--color-primary, #000080) 2px solid;
     }
     font-size: 14px;
     font-weight: 600;
-    color: #000080;
+    color: var(--color-primary, #000080);
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -506,7 +604,7 @@ const activeTooltipKey = computed(() => {
     }
 
     &--active {
-      background: #000080;
+      background: var(--color-primary, #000080);
       color: white;
       box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2);
     }
@@ -552,7 +650,7 @@ const activeTooltipKey = computed(() => {
     align-items: center;
     justify-content: center;
     padding: 12px 6px;
-    background: #000080; // Blue to match other sidebars
+    background: var(--color-primary, #000080); // Blue to match other sidebars
     position: relative;
     border-radius: 8px 0 0 8px; // Round left corners
 
@@ -632,7 +730,7 @@ const activeTooltipKey = computed(() => {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #000080;
+          border-color: var(--color-primary, #000080);
           background: white;
         }
       }
@@ -688,7 +786,7 @@ const activeTooltipKey = computed(() => {
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #000080;
+          border-color: var(--color-primary, #000080);
           background: white;
         }
       }

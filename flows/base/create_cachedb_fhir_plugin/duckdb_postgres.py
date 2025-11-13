@@ -22,7 +22,8 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str):
                 columns = dbdao.get_columns(schema_name, table)
                 casted_columns = []
                 for col in columns:
-                    if col.lower().endswith('text') or col.lower().endswith('_text'):
+                    # if col.lower().endswith('text') or col.lower().endswith('_text'):
+                    if col.lower() == 'content':
                         casted_columns.append(f"CAST({col} AS JSON) AS {col}")
                     else:
                         casted_columns.append(col)

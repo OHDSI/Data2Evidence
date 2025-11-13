@@ -11,7 +11,7 @@ export default {
 import Popper from '@/components/Popper.vue'
 import ButtonMaterial from './ButtonMaterial.vue'
 import DropdownMenu from './DropdownMenu.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 interface Props {
   target: HTMLElement
@@ -42,6 +42,18 @@ const countDropdownRef = ref<HTMLElement | null>(null)
 const activeGroupCriteriaType = ref<GroupCriteriaType>(props.groupCriteria?.type || 'ALL')
 const currentCount = ref(props.groupCriteria?.count?.toString() || '1')
 
+// Watch for prop changes to sync state
+watch(
+  () => props.groupCriteria,
+  newGroupCriteria => {
+    if (newGroupCriteria) {
+      activeGroupCriteriaType.value = newGroupCriteria.type || 'ALL'
+      currentCount.value = newGroupCriteria.count?.toString() || '1'
+    }
+  },
+  { immediate: false, deep: true }
+)
+
 // Show count dropdown only for AT_LEAST and AT_MOST
 const showCountDropdown = computed(() => {
   return activeGroupCriteriaType.value === 'AT_LEAST' || activeGroupCriteriaType.value === 'AT_MOST'
@@ -56,12 +68,12 @@ const updateGroupCriteriaField = () => {
   const newGroupCriteria: QueryFilterGroupCriteria = {
     type: activeGroupCriteriaType.value,
   }
-  
+
   // Only include count for AT_LEAST and AT_MOST
   if (activeGroupCriteriaType.value === 'AT_LEAST' || activeGroupCriteriaType.value === 'AT_MOST') {
     newGroupCriteria.count = parseInt(getGroupCriteriaCount(), 10)
   }
-  
+
   emit('updateGroupCriteriaField', newGroupCriteria)
 }
 
@@ -118,21 +130,17 @@ const getGroupCriteriaCount = () => {
                     At most
                   </button>
                 </div>
-                
+
                 <!-- Count Dropdown - Always reserve space -->
                 <div class="count-dropdown-container">
-                  <div 
-                    v-show="showCountDropdown" 
-                    class="count-dropdown" 
-                    ref="countDropdownRef"
-                  >
+                  <div v-show="showCountDropdown" class="count-dropdown" ref="countDropdownRef">
                     {{ currentCount }}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div class="footer">
             <ButtonMaterial
               @button-click="
@@ -163,7 +171,7 @@ const getGroupCriteriaCount = () => {
 .group-criteria-menu-popper.popper {
   z-index: 1000;
   background-color: transparent;
-  
+
   .popover-content {
     overflow-y: visible !important; // Override Popper's inline style to prevent shadow clipping
   }
@@ -212,67 +220,67 @@ const getGroupCriteriaCount = () => {
       transition: all 0.2s ease;
       position: relative;
       box-sizing: border-box; // Ensure border is included in width calculation
-      
+
       // Background colors as specified
       &--all {
-        background: #000080;
+        background: var(--color-cardinality-all);
         color: white;
       }
-      
+
       &--any {
-        background: #E75248;
+        background: var(--color-cardinality-any);
         color: white;
       }
-      
+
       &--at-least {
-        background: #2686EB;
+        background: var(--color-cardinality-at-least);
         color: white;
       }
-      
+
       &--at-most {
-        background: #FA9087;
+        background: var(--color-cardinality-at-most);
         color: white;
       }
-      
+
       // Remove gaps between buttons
       &:first-child {
         border-top-left-radius: 6px;
         border-bottom-left-radius: 6px;
       }
-      
+
       &--last {
         border-top-right-radius: 6px;
         border-bottom-right-radius: 6px;
       }
-      
+
       &:not(:first-child) {
         margin-left: -3px; // Overlap by border width to connect buttons
       }
-      
+
       // Selection state with 3px border
       &--selected {
-        border: 3px solid #000080;
+        border: 3px solid var(--color-primary, #000080);
         font-weight: 600;
         z-index: 2;
-        
+
         // Adjust background opacity when selected
         &.segment-button--all {
-          background: rgba(0, 0, 128, 0.9);
+          background: var(--color-cardinality-all);
         }
-        
+
         &.segment-button--any {
-          background: rgba(231, 82, 72, 0.9);
+          background: var(--color-cardinality-any);
         }
-        
+
         &.segment-button--at-least {
-          background: rgba(38, 134, 235, 0.9);
+          background: var(--color-cardinality-at-least);
         }
-        
+
         &.segment-button--at-most {
-          background: rgba(250, 144, 135, 0.9);
+          background: var(--color-cardinality-at-most);
         }
       }
-      
+
       &:hover:not(.segment-button--selected) {
         opacity: 0.8;
       }
@@ -292,14 +300,14 @@ const getGroupCriteriaCount = () => {
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid #000080;
+      border: 1px solid var(--color-primary, #000080);
       border-radius: 4px;
       background: #fff;
-      color: #000080;
+      color: var(--color-primary, #000080);
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
-      
+
       &:hover {
         background: #f8f9fa;
       }

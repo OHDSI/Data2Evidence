@@ -17,6 +17,7 @@ const moduleNames = [
   "SystemAdmin/FlowOverview",
   "SystemAdmin/ConceptMapping",
   "SystemAdmin/StudyPage",
+  "SystemAdmin/D2ELogs",
   "Starboard",
   "Cohort",
   "Admin/Permissions",

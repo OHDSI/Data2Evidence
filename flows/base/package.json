@@ -3,7 +3,7 @@
   "version": "0.0.99",
   "description": "",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t d2e/flow-base:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-base:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
   },
   "repository": {
     "type": "git",
@@ -20,14 +20,14 @@
       "image": "ghcr.io/ohdsi/d2e/flow-base",
       "flows": [
         {
-          "name": "create_cachedb_file_plugin",
-          "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
+          "name": "hana_load_plugin",
+          "entrypoint": "flows.hana_load_plugin.flow.hana_load_plugin",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
             "properties": {
               "options": {
-                "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
+                "$ref": "#/definitions/DataloadOptions",
                 "position": 0,
                 "title": "options"
               }
@@ -36,41 +36,248 @@
               "options"
             ],
             "definitions": {
-              "CreateDuckdbDatabaseFileType": {
+              "FlowActionType": {
+                "enum": [
+                  "create_datamodel",
+                  "get_version_info"
+                ],
+                "title": "FlowActionType",
+                "type": "string"
+              },
+              "DataloadOptions": {
                 "properties": {
+                  "flow_action_type": {
+                    "$ref": "#/definitions/FlowActionType"
+                  },
+                  "database_code": {
+                    "title": "Database Code",
+                    "type": "string"
+                  },
+                  "schema_name": {
+                    "title": "Schema Name",
+                    "type": "string"
+                  },
+                  "vocab_schema": {
+                    "title": "Vocabulary Schema",
+                    "type": "string"
+                  },
+                  "results_schema": {
+                    "title": "Results Schema",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "flow_action_type",
+                  "database_code",
+                  "schema_name",
+                  "vocab_schema",
+                  "results_schema"
+                ],
+                "title": "DataloadOptions",
+                "type": "object"
+              }
+            }
+          },
+          "type": "datamodel",
+          "datamodels": [
+            "omop5-3"
+          ]
+        },
+        {
+          "name": "create_cachedb_file_plugin",
+          "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/CreateCacheOptions",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "CacheFlowAction": {
+                "enum": [
+                  "create_datamart_cache",
+                  "get_version_info"
+                ],
+                "title": "CacheFlowAction",
+                "type": "string"
+              },
+              "CreateCacheOptions": {
+                "properties": {
+                  "flowActionType": {
+                    "$ref": "#/definitions/CacheFlowAction"
+                  },
                   "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "schemaName": {
-                    "title": "Schemaname",
-                    "type": "string"
-                  },
-                  "trex_connection": {
                     "anyOf": [
                       {
-                        "type": "boolean"
+                        "type": "string"
                       },
                       {
                         "type": "null"
                       }
                     ],
-                    "default": true,
-                    "title": "Trex Connection"
+                    "default": null,
+                    "title": "Databasecode"
+                  },
+                  "schemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Schemaname"
+                  },
+                  "resultsSchemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Ressultsschemaname"
                   },
                   "tablesToCreateDuckdbFtsIndex": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "default": [
                       "concept"
                     ],
-                    "title": "Tablestocreateduckdbftsindex",
+                    "title": "Tablestocreateduckdbftsindex"
+                  },
+                  "snapshotSchemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Snapshotschemaname"
+                  },
+                  "snapshotCopyConfig": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/DatamartConfig"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "datasets": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Datasets"
+                  }
+                },
+                "required": [
+                  "flowActionType"
+                ],
+                "title": "CreateCacheOptions",
+                "type": "object"
+              },
+              "DatamartConfig": {
+                "properties": {
+                  "timestamp": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Timestamp"
+                  },
+                  "tableConfig": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "$ref": "#/definitions/DatamartTableConfig"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Tableconfig"
+                  },
+                  "patientsToBeCopied": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "integer"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Patientstobecopied"
+                  }
+                },
+                "title": "DatamartConfig",
+                "type": "object"
+              },
+              "DatamartTableConfig": {
+                "properties": {
+                  "tableName": {
+                    "title": "Tablename",
+                    "type": "string"
+                  },
+                  "columnsToBeCopied": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "title": "Columnstobecopied",
                     "type": "array"
                   }
                 },
                 "required": [
-                  "databaseCode",
-                  "schemaName"
+                  "tableName",
+                  "columnsToBeCopied"
                 ],
-                "title": "CreateDuckdbDatabaseFileType",
+                "title": "DatamartTableConfig",
                 "type": "object"
               }
             }
@@ -178,6 +385,11 @@
                   "resultsSchema": {
                     "title": "Resultsschema",
                     "type": "string"
+                  },
+                  "executeConceptRecordCount": {
+                    "default": true,
+                    "title": "executeConceptRecordCount",
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -196,187 +408,6 @@
           "tags": [
             "data_characterization"
           ]
-        },
-        {
-          "name": "datamart_plugin",
-          "entrypoint": "flows.datamart_plugin.flow.datamart_plugin",
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/CreateDatamartOptions",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CreateDatamartOptions": {
-                "properties": {
-                  "flow_action_type": {
-                    "$ref": "#/definitions/DatamartFlowAction"
-                  },
-                  "dialect": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Dialect"
-                  },
-                  "schema_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Schema Name"
-                  },
-                  "source_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Source Schema"
-                  },
-                  "database_code": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Database Code"
-                  },
-                  "snapshot_copy_config": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/DatamartCopyConfig"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null
-                  },
-                  "datasets": {
-                    "anyOf": [
-                      {
-                        "items": {},
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Datasets"
-                  }
-                },
-                "required": [
-                  "flow_action_type"
-                ],
-                "title": "CreateDatamartOptions",
-                "type": "object"
-              },
-              "DatamartCopyConfig": {
-                "properties": {
-                  "timestamp": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Timestamp"
-                  },
-                  "tableConfig": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "$ref": "#/definitions/DatamartCopyTableConfig"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Tableconfig"
-                  },
-                  "patientsToBeCopied": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "type": "integer"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "title": "Patientstobecopied"
-                  }
-                },
-                "required": [],
-                "title": "DatamartCopyConfig",
-                "type": "object"
-              },
-              "DatamartCopyTableConfig": {
-                "properties": {
-                  "tableName": {
-                    "title": "Tablename",
-                    "type": "string"
-                  },
-                  "columnsToBeCopied": {
-                    "items": {
-                      "type": "string"
-                    },
-                    "title": "Columnstobecopied",
-                    "type": "array"
-                  }
-                },
-                "required": [
-                  "tableName",
-                  "columnsToBeCopied"
-                ],
-                "title": "DatamartCopyTableConfig",
-                "type": "object"
-              },
-              "DatamartFlowAction": {
-                "enum": [
-                  "create_snapshot",
-                  "create_parquet_snapshot",
-                  "get_version_info"
-                ],
-                "title": "DatamartFlowAction",
-                "type": "string"
-              }
-            }
-          },
-          "type": "datamart"
         },
         {
           "name": "dqd_plugin",
@@ -415,6 +446,10 @@
                   },
                   "vocabSchemaName": {
                     "title": "Vocabschemaname",
+                    "type": "string"
+                  },
+                  "resultsSchemaName": {
+                    "title": "Resultsschemaname",
                     "type": "string"
                   },
                   "releaseDate": {
@@ -469,7 +504,7 @@
                         "type": "null"
                       }
                     ],
-                    "default": null,
+                    "default": "cohort",
                     "title": "Cohorttablename"
                   }
                 },
@@ -479,6 +514,7 @@
                   "databaseCode",
                   "cdmVersionNumber",
                   "vocabSchemaName",
+                  "resultsSchemaName",
                   "releaseDate"
                 ],
                 "title": "DqdOptionsType",
@@ -550,6 +586,18 @@
                     ],
                     "default": null,
                     "title": "Schema Name"
+                  },
+                  "results_schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Results Schema"
                   },
                   "vocab_schema": {
                     "anyOf": [
@@ -653,7 +701,7 @@
                   "vocabschema_name": {
                     "type": "string",
                     "title": "Vocabulary Schema Name",
-                    "default": null,
+                    "default": "@vocab_schema",
                     "description": "Required when materialize=true."
                   },
                   "cohortschema_name": {

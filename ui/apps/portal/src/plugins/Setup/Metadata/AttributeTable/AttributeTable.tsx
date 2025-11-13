@@ -1,13 +1,13 @@
 import React, { FC, useState, useCallback } from "react";
-import { Box, Title } from "@portal/components";
+import { Title } from "@portal/components";
 import { useDatasetAttributeConfigs, useDialogHelper } from "../../../../hooks";
 import { TableContainer, Table, TableHead, TableBody, Alert } from "@mui/material";
 import { Button, EditIcon, IconButton, Loader, TableCell, TableRow, TrashIcon } from "@portal/components";
 import { SaveAttributeDialog } from "./SaveAttributeDialog/SaveAttributeDialog";
 import { DeleteAttributeDialog } from "./DeleteAttributeDialog/DeleteAttributeDialog";
 import { DatasetAttributeConfig } from "../../../../types";
-import "./AttributeTable.scss";
 import { useTranslation } from "../../../../contexts";
+import "./AttributeTable.scss";
 
 const AttributeTable: FC = () => {
   const { getText, i18nKeys } = useTranslation();
@@ -54,7 +54,7 @@ const AttributeTable: FC = () => {
 
   return (
     <>
-      <Box>
+      <div>
         <div className="metadata-attribute-table__header">
           <Title>{getText(i18nKeys.ATTRIBUTE_TABLE__METADATA)}</Title>
           <div className="metadata-attribute-table__add-button">
@@ -98,7 +98,7 @@ const AttributeTable: FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
-      </Box>
+      </div>
       <SaveAttributeDialog
         open={showSaveAttributeDialog}
         onClose={closeSaveAttributeDialog}

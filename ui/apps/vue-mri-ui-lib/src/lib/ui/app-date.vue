@@ -1,10 +1,9 @@
 <template>
   <div class="app-date form-group">
     <app-label v-if="text" :text="text" />
-    <span v-if="!isValid || errMsg" class="errortext">{{ errMsg }}</span>
     <div
       class="d-flex form-control form-control-sm date-container"
-      :class="{ invalidDate: !isValid || errMsg, MriHilite: isActive }"
+      :class="{ invalidDate: !isValid || errMsg, MriHilite: isActive && isValid, activeError: isActive && !isValid }"
     >
       <div class="app-date__trigger">
         <input
@@ -16,6 +15,7 @@
           @keyup.enter="onKeyEnter"
           @focus="onInputFocus"
           @blur="onInputBlur"
+          @input="clearError"
         />
         <div ref="calendarButton" class="app-date__icon" @click="togglePicker">
           <appIcon icon="calendar" />
@@ -32,6 +32,9 @@
         class="dp-hidden-input"
         :dark="false"
       />
+    </div>
+    <div v-if="!isValid || errMsg" class="error-container">
+      <span class="errortext">{{ errMsg }}</span>
     </div>
   </div>
 </template>
@@ -51,7 +54,9 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import moment from 'moment'
 import appIcon from './app-icon.vue'
 import appLabel from './app-label.vue'
+import { useStore } from 'vuex' 
 
+const store = useStore()
 // Component configuration
 defineOptions({
   name: 'AppDate',
@@ -75,6 +80,7 @@ interface Props {
   clearable?: boolean
   autoApply?: boolean
   textInput?: boolean
+  configFormat?: string // Optional date format from MRI config
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -91,6 +97,7 @@ const props = withDefaults(defineProps<Props>(), {
   clearable: true,
   autoApply: true,
   textInput: true,
+  configFormat: undefined,
 })
 
 // Emits
@@ -155,6 +162,7 @@ const isValid = ref(true)
 const isActive = ref(false)
 const tempDate = ref<Date | string | null>(null)
 const datepicker = ref()
+const errMsg = computed(() => props.errMsg || (isValid.value ? '' : store.getters['getText']('MRI_PA_INVALID_DATE')))
 
 // Computed properties
 const defaultConfig = computed(() => ({
@@ -164,10 +172,13 @@ const defaultConfig = computed(() => ({
   range: false,
 }))
 
-const mergedConfig = computed(() => ({
-  ...defaultConfig.value,
-  ...props.config,
-}))
+const mergedConfig = computed(() => {
+  return {
+    ...defaultConfig.value,
+    ...props.config,
+    format: props.configFormat || 'YYYY-MM-DD',
+  }
+})
 
 const displayFormat = computed(() => {
   const format = mergedConfig.value.format
@@ -217,6 +228,14 @@ const datePickerProps = computed(() => ({
   ui: customUI.value,
   keepActionRow: keepActionRow.value,
   menuClassName: 'app-date-menu',
+  textInput: props.textInput
+    ? {
+        format: mergedConfig.value.format,
+        enterSubmit: true,
+        tabSubmit: true,
+        selectOnFocus: true,
+      }
+    : false,
 }))
 
 // Watch for prop changes
@@ -308,7 +327,6 @@ const commitDate = (dateVal: string) => {
       emit('update', { date, isEmpty: false })
     } else {
       isValid.value = false
-      emit('update', { date: dateVal, isEmpty: false })
     }
   }
 }
@@ -322,6 +340,10 @@ const onCleared = () => {
   displayValue.value = ''
   isValid.value = true
   emit('update', { date: '', isEmpty: true })
+}
+
+const clearError = () => {
+  isValid.value = true
 }
 
 const togglePicker = () => {
@@ -389,19 +411,29 @@ defineExpose({
     }
 
     &.invalidDate {
-      border-color: #dc3545;
+      border-color: var(--color-mri-error);
     }
 
     &.MriHilite {
-      border-color: #007bff;
-      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      border-color: var(--color-app-date-border, #007bff);
+      box-shadow: 0 0 0 0.2rem var(--color-app-date-highlight, rgba(0, 123, 255, 0.25));
+    }
+
+    &.activeError {
+      border-color: var(--color-mri-error);
+      box-shadow: 0 0 0 0.1rem var(--color-mri-error);
     }
   }
 
-  .errortext {
-    color: #dc3545;
-    font-size: 0.875rem;
+  .error-container {
     margin-top: 0.25rem;
+    margin-left: 0.25rem;
+    height: 1rem;
+    position: relative;
+    .errortext {
+      color: var(--color-mri-error);
+      font-size: 0.7rem;
+    }
   }
 }
 </style>
@@ -418,21 +450,23 @@ defineExpose({
 }
 
 .dp__theme_light {
-  --dp-text-color: #000080;
+  --dp-text-color: var(--color-primary);
   --dp-hover-color: #d2d2d2;
+  --dp-primary-color: var(--color-primary, --dp-primary-color);
   .dp__today {
-    border: 2.5px solid #ff5e59;
+    border: 2.5px solid var(--color-app-date-today, #ff5e59);
     border-radius: 5px;
     color: #ffffff;
-    background: #000080;
+    background: var(--color-primary);
   }
   .dp__tp_inline_btn_top,
   .dp__tp_inline_btn_bottom {
     &:hover {
       .dp__tp_inline_btn_bar {
-        background: #000080;
+        background: var(--color-primary);
       }
     }
   }
 }
 </style>
+

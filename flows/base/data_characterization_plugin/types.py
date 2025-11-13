@@ -9,7 +9,30 @@ class DCOptionsType(BaseModel):
     vocabSchemaName: str
     releaseDate: Optional[str] = None
     resultsSchema: str
+    executeConceptRecordCount: Optional[bool] = True
 
     @property
-    def use_cache_db(self) -> str:
+    def use_cache_db(self) -> bool:
         return False
+
+    @property
+    def use_trex_connection(self) -> bool:
+        """
+        Whether to use the TREX sql connection or direct database connection.
+        """
+        return True
+
+
+class AchillesParams(DCOptionsType):
+    # Achilles-specific parameters with defaults
+    outputFolder: str
+    setDBDriverEnv: str
+    connectionDetails: str
+
+    numThreads: int = 1
+    excludeAnalysisIds: str = ""
+
+    createTable: bool = True
+    createIndices: bool = True
+    sqlOnly: bool = False
+    verboseMode: bool = False

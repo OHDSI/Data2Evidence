@@ -1,10 +1,9 @@
-@import './mri-variables';
 .modal-mask-dim {
   background-color: rgba(0, 0, 0, 0.6);
 }
 
 .modal-mask {
-  color: $UiDarkText;
+  color: var(--color-ui-dark-text);
   position: fixed;
   z-index: 9998;
   top: 0;
@@ -17,10 +16,10 @@
     vertical-align: middle;
   }
   .modal-container {
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
     border-radius: 2px;
-    box-shadow: 0 0 30px 2px transparentize($MriBoxShadow, $MriBoxShadowGlow);
-    border: 1px solid fade_in($UiMediumBorder, 0.6);
+    box-shadow: 0 0 30px 2px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(var(--color-ui-medium-border-rgb), 0.6);
     position: relative;
     .arrowUp {
       display: block;
@@ -40,7 +39,7 @@
       margin-left: -0.75rem;
       width: 1.5rem;
       height: 1.5rem;
-      background: $UiLightestBG;
+      background: var(--color-ui-lightest-bg);
       content: '';
       display: block;
       pointer-events: all;
@@ -52,7 +51,7 @@
     }
     .arrowUp:after {
       border-color: transparent;
-      border-bottom-color: $UiLightestBG;
+      border-bottom-color: var(--color-ui-lightest-bg);
       bottom: -17px;
       left: -16px;
       content: '';
@@ -64,10 +63,10 @@
       border-width: 16px;
     }
     .arrowUpVariant2:before {
-      background: $UiExtraLightBG;
+      background: var(--color-ui-extra-light-bg);
     }
     .arrowUpVariant2:after {
-      border-bottom-color: $UiExtraLightBG;
+      border-bottom-color: var(--color-ui-extra-light-bg);
     }
     .arrowDown {
       display: block;
@@ -153,8 +152,8 @@
     }
   }
   .modal-header {
-    border-bottom: 1px solid $UiMediumBorder;
-    background-color: $UiExtraLightBG;
+    border-bottom: 1px solid var(--color-ui-medium-border);
+    background-color: var(--color-ui-extra-light-bg);
   }
   .modal-header-container {
     padding: 4px;
@@ -166,12 +165,12 @@
   }
   .modal-footer {
     // height: 2.5rem;
-    border-top: 1px solid $UiMediumBorder;
-    background-color: opacify($MriContrast, 0.96);
+    border-top: 1px solid var(--color-ui-medium-border);
+    background-color: rgba(63, 81, 97, 0.96);
     align-items: center;
     display: flex;
     button {
-      color: $MriLightestText;
+      color: var(--color-mri-lightest-text);
     }
   }
   .modal-default-button {

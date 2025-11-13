@@ -15,7 +15,9 @@
             <div class="input-container">
               <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
             </div>
-
+            <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
+              {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
+            </div>
             <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
               Filter name must not exceed 40 characters
             </div>
@@ -86,12 +88,12 @@
 
     <div class="bookmark-content">
       <div class="bookmark-content__header">
-        <div class="bookmark-content__header-title">Create Cohort:</div>
+        <div class="bookmark-content__header-title" v-if="!isLocal">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
-          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
+          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort" v-if="!isLocal"></Button>
           <Button
             v-if="useAtlasLite || usePaAtlas"
-            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
+            :text="isLocal ? 'Create Cohort' : getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
             :onClick="openAtlasLink"
           >
           </Button>
@@ -101,7 +103,7 @@
 
           <Button
             v-if="enableAtlasCohortDefinition"
-            :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
+            :text="isLocal ? 'Import Cohort' : getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
             :onClick="openImportAtlasCohortDefinition"
           >
           </Button>
@@ -109,9 +111,10 @@
             :text="getText('MRI_PA_COMPARE_D2E_COHORT_TEXT')"
             :onClick="openCompareDialog"
             :disabled="!showCohortCompareBtn"
+            v-if="!isLocal"
           >
           </Button>
-          <div class="shared-toggle-container">
+          <div class="shared-toggle-container" v-if="!isLocal">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
             <SlideToggle v-model="showSharedBookmarks" />
           </div>
@@ -277,6 +280,9 @@ export default {
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
     },
+    isLocal() {
+      return getPortalAPI().isLocal
+    },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
@@ -368,6 +374,7 @@ export default {
       }
     },
     closeRenameBookmark() {
+      this.isInvalidName = false
       this.showRenameDialog = false
     },
     renameBookmark(bookmarkDisplay) {
@@ -379,6 +386,23 @@ export default {
     },
     confirmRenameBookmark() {
       const bookmarkDisplay = this.selectedBookmark
+
+      this.renamedBookmark = this.renamedBookmark.trim()
+
+      // Check if the new name is empty
+      if (!this.renamedBookmark.length) {
+        this.isInvalidName = true
+        return
+      }
+
+      // Check if the new name is already taken
+      const username = getPortalAPI().username
+      for (const bookmark of this.getBookmarks) {
+        if (username === bookmark.user_id && bookmark.bookmarkname === this.renamedBookmark) {
+          this.isInvalidName = true
+          return
+        }
+      }
 
       if (this.isMScohort(bookmarkDisplay)) {
         this.fireRenameMaterializedCohortQuery({
@@ -641,3 +665,4 @@ export default {
   },
 }
 </script>
+

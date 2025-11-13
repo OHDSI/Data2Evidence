@@ -14,7 +14,7 @@ from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.update_dataset_metadata import (extract_version,
                                                   OMOP_NON_PERSON_ENTITIES,
                                                   update_entity_value,
-                                                  update_entity_distinct_count,
+                                                  update_entity_count,
                                                   update_entity_count_distribution,
                                                   update_total_entity_count,
                                                   update_metadata_last_fetched_date)
@@ -72,6 +72,8 @@ def get_and_update_attributes(dataset: PortalDatasetType,
     vocab_schema = dataset.get("vocabSchemaName")
     data_model = dataset.get("dataModel").split(" ")[0]
     changelog_file = changelog_filepath_list.get(data_model)
+
+    logger.info(f"Updating attributes for dataset id '{dataset_id}' - schema '{schema_name}'")
 
     try:
         # handle case of wrong db credentials
@@ -142,7 +144,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
                 is_lower_case = check_table_case(dataset_dao, schema_name)
 
                 # update patient count or error msg
-                update_entity_distinct_count(
+                update_entity_count(
                     portal_server_api=portal_server_api,
                     dataset_id=dataset_id,
                     dbdao=dataset_dao,

@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
 import { FormHelperText } from "@mui/material";
-import { Box, Button, Dialog, Feedback, TextField } from "@portal/components";
+import { Button, Dialog, Feedback, TextField } from "@portal/components";
 import { CloseDialogType } from "../../../../types";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
@@ -92,7 +92,7 @@ const TrexPluginInstallDialog: FC<TrexPluginInstallDialogProps> = ({ open, onClo
     >
       <Divider />
       <div className="trex-plugin-install-dialog__content">
-        <Box my={6}>
+        <div style={{ marginTop: "48px", marginBottom: "48px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -104,7 +104,7 @@ const TrexPluginInstallDialog: FC<TrexPluginInstallDialogProps> = ({ open, onClo
           {formError.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
-        </Box>
+        </div>
       </div>
 
       <Divider />

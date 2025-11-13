@@ -20,11 +20,19 @@ import type {
   SelectedConceptSet,
 } from '../types/ConceptSetTypes'
 import type { AttributeOption } from '../utils/ConfigLoader'
+import { configLoader } from '../utils/ConfigLoader'
 import CardinalitySidebar from './CardinalitySidebar.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import TrashIcon from './icons/TrashIcon.vue'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 import AttributeContainer from './attributes/AttributeContainer.vue'
+import TemporalRelationshipSection from './TemporalRelationshipSection.vue'
+
+// Attribute update payload types
+type AttributeUpdatePayload =
+  | { operator: string; value: string; extent?: string } // NumericRange, DateRange (internal format)
+  | { Op: string; Text: string } // String (Atlas format - not yet normalized)
+  | { StartWith: string; StartOffset: number; EndWith: string; EndOffset: number } // DateAdjustment (Atlas format - not yet normalized)
 
 interface Props {
   event: QueryFilterEvent
@@ -35,6 +43,7 @@ interface Props {
   datasetId?: string | null
   nestedLevel?: number
   readonly?: boolean
+  sectionType?: 'initialEvents' | 'censoringEvents' | 'criteriaGroup'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -51,6 +60,7 @@ const emit = defineEmits<{
   'attribute-selected': [attribute: AttributeOption]
   'attribute-removed': [attributeId: string]
   'concept-set-action': [action: ConceptSetAction]
+  'search-change': [searchQuery: string]
 }>()
 
 // Get store access for dataset ID
@@ -59,7 +69,9 @@ const store = instance?.appContext.config.globalProperties['$store']
 
 // Use the reactive prop directly instead of local copy
 const eventData = computed({
-  get: () => props.event,
+  get: () => {
+    return props.event
+  },
   set: (value: QueryFilterEvent) => {
     emit('update:event', value)
   },
@@ -69,6 +81,37 @@ const eventData = computed({
 const hasNestedAttributes = computed(() => {
   return eventData.value.attributes?.some(attr => attr.attributeType === 'nested')
 })
+
+// Check if event type needs concept set selection based on configuration
+// Some criteria types (like demographic) don't require a concept set as they only have attributes
+const needsConceptSet = computed(() => {
+  const eventType = eventData.value.eventType || eventData.value.criteriaType
+  if (!eventType) return true // Default to true if no type specified
+  return configLoader.requiresConceptSet(eventType)
+})
+
+// Check if this event type has temporal relationship in config
+const hasTemporalRelationship = computed(() => {
+  const eventType = eventData.value.eventType || eventData.value.criteriaType
+  if (!eventType) return false
+
+  // Check if temporalRelationship attribute exists in config for this event type
+  const temporalConfig = configLoader.getAttributeConfig(eventType, 'temporalRelationship')
+  if (!temporalConfig) return false
+
+  // Check if this section is excluded (only for top-level events, nested events always show)
+  if (props.nestedLevel === 0 && props.sectionType && temporalConfig.excludeFromSections) {
+    return !temporalConfig.excludeFromSections.includes(props.sectionType)
+  }
+
+  // For nested events (nestedLevel > 0), always show temporal relationship if config exists
+  return true
+})
+
+// Handle temporal relationship updates
+const handleTemporalRelationshipUpdate = (updatedEvent: QueryFilterEvent) => {
+  eventData.value = updatedEvent
+}
 
 // Handle cardinality changes
 const updateCardinality = (updatedEventCardinality: QueryFilterCardinality) => {
@@ -123,6 +166,7 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
     modifiedDate: '',
   }
 
+  // Create the loading event and keep a local reference
   const updatedEvent: QueryFilterEvent = {
     ...eventData.value,
     selectedConceptSet,
@@ -137,18 +181,19 @@ const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
   try {
     const conceptSetDetails = await loadSingleConceptSetDetails(conceptSet, getDatasetIdFromProps())
 
-    // Update event with concept set details
+    // Update event with concept set details - use updatedEvent as base, not eventData.value
+    // to preserve the loading state we set above
     const eventWithDetails: QueryFilterEvent = {
-      ...eventData.value,
+      ...updatedEvent,
       conceptSetDetails,
       conceptSetLoading: false,
     }
     eventData.value = eventWithDetails
   } catch (error) {
     console.error('Failed to load concept set details:', error)
-    // Update loading state even if failed
+    // Update loading state even if failed - use updatedEvent as base
     const eventWithError: QueryFilterEvent = {
-      ...eventData.value,
+      ...updatedEvent,
       conceptSetLoading: false,
     }
     eventData.value = eventWithError
@@ -195,6 +240,7 @@ const handleAttributeSelected = (attribute: AttributeOption) => {
   if (attribute.type === 'nested') {
     newAttribute = {
       id: attribute.id,
+      attributeId: attribute.id, // Add attributeId to make nested consistent with other attributes
       attributeType: 'nested',
       nestedCriteria: {
         id: `nested_${Date.now()}`,
@@ -231,18 +277,22 @@ const handleAttributeRemoved = (attributeId: string) => {
   const updatedEvent: QueryFilterEvent = {
     ...eventData.value,
     selectedAttributes: currentSelectedAttributes.filter(id => id !== attributeId),
-    attributes: currentAttributes.filter(obj => obj.id !== attributeId),
+    attributes: currentAttributes.filter(obj => {
+      const match = obj.id !== attributeId
+      return match
+    }),
   }
+
   eventData.value = updatedEvent
   emit('attribute-removed', attributeId)
 }
 
 // Update a specific attribute's value by id
-const updateAttribute = (attributeId: string, value: any) => {
+const updateAttribute = (attributeId: string, payload: AttributeUpdatePayload) => {
   const currentAttributes = eventData.value.attributes || []
   const updatedAttributes = currentAttributes.map(attr => {
     if (attr.id === attributeId) {
-      return { ...attr, value }
+      return { ...attr, ...payload }
     }
     return attr
   })
@@ -264,7 +314,12 @@ const removeEvent = () => {
 const handleAttributeConceptSetSelected = (attributeId: string, conceptSet: ConceptSetItemDisplay) => {
   const currentAttributes = eventData.value.attributes || []
   const updatedAttributes = currentAttributes.map(attr => {
-    if (attr.id === attributeId && attr.attributeType === 'conceptSet') {
+    if (
+      attr.id === attributeId &&
+      attr.attributeType === 'standard' &&
+      'configType' in attr &&
+      attr.configType === 'conceptSet'
+    ) {
       return {
         ...attr,
         conceptSet: conceptSet,
@@ -300,6 +355,13 @@ const handleAttributeNestedCriteriaUpdate = (attributeId: string, nestedCriteria
 
 // Create tag input model for concept set selection
 const tagInputModel = computed(() => {
+  // Get the event type
+  const eventType = eventData.value.eventType
+
+  // Get the domain filter from the "default" attribute config for this event type
+  const defaultAttributeConfig = configLoader.getAttributeConfig(eventType, 'default')
+  const domainFilter = defaultAttributeConfig?.domainFilter
+
   const model = {
     id: `event-concept-set-${eventData.value.id}`,
     props: {
@@ -316,7 +378,7 @@ const tagInputModel = computed(() => {
           ]
         : [],
       attributePath: 'condition_occurrence.concept_id',
-      domainFilter: 'Condition',
+      domainFilter: domainFilter,
       standardConceptCodeFilter: 'Standard',
     },
   }
@@ -361,7 +423,6 @@ const getEventTypeDisplay = (eventType?: string, criteriaType?: string) => {
     procedureOccurrence: 'Procedure Occurrence',
     specimen: 'Specimen',
     observation: 'Observation',
-    visit: 'Visit',
     visitDetail: 'Visit Detail',
     visitOccurrence: 'Visit Occurrence',
   }
@@ -494,8 +555,8 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
         <div v-show="isExpanded" class="event-body">
           <!-- Event Content -->
           <div class="event-content">
-            <!-- Concept Set Selection -->
-            <div class="concept-set-section">
+            <!-- Concept Set Selection (not shown for demographic criteria) -->
+            <div v-if="needsConceptSet" class="concept-set-section">
               <label class="concept-set-label">Event Concept Set:</label>
               <QueryFilterTagInputAdapter
                 v-if="!readonly"
@@ -508,12 +569,20 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                 :is-catalog-attribute="false"
                 :max-selections="1"
                 @update:value="handleConceptSetChange"
+                @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
                 @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, eventId: eventData.id })"
               />
               <div v-else class="concept-set-readonly">
                 {{ getConceptSetDisplayName() || 'No concept set selected' }}
               </div>
             </div>
+
+            <!-- Temporal Relationship Section (config-driven) -->
+            <TemporalRelationshipSection
+              v-if="hasTemporalRelationship"
+              :event="eventData"
+              @update="handleTemporalRelationshipUpdate"
+            />
 
             <!-- Selected Attributes Display -->
             <div v-if="eventData.attributes?.length" class="selected-attributes">
@@ -547,6 +616,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                     :readonly="readonly"
                     :hide-header="true"
                     @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
+                    @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
                     @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, parentAttributeId: attribute.id })"
                   />
                 </div>
@@ -593,6 +663,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                           }
                         }
                       "
+                      @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
                       @concept-set-action="(action: ConceptSetAction) => {
                     $emit('concept-set-action', { ...action, attributeId: attribute.attributeId, eventId: eventData.id })
                   }"
@@ -642,6 +713,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
 
   .card-side {
     display: flex;
+    min-height: 100px; // For demographics which do not have concept set
   }
 
   .card-main {
@@ -672,7 +744,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    padding: 0px 12px;
 
     &__left {
       flex: 1;
@@ -766,7 +838,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
     padding: 6px 8px;
 
     &:hover {
-      color: #000080;
+      color: var(--color-primary, #000080);
       background: #f2f0f1;
     }
   }
@@ -801,7 +873,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
   .sidebar-label {
     writing-mode: sideways-lr;
     text-orientation: sideways;
-    color: #000080;
+    color: var(--color-primary, #000080);
     font-weight: 500;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     user-select: none;
@@ -809,11 +881,11 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
 
   .event-content {
     flex: 1;
-    padding: 12px;
+    padding: 0px 12px;
   }
 
   .concept-set-section {
-    margin-bottom: 12px;
+    margin-bottom: 0px;
   }
 
   .concept-set-label {

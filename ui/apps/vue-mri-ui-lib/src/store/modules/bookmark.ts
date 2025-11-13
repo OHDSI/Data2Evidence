@@ -4,7 +4,12 @@ import BMv2Parser from '../../lib/bookmarks/BMv2Parser'
 import Constants from '../../utils/Constants'
 import * as types from '../mutation-types'
 import isEqual from 'lodash/isEqual'
-import { formatBookmark, formatCohortDefinition, formatAtlasCohortDefinition } from '@/utils/BookmarkUtils'
+import {
+  formatBookmark,
+  formatCohortDefinition,
+  formatAtlasCohortDefinition,
+  processBookmarksData,
+} from '@/utils/BookmarkUtils'
 
 const CancelToken = axios.CancelToken
 let cancel
@@ -21,6 +26,7 @@ const state = {
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
+const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
 
 // getters
 const getters = {
@@ -144,7 +150,11 @@ const getters = {
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
         // check bookmark exists, if yes, should use the bookmark name
-        const bookmark = bookmarks.find(bookmark => (bookmark?.cohortDefinitionId === cohortDefinition.id && bookmark.bookmarkname === cohortDefinition?.cohortDefinitionName))
+        const bookmark = bookmarks.find(
+          bookmark =>
+            bookmark?.cohortDefinitionId === cohortDefinition.id &&
+            bookmark.bookmarkname === cohortDefinition?.cohortDefinitionName
+        )
         const atlasCohortDefinition = atlasCohortDefinitions.find(cd => cd.cohortDefinitionId === cohortDefinition.id)
         if (!bookmark && !atlasCohortDefinition) {
           return displayBookmarks.push({
@@ -191,7 +201,9 @@ const getters = {
 
       // bookmarks without a materialized cohort
       bookmarks.forEach(bookmark => {
-        const materializedCohort = materializedCohorts.find(cohort => (bookmark.bookmarkname === cohort?.cohortDefinitionName && cohort.id === bookmark?.cohortDefinitionId))
+        const materializedCohort = materializedCohorts.find(
+          cohort => bookmark.bookmarkname === cohort?.cohortDefinitionName && cohort.id === bookmark?.cohortDefinitionId
+        )
 
         if (materializedCohort) {
           return
@@ -233,9 +245,7 @@ const actions = {
     })
     let url = ''
     if (params.cmd === 'loadAll') {
-      url = `${bookmarkURL}?paConfigId=${rootGetters.getMriFrontendConfig.getPaConfigId()}&r=${Math.random()}&datasetId=${
-        rootGetters.getSelectedDataset.id
-      }`
+      url = `${webApiCohortDefinitionURL}?source=pa`
     } else {
       url = `${bookmarkURL}/${bookmarkId || ''}`
       params.paConfigId = rootGetters.getMriFrontendConfig.getPaConfigId()
@@ -244,18 +254,29 @@ const actions = {
       params.datasetId = rootGetters.getSelectedDataset.id
     }
 
-    return dispatch('ajaxAuth', { url, method, params, cancelToken })
+    const dispatchOptions: {
+      url: string
+      method: string
+      params: any
+      cancelToken: typeof cancelToken
+      datasetId?: string
+    } = { url, method, params, cancelToken }
+    if (params.cmd === 'loadAll') {
+      dispatchOptions.datasetId = rootGetters.getSelectedDataset.id
+    }
+    return dispatch('ajaxAuth', dispatchOptions)
       .then(({ data }) => {
         let toastMessage = ''
         if (params.cmd === 'loadAll') {
-          commit(types.SET_BOOKMARKS, data)
-          commit(types.SET_MATERIALIZED_COHORTS, data)
+          const { bookmarks, materializedCohorts, atlasCohortDefinitions } = processBookmarksData(
+            data,
+            rootGetters.getMriFrontendConfig.getPaConfigId()
+          )
+          commit(types.SET_BOOKMARKS, bookmarks)
+          commit(types.SET_MATERIALIZED_COHORTS, materializedCohorts)
           if (rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition) {
-            commit(types.SET_ATLAS_COHORT_DEFINITIONS, data)
+            commit(types.SET_ATLAS_COHORT_DEFINITIONS, atlasCohortDefinitions)
           }
-          commit(types.SET_SCHEMANAME, {
-            schemaName: data.schemaName,
-          })
         }
         if (params.cmd === 'delete') {
           toastMessage = rootGetters.getText('MRI_PA_DELETE_BMK_SUCCESS')
@@ -391,17 +412,16 @@ const actions = {
 
 // mutations
 const mutations = {
-  [types.SET_BOOKMARKS](modulestate, { bookmarks }) {
+  [types.SET_BOOKMARKS](modulestate, bookmarks) {
     modulestate.bookmarks = bookmarks
   },
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
   },
-  [types.SET_MATERIALIZED_COHORTS](modulestate, { materializedCohorts, cohortDefinitions }) {
-    // fallback to cohortDefinitions in interim until api changes
-    modulestate.materializedCohorts = materializedCohorts ?? cohortDefinitions
+  [types.SET_MATERIALIZED_COHORTS](modulestate, materializedCohorts) {
+    modulestate.materializedCohorts = materializedCohorts ?? []
   },
-  [types.SET_ATLAS_COHORT_DEFINITIONS](modulestate, { atlasCohortDefinitions }) {
+  [types.SET_ATLAS_COHORT_DEFINITIONS](modulestate, atlasCohortDefinitions) {
     modulestate.atlasCohortDefinitions = atlasCohortDefinitions ?? []
   },
   [types.SET_FILTERSUMMARY](modulestate, { filterSummaryVisibility }) {

@@ -1,4 +1,3 @@
-@import './mri-variables';
 @import './mixins';
 
 .app-date {
@@ -7,7 +6,7 @@
   .date-container {
     @include mriHoverable;
     border-radius: 5px;
-    border-color: $MriDropDownBorderLight;
+    border-color: var(--color-mri-dropdown-border-light);
   }
 
   .app-date-icon {
@@ -27,15 +26,7 @@
   }
 
   .invalidDate {
-    border: 1.5px solid $MriErrorColor;
-  }
-  .errortext {
-    position: absolute;
-    right: 0;
-    background: $DateErrorTextBG;
-    padding-right: 5px;
-    padding-left: 5px;
-    font-size: 0.765625rem;
+    border: 1.5px solid var(--color-mri-error);
   }
   .form-control:focus {
     box-shadow: none;
@@ -54,7 +45,7 @@
           border-radius: 0;
         }
         td.today {
-          border: 0.125rem solid $SelectedDateBorder;
+          border: 0.125rem solid var(--color-selected-date-border);
         }
         td.today:before {
           display: none;
@@ -63,7 +54,7 @@
         td.hour:hover,
         td.minute:hover,
         td.second:hover {
-          background-color: $DateHover;
+          background-color: var(--color-date-hover);
         }
         td span,
         td i {
@@ -71,12 +62,12 @@
         }
         td span:hover,
         td i:hover {
-          background-color: $DateHover;
+          background-color: var(--color-date-hover);
         }
       }
       .timepicker {
         padding: 5px;
-        border-left: 1px solid $UiLightBorder;
+        border-left: 1px solid var(--color-ui-light-border);
       }
     }
     .bootstrap-datetimepicker-widget.timepicker-sbs {
@@ -85,7 +76,7 @@
     // icons are inside italics tag, in our case 'normal' font-style is needed
     i {
       font-style: normal;
-      color: $UiLightText;
+      color: var(--color-ui-light-text);
     }
 
     // UI5 Icons are used in place of Bootstrap icons

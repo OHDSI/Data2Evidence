@@ -7,6 +7,7 @@ import traceback as tb
 from rpy2 import robjects
 from functools import partial
 from jsonpath_ng import parse
+from asyncio import iscoroutine, run
 from pydantic import ValidationError
 
 import pandas as pd
@@ -243,18 +244,23 @@ class PythonNode(Node):
         return self.task(_input, shared_variables, importlibs, task_run_context)
 
     def task(self, _input: dict[str, Result], 
-             shared_variables: dict[str, str], 
+             shared_variables: list[dict[str, str]], 
              importlibs: list[str], 
              task_run_context):
         params = {"myinput": _input, "output": {}}
         try:
             if shared_variables:
-                params.update(shared_variables)
+                for item in shared_variables:
+                    params.update({item["key"]: item["value"]})
             if importlibs:
                 exec("\n".join(importlibs), params)
             code = compile(self.source_code, '<string>', 'exec')
 
             data = exec(code, params)
+            output = params["output"]
+            # If python code was async, output will be a coroutine
+            if iscoroutine(output):
+                params["output"] = run(output)
             return Result(False,  params["output"], self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)

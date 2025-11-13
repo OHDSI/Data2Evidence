@@ -5,7 +5,7 @@
         <pane :size="paneSize" :min-size="splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
-              <div>
+              <div v-if="!isLocal">
                 <button
                   type="button"
                   class="actionButton"
@@ -47,7 +47,12 @@
               v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"
             ></filters>
 
-            <QueryFilter v-else-if="showQueryFilter" ref="queryFilterRef" :atlas-data="atlasDataForQueryFilter" />
+            <QueryFilter
+              v-else-if="showQueryFilter"
+              ref="queryFilterRef"
+              :atlas-data="atlasDataForQueryFilter"
+              :key="atlasDataForQueryFilter?.id || 'new-cohort'"
+            />
           </div>
         </pane>
 
@@ -463,20 +468,22 @@ export default {
     },
     async handleLoadAtlasCohortDefinition(atlasJson) {
       try {
-        // Ensure QueryFilter is shown
-        if (!this.showQueryFilter) {
-          this.toggleQueryFilter(true)
-        }
-        // Wait for component to be mounted
-        await this.$nextTick()
-        
+        // IMPORTANT: Set the data BEFORE showing QueryFilter to avoid race condition
         if (atlasJson === null) {
           // Clear any existing data and set null for empty initialization
           this.atlasDataForQueryFilter = null
         } else {
-          // Existing logic for loading Atlas JSON
+          // Set the Atlas JSON data
           this.atlasDataForQueryFilter = atlasJson
         }
+
+        // Ensure QueryFilter is shown AFTER setting the data
+        if (!this.showQueryFilter) {
+          this.toggleQueryFilter(true)
+        }
+
+        // Wait for component to be mounted and reactive updates to propagate
+        await this.$nextTick()
       } catch (error) {
         console.error('Error setting Atlas data:', error)
       }

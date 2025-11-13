@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        default: 0.8.1
+        default: 0.10.0
         description: Enter version to use
         required: true
         type: string
@@ -15,6 +15,21 @@ jobs:
   demosetup:
     runs-on: ubuntu-24.04
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
       - uses: actions/checkout@v4
         with:
           submodules: recursive

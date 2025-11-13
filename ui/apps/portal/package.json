@@ -7,22 +7,24 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "PUBLIC_URL=/portal BUILD_PATH='../../resources/portal' react-scripts build",
-    "build-mri": "npx grunt production",
-    "build-mri-css": "npx grunt css",
+    "build-mri": "bunx grunt production",
+    "build-mri-css": "bunx grunt css",
     "lint": "tsc --noEmit && prettier --check . && eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "analyze": "source-map-explorer 'build/static/js/*.js'",
-    "watch": "nodemon --watch \"src/**\" --ext \"tsx,ts\" --exec \"yarn build\"",
+    "watch": "nodemon --watch \"src/**\" --ext \"tsx,ts\" --exec \"bun build\"",
     "prettier": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@babel/runtime": "^7.18.9",
     "@axa-fr/react-oidc": "6.10.9",
     "@d4l/web-components-library": "^3.20.2",
     "@data2evidence/d2e-starboard-notebook": "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop",
     "@data2evidence/d2e-starboard-wrap": "https://github.com/data2evidence/d2e-starboard-wrap.git#develop",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
+    "@monaco-editor/react": "^4.7.0",
     "@mui/icons-material": "^5.8.3",
     "@mui/material": "^5.8.3",
     "@mui/x-date-pickers": "^6.19.2",
@@ -86,19 +88,14 @@
     "grunt-contrib-copy": "^1.0.0",
     "grunt-contrib-less": "^2.1.0",
     "grunt-openui5": "^0.18.4",
+    "monaco-editor-webpack-plugin": "^7.0.1",
     "mutationobserver-shim": "^0.3.7",
     "prettier": "^2.6.2",
     "react-scripts": "5.0.1",
     "react-test-renderer": "18.2.0",
     "sass": "^1.52.3",
-    "typescript": "^4.4.2",
+    "typescript": "^5.2.2",
     "web-vitals": "^2.1.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
   },
   "browserslist": {
     "production": [

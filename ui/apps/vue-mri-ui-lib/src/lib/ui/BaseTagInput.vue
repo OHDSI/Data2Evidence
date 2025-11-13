@@ -27,12 +27,13 @@
       :multiple="maxSelections !== 1"
       :options-limit="optionLimitSize"
       :loading="isLoading"
-      :close-on-select="false"
+      :close-on-select="componentType === 'conceptSet' && maxSelections === 1"
       @search-change="handleSearchChange"
-      @select="openControl"
+      @select="componentType === 'conceptSet' && maxSelections === 1 ? null : openControl"
       :preserveSearch="true"
       ref="multiselect"
       :clear-on-select="true"
+      open-direction="bottom"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
@@ -328,12 +329,21 @@ export default {
 
       this.currentPlaceholder = this.texts.enterSearchTerm
       this.handleSearchChange(this.searchQuery)
+
+      // Adjust dropdown height based on available space. For cases where dropdown is at bottom of filter card section
+      this.adjustDropdownHeight()
     },
     close() {
       if (this.selectedValues.length) {
         this.currentPlaceholder = this.texts.enterSearchTerm
       } else {
         this.currentPlaceholder = this.texts.placeholder
+      }
+      // Clear the search filter when dropdown closes to reset the list for other dropdowns
+      // Only for conceptSet type (PA-Atlas) to prevent global filter affecting all dropdowns
+      if (this.componentType === 'conceptSet' && this.searchQuery !== '') {
+        this.searchQuery = ''
+        this.$emit('search-change', '')
       }
     },
     addTag(newTag) {
@@ -375,6 +385,8 @@ export default {
       if (this.searchQuery !== searchQuery) {
         this.searchQuery = searchQuery
         this.$emit('search-change', searchQuery)
+      } else if (searchQuery === '' && this.filteredList.length === 0) {
+        this.$emit('search-change', '')
       }
     },
     getClass(item) {
@@ -414,6 +426,33 @@ export default {
     },
     removeFromNewTags(value) {
       this.newTags = this.newTags.filter(item => item.value !== value)
+    },
+    adjustDropdownHeight() {
+      const trigger = this.$refs.multiselect?.$el
+      const dropdown = trigger?.querySelector('.multiselect__content-wrapper')
+      const content = dropdown?.querySelector('.multiselect__content')
+
+      if (trigger && dropdown) {
+        const rect = trigger.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        const spaceBelow = viewportHeight - rect.bottom
+
+        // Only apply min-height if there's limited space below
+        if (spaceBelow < 300) {
+          if (content) {
+            // Get the actual content height
+            const contentHeight = content.scrollHeight
+
+            // Use the smaller of actual content height or 200px
+            const minHeight = Math.min(contentHeight, 200)
+            dropdown.style.minHeight = `${minHeight}px`
+          } else {
+            dropdown.style.minHeight = '200px'
+          }
+        } else {
+          dropdown.style.minHeight = 'auto'
+        }
+      }
     },
     tagKeyUpHandler(props) {
       const prevItemIndex =

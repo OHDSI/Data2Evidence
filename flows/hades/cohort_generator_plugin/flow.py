@@ -18,6 +18,7 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
 
     database_code = options.databaseCode
     schema_name = options.schemaName
+    cohort_schema_name = options.resultsSchemaName
     vocab_schema_name = options.vocabSchemaName
     cohort_json = options.cohortJson
     dataset_id = options.datasetId
@@ -28,13 +29,12 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
 
-    analytics_svc_api = AnalyticsSvcAPI()
-
     cohort_json_expression = json.dumps(cohort_json.expression)
     cohort_name = cohort_json.name
 
     # Only create cohort definition if cohort_definition_id is not provided in flow options
-    if cohort_definition_id == None:
+    if not cohort_definition_id:
+        analytics_svc_api = AnalyticsSvcAPI()
         cohort_definition_id = create_cohort_definition(
             analytics_svc_api,
             dataset_id,
@@ -49,6 +49,7 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
                   cohort_definition_id,
                   cohort_json_expression,
                   cohort_name,
+                  cohort_schema_name,
                   vocab_schema_name)
 
 
@@ -67,63 +68,25 @@ def create_cohort_definition(analytics_svc_api, dataset_id: str, description: st
 
 @task(log_prints=True)
 def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int,
-                  cohort_json_expression: str, cohort_name: str, vocab_schema_name: str):
+                  cohort_json_expression: str, cohort_name: str, 
+                  cohort_schema_name: str, vocab_schema_name: str):
 
     set_db_driver_env_string = dbdao.set_db_driver_env()
 
-    set_connection_string = dbdao.get_database_connector_connection_string(
+    set_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=admin_user
     )
-
+    create_script_path = os.path.join(os.path.dirname(__file__), 'create_cohort.R')
     with robjects.conversion.localconverter(robjects.default_converter):
-        robjects.r(f'''
-                library('CohortGenerator')
-                {set_db_driver_env_string}
-                {set_connection_string}
-                cohortJson <- '{cohort_json_expression}'
-                schemaName <- '{schema_name}'
-                vocabSchemaName <- '{vocab_schema_name}'
-                cohortName <- '{cohort_name}'
-                cohortId <- {cohort_definition_id}
-                
-                cat("Generating cohort sql from cohort expression from json")
-                cohortExpression <- CirceR::cohortExpressionFromJson(cohortJson)
-                options <- CirceR::createGenerateOptions(generateStats = FALSE, vocabularySchema = vocabSchemaName);
-                cohortSql <- CirceR::buildCohortQuery(cohortExpression, options = options)
-                
-                cat("Creating tempoary cohort stats table names")
-                cohortTableNames <- list()
-                cohortTableNames[["cohortTable"]] <- "cohort"
-                cohortTableNames[["cohortInclusionTable"]] <- sprintf("cohort_inclusion_%s", cohortId)
-                cohortTableNames[["cohortInclusionResultTable"]] <- sprintf("cohort_inclusion_result_%s", cohortId)
-                cohortTableNames[["cohortInclusionStatsTable"]] <- sprintf("cohort_inclusion_stats_%s", cohortId)
-                cohortTableNames[["cohortSummaryStatsTable"]] <- sprintf("cohort_summary_stats_%s", cohortId)
-                cohortTableNames[["cohortCensorStatsTable"]] <- sprintf("cohort_censor_stats_%s", cohortId)
-                
-                cat("Creating tempoary cohort stats tables")
-                CohortGenerator::createCohortTables(connectionDetails = connectionDetails,
-                                        cohortDatabaseSchema = schemaName,
-                                        cohortTableNames = cohortTableNames,
-                                        incremental=TRUE)
-                                        
-
-                cat("Creating cohorts")
-                cohortsToCreate <- CohortGenerator::createEmptyCohortDefinitionSet()
-                cohortsToCreate <- rbind(cohortsToCreate, data.frame(cohortId = cohortId,
-                                                    cohortName = cohortName, 
-                                                    sql = cohortSql,
-                                                    stringsAsFactors = FALSE))       
-                cohortsGenerated <- CohortGenerator::generateCohortSet(connectionDetails = connectionDetails,
-                                                    cdmDatabaseSchema = schemaName,
-                                                    cohortDatabaseSchema = schemaName,
-                                                    cohortTableNames = cohortTableNames,
-                                                    cohortDefinitionSet = cohortsToCreate)
-
-
-                cat("Dropping tempoary cohort stats tables")
-                CohortGenerator::dropCohortStatsTables(
-                connectionDetails = connectionDetails,
-                cohortDatabaseSchema = schemaName,
-                cohortTableNames = cohortTableNames
-                )
-        ''')
+        robjects.r(f"source('{create_script_path}')")
+        r_create_cohort = robjects.r['create_cohort']
+    
+        r_create_cohort(
+            set_db_driver_env_string=set_db_driver_env_string,
+            set_connection_string=set_connection_string,
+            schemaName=schema_name,
+            cohortId=cohort_definition_id,
+            cohortJson=cohort_json_expression,
+            cohortName=cohort_name,
+            vocabSchemaName=vocab_schema_name,
+            cohortSchemaName=cohort_schema_name)

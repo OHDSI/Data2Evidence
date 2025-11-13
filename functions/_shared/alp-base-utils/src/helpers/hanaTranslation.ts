@@ -4,7 +4,12 @@ interface ParameterInterface {
 }
 
 // Translation function containing regex that are shared between DUCKDB and POSTGRES dialects
-const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName: string): string => {
+const hanaCommonTranslation = (
+  temp: string,
+  schemaName: string,
+  vocabSchemaName: string,
+  resultSchemaName: string,
+): string => {
   // The first few queries to replace are very specific query which does not require further string replacements
   // subsequent lines, hence early return is used.
   const regex1 =
@@ -54,6 +59,51 @@ const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName
         ORDER BY ordinal_position`;
   }
 
+  // Get snapshot schema table metadata
+  const regex4 =
+    /SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON \(tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME\) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON \(tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME\) WHERE tc.SCHEMA_NAME = \? AND tc.TABLE_NAME = \?/;
+  if (temp.match(regex4)) {
+    const regexResult = regex4.exec(temp);
+    if (regexResult) {
+      return `
+        SELECT
+            c.table_schema as "SCHEMA_NAME",
+            c.table_name as "TABLE_NAME",
+            c.column_name as "COLUMN_NAME",
+            case
+                when c.is_nullable = 'YES' then 'TRUE'
+                else 'FALSE'
+            end as "IS_NULLABLE",
+            case
+                when constraint_type = 'PRIMARY KEY' then 'TRUE'
+                else 'NoValue'
+            end as "IS_PRIMARY_KEY",
+            case
+                when constraint_type = 'FOREIGN KEY' then 'TRUE'
+                else 'NoValue'
+            end as "IS_FOREIGN_KEY"
+        FROM
+            information_schema.columns as c
+            LEFT JOIN information_schema.key_column_usage AS kcu ON (
+                kcu.table_name = c.table_name
+                AND kcu.table_schema = c.table_schema
+                AND kcu.column_name = c.column_name
+            )
+            LEFT JOIN information_schema.constraint_column_usage AS ccu ON (
+                ccu.table_name = c.table_name
+                AND ccu.table_schema = c.table_schema
+                AND ccu.column_name = c.column_name
+            )
+            left join information_schema.table_constraints AS tc ON (
+                tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+            )
+        where
+            c.table_schema = $1
+            and c.table_name = $2`;
+    }
+  }
+
   temp = temp.replace(/FLAG 'i'/gi, "");
 
   temp = temp.replace(
@@ -87,6 +137,13 @@ const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName
     /COLUMN_NAME as "value" FROM TABLE_COLUMNS WHERE SCHEMA_NAME/gi,
     `COLUMN_NAME AS "value" from information_schema.columns where table_schema`,
   );
+
+  // Replace TABLE_NAME FROM SYS.M_TABLES WHERE SCHEMA_NAME=
+  temp = temp.replace(
+    /TABLE_NAME FROM SYS.M_TABLES WHERE SCHEMA_NAME=(\%s|\?) AND \(TABLE_NAME/gi,
+    `tablename as "TABLE_NAME" from pg_catalog.pg_tables where schemaname=? AND (UPPER(tablename)`,
+  );
+
   // Replace VIEW_COLUMNS with pg_attribute
   temp = temp.replace(
     /COLUMN_NAME as \"value\" FROM VIEW_COLUMNS WHERE SCHEMA_NAME = (\%s|\?) AND VIEW_NAME = (\%s|\?)/gi,
@@ -153,10 +210,12 @@ const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName
 
   temp = temp.replace(/(\w+[.{1}])(\"[\w]*\").nextval/gi, `nextval('$1$2')`);
 
-
   // Replace
   temp = temp.replace(/TO_NCLOB/gi, "");
-  temp = temp.replace(/TO_TIMESTAMP\(TO_VARCHAR\(([\w_]*)(.*?\)){2}/gi, "$1::varchar::timestamp");
+  temp = temp.replace(
+    /TO_TIMESTAMP\(TO_VARCHAR\(([\w_]*)(.*?\)){2}/gi,
+    "$1::varchar::timestamp",
+  );
   temp = temp.replace(/TO_TIMESTAMP\(([\w$_%?]*)(.*?\))/gi, "$1::timestamp");
   temp = temp.replace(/TO_DATE\(([\w$_%?]*)(.*?\))/gi, "$1::date");
   temp = temp.replace(/TO_VARCHAR(\(\"[\w]*\"\))/gi, "$1::varchar"); // Only for TO_VARCHAR that uses one parameter
@@ -174,12 +233,23 @@ const hanaCommonTranslation = (temp: string, schemaName: string, vocabSchemaName
 
   temp = temp.replace(/\$\$SCHEMA\$\$./g, `"${schemaName}".`);
   temp = temp.replace(/\$\$VOCAB_SCHEMA\$\$./g, `"${vocabSchemaName}".`);
+  temp = temp.replace(/\$\$RESULT_SCHEMA\$\$./g, `"${resultSchemaName}".`);
 
   return temp;
 };
 
-export const translateHanaToPostgres = (temp: string, schemaName: string, vocabSchemaName: string) => {
-  temp = hanaCommonTranslation(temp, schemaName, vocabSchemaName);
+export const translateHanaToPostgres = (
+  temp: string,
+  schemaName: string,
+  vocabSchemaName: string,
+  resultSchemaName: string,
+) => {
+  temp = hanaCommonTranslation(
+    temp,
+    schemaName,
+    vocabSchemaName,
+    resultSchemaName,
+  );
   temp = temp.replace(/LIKE_REGEXPR/gi, "~*"); // ~* short for regex, case insensitive matching
   temp = temp.replace(
     /DAYS_BETWEEN \(\(\(("[\w]*"."[\w]*")\)\),\(\(("[\w]*"."[\w]*")\)\)\)/gi,
@@ -199,33 +269,42 @@ export const translateHanaToDuckdb = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
+  resultSchemaName: string,
   parameters?: ParameterInterface[],
 ): string => {
   temp = temp.replace(
-      /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
-      `direct_db_conn.${schemaName}.COHORT_DEFINITION`
-    );
+    /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
+    `direct_db_conn.${schemaName}.COHORT_DEFINITION`,
+  );
   temp = temp.replace(
-      /\$\$SCHEMA\$\$.COHORT/g,
-      `direct_db_conn.${schemaName}.COHORT`
+    /\$\$SCHEMA\$\$.COHORT/g,
+    `direct_db_conn.${schemaName}.COHORT`,
   );
 
-  temp = hanaCommonTranslation(temp, schemaName, vocabSchemaName);
+  temp = hanaCommonTranslation(
+    temp,
+    schemaName,
+    vocabSchemaName,
+    resultSchemaName,
+  );
 
   // Cast left comparator to varchar which is required by duckdb
   temp = temp.replace(/LIKE_REGEXPR/gi, "::VARCHAR ILIKE");
-  
-  temp = temp.replace(/\$\$SCHEMA_DIRECT_CONN\$\$./g, `direct_db_conn.${schemaName}.`); // Used when using cachedb connection connecting to duckdb, but additionally requires direct connection to database schema
+
+  temp = temp.replace(
+    /\$\$SCHEMA_DIRECT_CONN\$\$./g,
+    `direct_db_conn.${schemaName}.`,
+  ); // Used when using cachedb connection connecting to duckdb, but additionally requires direct connection to database schema
 
   temp = temp.replace(/DAYS_BETWEEN \(/gi, `date_diff ('day', `);
   temp = temp.replace(
     /select count\(\*\) as \"TABLECOUNT\" from pg_tables where schemaname=(\%s|\?|\$[0-9]) and tablename=(\%s|\?|\$[0-9])/gi,
     `select count(*) AS tableCount from information_schema.tables where table_catalog=%s and table_name=%s`,
-  )
+  );
   temp = temp.replace(
     /select count\(\*\) as \"TABLECOUNT\" from pg_views where schemaname=(\%s|\?|\$[0-9]) and viewname=(\%s|\?|\$[0-9])/gi,
     `select count(*) AS tableCount from duckdb_views where database_name=%s and view_name=%s`,
-  )
+  );
 
   // Replace %s or `?` with $n
   let n = 0;
