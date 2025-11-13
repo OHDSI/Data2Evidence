@@ -51,7 +51,7 @@ export async function fetchCohortData(): Promise<CohortData[]> {
 
 export async function fetchCohortDefinitionTemplate(
   phenotypeId: number
-): Promise<void> {
+): Promise<any> {
   const url = `https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/cohorts/${phenotypeId}.json`;
   const response = await fetch(url);
   let result = (await response.json()) || undefined;
@@ -64,11 +64,37 @@ export async function fetchCohortDefinitionTemplate(
 export async function createCohortDefinition(
   cohortDefinition: any,
   authorization: string
-): Promise<void> {
+): Promise<any> {
   const webapi = new WebAPIAPI();
   const data = await webapi.createAtlasCohortDefinition(
     cohortDefinition,
     authorization
   );
+  return data;
+}
+
+export async function getCohortDefinition(cohortId: number): Promise<any> {
+  const webapi = new WebAPIAPI();
+  const data = await webapi.getAtlasCohortDefinition(cohortId);
+  return data;
+}
+
+export async function updateCohortDefinition(
+  cohortId: number,
+  cohortDefinition: any,
+  authorization: string
+): Promise<any> {
+  const webapi = new WebAPIAPI();
+  const data = await webapi.updateAtlasCohortDefinition(
+    cohortId,
+    cohortDefinition,
+    authorization
+  );
+  return data;
+}
+
+export async function deleteCohortDefinition(cohortId: number): Promise<any> {
+  const webapi = new WebAPIAPI();
+  const data = await webapi.deleteAtlasCohortDefinition(cohortId);
   return data;
 }

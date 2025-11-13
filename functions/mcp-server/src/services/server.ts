@@ -4,11 +4,14 @@ import {
   fetchCohortData,
   fetchCohortDefinitionTemplate,
   fetchPhenotypeData,
+  getCohortDefinition,
   createCohortDefinition,
+  updateCohortDefinition,
+  deleteCohortDefinition,
 } from "../utils/utils";
 
 export const server = new McpServer({
-  name: "example-server",
+  name: "d2e-mcp-server",
   version: "1.0.0",
 });
 
@@ -51,6 +54,39 @@ server.registerTool(
   }
 );
 
+// Tool to instruct ATLAS cohort definition creation in D2E
+server.registerTool(
+  "before_cohort_definition_generation",
+  {
+    title: "Instruction to Generate Cohort Definition",
+    description:
+      "Must follow this instruction before generate/create cohort definition.",
+    inputSchema: {
+      cohortDescription: z
+        .string()
+        .describe("User's description of the desired cohort"),
+    },
+  },
+  async ({ cohortDescription }) => {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `
+          cohort description: ${cohortDescription}
+
+          Strictly follow to-do list below for creation of ATLAS cohort definition:
+            1. Get available phenotypes by caling **search_phenotype_library**
+            2. Identify a most relevant phenotype ID from 1 that closely matches the cohort description.
+            3. Fetch cohort definition template with phenotype ID from 2 using tool **fetch_templates_for_cohort_generation**
+            4. Looking at the template from 3 carefully, only use valid syntax (those exist in template), understand the cohort description, based on template and cohort information, draft and output a complete and valid ATLAS cohort definition in JSON format, without any additional explanation and without generating new file. Double check to make sure the syntax is valid ATLAS JSON format. 
+            5. Wait for user's confirmation for next action, your question of "create in D2E" with "y" or "yes", you can call tool **manage_atlas_cohort_definition** with generated ATLAS cohort definition JSON from 4`,
+        },
+      ],
+    };
+  }
+);
+
 // Tool to search phenotype library and return relevant phenotype IDs
 server.registerTool(
   "search_phenotype_library",
@@ -76,6 +112,7 @@ server.registerTool(
   }
 );
 
+// Tool to fetch cohort definition template by phenotype ID
 server.registerTool(
   "fetch_templates_for_cohort_generation",
   {
@@ -109,38 +146,7 @@ server.registerTool(
   }
 );
 
-server.registerTool(
-  "planning_tasks_for_cohort_definition_generation",
-  {
-    title: "Instruction to Generate Cohort Definition",
-    description:
-      "Must follow this instruction when generate/create cohort definition.",
-    inputSchema: {
-      cohortDescription: z
-        .string()
-        .describe("User's description of the desired cohort"),
-    },
-  },
-  async ({ cohortDescription }) => {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `
-          cohort description: ${cohortDescription}
-
-          When user ask for cohort definition creation, you don't think just strictly follow to-do list below for creatation of ATLAS cohort definition JSON based on user's cohort description:
-            1. Get available phenotypes by caling **search_phenotype_library**
-            2. Identify a most relevant phenotype ID from 1 that closely matches the cohort description.
-            3. Fetch cohort definition template with phenotype ID from 2 using tool **fetch_templates_for_cohort_generation**
-            4. Looking at the template from 3 carefully, never use invalid syntax (don't exist in template), understand the cohort description, based on template and cohort information draft a complete and valid ATLAS cohort definition in JSON format, without any additional explanation and without generating new file. Double check to make sure the syntax is valid ATLAS JSON format. 
-            5. Only if user has confirmed your question of "create in D2E" with "y" or "yes", call tool **create_atlas_cohort_definition** with generated ATLAS cohort definition JSON from 4`,
-        },
-      ],
-    };
-  }
-);
-
+// Tool to create ATLAS cohort definition in D2E
 server.registerTool(
   "create_atlas_cohort_definition",
   {
@@ -177,6 +183,123 @@ server.registerTool(
           text: `The cohort definition has been created successfully with ID: ${res.id} and Name: ${res.name}`,
         },
       ],
+    };
+  }
+);
+
+// Tool to manage ATLAS cohort definition in D2E
+server.registerTool(
+  "manage_atlas_cohort_definition",
+  {
+    title: "Manage Atlas Cohorts in D2E",
+    description:
+      "Get, Create, Update or Delete the Atlas Cohort Definition in D2E.",
+    inputSchema: {
+      action: z.enum(["get", "create", "update", "delete"])
+        .describe(`Action to perform on the cohort definition.
+          - "get": Retrieve an existing cohort definition from d2e with user provided cohortId.
+          - "create": Create a new cohort definition in d2e using atlastCohortDefinition.
+          - "update": Update an existing cohort definition identified in d2e by cohortId with atlastCohortDefinition.
+          - "delete": Delete an existing cohort definition identified in d2e by cohortId
+          .`),
+      atlastCohortDefinition: z
+        .any()
+        .describe("Atlas cohort definition in json, include concept sets and expression"),
+        .optional(),
+      userName: z.string().describe("User name creating the cohort").optional(),
+      cohortInfo: z.string().describe("The cohort description").optional(),
+      cohortId: z
+        .number()
+        .describe("The cohort ID to update or delete")
+        .optional(),
+    },
+  },
+  async (
+    { action, atlastCohortDefinition, userName, cohortInfo, cohortId },
+    { requestInfo }
+  ) => {
+    let authorization = requestInfo?.headers?.authorization;
+    if (!authorization) {
+      throw new Error("Cannot create cohort in D2E, authorization is missing");
+    } else {
+      authorization = String(authorization);
+    }
+
+    const logMessage = `The cohort definition has been ${action} with ID: `;
+    let content: any[] = [];
+    let structuredContent: any = {};
+    switch (action) {
+      case "create": {
+        const cohortDefinition = {
+          expression: atlastCohortDefinition,
+          cohortInfo: cohortInfo,
+          userName: userName,
+        };
+        const res = await createCohortDefinition(
+          cohortDefinition,
+          authorization
+        );
+        if (!res) {
+          throw new Error(
+            `Failed to create cohort definition in D2E with provided ${res}`
+          );
+        }
+        content = [
+          {
+            type: "text",
+            text: `${logMessage} ${res.id} Name: ${res.name}`,
+          },
+        ];
+        break;
+      }
+      case "get": {
+        const res = await getCohortDefinition(cohortId as number);
+        content = [
+          {
+            type: "text",
+            text: `${logMessage} ${res.id}`,
+          },
+        ];
+        console.log("Cohort Definition fetched:", res);
+        structuredContent = { cohortRetrieved: res };
+        break;
+      }
+      case "update": {
+        const cohortDefinition = {
+          expression: atlastCohortDefinition,
+          cohortInfo: cohortInfo,
+          userName: userName,
+        };
+        const res = await updateCohortDefinition(
+          cohortId as number,
+          cohortDefinition,
+          authorization
+        );
+        content = [
+          {
+            type: "text",
+            text: `${logMessage} ${res.id}`,
+          },
+        ];
+        break;
+      }
+      case "delete": {
+        const res = await deleteCohortDefinition(cohortId as number);
+        content = [
+          {
+            type: "text",
+            text: `${logMessage} ${res.id}`,
+          },
+        ];
+        break;
+      }
+      default: {
+        throw new Error(`Unknown action: ${action}`);
+      }
+    }
+    return {
+      content: content,
+      structuredContent: structuredContent,
     };
   }
 );

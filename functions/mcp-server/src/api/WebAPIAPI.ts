@@ -37,6 +37,17 @@ export class WebAPIAPI {
       throw new Error(`Error while getting atlas cohort definition`);
     }
   }
+  async getAtlasCohortDefinition(cohortId: number): Promise<any> {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/cohortdefinition/${cohortId}`;
+      const response = await this.channel.get(url, options);
+      return response.status === 200 ? response.data : null;
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while deleting atlas cohort definition: ${error}`);
+    }
+  }
 
   async createAtlasCohortDefinition(
     cohortDefinition: any,
@@ -65,13 +76,60 @@ export class WebAPIAPI {
         modifiedDate: currentTime,
         tags: [],
       };
-      console.log("Cohort creation payload:", JSON.stringify(payload));
       const response = await this.channel.post(url, payload, options);
-      console.log("Cohort creation response:", JSON.stringify(response));
       return response.status === 200 ? response.data : null;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while creating atlas cohort definition: ${error}`);
+    }
+  }
+
+  async updateAtlasCohortDefinition(
+    cohortId: number,
+    cohortDefinition: any,
+    authorization: string
+  ): Promise<any> {
+    try {
+      const options = await this.getRequestConfig();
+      options.headers["Authorization"] = authorization;
+      const url = `${this.baseURL}/cohortdefinition/${cohortId}`;
+
+      const currentTime = Date.now();
+      const expression =
+        typeof cohortDefinition.expression === "string"
+          ? JSON.parse(cohortDefinition.expression)
+          : cohortDefinition.expression;
+
+      const payload = {
+        id: cohortId,
+        name: `${cohortDefinition.cohortInfo}`,
+        description: `${cohortDefinition.cohortInfo}`,
+        expressionType: "SIMPLE_EXPRESSION",
+        expression: expression,
+        createdBy: cohortDefinition.userName || "researcher",
+        createdDate: ,
+        modifiedBy: cohortDefinition.userName || "researcher",
+        modifiedDate: currentTime,
+        tags: [],
+      };
+      console.log("Update Payload:", payload);
+      const response = await this.channel.put(url, payload, options);
+      return response.status === 200 ? response.data : null;
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while updating atlas cohort definition: ${error}`);
+    }
+  }
+
+  async deleteAtlasCohortDefinition(cohortId: number): Promise<any> {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/cohortdefinition/${cohortId}`;
+      const response = await this.channel.delete(url, options);
+      return response.status === 200 ? response.data : null;
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while deleting atlas cohort definition: ${error}`);
     }
   }
 }
