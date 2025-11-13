@@ -217,6 +217,14 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
         return;
       }
 
+      if (!formData.paConfigId) {
+        setFeedback({
+          type: "error",
+          message: "PA Config ID is required!",
+        });
+        return;
+      }
+
       setFeedback({});
       const { name, date, copyStudySchemaMetadata, cohortDefinitionId } = formData;
 

@@ -27,7 +27,8 @@ export type ActionValue =
   | "setup-semantic-search"
   | "update"
   | "release"
-  | "create-cache";
+  | "create-cache"
+  | "manage-dashboard";
 
 export enum DatasetInfoTab {
   DatasetInfo = "info",

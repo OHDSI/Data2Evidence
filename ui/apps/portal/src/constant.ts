@@ -54,10 +54,19 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "data-quality",
     "data-characterization",
     "setup-semantic-search",
+    "manage-dashboard",
   ],
   study: ["metadata", "permissions", "resources", "delete"],
-  hana__omop: ["metadata", "permissions", "resources", "delete", "data-quality", "data-characterization"],
-  hana__non_omop: ["metadata", "permissions", "resources", "delete"],
+  hana__omop: [
+    "metadata",
+    "permissions",
+    "resources",
+    "delete",
+    "data-quality",
+    "data-characterization",
+    "manage-dashboard",
+  ],
+  hana__non_omop: ["metadata", "permissions", "resources", "delete", "manage-dashboard"],
 };
 
 export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
