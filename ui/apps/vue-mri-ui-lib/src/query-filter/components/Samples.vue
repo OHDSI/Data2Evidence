@@ -113,16 +113,16 @@
               />
               <p v-if="hasSizeError" class="validation-message">{{ sizeErrorMessage }}</p>
             </div>
-
+            <!-- 
             <div class="form-group">
               <label for="samplingMethod" class="form-label">Sampling Method</label>
               <select id="samplingMethod" class="form-control" v-model="samplingMethod">
                 <option value="random">Random</option>
                 <option value="stratified">Stratified</option>
               </select>
-            </div>
+            </div> -->
 
-            <div class="stratified-section" v-if="samplingMethod === 'stratified'">
+            <div class="stratified-section">
               <div class="form-group">
                 <label for="ageCriteria" class="form-label">Age Criteria</label>
                 <select id="ageCriteria" class="form-control" v-model="ageCriteria">
@@ -217,7 +217,7 @@ import SplashScreen from '@/components/SplashScreen.vue'
 import TrashIcon from '@/query-filter/components/icons/TrashIcon.vue'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useStore } from 'vuex'
-import { AgeFilter, GenderFilter, Sample, SampleElement, CreateSampleDTO } from '../types/SamplesTypes'
+import { AgeFilter, GenderFilter, Sample, CreateSampleDTO } from '../types/SamplesTypes'
 import AppButton from '@/lib/ui/app-button.vue'
 
 const props = defineProps<{
@@ -231,7 +231,7 @@ const store = useStore()
 const createSampleDialogOpen = ref(false)
 const newSampleName = ref('')
 const newSampleSize = ref(0)
-const samplingMethod = ref('random')
+// const samplingMethod = ref('random')
 const ageCriteria = ref('lessThan')
 const ageValue = ref(0)
 const ageMinValue = ref(0)
@@ -285,11 +285,11 @@ const sizeErrorMessage = computed(() => {
 })
 
 const hasGenderError = computed(() => {
-  return samplingMethod.value === 'stratified' && touched.value.gender && genderCriteria.value.length === 0
+  return touched.value.gender && genderCriteria.value.length === 0
 })
 
 const hasAgeError = computed(() => {
-  if (samplingMethod.value !== 'stratified' || !touched.value.age) return false
+  // if (samplingMethod.value !== 'stratified' || !touched.value.age) return false
 
   if (ageCriteria.value === 'between' || ageCriteria.value === 'notBetween') {
     return ageMinValue.value >= ageMaxValue.value
@@ -322,18 +322,18 @@ watch(
 )
 
 // Reset stratified criteria when switching between sampling methods
-watch(samplingMethod, (newMethod, oldMethod) => {
-  if (oldMethod === 'stratified' && newMethod === 'random') {
-    // Reset stratified fields when switching away from stratified
-    ageCriteria.value = 'lessThan'
-    ageValue.value = 0
-    ageMinValue.value = 0
-    ageMaxValue.value = 0
-    genderCriteria.value = []
-    touched.value.gender = false
-    touched.value.age = false
-  }
-})
+// watch(samplingMethod, (newMethod, oldMethod) => {
+//   if (oldMethod === 'stratified' && newMethod === 'random') {
+//     // Reset stratified fields when switching away from stratified
+//     ageCriteria.value = 'lessThan'
+//     ageValue.value = 0
+//     ageMinValue.value = 0
+//     ageMaxValue.value = 0
+//     genderCriteria.value = []
+//     touched.value.gender = false
+//     touched.value.age = false
+//   }
+// })
 
 const openCreateSampleDialog = () => {
   createSampleDialogOpen.value = true
@@ -344,7 +344,7 @@ const closeCreateSampleDialog = () => {
   // Reset form
   newSampleName.value = ''
   newSampleSize.value = 0
-  samplingMethod.value = 'random'
+  // samplingMethod.value = 'random'
   ageCriteria.value = 'lessThan'
   ageValue.value = 0
   ageMinValue.value = 0
@@ -377,45 +377,44 @@ const handleCreateSample = async () => {
 }
 
 const buildCreateSampleDTO = (): CreateSampleDTO => {
-  if (samplingMethod.value === 'random') {
-    // Random sample
-    return {
-      name: newSampleName.value.trim(),
-      size: newSampleSize.value,
-      age: null,
-      gender: {
-        otherNonBinary: true,
-        conceptIds: [8507, 8532],
-      },
-    }
-  } else {
-    // Stratified sample
-    const ageFilter: AgeFilter = {
-      mode: ageCriteria.value as AgeFilter['mode'],
-      min: ageCriteria.value === 'between' || ageCriteria.value === 'notBetween' ? ageMinValue.value : null,
-      max: ageCriteria.value === 'between' || ageCriteria.value === 'notBetween' ? ageMaxValue.value : null,
-      value: ageCriteria.value !== 'between' && ageCriteria.value !== 'notBetween' ? ageValue.value : null,
-    }
+  // if (samplingMethod.value === 'random') {
+  // Random sample
+  // return {
+  //   name: newSampleName.value.trim(),
+  //   size: newSampleSize.value,
+  //   age: null,
+  //   gender: {
+  //     otherNonBinary: true,
+  //     conceptIds: [8507, 8532],
+  //   },
+  // }
+  // } else {
 
-    const conceptIds: number[] = []
-    if (genderCriteria.value.includes('male')) {
-      conceptIds.push(8507)
-    }
-    if (genderCriteria.value.includes('female')) {
-      conceptIds.push(8532)
-    }
+  const ageFilter: AgeFilter = {
+    mode: ageCriteria.value as AgeFilter['mode'],
+    min: ageCriteria.value === 'between' || ageCriteria.value === 'notBetween' ? ageMinValue.value : null,
+    max: ageCriteria.value === 'between' || ageCriteria.value === 'notBetween' ? ageMaxValue.value : null,
+    value: ageCriteria.value !== 'between' && ageCriteria.value !== 'notBetween' ? ageValue.value : null,
+  }
 
-    const genderFilter: GenderFilter = {
-      otherNonBinary: genderCriteria.value.includes('other'),
-      conceptIds,
-    }
+  const conceptIds: number[] = []
+  if (genderCriteria.value.includes('male')) {
+    conceptIds.push(8507)
+  }
+  if (genderCriteria.value.includes('female')) {
+    conceptIds.push(8532)
+  }
 
-    return {
-      name: newSampleName.value.trim(),
-      size: newSampleSize.value,
-      age: ageFilter,
-      gender: genderFilter,
-    }
+  const genderFilter: GenderFilter = {
+    otherNonBinary: genderCriteria.value.includes('other'),
+    conceptIds,
+  }
+
+  return {
+    name: newSampleName.value.trim(),
+    size: newSampleSize.value,
+    age: ageFilter,
+    gender: genderFilter,
   }
 }
 
