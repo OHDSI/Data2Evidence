@@ -21,6 +21,7 @@ interface ActionSelectorProps {
   handleDataCharacterization: (dataset: Study) => void;
   handleCreateCache: (dataset: Study) => void;
   handleSetupSemanticSearch: (dataset: Study) => void;
+  handleManageDashboard: (dataset: Study) => void;
 }
 
 interface Action {
@@ -64,6 +65,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
   handleDataCharacterization,
   handleCreateCache,
   handleSetupSemanticSearch,
+  handleManageDashboard,
 }) => {
   const { getText, i18nKeys } = useTranslation();
   const { user } = useUser();
@@ -81,6 +83,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
     { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_CHARACTERIZATION), value: "data-characterization" },
     { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_CACHE), value: "create-cache" },
     { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
+    { name: getText(i18nKeys.ACTION_SELECTOR__MANAGE_DASHBOARD), value: "manage-dashboard" },
   ];
 
   const handleActionChange = useCallback(
@@ -119,6 +122,9 @@ const ActionSelector: FC<ActionSelectorProps> = ({
         case "setup-semantic-search":
           handleSetupSemanticSearch(dataset);
           break;
+        case "manage-dashboard":
+          handleManageDashboard(dataset);
+          break;
         default:
           break;
       }
@@ -135,6 +141,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
       handleDataCharacterization,
       handleCreateCache,
       handleSetupSemanticSearch,
+      handleManageDashboard,
       dataset,
     ]
   );

@@ -17,8 +17,8 @@ class FhirAPI(BaseAPI):
             "Content-Type": "application/json"
         }
     
-    def post(self, studyToken: str, resourceType: str, resource):
-        url = f"{self.url}project/{studyToken}/{resourceType}"
+    def post(self, study_token: str, resource_type: str, resource):
+        url = f"{self.url}project/{study_token}/{resource_type}"
         result = requests.post(
             url,
             headers=self.get_headers(),
@@ -30,3 +30,16 @@ class FhirAPI(BaseAPI):
                 f"[{result.status_code}] FhirAPI - Failed to post FHIR resource")
         else:
             return True
+
+    def get(self, study_token: str, resource_type: str, query: str):
+        url = f"{self.url}project/{study_token}/{resource_type}{query}"
+        result = requests.get(
+            url,
+            headers=self.get_headers(),
+            verify=self.get_verify_value()
+        )
+        if ((result.status_code >= 400) and (result.status_code < 600)):
+            raise Exception(
+                f"[{result.status_code}] FhirAPI - Failed to get FHIR resource")
+        else:
+            return result.json()
