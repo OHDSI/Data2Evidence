@@ -25,7 +25,7 @@
     "stop": "npm run local -- stop",
     "clean": "npm run local -- cleanci",
     "config": "npm run local -- config",
-    "ps": "npm run local -- ps",
+    "ps": "npm run local -- status",
     "ci:logs": "npm run local -- logs",
     "setup": "npm run local -- setupdemo",
     "deploy:logs": "ENV_TYPE=remote node ./scripts/dist/cli.js -v develop -e -n .env.remote logs",
