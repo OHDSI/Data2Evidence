@@ -50,6 +50,11 @@ export async function validateStudyId(
       const portalAPI = new PortalServerAPI(token);
       const analysisService = new StrategusAnalysisService();
       const existingAnalysis = await analysisService.getStudyAnalysis(studyId);
+      const datasets = await portalAPI
+        .getDatasets()
+        .then((data) => data.filter((dataset: any) => dataset.id === studyId));
+
+      if (datasets.length > 0) return true;
 
       if (existingAnalysis) return true;
 

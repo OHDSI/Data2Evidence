@@ -2,6 +2,7 @@ import { DataSource, DataSourceOptions } from "npm:typeorm";
 import { Config } from "../../config/entity/config.entity.ts";
 import { DatasetAttributeConfig } from "../../dataset/entity/dataset-attribute-config.entity.ts";
 import { DatasetAttribute } from "../../dataset/entity/dataset-attribute.entity.ts";
+import { DatasetCode } from "../../dataset/entity/dataset-code.entity.ts";
 import { DatasetDashboard } from "../../dataset/entity/dataset-dashboard.entity.ts";
 import { DatasetDetail } from "../../dataset/entity/dataset-detail.entity.ts";
 import { DatasetRelease } from "../../dataset/entity/dataset-release.entity.ts";
@@ -52,6 +53,7 @@ import { SplitUserArtifactIntoIndividualRows1753341753010 } from "./migrations/1
 import { UpdateDatasetAddResultSchema17211757718563 } from "./migrations/17211757718563-update-dataset-add-result-schema.ts";
 import { AddUniqueNameIndexToConceptSets1759126097000 } from "./migrations/1759126097000-add-unique-name-index-to-concept-sets.ts";
 import { RemoveMaterializedCohortDefinitionsKey1759473576894 } from "./migrations/1759473576894-remove-materializedCohortDefinitions-key.ts";
+import { createDatasetCodeTable1761883677510 } from "./migrations/1761883677510-create-dataset-code-table.ts";
 
 const _env = Deno.env.toObject();
 
@@ -78,6 +80,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     Config,
     DatasetAttributeConfig,
     DatasetAttribute,
+    DatasetCode,
     DatasetDashboard,
     DatasetDetail,
     DatasetRelease,
@@ -130,6 +133,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     UpdateDatasetAddResultSchema17211757718563,
     AddUniqueNameIndexToConceptSets1759126097000,
     RemoveMaterializedCohortDefinitionsKey1759473576894,
+    createDatasetCodeTable1761883677510,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);
