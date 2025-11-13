@@ -22,7 +22,8 @@ import {
   DatasetDetailRepository,
   DatasetReleaseRepository,
   DatasetRepository,
-  DatasetTagRepository
+  DatasetTagRepository,
+  DatasetCodeRepository
 } from '../repository/index.ts'
 
 const SWAP_TO = {
@@ -44,6 +45,7 @@ export class DatasetCommandService {
     private readonly dashboardRepo: DatasetDashboardRepository,
     private readonly attributeRepo: DatasetAttributeRepository,
     private readonly tagRepo: DatasetTagRepository,
+    private readonly datasetCodeRepo: DatasetCodeRepository,
     private readonly requestContextService: RequestContextService
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub
@@ -335,6 +337,32 @@ export class DatasetCommandService {
     }
 
     return this.transactionRunner.run(updateAttributeFn, datasetAttributeDto)
+  }
+
+  async updateDatasetDashboardCode(datasetId: string, code: string, type: string = 'dashboard') {
+    const updateDashboardCodeFn = async (_entityMgr: EntityManager, dto: { datasetId: string; code: string; type: string }) => {
+      const datasetCode = await this.datasetCodeRepo.getDatasetCode(dto.datasetId, dto.type)
+      const isNewEntity = !datasetCode
+
+      const datasetCodeEntity = this.addOwner(
+        this.datasetCodeRepo.create({
+          datasetId: dto.datasetId,
+          type: dto.type,
+          code: dto.code
+        }),
+        isNewEntity
+      )
+
+      // Add previous user to created entity if is not new entity
+      if (!isNewEntity) {
+        datasetCodeEntity.createdBy = datasetCode.createdBy
+      }
+      
+      const result = await this.datasetCodeRepo.upsert(datasetCodeEntity, ['datasetId', 'type'])
+      return result.identifiers[0].id
+    }
+
+    return this.transactionRunner.run(updateDashboardCodeFn, { datasetId, code, type })
   }
 
   private async addCustomAttribute(entityMgr: EntityManager, datasetId: string, customAttribute: IDatasetAttribute) {
