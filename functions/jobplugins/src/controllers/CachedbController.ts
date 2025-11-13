@@ -15,17 +15,13 @@ export class CachedbController {
 
   private registerRoutes() {
     // POST /cachedb/create-file
-    this.router.post(
-      "/create-file",
-      validateCreateCachedbFileFlowRunDto(),
-      async (req: Request, res: Response) => {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
-        }
-        await this.createCachedbFileFlowRun(req, res);
+    this.router.post("/create-file", async (req: Request, res: Response) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
-    );
+      await this.createCachedbFileFlowRun(req, res);
+    });
 
     // GET /cachedb/results/:flowRunId
     this.router.get(
@@ -64,8 +60,30 @@ export class CachedbController {
       const { databaseCode, schemaName, resultsSchemaName } =
         await portalServerApi.getDataset(params.datasetId);
 
+      const cacheDatasetId = params?.cacheDatasetId;
+      let snapshotSchemaName;
+
+      if (cacheDatasetId) {
+        const { schemaName } = await portalServerApi.getDataset(
+          params.cacheDatasetId
+        );
+        snapshotSchemaName = schemaName;
+      }
+
+      let snapshotCopyConfig;
+      if (params.snapshotCopyConfig) {
+        snapshotCopyConfig = params.snapshotCopyConfig;
+      }
+
       const result = await this.cachedbService.createCachedbFileFlowRun(
-        { flowActionType, databaseCode, schemaName, resultsSchemaName },
+        {
+          flowActionType,
+          databaseCode,
+          schemaName,
+          resultsSchemaName,
+          snapshotSchemaName,
+          snapshotCopyConfig,
+        },
         token
       );
       res.send(result);

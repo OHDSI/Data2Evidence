@@ -39,9 +39,7 @@
     "stream-browserify": "^3.0.0",
     "underscore": "^1.12.1",
     "vue": "3.5.17",
-    "vue-multiselect": "2.1.0",
-    "vue-slider-component": "2.5.8",
-    "vuedraggable": "2.24.3",
+    "vue-multiselect": "^3.4.0",
     "vuex": "4.1.0",
     "zod": "^3.24.2"
   },
