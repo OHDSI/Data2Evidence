@@ -317,3 +317,8 @@ export interface DatasetAttributeConfig {
   dataType: string;
   isDisplayed: boolean;
 }
+
+export type StudyDashboardTemplateData = {
+  filename: string;
+  content: string;
+};
