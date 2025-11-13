@@ -63,6 +63,7 @@ while [[ $# -gt 0 ]]; do
         -s|--services) services="$2"; shift ;;
         -m|--mlflow) mlflow=--profile="mlflow" ;;
         --hana) hana=--profile="hana" ;;
+        --pull) pull=true;;
         *) if [[ -z ${cmd:-} ]]; then
                cmd=$1
            else
@@ -135,6 +136,9 @@ case $cmd in
         cmd="$dockerbasecmd up --force-recreate --wait"
         if [ -n "$services" ]; then
             cmd="$cmd --no-deps $services"
+        fi
+        if [[ -n "$pull" ]]; then
+            cmd="$cmd --pull always"
         fi
         echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd

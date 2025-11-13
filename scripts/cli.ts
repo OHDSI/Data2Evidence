@@ -24,6 +24,7 @@ interface CliOptions {
   port?: string;
   services?: string;
   hana?: boolean;
+  pull?: boolean;
   ENVFILE?: string;
 }
 
@@ -241,6 +242,10 @@ class D2ECli {
       .option(
         "-s, --services <services>",
         "[SERVICES] Comma-separated list of services to start/stop"
+      )
+      .option(
+        "--pull",
+        "Always pull the latest images before starting services"
       );
   }
   initialise_node_modules_path(): string {
@@ -415,6 +420,7 @@ class D2ECli {
     let cmd = dockerbasecmd.join(" ");
     if (command === "start") {
       cmd = `${cmd} up --force-recreate --wait`;
+      if (options.pull) cmd += " --pull always";
       if (options.services) {
         let services = options.services;
         cmd += ` --no-deps ${services}`;
