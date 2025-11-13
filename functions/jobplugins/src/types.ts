@@ -392,7 +392,7 @@ export type CanvasResult =
       error: string;
     };
 
-export interface CsvFileOperationResponse {
+export interface FileOperationResponse {
   status: "success";
   filePath: string;
   bucket: string;
@@ -404,4 +404,11 @@ export interface TemplateDto {
   description: string;
   nodes: IReactFlowNode[];
   edges: IReactFlowEdge[];
+}
+
+export interface TemplateFhirDto {
+  id: string;
+  name: string;
+  description: string;
+  structureMap: string;
 }
