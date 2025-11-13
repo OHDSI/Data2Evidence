@@ -82,51 +82,51 @@ def data_characterization_plugin(options: DCOptionsType):
     )
 
     if dc_schema:
-        tables = dbdao.list_tables(achilles_params.resultsSchema)
+        # tables = dbdao.list_tables(achilles_params.resultsSchema)
 
-        logger.info(f"Tables in the database: {tables}")
+        # logger.info(f"Tables in the database: {tables}")
 
-        print(row for row in tables)
+        #print(row for row in tables)
 
-        # execute_achilles_wo = execute_achilles.with_options(
-        #     on_failure=[
-        #         partial(
-        #             drop_schema_hook,
-        #             **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
-        #         )
-        #     ]
-        # )
+        execute_achilles_wo = execute_achilles.with_options(
+            on_failure=[
+                partial(
+                    drop_schema_hook,
+                    **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
+                )
+            ]
+        )
 
-        # execute_achilles_wo(achilles_params, flow_run_id)
+        execute_achilles_wo(achilles_params, flow_run_id)
 
-        # if options.executeConceptRecordCount:
-        #     execute_concept_record_count_wo = execute_concept_record_count.with_options(
-        #         on_failure=[
-        #             partial(
-        #                 drop_schema_hook,
-        #                 **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
-        #             )
-        #         ]
-        #     )
-        #     execute_concept_record_count_wo(
-        #         achilles_params.resultsSchema,
-        #         achilles_params.vocabSchemaName,
-        #         dbdao,
-        #         logger,
-        #     )
+        if options.executeConceptRecordCount:
+            execute_concept_record_count_wo = execute_concept_record_count.with_options(
+                on_failure=[
+                    partial(
+                        drop_schema_hook,
+                        **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
+                    )
+                ]
+            )
+            execute_concept_record_count_wo(
+                achilles_params.resultsSchema,
+                achilles_params.vocabSchemaName,
+                dbdao,
+                logger,
+            )
 
-        # # Todo: Update implementation if Hana uses trex
-        # if not use_trex_connection:
-        #     execute_export_to_ares_wo = execute_export_to_ares.with_options(
-        #         on_failure=[
-        #             partial(
-        #                 drop_schema_hook,
-        #                 **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
-        #             )
-        #         ]
-        #     )
+        # Todo: Update implementation if Hana uses trex
+        if not use_trex_connection:
+            execute_export_to_ares_wo = execute_export_to_ares.with_options(
+                on_failure=[
+                    partial(
+                        drop_schema_hook,
+                        **dict(dbdao=dbdao, schema=achilles_params.resultsSchema),
+                    )
+                ]
+            )
 
-        #     execute_export_to_ares_wo(achilles_params, cdm_source)
+            execute_export_to_ares_wo(achilles_params, cdm_source)
 
 
 def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger):
