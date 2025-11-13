@@ -32,6 +32,7 @@ import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import "./StudyOverview.scss";
+import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
 
 const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
@@ -68,6 +69,7 @@ const StudyOverview: FC = () => {
   const [showCreateCacheDialog, openCreateCacheDialog, closeCreateCacheDialog] = useDialogHelper(false);
   const [showSetupSemanticSearchDialog, openSetupSemanticSearchDialog, closeSetupSemanticSearchDialog] =
     useDialogHelper(false);
+  const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [loading, setLoading] = useState(false);
@@ -162,6 +164,14 @@ const StudyOverview: FC = () => {
       openSetupSemanticSearchDialog();
     },
     [openSetupSemanticSearchDialog]
+  );
+
+  const handleManageDashboard = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openManageDashboardDialog();
+    },
+    [openManageDashboardDialog]
   );
 
   const visibilityImgAlt = useCallback((value?: string) => {
@@ -429,6 +439,7 @@ const StudyOverview: FC = () => {
                         handleDataCharacterization={handleDataCharacterization}
                         handleCreateCache={handleCreateCache}
                         handleSetupSemanticSearch={handleSetupSemanticSearch}
+                        handleManageDashboard={handleManageDashboard}
                       />
                     </TableCell>
                   </TableRow>
@@ -508,6 +519,14 @@ const StudyOverview: FC = () => {
               dataset={activeDataset}
               open={showSetupSemanticSearchDialog}
               onClose={closeSetupSemanticSearchDialog}
+            />
+          )}
+
+          {showManageDashboardDialog && (
+            <ManageDashboardDialog
+              study={activeDataset}
+              open={showManageDashboardDialog}
+              onClose={closeManageDashboardDialog}
             />
           )}
         </div>
