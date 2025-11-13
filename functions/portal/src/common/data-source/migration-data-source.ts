@@ -54,7 +54,7 @@ import { UpdateDatasetAddResultSchema17211757718563 } from "./migrations/1721175
 import { AddUniqueNameIndexToConceptSets1759126097000 } from "./migrations/1759126097000-add-unique-name-index-to-concept-sets.ts";
 import { RemoveMaterializedCohortDefinitionsKey1759473576894 } from "./migrations/1759473576894-remove-materializedCohortDefinitions-key.ts";
 import { createDatasetCodeTable1761883677510 } from "./migrations/1761883677510-create-dataset-code-table.ts";
-import { UpdateDatasetTypeColumn1763002358359 } from "./migrations/1763002358359-update-dataset-type-column.ts";
+import { UpdateDatasetTypeColumn17211757718564 } from "./migrations/17211757718564-update-dataset-type-column.ts";
 
 const _env = Deno.env.toObject();
 
@@ -135,7 +135,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     AddUniqueNameIndexToConceptSets1759126097000,
     RemoveMaterializedCohortDefinitionsKey1759473576894,
     createDatasetCodeTable1761883677510,
-    UpdateDatasetTypeColumn1763002358359,
+    UpdateDatasetTypeColumn17211757718564,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);

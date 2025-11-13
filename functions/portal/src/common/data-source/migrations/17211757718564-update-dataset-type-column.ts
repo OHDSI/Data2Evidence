@@ -1,9 +1,9 @@
 import { MigrationInterface, QueryRunner } from "npm:typeorm";
 
-export class UpdateDatasetTypeColumn1763002358359
+export class UpdateDatasetTypeColumn17211757718564
   implements MigrationInterface
 {
-  name = "UpdateDatasetTypeColumn1763002358359";
+  name = "UpdateDatasetTypeColumn17211757718564";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
