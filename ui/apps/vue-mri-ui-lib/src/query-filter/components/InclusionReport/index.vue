@@ -45,6 +45,10 @@ const inclusionReportResponse = computed(() => {
     : inclusionReportEventResponse.value
 })
 
+const hasInclusionRules = computed(() => {
+  return inclusionReportResponse.value?.inclusionRuleStats.length > 0
+})
+
 const treemapData = computed(() => {
   if (!inclusionReportResponse.value) return null
   const data = JSON.parse(inclusionReportResponse.value.treemapData)
@@ -426,97 +430,98 @@ watch(
       </table>
     </div>
 
-    <!-- Inclusion Rule Stats Table -->
-    <div class="group-buttons-container">
-      <group-buttons
-        :options="visualizationOptions"
-        :limit-value="selectedVisualization"
-        @update-limit-value="handleVisualizationChange($event as 'ATTRITION' | 'INTERSECT')"
-        class="person-event-view-buttons"
-      />
-    </div>
-
-    <!-- Any/All Rule Selector (only show in INTERSECT view) -->
-    <div v-if="selectedVisualization === 'INTERSECT'" class="all-any-selector">
-      <span>Having</span>
-      <select v-model="allAnyOption" @change="handleAllAnyChange(allAnyOption)">
-        <option value="ALL">ALL</option>
-        <option value="ANY">ANY</option>
-      </select>
-      <span>of selected criteria</span>
-      <select v-model="passedFailedOption" @change="handlePassedFailedChange(passedFailedOption)">
-        <option value="PASSED">PASSED</option>
-        <option value="FAILED">FAILED</option>
-      </select>
-    </div>
-
-    <div class="rules-section">
-      <h4>Inclusion Rules</h4>
-      <table class="rules-table">
-        <thead>
-          <tr>
-            <th v-if="selectedVisualization === 'INTERSECT'">
-              <input
-                type="checkbox"
-                :checked="areAllRulesChecked()"
-                @change="toggleAllRules()"
-                title="Select/unselect all rules"
-              />
-            </th>
-            <th>ID</th>
-            <th class="rule-name">Inclusion rule</th>
-            <!-- count satisfying -->
-            <th>N</th>
-            <!-- percent satisfying -->
-            <th v-if="selectedVisualization === 'ATTRITION'">% remain</th>
-            <th v-else>% satisfied</th>
-            <!-- percent excluded -->
-            <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
-            <th v-else>% to-gain</th>
-          </tr>
-        </thead>
-        <tbody v-if="selectedVisualization === 'ATTRITION'">
-          <tr v-for="stat in attritionStats" :key="stat.id">
-            <td>{{ stat.id + 1 }}</td>
-            <td class="rule-name">{{ stat.name }}</td>
-            <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-            <td>{{ stat.percentSatisfying }}</td>
-            <td>{{ stat.pctDiff }}</td>
-          </tr>
-        </tbody>
-        <tbody v-else>
-          <tr
-            v-for="stat in inclusionReportResponse.inclusionRuleStats"
-            :key="stat.id"
-            :class="{ 'grayed-out': !isRuleChecked(stat.id) }"
-          >
-            <td>
-              <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />
-            </td>
-            <td>{{ stat.id + 1 }}</td>
-            <td class="rule-name">
-              {{ stat.name }}
-            </td>
-            <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-            <td>{{ stat.percentSatisfying }}</td>
-            <td>{{ stat.percentExcluded }}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
-        <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
+    <div v-if="hasInclusionRules" class="inclusion-rules-detail">
+      <!-- Inclusion Rule Stats Table -->
+      <div class="group-buttons-container">
+        <group-buttons
+          :options="visualizationOptions"
+          :limit-value="selectedVisualization"
+          @update-limit-value="handleVisualizationChange($event as 'ATTRITION' | 'INTERSECT')"
+          class="person-event-view-buttons"
+        />
       </div>
 
-      <!-- Plotly Funnel chart -->
-      <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
-        <h4>Attrition visualization</h4>
-        <div ref="funnelChartRef" class="funnel-chart"></div>
+      <!-- Any/All Rule Selector (only show in INTERSECT view) -->
+      <div v-if="selectedVisualization === 'INTERSECT'" class="all-any-selector">
+        <span>Having</span>
+        <select v-model="allAnyOption" @change="handleAllAnyChange(allAnyOption)">
+          <option value="ALL">ALL</option>
+          <option value="ANY">ANY</option>
+        </select>
+        <span>of selected criteria</span>
+        <select v-model="passedFailedOption" @change="handlePassedFailedChange(passedFailedOption)">
+          <option value="PASSED">PASSED</option>
+          <option value="FAILED">FAILED</option>
+        </select>
       </div>
-      <!-- Echarts Treemap chart -->
-      <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
-        <h4>Population visualization</h4>
-        <div ref="treemapChartRef" class="treemap-chart"></div>
+
+      <div class="rules-section">
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th v-if="selectedVisualization === 'INTERSECT'">
+                <input
+                  type="checkbox"
+                  :checked="areAllRulesChecked()"
+                  @change="toggleAllRules()"
+                  title="Select/unselect all rules"
+                />
+              </th>
+              <th>ID</th>
+              <th class="rule-name">Inclusion rule</th>
+              <!-- count satisfying -->
+              <th>N</th>
+              <!-- percent satisfying -->
+              <th v-if="selectedVisualization === 'ATTRITION'">% remain</th>
+              <th v-else>% satisfied</th>
+              <!-- percent excluded -->
+              <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
+              <th v-else>% to-gain</th>
+            </tr>
+          </thead>
+          <tbody v-if="selectedVisualization === 'ATTRITION'">
+            <tr v-for="stat in attritionStats" :key="stat.id">
+              <td>{{ stat.id + 1 }}</td>
+              <td class="rule-name">{{ stat.name }}</td>
+              <td>{{ stat.countSatisfying.toLocaleString() }}</td>
+              <td>{{ stat.percentSatisfying }}</td>
+              <td>{{ stat.pctDiff }}</td>
+            </tr>
+          </tbody>
+          <tbody v-else>
+            <tr
+              v-for="stat in inclusionReportResponse.inclusionRuleStats"
+              :key="stat.id"
+              :class="{ 'grayed-out': !isRuleChecked(stat.id) }"
+            >
+              <td>
+                <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />
+              </td>
+              <td>{{ stat.id + 1 }}</td>
+              <td class="rule-name">
+                {{ stat.name }}
+              </td>
+              <td>{{ stat.countSatisfying.toLocaleString() }}</td>
+              <td>{{ stat.percentSatisfying }}</td>
+              <td>{{ stat.percentExcluded }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
+          <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
+        </div>
+
+        <!-- Plotly Funnel chart -->
+        <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
+          <h4>Attrition visualization</h4>
+          <div ref="funnelChartRef" class="funnel-chart"></div>
+        </div>
+        <!-- Echarts Treemap chart -->
+        <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
+          <h4>Population visualization</h4>
+          <div ref="treemapChartRef" class="treemap-chart"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -525,6 +530,12 @@ watch(
 </template>
 
 <style scoped>
+.inclusion-rules-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .group-buttons-container {
   width: 100%;
   display: flex;
