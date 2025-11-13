@@ -65,7 +65,7 @@ def create_and_assign_roles_task(dbdao: DaoBase, schema: str):
     
 
     if (Variable.get("IS_SELF_MANAGED_ROLES", "false") == "true"):
-        logger.info(f"Skipping role managed: {dbdao.dialect}")
+        logger.info(f"Skipping since role are self managed: {dbdao.dialect}")
         return
 
     if (
