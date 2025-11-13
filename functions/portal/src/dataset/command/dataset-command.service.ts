@@ -131,27 +131,29 @@ export class DatasetCommandService {
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
     const createSnapshotFn = async (entityMgr: EntityManager, snapshotDto: IDatasetSnapshotDto) => {
-      const { id: snapshotId, sourceDatasetId, newDatasetName, schemaName, timestamp } = snapshotDto
+      const { id: snapshotId, sourceDatasetId, newDatasetName, schemaName, timestamp, type: newType } = snapshotDto
       const sourceDataset = await this.datasetRepo.getDataset(sourceDatasetId)
       if (!sourceDataset) {
         throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
       }
 
-      const { type, tenantId, databaseCode, vocabSchemaName, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, plugin } = sourceDataset
+      const { tenantId, databaseCode, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
       // Copy dataset with new schema name
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
-        type,
+        type: newType,
         tenantId,
         databaseCode,
+        dialect,
         schemaName,
-        vocabSchemaName,
-        resultSchemaName,
-        tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim()}`,
+        vocabSchemaName: schemaName,
+        resultSchemaName: schemaName || resultSchemaName,
+        tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim().replace(/\s+/g, '_')}`,
         paConfigId,
         dataModel,
         plugin,
-        sourceDatasetId
+        sourceDatasetId,
+        visibilityStatus: "DEFAULT"
       }
       this.logger.info(`Create dataset snapshot with id ${snapshotId} from source dataset ${sourceDatasetId}`)
       const datasetEntity = this.datasetRepo.create(datasetSnapshot)

@@ -1,12 +1,50 @@
 import { Tenant } from "./tenant";
 
+export enum SourceDatasetType {
+  SOURCE = "source",
+  FHIR = "fhir",
+}
+
+export enum CacheDatasetType {
+  OMOP = "omop",
+  STUDY = "study",
+  HANA__OMOP = "hana__omop",
+  HANA__NON_OMOP = "hana__non_omop",
+  NON_OMOP = "non_omop",
+}
+
+export type DatasetType = SourceDatasetType | CacheDatasetType;
+
+export type ActionValue =
+  | "info"
+  | "metadata"
+  | "version"
+  | "delete"
+  | "permissions"
+  | "resources"
+  | "data-quality"
+  | "data-characterization"
+  | "setup-semantic-search"
+  | "update"
+  | "release"
+  | "create-cache"
+  | "manage-dashboard";
+
+export enum DatasetInfoTab {
+  DatasetInfo = "info",
+  DataQuality = "quality",
+  DataCharacterization = "characterization",
+  History = "history",
+  Dashboard = "dashboard",
+}
+
 export interface Study {
   id: string;
   tenant: Tenant;
   tokenStudyCode: string;
   schemaName: string;
   vocabSchemaName?: string;
-  type: string;
+  type: DatasetType;
   visibilityStatus: string;
   publicKey: string;
   dataModel: string;
@@ -44,6 +82,8 @@ export interface NewStudyInput {
     value: string;
   }[];
   tags: string[];
+  cacheDatasetName: string;
+  cacheDatasetType: string;
 }
 
 export interface CopyStudyInput {
@@ -52,6 +92,9 @@ export interface CopyStudyInput {
   snapshotLocation: string;
   dataModel: string;
   snapshotCopyConfig?: SnapshotCopyConfig;
+  type: CacheDatasetType;
+  detail: DatasetDetail;
+  paConfigId: string;
 }
 
 export interface NewFhirProjectInput {

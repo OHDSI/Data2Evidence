@@ -18,7 +18,8 @@ class QueryColumns:
     patient_filter_col: str | None
     timestamp_filter_col: str | None
 
-@dataclass  
+
+@dataclass
 class CopyParameters:
     """
     Dataclass to hold parameters for creating cache
@@ -58,7 +59,6 @@ class DatamartConfig(BaseModel):
         default=None, alias="patientsToBeCopied"
     )
 
-
     def table_config_to_dict(self) -> Dict[str, List[str]] | None:
         """
         Converts the table_config list to a dictionary mapping table names to columns.
@@ -73,6 +73,7 @@ class DatamartConfig(BaseModel):
         # Accept field name and aliases as input
         validate_by_name = True
 
+
 class CacheFlowAction(str, Enum):
     CREATE_DATAMART_CACHE = "create_datamart_cache"
     GET_VERSION_INFO = "get_version_info"
@@ -83,8 +84,9 @@ class CreateCacheOptions(BaseModel):
 
     database_code: Optional[str] = Field(default=None, alias="databaseCode")
     schema_name: Optional[str] = Field(default=None, alias="schemaName")
-    results_schema_name: Optional[str] = Field(default=None, alias="resultsSchemaName")
-    
+    results_schema_name: Optional[str] = Field(
+        default=None, alias="resultsSchemaName")
+
     # Optional flag used to determine which tables to create duckdb FTS indexes.
     # By default only creates FTS indexes for concept table.
     # If required, more table names can be added accordingly to the keys in DUCKDB_FULLTEXT_SEARCH_CONFIG
@@ -101,7 +103,6 @@ class CreateCacheOptions(BaseModel):
     )
 
     datasets: Optional[List[Dict]] = Field(default=None)
-
 
     @property
     def target_schema_name(self) -> str:
@@ -133,7 +134,8 @@ class CreateCacheOptions(BaseModel):
         required_fields = required_fields_map.get(self.flow_action_type, [])
 
         # Check for missing required fields
-        missing = [field for field in required_fields if getattr(self, field) is None]
+        missing = [field for field in required_fields if getattr(
+            self, field) is None]
 
         if missing:
             raise ValueError(
@@ -147,7 +149,6 @@ class CreateCacheOptions(BaseModel):
         # Accept field name and aliases as input
         validate_by_name = True
 
-
     @model_validator(mode="after")
     def validate_trex_connection_and_flow_action(self) -> Self:
         if (
@@ -158,6 +159,7 @@ class CreateCacheOptions(BaseModel):
                 f"If flow_action_type is '{CacheFlowAction.GET_VERSION_INFO}', use_trex_connection must be True."
             )
         return self
+
 
 class CreateCDWValidationConfig(BaseModel):
     databaseCode: str
