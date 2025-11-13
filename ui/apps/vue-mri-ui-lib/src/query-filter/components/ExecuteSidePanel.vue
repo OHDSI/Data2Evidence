@@ -16,7 +16,7 @@ const props = defineProps<{
 const tabList = [
   {
     text: 'Inclusion report',
-    value: 'inclusion_report',
+    value: 'inclusion-report',
   },
   {
     text: 'Analysis',
@@ -28,7 +28,7 @@ const tabList = [
   },
 ]
 
-const selectedView = ref<'inclusion_report' | 'analysis' | 'sample'>('inclusion_report')
+const selectedView = ref<'inclusion-report' | 'analysis' | 'sample'>('inclusion-report')
 const activeDataset = ref<string>(props.availableSources[0].sourceKey)
 
 // Emit an event to parent to trigger cohort generation for a source
@@ -141,7 +141,7 @@ const hasCohortGenerated = computed(() => {
         <div v-else-if="!hasCohortGenerated" class="status-message">Please generate the cohort first</div>
         <div v-else>
           <InclusionReport
-            v-if="selectedView === 'inclusion_report'"
+            v-if="selectedView === 'inclusion-report'"
             :cohort-definition-id="cohortDefinitionId"
             :source-key="activeDataset"
             :modeId="1"
@@ -181,11 +181,10 @@ const hasCohortGenerated = computed(() => {
 .dataset-card {
   border-radius: 8px;
   background-color: white;
-  border: none;
 }
 .active-dataset {
-  border: 2px solid var(--color-primary);
-  box-sizing: border-box;
+  outline: 2px solid var(--color-primary);
+  box-sizing: content-box;
 }
 :global(.dataset-card .card-body) {
   padding-top: 8px;
@@ -198,6 +197,28 @@ const hasCohortGenerated = computed(() => {
   align-items: center;
   padding-left: 0;
   padding-right: 0;
+
+  @media (max-width: 1400px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: start;
+  }
+}
+
+:global(.main-content .tabs .app-list) {
+  margin-top: 0;
+  margin-bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  background-color: transparent;
+}
+
+:global(.main-content .tabs .app-listItem) {
+  width: 100%;
+  background-color: transparent !important;
+  color: var(--color-primary) !important;
+  font-size: 1.2rem !important;
 }
 
 .main-content {
@@ -209,23 +230,7 @@ const hasCohortGenerated = computed(() => {
     width: 100%;
     margin-bottom: -5px;
     z-index: 1;
-
-    :global(.app-list) {
-      margin-top: 0;
-      margin-bottom: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      background-color: transparent;
-    }
-
-    :global(.app-listItem) {
-      width: 100%;
-      // text-align: center;
-      background-color: transparent !important;
-      color: var(--color-primary) !important;
-      font-size: 1.2rem !important;
-    }
+    padding-bottom: 4px;
   }
 
   .tab-content {
@@ -233,7 +238,6 @@ const hasCohortGenerated = computed(() => {
     height: 100%;
     border-radius: 8px;
     overflow-y: scroll;
-    // height: 100%;
   }
 }
 
@@ -348,7 +352,7 @@ const hasCohortGenerated = computed(() => {
   }
 }
 .side {
-  padding-right: 1rem;
+  padding: 0 8px 0 4px;
   height: 100%;
   overflow-y: auto;
   width: 30%;
@@ -360,17 +364,14 @@ const hasCohortGenerated = computed(() => {
 
   .sidepanel-title {
     text-align: center;
-    margin-bottom: 1rem;
     font-weight: normal;
+    margin: 0;
   }
 }
 
 .execute-content {
-  // margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0;
   display: flex;
-  // display: grid;
-  // grid-template-columns: 1fr 2fr;
   gap: 1.5rem;
   height: calc(100vh - 49px - 16px);
 }

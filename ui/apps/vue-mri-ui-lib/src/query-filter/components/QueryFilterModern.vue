@@ -1050,7 +1050,7 @@ const updatePatientCountFromInfo = () => {
 
   if (!selectedSource) {
     patientCount.value = null
-    generationStatus[selectedDatasetForGeneration.value] = 'idle'
+    generationStatus.value[selectedDatasetForGeneration.value] = 'idle'
     return
   }
 

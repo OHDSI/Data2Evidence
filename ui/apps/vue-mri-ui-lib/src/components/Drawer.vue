@@ -93,6 +93,7 @@ function lockBody() {
     }
   }
 }
+
 function unlockBody() {
   bodyScrollLocked = Math.max(0, bodyScrollLocked - 1)
   if (bodyScrollLocked === 0) {
@@ -204,7 +205,6 @@ function trapFocus(e: KeyboardEvent) {
 }
 
 .drawer-panel {
-  z-index: 92;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -243,7 +243,7 @@ function trapFocus(e: KeyboardEvent) {
 .drawer-content {
   padding: 16px;
   height: 100%;
-  /* overflow: hidden; */
+  box-sizing: border-box;
 }
 
 .drawer-backdrop-enter-active,

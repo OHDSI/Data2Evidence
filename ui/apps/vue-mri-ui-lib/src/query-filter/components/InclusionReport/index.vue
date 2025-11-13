@@ -515,7 +515,7 @@ watch(
       </div>
       <!-- Echarts Treemap chart -->
       <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
-        <h4>Populatiom visualization</h4>
+        <h4>Population visualization</h4>
         <div ref="treemapChartRef" class="treemap-chart"></div>
       </div>
     </div>
