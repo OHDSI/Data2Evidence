@@ -248,9 +248,8 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         error_message = get_error_message(
             "errorReportR.txt", achilles_params.outputFolder
         )
+        
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
-
-        logger.error(f"Failed analysis IDs: {failed_analysis_ids}")
 
         if error_message or failed_analysis_ids:
             raise RuntimeError(
