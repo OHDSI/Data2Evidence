@@ -338,7 +338,9 @@ export interface ICreateCachedbFileFlowRunDto {
   flowActionType: string;
   databaseCode: string;
   schemaName: string;
+  snapshotSchemaName?: string;
   resultsSchemaName?: string;
+  snapshotCopyConfig?: object;
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {
