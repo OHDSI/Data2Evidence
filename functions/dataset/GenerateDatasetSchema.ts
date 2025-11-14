@@ -15,17 +15,10 @@ export const generateDatasetSchema = async (req: Request, res: Response, next: N
   //CDM Schema preparation
   logger.info('Option for schema: ' + schemaOption + ' with the value: ' + schemaName)
   if (schemaOption === CDMSchemaTypes.CustomCDM || schemaOption === CDMSchemaTypes.ExistingCDM) {
-    const datasets = await portalAPI.getStudiesAsSystemAdmin()
 
     const schemaExists = await analyticsSvcApi.checkIfSchemaExists(dialect, databaseCode, schemaName)
 
-    const foundDataset = datasets.find(
-      dataset => dataset.schemaName === schemaName && dataset.databaseCode === databaseCode
-    )
-
-    if (foundDataset) {
-      return badRequest(res, 'This schema is already in use')
-    } else if (schemaOption === CDMSchemaTypes.CustomCDM && schemaExists) {
+    if (schemaOption === CDMSchemaTypes.CustomCDM && schemaExists) {
       return badRequest(res, 'This schema already exists')
     } else if (schemaOption === CDMSchemaTypes.ExistingCDM && !schemaExists) {
       return badRequest(res, 'This schema does not exist')
