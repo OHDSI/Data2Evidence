@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 type Side = 'left' | 'right'
 
@@ -32,19 +32,15 @@ const emit = defineEmits<{
 }>()
 
 const panelRef = ref<HTMLElement | null>(null)
-const previouslyFocused = ref<HTMLElement | null>(null)
 
-//  When the component is mounted, store the currently focused element and lock body scroll if needed.
+// lock body scroll
 onMounted(() => {
-  previouslyFocused.value = (document.activeElement as HTMLElement) ?? null
   if (props.lockScroll) lockBody()
 })
 
-// When the component is removed from the page, make sure the body scroll is unlocked (cleanup) and focus is restored.
-
+// unlock body scroll
 onUnmounted(() => {
   if (props.lockScroll) unlockBody()
-  previouslyFocused.value?.focus?.()
 })
 
 function close() {
@@ -53,41 +49,22 @@ function close() {
 
 /**
  * Backdrop click handler:
- * - Only close if the click originated on the backdrop (not on children).
- * - This avoids closing when clicking inside the panel.
+ * Only close if the click originated on the backdrop (not on children).
  */
 function onBackdropClick(e: MouseEvent) {
   if (!props.closeOnBackdrop) return
   if (e.target === e.currentTarget) close()
 }
 
-/**
- * Key handling inside the panel:
- * - ESC closes the drawer.
- * - TAB is captured to "trap focus" so keyboard users stay inside the drawer.
- */
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    e.stopPropagation()
-    close()
-  } else if (e.key === 'Tab') {
-    trapFocus(e)
-  }
-}
-
-/* ---------------------- Accessibility & UX Utilities --------------------- */
-
-/**
- * A "reference count" scroll lock:
- * - If multiple drawers/modals ever exist, we only unlock when the last one closes.
- * - Add right padding equal to the scrollbar width to prevent layout shift.
- */
+// reference count for scroll lock
 let bodyScrollLocked = 0
+// If multiple drawers exist, only unlock when the last one closes.
 function lockBody() {
   bodyScrollLocked++
   if (bodyScrollLocked === 1) {
     const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
     document.body.style.overflow = 'hidden'
+    // Add right padding equal to the scrollbar width to prevent layout shift.
     if (scrollBarWidth > 0) {
       document.body.style.paddingRight = `${scrollBarWidth}px`
     }
@@ -99,60 +76,6 @@ function unlockBody() {
   if (bodyScrollLocked === 0) {
     document.body.style.overflow = ''
     document.body.style.paddingRight = ''
-  }
-}
-
-/**
- * Return all focusable elements inside a root node.
- * for focus trapping and focusing the first control on open.
- */
-function focusableEls(root: HTMLElement | null) {
-  if (!root) return [] as HTMLElement[]
-  const selectors = [
-    'a[href]',
-    'button:not([disabled])',
-    'textarea:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    '[tabindex]:not([tabindex="-1"])',
-  ]
-  return Array.from(root.querySelectorAll<HTMLElement>(selectors.join(','))).filter(
-    el => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden')
-  )
-}
-
-//Focus the first focusable child, or the panel itself if none.
-
-function focusFirst(root: HTMLElement | null) {
-  const els = focusableEls(root)
-  if (els.length) els[0].focus()
-  else root?.focus()
-}
-
-/**
- * Keep keyboard focus inside the panel when users press TAB.
- * - If on the last element and TAB forward => loop to first.
- * - If on the first element and SHIFT+TAB => loop to last.
- */
-function trapFocus(e: KeyboardEvent) {
-  const root = panelRef.value
-  if (!root) return
-  const els = focusableEls(root)
-  if (els.length === 0) {
-    e.preventDefault()
-    root.focus()
-    return
-  }
-  const first = els[0]
-  const last = els[els.length - 1]
-  const active = document.activeElement as HTMLElement | null
-
-  if (!e.shiftKey && active === last) {
-    e.preventDefault()
-    first.focus()
-  } else if (e.shiftKey && active === first) {
-    e.preventDefault()
-    last.focus()
   }
 }
 </script>
@@ -172,7 +95,6 @@ function trapFocus(e: KeyboardEvent) {
             aria-modal="true"
             tabindex="-1"
             ref="panelRef"
-            @keydown="onKeydown"
           >
             <header class="drawer-header">
               <h2 v-if="title" class="drawer-title">{{ title }}</h2>
