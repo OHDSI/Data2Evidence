@@ -115,11 +115,9 @@ ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
 COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
 
 RUN \
-    # Create output directory and set ownership
-    mkdir -p /output \
-    && chown -R docker:docker /output \
-    # Create directory for DuckDB extensions
-    && mkdir -p /app/duckdb_extensions \
+    # Create directory for duckdb extensions, achilles output logs
+    mkdir -p /app/duckdb_extensions /app/achilles_output \
+    && chown -R docker:docker /app/achilles_output \
     && chmod -R 711 /app/duckdb_extensions \
     # Make the download script executable
     && chmod +x /app/download_duckdb_extensions.sh \
