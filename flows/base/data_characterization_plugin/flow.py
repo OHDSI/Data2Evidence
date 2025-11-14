@@ -223,9 +223,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         )
 
         r_script_path = os.path.join(os.path.dirname(__file__), "execute_achilles.R")
-        # a = 5
-        # if a > 1:
-        #     raise ValueError("a is greater than 1")
+
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f"source('{r_script_path}')")
             r_execute_achilles = robjects.r["execute_achilles"]
