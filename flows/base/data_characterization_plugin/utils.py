@@ -3,14 +3,14 @@ from re import match
 from pathlib import Path
 
 
-def get_failed_analysis_ids(output_folder: str) -> list[int]:
+def get_failed_analysis_ids(output_folder: str) -> list[int] | None:
     """
     Get the list of failed analysis IDs from the output folder.
     """
     error_files = list(Path(output_folder).glob("achillesError_*.txt"))
-    failed_id_str = [int(file.stem.split("_")[-1]) for file in error_files if file.is_file()]
+    failed_ids = [int(file.stem.split("_")[-1]) for file in error_files if file.is_file()]
 
-    sorted_failed_ids = sorted(failed_id_str)
+    sorted_failed_ids = sorted(failed_ids)
 
     return sorted_failed_ids if sorted_failed_ids else None
 
