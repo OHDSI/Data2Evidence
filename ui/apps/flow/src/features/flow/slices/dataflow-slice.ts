@@ -19,6 +19,7 @@ import {
   SaveDataflowDto,
   SaveDataflowResponseDto,
   TemplateDto,
+  TemplateFhirDto,
   TestDataflowDto,
 } from "../types";
 import { createBaseQueryFn } from "./base-query";
@@ -186,7 +187,7 @@ export const dataflowApiSlice = createApi({
         formData.append("file", file);
 
         return {
-          url: `dataflow/file/csv?nodeId=${nodeId}`,
+          url: `dataflow/node/file?nodeId=${nodeId}`,
           method: "POST",
           body: formData,
         };
@@ -198,7 +199,33 @@ export const dataflowApiSlice = createApi({
       { nodeId: string; fileName: string }
     >({
       query: ({ nodeId, fileName }) => ({
-        url: `dataflow/file/csv?nodeId=${nodeId}&fileName=${fileName}`,
+        url: `dataflow/node/file?nodeId=${nodeId}&fileName=${fileName}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    uploadNodeFile: builder.mutation<
+      { status: string },
+      { nodeId: string; file: File; file_type?: string }
+    >({
+      query: ({ nodeId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return {
+          url: `dataflow/node/file?nodeId=${nodeId}`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
+    }),
+    deleteNodeFile: builder.mutation<
+      { status: string },
+      { nodeId: string; fileName: string; file_type?: string }
+    >({
+      query: ({ nodeId, fileName }) => ({
+        url: `dataflow/node/file?nodeId=${nodeId}&fileName=${fileName}`,
         method: "DELETE",
       }),
       invalidatesTags: [{ type: "Dataflow", id: "LIST" }],
@@ -226,6 +253,10 @@ export const dataflowApiSlice = createApi({
     }),
     getTemplates: builder.query<TemplateDto[], void>({
       query: () => "dataflow/templates",
+      providesTags: ["Template"],
+    }),
+    getFhirStructureMapTemplates: builder.query<TemplateFhirDto[], void>({
+      query: () => "dataflow/templates/fhir",
       providesTags: ["Template"],
     }),
     createCanvasFromTemplate: builder.mutation<
@@ -343,9 +374,12 @@ export const {
   useLazyGetFlowRunStateByIdQuery,
   useUploadNodeCsvFileMutation,
   useDeleteNodeCsvFileMutation,
+  useUploadNodeFileMutation,
+  useDeleteNodeFileMutation,
   useCheckRemoteDiffQuery,
   useOverwriteCanvasFromRemoteMutation,
   useGetTemplatesQuery,
+  useGetFhirStructureMapTemplatesQuery,
   useCreateCanvasFromTemplateMutation,
   useCreateDBScanReportMutation,
   useCreateScanReportMutation,

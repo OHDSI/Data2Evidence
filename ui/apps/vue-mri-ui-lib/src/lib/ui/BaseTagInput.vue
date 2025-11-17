@@ -9,8 +9,8 @@
   >
     <multiselect
       size="sm"
-      :value="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
-      @input="handleUpdateValue"
+      :modelValue="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
+      @update:modelValue="handleUpdateValue"
       track-by="value"
       :hide-selected="true"
       :internal-search="false"
@@ -34,6 +34,8 @@
       ref="multiselect"
       :clear-on-select="true"
       open-direction="bottom"
+      name="multiselect"
+      :showNoOptions="false"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
