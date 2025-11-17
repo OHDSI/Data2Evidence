@@ -338,7 +338,9 @@ export interface ICreateCachedbFileFlowRunDto {
   flowActionType: string;
   databaseCode: string;
   schemaName: string;
+  snapshotSchemaName?: string;
   resultsSchemaName?: string;
+  snapshotCopyConfig?: object;
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {
@@ -391,12 +393,6 @@ export type CanvasResult =
       canvasId: string;
       error: string;
     };
-
-export interface CsvFileOperationResponse {
-  status: "success";
-  filePath: string;
-  bucket: string;
-}
 
 export interface FileOperationResponse {
   status: "success";

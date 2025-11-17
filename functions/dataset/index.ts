@@ -32,7 +32,7 @@ export class DatasetRouter {
 
   private flowSnapshotType(snapshotLocation: string) {
     if (snapshotLocation === "DB") {
-      return "create_snapshot";
+      return "create_datamart_cache";
     } else {
       return "create_parquet_snapshot";
     }
@@ -121,7 +121,15 @@ export class DatasetRouter {
           attributes,
           tags,
           fhirProjectId,
+          cacheDatasetName,
+          cacheDatasetType,
         } = req.body;
+
+        const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
+        const parsedNewCacheSchemaName = this.schemaCase(
+          newCacheSchemaName,
+          dialect as DbDialect
+        );
 
         // Token study code validation
         const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
@@ -158,6 +166,7 @@ export class DatasetRouter {
                     database_code: databaseCode,
                     data_model: dataModel,
                     schema_name: schemaName,
+                    cache_schema_name: parsedNewCacheSchemaName,
                     cleansed_schema_option: cleansedSchemaOption,
                     vocab_schema: vocabSchema,
                     results_schema: resultSchemaValue,
@@ -205,7 +214,7 @@ export class DatasetRouter {
           this.logger.info("Creating new dataset in Portal");
           const newDatasetInput = {
             id,
-            type,
+            type, // TODO: validate type
             tokenDatasetCode: tokenStudyCode,
             schemaOption,
             dialect,
@@ -224,11 +233,32 @@ export class DatasetRouter {
             tags,
             fhir_project_id: fhirProjectId,
           };
+
           const newDataset = await portalAPI.createDataset(newDatasetInput);
+
           if (newDataset.error) {
             return res.status(400).json(newDataset);
           }
-          return res.status(200).json(newDataset);
+
+          this.logger.info("Creating cache dataset in Portal");
+
+          let newCacheDataset: any = {};
+
+          if (cacheDatasetName && cacheDatasetType) {
+            const snapshotRequest = {
+              id: uuidv4(),
+              sourceDatasetId: id,
+              newDatasetName: cacheDatasetName,
+              schemaName: parsedNewCacheSchemaName,
+              timestamp: new Date(),
+              type: cacheDatasetType,
+            };
+            newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
+          }
+
+          return res
+            .status(200)
+            .json({ id: newDataset.id, cacheId: newCacheDataset.id });
         } catch (error) {
           this.logger.error(
             `Error while creating dataset: ${JSON.stringify(error)}`
@@ -249,13 +279,19 @@ export class DatasetRouter {
         snapshotLocation,
         snapshotCopyConfig,
         dataModel,
+        type,
       } = req.body;
-      const { dialect, databaseCode, schemaName, resultSchemaName } =
-        await portalAPI.getDataset(sourceStudyId);
+      const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
+        sourceStudyId
+      );
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
       const newSchemaName = sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "";
+      const parsedNewSchemaName = this.schemaCase(
+        newSchemaName,
+        dialect as DbDialect
+      );
 
       const dataModels = await jobpluginsAPI.getDatamodels();
       const dataModelInfo = dataModels.find(
@@ -267,9 +303,13 @@ export class DatasetRouter {
           id,
           sourceDatasetId: sourceStudyId,
           newDatasetName: newStudyName,
-          schemaName: newSchemaName,
+          schemaName: parsedNewSchemaName,
           timestamp: new Date(),
+          type,
         };
+
+        this.logger.info("Copying dataset in Portal");
+        const newDataset = await portalAPI.copyDataset(snapshotRequest);
 
         // Copy schema if it exist
         if (sourceHasSchema) {
@@ -280,23 +320,10 @@ export class DatasetRouter {
           );
 
           try {
-            const options = {
-              options: {
-                flow_action_type: this.flowSnapshotType(snapshotLocation),
-                database_code: databaseCode,
-                schema_name: this.schemaCase(
-                  newSchemaName,
-                  dialect as DbDialect
-                ),
-                source_schema: schemaName,
-                results_schema: resultSchemaName,
-                dialect: dialect,
-                snapshot_copy_config: snapshotCopyConfig,
-              },
-            };
-
-            await jobpluginsAPI.createDatamartFlowRun(
-              options,
+            await jobpluginsAPI.createDatamartCacheFlowRun(
+              sourceStudyId,
+              newDataset.id,
+              snapshotCopyConfig,
               dataModelInfo.flowId,
               `datamart-snapshot-${schemaName}`
             );
@@ -306,14 +333,12 @@ export class DatasetRouter {
           }
         }
 
-        this.logger.info("Copying dataset in Portal");
-        const newDataset = await portalAPI.copyDataset(snapshotRequest);
         return res.status(200).json(newDataset);
       } catch (error) {
         this.logger.error(
           `Error when copying dataset: ${JSON.stringify(error)}`
         );
-        res.status(500).send("Error when copying dataset");
+        res.status(500).send(`Error when copying dataset: ${error}`);
       }
     });
 
