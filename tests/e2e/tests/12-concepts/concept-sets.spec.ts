@@ -69,9 +69,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
   // Select the concept set we just created
   await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill(conceptSetName)
-  await page.waitForTimeout(2000)
-  await page.getByRole('textbox', { name: 'Enter search term' }).press('Enter')
+  await page.getByPlaceholder('Enter search term').fill(conceptSetName)
+  await expect(page.getByText('Concept Set Test 1 -')).toBeVisible()
+  await page.waitForTimeout(3000)
+  await page.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('1677 / 2694')).toBeVisible({ timeout: 10000 })
   await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
   await page.getByText('✎').click()

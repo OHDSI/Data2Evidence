@@ -1,4 +1,13 @@
-import { HttpException, Controller, Delete, Get, Post, Query, Param, Req } from "@danet/core";
+import {
+  HttpException,
+  Controller,
+  Delete,
+  Get,
+  Post,
+  Query,
+  Param,
+  Req,
+} from "@danet/core";
 import { Buffer } from "node:buffer";
 import { ResourceService } from "./resource.service.ts";
 

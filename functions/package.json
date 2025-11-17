@@ -131,6 +131,12 @@
           "env": "code-suggestion"
         },
         {
+          "source": "/mcp",
+          "function": "/mcp-server",
+          "imports": "/mcp-server/deno.json",
+          "env": "mcp-server"
+        },
+        {
           "source": "/data-mapping",
           "function": "/data-mapping",
           "imports": "/data-mapping/deno.json",
@@ -437,7 +443,9 @@
           "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
           "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
           "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
-          "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}"
+          "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}",
+          "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
         },
         "dataset": {
           "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
@@ -468,7 +476,9 @@
           "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
           "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
-          "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}"
+          "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}",
+          "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
+          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}"
         },
         "files-manager": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -509,7 +519,7 @@
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
-          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"demo\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [] }"
+          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"source\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"HIDDEN\", \"detail\": { \"name\": \"Demo source dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }"
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
@@ -556,7 +566,7 @@
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
-          "GOOGLE_APPLICATION_CREDENTIALS": "/app/google-credentials.json",
+          "GOOGLE_APPLICATION_CREDENTIALS": "/tmp/google-credentials.json",
           "PREFECT__LOCAL_DEBUG": "${PREFECT__LOCAL_DEBUG:-false}",
           "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}",
           "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
@@ -579,7 +589,9 @@
           "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
           "PG_SCHEMA": "strategus",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }
       },
       "roles": {
@@ -678,6 +690,7 @@
           "portal.supabaseStorage.delete",
           "portal.notebook.systemAdmin.write",
           "portal.gitStudies.read",
+          "portal.gitDashboard.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
           "dataflowmgmt.dataflow.add",
@@ -779,6 +792,7 @@
           "portal.dataset.release.list.read",
           "portal.config.read",
           "codesuggestion.tenantview.read",
+          "mcpchat.tenantview.read",
           "d2e.webapi.public"
         ],
         "RESEARCHER": [
@@ -804,6 +818,7 @@
           "gateway.terminology.concept.hierarchy.read",
           "gateway.terminology.fhir.read",
           "codesuggestion.read",
+          "mcpchat.read",
           "portal.userArtifact.bookmarks.read",
           "portal.userArtifact.bookmarks.write",
           "portal.userArtifact.bookmarks.delete",
@@ -1320,6 +1335,17 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT"
           ]
         },
         {
@@ -1849,7 +1875,16 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/upload/csv",
+          "path": "^/system-portal/supabase-storage/list/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/upload/file",
           "scopes": [
             "portal.supabaseStorage.write"
           ],
@@ -1858,7 +1893,16 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/delete/csv",
+          "path": "^/system-portal/supabase-storage/get/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/file",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
@@ -1879,6 +1923,15 @@
           "path": "^/system-portal/git-studies/study/strategus",
           "scopes": [
             "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-dashboards",
+          "scopes": [
+            "portal.gitDashboard.read"
           ],
           "httpMethods": [
             "GET"
@@ -2077,7 +2130,34 @@
           ]
         },
         {
-          "path": "^/jobplugins/dataflow/file/csv$",
+          "path": "^/jobplugins/dataflow/node/file/list$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
@@ -2682,6 +2762,16 @@
           ]
         },
         {
+          "path": "^/mcp/chat",
+          "scopes": [
+            "mcpchat.read",
+            "mcpchat.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/data-mapping",
           "scopes": [
             "datamapping.post"
@@ -2736,6 +2826,12 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ]
+        },
+        {
+          "path": "^/strategus/template",
+          "scopes": [
+            "strategus.results.read"
           ]
         },
         {

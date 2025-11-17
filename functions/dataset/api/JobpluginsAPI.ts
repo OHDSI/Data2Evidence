@@ -2,6 +2,7 @@
 import { AxiosRequestConfig } from "npm:axios";
 import { ICreateDatamodelFlowRunDto } from "../../jobplugins/src/types.ts";
 import { services } from "../env.ts";
+import { post } from "./request-util.ts";
 
 export class JobPluginsAPI {
   private readonly baseURL: string;
@@ -191,24 +192,33 @@ export class JobPluginsAPI {
     throw new Error(`Failed to update schema for ${schemaName}`);
   }
 
-  async createDatamartFlowRun(
-    options: object,
+  async createDatamartCacheFlowRun(
+    datasetId: string,
+    cacheDatasetId: string,
+    snapshotCopyConfig: object,
     flowId?: string,
     flowRunName?: string
   ): Promise<any> {
-    this.logger.info(`Running datamart flow run`);
-    const postOptions = await this.getRequestConfig();
-    const url = `${this.baseURL}/datamodel/create_datamart_run`;
-    const body = {
-      flowId,
-      options,
-      flowRunName,
-    };
-    const result = await this.channel.post(url, body, postOptions);
+    this.logger.info(`Running datamart cache flow run`);
 
-    if (result.data) {
-      return result.data;
+    try {
+      const postOptions = await this.getRequestConfig();
+      const url = `${this.baseURL}/cachedb/create-file`;
+      const body = {
+        datasetId,
+        cacheDatasetId,
+        flowId,
+        snapshotCopyConfig,
+        flowRunName,
+      };
+      const result = await post(url, body, postOptions);
+
+      if (result.data) {
+        return result.data;
+      }
+    } catch (error) {
+      this.logger.error(`Error running datamart flow run: ${error}`);
+      throw new Error(`Error running datamart flow run: ${error}`);
     }
-    throw new Error(`Failed to run flow`);
   }
 }
