@@ -407,7 +407,6 @@ export default {
     },
     getActiveBookmarkName() {
       if (this.getActiveBookmark) {
-        console.log('activeBookmark', this.getActiveBookmark)
         return this.getActiveBookmark.bookmarkname
       } else {
         return ''
