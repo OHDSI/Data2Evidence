@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 const TEST_NAME = 'dataset-new-schema-i2b2-plugin'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+const randomString = Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/portal');
@@ -25,17 +26,18 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click();
   await page.locator('#mui-component-select-databaseOption').click();
   await page.getByRole('option', { name: 'demo_database-postgres' }).click();
-  await page.locator('#mui-component-select-vocabSchemaOption').click();
-  await page.getByRole('option', { name: 'demo_cdm' }).click();
-  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('result_schema')
+  await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`);
   await page.locator('#mui-component-select-dataModelOption').click();
   await page.getByRole('option', { name: 'v1.8.1 [i2b2_plugin]' }).click();
   await page.locator('#mui-component-select-paConfigOption').click();
   await page.getByRole('option', { name: 'OMOP', exact: true }).click();
   await page.getByRole('textbox', { name: 'Token dataset code' }).click();
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill('tsi2b2');
+  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
+  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click();
-  await expect(page.getByText('Test Study')).toBeVisible();
+  await expect(page.locator('tbody')).toContainText('Test Study')
+  await expect(page.locator('tbody')).toContainText('Test Cache')
   await page.getByRole('link', { name: 'Jobs' }).click();
   // Get the first (top) entry link
   const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_tsi2b2_"))').first();
@@ -44,12 +46,11 @@ test(TEST_NAME, async ({ page }) => {
   await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });  
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page
-      .getByRole('row', { name: /Test Study/ })
-      .filter({ hasText: 'Not Available' })
-      .getByRole('button')
-      .nth(2)
-      .click()
+  const testStudyDataset = await page.locator('tr', { hasText: 'Test Study' }).getByText('Select action')
+  await testStudyDataset.click()
   await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
   await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 });
+  await page.locator('tr', { hasText: 'Test Cache' }).getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
 });

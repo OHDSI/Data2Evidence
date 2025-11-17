@@ -1,0 +1,38 @@
+# Explicitly exclude large directories first (order matters!)
+Trex/target
+Trex/ext/trexas
+Trex/ext/pgwire
+Trex/ext/chdb
+Trex/ext/pgt
+Trex/ext/hana
+Trex/ext/llama
+Trex/ext/circe
+Trex/ext/cmake_build
+Trex/deno
+Trex/crates
+Trex/cli
+Trex/types
+
+# Exclude other small extensions
+Trex/ext/node
+Trex/ext/trex
+Trex/ext/extension-ci-tools
+Trex/ext/runtime
+Trex/ext/ai
+Trex/ext/workers
+Trex/ext/event_worker
+Trex/ext/os
+Trex/ext/env
+Trex/ext/xs
+
+# Exclude node_modules and build artifacts everywhere
+**/node_modules
+**/target
+**/build
+**/.git
+**/*.duckdb_extension
+
+Trex/ext/bao/node_modules
+Trex/ext/bao/target
+Trex/ext/bao/build
+Trex/ext/bao/.git

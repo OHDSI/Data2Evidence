@@ -94,7 +94,6 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/cohort_survival/
           - PKGPATH: ./flows/i2b2/
           - PKGPATH: ./flows/search_embedding/
           - PKGPATH: ./flows/data_management/
@@ -102,17 +101,11 @@ jobs:
           - PKGPATH: ./flows/loyalty_score/
           - PKGPATH: ./flows/data_transformation/
           - PKGPATH: ./ui
-            NPM: yarn
+            NPM: bun
           - PKGPATH: ./functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
-          - PKGPATH: ./services/trex/ext/circe
-            RUNNER: ubuntu-24.04
-          - PKGPATH: ./services/trex/ext/hana
-          - PKGPATH: ./services/trex/ext/llama
-            RUNNER: ubuntu-24.04
-          - PKGPATH: ./services/trex/ext/pgwire
 
     runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
 
@@ -145,8 +138,13 @@ jobs:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
+      - name: Setup bun
+        if: ${{ matrix.NPM == 'bun' }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
       - name: Setup NPM
-        if: ${{ matrix.NPM }}
+        if: ${{ matrix.NPM && matrix.NPM != 'bun' }}
         run: npm install -g ${{ matrix.NPM }}
       - name: Install dependencies
         if: ${{ matrix.DESTPATH }}
@@ -165,9 +163,9 @@ jobs:
       - name: Build
         run: |
           cd ${{ matrix.PKGPATH }}
-          ${{ matrix.NPM == 'yarn' && 'yarn install' ||'npm install --ignore-scripts' }}
+          ${{ matrix.NPM == 'bun' && 'bun install' ||'npm install --ignore-scripts' }}
         env:
-          CI: ${{ matrix.NPM != 'yarn' }}
+          CI: ${{ matrix.NPM != 'bun' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Patch Package
         if: ${{ matrix.NPM }}
@@ -209,15 +207,15 @@ jobs:
           scope: "@data2evidence"
       - name: Publish
         env:
-          CI: ${{ matrix.NPM != 'yarn' }}
+          CI: ${{ matrix.NPM != 'bun' }}
           SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then
-             ${{ matrix.NPM || 'npm' }} publish
+            npm publish
           else
-             ${{ matrix.NPM || 'npm' }} pack
+            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
           fi
 
   success:

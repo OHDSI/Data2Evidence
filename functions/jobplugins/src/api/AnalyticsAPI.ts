@@ -1,13 +1,13 @@
 import https from "node:https";
 import { AxiosRequestConfig } from "axios";
 import { env, services } from "../env.ts";
-import { get } from "./request-util.ts";
 
 export class AnalyticsSvcAPI {
   private readonly baseURL: string;
   // private readonly httpsAgent: any;
   private readonly token: string;
   private readonly endpoint: string = "/analytics-svc/api/services";
+  private readonly channel;
 
   constructor(token: string) {
     this.token = token;
@@ -17,6 +17,7 @@ export class AnalyticsSvcAPI {
 
     if (services.analytics) {
       this.baseURL = services.analytics + this.endpoint;
+      this.channel = Trex.tokioChannel("d2e-functions/analytics-svc");
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: true,
       //   ca: env.GATEWAY_CA_CERT,
@@ -52,11 +53,11 @@ export class AnalyticsSvcAPI {
       )}/${encodeURIComponent(sourceKey)}?datasetId=${encodeURIComponent(
         datasetId
       )}`;
-      const response = await fetch(url, options);
-      if (!response.ok) {
+      const response = await this.channel.get(url, options);
+      if (response.status !== 200) {
         throw new Error(errorMessage);
       }
-      return await response.json();
+      return await response.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
       throw error;
@@ -82,13 +83,13 @@ export class AnalyticsSvcAPI {
       )}?datasetId=${encodeURIComponent(datasetId)}`;
       console.log(`Calling ${url} for conceptId ${conceptId}`);
       const options = this.createOptions("GET");
-      const result = await fetch(url, options);
-      if (!result.ok) {
+      const result = await this.channel.get(url, options);
+      if (result.status !== 200) {
         throw new Error(
           "Error while getting data characterization results drilldown"
         );
       }
-      return await result.json();
+      return await result.data;
     } catch (error) {
       console.error(
         `Error while getting data characterization drilldown: ${error}`
@@ -100,12 +101,10 @@ export class AnalyticsSvcAPI {
   // Fetch CDM version
   async getCdmVersion(datasetId: string) {
     try {
-      const url = `${this.baseURL}/alpdb/cdmversion`;
+      const url = `${this.baseURL}/alpdb/cdmversion?datasetId=${datasetId}`;
       console.log(`Calling ${url} to fetch CDM version`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      const result = await get(url, { ...options, params });
+      const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {
       console.error(`Error while getting cdm version: ${error}`);

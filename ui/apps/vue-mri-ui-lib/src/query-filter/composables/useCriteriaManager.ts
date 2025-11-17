@@ -72,7 +72,6 @@ export function useCriteriaManager(
 
   const handleUpdateQualifyingLimit = (limit: 'ALL' | 'EARLIEST' | 'LATEST') => {
     criteriaManager.updateQualifyingEventsLimit(limit)
-    console.log('Qualifying limit updated:', limit)
   }
 
   const handleUpdatePrimaryCriteriaLimit = (
@@ -80,14 +79,12 @@ export function useCriteriaManager(
   ) => {
     if (limit === 'ALL' || limit === 'EARLIEST' || limit === 'LATEST') {
       criteriaManager.updatePrimaryCriteriaLimit(limit)
-      console.log('Primary criteria limit updated:', limit)
     }
   }
 
   const handleUpdateExitStrategy = (limit: 'ALL' | 'EARLIEST' | 'LATEST' | 'CONT_OBS' | 'FIXED' | 'CONT_DRUG') => {
     if (limit === 'CONT_OBS' || limit === 'FIXED' || limit === 'CONT_DRUG') {
       criteriaManager.updateEndStrategy(limit)
-      console.log('Exit strategy updated:', limit)
     }
   }
 
@@ -101,14 +98,36 @@ export function useCriteriaManager(
     console.log('Fixed duration updated:', eventDateOffset, daysOffset)
   }
 
-  const handleUpdateContDrugSettings = (
+  const handleUpdateContDrugSettings = async (
     conceptSetId: string,
+    conceptSetName: string,
     gapDays: number,
     offset: number,
     daysSupplyOverride: number
   ) => {
-    criteriaManager.updateContDrugSettings(conceptSetId, gapDays, offset, daysSupplyOverride)
-    console.log('CONT_DRUG settings updated:', conceptSetId, gapDays, offset, daysSupplyOverride)
+    // Find the concept set in allConceptSets to get its details
+    const conceptSetItem = allConceptSets.value.find(cs => cs.value.toString() === conceptSetId)
+
+    let conceptSetDetails: any[] | undefined
+
+    if (conceptSetItem) {
+      try {
+        // Fetch concept set details
+        conceptSetDetails = await loadSingleConceptSetDetails(conceptSetItem, getDatasetId())
+      } catch (error) {
+        console.error('Error loading CONT_DRUG concept set details:', error)
+      }
+    }
+
+    criteriaManager.updateContDrugSettings(
+      conceptSetId,
+      conceptSetName,
+      conceptSetDetails,
+      gapDays,
+      offset,
+      daysSupplyOverride
+    )
+    console.log('CONT_DRUG settings updated:', { conceptSetId, conceptSetName, gapDays, offset, daysSupplyOverride })
   }
 
   const handleUpdatePrimaryEvents = (events: QueryFilterEvent[]) => {
@@ -221,6 +240,14 @@ export function useCriteriaManager(
           return event
         }
 
+        // Search in group event's nested criteria (for group type events)
+        if (event.eventType === 'group' && event.nestedCriteria?.events) {
+          const nestedEvent = event.nestedCriteria.events.find(ne => ne.id === eventId)
+          if (nestedEvent) {
+            return nestedEvent
+          }
+        }
+
         // Also search nested events within attributes
         if (event.attributes) {
           for (const attribute of event.attributes) {
@@ -253,7 +280,7 @@ export function useCriteriaManager(
       if (primaryEvent) {
         primaryEvent.conceptSetDetails = conceptSetDetails
         primaryEvent.conceptSetLoading = false
-        primaryEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+        primaryEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
       } else {
         // Also check nested events within primary events
         let foundInPrimary = false
@@ -268,7 +295,7 @@ export function useCriteriaManager(
                     nestedEvent.conceptSetLoading = false
                     // Only update conceptSet name if the event actually has a conceptSetId
                     if (nestedEvent.conceptSetId) {
-                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
                     }
                     foundInPrimary = true
                     break
@@ -291,7 +318,7 @@ export function useCriteriaManager(
             if (regularEvent) {
               regularEvent.conceptSetDetails = conceptSetDetails
               regularEvent.conceptSetLoading = false
-              regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+              regularEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
               found = true
               break
             }
@@ -305,7 +332,7 @@ export function useCriteriaManager(
                     if (nestedEvent) {
                       nestedEvent.conceptSetDetails = conceptSetDetails
                       nestedEvent.conceptSetLoading = false
-                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || conceptSet.value
+                      nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
                       found = true
                       break
                     }
@@ -372,7 +399,7 @@ export function useCriteriaManager(
                   createdDate: new Date().toISOString(),
                   modifiedDate: new Date().toISOString(),
                 }
-                nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || ''
+                nestedEvent.conceptSet = conceptSet.text || conceptSet.display_value || `${conceptSet.value}`
 
                 // Load concept set details for Atlas conversion
                 loadConceptSetDetailsForEvent(nestedEvent, conceptSet)

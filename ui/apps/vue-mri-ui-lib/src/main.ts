@@ -29,7 +29,6 @@ const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
 import './styles/themes/_main.scss'
 
 if (isLocal) {
-  import('import-map-overrides')
   app = createApp(RootLayout as unknown as Component)
   applyTheme('atlas')
 
@@ -70,3 +69,4 @@ applyPolyfills().then(() => {
 })
 
 app.mount('.vue-main')
+

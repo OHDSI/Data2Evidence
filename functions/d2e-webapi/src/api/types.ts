@@ -246,7 +246,7 @@ export interface IDataset {
   id: string;
   dialect: string;
   schemaName: string;
-  resultsSchemaName: string;
+  resultSchemaName: string;
   vocabSchemaName: string;
   dataModel: string;
   plugin: string;

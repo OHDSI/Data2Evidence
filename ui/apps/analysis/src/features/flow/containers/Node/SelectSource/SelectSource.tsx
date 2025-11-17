@@ -99,6 +99,7 @@ export const SelectSource: FC<SelectSourceProps> = ({
     <FormControl variant="standard" sx={{ minWidth: "350px", width: "100%" }}>
       {label && <InputLabel shrink>{label}</InputLabel>}
       <Select
+        variant="standard"
         value={value}
         onChange={(e: SelectChangeEvent) => onChange(e.target.value)}
         {...props}
