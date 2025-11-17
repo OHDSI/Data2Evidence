@@ -248,7 +248,18 @@ async function handleLogout(ctx: any) {
     idToken = tokens?.id_token;
   }
 
-  await ctx.cookies.delete(COOKIE_NAME);
+  // Delete the auth cookie with the same domain/path options used when setting it
+  const cookieDomain = Deno.env.get('COOKIE_DOMAIN');
+  const deleteOptions: any = {
+    path: '/',
+  };
+
+  if (cookieDomain) {
+    deleteOptions.domain = cookieDomain;
+  }
+
+  console.log('[Logout] Deleting auth cookie with options:', deleteOptions);
+  await ctx.cookies.delete(COOKIE_NAME, deleteOptions);
 
   const config = getOidcConfig();
   const params = new URLSearchParams();
@@ -256,9 +267,23 @@ async function handleLogout(ctx: any) {
   if (idToken) {
     params.append('id_token_hint', idToken);
   }
-  params.append('post_logout_redirect_uri', ATLAS3_FRONTEND_URL);
+
+  // Use configurable post-logout redirect URI or fall back to frontend URL
+  // If OIDC_POST_LOGOUT_REDIRECT_URI is not set, omit the parameter
+  // This allows the OIDC provider to use its default logout redirect
+  const postLogoutRedirectUri = Deno.env.get('OIDC_POST_LOGOUT_REDIRECT_URI');
+
+  if (postLogoutRedirectUri) {
+    params.append('post_logout_redirect_uri', postLogoutRedirectUri);
+    console.log('[Logout] Using configured post_logout_redirect_uri:', postLogoutRedirectUri);
+  } else {
+    console.log('[Logout] No post_logout_redirect_uri configured, using OIDC provider default');
+  }
 
   const logoutUrl = `${config.endSessionEndpoint}?${params.toString()}`;
+
+  console.log('[Logout] OIDC config endSessionEndpoint:', config.endSessionEndpoint);
+  console.log('[Logout] Final logout URL with params:', logoutUrl);
 
   ctx.response.body = {
     redirect: logoutUrl,

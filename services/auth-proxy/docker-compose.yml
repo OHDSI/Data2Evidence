@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  auth-proxy:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - atlas-network
+
+networks:
+  atlas-network:
+    driver: bridge
