@@ -130,6 +130,8 @@ export default class FilterCardModel extends EntityBase {
             type: attributeConfig.getType(),
             name: attributeConfig.getName(),
             cardId: instanceId,
+            domainFilter: attributeConfig.getDomainFilter(),
+            standardConceptCodeFilter: attributeConfig.getStandardConceptCodeFilter(),
           },
           key
         )
