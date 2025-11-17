@@ -5,9 +5,9 @@ import { Command } from "commander";
 import * as crypto from "crypto";
 import * as path from "path";
 import * as fs from "fs";
-import * as dotenv from "dotenv";
 import * as readline from "readline";
 import { exec, execSync, spawnSync } from "child_process";
+import { LibUtils } from "./lib";
 
 interface CliOptions {
   functionPath?: string;
@@ -53,11 +53,13 @@ class D2ECli {
   DOTENV_KEYS: string;
   hanapw: string;
   DOCKER_IMAGE_PREFIX: string;
+  libUtils: LibUtils;
 
   constructor() {
     this.script_full_path = path.resolve(__dirname, "..");
     this.node_modules_path = this.initialise_node_modules_path();
     this.program = new Command();
+    this.libUtils = new LibUtils();
     this.install_options();
   }
 
@@ -101,18 +103,31 @@ class D2ECli {
     );
     const DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE =
       this.generate_random_password(41);
-    const DB_CREDENTIALS__INTERNAL__PRIVATE_KEY = execSync(
-      `DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl genpkey -algorithm RSA -aes-256-cbc -pkeyopt rsa_keygen_bits:4096 -pass env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE -quiet`,
-      { encoding: "utf-8" }
-    );
-    const DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY = execSync(
-      `bash -c 'DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE'`,
-      { encoding: "utf-8" }
-    );
-    const DB_CREDENTIALS__INTERNAL__PUBLIC_KEY = execSync(
-      `bash -c 'DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -pubout -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE'`,
-      { encoding: "utf-8" }
-    );
+    
+    const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: "spki",
+        format: "pem",
+      },
+      privateKeyEncoding: {
+        type: "pkcs8",
+        format: "pem",
+        cipher: "aes-256-cbc",
+        passphrase: DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE,
+      },
+    });
+    const keyObject = crypto.createPrivateKey({
+      key:privateKey,
+      passphrase: DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE,
+    });
+    const DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY = keyObject.export({
+      type: "pkcs8",
+      format: "pem"
+    });
+
+    const DB_CREDENTIALS__INTERNAL__PUBLIC_KEY = publicKey;
+    
     this.SUPABASE_STORAGE_JWT_SECRET = this.generate_random_secret();
     const ROLE = "service_role";
     const ISSUER = "supabase";
@@ -160,7 +175,7 @@ class D2ECli {
       DICOM__HEALTH_CHECK_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH
       )}`,
-      TLS__CADDY_DIRECTIVE: `'${this.TLS__CADDY_DIRECTIVE}'`,
+      TLS__CADDY_DIRECTIVE: `${this.TLS__CADDY_DIRECTIVE}`,
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
@@ -171,18 +186,18 @@ class D2ECli {
       PG__LOGTO_MANAGER_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH
       )}`,
-      DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY: `'${DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.replace(
-        /\n$/,
-        ""
-      )}'`,
-      DB_CREDENTIALS__INTERNAL__PUBLIC_KEY: `'${DB_CREDENTIALS__INTERNAL__PUBLIC_KEY.replace(
-        /\n$/,
-        ""
-      )}'`,
+      DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY: DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.toString(),
+      DB_CREDENTIALS__INTERNAL__PUBLIC_KEY: DB_CREDENTIALS__INTERNAL__PUBLIC_KEY.toString(),
     };
 
     const envContent = Object.entries(envVariables)
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([key, value]) => {
+        // Quote values containing newlines
+        if (typeof value === 'string' && value.includes('\n')) {
+          return `${key}="${value.replace(/"/g, '\\"')}"`;  
+        }
+        return `${key}=${value}`;
+      })
       .join("\n");
     fs.writeFileSync(this.ENVFILE, envContent + "\n", { flag: "w" });
     this.set_cpu_limit(this.ENVFILE, this.node_modules_path);
@@ -318,40 +333,13 @@ class D2ECli {
     return result;
   }
   set_cpu_limit(DOTENV_FILE: string, nodeModulesPath: string) {
-    const command = `source ${nodeModulesPath}/scripts/lib.sh && set-cpu-limit`;
-    try {
-      execSync(command, {
-        stdio: "inherit",
-        shell: "/bin/bash",
-        env: { ...process.env, DOTENV_FILE: DOTENV_FILE },
-      });
-    } catch (error) {
-      console.error("Error running set-cpu-limit:", error);
-    }
+    this.libUtils.setCpuLimit(DOTENV_FILE);
   }
   set_memory_limit(DOTENV_FILE: string, nodeModulesPath: string) {
-    const command = `source ${nodeModulesPath}/scripts/lib.sh && set-memory-limit`;
-    try {
-      execSync(command, {
-        stdio: "inherit",
-        shell: "/bin/bash",
-        env: { ...process.env, DOTENV_FILE: DOTENV_FILE },
-      });
-    } catch (error) {
-      console.error("Error running set_memory_limit:", error);
-    }
+    this.libUtils.setMemoryLimit(DOTENV_FILE);
   }
   gen_tls_internal(DOTENV_FILE: string, nodeModulesPath: string) {
-    const command = `source ${nodeModulesPath}/scripts/lib.sh && gen-tls-internal`;
-    try {
-      execSync(command, {
-        stdio: "inherit",
-        shell: "/bin/bash",
-        env: { ...process.env, DOTENV_FILE: DOTENV_FILE },
-      });
-    } catch (error) {
-      console.error("Error running gen_tls_internal:", error);
-    }
+    this.libUtils.genTlsInternal(DOTENV_FILE);
   }
 
   generate_random_password(length: number): string {
@@ -392,7 +380,7 @@ class D2ECli {
     return `${header}.${payload}.${signature}`;
   }
 
-  build_docker_command(options: CliOptions, command: string): string {
+  build_docker_command(options: CliOptions, command: string): { cmd: string; env: NodeJS.ProcessEnv } {
     const dockerbasecmd = ["docker"];
     dockerbasecmd.push("--log-level", this.DOCKER_LOG_LEVEL);
     dockerbasecmd.push("compose");
@@ -414,9 +402,15 @@ class D2ECli {
     if (options.composeFile) dockerbasecmd.push("--file", options.composeFile);
     if (options.dockerContext)
       dockerbasecmd.push("--context", options.dockerContext);
-    dockerbasecmd.unshift("PORT=" + this.port);
-    dockerbasecmd.unshift("CADDY__CONFIG=" + this.CADDY__CONFIG);
-    dockerbasecmd.unshift("ENV_TYPE=" + this.ENV_TYPE);
+    
+    // Prepare environment variables separately
+    const envVars = {
+      ...process.env,
+      PORT: this.port,
+      CADDY__CONFIG: this.CADDY__CONFIG,
+      ENV_TYPE: this.ENV_TYPE,
+    };
+    
     let cmd = dockerbasecmd.join(" ");
     if (command === "start") {
       cmd = `${cmd} up --force-recreate --wait`;
@@ -457,6 +451,7 @@ class D2ECli {
         const proc = spawn(cmd_pull_jupyter, {
           stdio: ["inherit"],
           shell: true,
+          env: envVars,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -468,7 +463,7 @@ class D2ECli {
       }
       cmd = `${cmd} pull`;
     }
-    return cmd;
+    return { cmd, env: envVars };
   }
 
   user_input(query: string): Promise<string> {
@@ -501,10 +496,10 @@ class D2ECli {
     );
 
     if (fs.existsSync(zxBin)) {
-      let zx_cmd = zxBin;
+      zx_cmd = zxBin;
       return zx_cmd;
     } else if (fs.existsSync(zxCliJs)) {
-      let zx_cmd = `node ${zxCliJs}`;
+      zx_cmd = `node ${zxCliJs}`;
       return zx_cmd;
     } else {
       console.error("Error: zx not found in node_modules");
@@ -514,12 +509,17 @@ class D2ECli {
   patch_demodb() {
     console.log("Patching demodb...");
     const database_host = `${this.PROJECT_NAME}-demodb`;
+    console.log(`Patching demodb at host: ${database_host}`);
     const command = `docker exec ${database_host} psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"`;
     try {
-      execSync(command, {
+      const options: any = {
         stdio: "inherit",
-        shell: "/bin/bash",
-      });
+        encoding: "utf-8",
+      };
+      if (process.platform !== "win32") {
+        options.shell = "/bin/bash";
+      }
+      execSync(command, options);
     } catch (error) {
       console.error("Error running patch_demodb:", error);
     }
@@ -535,6 +535,7 @@ class D2ECli {
       {
         env: { ...process.env, PORT: this.port },
         stdio: "inherit",
+        shell: true,
       }
     );
     if (setupdemo.error) {
@@ -552,6 +553,7 @@ class D2ECli {
       {
         env: { ...process.env, PORT: this.port },
         stdio: "inherit",
+        shell: true,
       }
     );
     if (check_setupdemo.error) {
@@ -629,11 +631,13 @@ class D2ECli {
       .action(async () => {
         console.log("Starting services...");
         this.load_env_variables();
-        const cmd = this.build_docker_command(this.program.opts(), "start");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "start");
         console.log(`Executing command: ${cmd}`);
+        console.log(`DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY is set in ${this.ENVFILE}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -687,11 +691,12 @@ class D2ECli {
           .map(([key, value]) => `${key}=${value}`)
           .join("\n");
         fs.writeFileSync(this.ENVFILE, envContent, { flag: "a" });
-        const cmd = this.build_docker_command(this.program.opts(), "inithana");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "inithana");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -709,11 +714,12 @@ class D2ECli {
       .action(async () => {
         console.log("Stopping services...");
         this.load_env_variables();
-        const cmd = this.build_docker_command(this.program.opts(), "stop");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "stop");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -729,11 +735,12 @@ class D2ECli {
       .action(async () => {
         console.log("Building services...");
         this.load_env_variables();
-        const cmd = this.build_docker_command(this.program.opts(), "build");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "build");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -749,11 +756,12 @@ class D2ECli {
       .description("Status of d2e services")
       .action(async () => {
         this.load_env_variables();
-        const cmd = this.build_docker_command(this.program.opts(), "status");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "status");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -769,11 +777,12 @@ class D2ECli {
       .description("View logs of d2e services")
       .action(async () => {
         this.load_env_variables();
-        const cmd = this.build_docker_command(this.program.opts(), "logs");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "logs");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -790,11 +799,12 @@ class D2ECli {
       .description("View configuration of d2e services")
       .action(async () => {
         this.load_env_variables();
-        const cmd = this.build_docker_command(this.program.opts(), "config");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "config");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: ["ignore", "inherit", "ignore"],
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -818,11 +828,12 @@ class D2ECli {
           console.log("Aborting cleanup.");
           return;
         }
-        const cmd = this.build_docker_command(this.program.opts(), "clean");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "clean");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -837,11 +848,12 @@ class D2ECli {
       .description("Clean up d2e services")
       .action(async () => {
         this.load_env_variables();
-        const cmd = this.build_docker_command(this.program.opts(), "cleanci");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "cleanci");
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: ["inherit"],
           shell: true,
+          env: env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -873,6 +885,7 @@ class D2ECli {
         const proc = spawn(cmd_pull_flow_base, {
           stdio: ["inherit"],
           shell: true,
+          env: process.env,
         });
         proc.on("close", (code) => {
           if (code === 0) {
@@ -881,11 +894,12 @@ class D2ECli {
             console.log(`Process exited with code ${code}`);
           }
         });
-        const cmd = this.build_docker_command(this.program.opts(), "pull");
+        const { cmd, env } = this.build_docker_command(this.program.opts(), "pull");
         console.log(`Executing command: ${cmd}`);
         const proc1 = spawn(cmd, {
           stdio: "inherit",
           shell: true,
+          env: env,
         });
         proc1.on("close", (code) => {
           if (code === 0) {

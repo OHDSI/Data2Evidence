@@ -1,5 +1,6 @@
 #!/usr/bin/env zx
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 const args = process.argv.slice(2); 
 const vIndex_envfile = args.indexOf("-n");
@@ -11,14 +12,14 @@ if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
 }
 try {
     await $`test -f ${envfile}`;
-    dotenv.config({ path: `${envfile}` });
+    dotenv.config({ path: `${envfile}`, debug: false });
 } catch (error) {
     console.log(chalk.red(`FATAL ${envfile} not found`));
     process.exit(1)
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
-const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
+let public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
 let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
@@ -109,10 +110,10 @@ const payload = JSON.stringify({
     encryptionKeys: JSON.stringify(encryptionKeysObj)
 });
 
-var resp = await $`curl -X POST -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup/' \
+var resp = await $`echo ${payload} | curl -X POST -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup/' \
     --header 'Content-Type: application/json' \
     --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-    --data ${payload}`;
+    --data-binary @-`;
 
 var resp_message = await $`echo ${resp} | grep -o '"message":"[^"]*"' | sed 's/"message":"\\([^"]*\\)"/\\1/'`
 var progress_id = await $`echo ${resp} | grep -o '"id":"[^"]*"' | sed 's/"id":"\\([^"]*\\)"/\\1/'`
