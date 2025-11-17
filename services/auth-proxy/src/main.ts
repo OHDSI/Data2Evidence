@@ -6,6 +6,9 @@ import { proxyMiddleware } from './middleware/proxy.middleware.ts';
 import authRoutes from './routes/auth.routes.ts';
 import healthRoutes from './routes/health.routes.ts';
 import atlasRoutes, { routerNoPrefix as atlasRoutesNoPrefix } from './routes/atlas.routes.ts';
+import managementRoutes from './routes/management.routes.ts';
+import pluginRoutes from './routes/plugin.routes.ts';
+import resourcesRoutes from './routes/resources.routes.ts';
 import { API_BASE_PATH } from './config/constants.ts';
 
 // Load .env file if it exists
@@ -48,6 +51,15 @@ app.use(healthRoutes.allowedMethods());
 app.use(authRoutes.routes());
 app.use(authRoutes.allowedMethods());
 
+app.use(managementRoutes.routes());
+app.use(managementRoutes.allowedMethods());
+
+app.use(resourcesRoutes.routes());
+app.use(resourcesRoutes.allowedMethods());
+
+app.use(pluginRoutes.routes());
+app.use(pluginRoutes.allowedMethods());
+
 app.use(atlasRoutes.routes());
 app.use(atlasRoutes.allowedMethods());
 
@@ -73,16 +85,21 @@ app.addEventListener('listen', ({ hostname, port, secure }) => {
   console.log(`🚀 Server running on ${secure ? 'https' : 'http'}://${hostname || 'localhost'}:${port}`);
   console.log('');
   console.log('📋 Available endpoints:');
-  console.log(`   POST   ${API_BASE_PATH}/user/login            - Initiate OIDC login`);
-  console.log(`   GET    ${API_BASE_PATH}/auth/callback         - OIDC callback handler`);
-  console.log(`   GET    ${API_BASE_PATH}/user/me               - Get user information`);
-  console.log(`   GET    ${API_BASE_PATH}/user/refresh          - Refresh token`);
-  console.log(`   POST   ${API_BASE_PATH}/user/logout           - Logout`);
-  console.log(`   GET    ${API_BASE_PATH}/user/oauth/providers  - Get OAuth providers`);
-  console.log(`   GET    ${API_BASE_PATH}/health                - Health check`);
-  console.log(`   GET    ${API_BASE_PATH}/Atlas                 - Atlas UI`);
-  console.log(`   GET    /Atlas                                 - Atlas UI (no prefix)`);
-  console.log(`   *      ${API_BASE_PATH}/*                     - Proxy to Portal backend`);
+  console.log(`   POST   ${API_BASE_PATH}/user/login                    - Initiate OIDC login`);
+  console.log(`   GET    ${API_BASE_PATH}/auth/callback                 - OIDC callback handler`);
+  console.log(`   GET    ${API_BASE_PATH}/user/me                       - Get user information`);
+  console.log(`   GET    ${API_BASE_PATH}/user/refresh                  - Refresh token`);
+  console.log(`   POST   ${API_BASE_PATH}/user/logout                   - Logout`);
+  console.log(`   GET    ${API_BASE_PATH}/user/oauth/providers          - Get OAuth providers`);
+  console.log(`   GET    ${API_BASE_PATH}/health                        - Health check`);
+  console.log(`   GET    ${API_BASE_PATH}/auth-management/config        - Get auth config`);
+  console.log(`   GET    ${API_BASE_PATH}/auth-management/sessions/stats - Session statistics`);
+  console.log(`   GET    ${API_BASE_PATH}/Atlas                         - Atlas UI`);
+  console.log(`   GET    /Atlas                                         - Atlas UI (no prefix)`);
+  console.log(`   GET    /Atlas/config/plugins.json                     - Plugin manifest`);
+  console.log(`   GET    /Atlas/plugins/*                               - Plugin files`);
+  console.log(`   GET    /mri/*                                         - Vue MRI assets (proxied to Portal)`);
+  console.log(`   *      ${API_BASE_PATH}/*                             - Proxy to Portal backend`);
   console.log('');
   console.log('✅ Stateless: No Redis required!');
   console.log('✅ Encrypted cookies for session storage');

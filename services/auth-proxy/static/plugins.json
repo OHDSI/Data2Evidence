@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "plugins": [
+    {
+      "id": "cohorts",
+      "name": "Cohorts",
+      "version": "1.0.0",
+      "entryPoint": "cohorts/index.js",
+      "menuItems": [
+        {
+          "id": "main",
+          "name": "Cohorts",
+          "route": "/plugins/cohorts/main",
+          "icon": "mdi-account-group",
+          "order": 10,
+          "visible": true
+        }
+      ],
+      "metadata": {
+        "author": "Data2Evidence Team",
+        "description": "Patient Analytics and Cohort Management - Vue MRI PA Library integration",
+        "homepage": "https://github.com/data2evidence"
+      }
+    }
+  ],
+  "settings": {
+    "enableHotReload": true,
+    "loadTimeout": 30000,
+    "pluginsPath": "plugins",
+    "showLoadingIndicators": true,
+    "theme": {
+      "primaryColor": "#000080",
+      "logoUrl": "/Atlas/config/d2e2.svg"
+    },
+    "navigation": {
+         "enabledCoreItems": ["datasources", "concepts"]
+    }
+  }
+}

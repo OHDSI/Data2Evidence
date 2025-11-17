@@ -43,7 +43,7 @@ async function serveAtlasFile(ctx: any) {
       filePath = `${filePath}/index.html`;
     }
 
-    const content = await Deno.readFile(filePath);
+    let content = await Deno.readFile(filePath);
 
     // Set appropriate content type based on file extension
     const ext = filePath.split('.').pop()?.toLowerCase();
@@ -65,6 +65,21 @@ async function serveAtlasFile(ctx: any) {
     };
 
     ctx.response.headers.set('Content-Type', contentTypes[ext || ''] || 'application/octet-stream');
+
+    // Inject environment variables into HTML files
+    if (ext === 'html') {
+      const datasetId = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
+      const htmlContent = new TextDecoder().decode(content);
+      const injectedScript = `<script>window.__DATASET_ID__ = '${datasetId}';</script>`;
+
+      // Inject before closing </head> tag, or at the beginning if no head tag
+      const modifiedHtml = htmlContent.includes('</head>')
+        ? htmlContent.replace('</head>', `${injectedScript}\n</head>`)
+        : `${injectedScript}\n${htmlContent}`;
+
+      content = new TextEncoder().encode(modifiedHtml);
+    }
+
     ctx.response.body = content;
   } catch (error) {
     console.error(`[Atlas] Error serving file ${filePath}:`, error);
@@ -72,7 +87,20 @@ async function serveAtlasFile(ctx: any) {
     // Try to serve index.html as fallback for SPA routing
     try {
       const indexPath = `${atlasBasePath}/index.html`;
-      const content = await Deno.readFile(indexPath);
+      let content = await Deno.readFile(indexPath);
+
+      // Inject environment variables
+      const datasetId = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
+      const htmlContent = new TextDecoder().decode(content);
+      const injectedScript = `<script>window.__DATASET_ID__ = '${datasetId}';</script>`;
+
+      // Inject before closing </head> tag, or at the beginning if no head tag
+      const modifiedHtml = htmlContent.includes('</head>')
+        ? htmlContent.replace('</head>', `${injectedScript}\n</head>`)
+        : `${injectedScript}\n${htmlContent}`;
+
+      content = new TextEncoder().encode(modifiedHtml);
+
       ctx.response.headers.set('Content-Type', 'text/html');
       ctx.response.body = content;
     } catch {

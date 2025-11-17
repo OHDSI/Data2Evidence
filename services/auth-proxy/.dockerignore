@@ -1,9 +1,31 @@
+# Environment files
 .env
 .env.local
+
+# Git
 .git
 .gitignore
+
+# Documentation
 *.md
+
+# Node modules (will be installed during build)
 node_modules
+plugin/node_modules
+
+# Build artifacts (will be built in Docker)
+static/plugins/*/
+
+# Editor
 .vscode
 .idea
+
+# Logs
 *.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Deno lock (will be regenerated)
+deno.lock

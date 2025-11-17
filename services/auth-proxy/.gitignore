@@ -3,3 +3,12 @@
 *.log
 .DS_Store
 deno.lock
+
+# Build output
+static/plugins/*/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
