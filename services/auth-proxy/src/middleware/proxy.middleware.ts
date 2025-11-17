@@ -1,0 +1,114 @@
+import type { Context } from 'oak';
+import { CookieService } from '../services/cookie.service.ts';
+import { API_BASE_PATH } from '../config/constants.ts';
+
+const cookieService = new CookieService();
+const PORTAL_BACKEND_URL = Deno.env.get('PORTAL_BACKEND_URL') || 'https://localhost:4000';
+const PORTAL_BACKEND_PATH = Deno.env.get('PORTAL_BACKEND_PATH') || '/gateway/api';
+const COOKIE_NAME = Deno.env.get('COOKIE_NAME') || 'atlas_auth';
+const PROXY_BASE_REGEX = new RegExp(`^${API_BASE_PATH}`, 'i');
+
+export async function proxyMiddleware(ctx: Context) {
+  const authCookie = await ctx.cookies.get(COOKIE_NAME);
+
+  console.log('[Proxy] Cookie name:', COOKIE_NAME);
+  console.log('[Proxy] Auth cookie found:', !!authCookie);
+  console.log('[Proxy] All cookies:', await ctx.cookies.entries());
+
+  if (!authCookie) {
+    console.log('[Proxy] No auth cookie - returning 401');
+    ctx.response.status = 401;
+    ctx.response.body = { error: 'Not authenticated' };
+    return;
+  }
+  
+  let authTokens;
+  try {
+    authTokens = await cookieService.parseAuthCookie(authCookie);
+    console.log('[Proxy] Parsed auth tokens:', authTokens ? 'success' : 'null');
+    console.log('[Proxy] Has access_token:', !!authTokens?.access_token);
+  } catch (error) {
+    console.error('[Proxy] Error parsing cookie:', error);
+    ctx.response.status = 401;
+    ctx.response.body = { error: 'Cookie parse error' };
+    return;
+  }
+
+  if (!authTokens || !authTokens.access_token) {
+    console.log('[Proxy] Invalid auth - no access token');
+    ctx.response.status = 401;
+    ctx.response.body = { error: 'Invalid authentication' };
+    return;
+  }
+  
+  const pathWithoutBase = ctx.request.url.pathname.replace(PROXY_BASE_REGEX, '');
+  const normalizedPath = pathWithoutBase
+    ? pathWithoutBase.startsWith('/')
+      ? pathWithoutBase
+      : `/${pathWithoutBase}`
+    : '';
+  const targetUrl = `${PORTAL_BACKEND_URL}${PORTAL_BACKEND_PATH}${normalizedPath}${ctx.request.url.search}`;
+  
+  console.log(`[Proxy] ${ctx.request.method} ${targetUrl}`);
+  
+  const headers = new Headers();
+
+  // Use WebAPI JWT token if available, otherwise fall back to OIDC access token
+  const token = authTokens.webapi_token || authTokens.access_token;
+  const tokenType = authTokens.webapi_token ? 'WebAPI JWT' : 'OIDC token';
+  console.log(`[Proxy] Using ${tokenType}, first 50 chars:`, token?.substring(0, 50));
+  console.log(`[Proxy] Token length:`, token?.length);
+  headers.set('Authorization', `Bearer ${token}`);
+  headers.set('Content-Type', 'application/json');
+
+  // Add dataset ID header
+  const ATLAS3_DEFAULT_DATASET_ID = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
+  headers.set('datasetId', ATLAS3_DEFAULT_DATASET_ID);
+  console.log('[Proxy] Adding datasetId header:', ATLAS3_DEFAULT_DATASET_ID);
+  
+  ctx.request.headers.forEach((value: string, key: string) => {
+    if (key.toLowerCase() !== 'host' && 
+        key.toLowerCase() !== 'cookie' &&
+        key.toLowerCase() !== 'authorization') {
+      headers.set(key, value);
+    }
+  });
+  
+  try {
+    let body = undefined;
+    if (ctx.request.hasBody) {
+      const bodyData = await ctx.request.body.json();
+      body = JSON.stringify(bodyData);
+    }
+    
+    const response = await fetch(targetUrl, {
+      method: ctx.request.method,
+      headers,
+      body,
+    });
+
+    console.log(`[Proxy] Response status from trex: ${response.status}`);
+
+    ctx.response.status = response.status;
+    
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() !== 'set-cookie') {
+        ctx.response.headers.set(key, value);
+      }
+    });
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      ctx.response.body = await response.json();
+    } else {
+      ctx.response.body = await response.text();
+    }
+  } catch (error) {
+    console.error('[Proxy] Error:', error);
+    ctx.response.status = 502;
+    ctx.response.body = {
+      error: 'Bad Gateway',
+      message: 'Failed to proxy request to backend',
+    };
+  }
+}

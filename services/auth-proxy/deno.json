@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.window", "dom"]
+  },
+  "imports": {
+    "oak": "https://deno.land/x/oak@v17.1.3/mod.ts",
+    "djwt": "https://deno.land/x/djwt@v3.0.2/mod.ts",
+    "std/dotenv": "https://deno.land/std@0.224.0/dotenv/mod.ts",
+    "std/crypto": "https://deno.land/std@0.224.0/crypto/mod.ts",
+    "std/encoding": "https://deno.land/std@0.224.0/encoding/mod.ts"
+  },
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --allow-env --watch src/main.ts",
+    "start": "deno run --allow-net --allow-read --allow-env src/main.ts",
+    "cache": "deno cache src/main.ts"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "singleQuote": true
+  }
+}
