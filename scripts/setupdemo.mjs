@@ -1,6 +1,5 @@
 #!/usr/bin/env zx
 import dotenv from 'dotenv';
-import fs from 'fs';
 
 const args = process.argv.slice(2); 
 const vIndex_envfile = args.indexOf("-n");
@@ -106,14 +105,49 @@ const encryptionKeysObj = {
     DataPlatform: "",
     Internal: public_key
 };
-const payload = JSON.stringify({
-    encryptionKeys: JSON.stringify(encryptionKeysObj)
-});
+const encryptionKeysString = JSON.stringify(encryptionKeysObj);
+const payloadObj = {
+    encryptionKeys: encryptionKeysString
+};
 
-var resp = await $`echo ${payload} | curl -X POST -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup/' \
-    --header 'Content-Type: application/json' \
-    --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-    --data-binary @-`;
+const { spawn } = await import('child_process');
+const payloadString = JSON.stringify(payloadObj);
+var resp = await new Promise((resolve, reject) => {
+    const curlProcess = spawn('curl', [
+        '-X', 'POST',
+        '-ks',
+        '--location', `https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup/`,
+        '--header', 'Content-Type: application/json',
+        '--header', `Authorization: Bearer ${BEARER_TOKEN.toString().trim()}`,
+        '--data-binary', '@-'
+    ]);
+    
+    let output = '';
+    let errorOutput = '';
+    
+    curlProcess.stdout.on('data', (data) => {
+        output += data.toString();
+    });
+    
+    curlProcess.stderr.on('data', (data) => {
+        errorOutput += data.toString();
+    });
+    
+    curlProcess.on('close', (code) => {
+        if (code === 0) {
+            resolve(output);
+        } else {
+            reject(new Error(`curl failed with code ${code}: ${errorOutput}`));
+        }
+    });
+    
+    curlProcess.on('error', (err) => {
+        reject(err);
+    });
+
+    curlProcess.stdin.write(payloadString);
+    curlProcess.stdin.end();
+});
 
 var resp_message = await $`echo ${resp} | grep -o '"message":"[^"]*"' | sed 's/"message":"\\([^"]*\\)"/\\1/'`
 var progress_id = await $`echo ${resp} | grep -o '"id":"[^"]*"' | sed 's/"id":"\\([^"]*\\)"/\\1/'`

@@ -6,7 +6,7 @@ import * as crypto from "crypto";
 import * as path from "path";
 import * as fs from "fs";
 import * as readline from "readline";
-import { exec, execSync, spawnSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import { LibUtils } from "./lib";
 
 interface CliOptions {
@@ -509,7 +509,6 @@ class D2ECli {
   patch_demodb() {
     console.log("Patching demodb...");
     const database_host = `${this.PROJECT_NAME}-demodb`;
-    console.log(`Patching demodb at host: ${database_host}`);
     const command = `docker exec ${database_host} psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"`;
     try {
       const options: any = {
@@ -567,14 +566,11 @@ class D2ECli {
     const zx_cmd = this.setup_zx_cmd();
     const checkflow = spawnSync(
       zx_cmd,
-      [
-        `${this.node_modules_path}/scripts/check-setupdemo-flow.mjs`,
-        "-n",
-        this.ENVFILE,
-      ],
+      [`${this.node_modules_path}/scripts/check-setupdemo-flow.mjs`, "-n", this.ENVFILE],
       {
         env: { ...process.env, PORT: this.port },
-        stdio: "inherit", // shows output in console
+        stdio: "inherit",
+        shell: true,
       }
     );
     if (checkflow.error) {
@@ -584,18 +580,15 @@ class D2ECli {
   }
 
   getnoproxy() {
-    console.log("Getting no proxy setup...");
     const zx_cmd = this.setup_zx_cmd();
     const getnoproxy = spawnSync(
       zx_cmd,
       [
-        `${this.node_modules_path}/scripts/get-noproxy.mjs`,
-        "--script_full_path",
-        `${this.node_modules_path}`,
-      ],
+        `${this.node_modules_path}/scripts/get-noproxy.mjs`, "--script_full_path", `${this.node_modules_path}`],   
       {
         env: { ...process.env, DOTENV_FILE: this.ENVFILE, PORT: this.port },
         stdio: "inherit",
+        shell: true,
       }
     );
     if (getnoproxy.error) {
