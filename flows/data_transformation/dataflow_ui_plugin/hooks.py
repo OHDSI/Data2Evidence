@@ -48,6 +48,8 @@ def node_task_execution_hook(task, task_run, state, nodename, nodetype, nodeobj,
             # clean up based on node type
             case NodeType.CSV:
                 pass
+            case NodeType.FILE:
+                pass
             case NodeType.SQL:
                 pass
             case NodeType.PYTHON:
@@ -65,6 +67,8 @@ def node_task_execution_hook(task, task_run, state, nodename, nodetype, nodeobj,
             case NodeType.DATAMAPPING:
                 pass
             case NodeType.CONCEPTMAPPING:
+                pass
+            case NodeType.TRANSFORMFHIRDATA:
                 pass
             case _:
                 logger.error("ERR: Unknown Node " + nodetype)

@@ -160,21 +160,15 @@ export default {
 import axios from 'axios'
 import d3 from 'd3'
 import VueSlider from 'vue-slider-component'
-import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
-import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
-import DateUtils from '../utils/DateUtils'
-import processCSV from '../utils/ProcessCSV'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import ChartPopover from './ChartPopover.vue'
 import DialogBox from './DialogBox.vue'
-import KMEndEventMenu from './KMEndEventMenu.vue'
-import KMInteractionList from './KMInteractionList.vue'
 import kmLegend from './KMLegend.vue'
-import KMStartEventMenu from './KMStartEventMenu.vue'
 import kmStatisticsTable from './KMStatisticsTable.vue'
 import KMUnitMenu from './KMUnitMenu.vue'
 import messageBox from './MessageBox.vue'
@@ -300,8 +294,6 @@ const minDay = ref(0)
 const minProb = ref(0.0)
 const xScale = ref<any>(0)
 const yScale = ref<any>(0)
-const kmChartStyle = ref<any>({})
-const selection = ref<any[]>([])
 const showTooltip = ref(false)
 const tooltipPosition = ref<any>({})
 const tooltipCategories = ref<any[]>([])
@@ -314,7 +306,6 @@ const sliderHoverState = ref(false)
 const tooltipHoverState = ref(false)
 const tooltipFocusLeft = ref(false)
 const tooltipFocusRight = ref(false)
-const sliderFocus = ref(false)
 const sliderWidth = ref(0)
 const kmInterval = ref('')
 const kmUnit = ref('years')
