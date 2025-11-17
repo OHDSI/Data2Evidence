@@ -2,12 +2,13 @@ services:
   trex:
     command: npm run startdev
     build:
-      context: .
-      dockerfile: ./services/trex/Dockerfile
+      context: ./services/trex
+      dockerfile: ./Dockerfile
     ports:
       - 9229:9229
       - 25432:5432
       - 25433:5433
+      - 33000:33000
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
@@ -49,7 +50,8 @@ services:
           "d2e-webapi": false,
           "perseus": false,
           "white-rabbit": false,
-          "strategus-analysis": false
+          "strategus-analysis": false,
+          "mcp-server": false
         }
 
   alp-caddy:

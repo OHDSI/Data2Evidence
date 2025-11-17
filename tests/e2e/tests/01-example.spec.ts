@@ -15,7 +15,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('MALE')
+  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
   await expect(page.getByText('1321 / 2694')).toBeVisible()

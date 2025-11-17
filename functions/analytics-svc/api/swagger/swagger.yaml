@@ -1008,7 +1008,7 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
-  /alpdb/{databaseType}/database/{tenant}/schema/{schemaName}/exists:
+  /alpdb/schema/exists:
     x-swagger-router-controller: dbsvc
     get:
       description: Check if schema exists
@@ -1016,18 +1016,18 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: databaseType
-          in: path
+        - name: dialect
+          in: query
           description: Dialect of database (Hana or Postgres)
           required: true
           type: string
-        - name: tenant
-          in: path
-          description: Tenant database name
+        - name: databaseCode
+          in: query
+          description: Database code
           required: true
           type: string
         - name: schemaName
-          in: path
+          in: query
           description: Name of schema to check for
           required: true
           type: string

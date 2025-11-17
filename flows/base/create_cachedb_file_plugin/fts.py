@@ -40,9 +40,9 @@ def create_fts_index(
         )
 
         write_conn.execute(get_column_names_query(target_database, target_schema, vocab_table))
-        existing_columns = [column for (column,) in write_conn.fetchall()]
+        existing_columns = [column.lower() for (column,) in write_conn.fetchall()]
 
-        logger.debug(
+        logger.info(
             f"Existing columns in '{target_database}'.'{target_schema}'.'{vocab_table}': {existing_columns}"
         )
 

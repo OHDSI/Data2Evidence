@@ -8,10 +8,11 @@ import { useActiveDataset, useFeedback } from "../../contexts";
 import { IPluginItem, PluginDropdown } from "../../types";
 import { getPluginChildPathPattern, loadPlugins, sortPluginsByType } from "../../utils";
 import { ResearcherStudyPluginRenderer } from "../../plugins/core/ResearcherStudyPluginRenderer";
-import { useEnabledFeatures } from "../../hooks";
+import { useEnabledFeatures, useDataset } from "../../hooks";
 import { Overview } from "./Overview/Overview";
 import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
+import { ResearcherFeatureMap, ResearcherFeatures } from "../../constant";
 import "./Researcher.scss";
 
 const plugins = loadPlugins();
@@ -42,6 +43,8 @@ export const Researcher: FC = () => {
   const { activeDataset } = useActiveDataset();
   const activeDatasetId = activeDataset.id;
   const activeReleaseId = activeDataset.releaseId;
+
+  const [dataset] = useDataset(activeDatasetId);
 
   const [pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
   const [activeTenantId, setActiveTenantId] = useState<string>(state?.tenantId || "");
@@ -77,6 +80,7 @@ export const Researcher: FC = () => {
 
   const researcherPluginsFlat = useMemo(() => {
     const flatPlugins: IPluginItem[] = [];
+
     plugins.researcher.forEach((plugin) => {
       flatPlugins.push(plugin);
       plugin.children?.forEach((childPlugin) => {
@@ -84,13 +88,25 @@ export const Researcher: FC = () => {
       });
     });
     return flatPlugins;
-  }, [plugins]);
+  }, [dataset]);
 
   const onFetchMenus = useCallback((route: string, menus: PluginDropdownItem[]) => {
     setPluginDropdown((current: any) => ({ ...current, [route]: menus }));
   }, []);
 
-  const sortedResearcherPlugins = useMemo(() => sortPluginsByType(plugins.researcher), []);
+  const sortedResearcherPlugins = useMemo(() => {
+    if (!dataset) return [];
+    const allowed = ResearcherFeatureMap.hasOwnProperty(dataset.type)
+      ? (ResearcherFeatureMap[dataset.type] as string[])
+      : [];
+    return sortPluginsByType(plugins.researcher).filter((plugin) => {
+      if (ResearcherFeatures.includes(plugin.name)) {
+        return allowed.includes(plugin.name);
+      }
+      return true;
+    });
+  }, [dataset]);
+
   const sortedPlugins = JSON.parse(JSON.stringify(plugins));
   sortedPlugins.researcher = sortedResearcherPlugins;
 

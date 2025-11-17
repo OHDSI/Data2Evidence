@@ -8,7 +8,7 @@ export class Dataflow {
     formData.append("file", file);
 
     return request({
-      url: `${DATAFLOW_BASE_ENDPOINT}dataflow/file/csv?nodeId=${nodeId}`,
+      url: `${DATAFLOW_BASE_ENDPOINT}dataflow/node/file?nodeId=${nodeId}`,
       method: "POST",
       data: formData,
     });

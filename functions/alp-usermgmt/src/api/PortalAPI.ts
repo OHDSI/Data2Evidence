@@ -1,5 +1,5 @@
 import { Container, Service } from 'typedi'
-import axios, { AxiosRequestConfig } from 'axios'
+import { AxiosRequestConfig } from 'axios'
 import { createLogger } from '../Logger'
 import { CONTAINER_KEY } from '../const'
 import https from 'https'
@@ -11,10 +11,12 @@ export class PortalAPI {
   // disable as https is not working for trex internal yet
   // private readonly httpsAgent: any
   private readonly logger = createLogger(this.constructor.name)
+  private readonly channel
 
   constructor() {
     if (services.portalServer) {
       this.baseURL = services.portalServer
+      this.channel = Trex.tokioChannel('d2e-functions/portal')
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: false,
       //   ca: env.SSL_CA_CERT
@@ -43,7 +45,7 @@ export class PortalAPI {
   async getMyTenants(): Promise<ITenant[]> {
     try {
       const options = await this.getRequestConfig()
-      const result = await axios.get(`${this.baseURL}/tenant/list/me`, options)
+      const result = await this.channel.get(`${this.baseURL}/tenant/list/me`, options)
       return result.data
     } catch (error) {
       this.logger.error(`Error when get my tenant: ${JSON.stringify(error?.response?.data || error?.code)}`)
@@ -54,11 +56,10 @@ export class PortalAPI {
 
   async getDataset(id: string) {
     try {
-      const timestamp = (new Date()).valueOf();
+      const timestamp = new Date().valueOf()
       console.time(`time-usermgmt-svc-getDataset-${timestamp}`)
       const options = await this.getRequestConfig()
-      options.params = { datasetId: id }
-      const result = await axios.get(`${this.baseURL}/dataset`, options)
+      const result = await this.channel.get(`${this.baseURL}/dataset?datasetId=${id}`, options)
       console.timeEnd(`time-usermgmt-svc-getDataset-${timestamp}`)
       return result.data
     } catch (error) {
@@ -70,7 +71,7 @@ export class PortalAPI {
   async getDatasets() {
     try {
       const options = await this.getRequestConfig()
-      const result = await axios.get(`${this.baseURL}/dataset/list/systemadmin`, options)
+      const result = await this.channel.get(`${this.baseURL}/dataset/list/systemadmin`, options)
       return result.data
     } catch (error) {
       this.logger.error('Error getting studies', error?.response?.data || error?.code)
@@ -81,7 +82,7 @@ export class PortalAPI {
   async getTenants(): Promise<ITenant[]> {
     try {
       const options = await this.getRequestConfig()
-      const result = await axios.get(`${this.baseURL}/tenant/list`, options)
+      const result = await this.channel.get(`${this.baseURL}/tenant/list`, options)
       return result.data
     } catch (error) {
       this.logger.error('Error getting tenants', error?.response?.data || error?.code)
@@ -93,7 +94,7 @@ export class PortalAPI {
   async getPublicDatasets() {
     try {
       const options = await this.getRequestConfig()
-      const result = await axios.get(`${this.baseURL}/dataset/public/list`, options)
+      const result = await this.channel.get(`${this.baseURL}/dataset/public/list`, options)
       return result.data
     } catch (error) {
       this.logger.error('Error getting datasets', error?.response?.data || error?.code)

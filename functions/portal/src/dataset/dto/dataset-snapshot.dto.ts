@@ -1,23 +1,27 @@
-import { Transform } from 'npm:class-transformer'
-import { IsDate, IsNotEmpty, IsString, IsUUID } from 'npm:class-validator'
-import { IDatasetSnapshotDto } from '../../types.d.ts'
+import { Transform } from "npm:class-transformer";
+import { IsDate, IsNotEmpty, IsString, IsUUID } from "npm:class-validator";
+import { IDatasetSnapshotDto } from "../../types.d.ts";
 
 export class DatasetSnapshotDto implements IDatasetSnapshotDto {
   @IsUUID()
-  id: string
+  id: string;
 
   @IsUUID()
-  sourceDatasetId: string
+  sourceDatasetId: string;
 
   @IsNotEmpty()
   @IsString()
-  newDatasetName: string
+  newDatasetName: string;
 
   @IsNotEmpty()
   @IsString()
-  schemaName: string
+  schemaName: string;
 
   @Transform(({ value }) => new Date(value))
   @IsDate()
-  timestamp: Date
+  timestamp: Date;
+
+  @IsNotEmpty()
+  @IsString()
+  type: string;
 }

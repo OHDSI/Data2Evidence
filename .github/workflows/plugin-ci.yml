@@ -94,7 +94,6 @@ jobs:
       matrix:
         include:
           - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/cohort_survival/
           - PKGPATH: ./flows/i2b2/
           - PKGPATH: ./flows/search_embedding/
           - PKGPATH: ./flows/data_management/
@@ -107,12 +106,6 @@ jobs:
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
-          - PKGPATH: ./services/trex/ext/circe
-            RUNNER: ubuntu-24.04
-          - PKGPATH: ./services/trex/ext/hana
-          - PKGPATH: ./services/trex/ext/llama
-            RUNNER: ubuntu-24.04
-          - PKGPATH: ./services/trex/ext/pgwire
 
     runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
 
@@ -220,9 +213,9 @@ jobs:
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
           if [[ $SHOULD_PUBLISH == true ]]; then
-             ${{ matrix.NPM || 'npm' }} publish
+            npm publish
           else
-             ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
           fi
 
   success:

@@ -56,10 +56,13 @@ export interface IDataset {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
+  sourceStudyId: string;
+  plugin: string;
 }
 
 export interface ICacheCreateFlowRun {
   datasetId: string;
+  cacheDatasetId: string;
 }
 
 export interface ICacheStatusFlowRun {

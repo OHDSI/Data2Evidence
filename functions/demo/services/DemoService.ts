@@ -89,9 +89,14 @@ export class DemoService {
         dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
         dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA
     );
-    if (exist) {
+
+    const cacheDataset = datasets.find(
+      (dataset) => dataset.sourceStudyId === exist?.id
+    );
+
+    if (exist && cacheDataset) {
       this.logger.info(`Dataset exists: ${JSON.stringify(exist)}`);
-      return exist;
+      return { ...exist, cacheId: cacheDataset.id };
     }
 
     const datasetAPI = new DatasetAPI(token);
@@ -120,11 +125,11 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { id: datasetId, vocabSchemaName } = dataset;
+    const { cacheId: datasetId, vocabSchemaName } = dataset;
     const dqdFlowRun = await jobPluginsAPI.createDqdFlowRun({
       datasetId,
       releaseId: "",
-      vocabSchemaName,
+      vocabSchemaName: datasetId,
       comment: "Demo setup",
     });
 
@@ -174,7 +179,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { id: datasetId } = dataset;
+    const { cacheId: datasetId } = dataset;
     const result = await jobPluginsAPI.createDcFlowRun({
       datasetId,
       releaseId: "",
@@ -201,8 +206,11 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { id: datasetId } = dataset;
-    const result = await jobPluginsAPI.createCacheFlowRun({ datasetId });
+    const { id: datasetId, cacheId: cacheDatasetId } = dataset;
+    const result = await jobPluginsAPI.createCacheFlowRun({
+      datasetId,
+      cacheDatasetId,
+    });
 
     this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
     const flowRunId = result.flowRunId ? result : result.data;
@@ -234,21 +242,33 @@ export class DemoService {
     if (!dataset) {
       throw new Error("Dataset not found");
     }
+    const portalAPI = new PortalAPI(token);
+    const { cacheId: datasetId } = dataset;
+
+    const cacheDataset = await portalAPI.getDataset(datasetId);
+
+    if (!cacheDataset) {
+      throw new Error("Cache dataset not found");
+    }
 
     if (!dataset?.plugin) {
       throw new Error("Dataset has empty plugin");
     }
 
+    if (!cacheDataset?.plugin) {
+      throw new Error("Cache dataset has empty plugin");
+    }
+
     const result = await jobPluginsAPI.createGetVersionInfoFlowRun({
-      flowRunName: `${dataset.plugin}-get_version_info`,
+      flowRunName: `cache-get_version_info`,
       options: {
         options: {
-          flow_action_type: "get_version_info",
+          flowActionType: "get_version_info",
           token: "",
           database_code: "",
           data_model: "",
-          plugin: dataset.plugin,
-          datasets: [dataset],
+          plugin: "create_cachedb_file_plugin",
+          datasets: [cacheDataset],
         },
       },
     });
