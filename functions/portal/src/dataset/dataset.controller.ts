@@ -13,7 +13,10 @@ import {
 } from "@danet/core";
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 import { IDataset } from "../types.d.ts";
-import { DATASET_SYSTEM_ADMIN_ROLE, DATASET_RESEARCHER_ROLE } from '../common/const.ts'
+import {
+  DATASET_SYSTEM_ADMIN_ROLE,
+  DATASET_RESEARCHER_ROLE,
+} from "../common/const.ts";
 import { DatasetCommandService } from "./command/dataset-command.service.ts";
 import { DatasetFilterService } from "./dataset-filter.service.ts";
 import { DatasetDetailMetadataUpdateDto } from "./dto/dataset-detail-metadata.update.dto.ts";
@@ -38,7 +41,7 @@ export class DatasetController {
 
   @Get()
   async getDataset(@Query() queryParams: any): Promise<IDataset> {
-    const id = queryParams.datasetId
+    const id = queryParams.datasetId;
     if (!id) {
       console.error(`No datasetId provided ${JSON.stringify(queryParams)}`);
       throw new HttpException(400, "datasetId is required");
@@ -50,17 +53,23 @@ export class DatasetController {
   async hasDataset(@Query() searchParams: any) {
     const dataset = await this.datasetQueryService.hasDataset(searchParams);
     const exist = !!dataset;
-    return { exist }
+    return { exist };
   }
 
   @Get("list/systemadmin")
   async getSystemAdminDatasets(@Query() queryParams: DatasetQueryDto) {
-    return await this.datasetQueryService.getDatasets({ ...queryParams, role: DATASET_SYSTEM_ADMIN_ROLE });
+    return await this.datasetQueryService.getDatasets({
+      ...queryParams,
+      role: DATASET_SYSTEM_ADMIN_ROLE,
+    });
   }
 
   @Get("list")
   async getResearcherDatasets(@Query() queryParams: DatasetQueryDto) {
-    return await this.datasetQueryService.getDatasets({ ...queryParams, role: DATASET_RESEARCHER_ROLE });
+    return await this.datasetQueryService.getDatasets({
+      ...queryParams,
+      role: DATASET_RESEARCHER_ROLE,
+    });
   }
 
   @Get("filter-scopes")
@@ -126,5 +135,27 @@ export class DatasetController {
   @Get("dashboards/list")
   async getDashboards() {
     return await this.datasetQueryService.getDashboards();
+  }
+
+  @Get("dashboard-code")
+  async getDatasetDashboardCode(
+    @Query("datasetId") datasetId: string,
+    @Query("type") type: string
+  ) {
+    return await this.datasetQueryService.getDatasetCode(
+      datasetId,
+      type
+    );
+  }
+
+  @Put("dashboard-code")
+  async updateDatasetDashboardCode(
+    @Body() datasetCodeDto: { datasetId: string; code: string; type: string }
+  ) {
+    return await this.datasetCommandService.updateDatasetDashboardCode(
+      datasetCodeDto.datasetId,
+      datasetCodeDto.code,
+      datasetCodeDto.type
+    );
   }
 }
