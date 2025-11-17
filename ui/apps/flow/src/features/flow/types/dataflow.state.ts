@@ -142,6 +142,13 @@ export interface TemplateDto {
   edges: EdgeState[];
 }
 
+export interface TemplateFhirDto {
+  id: string;
+  name: string;
+  description: string;
+  structureMap: string;
+}
+
 export interface CreateFromTemplateDto {
   templateId: string;
   name: string;
