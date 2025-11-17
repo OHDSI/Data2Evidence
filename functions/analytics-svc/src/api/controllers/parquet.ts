@@ -1,9 +1,8 @@
 import { IMRIRequest, StudyDbMetadata } from "../../types";
-import { Logger } from "@alp/alp-base-utils";
+import { Logger, validateIdentifierForSchemaOrTableName } from "@alp/alp-base-utils";
 import * as Minio from "minio";
 import PortalServerAPI from "../PortalServerAPI";
 import { env } from "../../env";
-import { validateIdentifierForSchemaOrTableName } from "../_shared/alp-base-utils/src/utils";
 
 const log = Logger.CreateLogger("analytics-log");
 
