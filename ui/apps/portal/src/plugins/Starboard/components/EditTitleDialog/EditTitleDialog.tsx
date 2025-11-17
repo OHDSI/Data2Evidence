@@ -22,6 +22,7 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
 
   const handleNotebookChanges = (e: any) => {
     setNotebookTitle(e.target.value);
+    setShowErrorMessage(false);
   };
 
   const handleClose = useCallback(
@@ -33,12 +34,13 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
 
   const handleRename = useCallback(async () => {
     try {
-      if (notebookTitle) {
-        if (notebooks?.some((nb) => nb.name.toUpperCase() === notebookTitle.toUpperCase())) {
+      const trimmedTitle = notebookTitle?.trim();
+      if (trimmedTitle) {
+        if (notebooks?.some((nb) => nb.name.toUpperCase() === trimmedTitle.toUpperCase())) {
           setShowErrorMessage(true);
           return;
         }
-        await renameNotebook(notebookTitle);
+        await renameNotebook(trimmedTitle);
       }
       handleClose("success");
     } catch (err: any) {
@@ -46,6 +48,14 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
       setShowErrorMessage(true);
     }
   }, [notebookTitle, renameNotebook, handleClose, notebooks]);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleRename();
+    },
+    [handleRename]
+  );
 
   return (
     <Dialog
@@ -55,28 +65,37 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
       open={open}
       onClose={() => handleClose("cancelled")}
     >
-      <div className="edit-title-dialog__content">
-        <TextField
-          id="standard-helperText"
-          label={getText(i18nKeys.EDIT_TITLE_DIALOG__NOTEBOOK_TITLE)}
-          defaultValue={notebookTitle}
-          variant="standard"
-          onChange={handleNotebookChanges}
-        />
-        {showErrorMessage && (
-          <div className="edit-title-dialog__content__error">{getText(i18nKeys.EDIT_TITLE_DIALOG__ALREADY_EXISTS)}</div>
-        )}
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.EDIT_TITLE_DIALOG__CANCEL)}
-          onClick={() => handleClose("cancelled")}
-          variant="outlined"
-          block
-        />
-        <Button text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)} onClick={handleRename} block />
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="edit-title-dialog__content">
+          <TextField
+            id="standard-helperText"
+            label={getText(i18nKeys.EDIT_TITLE_DIALOG__NOTEBOOK_TITLE)}
+            defaultValue={notebookTitle}
+            variant="standard"
+            onChange={handleNotebookChanges}
+            autoFocus
+          />
+          {showErrorMessage && (
+            <div className="edit-title-dialog__content__error">{getText(i18nKeys.EDIT_TITLE_DIALOG__ALREADY_EXISTS)}</div>
+          )}
+        </div>
+        <Divider />
+        <div className="button-group-actions">
+          <Button
+            text={getText(i18nKeys.EDIT_TITLE_DIALOG__CANCEL)}
+            onClick={() => handleClose("cancelled")}
+            variant="outlined"
+            block
+          />
+          <Button 
+            text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)} 
+            onClick={handleRename} 
+            block 
+            type="submit"
+            disabled={!notebookTitle?.trim()}
+          />
+        </div>
+      </form>
     </Dialog>
   );
 };
