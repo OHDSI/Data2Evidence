@@ -5,7 +5,7 @@
         <pane :size="paneSize" :min-size="splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
-              <div v-if="!isAtlasBookmark">
+              <div v-if="!isLocal">
                 <button
                   type="button"
                   class="actionButton"
@@ -407,7 +407,6 @@ export default {
     },
     getActiveBookmarkName() {
       if (this.getActiveBookmark) {
-        console.log('activeBookmark', this.getActiveBookmark)
         return this.getActiveBookmark.bookmarkname
       } else {
         return ''
@@ -512,4 +511,3 @@ export default {
   },
 }
 </script>
-
