@@ -125,7 +125,15 @@ def data_characterization_plugin(options: DCOptionsType):
 def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger):
     try:
         # create results schema
-        create_schema_task(dbdao, results_schema)
+        existing_schema = dbdao.check_schema_exists(results_schema)
+
+        if existing_schema:
+            logger.warning(
+                f"Results schema '{results_schema}' already exists. This will drop existing achilles tables."
+            )
+            drop_existing_achilles_tables(results_schema, dbdao)
+        else:
+            create_schema_task(dbdao, results_schema)
 
         # create result tables
         schema_params = {
@@ -306,6 +314,57 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         logger.info(
             f"Achilles run completed successfully for schema: {achilles_params.schemaName}"
         )
+
+
+@task(log_prints=True, task_run_name="drop_existing_achilles_tables_{results_schema}")
+def drop_existing_achilles_tables(results_schema: str, dbdao):
+    logger = get_run_logger()
+    tables = [
+        "cohort",
+        "cohort_censor_stats",
+        "cohort_inclusion",
+        "cohort_inclusion_result",
+        "cohort_inclusion_stats",
+        "cohort_summary_stats",
+        "cohort_cache",
+        "cohort_censor_stats_cache",
+        "cohort_inclusion_result_cache",
+        "cohort_inclusion_stats_cache",
+        "cohort_summary_stats_cache",
+        "feas_study_inclusion_stats",
+        "feas_study_index_stats",
+        "feas_study_result",
+        "heracles_analysis",
+        "heracles_heel_results",
+        "heracles_results",
+        "heracles_results_dist",
+        "heracles_periods",
+        "cohort_sample_element",
+        "ir_analysis_dist",
+        "ir_analysis_result",
+        "ir_analysis_strata_stats",
+        "ir_strata",
+        "cc_results",
+        "pathway_analysis_codes",
+        "pathway_analysis_events",
+        "pathway_analysis_paths",
+        "pathway_analysis_stats",
+        "concept_hierarchy",
+        "achilles_result_concept_count"
+    ]
+
+    logger.info(f"Dropping existing Achilles tables in schema '{results_schema}': {tables}")
+
+    for table in tables:
+        # Check if table exists
+        if dbdao.check_table_exists(results_schema, table):
+            logger.debug(
+                f"Dropping existing Achilles table '{results_schema}.{table}'.."
+            )
+            dbdao.drop_table(results_schema, table, cascade=True)
+            logger.info(
+                f"Successfully dropped existing Achilles table '{results_schema}.{table}'"
+            )
 
 
 @task(log_prints=True, task_run_name="execute_achilles_{achilles_params.schemaName}")

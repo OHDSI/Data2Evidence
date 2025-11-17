@@ -62,12 +62,23 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
   const handleSave = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      
+      const trimmedData = {
+        ...formData,
+        id: formData.id.trim(),
+        name: formData.name.trim(),
+      };
+      
+      if (!trimmedData.id || !trimmedData.name) {
+        return;
+      }
+      
       try {
         setSaving(true);
         if (isEditMode) {
-          await api.systemPortal.updateDatasetAttributeConfig(formData);
+          await api.systemPortal.updateDatasetAttributeConfig(trimmedData);
         } else {
-          await api.systemPortal.addDatasetAttributeConfig(formData);
+          await api.systemPortal.addDatasetAttributeConfig(trimmedData);
         }
         setFeedback({
           type: "success",
@@ -110,6 +121,7 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
               disabled={isEditMode}
               value={formData.id}
               onChange={(event) => handleFormDataChange({ id: event.target?.value })}
+              autoFocus={!isEditMode}
             />
           </div>
           <div style={{ marginBottom: "32px" }}>
@@ -119,6 +131,7 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
               sx={{ width: "100%" }}
               value={formData.name}
               onChange={(event) => handleFormDataChange({ name: event.target?.value })}
+              autoFocus={isEditMode}
             />
           </div>
           <div style={{ marginBottom: "32px" }}>
@@ -165,7 +178,12 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
               variant="outlined"
               onClick={() => handleClose("cancelled")}
             />
-            <Button type="submit" text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SAVE)} loading={saving} />
+            <Button 
+              type="submit" 
+              text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SAVE)} 
+              loading={saving}
+              disabled={!formData.id.trim() || !formData.name.trim()}
+            />
           </div>
         </div>
       </form>

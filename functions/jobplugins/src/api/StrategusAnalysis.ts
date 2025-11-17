@@ -9,7 +9,7 @@ export class StrategusAnalysisApi {
     this.token = token;
     if (services["strategus-analysis"]) {
       this.baseUrl = services["strategus-analysis"];
-      this.channel = Trex.tokioChannel("strategus-analysis");
+      this.channel = Trex.tokioChannel("d2e-functions/strategus-analysis");
     } else {
       throw new Error("No url is set for Strategus Analysis API");
     }
