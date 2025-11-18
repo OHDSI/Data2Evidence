@@ -495,11 +495,12 @@ class D2ECli {
       "cli.js"
     );
 
-    if (fs.existsSync(zxBin)) {
-      zx_cmd = zxBin;
-      return zx_cmd;
-    } else if (fs.existsSync(zxCliJs)) {
+
+    if (fs.existsSync(zxCliJs)) {
       zx_cmd = `node ${zxCliJs}`;
+      return zx_cmd;
+    } else if (fs.existsSync(zxBin)) {
+      zx_cmd = process.platform === "win32" ? `${zxBin}.cmd` : zxBin;
       return zx_cmd;
     } else {
       console.error("Error: zx not found in node_modules");
@@ -528,9 +529,10 @@ class D2ECli {
     this.patch_demodb();
     const database_host = `${this.PROJECT_NAME}-demodb`;
     const zx_cmd = this.setup_zx_cmd();
+    const setupdemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setupdemo.mjs -n ${this.ENVFILE}`;
     const setupdemo = spawnSync(
-      zx_cmd,
-      [`${this.node_modules_path}/scripts/setupdemo.mjs`, "-n", this.ENVFILE],
+      setupdemoCmd,
+      [],
       {
         env: { ...process.env, PORT: this.port },
         stdio: "inherit",
@@ -542,13 +544,10 @@ class D2ECli {
       process.exit(1);
     }
 
+    const checkSetupDemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE} -b ${database_host}`;
     const check_setupdemo = spawnSync(
-      zx_cmd,
-      [
-        `${this.node_modules_path}/scripts/check-setupdemo-flow.mjs`,
-        "-n",
-        this.ENVFILE,
-      ],
+      checkSetupDemoCmd,
+      [],
       {
         env: { ...process.env, PORT: this.port },
         stdio: "inherit",
@@ -564,9 +563,10 @@ class D2ECli {
   checkflow() {
     console.log("Checking flow...");
     const zx_cmd = this.setup_zx_cmd();
+    const checkflowCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE} -b ${this.PROJECT_NAME}-demodb`;
     const checkflow = spawnSync(
-      zx_cmd,
-      [`${this.node_modules_path}/scripts/check-setupdemo-flow.mjs`, "-n", this.ENVFILE],
+      checkflowCmd,
+      [],
       {
         env: { ...process.env, PORT: this.port },
         stdio: "inherit",
@@ -581,10 +581,10 @@ class D2ECli {
 
   getnoproxy() {
     const zx_cmd = this.setup_zx_cmd();
+    const getnoproxyCmd = `${zx_cmd} ${this.node_modules_path}/scripts/get-noproxy.mjs --script_full_path ${this.node_modules_path}`;
     const getnoproxy = spawnSync(
-      zx_cmd,
-      [
-        `${this.node_modules_path}/scripts/get-noproxy.mjs`, "--script_full_path", `${this.node_modules_path}`],   
+      getnoproxyCmd,
+      [],
       {
         env: { ...process.env, DOTENV_FILE: this.ENVFILE, PORT: this.port },
         stdio: "inherit",

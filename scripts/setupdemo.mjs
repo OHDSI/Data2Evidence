@@ -26,11 +26,11 @@ let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
 var response= await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256"`
 
 // Extract cookies
-var interaction_cookie=await $`echo ${response} | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_sig_cookie=await $`echo ${response} | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_cookie=await $`echo ${response} | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_sig_cookie=await $` echo ${response} | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var logto_cookie=await $` echo ${response} | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
+var interaction_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction=' | head -1 | sed 's/.*_interaction=//; s/;.*//'`;
+var interaction_sig_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction.sig=' | head -1 | sed 's/.*_interaction.sig=//; s/;.*//'`;
+var interaction_resume_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction_resume=' | head -1 | sed 's/.*_interaction_resume=//; s/;.*//'`;
+var interaction_resume_sig_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction_resume.sig=' | head -1 | sed 's/.*_interaction_resume.sig=//; s/;.*//'`;
+var logto_cookie=await $`echo ${response} | grep -i 'set-cookie.*_logto=' | head -1 | sed 's/.*_logto=//; s/;.*//'`;
 
 // Sign in
 var response=await $`(curl -iks --request PUT 'https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction' \
@@ -57,13 +57,13 @@ var response=await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${i
     --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
     --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
 
-var interaction_cookie=await $`echo ${response} | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_sig_cookie=await $`echo ${response} | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_cookie=await $`echo ${response} | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_sig_cookie=await $` echo ${response} | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var logto_cookie=await $` echo ${response} | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var session_cookie=await $` echo ${response} | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var session_sig_cookie=await $` echo ${response} | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
+var interaction_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction=' | head -1 | sed 's/.*_interaction=//; s/;.*//'`;
+var interaction_sig_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction.sig=' | head -1 | sed 's/.*_interaction.sig=//; s/;.*//'`;
+var interaction_resume_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction_resume=' | head -1 | sed 's/.*_interaction_resume=//; s/;.*//'`;
+var interaction_resume_sig_cookie=await $`echo ${response} | grep -i 'set-cookie.*_interaction_resume.sig=' | head -1 | sed 's/.*_interaction_resume.sig=//; s/;.*//'`;
+var logto_cookie=await $`echo ${response} | grep -i 'set-cookie.*_logto=' | head -1 | sed 's/.*_logto=//; s/;.*//'`;
+var session_cookie=await $`echo ${response} | grep -i 'set-cookie.*_session=' | head -1 | sed 's/.*_session=//; s/;.*//'`;
+var session_sig_cookie=await $`echo ${response} | grep -i 'set-cookie.*_session.sig=' | head -1 | sed 's/.*_session.sig=//; s/;.*//'`;
 
 // Submit consent page
 var response=await $`curl -iks 'https://${CADDY__ALP__PUBLIC_FQDN}/consent' \
