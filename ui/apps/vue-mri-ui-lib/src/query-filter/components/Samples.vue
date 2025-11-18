@@ -1,3 +1,11 @@
+<script lang="ts">
+export default {
+  compatConfig: {
+    MODE: 3,
+  },
+}
+</script>
+
 <template>
   <SplashScreen v-if="isLoading" />
   <div v-else-if="generationStatus !== 'COMPLETE'" class="status-message">
@@ -113,14 +121,6 @@
               />
               <p v-if="hasSizeError" class="validation-message">{{ sizeErrorMessage }}</p>
             </div>
-            <!-- 
-            <div class="form-group">
-              <label for="samplingMethod" class="form-label">Sampling Method</label>
-              <select id="samplingMethod" class="form-control" v-model="samplingMethod">
-                <option value="random">Random</option>
-                <option value="stratified">Stratified</option>
-              </select>
-            </div> -->
 
             <div class="stratified-section">
               <div class="form-group">
@@ -289,8 +289,6 @@ const hasGenderError = computed(() => {
 })
 
 const hasAgeError = computed(() => {
-  // if (samplingMethod.value !== 'stratified' || !touched.value.age) return false
-
   if (ageCriteria.value === 'between' || ageCriteria.value === 'notBetween') {
     return ageMinValue.value >= ageMaxValue.value
   }
@@ -320,20 +318,6 @@ watch(
     })
   }
 )
-
-// Reset stratified criteria when switching between sampling methods
-// watch(samplingMethod, (newMethod, oldMethod) => {
-//   if (oldMethod === 'stratified' && newMethod === 'random') {
-//     // Reset stratified fields when switching away from stratified
-//     ageCriteria.value = 'lessThan'
-//     ageValue.value = 0
-//     ageMinValue.value = 0
-//     ageMaxValue.value = 0
-//     genderCriteria.value = []
-//     touched.value.gender = false
-//     touched.value.age = false
-//   }
-// })
 
 const openCreateSampleDialog = () => {
   createSampleDialogOpen.value = true
@@ -506,227 +490,8 @@ const getGenderFromId = (conceptId: number) => {
   return 'Other'
 }
 </script>
+
 <style lang="scss" scoped>
-.status-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-ui-darkest-text);
-  font-size: 1rem;
-  font-weight: 500;
-  text-align: center;
-  min-height: 100px;
-}
-
-.samples {
-  display: flex;
-  flex-direction: column;
-  padding: 1rem;
-  gap: 16px;
-
-  &__action {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  &__table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid #ddd;
-    font-size: 0.9rem;
-
-    thead {
-      background-color: #f5f5f5;
-    }
-
-    th {
-      padding: 0.75rem;
-      text-align: left;
-      font-weight: 600;
-      border-bottom: 2px solid #ddd;
-      color: #333;
-    }
-
-    td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #ddd;
-      color: #666;
-    }
-
-    tbody tr:hover {
-      background-color: #f9f9f9;
-    }
-
-    .btn-remove-sample {
-      border: 1px solid transparent;
-      background: transparent;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      padding: 4px 8px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 32px;
-      min-height: 32px;
-
-      &:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-      }
-
-      &:not(:disabled):hover {
-        svg {
-          fill: var(--color-feedback-error);
-        }
-      }
-
-      .spinner {
-        width: 16px;
-        height: 16px;
-        border: 2px solid var(--color-neutral-lightest);
-        border-top: 2px solid var(--color-primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-    }
-    .no-data {
-      text-align: center;
-      font-weight: bold;
-    }
-  }
-
-  &__sample-entry-table {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    flex: 1;
-  }
-
-  .sample-dialog {
-    padding: 1.5rem;
-
-    .sample-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-
-      &.form-group-inline {
-        flex: 1;
-      }
-    }
-
-    .form-label {
-      font-weight: 600;
-      font-size: 0.875rem;
-      color: var(--color-ui-darkest-text);
-
-      .required {
-        color: var(--color-feedback-error);
-      }
-    }
-
-    .form-control {
-      padding: 0.625rem 0.75rem;
-      border: 1px solid var(--color-ui-medium-border);
-      border-radius: 4px;
-      font-size: 0.875rem;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      background-color: var(--color-ui-lightest-bg);
-
-      &:focus {
-        outline: none;
-        border-color: var(--color-form-control-focus, var(--color-primary));
-        box-shadow: 0 0 0 3px var(--color-primary-extra-lightest, rgba(0, 102, 204, 0.1));
-      }
-
-      &::placeholder {
-        color: var(--color-ui-light-text);
-      }
-
-      &:disabled {
-        background-color: var(--color-ui-light-bg);
-        cursor: not-allowed;
-      }
-
-      &.has-error {
-        border-color: var(--color-feedback-error);
-      }
-    }
-
-    select.form-control {
-      cursor: pointer;
-    }
-
-    .stratified-section {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      padding: 1rem;
-      background-color: var(--color-ui-extra-light-bg);
-      border: 1px solid var(--color-ui-light-border);
-      border-radius: 6px;
-      margin-top: 0.5rem;
-    }
-
-    .validation-message {
-      margin: 0.25rem 0 0 0;
-      font-size: 0.75rem;
-      color: var(--color-feedback-error);
-      font-style: italic;
-    }
-
-    .age-range-group {
-      display: flex;
-      gap: 1rem;
-    }
-
-    .checkbox-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .checkbox-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      input[type='checkbox'] {
-        width: 1rem;
-        height: 1rem;
-        cursor: pointer;
-        accent-color: var(--color-primary);
-      }
-
-      label {
-        font-weight: 400;
-        font-size: 0.875rem;
-        cursor: pointer;
-        margin: 0;
-        color: var(--color-ui-dark-text);
-      }
-    }
-  }
-
-  .flex-spacer {
-    flex: 1;
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
+@import '../styles/Samples.scss';
 </style>
 

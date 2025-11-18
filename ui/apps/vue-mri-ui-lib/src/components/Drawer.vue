@@ -1,3 +1,11 @@
+<script lang="ts">
+export default {
+  compatConfig: {
+    MODE: 3,
+  },
+}
+</script>
+
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
 
@@ -114,92 +122,6 @@ function unlockBody() {
 </template>
 
 <style scoped>
-.drawer-backdrop {
-  z-index: 91;
-  position: fixed;
-  inset: 0;
-  background: transparent;
-  display: flex;
-}
-
-.drawer-backdrop-dim {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.drawer-panel {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: var(--color-table-row-bg, #edf2f7);
-  outline: none;
-  width: 85vw;
-  max-width: 100vw;
-  height: 100vh;
-  max-height: 100vh;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-}
-
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #eee;
-}
-.drawer-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: normal;
-}
-.drawer-close {
-  background: transparent;
-  border: 0;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.drawer-content {
-  padding: 16px;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.drawer-backdrop-enter-active,
-.drawer-backdrop-leave-active {
-  transition: opacity 0.18s ease;
-}
-.drawer-backdrop-enter-from,
-.drawer-backdrop-leave-to {
-  opacity: 0;
-}
-
-.drawer-right-enter-active,
-.drawer-right-leave-active,
-.drawer-left-enter-active,
-.drawer-left-leave-active {
-  transition: transform 0.22s ease;
-}
-.drawer-right-enter-from,
-.drawer-right-leave-to {
-  transform: translateX(100%);
-}
-.drawer-left-enter-from,
-.drawer-left-leave-to {
-  transform: translateX(-100%);
-}
-
-.drawer-content-enter-active,
-.drawer-content-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-.drawer-content-enter-from,
-.drawer-content-leave-to {
-  opacity: 0;
-  transform: translateY(8px);
-}
+@import '../styles/drawer.scss';
 </style>
 

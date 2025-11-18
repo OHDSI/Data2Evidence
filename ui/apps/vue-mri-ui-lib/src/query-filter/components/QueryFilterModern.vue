@@ -1059,11 +1059,11 @@ const updatePatientCountFromInfo = () => {
 
   if (infoForSource && infoForSource.status === 'COMPLETE') {
     patientCount.value = infoForSource.personCount
-    generationStatus[selectedDatasetForGeneration.value] = 'complete'
+    generationStatus.value[selectedDatasetForGeneration.value] = 'complete'
     console.log('Found patient count from cohort info:', infoForSource.personCount)
   } else {
     patientCount.value = null
-    generationStatus[selectedDatasetForGeneration.value] = 'idle'
+    generationStatus.value[selectedDatasetForGeneration.value] = 'idle'
   }
 }
 

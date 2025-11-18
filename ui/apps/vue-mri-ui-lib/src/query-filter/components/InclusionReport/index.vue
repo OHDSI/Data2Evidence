@@ -1,3 +1,11 @@
+<script lang="ts">
+export default {
+  compatConfig: {
+    MODE: 3,
+  },
+}
+</script>
+
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import type { InclusionReportResponse } from '@/query-filter/types/QueryFilterTypes'
@@ -530,168 +538,6 @@ watch(
 </template>
 
 <style scoped>
-.inclusion-rules-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.group-buttons-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin-top: 16px;
-  .group-button {
-    width: 80%;
-  }
-}
-table {
-  font-size: 16px;
-}
-.rule-name {
-  max-width: 70ch;
-  text-align: left;
-}
-
-.inclusion-report-container {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  height: 100%;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.summary-section,
-.rules-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-h4 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-primary);
-}
-
-.summary-table,
-.rules-table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid var(--color-ui-light-border, #ddd);
-  text-align: right;
-  .rule-name {
-    text-align: left;
-  }
-}
-
-.summary-table thead,
-.rules-table thead {
-  background-color: var(--color-ui-extra-light-bg, #ddd);
-}
-
-.summary-table th,
-.rules-table th {
-  padding: 0.75rem;
-  font-weight: 500;
-  border-bottom: 2px solid var(--color-ui-light-border, #ddd);
-  color: #333;
-}
-
-.summary-table td,
-.rules-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--color-ui-light-border, #ddd);
-}
-
-.summary-table,
-.rules-table {
-  color: var(--color-ui-medium-text);
-  tr.grayed-out {
-    color: var(--color-mri-disabled-text);
-  }
-}
-
-.summary-table tbody tr:hover,
-.rules-table tbody tr:hover {
-  background-color: var(--color-ui-extra-light-bg, #ddd);
-}
-
-.status-message,
-.no-data {
-  padding: 2rem;
-  text-align: center;
-  color: var(--color-neutral);
-}
-
-.all-any-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 1rem 0;
-  padding: 12px;
-  padding-left: 0;
-
-  span {
-    color: var(--color-ui-medium-text);
-  }
-
-  select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--color-ui-light-border, #ddd);
-    border-radius: 4px;
-    cursor: pointer;
-    color: var(--color-mri-dropdown-label-dark-text);
-
-    &:hover {
-      border-color: #999;
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-focus, #005483);
-      box-shadow: 0 0 0 2px var(--color-dialog-box-footer-shadow);
-    }
-  }
-}
-
-.filtered-summary {
-  margin: 0.5rem 0;
-  padding: 0.75rem;
-
-  p {
-    margin: 0;
-    font-size: 0.95rem;
-    color: #333;
-  }
-}
-
-.chart-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  min-height: 400px;
-  width: 100%;
-
-  .funnel-chart {
-    width: 100%;
-    height: fit-content;
-    border: 1px solid var(--color-ui-light-border, #ddd);
-    border-radius: 4px;
-  }
-
-  .treemap-chart {
-    height: 500px;
-    width: 100%;
-    border: 1px solid var(--color-ui-light-border, #ddd);
-    border-radius: 4px;
-  }
-}
+@import '../../styles/InclusionReport.scss';
 </style>
 
