@@ -10,6 +10,8 @@ import {
 } from "./types.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import TrexConnection from "./TrexConnection.ts";
+import { ICohortExpression } from "../types.ts";
+import { ICohortDefinitionCheckV2ResponseDto } from "../dto/cohortdefinition.ts";
 
 export class TrexDAO {
   private readonly conn: TrexConnection;
@@ -293,6 +295,18 @@ export class TrexDAO {
 
       const result = await this.conn.query(sql);
       return result as IConceptRecordCount[];
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+
+  async validateCohortJson(
+    cohortJson: ICohortExpression
+  ): Promise<ICohortDefinitionCheckV2ResponseDto> {
+    try {
+      const result = await this.conn.validateCohortJson(cohortJson);
+      return result;
     } catch (error) {
       console.error(error);
       throw error;

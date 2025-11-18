@@ -1,3 +1,6 @@
+import { ICohortDefinitionCheckV2ResponseDto } from "../dto/cohortdefinition.ts";
+import { ICohortExpression } from "../types.ts";
+
 export default class TrexConnection {
   // deno-lint-ignore no-explicit-any
   private readonly conn: any;
@@ -43,6 +46,23 @@ export default class TrexConnection {
             reject(err);
           }
           resolve(res);
+        }
+      );
+    });
+  }
+
+  validateCohortJson(
+    cohortJson: ICohortExpression
+  ): Promise<ICohortDefinitionCheckV2ResponseDto> {
+    return new Promise((resolve, reject) => {
+      this.conn.atlas_validate(
+        cohortJson,
+        // deno-lint-ignore no-explicit-any
+        (err: any, res: any) => {
+          if (err) {
+            reject(err);
+          }
+          resolve({ warnings: res });
         }
       );
     });

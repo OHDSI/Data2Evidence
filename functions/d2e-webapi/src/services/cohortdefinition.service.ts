@@ -21,9 +21,11 @@ import {
   CohortDefinitionResponseDto,
   IUserArtifactAtlasCohortDefinitionDto,
   IGenerateCohortResponseDto,
+  ICohortDefinitionCheckV2ResponseDto,
 } from "../dto/cohortdefinition.ts";
 import { BookmarksSchema } from "../api/types.ts";
-import { UserArtifactServiceNames } from "../types.ts";
+import { ICohortExpression, UserArtifactServiceNames } from "../types.ts";
+import { TrexDAO } from "../dao/trex.dao.ts";
 
 export const generateCohort = async (
   token: string,
@@ -43,6 +45,12 @@ export const generateCohort = async (
     );
   const { name, description, expressionType, expression, tags } =
     userArtifactAtlasCohortDefinition;
+
+  // If cohortJson expression has any CRITICAL warnings, reject cohort generation
+  const cohortJsonValidation = await checkV2(token, datasetId, expression);
+  if (cohortJsonValidation.warnings.some((e) => e.severity === "CRITICAL")) {
+    throw new Error("Cohort expression has critical warnings");
+  }
 
   // Construct response into OMOP cohort definition format
   const cohortDefinitionData: ICohortDefinition = {
@@ -399,6 +407,16 @@ export const checkIfAtlasCohortDefinitionExists = async (
   );
   const result = nameUsedInOtherDefinition ? 1 : 0;
   return result;
+};
+
+export const checkV2 = async (
+  token: string,
+  datasetId: string,
+  cohortJson: ICohortExpression
+): Promise<ICohortDefinitionCheckV2ResponseDto> => {
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+  const warnings = await trexDao.validateCohortJson(cohortJson);
+  return warnings;
 };
 
 const _formatMaterializedCohort = (
