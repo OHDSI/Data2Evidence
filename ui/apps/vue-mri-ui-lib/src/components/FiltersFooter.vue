@@ -180,7 +180,6 @@ import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
-import { isEmpty } from 'underscore'
 
 export default {
   compatConfig: {
@@ -201,7 +200,6 @@ export default {
       showResetDialog: false,
       saveDialogWidth: 260,
       cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
-      isEmptyName: false,
       cohortName: '',
       maxLength: 40,
       maxFiltercardCount: 10,
