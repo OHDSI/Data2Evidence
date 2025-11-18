@@ -130,6 +130,12 @@ private async _getCredentials(fn:any) {
     });
     return JSON.parse(JSON.stringify(result));
 }
+
+
+public getCredentialsTrex() {
+  return this.trexdbm.getCredentials();
+}
+
 public async getCredentials() {
     return await this._getCredentials((y:any) => { 
                 return {

@@ -39,7 +39,7 @@ export function addRoutes(app: Hono) {
     });
 
     app.get('/trex/db/', authn, authz, async (c: Context) => {
-        const r = await (await DatabaseManager.get()).getCredentials();
+        const r = await (await DatabaseManager.get()).getCredentialsTrex();
         return c.json(r);
     });
 
