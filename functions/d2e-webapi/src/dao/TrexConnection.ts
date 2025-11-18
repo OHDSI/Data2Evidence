@@ -51,12 +51,12 @@ export default class TrexConnection {
     });
   }
 
-  validateCohortJson(
-    cohortJson: ICohortExpression
+  validateCohortJsonExpression(
+    cohortJsonExpression: ICohortExpression
   ): Promise<ICohortDefinitionCheckV2ResponseDto> {
     return new Promise((resolve, reject) => {
       this.conn.atlas_validate(
-        cohortJson,
+        cohortJsonExpression,
         // deno-lint-ignore no-explicit-any
         (err: any, res: any) => {
           if (err) {

@@ -412,10 +412,12 @@ export const checkIfAtlasCohortDefinitionExists = async (
 export const checkV2 = async (
   token: string,
   datasetId: string,
-  cohortJson: ICohortExpression
+  cohortJsonExpression: ICohortExpression
 ): Promise<ICohortDefinitionCheckV2ResponseDto> => {
   const trexDao = await TrexDAO.getTrexDao(token, datasetId);
-  const warnings = await trexDao.validateCohortJson(cohortJson);
+  const warnings = await trexDao.validateCohortJsonExpression(
+    cohortJsonExpression
+  );
   return warnings;
 };
 

@@ -301,11 +301,13 @@ export class TrexDAO {
     }
   }
 
-  async validateCohortJson(
-    cohortJson: ICohortExpression
+  async validateCohortJsonExpression(
+    cohortJsonExpression: ICohortExpression
   ): Promise<ICohortDefinitionCheckV2ResponseDto> {
     try {
-      const result = await this.conn.validateCohortJson(cohortJson);
+      const result = await this.conn.validateCohortJsonExpression(
+        cohortJsonExpression
+      );
       return result;
     } catch (error) {
       console.error(error);
