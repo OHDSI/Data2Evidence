@@ -445,8 +445,11 @@ services:
 
         https://$CADDY__ALP__PUBLIC_FQDN${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
           $TLS__CADDY_DIRECTIVE
-          redir / /d2e/portal
-          redir /portal /d2e/portal
+
+          @aliasbasepaths {
+              path_regexp portal_basepath ^/(d2e|portal)(/)?$
+          }
+          redir @aliasbasepaths /d2e/portal
           import portal
         }
       EOT
