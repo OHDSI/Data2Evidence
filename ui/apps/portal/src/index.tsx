@@ -10,7 +10,7 @@ import "./index.scss";
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <StrictMode>
-    <BrowserRouter basename="/portal">
+    <BrowserRouter basename="/d2e/portal">
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <App />

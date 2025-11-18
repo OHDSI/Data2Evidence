@@ -2,11 +2,11 @@
   "name": "portal",
   "version": "1.0.0",
   "private": true,
-  "homepage": "/portal",
+  "homepage": "/d2e/portal",
   "proxy": "https://localhost:41100",
   "scripts": {
     "start": "react-scripts start",
-    "build": "PUBLIC_URL=/portal BUILD_PATH='../../resources/portal' react-scripts build",
+    "build": "PUBLIC_URL=/d2e/portal BUILD_PATH='../../resources/portal' react-scripts build",
     "build-mri": "bunx grunt production",
     "build-mri-css": "bunx grunt css",
     "lint": "tsc --noEmit && prettier --check . && eslint '*/**/*.{js,ts,tsx}' --quiet --fix",
