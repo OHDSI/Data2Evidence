@@ -383,6 +383,7 @@
           "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
           "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
           "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY}",
+          "AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}",
           "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
           "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG__USER_MGMT__ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
