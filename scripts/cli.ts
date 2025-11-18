@@ -103,7 +103,7 @@ class D2ECli {
     );
     const DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE =
       this.generate_random_password(41);
-    
+
     const { privateKey, publicKey } = crypto.generateKeyPairSync("rsa", {
       modulusLength: 4096,
       publicKeyEncoding: {
@@ -118,16 +118,16 @@ class D2ECli {
       },
     });
     const keyObject = crypto.createPrivateKey({
-      key:privateKey,
+      key: privateKey,
       passphrase: DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE,
     });
     const DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY = keyObject.export({
       type: "pkcs8",
-      format: "pem"
+      format: "pem",
     });
 
     const DB_CREDENTIALS__INTERNAL__PUBLIC_KEY = publicKey;
-    
+
     this.SUPABASE_STORAGE_JWT_SECRET = this.generate_random_secret();
     const ROLE = "service_role";
     const ISSUER = "supabase";
@@ -186,15 +186,17 @@ class D2ECli {
       PG__LOGTO_MANAGER_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH
       )}`,
-      DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY: DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.toString(),
-      DB_CREDENTIALS__INTERNAL__PUBLIC_KEY: DB_CREDENTIALS__INTERNAL__PUBLIC_KEY.toString(),
+      DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY:
+        DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.toString(),
+      DB_CREDENTIALS__INTERNAL__PUBLIC_KEY:
+        DB_CREDENTIALS__INTERNAL__PUBLIC_KEY.toString(),
     };
 
     const envContent = Object.entries(envVariables)
       .map(([key, value]) => {
         // Quote values containing newlines
-        if (typeof value === 'string' && value.includes('\n')) {
-          return `${key}="${value.replace(/"/g, '\\"')}"`;  
+        if (typeof value === "string" && value.includes("\n")) {
+          return `${key}="${value.replace(/"/g, '\\"')}"`;
         }
         return `${key}=${value}`;
       })
@@ -380,7 +382,10 @@ class D2ECli {
     return `${header}.${payload}.${signature}`;
   }
 
-  build_docker_command(options: CliOptions, command: string): { cmd: string; env: NodeJS.ProcessEnv } {
+  build_docker_command(
+    options: CliOptions,
+    command: string
+  ): { cmd: string; env: NodeJS.ProcessEnv } {
     const dockerbasecmd = ["docker"];
     dockerbasecmd.push("--log-level", this.DOCKER_LOG_LEVEL);
     dockerbasecmd.push("compose");
@@ -402,7 +407,7 @@ class D2ECli {
     if (options.composeFile) dockerbasecmd.push("--file", options.composeFile);
     if (options.dockerContext)
       dockerbasecmd.push("--context", options.dockerContext);
-    
+
     // Prepare environment variables separately
     const envVars = {
       ...process.env,
@@ -410,7 +415,7 @@ class D2ECli {
       CADDY__CONFIG: this.CADDY__CONFIG,
       ENV_TYPE: this.ENV_TYPE,
     };
-    
+
     let cmd = dockerbasecmd.join(" ");
     if (command === "start") {
       cmd = `${cmd} up --force-recreate --wait`;
@@ -495,7 +500,6 @@ class D2ECli {
       "cli.js"
     );
 
-
     if (fs.existsSync(zxCliJs)) {
       zx_cmd = `node ${zxCliJs}`;
       return zx_cmd;
@@ -530,30 +534,22 @@ class D2ECli {
     const database_host = `${this.PROJECT_NAME}-demodb`;
     const zx_cmd = this.setup_zx_cmd();
     const setupdemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setupdemo.mjs -n ${this.ENVFILE}`;
-    const setupdemo = spawnSync(
-      setupdemoCmd,
-      [],
-      {
-        env: { ...process.env, PORT: this.port },
-        stdio: "inherit",
-        shell: true,
-      }
-    );
+    const setupdemo = spawnSync(setupdemoCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
     if (setupdemo.error) {
       console.error("Failed to run script:", setupdemo.error);
       process.exit(1);
     }
 
     const checkSetupDemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE} -b ${database_host}`;
-    const check_setupdemo = spawnSync(
-      checkSetupDemoCmd,
-      [],
-      {
-        env: { ...process.env, PORT: this.port },
-        stdio: "inherit",
-        shell: true,
-      }
-    );
+    const check_setupdemo = spawnSync(checkSetupDemoCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
     if (check_setupdemo.error) {
       console.error("Failed to run script:", check_setupdemo.error);
       process.exit(1);
@@ -564,15 +560,11 @@ class D2ECli {
     console.log("Checking flow...");
     const zx_cmd = this.setup_zx_cmd();
     const checkflowCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE} -b ${this.PROJECT_NAME}-demodb`;
-    const checkflow = spawnSync(
-      checkflowCmd,
-      [],
-      {
-        env: { ...process.env, PORT: this.port },
-        stdio: "inherit",
-        shell: true,
-      }
-    );
+    const checkflow = spawnSync(checkflowCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
     if (checkflow.error) {
       console.error("Failed to run script:", checkflow.error);
       process.exit(1);
@@ -582,15 +574,11 @@ class D2ECli {
   getnoproxy() {
     const zx_cmd = this.setup_zx_cmd();
     const getnoproxyCmd = `${zx_cmd} ${this.node_modules_path}/scripts/get-noproxy.mjs --script_full_path ${this.node_modules_path}`;
-    const getnoproxy = spawnSync(
-      getnoproxyCmd,
-      [],
-      {
-        env: { ...process.env, DOTENV_FILE: this.ENVFILE, PORT: this.port },
-        stdio: "inherit",
-        shell: true,
-      }
-    );
+    const getnoproxy = spawnSync(getnoproxyCmd, [], {
+      env: { ...process.env, DOTENV_FILE: this.ENVFILE, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
     if (getnoproxy.error) {
       console.error("Failed to run script:", getnoproxy.error);
       process.exit(1);
@@ -624,9 +612,11 @@ class D2ECli {
       .action(async () => {
         console.log("Starting services...");
         this.load_env_variables();
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "start");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "start"
+        );
         console.log(`Executing command: ${cmd}`);
-        console.log(`DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY is set in ${this.ENVFILE}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
           shell: true,
@@ -684,7 +674,10 @@ class D2ECli {
           .map(([key, value]) => `${key}=${value}`)
           .join("\n");
         fs.writeFileSync(this.ENVFILE, envContent, { flag: "a" });
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "inithana");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "inithana"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
@@ -707,7 +700,10 @@ class D2ECli {
       .action(async () => {
         console.log("Stopping services...");
         this.load_env_variables();
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "stop");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "stop"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
@@ -728,7 +724,10 @@ class D2ECli {
       .action(async () => {
         console.log("Building services...");
         this.load_env_variables();
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "build");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "build"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
@@ -749,7 +748,10 @@ class D2ECli {
       .description("Status of d2e services")
       .action(async () => {
         this.load_env_variables();
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "status");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "status"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
@@ -770,7 +772,10 @@ class D2ECli {
       .description("View logs of d2e services")
       .action(async () => {
         this.load_env_variables();
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "logs");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "logs"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
@@ -792,7 +797,10 @@ class D2ECli {
       .description("View configuration of d2e services")
       .action(async () => {
         this.load_env_variables();
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "config");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "config"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: ["ignore", "inherit", "ignore"],
@@ -821,7 +829,10 @@ class D2ECli {
           console.log("Aborting cleanup.");
           return;
         }
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "clean");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "clean"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: "inherit",
@@ -841,7 +852,10 @@ class D2ECli {
       .description("Clean up d2e services")
       .action(async () => {
         this.load_env_variables();
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "cleanci");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "cleanci"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
           stdio: ["inherit"],
@@ -887,7 +901,10 @@ class D2ECli {
             console.log(`Process exited with code ${code}`);
           }
         });
-        const { cmd, env } = this.build_docker_command(this.program.opts(), "pull");
+        const { cmd, env } = this.build_docker_command(
+          this.program.opts(),
+          "pull"
+        );
         console.log(`Executing command: ${cmd}`);
         const proc1 = spawn(cmd, {
           stdio: "inherit",
