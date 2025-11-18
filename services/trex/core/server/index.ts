@@ -21,16 +21,6 @@ export async function initTrex() {
                 url.pathname = url.pathname.replace(/^\/d2e/, '');
             }
             return url.pathname;
-            // logger.log(`urlpathname url ${url.pathname.toString()}`);
-            // let requrl;
-
-            // if (req.url.includes('/d2e/')) {
-            //     requrl = req.url.replace(/^https?:\/\/[^\/]+\/d2e(\/[^?]*).*/, '$1')
-            // } else {
-            //     requrl = req.url.replace(/^https?:\/\/[^\/]+(\/[^?]*).*/, '$1')
-            // }
-            // logger.log(`req url ${requrl}`);
-            // return requrl;
         }
             
     })
