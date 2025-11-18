@@ -159,7 +159,6 @@ export default {
 <script setup lang="ts">
 import axios from 'axios'
 import d3 from 'd3'
-import VueSlider from 'vue-slider-component'
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
