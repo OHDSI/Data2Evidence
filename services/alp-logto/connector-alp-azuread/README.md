@@ -22,6 +22,9 @@
 - Add dataset researcher role
   - Add `role.researcher.<token_dataset_code>` to `LOGTO__ROLES`, `LOGTO__SCOPES` and `LOGTO__SCOPE`
   - Update the mapping between `role.researcher.<token_dataset_code>` to Entra Group ID in `LOGTO_ROLES_AZ_GROUPS_MAPPING`
+  - **Optional**: Set `AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES` to automatically grant researcher access to specific datasets
+    - Format: Comma-separated list of dataset codes (e.g., `dataset1,dataset2,dataset3`)
+    - These dataset codes will be automatically granted researcher access in addition to any roles from Azure AD group mappings
   - Restart services
 
 # Microsoft Azure AD connector

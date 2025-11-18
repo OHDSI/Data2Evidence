@@ -7,6 +7,20 @@ const _structureDefinitionResolver = async (url) => {
   return structureDefinitions[url]
 };
 
+const _conceptMapResolver = async (url) => {
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    console.warn(`Failed to fetch ConceptMap from ${url}: ${res.status}`);
+    return undefined;
+  }
+
+  const conceptMap = await res.json();
+  return  {
+    [url]: conceptMap,
+  }
+};
+
 async function main() {
     const [,, structureMapJsonString, resourceJsonString, sourceStructureDefinition, targetStructureDefinition] = process.argv;
     if (!structureMapJsonString || !resourceJsonString || !sourceStructureDefinition || !targetStructureDefinition) {
@@ -28,6 +42,7 @@ async function main() {
         content: JSON.parse(resource),
         structureMap: structureMap,
         structureDefinitionResolver: _structureDefinitionResolver,
+        conceptMapResolver : _conceptMapResolver,
       });
       process.stdout.write(JSON.stringify(result));
     } catch (err) {
