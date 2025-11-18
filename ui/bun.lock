@@ -463,7 +463,6 @@
         "jspdf": "2.3.1",
         "jszip": "3.10.1",
         "lodash": "^4.17.21",
-        "moment": "2.30.1",
         "normalizr": "3.2.4",
         "pako": "1.0.11",
         "plotly.js": "^2.14.0",
@@ -504,8 +503,8 @@
         "streamsaver": "2.0.6",
         "ts-jest": "27",
         "tslint-config-prettier": "^1.15.0",
+        "typescript": "5.9.3",
         "vue-server-renderer": "2.6.14",
-        "webpack": "5.76.0",
       },
     },
     "libs/portal-components": {
@@ -2334,8 +2333,6 @@
     "acorn": ["acorn@7.4.1", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A=="],
 
     "acorn-globals": ["acorn-globals@6.0.0", "", { "dependencies": { "acorn": "^7.1.1", "acorn-walk": "^7.1.1" } }, "sha512-ZQl7LOWaF5ePqqcX4hLuv/bLXYQNfNWw2c0/yX/TsPRKamzHcTGQnlCjHT3TsmkOUVEPS3crCxiPfdzE/Trlhg=="],
-
-    "acorn-import-assertions": ["acorn-import-assertions@1.9.0", "", { "peerDependencies": { "acorn": "^8" } }, "sha512-cmMwop9x+8KFhxvKrKfPYmN6/pKTYYHBqLa0DfvVZcKMJWNyWLnaqND7dx/qn66R7ewM1UX5XMaDVP5wlVTaVA=="],
 
     "acorn-import-phases": ["acorn-import-phases@1.0.4", "", { "peerDependencies": { "acorn": "^8.14.0" } }, "sha512-wKmbr/DDiIXzEOiWrTTUcDm24kQ2vGfZQvM2fwg2vXqR5uW6aapr7ObPtj1th32b9u90/Pf4AItvdTh42fBmVQ=="],
 
@@ -7141,8 +7138,6 @@
 
     "accepts/negotiator": ["negotiator@0.6.3", "", {}, "sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg=="],
 
-    "acorn-import-assertions/acorn": ["acorn@8.15.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
-
     "acorn-import-phases/acorn": ["acorn@8.15.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
 
     "ajv-formats/ajv": ["ajv@8.17.1", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-B/gBuNg5SiMTrPkC+A2+cW0RszwxYmn6VYxB/inlBStS5nx6xHIt/ehKRhIMhqusl7a8LjQoZnjCs5vhwxOQ1g=="],
@@ -8502,8 +8497,6 @@
     "vue-mri/file-saver": ["file-saver@1.3.3", "", {}, "sha512-2lGfU4gymmhXRUiPLeQlnlkMaSY8azJB9W8e/vFp44AlAOEvzf6XiBUoTHO9NBM4OVlehybxDM9B4SwLBh42mw=="],
 
     "vue-mri/vue": ["vue@3.5.17", "", { "dependencies": { "@vue/compiler-dom": "3.5.17", "@vue/compiler-sfc": "3.5.17", "@vue/runtime-dom": "3.5.17", "@vue/server-renderer": "3.5.17", "@vue/shared": "3.5.17" }, "peerDependencies": { "typescript": "*" }, "optionalPeers": ["typescript"] }, "sha512-LbHV3xPN9BeljML+Xctq4lbz2lVHCR6DtbpTf5XIO6gugpXUN49j2QQPcMj086r9+AkJ0FfUT8xjulKKBkkr9g=="],
-
-    "vue-mri/webpack": ["webpack@5.76.0", "", { "dependencies": { "@types/eslint-scope": "^3.7.3", "@types/estree": "^0.0.51", "@webassemblyjs/ast": "1.11.1", "@webassemblyjs/wasm-edit": "1.11.1", "@webassemblyjs/wasm-parser": "1.11.1", "acorn": "^8.7.1", "acorn-import-assertions": "^1.7.6", "browserslist": "^4.14.5", "chrome-trace-event": "^1.0.2", "enhanced-resolve": "^5.10.0", "es-module-lexer": "^0.9.0", "eslint-scope": "5.1.1", "events": "^3.2.0", "glob-to-regexp": "^0.4.1", "graceful-fs": "^4.2.9", "json-parse-even-better-errors": "^2.3.1", "loader-runner": "^4.2.0", "mime-types": "^2.1.27", "neo-async": "^2.6.2", "schema-utils": "^3.1.0", "tapable": "^2.1.1", "terser-webpack-plugin": "^5.1.3", "watchpack": "^2.4.0", "webpack-sources": "^3.2.3" }, "bin": { "webpack": "bin/webpack.js" } }, "sha512-l5sOdYBDunyf72HW8dF23rFtWq/7Zgvt/9ftMof71E/yUb1YLOBmTgA2K4vQthB3kotMrSj609txVE0dnr2fjA=="],
 
     "vue-router/@vue/devtools-api": ["@vue/devtools-api@6.6.4", "", {}, "sha512-sGhTPMuXqZ1rVOk32RylztWkfXTRhuS7vgAKv0zjqk8gbsHkJ7xfFf+jbySxt7tWObEJwyKaHMikV/WGDiQm8g=="],
 
@@ -10141,18 +10134,6 @@
 
     "vue-mri/vue/@vue/shared": ["@vue/shared@3.5.17", "", {}, "sha512-CabR+UN630VnsJO/jHWYBC1YVXyMq94KKp6iF5MQgZJs5I8cmjw6oVMO1oDbtBkENSHSSn/UadWlW/OAgdmKrg=="],
 
-    "vue-mri/webpack/@webassemblyjs/ast": ["@webassemblyjs/ast@1.11.1", "", { "dependencies": { "@webassemblyjs/helper-numbers": "1.11.1", "@webassemblyjs/helper-wasm-bytecode": "1.11.1" } }, "sha512-ukBh14qFLjxTQNTXocdyksN5QdM28S1CxHt2rdskFyL+xFV7VremuBLVbmCePj+URalXBENx/9Lm7lnhihtCSw=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit": ["@webassemblyjs/wasm-edit@1.11.1", "", { "dependencies": { "@webassemblyjs/ast": "1.11.1", "@webassemblyjs/helper-buffer": "1.11.1", "@webassemblyjs/helper-wasm-bytecode": "1.11.1", "@webassemblyjs/helper-wasm-section": "1.11.1", "@webassemblyjs/wasm-gen": "1.11.1", "@webassemblyjs/wasm-opt": "1.11.1", "@webassemblyjs/wasm-parser": "1.11.1", "@webassemblyjs/wast-printer": "1.11.1" } }, "sha512-g+RsupUC1aTHfR8CDgnsVRVZFJqdkFHpsHMfJuWQzWU3tvnLC07UqHICfP+4XyL2tnr1amvl1Sdp06TnYCmVkA=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-parser": ["@webassemblyjs/wasm-parser@1.11.1", "", { "dependencies": { "@webassemblyjs/ast": "1.11.1", "@webassemblyjs/helper-api-error": "1.11.1", "@webassemblyjs/helper-wasm-bytecode": "1.11.1", "@webassemblyjs/ieee754": "1.11.1", "@webassemblyjs/leb128": "1.11.1", "@webassemblyjs/utf8": "1.11.1" } }, "sha512-rrBujw+dJu32gYB7/Lup6UhdkPx9S9SnobZzRVL7VcBH9Bt9bCBLEuX/YXOOtBsOZ4NQrRykKhffRWHvigQvOA=="],
-
-    "vue-mri/webpack/acorn": ["acorn@8.15.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
-
-    "vue-mri/webpack/es-module-lexer": ["es-module-lexer@0.9.3", "", {}, "sha512-1HQ2M2sPtxwnvOvT1ZClHyQDiggdNjURWpY2we6aMKCQiUVxTmVs2UYPLIrD84sS+kMdUwfBSylbJPwNnBrnHQ=="],
-
-    "vue-mri/webpack/schema-utils": ["schema-utils@3.3.0", "", { "dependencies": { "@types/json-schema": "^7.0.8", "ajv": "^6.12.5", "ajv-keywords": "^3.5.2" } }, "sha512-pN/yOAvcC+5rQ5nERGuwrjLlYvLTbCibnZ1I7B1LaiAz9BRBlE9GMgE/eqV30P7aJQUf7Ddimy/RsbYO/GrVGg=="],
-
     "vue-server-renderer/chalk/ansi-styles": ["ansi-styles@2.2.1", "", {}, "sha512-kmCevFghRiWM7HB5zTPULl4r9bVFSWjz62MhqizDGUrq2NWuNMQyuv4tHHoKJHs69M/MF64lEcHdYIocrdWQYA=="],
 
     "vue-server-renderer/chalk/escape-string-regexp": ["escape-string-regexp@1.0.5", "", {}, "sha512-vbRorB5FUQWvla16U8R/qgaFIya2qGzwDrNmCZuYKrbdSUMG6I1ZCGQRefkRVhuOkIGVne7BQ35DSfo1qvJqFg=="],
@@ -11141,32 +11122,6 @@
 
     "vue-mri/vue/@vue/server-renderer/@vue/compiler-ssr": ["@vue/compiler-ssr@3.5.17", "", { "dependencies": { "@vue/compiler-dom": "3.5.17", "@vue/shared": "3.5.17" } }, "sha512-hkDbA0Q20ZzGgpj5uZjb9rBzQtIHLS78mMilwrlpWk2Ep37DYntUz0PonQ6kr113vfOEdM+zTBuJDaceNIW0tQ=="],
 
-    "vue-mri/webpack/@webassemblyjs/ast/@webassemblyjs/helper-numbers": ["@webassemblyjs/helper-numbers@1.11.1", "", { "dependencies": { "@webassemblyjs/floating-point-hex-parser": "1.11.1", "@webassemblyjs/helper-api-error": "1.11.1", "@xtuc/long": "4.2.2" } }, "sha512-vDkbxiB8zfnPdNK9Rajcey5C0w+QJugEglN0of+kmO8l7lDb77AnlKYQF7aarZuCrv+l0UvqL+68gSDr3k9LPQ=="],
-
-    "vue-mri/webpack/@webassemblyjs/ast/@webassemblyjs/helper-wasm-bytecode": ["@webassemblyjs/helper-wasm-bytecode@1.11.1", "", {}, "sha512-PvpoOGiJwXeTrSf/qfudJhwlvDQxFgelbMqtq52WWiXC6Xgg1IREdngmPN3bs4RoO83PnL/nFrxucXj1+BX62Q=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/helper-buffer": ["@webassemblyjs/helper-buffer@1.11.1", "", {}, "sha512-gwikF65aDNeeXa8JxXa2BAk+REjSyhrNC9ZwdT0f8jc4dQQeDQ7G4m0f2QCLPJiMTTO6wfDmRmj/pW0PsUvIcA=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/helper-wasm-bytecode": ["@webassemblyjs/helper-wasm-bytecode@1.11.1", "", {}, "sha512-PvpoOGiJwXeTrSf/qfudJhwlvDQxFgelbMqtq52WWiXC6Xgg1IREdngmPN3bs4RoO83PnL/nFrxucXj1+BX62Q=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/helper-wasm-section": ["@webassemblyjs/helper-wasm-section@1.11.1", "", { "dependencies": { "@webassemblyjs/ast": "1.11.1", "@webassemblyjs/helper-buffer": "1.11.1", "@webassemblyjs/helper-wasm-bytecode": "1.11.1", "@webassemblyjs/wasm-gen": "1.11.1" } }, "sha512-10P9No29rYX1j7F3EVPX3JvGPQPae+AomuSTPiF9eBQeChHI6iqjMIwR9JmOJXwpnn/oVGDk7I5IlskuMwU/pg=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/wasm-gen": ["@webassemblyjs/wasm-gen@1.11.1", "", { "dependencies": { "@webassemblyjs/ast": "1.11.1", "@webassemblyjs/helper-wasm-bytecode": "1.11.1", "@webassemblyjs/ieee754": "1.11.1", "@webassemblyjs/leb128": "1.11.1", "@webassemblyjs/utf8": "1.11.1" } }, "sha512-F7QqKXwwNlMmsulj6+O7r4mmtAlCWfO/0HdgOxSklZfQcDu0TpLiD1mRt/zF25Bk59FIjEuGAIyn5ei4yMfLhA=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/wasm-opt": ["@webassemblyjs/wasm-opt@1.11.1", "", { "dependencies": { "@webassemblyjs/ast": "1.11.1", "@webassemblyjs/helper-buffer": "1.11.1", "@webassemblyjs/wasm-gen": "1.11.1", "@webassemblyjs/wasm-parser": "1.11.1" } }, "sha512-VqnkNqnZlU5EB64pp1l7hdm3hmQw7Vgqa0KF/KCNO9sIpI6Fk6brDEiX+iCOYrvMuBWDws0NkTOxYEb85XQHHw=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/wast-printer": ["@webassemblyjs/wast-printer@1.11.1", "", { "dependencies": { "@webassemblyjs/ast": "1.11.1", "@xtuc/long": "4.2.2" } }, "sha512-IQboUWM4eKzWW+N/jij2sRatKMh99QEelo3Eb2q0qXkvPRISAj8Qxtmw5itwqK+TTkBuUIE45AxYPToqPtL5gg=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-parser/@webassemblyjs/helper-api-error": ["@webassemblyjs/helper-api-error@1.11.1", "", {}, "sha512-RlhS8CBCXfRUR/cwo2ho9bkheSXG0+NwooXcc3PAILALf2QLdFyj7KGsKRbVc95hZnhnERon4kW/D3SZpp6Tcg=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-parser/@webassemblyjs/helper-wasm-bytecode": ["@webassemblyjs/helper-wasm-bytecode@1.11.1", "", {}, "sha512-PvpoOGiJwXeTrSf/qfudJhwlvDQxFgelbMqtq52WWiXC6Xgg1IREdngmPN3bs4RoO83PnL/nFrxucXj1+BX62Q=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-parser/@webassemblyjs/ieee754": ["@webassemblyjs/ieee754@1.11.1", "", { "dependencies": { "@xtuc/ieee754": "^1.2.0" } }, "sha512-hJ87QIPtAMKbFq6CGTkZYJivEwZDbQUgYd3qKSadTNOhVY7p+gfP6Sr0lLRVTaG1JjFj+r3YchoqRYxNH3M0GQ=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-parser/@webassemblyjs/leb128": ["@webassemblyjs/leb128@1.11.1", "", { "dependencies": { "@xtuc/long": "4.2.2" } }, "sha512-BJ2P0hNZ0u+Th1YZXJpzW6miwqQUGcIHT1G/sf72gLVD9DZ5AdYTqPNbHZh6K1M5VmKvFXwGSWZADz+qBWxeRw=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-parser/@webassemblyjs/utf8": ["@webassemblyjs/utf8@1.11.1", "", {}, "sha512-9kqcxAEdMhiwQkHpkNiorZzqpGrodQQ2IGrHHxCy+Ozng0ofyMA0lTqiLkVs1uzTRejX+/O0EOT7KxqVPuXosQ=="],
-
     "vue-server-renderer/chalk/strip-ansi/ansi-regex": ["ansi-regex@2.1.1", "", {}, "sha512-TIGnTpdo+E3+pCyAluZvtED5p5wCqLdezCyhPZzKPcxvFplEt4i+W7OONCKgeZFT3+y5NZZfOOS/Bdcanm1MYA=="],
 
     "watchpack-chokidar2/chokidar/anymatch/micromatch": ["micromatch@3.1.10", "", { "dependencies": { "arr-diff": "^4.0.0", "array-unique": "^0.3.2", "braces": "^2.3.1", "define-property": "^2.0.2", "extend-shallow": "^3.0.2", "extglob": "^2.0.4", "fragment-cache": "^0.2.1", "kind-of": "^6.0.2", "nanomatch": "^1.2.9", "object.pick": "^1.3.0", "regex-not": "^1.0.0", "snapdragon": "^0.8.1", "to-regex": "^3.0.2" } }, "sha512-MWikgl9n9M3w+bpsY3He8L+w9eF9338xRl8IAO5viDizwSzziFEyUzo2xrrloB64ADbTf8uA8vRqqttDTOmccg=="],
@@ -11728,16 +11683,6 @@
     "vue-mri/vue/@vue/compiler-dom/@vue/compiler-core/entities": ["entities@4.5.0", "", {}, "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw=="],
 
     "vue-mri/vue/@vue/compiler-sfc/@vue/compiler-core/entities": ["entities@4.5.0", "", {}, "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw=="],
-
-    "vue-mri/webpack/@webassemblyjs/ast/@webassemblyjs/helper-numbers/@webassemblyjs/floating-point-hex-parser": ["@webassemblyjs/floating-point-hex-parser@1.11.1", "", {}, "sha512-iGRfyc5Bq+NnNuX8b5hwBrRjzf0ocrJPI6GWFodBFzmFnyvrQ83SHKhmilCU/8Jv67i4GJZBMhEzltxzcNagtQ=="],
-
-    "vue-mri/webpack/@webassemblyjs/ast/@webassemblyjs/helper-numbers/@webassemblyjs/helper-api-error": ["@webassemblyjs/helper-api-error@1.11.1", "", {}, "sha512-RlhS8CBCXfRUR/cwo2ho9bkheSXG0+NwooXcc3PAILALf2QLdFyj7KGsKRbVc95hZnhnERon4kW/D3SZpp6Tcg=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/wasm-gen/@webassemblyjs/ieee754": ["@webassemblyjs/ieee754@1.11.1", "", { "dependencies": { "@xtuc/ieee754": "^1.2.0" } }, "sha512-hJ87QIPtAMKbFq6CGTkZYJivEwZDbQUgYd3qKSadTNOhVY7p+gfP6Sr0lLRVTaG1JjFj+r3YchoqRYxNH3M0GQ=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/wasm-gen/@webassemblyjs/leb128": ["@webassemblyjs/leb128@1.11.1", "", { "dependencies": { "@xtuc/long": "4.2.2" } }, "sha512-BJ2P0hNZ0u+Th1YZXJpzW6miwqQUGcIHT1G/sf72gLVD9DZ5AdYTqPNbHZh6K1M5VmKvFXwGSWZADz+qBWxeRw=="],
-
-    "vue-mri/webpack/@webassemblyjs/wasm-edit/@webassemblyjs/wasm-gen/@webassemblyjs/utf8": ["@webassemblyjs/utf8@1.11.1", "", {}, "sha512-9kqcxAEdMhiwQkHpkNiorZzqpGrodQQ2IGrHHxCy+Ozng0ofyMA0lTqiLkVs1uzTRejX+/O0EOT7KxqVPuXosQ=="],
 
     "watchpack-chokidar2/chokidar/anymatch/micromatch/arr-diff": ["arr-diff@4.0.0", "", {}, "sha512-YVIQ82gZPGBebQV/a8dar4AitzCQs0jjXwMPZllpXMaGjXPYVUawSxQrRsjhjupyVxEvbHgUmIhKVlND+j02kA=="],
 
