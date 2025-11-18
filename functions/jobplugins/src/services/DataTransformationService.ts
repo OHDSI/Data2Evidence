@@ -1,6 +1,6 @@
 import fs from "fs";
-import http from "isomorphic-git/http";
 import git from "isomorphic-git";
+import http from "isomorphic-git/http";
 import { JwtPayload, decode } from "jsonwebtoken";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -852,6 +852,7 @@ export class TransformationService {
           dir: repoDir,
           url: gitRemoteUrl,
           singleBranch: true,
+          ref: defaultBranch,
           depth: 1,
           ref: defaultBranch,
           ...authConfig,
@@ -864,28 +865,28 @@ export class TransformationService {
     } else {
       this.logger.info(`Updating existing repository`);
       try {
-        await git.fetch({
-          fs,
-          http,
-          dir: repoDir,
-          remote: "origin",
-          ref: defaultBranch,
-          ...authConfig,
-        });
-        this.logger.info(`Successfully fetched from remote`);
+        const remotes = await git.listRemotes({ fs, dir: repoDir });
+        const hasOrigin = remotes.some((r) => r.remote === "origin");
 
-        // Get current branch
-        const currentBranch = await git.currentBranch({ fs, dir: repoDir });
-        this.logger.info(`Current branch: ${currentBranch}`);
+        if (hasOrigin) {
+          console.log(
+            `Fetching latest changes from origin/${defaultBranch}...`
+          );
+          await git.fetch({
+            fs,
+            http,
+            dir: repoDir,
+            remote: "origin",
+            ref: defaultBranch,
+          });
 
-        // Reset to match remote current branch
-        if (currentBranch) {
           await git.checkout({
             fs,
             dir: repoDir,
             ref: `origin/${defaultBranch}`,
             force: true,
           });
+
           this.logger.info(
             `Updated local repository to match origin/${defaultBranch}`
           );
@@ -1111,7 +1112,7 @@ export class TransformationService {
     const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
     const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-  
+
     const repoDir = this.templateRepoPath;
     const subDirPath = path.join(repoDir, subDir);
     try {
@@ -1163,7 +1164,7 @@ export class TransformationService {
   }
 
   async getFhirTemplates() {
-    this.logger.info('Fetching FHIR Structure Map templates');
+    this.logger.info("Fetching FHIR Structure Map templates");
     const templateRepoUrl = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL;
     const templateBranch = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH;
     const subDir = GIT_REPO_CONSTANTS.FHIR_SUBDIR;
@@ -1188,7 +1189,7 @@ export class TransformationService {
       }
 
       const templates: TemplateFhirDto[] = [];
-      
+
       for (const fileName of files) {
         const templateId = fileName.replace(".json", "");
         const filePath = path.join(subDirPath, fileName);
@@ -1200,7 +1201,7 @@ export class TransformationService {
             id: templateId,
             name: templateData.name || templateId,
             description: templateData.description || `Template: ${templateId}`,
-            structureMap: templateData || '',
+            structureMap: templateData || "",
           });
         } catch (fileError) {
           this.logger.error(
