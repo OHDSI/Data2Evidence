@@ -20,7 +20,6 @@
     "axios": ">=0.21.2",
     "bootstrap": "4.6.1",
     "canvg": "^3.0.7",
-    "core-js": "3",
     "d3": "3.5.17",
     "file-saver": "1.3.3",
     "fuse.js": "^6.6.2",
@@ -61,7 +60,6 @@
     "@vue/vue3-jest": "27",
     "babel-core": "7.0.0-bridge.0",
     "fflate": "0.7.4",
-    "html-webpack-plugin": "^5.5.0",
     "jest": "27.1.0",
     "jest-environment-jsdom": "27.1.0",
     "jest-junit": "^5.1.0",
@@ -72,7 +70,6 @@
     "streamsaver": "2.0.6",
     "ts-jest": "27",
     "tslint-config-prettier": "^1.15.0",
-    "typescript": "5.2.2",
     "webpack": "5.76.0",
     "vue-server-renderer": "2.6.14"
   },
