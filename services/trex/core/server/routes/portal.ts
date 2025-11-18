@@ -6,7 +6,7 @@ export function addRoutes(app: Hono) {
   const GATEWAY_PROTOCOL_FQDN = `https://${GATEWAY_WO_PROTOCOL_FQDN}/`
   const CLIENT_ID = env.LOGTO_CLIENT_ID
   const AUTHORIZATION_URL = `${GATEWAY_PROTOCOL_FQDN}oidc/auth`
-  const END_SESSION_URL = `${GATEWAY_PROTOCOL_FQDN}oidc/session/end?client_id=${CLIENT_ID}&redirect={window.location.origin}/portal`
+  const END_SESSION_URL = `${GATEWAY_PROTOCOL_FQDN}oidc/session/end?client_id=${CLIENT_ID}&redirect={window.location.origin}/d2e/portal`
   const SCOPE = env.LOGTO_SCOPE
 
 
@@ -16,7 +16,7 @@ export function addRoutes(app: Hono) {
 
   app.get('/portal/env.js', (c: Context) => {
     const clientEnv = {
-      PUBLIC_URL: '/portal',
+      PUBLIC_URL: '/d2e/portal',
       REACT_APP_LOCALE: env.APP_LOCALE,
       GIT_COMMIT: env.GIT_COMMIT,
       REACT_APP_IDP_RELYING_PARTY: env.IDP_RELYING_PARTY,
@@ -24,7 +24,7 @@ export function addRoutes(app: Hono) {
       REACT_APP_CURRENT_SYSTEM: 'Local',
       REACT_APP_IDP_SUBJECT_PROP: 'sub',
       REACT_APP_IDP_NAME_PROP: 'username',
-      REACT_APP_IDP_OIDC_CONFIG: `{ "client_id": "${CLIENT_ID}", "redirect_uri": "{window.location.origin}/portal/login-callback", "authority": "${GATEWAY_PROTOCOL_FQDN}", "authority_configuration": { "issuer": "${GATEWAY_PROTOCOL_FQDN}oidc", "authorization_endpoint": "${AUTHORIZATION_URL}", "token_endpoint": "https://${GATEWAY_WO_PROTOCOL_FQDN}/oauth/token", "end_session_endpoint": "${END_SESSION_URL}" }, "scope": "${SCOPE}", "refresh_time_before_tokens_expiration_in_second": 180 }`,
+      REACT_APP_IDP_OIDC_CONFIG: `{ "client_id": "${CLIENT_ID}", "redirect_uri": "{window.location.origin}/d2e/portal/login-callback", "authority": "${GATEWAY_PROTOCOL_FQDN}", "authority_configuration": { "issuer": "${GATEWAY_PROTOCOL_FQDN}oidc", "authorization_endpoint": "${AUTHORIZATION_URL}", "token_endpoint": "https://${GATEWAY_WO_PROTOCOL_FQDN}/oauth/token", "end_session_endpoint": "${END_SESSION_URL}" }, "scope": "${SCOPE}", "refresh_time_before_tokens_expiration_in_second": 180 }`,
       REACT_APP_DB_CREDENTIALS_PUBLIC_KEYS: certEscapeNewLine(env.DB_CREDENTIALS_PUBLIC_KEYS || "").replace('}\\n', '}'),
       REACT_APP_PLUGINS: global.PLUGINS_JSON,
       REACT_APP_MRI_CONFIG_NAME: 'OMOP_GDM_PA_CONF', // Currently supporting static configs

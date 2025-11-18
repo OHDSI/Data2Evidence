@@ -12,7 +12,28 @@ import { addRoutes as addLogRoutes } from "./routes/log.ts"
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
-    const app: Hono = new Hono();
+    // const app: Hono = new Hono().basePath('/d2e');
+    // const app: Hono = new Hono();
+    const app: Hono = new Hono({
+        getPath: (req) => {
+            const url = new URL(req.url);
+            if (url.pathname.startsWith('/d2e/')) {
+                url.pathname = url.pathname.replace(/^\/d2e/, '');
+            }
+            return url.pathname;
+            // logger.log(`urlpathname url ${url.pathname.toString()}`);
+            // let requrl;
+
+            // if (req.url.includes('/d2e/')) {
+            //     requrl = req.url.replace(/^https?:\/\/[^\/]+\/d2e(\/[^?]*).*/, '$1')
+            // } else {
+            //     requrl = req.url.replace(/^https?:\/\/[^\/]+(\/[^?]*).*/, '$1')
+            // }
+            // logger.log(`req url ${requrl}`);
+            // return requrl;
+        }
+            
+    })
     app.use(hlogger())
     await DatabaseManager.get();
     /*for await (const r of Deno.readDir("./core/server/routes")) {
