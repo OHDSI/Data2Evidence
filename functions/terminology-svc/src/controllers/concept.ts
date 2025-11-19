@@ -19,7 +19,7 @@ export const getConcepts = async (
   try {
     const {
       query: {
-        offset,
+        offset: pageNumber,
         count: rowsPerPage,
         datasetId,
         code: searchText,
@@ -27,15 +27,13 @@ export const getConcepts = async (
       },
     } = schemas.getConcepts.parse(req);
 
-    const pageNumber = Math.floor(offset / rowsPerPage);
-
     const cachedbService = await CachedbService.createCacheDBService(
       req,
       datasetId
     );
 
     const concepts = await cachedbService.getConcepts(
-      pageNumber,
+      Number(pageNumber),
       Number(rowsPerPage),
       datasetId,
       searchText,
