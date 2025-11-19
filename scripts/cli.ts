@@ -612,6 +612,7 @@ class D2ECli {
       .action(async () => {
         console.log("Starting services...");
         this.load_env_variables();
+        dotenvConfig({ path: this.ENVFILE });
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "start"
@@ -952,7 +953,6 @@ class D2ECli {
     this.program.parseOptions(process.argv);
     const options = this.program.opts();
     this.ENVFILE = options.envFile ?? ".env";
-    dotenvConfig({ path: this.ENVFILE });
     this.DEFAULT_PASSWORD_LENGTH = 30;
     this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
