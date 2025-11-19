@@ -61,7 +61,7 @@ jobs:
       - name: Generate dotenv
         run: |
           # generate dotenv
-          npm run init
+          init_choice=y npm run init
 
       - name: Docker compose build
         run: |

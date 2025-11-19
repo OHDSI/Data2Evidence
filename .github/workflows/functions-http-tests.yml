@@ -119,7 +119,7 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
+          init_choice=y ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
       - name: Initialise HANA
         if: success() || failure()
