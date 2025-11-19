@@ -37,10 +37,13 @@ export class LibUtils {
   randomPassword(passwordLength: number): string {
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    const bytes = crypto.randomBytes(passwordLength);
     let password = "";
-    for (let i = 0; i < passwordLength; i++) {
-      password += chars[bytes[i] % chars.length];
+    const charsLength = chars.length;
+    const maxValidByte = Math.floor(256 / charsLength) * charsLength; // 248 for charsLength=62
+    while (password.length < passwordLength) {
+      const byte = crypto.randomBytes(1)[0];
+      if (byte >= maxValidByte) continue;
+      password += chars[byte % charsLength];
     }
     return password;
   }
