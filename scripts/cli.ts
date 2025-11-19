@@ -544,7 +544,7 @@ class D2ECli {
       process.exit(1);
     }
 
-    const checkSetupDemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE} -b ${database_host}`;
+    const checkSetupDemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE}`;
     const check_setupdemo = spawnSync(checkSetupDemoCmd, [], {
       env: { ...process.env, PORT: this.port },
       stdio: "inherit",
@@ -592,10 +592,18 @@ class D2ECli {
       .description("Initialize d2e services")
       .action(async () => {
         console.log("Initializing services...");
-        const user_input_init = await this.user_input(
-          "Do you wish to overwrite .env file? (y/n): "
-        );
-        if (user_input_init.toLowerCase() !== "y") {
+        let init_choice: string;
+        if (process.env.init_choice) {
+          console.log(
+            "CI environment detected. Auto-accepting to overwite all values in .env file..."
+          );
+          init_choice = "y";
+        } else {
+          init_choice = await this.user_input(
+            "Do you wish to overwrite .env file? (y/n): "
+          );
+        }
+        if (init_choice.toLowerCase() !== "y") {
           console.log(
             "Aborting initialization to prevent overwriting .env file."
           );
@@ -889,17 +897,20 @@ class D2ECli {
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
         const cmd_pull_flow_base = `docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX}d2e/flow-base:${this.PLUGINS_IMAGE_TAG}`;
-        const proc = spawn(cmd_pull_flow_base, {
-          stdio: ["inherit"],
-          shell: true,
-          env: process.env,
-        });
-        proc.on("close", (code) => {
-          if (code === 0) {
-            console.log("Process completed successfully.");
-          } else {
-            console.log(`Process exited with code ${code}`);
-          }
+        await new Promise<void>((resolve) => {
+          const proc = spawn(cmd_pull_flow_base, {
+            stdio: "inherit",
+            shell: true,
+            env: process.env,
+          });
+          proc.on("close", (code) => {
+            if (code === 0) {
+              console.log("Process completed successfully.");
+            } else {
+              console.log(`Process exited with code ${code}`);
+            }
+            resolve();
+          });
         });
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),

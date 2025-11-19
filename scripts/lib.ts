@@ -35,7 +35,8 @@ export class LibUtils {
   }
 
   randomPassword(passwordLength: number): string {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const bytes = crypto.randomBytes(passwordLength);
     let password = "";
     for (let i = 0; i < passwordLength; i++) {
@@ -66,7 +67,9 @@ export class LibUtils {
             { encoding: "utf-8" }
           );
           const match = result.match(/NumberOfLogicalProcessors=(\d+)/);
-          nprocs = match ? parseInt(match[1]) : parseInt(process.env.NUMBER_OF_PROCESSORS || "1");
+          nprocs = match
+            ? parseInt(match[1])
+            : parseInt(process.env.NUMBER_OF_PROCESSORS || "1");
         } catch {
           nprocs = parseInt(process.env.NUMBER_OF_PROCESSORS || "1");
         }
@@ -102,9 +105,12 @@ export class LibUtils {
         memoryGb = Math.floor(memoryBytes / (1024 * 1024 * 1024));
       } else if (this.OS === "Windows_NT") {
         try {
-          const result = execSync("wmic ComputerSystem get TotalPhysicalMemory /value", {
-            encoding: "utf-8",
-          });
+          const result = execSync(
+            "wmic ComputerSystem get TotalPhysicalMemory /value",
+            {
+              encoding: "utf-8",
+            }
+          );
           const match = result.match(/TotalPhysicalMemory=(\d+)/);
           const memoryBytes = match ? parseInt(match[1]) : 0;
           memoryGb = Math.floor(memoryBytes / (1024 * 1024 * 1024));
@@ -211,7 +217,10 @@ export class LibUtils {
       fs.writeFileSync(serverConfFile, serverConfContent);
 
       // Generate server CSR
-      const serverCsrFile = path.join(os.tmpdir(), `server-csr-${Date.now()}.pem`);
+      const serverCsrFile = path.join(
+        os.tmpdir(),
+        `server-csr-${Date.now()}.pem`
+      );
       execSync(
         `openssl req -new -sha256 -key "${serverKeyFile}" -config "${serverConfFile}" -out "${serverCsrFile}"`,
         { encoding: "utf-8" }
@@ -237,25 +246,30 @@ export class LibUtils {
       const TLS__INTERNAL__CA_KEY = fs.readFileSync(caKeyFile, "utf-8").trim();
       const TLS__INTERNAL__CA_CRT = fs.readFileSync(caCertFile, "utf-8").trim();
       const TLS__INTERNAL__KEY = fs.readFileSync(serverKeyFile, "utf-8").trim();
-      const TLS__INTERNAL__CRT = fs.readFileSync(
-        serverCertFile,
-        "utf-8"
-      ).trim();
+      const TLS__INTERNAL__CRT = fs
+        .readFileSync(serverCertFile, "utf-8")
+        .trim();
 
       let envContent = fs.readFileSync(dotenvFile, "utf-8");
       envContent = envContent
-        .replace(
-          /^TLS__INTERNAL__CA_CRT=[\s\S]*?END CERTIFICATE-----'$/gm,
-          ""
-        )
+        .replace(/^TLS__INTERNAL__CA_CRT=[\s\S]*?END CERTIFICATE-----'$/gm, "")
         .replace(/^TLS__INTERNAL__CRT=[\s\S]*?END CERTIFICATE-----'$/gm, "")
         .replace(/^TLS__INTERNAL__KEY=[\s\S]*?PRIVATE KEY-----'$/gm, "")
         .replace(/^TLS__INTERNAL__CA_KEY=[\s\S]*?PRIVATE KEY-----'$/gm, "")
         .trim();
 
-      envContent += `\nTLS__INTERNAL__CA_CRT="${TLS__INTERNAL__CA_CRT.replace(/"/g, '\\"')}"\n`;
-      envContent += `TLS__INTERNAL__CRT="${TLS__INTERNAL__CRT.replace(/"/g, '\\"')}"\n`;
-      envContent += `TLS__INTERNAL__KEY="${TLS__INTERNAL__KEY.replace(/"/g, '\\"')}"\n`;
+      envContent += `\nTLS__INTERNAL__CA_CRT="${TLS__INTERNAL__CA_CRT.replace(
+        /\\/g,
+        "\\\\"
+      ).replace(/"/g, '\\"')}"\n`;
+      envContent += `TLS__INTERNAL__CRT="${TLS__INTERNAL__CRT.replace(
+        /\\/g,
+        "\\\\"
+      ).replace(/"/g, '\\"')}"\n`;
+      envContent += `TLS__INTERNAL__KEY="${TLS__INTERNAL__KEY.replace(
+        /\\/g,
+        "\\\\"
+      ).replace(/"/g, '\\"')}"\n`;
       fs.writeFileSync(dotenvFile, envContent);
 
       const tempFiles = [
@@ -281,5 +295,4 @@ export class LibUtils {
       console.error("Error generating TLS certificates:", error);
     }
   }
-
 }

@@ -18,7 +18,7 @@ try {
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
-let public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
+const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
 let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;

@@ -229,7 +229,13 @@ case $cmd in
         docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
     init)
-        read -p "This action will overwrite all values in .env file. Continue (y/n)?" init_choice
+        if [[ -n "${init_choice:-}" ]]; then
+            echo "CI environment detected. Auto-accepting to overwite all values in .env file..."
+            init_choice="y"
+        else
+            read -p "This action will overwrite .env file. Continue (y/n)?" init_choice
+        fi
+
         case "$init_choice" in
           y|Y)
             CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}

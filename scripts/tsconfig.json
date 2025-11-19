@@ -11,6 +11,6 @@
     "target": "es2019",
     "types": ["node"],
     "sourceMap": true,
-    "declaration": true,
+    "declaration": true
   }
 }

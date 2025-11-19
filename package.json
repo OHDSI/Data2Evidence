@@ -34,8 +34,7 @@
     "inittestdb": "node tests/backend_integration_tests/build/initdb.js test",
     "removetestdb": "node tests/backend_integration_tests/build/initdb.js rmonly",
     "internal": "npm run-script --prefix internal",
-    "build:ts": "tsc ./scripts/cli.ts --outDir ./scripts/dist",
-    "prepare": "npm run build:ts"
+    "build:ts": "tsc ./scripts/cli.ts --outDir ./scripts/dist"
   },
   "optionalDependencies": {
     "hdb": "0.19.12",
@@ -50,6 +49,7 @@
     "commander": "^10.0.1",
     "cross-env": "^7.0.3",
     "dotenv": "^16.4.7",
-    "zx": "^8.3.2"
+    "zx": "^8.3.2",
+    "typescript": "^5.0.0"
   }
 }
