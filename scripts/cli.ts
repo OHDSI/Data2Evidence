@@ -196,7 +196,9 @@ class D2ECli {
       .map(([key, value]) => {
         // Quote values containing newlines
         if (typeof value === "string" && value.includes("\n")) {
-          return `${key}="${value.replace(/"/g, '\\"')}"`;
+          // Escape backslashes first, then double quotes
+          const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+          return `${key}="${escaped}"`;
         }
         return `${key}=${value}`;
       })
