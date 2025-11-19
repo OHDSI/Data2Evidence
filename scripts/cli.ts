@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+import { config as dotenvConfig } from "dotenv";
 import { spawn } from "child_process";
 import { Command } from "commander";
 import * as crypto from "crypto";
@@ -952,6 +952,7 @@ class D2ECli {
     this.program.parseOptions(process.argv);
     const options = this.program.opts();
     this.ENVFILE = options.envFile ?? ".env";
+    dotenvConfig({ path: this.ENVFILE });
     this.DEFAULT_PASSWORD_LENGTH = 30;
     this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
