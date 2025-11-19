@@ -17,9 +17,9 @@
     "env_names_dev": "local remote base-all base-local base-remote alp-dev-sg-3"
   },
   "scripts": {
-    "init": "cross-env PROJECT_NAME=alp ENV_TYPE=local ./scripts/cli.sh --version develop --env-file .env.local init",
-    "inithana": "cross-env PROJECT_NAME=alp ENV_TYPE=local ./scripts/cli.sh --version develop --env-file .env.local inithana",
-    "local": "cross-env PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh --version develop --demo --env-file .env.local --function-path ./functions -p 41100",
+    "init": "PROJECT_NAME=alp ENV_TYPE=local ./scripts/cli.sh --version develop --env-file .env.local init",
+    "inithana": "PROJECT_NAME=alp ENV_TYPE=local ./scripts/cli.sh --version develop --env-file .env.local inithana",
+    "local": "PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh --version develop --demo --env-file .env.local --function-path ./functions -p 41100",
     "build": "npm run local -- build",
     "start": "npm run local -- start",
     "stop": "npm run local -- stop",
@@ -28,7 +28,7 @@
     "ps": "npm run local -- status",
     "ci:logs": "npm run local -- logs",
     "setup": "npm run local -- setupdemo",
-    "deploy:logs": "cross-env ENV_TYPE=remote ./scripts/cli.sh -v develop -e -n .env.remote logs",
+    "deploy:logs": "ENV_TYPE=remote ./scripts/cli.sh -v develop -e -n .env.remote logs",
     "logs": "npm run local -- logs",
     "create-postgres-cdm-schemas": "bash scripts/create-cdm-schema.sh",
     "inittestdb": "node tests/backend_integration_tests/build/initdb.js test",
