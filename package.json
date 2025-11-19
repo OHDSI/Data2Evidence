@@ -10,7 +10,7 @@
   },
   "bugs": "https://github.com/ohdsi/d2e/issues",
   "bin": {
-    "d2e": "scripts/dist/cli.js"
+    "d2e": "scripts/cli.sh"
   },
   "config": {
     "env_names_all": "local remote base-all base-local base-remote alp-dev-sg-3 alp-dev-sg-2 alp-stg-de-1 alp-stg-sg-1 alp-stg-sg-2",
