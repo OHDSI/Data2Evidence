@@ -18,6 +18,7 @@ import { useActiveDataset, useToken, useTranslation, useUser } from "../../../co
 import env from "../../../env";
 import { api } from "../../../axios/api";
 import { mapd2eWebapiConcept, mapd2eWebapiConceptSet } from "./utils/d2eWebapiMappers";
+import { CSSProperties } from "react";
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
@@ -95,6 +96,8 @@ const NameSection = ({
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    width: "100%",
+    padding: "0 20px",
   };
   const actionBoxStyle = {
     display: "flex",
@@ -103,8 +106,14 @@ const NameSection = ({
     height: "32px",
   };
 
+  const flexColumnStyle: CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  };
+
   return (
-    <div style={borderBoxStyle}>
+    <div style={{ ...borderBoxStyle, ...flexColumnStyle }}>
       <div style={headerBoxStyle}>
         <Typography>{getText(i18nKeys.TERMINOLOGY__NAME)}:</Typography>
         <TextField
@@ -143,7 +152,7 @@ const NameSection = ({
           />
         </div>
       </div>
-      {errorMsg ? <div style={{ color: "red", textAlign: "center" }}>{errorMsg}</div> : null}
+      {errorMsg ? <div style={{ color: "red", textAlign: "center", maxWidth: "62ch" }}>{errorMsg}</div> : null}
     </div>
   );
 };
@@ -355,6 +364,15 @@ export const Terminology: FC<TerminologyProps> = ({
     return conceptSetId;
   };
 
+  const checkIfConceptSetExists = async (
+    conceptSetId: number,
+    conceptSetName: string,
+    datasetId: string
+  ): Promise<number> => {
+    const result = await api.d2eWebapi.checkIfConceptSetExists(conceptSetId, conceptSetName, datasetId);
+    return result;
+  };
+
   const saveConceptSet = useCallback(async () => {
     const conceptSet = {
       concepts: selectedConcepts.map((concept) => {
@@ -371,6 +389,12 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
+      // 0 is the conceptSetId placeholder when creating a new concept set
+      const isNameUsed = await checkIfConceptSetExists(conceptSetId || 0, conceptSetName, activeDatasetId);
+      if (isNameUsed) {
+        setErrorMsg(getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [`"${conceptSetName}"`]));
+        return;
+      }
       const updatedConceptSetId = conceptSetId
         ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
