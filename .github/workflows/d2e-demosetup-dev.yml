@@ -58,7 +58,7 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
       - uses: dorny/paths-filter@v3
         id: file_changes
         with:
@@ -95,7 +95,7 @@ jobs:
         if: success() || failure()
         id: pull
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Prune images
@@ -114,7 +114,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -133,7 +133,7 @@ jobs:
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Setupdemo
         if: success() || failure()
@@ -145,7 +145,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions setupdemo
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -154,7 +154,7 @@ jobs:
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Checkflow
         if: success() || failure()
@@ -166,7 +166,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions checkflow
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
@@ -199,8 +199,8 @@ jobs:
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
 
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
@@ -230,7 +230,7 @@ jobs:
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Publish Test Report
         if: always()
@@ -243,7 +243,7 @@ jobs:
         if: success() || failure()
         id: stop
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
 
       - name: Prune system
         if: always()

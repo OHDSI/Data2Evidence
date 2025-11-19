@@ -119,13 +119,13 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
+          node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
       - name: Initialise HANA
         if: success() || failure()
         id: inithana
         run: |
-          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
       - name: Remove empty lines, replace ; within the query with a place holder
         run: |
@@ -139,7 +139,7 @@ jobs:
 
       - name: Build system services
         run: |
-          ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 build
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -153,7 +153,7 @@ jobs:
 
       - name: Start system services
         run: |
-          ./scripts/cli.sh -v develop -e -n .env.local --hana -d ./functions -p 41100 start
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
           echo "Waiting 120 secs for services to start..."
           sleep 120
 
