@@ -8,7 +8,7 @@ import type {
   CohortInfoResponse,
   NotificationsResponse,
 } from '../types/ConceptSetTypes'
-import type { InclusionReportResponse } from '../types/QueryFilterTypes'
+import type { InclusionReportResponse } from '../types/InclusionReportTypes'
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
 

@@ -119,7 +119,7 @@
     width: fit-content;
     &.btn-primary {
       background-color: var(--color-primary);
-      color: var(--color-mri-lightest-text);
+      color: white;
 
       &:hover:not(:disabled) {
         background-color: var(--color-primary-light);

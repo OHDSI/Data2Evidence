@@ -8,7 +8,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
-import type { InclusionReportResponse } from '@/query-filter/types/QueryFilterTypes'
+import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
 import plotly from '@/lib/CustomPlotly'
 import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
 import { computeAttritionStats } from './computeAttritionStats'

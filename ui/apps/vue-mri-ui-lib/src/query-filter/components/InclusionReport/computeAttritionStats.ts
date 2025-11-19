@@ -1,4 +1,4 @@
-import type { InclusionReportResponse } from '@/query-filter/types/QueryFilterTypes'
+import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
 
 type AttritionStat = {
   id: number

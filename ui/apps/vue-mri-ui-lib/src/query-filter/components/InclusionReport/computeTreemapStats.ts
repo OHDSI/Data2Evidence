@@ -1,4 +1,4 @@
-import { InclusionReportResponse } from '@/query-filter/types/QueryFilterTypes'
+import { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
 
 type TooltipData = {
   count: string
