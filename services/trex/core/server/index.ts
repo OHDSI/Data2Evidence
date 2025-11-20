@@ -18,12 +18,12 @@ export async function initTrex() {
         getPath: (req) => {
             const url = new URL(req.url);
             if (url.pathname.startsWith('/d2e/')) {
-                url.pathname = url.pathname.replace(/^\/d2e/, '');
+                url.pathname = url.pathname.replace(/^\/d2e\//, '/');
             }
             return url.pathname;
         }
             
-    })
+    });
     app.use(hlogger())
     await DatabaseManager.get();
     /*for await (const r of Deno.readDir("./core/server/routes")) {
