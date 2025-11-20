@@ -84,6 +84,25 @@ export class D2eWebapi {
     }
   }
 
+  public checkIfConceptSetExists(
+    conceptSetId: number,
+    conceptSetName: string,
+    datasetId: string
+  ) {
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return 0;
+    }
+
+    return request({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(
+        conceptSetName
+      )}`,
+      method: "GET",
+      headers: { datasetid: datasetId },
+    });
+  }
+
   public async createConceptSet(
     name: string,
     datasetId: string
