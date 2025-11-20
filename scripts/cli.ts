@@ -197,7 +197,7 @@ class D2ECli {
         // Quote values containing newlines
         if (typeof value === "string" && value.includes("\n")) {
           // Escape backslashes first, then double quotes
-          const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+          const escaped = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
           return `${key}="${escaped}"`;
         }
         return `${key}=${value}`;
@@ -607,7 +607,7 @@ class D2ECli {
           init_choice = "y";
         } else {
           init_choice = await this.user_input(
-            "Do you wish to overwrite .env file? (y/n): "
+            "WARNING: Re-running this command again will require you to run `d2e clean` to remove all existing containers and volumes before starting services again with `d2e start`.\nDo you wish to overwrite .env file? (y/n): \n"
           );
         }
         if (init_choice.toLowerCase() !== "y") {

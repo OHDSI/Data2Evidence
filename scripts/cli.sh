@@ -233,7 +233,8 @@ case $cmd in
             echo "CI environment detected. Auto-accepting to overwite all values in .env file..."
             init_choice="y"
         else
-            read -p "This action will overwrite .env file. Continue (y/n)?" init_choice
+            echo "WARNING: Re-running this command again will require you to run \`d2e clean\` to remove all existing containers and volumes before starting services again with \`d2e start\`."
+            read -p "Do you wish to overwrite .env file? (y/n):" init_choice
         fi
 
         case "$init_choice" in
