@@ -130,7 +130,7 @@ export default {
   mounted() {
     const parsed = JSON.parse(this.selectedBookmark.data)
 
-    this.copyUrl = window.location.origin + '/analytics-svc/api/services/data/' + this.selectedBookmark.id + '/Patient'
+    this.copyUrl = window.location.origin + '/d2e/analytics-svc/api/services/data/' + this.selectedBookmark.id + '/Patient'
 
     this.getPatientCount({
       params: { ...parsed, guarded: parsed.chartType === 'list' },
