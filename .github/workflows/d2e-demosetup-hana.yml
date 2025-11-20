@@ -58,6 +58,8 @@ jobs:
         id: init
         run: |
           init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --env-file .env init
+        env:
+          init_choice: y
 
       - name: Initialise HANA
         if: success() || failure()
