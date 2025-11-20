@@ -58,6 +58,10 @@ jobs:
         with:
           submodules: recursive
 
+      - name: npm prepare
+        if: success() || failure()
+        run: |
+          npm run prepare 
       - name: Generate dotenv
         run: |
           # generate dotenv
