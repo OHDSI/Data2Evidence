@@ -58,11 +58,14 @@ jobs:
         with:
           submodules: recursive
 
-
+      - name: npm run build
+        run: |
+          npm install
+          npm run build:ts
       - name: Generate dotenv
         run: |
           # generate dotenv
-          npm run init -- --version develop --env-file .env.local
+          npm run init
         env: 
           init_choice: y 
 

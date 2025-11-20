@@ -17,9 +17,9 @@
     "env_names_dev": "local remote base-all base-local base-remote alp-dev-sg-3"
   },
   "scripts": {
-    "init": "npx cross-env PROJECT_NAME=alp ENV_TYPE=local node ./scripts/dist/cli.js --version develop --env-file .env.local init",
-    "inithana": "npx cross-env PROJECT_NAME=alp ENV_TYPE=local node ./scripts/dist/cli.js --version develop --env-file .env.local inithana",
-    "local": "npx cross-env PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js --version develop --demo --env-file .env.local --function-path ./functions -p 41100",
+    "init": "npx cross-env PROJECT_NAME=alp ENV_TYPE=local node ./scripts/dist/cli.js --version develop -n .env.local init",
+    "inithana": "npx cross-env PROJECT_NAME=alp ENV_TYPE=local node ./scripts/dist/cli.js --version develop -n .env.local inithana",
+    "local": "npx cross-env PROJECT_NAME=alp ENV_TYPE=local CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js --version develop --demo -n .env.local --function-path ./functions -p 41100",
     "build": "npm run local -- build",
     "start": "npm run local -- start",
     "stop": "npm run local -- stop",
