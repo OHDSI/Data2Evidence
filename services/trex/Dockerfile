@@ -59,5 +59,3 @@ RUN mkdir -p ./core
 COPY ./core ./core
 
 CMD ["npm", "run", "start"]
-
-
