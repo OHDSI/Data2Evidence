@@ -351,9 +351,14 @@ class D2ECli {
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     const charsLength = chars.length;
     let password = "";
-    const bytes = crypto.randomBytes(length);
-    for (let i = 0; i < length; i++) {
-      const index = bytes[i] % charsLength;
+    while (password.length < length) {
+      // Draw one random byte at a time
+      const byte = crypto.randomBytes(1)[0];
+      // Only use the byte if it's within an unbiased range
+      if (byte >= Math.floor(256 / charsLength) * charsLength) {
+        continue; // Discard byte to avoid modulo bias
+      }
+      const index = byte % charsLength;
       password += chars[index];
     }
     return password;
