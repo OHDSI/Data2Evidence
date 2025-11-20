@@ -85,7 +85,7 @@ module.exports = {
         filename: 'assets.json',
         inject: false,
         templateContent: ({ htmlWebpackPlugin }) => {
-          const prependBasePath = filepath => `${process.env.VUE_APP_HOST}/mri/${filepath}`
+          const prependBasePath = filepath => `${process.env.VUE_APP_HOST}/d2e/mri/${filepath}`
           return JSON.stringify({
             js: htmlWebpackPlugin.files.js.map(prependBasePath),
             css: htmlWebpackPlugin.files.css.map(prependBasePath),
