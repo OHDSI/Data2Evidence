@@ -8,6 +8,7 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { execSync, spawnSync } from "child_process";
 import { LibUtils } from "./lib";
+import { promises as fsPromises } from "fs";
 
 interface CliOptions {
   functionPath?: string;
@@ -91,7 +92,7 @@ class D2ECli {
     process.env.PLUGINS_API_VERSION = this.PLUGINS_API_VERSION;
   }
 
-  write_env_file_variable(options: CliOptions): void {
+  async write_env_file_variable(options: CliOptions): Promise<void> {
     this.DOTENV_KEYS = `${this.ENVFILE}.keys`;
     const LOGTO_API_M2M_CLIENT_ID = `${this.generate_random_password(21)}`;
     const LOGTO_API_M2M_CLIENT_SECRET = `${this.generate_random_password(30)}`;
@@ -203,21 +204,22 @@ class D2ECli {
         return `${key}=${value}`;
       })
       .join("\n");
-    fs.writeFileSync(this.ENVFILE, envContent + "\n", { flag: "w" });
+    await fsPromises.writeFile(this.ENVFILE, envContent + "\n");
     this.set_cpu_limit(this.ENVFILE, this.node_modules_path);
     this.set_memory_limit(this.ENVFILE, this.node_modules_path);
     this.gen_tls_internal(this.ENVFILE, this.node_modules_path);
-
-    const content = fs.readFileSync(this.ENVFILE, "utf-8");
+    const content = await fsPromises.readFile(this.ENVFILE, "utf-8");
     const keys = content
       .split("\n")
       .map((line) => line.trim())
-      .filter((line) => line.includes("=")) // has an '='
-      .map((line) => line.split("=")[0].trim()) // take left side
-      .filter((key) => key.includes("_")) // has an underscore
-      .filter((key, i, arr) => arr.indexOf(key) === i) // unique
-      .sort(); // sort alphabetically
-    fs.writeFileSync(this.DOTENV_KEYS, keys.join("\n"), { flag: "w" });
+      .filter((line) => line.includes("="))
+      .map((line) => line.split("=")[0].trim())
+      .filter((key) => key.includes("_"))
+      .filter((key, i, arr) => arr.indexOf(key) === i)
+      .sort();
+
+    await fsPromises.writeFile(this.DOTENV_KEYS, keys.join("\n"));
+
     const counts = [
       { file: this.ENVFILE, lines: this.countLines(this.ENVFILE) },
       { file: this.DOTENV_KEYS, lines: this.countLines(this.DOTENV_KEYS) },
@@ -227,8 +229,8 @@ class D2ECli {
     }
     console.log("File written successfully");
   }
-  countLines(filePath: string): number {
-    const content = fs.readFileSync(filePath, "utf-8");
+  async countLines(filePath: string): Promise<number> {
+    const content = await fsPromises.readFile(filePath, "utf-8");
     return content.trimEnd().split("\n").length;
   }
   install_options(): void {
