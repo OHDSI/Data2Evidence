@@ -9,6 +9,7 @@ export default {
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, getCurrentInstance, watch, nextTick } from 'vue'
+import { useStore } from 'vuex'
 import QueryFilterCriteria from './QueryFilterCriteria.vue'
 import QueryFilterTagInputAdapter from '../../lib/ui/QueryFilterTagInputAdapter.vue'
 import { loadConceptSets } from '../utils/QueryFilterModern/loadConceptSets'
@@ -64,8 +65,7 @@ interface TerminologyEventProps {
   onMultiConceptSelect?: (concepts: SelectedConcept[]) => void
 }
 
-const instance = getCurrentInstance()
-const store = instance?.appContext.config.globalProperties['$store']
+const store = useStore()
 
 const showDebug = ref(false)
 

@@ -35,90 +35,155 @@
 <script lang="ts">
 export default {
   name: 'app-segmented-button',
-  data() {
-    return {
-      selected: '',
-      focusedItem: {},
+  compatConfig: {
+    MODE: 3, // Run in Vue 3 mode for proper v-model behavior
+  },
+}
+</script>
+
+<script setup lang="ts">
+import { ref, watch, nextTick, computed } from 'vue'
+
+interface SegmentedItem {
+  text: string
+  value: string
+}
+
+interface Props {
+  segmentedItems?: SegmentedItem[]
+  value?: string
+  modelValue?: string
+  onSelectedChange?: () => void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  segmentedItems: () => [],
+  value: undefined,
+  modelValue: undefined,
+  onSelectedChange: undefined,
+})
+
+const emit = defineEmits<{
+  input: [value: string]
+  'update:modelValue': [value: string]
+  onSelectedChange: []
+}>()
+
+// Merge both props - modelValue takes precedence for Vue 2/3 compat
+const mergedValue = computed(() => {
+  return props.modelValue !== undefined ? props.modelValue : props.value ?? ''
+})
+
+// Template refs
+const segmentedItemList = ref<HTMLElement | null>(null)
+
+// Internal reactive state
+const selected = ref<string>(mergedValue.value)
+const focusedItem = ref<SegmentedItem | Record<string, never>>({})
+
+// Watch for external value changes
+watch(
+  mergedValue,
+  val => {
+    if (val !== selected.value) {
+      selected.value = val
     }
   },
-  watch: {
-    selected() {
-      this.$emit('input', this.selected)
-    },
+  { immediate: true }
+)
+
+// Watch for selected changes to emit events (watcher-based emission pattern)
+// Note: flush: 'post' prevents emission during initialization, only emitting on user changes
+watch(
+  selected,
+  val => {
+    // Dual emission for Vue 2/3 compatibility during compat mode
+    // Once compat mode is disabled, only 'update:modelValue' will be needed
+    emit('input', val) // Vue 2 pattern
+    emit('update:modelValue', val) // Vue 3 pattern
   },
-  created() {
-    this.selected = this.value
-  },
-  props: ['segmentedItems', 'value', 'onSelectedChange'],
-  methods: {
-    selectItem(item) {
-      this.focusedItem = item
-      this.selected = item.value
-      this.$emit('onSelectedChange')
-      for (let i = 0; i < this.segmentedItems.length; i += 1) {
-        if (this.segmentedItems[i].value === item.value) {
-          this.$nextTick(() => {
-            this.setFocusIndex(i)
-          })
-          break
+  { flush: 'post' }
+)
+
+// Methods
+const selectItem = (item: SegmentedItem) => {
+  focusedItem.value = item
+  selected.value = item.value
+  emit('onSelectedChange')
+
+  if (props.segmentedItems) {
+    for (let i = 0; i < props.segmentedItems.length; i += 1) {
+      if (props.segmentedItems[i].value === item.value) {
+        nextTick(() => {
+          setFocusIndex(i)
+        })
+        break
+      }
+    }
+  }
+}
+
+const keymonitor = (event: KeyboardEvent) => {
+  const key = event.key
+  if (key === ' ' || key === 'Spacebar') {
+    selectItem(focusedItem.value as SegmentedItem)
+  }
+  if (key === 'Right' || key === 'ArrowRight') {
+    if (!props.segmentedItems) return
+
+    for (let i = 0; i < props.segmentedItems.length; i += 1) {
+      const focusedValue = (focusedItem.value as SegmentedItem).value
+      if (focusedValue && props.segmentedItems[i].value === focusedValue) {
+        if (props.segmentedItems[i + 1]) {
+          focusedItem.value = props.segmentedItems[i + 1]
+          setFocusIndex(i + 1)
         }
+        break
       }
-    },
-    keymonitor(event) {
-      const key = event.key
-      if (key === ' ' || key === 'Spacebar') {
-        this.selectItem(this.focusedItem)
-      }
-      if (key === 'Right' || key === 'ArrowRight') {
-        for (let i = 0; i < this.segmentedItems.length; i += 1) {
-          if (this.focusedItem.value && this.segmentedItems[i].value === this.focusedItem.value) {
-            if (this.segmentedItems[i + 1]) {
-              this.focusedItem = this.segmentedItems[i + 1]
-              this.setFocusIndex(i + 1)
-            }
-            break
-          }
-          if (!this.focusedItem.value && this.segmentedItems[i].value === this.selected) {
-            if (this.segmentedItems[i + 1]) {
-              this.focusedItem = this.segmentedItems[i + 1]
-              this.setFocusIndex(i + 1)
-            }
-            break
-          }
+      if (!focusedValue && props.segmentedItems[i].value === selected.value) {
+        if (props.segmentedItems[i + 1]) {
+          focusedItem.value = props.segmentedItems[i + 1]
+          setFocusIndex(i + 1)
         }
+        break
       }
-      if (key === 'Left' || key === 'ArrowLeft') {
-        for (let i = 0; i < this.segmentedItems.length; i += 1) {
-          if (this.focusedItem.value && this.segmentedItems[i].value === this.focusedItem.value) {
-            if (this.segmentedItems[i - 1]) {
-              this.focusedItem = this.segmentedItems[i - 1]
-              this.setFocusIndex(i - 1)
-            }
-            break
-          }
-          if (!this.focusedItem.value && this.segmentedItems[i].value === this.selected) {
-            if (this.segmentedItems[i - 1]) {
-              this.focusedItem = this.segmentedItems[i - 1]
-              this.setFocusIndex(i - 1)
-            }
-            break
-          }
+    }
+  }
+  if (key === 'Left' || key === 'ArrowLeft') {
+    if (!props.segmentedItems) return
+
+    for (let i = 0; i < props.segmentedItems.length; i += 1) {
+      const focusedValue = (focusedItem.value as SegmentedItem).value
+      if (focusedValue && props.segmentedItems[i].value === focusedValue) {
+        if (props.segmentedItems[i - 1]) {
+          focusedItem.value = props.segmentedItems[i - 1]
+          setFocusIndex(i - 1)
         }
+        break
       }
-    },
-    setFocusIndex(index) {
-      if (
-        this.$refs.segmentedItemList &&
-        this.$refs.segmentedItemList.children &&
-        this.$refs.segmentedItemList.children[index] &&
-        this.$refs.segmentedItemList.children[index].focus
-      ) {
-        this.$refs.segmentedItemList.children[index].focus()
+      if (!focusedValue && props.segmentedItems[i].value === selected.value) {
+        if (props.segmentedItems[i - 1]) {
+          focusedItem.value = props.segmentedItems[i - 1]
+          setFocusIndex(i - 1)
+        }
+        break
       }
-    },
-    setFocusItem(item) {
-      this.focusedItem = item
-    },
-  },
+    }
+  }
+}
+
+const setFocusIndex = (index: number) => {
+  if (
+    segmentedItemList.value &&
+    segmentedItemList.value.children &&
+    segmentedItemList.value.children[index] &&
+    (segmentedItemList.value.children[index] as HTMLElement).focus
+  ) {
+    ;(segmentedItemList.value.children[index] as HTMLElement).focus()
+  }
+}
+
+const setFocusItem = (item: SegmentedItem) => {
+  focusedItem.value = item
 }
 </script>
