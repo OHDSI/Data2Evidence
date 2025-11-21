@@ -461,14 +461,22 @@ const setupWebapiRoutes = app => {
     const cacheKey = CACHE_KEYS.CONCEPT_SETS
     let data = cache[cacheKey]
 
-    if(!data || !USE_CACHE) {
-
-      const response = await api.get(ALLOWED_ENDPOINTS.conceptset)
-      data = response.data
-      cache[cacheKey] = data
+    if (!data || !USE_CACHE) {
+      try{
+        const response = await api.get(ALLOWED_ENDPOINTS.conceptset)
+        data = response.data
+        cache[cacheKey] = data
+      } catch (error) {
+        console.error('Error fetching concept sets from Atlas API:', error.message)
+        return res.status(500).json({
+          error: 'Failed to fetch concept sets from Atlas API',
+          message: error.message,
+          timestamp: new Date().toISOString(),
+        })
+      }
     }
 
-    const result = data.find(conceptSet => conceptSet.name === name && conceptSet.id !== conceptSetId)
+    const result = data.find(conceptSet => conceptSet.name === name && conceptSet.id != conceptSetId)
 
     return res.status(200).type('text/plain').send(String(result === undefined ? 0 : 1))
   })

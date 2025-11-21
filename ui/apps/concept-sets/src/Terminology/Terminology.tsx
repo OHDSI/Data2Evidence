@@ -477,7 +477,6 @@ export const Terminology: FC<TerminologyProps> = ({
         conceptSetName,
         activeDatasetId
       );
-      console.log("isNameUsed:", isNameUsed);
 
       if (isNameUsed) {
         setErrorMsg(

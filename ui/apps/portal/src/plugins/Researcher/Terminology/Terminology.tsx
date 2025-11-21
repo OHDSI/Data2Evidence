@@ -370,7 +370,7 @@ export const Terminology: FC<TerminologyProps> = ({
     datasetId: string
   ): Promise<number> => {
     const result = await api.d2eWebapi.checkIfConceptSetExists(conceptSetId, conceptSetName, datasetId);
-    return result;
+    return Number(result);
   };
 
   const saveConceptSet = useCallback(async () => {
