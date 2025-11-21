@@ -150,7 +150,8 @@ export class PublicWebapiProxyAPI {
   }
 
   public checkIfConceptSetExists(conceptSetId: number, conceptSetName: string): Promise<number> {
-    return request<number>({
+    // no type specified on request() as mock server sends response as a string, while webapi may send a number.
+    return request({
       baseURL: this.baseURL,
       url: `d2e-webapi/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(conceptSetName)}`,
       method: "GET",

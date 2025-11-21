@@ -90,7 +90,10 @@ export class D2eWebapi {
     datasetId: string
   ) {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
-      return 0;
+      return api.publicWebapiProxyAPI.checkIfConceptSetExists(
+        conceptSetId,
+        conceptSetName
+      );
     }
 
     return request({
