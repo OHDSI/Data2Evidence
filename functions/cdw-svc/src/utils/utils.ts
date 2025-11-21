@@ -275,7 +275,7 @@ export function getJsonWalkFunction(obj) {
         case "*":
           return "[^\\.]+";
         default:
-          return subPath;
+          return escapeRegExp(subPath);
       }
     });
     let regexp = new RegExp("^" + regexpSplit.join("\\.") + "$");

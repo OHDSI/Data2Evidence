@@ -243,6 +243,7 @@ services:
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
+      AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
