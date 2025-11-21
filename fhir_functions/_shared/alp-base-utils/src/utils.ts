@@ -319,7 +319,7 @@ export function getJsonWalkFunction(obj) {
         case "*":
           return "[^\\.]+";
         default:
-          return subPath;
+          return escapeRegExp(subPath);
       }
     });
     const regexp = new RegExp("^" + regexpSplit.join("\\.") + "$");

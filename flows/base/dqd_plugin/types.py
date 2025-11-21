@@ -29,7 +29,7 @@ class DqdOptionsType(BaseModel):
 
 class DqdParams(DqdOptionsType):
     # DQD-specific parameters with defaults
-    outputFolder: str
+    outputFolder: str = "dqd_output"
     setDBDriverEnv: str
     connectionDetails: str
     materializedCohortDatabaseSchema: Optional[str] = None
