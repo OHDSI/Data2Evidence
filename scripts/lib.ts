@@ -149,91 +149,99 @@ export class LibUtils {
     }
   }
 
-  genTlsInternal(dotenvFile: string): void {
+  async genTlsInternal(dotenvFile: string): Promise<void> {
     console.log(". INFO generate x509 certs - TLS__INTERNAL_*");
 
     try {
       const pki = forge.pki;
-      const { v4: uuidv4 } = require('uuid');
+      const { v4: uuidv4 } = await import("uuid");
 
       // Generate CA keypair
       const caKeyPair = pki.rsa.generateKeyPair({ bits: 2048 });
       const caCert = pki.createCertificate();
-      
+
       caCert.publicKey = caKeyPair.publicKey;
-      caCert.serialNumber = uuidv4().replace(/-/g, '').substring(0, 16);
-      
-      const caSubject = [{
-        name: 'commonName',
-        value: 'D2E Internal CA'
-      }];
-      
+      caCert.serialNumber = uuidv4().replace(/-/g, "").substring(0, 16);
+
+      const caSubject = [
+        {
+          name: "commonName",
+          value: "D2E Internal CA",
+        },
+      ];
+
       caCert.setSubject(caSubject);
       caCert.setIssuer(caSubject);
-      
+
       const now = new Date();
       caCert.validity.notBefore = now;
-      caCert.validity.notAfter = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
-      
+      caCert.validity.notAfter = new Date(
+        now.getTime() + 3650 * 24 * 60 * 60 * 1000
+      );
+
       caCert.setExtensions([
         {
-          name: 'basicConstraints',
+          name: "basicConstraints",
           cA: true,
-          pathLenConstraint: 1
+          pathLenConstraint: 1,
         },
         {
-          name: 'keyUsage',
+          name: "keyUsage",
           keyCertSign: true,
-          cRLSign: true
-        }
+          cRLSign: true,
+        },
       ]);
-      
+
       caCert.sign(caKeyPair.privateKey, forge.md.sha256.create());
-      
+
       // Generate Server keypair
       const serverKeyPair = pki.rsa.generateKeyPair({ bits: 2048 });
       const serverCert = pki.createCertificate();
-      
+
       serverCert.publicKey = serverKeyPair.publicKey;
-      serverCert.serialNumber = uuidv4().replace(/-/g, '').substring(0, 16);
-      
-      const serverSubject = [{
-        name: 'commonName',
-        value: this.TLS__INTERNAL__DOMAIN_NAME
-      }];
-      
+      serverCert.serialNumber = uuidv4().replace(/-/g, "").substring(0, 16);
+
+      const serverSubject = [
+        {
+          name: "commonName",
+          value: this.TLS__INTERNAL__DOMAIN_NAME,
+        },
+      ];
+
       serverCert.setSubject(serverSubject);
       serverCert.setIssuer(caSubject);
-      
+
       serverCert.validity.notBefore = now;
-      serverCert.validity.notAfter = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
-      
+      serverCert.validity.notAfter = new Date(
+        now.getTime() + 3650 * 24 * 60 * 60 * 1000
+      );
+
       serverCert.setExtensions([
         {
-          name: 'basicConstraints',
-          cA: false
+          name: "basicConstraints",
+          cA: false,
         },
         {
-          name: 'keyUsage',
+          name: "keyUsage",
           digitalSignature: true,
-          keyEncipherment: true
+          keyEncipherment: true,
         },
         {
-          name: 'extKeyUsage',
+          name: "extKeyUsage",
           serverAuth: true,
-          clientAuth: true
+          clientAuth: true,
         },
         {
-          name: 'subjectAltName',
+          name: "subjectAltName",
           altNames: [
-            { type: 2, value: '*.d2e.local' },
-            { type: 2, value: 'd2e.local' }
-          ]
-        }
+            { type: 2, value: "*.d2e.local" },
+            { type: 2, value: "d2e.local" },
+          ],
+        },
       ]);
-      
+
       serverCert.sign(caKeyPair.privateKey, forge.md.sha256.create());
-      
+
       // Convert to PEM format
       const caRsaAsn1 = pki.privateKeyToAsn1(caKeyPair.privateKey);
       const caKeyInfo = pki.wrapRsaPrivateKey(caRsaAsn1);

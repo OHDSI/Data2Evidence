@@ -627,6 +627,7 @@ class D2ECli {
       )
       .action(async () => {
         console.log("Starting services...");
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
@@ -651,6 +652,7 @@ class D2ECli {
       .command("inithana")
       .description("Initialise hana services")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         console.log("Starting services...");
         console.log("This will initialize SAP HANA Express Edition.");
@@ -715,6 +717,7 @@ class D2ECli {
       .description("Stop d2e services")
       .action(async () => {
         console.log("Stopping services...");
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
@@ -738,6 +741,7 @@ class D2ECli {
       .command("build")
       .description("Build d2e services")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         console.log("Building services...");
         this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
@@ -763,6 +767,7 @@ class D2ECli {
       .command("status")
       .description("Status of d2e services")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
@@ -787,6 +792,7 @@ class D2ECli {
       .command("logs")
       .description("View logs of d2e services")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
@@ -812,6 +818,7 @@ class D2ECli {
       .command("config")
       .description("View configuration of d2e services")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
@@ -837,6 +844,7 @@ class D2ECli {
       .command("clean")
       .description("Removes d2e docker containers and volumes")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const user_input_init = await this.user_input(
           "This action will delete all docker containers and volumes. Continue (y/n)? "
@@ -867,6 +875,7 @@ class D2ECli {
       .command("cleanci")
       .description("Clean up d2e services")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
@@ -892,6 +901,7 @@ class D2ECli {
       .command("patchdemodb")
       .description("Patch demo database")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         this.patch_demodb();
       });
@@ -900,6 +910,7 @@ class D2ECli {
       .command("pull")
       .description("Pull images for d2e services")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
@@ -971,7 +982,6 @@ class D2ECli {
     this.program.parseOptions(process.argv);
     const options = this.program.opts();
     this.ENVFILE = options.envFile ?? ".env";
-    dotenvConfig({ path: this.ENVFILE });
     this.DEFAULT_PASSWORD_LENGTH = 30;
     this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
