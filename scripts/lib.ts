@@ -3,6 +3,7 @@ import * as os from "os";
 import * as path from "path";
 import * as crypto from "crypto";
 import { execSync } from "child_process";
+import * as forge from "node-forge";
 
 export class LibUtils {
   private D2E_MEM_TO_SWAP_LIMIT_RATIO: number;
@@ -152,147 +153,113 @@ export class LibUtils {
     console.log(". INFO generate x509 certs - TLS__INTERNAL_*");
 
     try {
-      const opensslVersion = execSync("openssl version", { encoding: "utf-8" });
-      if (!opensslVersion.includes("OpenSSL 3")) {
-        console.error("FATAL: openssl version 3 is required");
-        return;
-      }
+      const pki = forge.pki;
+      const { v4: uuidv4 } = require('uuid');
 
-      const caKeyFile = path.join(os.tmpdir(), `ca-key-${Date.now()}.pem`);
-      const caConfFile = path.join(os.tmpdir(), `ca-conf-${Date.now()}.cnf`);
-      const PKEY_ALGORITHM = "ec";
-      const PKEY_OPT = "ec_paramgen_curve:P-256";
+      // Generate CA keypair
+      const caKeyPair = pki.rsa.generateKeyPair({ bits: 2048 });
+      const caCert = pki.createCertificate();
+      
+      caCert.publicKey = caKeyPair.publicKey;
+      caCert.serialNumber = uuidv4().replace(/-/g, '').substring(0, 16);
+      
+      const caSubject = [{
+        name: 'commonName',
+        value: 'D2E Internal CA'
+      }];
+      
+      caCert.setSubject(caSubject);
+      caCert.setIssuer(caSubject);
+      
+      const now = new Date();
+      caCert.validity.notBefore = now;
+      caCert.validity.notAfter = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+      
+      caCert.setExtensions([
+        {
+          name: 'basicConstraints',
+          cA: true,
+          pathLenConstraint: 1
+        },
+        {
+          name: 'keyUsage',
+          keyCertSign: true,
+          cRLSign: true
+        }
+      ]);
+      
+      caCert.sign(caKeyPair.privateKey, forge.md.sha256.create());
+      
+      // Generate Server keypair
+      const serverKeyPair = pki.rsa.generateKeyPair({ bits: 2048 });
+      const serverCert = pki.createCertificate();
+      
+      serverCert.publicKey = serverKeyPair.publicKey;
+      serverCert.serialNumber = uuidv4().replace(/-/g, '').substring(0, 16);
+      
+      const serverSubject = [{
+        name: 'commonName',
+        value: this.TLS__INTERNAL__DOMAIN_NAME
+      }];
+      
+      serverCert.setSubject(serverSubject);
+      serverCert.setIssuer(caSubject);
+      
+      serverCert.validity.notBefore = now;
+      serverCert.validity.notAfter = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+      
+      serverCert.setExtensions([
+        {
+          name: 'basicConstraints',
+          cA: false
+        },
+        {
+          name: 'keyUsage',
+          digitalSignature: true,
+          keyEncipherment: true
+        },
+        {
+          name: 'extKeyUsage',
+          serverAuth: true,
+          clientAuth: true
+        },
+        {
+          name: 'subjectAltName',
+          altNames: [
+            { type: 2, value: '*.d2e.local' },
+            { type: 2, value: 'd2e.local' }
+          ]
+        }
+      ]);
+      
+      serverCert.sign(caKeyPair.privateKey, forge.md.sha256.create());
+      
+      // Convert to PEM format
+      const caRsaAsn1 = pki.privateKeyToAsn1(caKeyPair.privateKey);
+      const caKeyInfo = pki.wrapRsaPrivateKey(caRsaAsn1);
+      const TLS__INTERNAL__CA_KEY = pki.privateKeyInfoToPem(caKeyInfo).trim();
 
-      // Create CA config file
-      const caConfContent = `[ req ]
-        distinguished_name = req_distinguished_name
-        x509_extensions = v3_ext
-        prompt = no
+      const serverRsaAsn1 = pki.privateKeyToAsn1(serverKeyPair.privateKey);
+      const serverKeyInfo = pki.wrapRsaPrivateKey(serverRsaAsn1);
+      const TLS__INTERNAL__KEY = pki.privateKeyInfoToPem(serverKeyInfo).trim();
 
-        [ req_distinguished_name ]
-        CN = D2E Internal CA
-
-        [ v3_ext ]
-        keyUsage = critical,keyCertSign,cRLSign
-        basicConstraints = critical,CA:TRUE,pathlen:1`;
-      fs.writeFileSync(caConfFile, caConfContent);
-
-      // Generate TLS__INTERNAL__CA_KEY CA key to ${caKeyFile}
-      execSync(
-        `openssl genpkey -algorithm ${PKEY_ALGORITHM} -pkeyopt ${PKEY_OPT} -out "${caKeyFile}"`,
-        { encoding: "utf-8" }
-      );
-
-      // Generate TLS__INTERNAL__CA_CRT CA certificate to ${caCertFile}
-      const caCertFile = path.join(os.tmpdir(), `ca-cert-${Date.now()}.pem`);
-      execSync(
-        `openssl req -x509 -key "${caKeyFile}" -sha256 -days 3650 -config "${caConfFile}" -out "${caCertFile}"`,
-        { encoding: "utf-8" }
-      );
-
-      // Generate TLS__INTERNAL__KEY server key to ${serverKeyFile}
-      const serverKeyFile = path.join(
-        os.tmpdir(),
-        `server-key-${Date.now()}.pem`
-      );
-      execSync(
-        `openssl genpkey -algorithm ec -pkeyopt ${PKEY_OPT} -out "${serverKeyFile}"`,
-        { encoding: "utf-8" }
-      );
-
-      // Create server CSR config file
-      const serverConfFile = path.join(
-        os.tmpdir(),
-        `server-conf-${Date.now()}.cnf`
-      );
-      const serverConfContent = `[ req ]
-        distinguished_name = req_distinguished_name
-        req_extensions = v3_req
-        prompt = no
-
-        [ req_distinguished_name ]
-        CN = ${this.TLS__INTERNAL__DOMAIN_NAME}
-
-        [ v3_req ]
-        subjectAltName = DNS:*.d2e.local
-        keyUsage = critical,digitalSignature
-        extendedKeyUsage = serverAuth,clientAuth`;
-      fs.writeFileSync(serverConfFile, serverConfContent);
-
-      // Generate server CSR
-      const serverCsrFile = path.join(
-        os.tmpdir(),
-        `server-csr-${Date.now()}.pem`
-      );
-      execSync(
-        `openssl req -new -sha256 -key "${serverKeyFile}" -config "${serverConfFile}" -out "${serverCsrFile}"`,
-        { encoding: "utf-8" }
-      );
-
-      // Create extensions file for signing
-      const extFile = path.join(os.tmpdir(), `ext-${Date.now()}.cnf`);
-      const extContent = `subjectAltName = DNS:*.d2e.local
-        keyUsage = critical,digitalSignature
-        extendedKeyUsage = serverAuth,clientAuth`;
-      fs.writeFileSync(extFile, extContent);
-
-      // Generate TLS__INTERNAL__CRT server certificate to ${serverCertFile}
-      const serverCertFile = path.join(
-        os.tmpdir(),
-        `server-cert-${Date.now()}.pem`
-      );
-      execSync(
-        `openssl x509 -req -in "${serverCsrFile}" -CA "${caCertFile}" -CAkey "${caKeyFile}" -CAcreateserial -days 3650 -sha256 -extfile "${extFile}" -out "${serverCertFile}"`,
-        { encoding: "utf-8" }
-      );
-
-      const TLS__INTERNAL__CA_KEY = fs.readFileSync(caKeyFile, "utf-8").trim();
-      const TLS__INTERNAL__CA_CRT = fs.readFileSync(caCertFile, "utf-8").trim();
-      const TLS__INTERNAL__KEY = fs.readFileSync(serverKeyFile, "utf-8").trim();
-      const TLS__INTERNAL__CRT = fs
-        .readFileSync(serverCertFile, "utf-8")
-        .trim();
+      const TLS__INTERNAL__CA_CRT = pki.certificateToPem(caCert).trim();
+      const TLS__INTERNAL__CRT = pki.certificateToPem(serverCert).trim();
 
       let envContent = fs.readFileSync(dotenvFile, "utf-8");
       envContent = envContent
-        .replace(/^TLS__INTERNAL__CA_CRT=[\s\S]*?END CERTIFICATE-----'$/gm, "")
-        .replace(/^TLS__INTERNAL__CRT=[\s\S]*?END CERTIFICATE-----'$/gm, "")
-        .replace(/^TLS__INTERNAL__KEY=[\s\S]*?PRIVATE KEY-----'$/gm, "")
-        .replace(/^TLS__INTERNAL__CA_KEY=[\s\S]*?PRIVATE KEY-----'$/gm, "")
+        .replace(/^TLS__INTERNAL__CA_CRT=[\s\S]*?END CERTIFICATE-----"$/gm, "")
+        .replace(/^TLS__INTERNAL__CRT=[\s\S]*?END CERTIFICATE-----"$/gm, "")
+        .replace(/^TLS__INTERNAL__KEY=[\s\S]*?END PRIVATE KEY-----"$/gm, "")
+        .replace(/^TLS__INTERNAL__CA_KEY=[\s\S]*?END PRIVATE KEY-----"$/gm, "")
         .trim();
 
-      envContent += `\nTLS__INTERNAL__CA_CRT="${TLS__INTERNAL__CA_CRT.replace(
-        /\\/g,
-        "\\\\"
-      ).replace(/"/g, '\\"')}"\n`;
-      envContent += `TLS__INTERNAL__CRT="${TLS__INTERNAL__CRT.replace(
-        /\\/g,
-        "\\\\"
-      ).replace(/"/g, '\\"')}"\n`;
-      envContent += `TLS__INTERNAL__KEY="${TLS__INTERNAL__KEY.replace(
-        /\\/g,
-        "\\\\"
-      ).replace(/"/g, '\\"')}"\n`;
+      const esc = (v: string) => v.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+      envContent += `\nTLS__INTERNAL__CA_CRT="${esc(TLS__INTERNAL__CA_CRT)}"\n`;
+      envContent += `TLS__INTERNAL__CRT="${esc(TLS__INTERNAL__CRT)}"\n`;
+      envContent += `TLS__INTERNAL__KEY="${esc(TLS__INTERNAL__KEY)}"\n`;
       fs.writeFileSync(dotenvFile, envContent);
-
-      const tempFiles = [
-        caKeyFile,
-        caConfFile,
-        caCertFile,
-        serverKeyFile,
-        serverConfFile,
-        serverCsrFile,
-        extFile,
-        serverCertFile,
-      ];
-      tempFiles.forEach((file) => {
-        try {
-          fs.unlinkSync(file);
-        } catch {
-          // File may not exist
-        }
-      });
-
       console.log("TLS certificates generated successfully");
     } catch (error) {
       console.error("Error generating TLS certificates:", error);

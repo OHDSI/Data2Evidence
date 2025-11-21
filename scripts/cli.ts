@@ -8,7 +8,6 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { execSync, spawnSync } from "child_process";
 import { LibUtils } from "./lib";
-import { promises as fsPromises } from "fs";
 
 interface CliOptions {
   functionPath?: string;
@@ -204,11 +203,11 @@ class D2ECli {
         return `${key}=${value}`;
       })
       .join("\n");
-    await fsPromises.writeFile(this.ENVFILE, envContent + "\n");
+    fs.writeFileSync(this.ENVFILE, envContent + "\n");
     this.set_cpu_limit(this.ENVFILE, this.node_modules_path);
     this.set_memory_limit(this.ENVFILE, this.node_modules_path);
     this.gen_tls_internal(this.ENVFILE, this.node_modules_path);
-    const content = await fsPromises.readFile(this.ENVFILE, "utf-8");
+    const content = fs.readFileSync(this.ENVFILE, "utf-8");
     const keys = content
       .split("\n")
       .map((line) => line.trim())
@@ -218,19 +217,19 @@ class D2ECli {
       .filter((key, i, arr) => arr.indexOf(key) === i)
       .sort();
 
-    await fsPromises.writeFile(this.DOTENV_KEYS, keys.join("\n"));
+    fs.writeFileSync(this.DOTENV_KEYS, keys.join("\n"));
 
     const counts = [
-      { file: this.ENVFILE, lines: this.countLines(this.ENVFILE) },
-      { file: this.DOTENV_KEYS, lines: this.countLines(this.DOTENV_KEYS) },
+      { file: this.ENVFILE, lines: this.countLinesSync(this.ENVFILE) },
+      { file: this.DOTENV_KEYS, lines: this.countLinesSync(this.DOTENV_KEYS) },
     ];
     for (const { file, lines } of counts) {
       console.log(`${lines} ${file}`);
     }
     console.log("File written successfully");
   }
-  async countLines(filePath: string): Promise<number> {
-    const content = await fsPromises.readFile(filePath, "utf-8");
+  countLinesSync(filePath: string): number {
+    const content = fs.readFileSync(filePath, "utf-8");
     return content.trimEnd().split("\n").length;
   }
   install_options(): void {
@@ -609,7 +608,7 @@ class D2ECli {
           init_choice = "y";
         } else {
           init_choice = await this.user_input(
-            "WARNING: Re-running this command again will require you to run `d2e clean` to remove all existing containers and volumes before starting services again with `d2e start`.\nDo you wish to overwrite .env file? (y/n): \n"
+            "WARNING: Re-running this command again will require you to run `d2e clean` to remove all existing containers and volumes before starting services again with `d2e start`.\nDo you wish to overwrite .env file? (y/n): "
           );
         }
         if (init_choice.toLowerCase() !== "y") {
