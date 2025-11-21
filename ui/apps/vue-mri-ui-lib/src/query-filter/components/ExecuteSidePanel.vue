@@ -1,3 +1,11 @@
+<script lang="ts">
+export default {
+  compatConfig: {
+    MODE: 3,
+  },
+}
+</script>
+
 <script setup lang="ts">
 import bsCard from '@/lib/ui/bs-card.vue'
 import appTab from '@/lib/ui/app-tab.vue'

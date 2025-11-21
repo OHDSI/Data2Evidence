@@ -83,7 +83,6 @@ const patientCount = ref<number | null>(null)
 const isGeneratingCohort = ref(false)
 const cohortInfo = ref<CohortInfoResponse>([])
 const isLoadingCohortInfo = ref(false)
-// const generationStatus = ref<'idle' | 'pending' | 'complete' | 'failed'>('idle')
 const generationStatus = ref<Record<string, 'idle' | 'pending' | 'complete' | 'failed'>>({})
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 const POLLING_INTERVAL_MS = 2000
