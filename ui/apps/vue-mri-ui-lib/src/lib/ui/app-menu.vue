@@ -15,9 +15,6 @@ import bsDropdown from './bs-dropdown.vue'
 import bsDropdownItem from './bs-dropdown-item.vue'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'app-menu',
   props: ['nodes', 'text'],
   methods: {

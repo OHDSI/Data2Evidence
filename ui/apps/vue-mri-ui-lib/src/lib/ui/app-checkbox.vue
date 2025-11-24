@@ -12,15 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  name: 'app-checkbox',
-  compatConfig: {
-    MODE: 3, // Run in Vue 3 mode for proper v-model behavior
-  },
-}
-</script>
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import appLabel from './app-label.vue'
@@ -50,7 +41,7 @@ const emit = defineEmits<{
 
 // Merge both props - modelValue takes precedence for Vue 2/3 compat
 const mergedValue = computed(() => {
-  return props.modelValue !== undefined ? props.modelValue : props.value ?? false
+  return props.modelValue !== undefined ? props.modelValue : (props.value ?? false)
 })
 
 // Internal reactive state

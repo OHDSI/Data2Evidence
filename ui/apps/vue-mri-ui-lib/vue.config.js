@@ -34,8 +34,6 @@ module.exports = {
   },
   publicPath: '',
   chainWebpack: config => {
-    config.resolve.alias.set('vue', '@vue/compat')
-
     config.plugin('html').tap(args => {
       args[0].template = './public/index.html'
       args[0].filename = 'index.html'
@@ -55,9 +53,7 @@ module.exports = {
         return {
           ...options,
           compilerOptions: {
-            compatConfig: {
-              MODE: 2,
-            },
+            isCustomElement: tag => tag.startsWith('d4l-'),
           },
         }
       })
@@ -68,6 +64,10 @@ module.exports = {
     },
     resolve: {
       preferRelative: true,
+      alias: {
+        // Dedupe Vue to prevent multiple instances. Duplicate vue was causing issues with multiselect
+        vue: path.resolve(__dirname, 'node_modules/vue'),
+      },
       fallback: {
         // https://stackoverflow.com/questions/64557638/how-to-polyfill-node-core-modules-in-webpack-5
         stream: require.resolve('stream-browserify'),
@@ -79,6 +79,11 @@ module.exports = {
       // https://stackoverflow.com/questions/65018431/webpack-5-uncaught-referenceerror-process-is-not-defined/65018686#65018686
       new webpack.ProvidePlugin({
         process: require.resolve('process/browser'),
+      }),
+      new webpack.DefinePlugin({
+        __VUE_OPTIONS_API__: JSON.stringify(true),
+        __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
       }),
       new HtmlWebpackPlugin({
         filename: 'assets.json',

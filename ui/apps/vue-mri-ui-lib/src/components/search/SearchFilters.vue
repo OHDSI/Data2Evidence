@@ -33,9 +33,6 @@ import bsDropdown from '../../lib/ui/bs-dropdown.vue'
 import bsDropdownItemButton from '../../lib/ui/bs-dropdown-item-button.vue'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'searchFilters',
   data() {
     return {

@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'QueryFilterEntryExit',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -43,7 +40,7 @@ const emit = defineEmits<{
     conceptSetName: string,
     gapDays: number,
     offset: number,
-    daysSupplyOverride: number
+    daysSupplyOverride: number,
   ]
   'update-primary-events': [events: QueryFilterEvent[]]
   'update-exit-events': [events: QueryFilterEvent[]]
@@ -55,7 +52,7 @@ const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : '
 const updateLimitValue = (value: string) => {
   // Type guard to ensure the value is valid
   const validLimits = ['ALL', 'EARLIEST', 'LATEST', 'CONT_OBS', 'FIXED', 'CONT_DRUG'] as const
-  type ValidLimit = typeof validLimits[number]
+  type ValidLimit = (typeof validLimits)[number]
 
   const isValidLimit = (val: string): val is ValidLimit => {
     return validLimits.includes(val as ValidLimit)
