@@ -4,12 +4,12 @@ const { default: axios } = require('axios')
 const _ = require('lodash')
 
 const api = axios.create({
-  baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
+  baseURL: process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI',
 })
 
-const SOURCE = process.env.SOURCE || 'EUNOMIA'
+const SOURCE = process.env.SOURCE || 'SYNPUF1K'
 
-console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI')
+console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI')
 console.log('SOURCE:', SOURCE)
 
 const sourceMap = [

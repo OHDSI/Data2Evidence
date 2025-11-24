@@ -1,19 +1,23 @@
-const USE_MOCK_SERVER = false
-const REDIRECT_URL = 'https://localhost:8081'
+// For local development only, production uses another authenticate.js in the resources folder.
+
+// Get configuration from environment variables injected in index.html
+const AUTH_CONFIG = window.AUTH_CONFIG || {}
+const USE_MOCK_SERVER = AUTH_CONFIG.useMockServer || false
+const REDIRECT_URL = AUTH_CONFIG.redirectUrl || 'https://localhost:8081'
+const CLIENT_ID = AUTH_CONFIG.clientId || 'ALOjB8OcP85tw2ZQb33aH'
 
 const config = {
-  // Update client_id to your LOGTO__ALP_APP__CLIENT_ID
-  client_id: '1d6wuydanyaiypbkchxzu',
+  client_id: CLIENT_ID,
   redirect_uri: REDIRECT_URL,
-  authority: 'https://localhost:41100',
+  authority: AUTH_CONFIG.authority || 'https://localhost:41100',
   metadata: {
-    issuer: 'https://localhost:8081/oidc',
-    authorization_endpoint: 'https://localhost:8081/oidc/auth',
-    token_endpoint: 'https://localhost:8081/oauth/token',
-    end_session_endpoint:
-      // Update client_id to your LOGTO__ALP_APP__CLIENT_ID
-      'https://localhost:8081/oidc/session/end?client_id=1d6wuydanyaiypbkchxzu&redirect={window.location.origin}/portal',
-    revocation_endpoint: 'https://localhost:8081/oidc/token/revocation',
+    issuer: AUTH_CONFIG.issuer || 'https://localhost:8081/oidc',
+    authorization_endpoint: AUTH_CONFIG.authEndpoint || 'https://localhost:8081/oidc/auth',
+    token_endpoint: AUTH_CONFIG.tokenEndpoint || 'https://localhost:8081/oauth/token',
+    end_session_endpoint: AUTH_CONFIG.endSessionEndpoint
+      ? `${AUTH_CONFIG.endSessionEndpoint}?client_id=${CLIENT_ID}&redirect={window.location.origin}/portal`
+      : `https://localhost:8081/oidc/session/end?client_id=${CLIENT_ID}&redirect={window.location.origin}/portal`,
+    revocation_endpoint: AUTH_CONFIG.revocationEndpoint || 'https://localhost:8081/oidc/token/revocation',
   },
   scope: 'openid offline',
 }

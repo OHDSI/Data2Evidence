@@ -1,4 +1,4 @@
-<!-- For local development only -->
+<!-- For local development only, production uses another index.html in the resources folder. -->
 <html>
   <head>
     <title>Atlas</title>
@@ -9,6 +9,19 @@
     <link rel="icon" type="image/x-icon" href="favicon-atlas.ico" />
     <script nonce="__NONCE__">
       window.ENV_DATA = __ENV_DATA__
+    </script>
+    <script nonce="__NONCE__">
+      window.AUTH_CONFIG = {
+        useMockServer: <%= process.env.VUE_APP_STANDALONE_ATLAS === 'true' ? true : false %>,
+        redirectUrl: '<%= process.env.VUE_APP_REDIRECT_URL || "https://localhost:8081" %>',
+        clientId: '<%= process.env.VUE_APP_CLIENT_ID %>',
+        authority: '<%= process.env.VUE_APP_AUTHORITY || "https://localhost:41100" %>',
+        issuer: '<%= process.env.VUE_APP_ISSUER || "https://localhost:8081/oidc" %>',
+        authEndpoint: '<%= process.env.VUE_APP_AUTH_ENDPOINT || "https://localhost:8081/oidc/auth" %>',
+        tokenEndpoint: '<%= process.env.VUE_APP_TOKEN_ENDPOINT || "https://localhost:8081/oauth/token" %>',
+        endSessionEndpoint: '<%= process.env.VUE_APP_END_SESSION_ENDPOINT || "https://localhost:8081/oidc/session/end" %>',
+        revocationEndpoint: '<%= process.env.VUE_APP_REVOCATION_ENDPOINT || "https://localhost:8081/oidc/token/revocation" %>'
+      }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
     <script type="text/javascript" src="/authenticate.js"></script>
@@ -47,21 +60,21 @@
 
     <script>
       ;(function () {
-        const isLocal = true
-        const defaultDatasource = 'SYNPUF1K' // Default fallback
+        const isLocal = <%= process.env.VUE_APP_STANDALONE_ATLAS === 'true' ? true : false %>
+        const defaultDatasource = '<%= process.env.VUE_APP_DEFAULT_DATASOURCE || "SYNPUF1K" %>'
 
-        // Set portalAPI immediately with default values
+        // Set portalAPI immediately with values from environment
         document.querySelector('.plugin-container').portalAPI = {
-          qeSvcUrl: 'https://localhost:8081',
-          studyId: '963820c6-94b0-42d8-8359-115b2695faf5', // Change to your dev studyID
+          qeSvcUrl: '<%= process.env.VUE_APP_QE_SVC_URL || "https://localhost:8081" %>',
+          studyId: '<%= process.env.VUE_APP_DATASET_ID %>',
           releaseId: '',
           async getToken() {
             return localStorage.getItem('msaltoken')
           },
           isLocal: isLocal,
-          username: 'admin', // Change to your logto username
-          locale: 'en',
-          debug: false,
+          username: '<%= process.env.VUE_APP_USERNAME || "admin" %>',
+          locale: '<%= process.env.VUE_APP_LOCALE || "en" %>',
+          debug: <%= process.env.VUE_APP_DEBUG === 'true' ? true : false %>,
 
           // DEMO
           // REACT_APP_PUBLIC_WEBAPI_PROXY_URL: 'http://localhost:3001', // only used when different url from website url
@@ -107,17 +120,15 @@
     ></script>
 
     <!-- Load preload script FIRST to ensure import-map-overrides is available -->
-    <% if (htmlWebpackPlugin.files.js.find(f => f.includes('preload'))) { %>
-      <% var preloadScript = htmlWebpackPlugin.files.js.find(f => f.includes('preload')); %>
-      <script type="text/javascript" src="<%= preloadScript %>"></script>
+    <% if (htmlWebpackPlugin.files.js.find(f => f.includes('preload'))) { %> <% var preloadScript =
+    htmlWebpackPlugin.files.js.find(f => f.includes('preload')); %>
+    <script type="text/javascript" src="<%= preloadScript %>"></script>
     <% } %>
 
     <!-- Then load remaining scripts -->
-    <% for (key in htmlWebpackPlugin.files.js) { %>
-      <% if (!htmlWebpackPlugin.files.js[key].includes('preload')) { %>
-        <script type="text/javascript" src="<%= htmlWebpackPlugin.files.js[key] %>"></script>
-      <% } %>
-    <% } %>
+    <% for (key in htmlWebpackPlugin.files.js) { %> <% if (!htmlWebpackPlugin.files.js[key].includes('preload')) { %>
+    <script type="text/javascript" src="<%= htmlWebpackPlugin.files.js[key] %>"></script>
+    <% } %> <% } %>
 
     <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
   </body>

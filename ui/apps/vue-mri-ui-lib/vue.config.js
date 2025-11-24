@@ -19,8 +19,7 @@ module.exports = {
     // add your proxies here. See https://cli.vuejs.org/config/#devserver-proxy
     proxy: {
       '/': {
-        // target: 'http://localhost:3001',
-        target: 'https://localhost:41100',
+        target: process.env.VUE_APP_STANDALONE_ATLAS === 'true' ? 'http://localhost:3131' : 'https://localhost:41100',
         changeOrigin: true,
         ws: false, // This disables proxying of ws so the hot reloader can communicate directly with vue dev server
         bypass: req => {
@@ -96,4 +95,3 @@ module.exports = {
     devtool: 'source-map',
   },
 }
-
