@@ -27,10 +27,25 @@ const signinRedirect = async () => {
   await userManager.signinRedirect()
 }
 
+// This is not used in code, but can be accessed in the browser when developing using `await getUser()`
 const getUser = () => {
   return userManager.getUser()
 }
 
+const isTokenExpired = token => {
+  if (!token) return true
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const expirationTime = payload.exp * 1000 // Convert to milliseconds
+    return Date.now() >= expirationTime
+  } catch (error) {
+    console.error('Error parsing token', error)
+    return true
+  }
+}
+
+// This is not used in this file, so it is marked unused, however it is used in index.html
 const logoutfn = () => {
   localStorage.removeItem('msaltoken')
   userManager.signoutRedirect({
@@ -53,7 +68,11 @@ if (!USE_MOCK_SERVER) {
         localStorage.removeItem('msaltoken')
         signinRedirect()
       })
-  } else if (!authToken) {
+  } else if (!authToken || isTokenExpired(authToken)) {
+    if (authToken && isTokenExpired(authToken)) {
+      console.log('Token expired, redirecting to sign in')
+      localStorage.removeItem('msaltoken')
+    }
     sessionStorage.setItem('returnPath', window.location.pathname)
     signinRedirect()
   }
