@@ -61,7 +61,7 @@ sap.ui.define([
             if (meta.configId !== "") {
                 // there is a config id but it's not loaded
                 ConfigUtils.ajax({
-                    url: "/pa-config-svc/services/config.xsjs",
+                    url: "/d2e/pa-config-svc/services/config.xsjs",
                     type: "POST",
                     dataType: "json",
                     contentType: "application/json;charset=utf-8",

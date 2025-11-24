@@ -124,7 +124,7 @@ sap.ui.define([
         var currentConfig = oAnalyticsModel.getProperty(configPath);
 
         ConfigUtils.ajax({
-            url: "/pa-config-svc/services/config.xsjs",
+            url: "/d2e/pa-config-svc/services/config.xsjs",
             type: "POST",
             dataType: "json",
             contentType: "application/json;charset=utf-8",
@@ -298,7 +298,7 @@ sap.ui.define([
         var configPath = bindingContext.getPath() + "/config";
 
         ConfigUtils.ajax({
-            url: "/pa-config-svc/services/config.xsjs",
+            url: "/d2e/pa-config-svc/services/config.xsjs",
             type: "POST",
             dataType: "json",
             contentType: "application/json;charset=utf-8",
