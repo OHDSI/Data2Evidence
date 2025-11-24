@@ -146,7 +146,7 @@ export class DatasetCommandService {
         .replace(/_+/g, '_') // Replace multiple underscores with single underscore
         .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
       
-      const newTokenDatasetCode = `${tokenDatasetCode}_copy_${sanitizedName}`.substring(0, 80);
+      const newTokenDatasetCode = `${tokenDatasetCode}_dm_${sanitizedName}`.substring(0, 80);
       
       // Copy dataset with new schema name
       const datasetSnapshot: Partial<Dataset> = {
