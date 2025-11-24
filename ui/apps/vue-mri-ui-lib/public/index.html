@@ -32,6 +32,7 @@
     <% } %>
   </head>
   <body style="margin: 0px; display: flex; flex-direction: column">
+    <% if (process.env.VUE_APP_STANDALONE_ATLAS !== 'true') { %>
     <button
       id="mriBtnLogout"
       onclick="logoutfn()"
@@ -39,6 +40,7 @@
     >
       logout
     </button>
+    <% } %>
 
     <!-- Uncomment the Portal Header when developing without single-spa -->
     <!-- <div
