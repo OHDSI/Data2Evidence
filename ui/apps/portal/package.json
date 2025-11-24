@@ -17,11 +17,9 @@
     "prettier": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
-    "@babel/runtime": "^7.18.9",
     "@axa-fr/react-oidc": "6.10.9",
+    "@babel/runtime": "^7.18.9",
     "@d4l/web-components-library": "^3.20.2",
-    "@data2evidence/d2e-starboard-notebook": "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop",
-    "@data2evidence/d2e-starboard-wrap": "https://github.com/data2evidence/d2e-starboard-wrap.git#develop",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",
     "@monaco-editor/react": "^4.7.0",
@@ -58,6 +56,7 @@
     "react-router-dom": "^6.3.0",
     "react-simple-code-editor": "^0.13.1",
     "react-simplemde-editor": "^5.0.2",
+    "single-spa": "^6.0.3",
     "systemjs": "0.21.6"
   },
   "devDependencies": {

@@ -90,6 +90,14 @@ export const Researcher: FC = () => {
     return flatPlugins;
   }, [dataset]);
 
+  const singleSpaApps = useMemo(() => {
+    return researcherPluginsFlat.filter((plugin) => plugin.type === "app");
+  }, [researcherPluginsFlat]);
+
+  const legacyPlugins = useMemo(() => {
+    return researcherPluginsFlat.filter((plugin) => plugin.type !== "app");
+  }, [researcherPluginsFlat]);
+
   const onFetchMenus = useCallback((route: string, menus: PluginDropdownItem[]) => {
     setPluginDropdown((current: any) => ({ ...current, [route]: menus }));
   }, []);
@@ -121,23 +129,54 @@ export const Researcher: FC = () => {
           description={feedback?.description}
           visible={feedback?.message != null}
         />
+        {/* Pre-render all single-spa app containers - visibility controlled by route matching */}
+        {singleSpaApps.map((item: IPluginItem) => {
+          const subFeatureFlags = item.featureFlag ? featureFlagsDict[item.featureFlag] : {};
+          const isActiveRoute = location.pathname.includes(`/researcher/${item.route}`);
+          return (
+            <div
+              key={item.route}
+              style={{
+                display: isActiveRoute ? "block" : "none",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <ErrorBoundary name={item.name}>
+                <ResearcherStudyPluginRenderer
+                  path={item.pluginPath}
+                  route={item.route}
+                  type={item.type}
+                  tenantId={activeTenantId}
+                  studyId={activeDatasetId}
+                  releaseId={activeReleaseId}
+                  data={item?.data}
+                  fetchMenu={onFetchMenus}
+                  subFeatureFlags={subFeatureFlags}
+                />
+              </ErrorBoundary>
+            </div>
+          );
+        })}
+        {/* Legacy plugins use React Router */}
         <Routes>
           <Route path="/">
             <Route index element={<Overview />} />
             <Route path={ROUTES.overview} element={<Overview />} />
             <Route path={ROUTES.info} element={<Information />} />
             <Route path={ROUTES.account} element={<Account portalType="researcher" />} />
-            {researcherPluginsFlat.map((item: IPluginItem) => {
+            {legacyPlugins.map((item: IPluginItem) => {
               const subFeatureFlags = item.featureFlag ? featureFlagsDict[item.featureFlag] : {};
               return (
                 <Route
                   key={item.name}
                   path={getPluginChildPathPattern(item)}
                   element={
-                    <ErrorBoundary name={item.name} key={item.route}>
+                    <ErrorBoundary name={item.name}>
                       <ResearcherStudyPluginRenderer
-                        key={item.route}
                         path={item.pluginPath}
+                        route={item.route}
+                        type={item.type}
                         tenantId={activeTenantId}
                         studyId={activeDatasetId}
                         releaseId={activeReleaseId}

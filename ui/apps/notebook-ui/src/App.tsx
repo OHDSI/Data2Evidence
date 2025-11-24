@@ -14,8 +14,6 @@ import { theme } from "./theme";
 import "./App.css";
 
 const App: FC<PortalProps> = (props) => {
-  console.log("Notebook UI App mounted with props:", props);
-
   // Initialize API and fetch token providers
   useEffect(() => {
     if (props.getToken) {

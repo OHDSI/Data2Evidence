@@ -180,22 +180,26 @@
           },
           {
             "enabled": true,
+            "type": "app",
             "featureFlag": "starboard",
             "name": "Notebooks",
             "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
-            "pluginPath": "plugins/Starboard/module",
+            "pluginPath": "/resources/notebook-ui-lite/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
             "route": "starboard",
-            "subMenus": "true"
+            "data": {
+              "uiFilesUrl": "https://localhost:41100/"
+            }
           },
           {
             "enabled": true,
+            "type": "app",
             "name": "Analysis",
             "nameI18nKey": "UI_PLUGIN_ANALYSIS",
             "route": "analysis",
-            "pluginPath": "https://$$FQDN$$/analysis/module.js",
+            "pluginPath": "/resources/analysis-ui/lifecycles.js",
             "featureFlag": "strategus",
             "requiredRoles": [
               "RESEARCHER"
