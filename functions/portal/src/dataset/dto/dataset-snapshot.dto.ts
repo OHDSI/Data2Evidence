@@ -1,5 +1,5 @@
 import { Transform } from "npm:class-transformer";
-import { IsDate, IsNotEmpty, IsString, IsUUID } from "npm:class-validator";
+import { IsDate, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from "npm:class-validator";
 import { IDatasetSnapshotDto } from "../../types.d.ts";
 
 export class DatasetSnapshotDto implements IDatasetSnapshotDto {
@@ -24,4 +24,8 @@ export class DatasetSnapshotDto implements IDatasetSnapshotDto {
   @IsNotEmpty()
   @IsString()
   type: string;
+
+  @IsOptional()
+  @IsObject()
+  flowParameters?: Record<string, unknown>;
 }
