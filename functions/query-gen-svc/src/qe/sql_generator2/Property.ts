@@ -231,10 +231,16 @@ export class Property extends AstElement {
 
                     //Please dont change the order of these joins as they are dependent on each other
 
-                    const refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+                    let refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
 
                     if(!refAlias) {
-                        throw new Error("@REF undefined in the Data Source (Expression)!")
+                        this.scopeEntityDef.addTableAlias(
+                            { baseEntity: "@REF", table: attrConfig.placeholderMap["@REF"] },
+                            false,
+                            "INNER JOIN",
+                            true
+                        );
+                        refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
                     }
 
 
