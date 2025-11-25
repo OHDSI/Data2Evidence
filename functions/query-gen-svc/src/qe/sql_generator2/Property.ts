@@ -230,13 +230,16 @@ export class Property extends AstElement {
                 if (attrConfig.__config.includeDescendants) {
 
                     //Please dont change the order of these joins as they are dependent on each other
-                    //Add Concept Relationship
-                    this.scopeEntityDef.addTableAlias(
-                        { baseEntity: "@REF0", table: `$$VOCAB_SCHEMA$$.CONCEPT_RELATIONSHIP` },
-                        false,
-                        "INNER JOIN",
-                        true
-                    );
+
+                    const refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+
+                    if(!refAlias) {
+                        throw new Error("@REF undefined in the Data Source (Expression)!")
+                    }
+
+
+                    //Build Concept Relationship
+                    const conceptRelationshipPlaceholder = "@TEXT";
 
                     //Add Concept Ancestor
                     this.scopeEntityDef.addTableAlias(
@@ -246,52 +249,38 @@ export class Property extends AstElement {
                         true
                     );
 
-                    const textAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@TEXT"]);
-                    const refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
-
-                    if(!refAlias) {
-                        throw new Error("@REF undefined in the Data Source (Expression)!")
-                    }
-
-
-                    //Build Concept Relationship
-                    const conceptRelationshipPlaceholder = "@REF0";
-                    attrConfig.placeholderMap[conceptRelationshipPlaceholder] = `$$VOCAB_SCHEMA$$.CONCEPT_RELATIONSHIP`;
-                    attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.CODE`] = attrConfig.placeholderMap["@REF.CODE"];
-                    attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.TEXT`] = attrConfig.placeholderMap["@REF.TEXT"];
-                    attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.VOCABULARY_ID`] = attrConfig.placeholderMap["@REF.VOCABULARY_ID"];
-
-                    // const ref0AliasObj = this.scopeEntityDef.getTableAliasByBaseEntity("@REF0");
-                    const ref0AliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap["@REF0"]);
+                    // const conRelAliasObj = this.scopeEntityDef.getTableAliasByBaseEntity("@REF0");
+                    const conRelAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[conceptRelationshipPlaceholder]);
                     const relationships = Deno.env.get("OMOP_RELATIONSHIPS_FOR_DESCENDANTS") || `'Maps to','Subsumes'`;
-                    ref0AliasObj.on = []; //initialize
-                    this.pushOnCondition(
-                        ref0AliasObj.on,
-                        QueryObject.format("%UNSAFE", 
-                                            `${ref0AliasObj.alias}.relationship_id in (${relationships}) AND 
-                                             ${ref0AliasObj.alias}.concept_id_1 = ${refAlias}.${attrConfig.placeholderMap["@REF.CODE"]}`)
-                    )
-
-                    this.pushOnCondition(
-                        textAliasObj.on,
-                        QueryObject.format("%UNSAFE", 
-                                            `${textAliasObj.alias}.ANCESTOR_CONCEPT_ID 
-                                              = ${ref0AliasObj.alias}.concept_id_2`)
-                    )
+                    
                     
                     let descendantsFilterExpression = attrConfig.__config.includeDescendantsExpression;
                     if(!descendantsFilterExpression) {
                         throw new Error("Expression undefined in the descendantsFilterExpression!")
                     }
+
+                    const columnConceptIDEntityPlaceholderMap = {
+                        "@COND": 902379,
+                        "@DRUGEXP": 1147096,
+                        "@MEAS": 1147140,
+                        "@PROC": 1147084,
+                    }
                     const descendantsPlaceholder = descendantsFilterExpression.match(/@[^.^\s]+/g)[0];
                     const descendantsAlias = this.scopeEntityDef.getTableAliasByBaseEntity(descendantsPlaceholder);
                     descendantsFilterExpression = descendantsFilterExpression.replaceAll(descendantsPlaceholder, descendantsAlias);
+                    const ancestorColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.INTERACTION_ID`]
+                    const descendantColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.INTERACTION_TEXT_ID`]
+                    const conceptColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.VALUE`]
 
+                    const finalDescendantsJoinExpression = QueryObject.format("%UNSAFE", 
+                                            `${conRelAliasObj.alias}.${descendantColumn} = ${descendantsFilterExpression} AND 
+                                             ${conRelAliasObj.alias}.${ancestorColumn} = ${refAlias}.CONCEPT_ID AND 
+                                             ${conRelAliasObj.alias}.${conceptColumn} = ${columnConceptIDEntityPlaceholderMap[descendantsPlaceholder]}`)
+
+                    conRelAliasObj.on = []; //initialize
                     this.pushOnCondition(
-                        textAliasObj.on,
-                        QueryObject.format("%UNSAFE", 
-                                            `${textAliasObj.alias}.DESCENDANT_CONCEPT_ID 
-                                             = ${descendantsFilterExpression}`)
+                        conRelAliasObj.on,
+                        finalDescendantsJoinExpression
                     )
 
                     //Detect if its on the x1 or x2
@@ -312,21 +301,21 @@ export class Property extends AstElement {
                         groupByNode.attrConfig.__config.defaultFilter = groupByNode.attrConfig.__config.defaultFilter.replaceAll("@REF", newRefPlaceholder);
                         
                         this.scopeEntityDef.addTableAlias(
-                        { baseEntity: newRefPlaceholder, table: attrConfig.placeholderMap[newRefPlaceholder] },
-                        false,
-                        "INNER JOIN",
-                        true
+                            { baseEntity: newRefPlaceholder, table: attrConfig.placeholderMap[newRefPlaceholder] },
+                            false,
+                            "INNER JOIN",
+                            true
                         );
 
                         //Add the ON condition between additional concept table and the descendant expression
                         const maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
                         const maxRefAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[newRefPlaceholder]);
+                        const finalmaxDescendantsJoinExpression = QueryObject.format("%UNSAFE", 
+                                            `${conRelAliasObj.alias}.FACET_CONCEPT_ID = ${maxRefAliasObj.alias}.CONCEPT_ID`)
                         maxRefAliasObj.on = []; //initialize
                         this.pushOnCondition(
-                        maxRefAliasObj.on,
-                        QueryObject.format("%UNSAFE", 
-                                            `${maxRefAliasObj.alias}.CONCEPT_ID 
-                                             = ${descendantsFilterExpression}`)
+                            maxRefAliasObj.on,
+                            finalmaxDescendantsJoinExpression
                         )
                     }
                 }
@@ -346,7 +335,7 @@ export class Property extends AstElement {
     private getNewMaxPlaceholderRefPlaceholder(placeholderMap) {
         const sortedArray = Object.keys(placeholderMap).filter((x) => x.startsWith("@REF")).map(x => x.match(/@[^.^\s]+/g)[0]).sort();
         if (sortedArray[sortedArray.length - 1] === "@REF") {
-            return "@REF2";
+            return "@REF0";
         } else {
             const maxRef = sortedArray[sortedArray.length - 1];
             const refNumber = parseInt(maxRef.replace("@REF", ""));
