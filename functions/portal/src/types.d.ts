@@ -26,6 +26,7 @@ export interface IDataset {
   databaseCode: string;
   schemaName?: string;
   vocabSchemaName?: string;
+  sourceDatasetId?: string;
   dataModel?: string;
   studyDetail: {
     id: string;
@@ -73,6 +74,7 @@ export interface IDatasetSnapshotDto {
   newDatasetName: string;
   schemaName: string;
   timestamp: Date;
+  type: string;
 }
 
 interface IDatasetDetailBaseDto {

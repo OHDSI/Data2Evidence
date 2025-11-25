@@ -7,9 +7,10 @@ from pydantic import BaseModel, model_validator
 
 # Todo: call github api to get latest release
 RELEASE_VERSION_MAPPING = {
-            "5.3": "v5.3.2",
-            "5.4": "v5.4.1"
-        }
+    "5.3": "v5.3.2",
+    "5.4": "v5.4.1"
+}
+
 
 class FlowActionType(str, Enum):
     CREATE_DATA_MODEL = "create_datamodel"
@@ -26,10 +27,12 @@ class CDMVersion(str, Enum):
 class OmopCDMPluginOptions(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
-    data_model: Optional[str] = None # omop5-3, omop5-4
+    data_model: Optional[str] = None  # omop5-3, omop5-4
     schema_name: Optional[str] = None
     results_schema: Optional[str] = None
     vocab_schema: Optional[str] = None
+    cache_schema_name: Optional[str] = None
+    result_schema: Optional[str] = None
     datasets: Optional[List] = None
 
     @property
@@ -41,7 +44,7 @@ class OmopCDMPluginOptions(BaseModel):
         if self.data_model:
             return self.data_model[-3:].replace("-", ".")
         return None
-    
+
     @property
     def release_version(self) -> str | None:
         if self.cdm_version:
