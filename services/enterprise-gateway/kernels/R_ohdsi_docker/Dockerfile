@@ -97,7 +97,7 @@ RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/Archive
 RUN Rscript -e 'install.packages(c("MatrixModels", "quantreg", "shiny", "shinydashboard","svglite","car","rstatix", "kableExtra", "ggpubr"), dependencies=TRUE, repos="https://cloud.r-project.org")'
 RUN Rscript -e 'remotes::install_github("ohdsi/OhdsiShinyAppBuilder")'
 RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiReportGenerator", dependencies = TRUE,quiet=FALSE)'
-RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@RC-3.2.0", dependencies=TRUE,quiet=FALSE)'
+RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@v3.3.0", dependencies=TRUE,quiet=FALSE)'
 
 # OHDSI packages and versions - final
 RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
