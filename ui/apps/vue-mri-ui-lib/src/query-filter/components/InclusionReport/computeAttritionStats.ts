@@ -8,7 +8,14 @@ type AttritionStat = {
   pctDiff: string
 }
 
-// Helper function to count matches in treemap data (adapted from Ohdsi Atlas codebase)
+/**
+ * Count matches in treemap data based on a binary mask pattern
+ * Recursively traverses the tree and counts leaf nodes whose names start with the mask
+ * Adapted from Ohdsi Atlas codebase
+ * @param node - The treemap node to search (can have children or be a leaf)
+ * @param mask - Binary string pattern to match (e.g., "11" matches nodes starting with "11")
+ * @returns Total count of matching leaf nodes
+ */
 const countMatch = (node: any, mask: string): number => {
   let count = 0
   if (node.hasOwnProperty('children')) {
@@ -21,7 +28,13 @@ const countMatch = (node: any, mask: string): number => {
   return count
 }
 
-// Compute attrition statistics from treemap data (adapted from Ohdsi Atlas codebase)
+/**
+ * Compute attrition statistics from treemap data
+ * Calculates cumulative counts and percentages for each inclusion rule
+ * Adapted from Ohdsi Atlas codebase
+ * @param report - The inclusion report containing treemap data and rule definitions
+ * @returns Array of attrition statistics, one for each inclusion rule
+ */
 export function computeAttritionStats(report: InclusionReportResponse): AttritionStat[] {
   if (!report) return []
   const treemapData = JSON.parse(report.treemapData)

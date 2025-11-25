@@ -7,7 +7,6 @@ type TooltipData = {
   failed: string[]
 }
 
-// Color mapping based on number of failed rules
 const RULE_FAILURE_COLORS = {
   allFailedOr5Plus: '#fabfb4',
   threeToFour: '#fcdab6',
@@ -16,7 +15,11 @@ const RULE_FAILURE_COLORS = {
   allPassed: '#53bead',
 }
 
-// Helper function to calculate pass and fail counts from binary string
+/**
+ * Calculate pass and fail counts from a binary string representation
+ * @param bits - Binary string where '1' represents passed and '0' represents failed
+ * @returns Object containing passCount and failCount
+ */
 function calculateRuleCounts(bits: string): { passCount: number; failCount: number } {
   let passCount = 0
   let failCount = 0
@@ -32,7 +35,11 @@ function calculateRuleCounts(bits: string): { passCount: number; failCount: numb
   return { passCount, failCount }
 }
 
-// Helper function to get color based on number of failed rules
+/**
+ * Get color based on number of failed rules
+ * @param failCount - Number of failed rules
+ * @returns Hex color code corresponding to the failure count
+ */
 function getColorByFailureCount(failCount: number): string {
   if (failCount === 0) {
     return RULE_FAILURE_COLORS.allPassed
@@ -48,7 +55,13 @@ function getColorByFailureCount(failCount: number): string {
   }
 }
 
-// Helper function to compute and format treemap tooltips
+/**
+ * Compute treemap tooltip data
+ * @param bits - Binary string representing pass/fail status for each rule
+ * @param size - Number of people in this cohort segment
+ * @param inclusionReportResponse - The inclusion report containing rule definitions and base count
+ * @returns TooltipData object with formatted count, summary, and passed/failed criteria lists
+ */
 function computeTooltipData(bits: string, size: number, inclusionReportResponse: InclusionReportResponse) {
   const { passCount, failCount } = calculateRuleCounts(bits)
   const passed = []
@@ -78,7 +91,11 @@ function computeTooltipData(bits: string, size: number, inclusionReportResponse:
   }
 }
 
-// Helper function to format treemap tooltip HTML
+/**
+ * Format treemap tooltip data into HTML string
+ * @param tooltipData - The tooltip data containing count, summary, and passed/failed criteria
+ * @returns HTML string for displaying in the tooltip
+ */
 export function formatTreemapTooltip(tooltipData: TooltipData): string {
   if (!tooltipData) return ''
 
@@ -108,7 +125,13 @@ export function formatTreemapTooltip(tooltipData: TooltipData): string {
   return html
 }
 
-// Convert treemap data to format expected by ECharts
+/**
+ * Convert treemap data to format expected by ECharts
+ * Transforms d3 treemap structure to ECharts format with tooltip data and color styling
+ * @param data - The treemap data with nodes containing name (binary string) and size properties
+ * @param inclusionReportResponse - The inclusion report containing rule definitions and base count
+ * @returns Converted treemap data in ECharts format, or null if data is null/undefined
+ */
 export function convertTreemapData(data: any, inclusionReportResponse: InclusionReportResponse) {
   if (!data) return null
 
