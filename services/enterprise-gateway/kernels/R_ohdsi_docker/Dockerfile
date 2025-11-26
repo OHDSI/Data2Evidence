@@ -59,54 +59,19 @@ RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME}/bin/java 100 &
 # Verify the installation
 RUN java -version && R CMD javareconf
 
-# Install Dependencies
-RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
-RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), repos="https://cran.r-project.org")'
+# Install renv for R package management
+RUN Rscript -e 'install.packages("renv", repos="https://cran.r-project.org")'
 
-# HADES Dependencies
-# https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
-RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v0.6.7")' # https://github.com/OHDSI/Andromeda
-RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
-RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.6.0")' # https://github.com/OHDSI/Cyclops
-RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.41.0")' # https://github.com/rstudio/reticulate
-RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.3", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
+# Copy renv.lock from the flows/hades directory
+COPY /flows/hades/renv.lock /app/renv.lock
 
-# OHDSI HADES
-# private d2e repo auth - ssh key
-# public HADES repo auth - .Renviron:GITHUB_PAT - https://ohdsi.github.io/Hades/rSetup.html#GitHub_Personal_Access_Token
-RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.18.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)'
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
-
-#RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
-# include a d2e version of Strategus - with CohortSurvival module integrated
-RUN Rscript -e 'remotes::install_github("darwin-eu/TreatmentPatterns@v3.1.1", upgrade = "never", dependencies=TRUE)'
-RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", upgrade = "never", dependencies=TRUE)'
-
-# D2E packages
-RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-SqlRender.git", ref="alp-dqd", force = TRUE)' # overwrite existing from OHDSI
-RUN Rscript -e 'remotes::install_git("https://github.com/data2evidence/d2e-DatabaseConnector.git", ref="alp-dqd", force = TRUE)' # overwrite existing from OHDSI
-
-# mlflow
-RUN pip3 install --upgrade pip
-RUN pip3 install mlflow==2.22.1
-RUN Rscript -e 'install.packages("mlflow", version ="2.22.1", repos="https://cran.r-project.org")'
-
-# OHDSI studies viewer
-RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/Archive/Matrix/Matrix_1.6-1.tar.gz", repos = NULL, type = "source")'
-RUN Rscript -e 'install.packages(c("MatrixModels", "quantreg", "shiny", "shinydashboard","svglite","car","rstatix", "kableExtra", "ggpubr"), dependencies=TRUE, repos="https://cloud.r-project.org")'
-RUN Rscript -e 'remotes::install_github("ohdsi/OhdsiShinyAppBuilder")'
-RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiReportGenerator", dependencies = TRUE,quiet=FALSE)'
-RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@v3.3.0", dependencies=TRUE,quiet=FALSE)'
-
-# OHDSI packages and versions - final
-RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
+# Restore R packages using renv
+RUN Rscript -e 'renv::restore(lockfile = "/app/renv.lock", prompt = FALSE)'
 
 COPY --chown=jovyan:user ./flows/drivers /app/inst/drivers
 COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app/rD2E
 
 WORKDIR /app/rD2E
-# R CMD build . && R CMD check $(ls -t . | head -n1)
 RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
 RUN chown jovyan /app && chmod 711 /app
 
