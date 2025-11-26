@@ -137,9 +137,14 @@ jobs:
 
       - name: Check PG DB connection
         run: |
+          # postgres://postgres:WJUFCC@demodb:5432/postgres
+          docker ps
           sudo apt install -y jq
-          PGUSER=$(echo $(docker exec d2e-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
-          PGPASSWORD=$(echo $(docker exec d2e-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
+          PGUSER=postgres
+          PGPASSWORD=$(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
+          PGPORT=5432
+          PGHOST=demodb
+          PGDATABASE=postgres
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
           echo "PGUSER: ${PGUSER}"
