@@ -4,7 +4,6 @@ This portal supports **import-map-overrides**, allowing you to override micro-fr
 
 - Testing local changes to notebook-ui or analysis-ui without rebuilding the portal
 - Debugging single-spa applications in isolation
-- Overriding shared dependencies like `@data2evidence/d2e-starboard-wrap`
 
 ## Quick Start
 
