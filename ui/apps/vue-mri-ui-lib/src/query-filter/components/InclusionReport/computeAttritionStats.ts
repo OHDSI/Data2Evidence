@@ -16,14 +16,17 @@ type AttritionStat = {
  * @param mask - Binary string pattern to match (e.g., "11" matches nodes starting with "11")
  * @returns Total count of matching leaf nodes
  */
-const countMatch = (node: any, mask: string): number => {
+const countMatch = (node: any, ruleIds: number[], totalRuleCount: number): number => {
   let count = 0
   if (node.hasOwnProperty('children')) {
     node.children.forEach((c: any) => {
-      count += countMatch(c, mask)
+      count += countMatch(c, ruleIds, totalRuleCount)
     })
   } else {
-    count = node.name.startsWith(mask) ? node.size : 0
+    const name = node.name as string
+    // Check if ALL rules in ruleIds have '1' at their original position
+    const allPass = ruleIds.every(ruleId => name.charAt(ruleId) === '1')
+    count = allPass ? node.size : 0
   }
   return count
 }
@@ -35,14 +38,19 @@ const countMatch = (node: any, mask: string): number => {
  * @param report - The inclusion report containing treemap data and rule definitions
  * @returns Array of attrition statistics, one for each inclusion rule
  */
-export function computeAttritionStats(report: InclusionReportResponse): AttritionStat[] {
+export function computeAttritionStats(report: InclusionReportResponse, order?: number[]): AttritionStat[] {
   if (!report) return []
+
   const treemapData = JSON.parse(report.treemapData)
   const baseCount = report.summary.baseCount
+  const ruleOrder: number[] = order || report.inclusionRuleStats.map(rule => rule.id)
 
   let priorPct = 1.0
-  const stats = report.inclusionRuleStats.map((rule: any, i: number) => {
-    const countSatisfying = countMatch(treemapData, '1'.repeat(i + 1))
+  const stats = ruleOrder.map((ruleId: number) => {
+    const rule = report.inclusionRuleStats.find(r => r.id === ruleId)
+    if (!rule) return null
+    const rulesToCheck = ruleOrder.slice(0, ruleOrder.indexOf(ruleId) + 1)
+    const countSatisfying = countMatch(treemapData, rulesToCheck, report.inclusionRuleStats.length)
     const percentSatisfying = baseCount !== 0 ? countSatisfying / baseCount : 0
     const pctDiff = priorPct - percentSatisfying
     priorPct = percentSatisfying
@@ -56,6 +64,6 @@ export function computeAttritionStats(report: InclusionReportResponse): Attritio
     }
   })
 
-  return stats
+  return stats as AttritionStat[]
 }
 

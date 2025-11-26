@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
@@ -15,7 +7,9 @@ import { computeAttritionStats } from './computeAttritionStats'
 import { convertTreemapData, formatTreemapTooltip } from './computeTreemapStats'
 import { shouldIncludeRect, calculateFilteredSummary } from './ruleSelectionFilter'
 import GroupButtons from '../GroupButtons.vue'
+import ChevronButton from '@/components/ChevronButton.vue'
 import * as echarts from 'echarts'
+import { VueDraggable } from 'vue-draggable-plus'
 
 const props = defineProps<{
   cohortDefinitionId: number
@@ -35,6 +29,7 @@ const echartsTreemap = ref<any>(null)
 const allAnyOption = ref<'ALL' | 'ANY'>('ANY')
 const passedFailedOption = ref<'PASSED' | 'FAILED'>('PASSED')
 const checkedRulesIds = ref<number[]>([])
+const draggableAttritionStats = ref<ReturnType<typeof computeAttritionStats>>([])
 
 const personEventOptions = [
   { value: 'PERSON', label: 'By person' },
@@ -63,10 +58,6 @@ const treemapData = computed(() => {
   return convertTreemapData(data, inclusionReportResponse.value)
 })
 
-const attritionStats = computed(() => {
-  return computeAttritionStats(inclusionReportResponse.value)
-})
-
 const filteredSummary = computed(() => {
   if (!treemapData.value || checkedRulesIds.value.length === 0) {
     return { value: 0, percent: '0%' }
@@ -89,10 +80,10 @@ const shouldFetchInclusionReport = computed(() => {
 })
 
 const funnelChartData = computed(() => {
-  if (!inclusionReportResponse.value || attritionStats.value.length === 0) return null
+  if (!inclusionReportResponse.value || draggableAttritionStats.value.length === 0) return null
 
   const summary = inclusionReportResponse.value.summary
-  const stats = attritionStats.value
+  const stats = draggableAttritionStats.value
 
   // Build funnel data with base count as first level
   const labels = ['Total']
@@ -322,6 +313,35 @@ const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: strin
   }
 }
 
+function handleDragEnd(event: any) {
+  const newOrder = draggableAttritionStats.value.map(stat => stat.id)
+  draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+}
+
+function getRowIndex(statId: number): number {
+  return draggableAttritionStats.value.findIndex(s => s.id === statId)
+}
+
+function moveRowUp(statId: number) {
+  const index = getRowIndex(statId)
+  if (index > 0) {
+    const newStats = [...draggableAttritionStats.value]
+    ;[newStats[index - 1], newStats[index]] = [newStats[index], newStats[index - 1]]
+    const newOrder = newStats.map(s => s.id)
+    draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+  }
+}
+
+function moveRowDown(statId: number) {
+  const index = getRowIndex(statId)
+  if (index < draggableAttritionStats.value.length - 1) {
+    const newStats = [...draggableAttritionStats.value]
+    ;[newStats[index], newStats[index + 1]] = [newStats[index + 1], newStats[index]]
+    const newOrder = newStats.map(s => s.id)
+    draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+  }
+}
+
 const avaiableWidth = ref(0)
 
 onMounted(() => {
@@ -340,6 +360,7 @@ watch(
     if (newResponse && newResponse.inclusionRuleStats) {
       // Initialize checkedRulesIds with all rule IDs
       checkedRulesIds.value = newResponse.inclusionRuleStats.map(r => r.id)
+      draggableAttritionStats.value = computeAttritionStats(newResponse)
     }
   }
 )
@@ -464,57 +485,84 @@ watch(
       </div>
 
       <div class="rules-section">
-        <table class="rules-table">
-          <thead>
-            <tr>
-              <th v-if="selectedVisualization === 'INTERSECT'">
-                <input
-                  type="checkbox"
-                  :checked="areAllRulesChecked()"
-                  @change="toggleAllRules()"
-                  title="Select/unselect all rules"
-                />
-              </th>
-              <th>ID</th>
-              <th class="rule-name">Inclusion rule</th>
-              <!-- count satisfying -->
-              <th>N</th>
-              <!-- percent satisfying -->
-              <th v-if="selectedVisualization === 'ATTRITION'">% remain</th>
-              <th v-else>% satisfied</th>
-              <!-- percent excluded -->
-              <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
-              <th v-else>% to-gain</th>
-            </tr>
-          </thead>
-          <tbody v-if="selectedVisualization === 'ATTRITION'">
-            <tr v-for="stat in attritionStats" :key="stat.id">
-              <td>{{ stat.id + 1 }}</td>
-              <td class="rule-name">{{ stat.name }}</td>
-              <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-              <td>{{ stat.percentSatisfying }}</td>
-              <td>{{ stat.pctDiff }}</td>
-            </tr>
-          </tbody>
-          <tbody v-else>
-            <tr
-              v-for="stat in inclusionReportResponse.inclusionRuleStats"
-              :key="stat.id"
-              :class="{ 'grayed-out': !isRuleChecked(stat.id) }"
-            >
-              <td>
-                <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />
-              </td>
-              <td>{{ stat.id + 1 }}</td>
-              <td class="rule-name">
-                {{ stat.name }}
-              </td>
-              <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-              <td>{{ stat.percentSatisfying }}</td>
-              <td>{{ stat.percentExcluded }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <VueDraggable
+          :key="`${selectedPersonEventView}-${selectedVisualization}`"
+          v-model="draggableAttritionStats"
+          target=".rules-table tbody"
+          :disabled="selectedVisualization === 'INTERSECT'"
+          :animation="150"
+          @end="handleDragEnd"
+        >
+          <table class="rules-table">
+            <thead>
+              <tr>
+                <th v-if="selectedVisualization === 'INTERSECT'">
+                  <input
+                    type="checkbox"
+                    :checked="areAllRulesChecked()"
+                    @change="toggleAllRules()"
+                    title="Select/unselect all rules"
+                  />
+                </th>
+                <th v-if="selectedVisualization === 'ATTRITION'"></th>
+                <th v-if="selectedVisualization === 'ATTRITION'"></th>
+                <th class="rule-id">ID</th>
+                <th class="rule-name">Inclusion rule</th>
+                <!-- count satisfying -->
+                <th>N</th>
+                <!-- percent satisfying -->
+                <th v-if="selectedVisualization === 'ATTRITION'">% remain</th>
+                <th v-else>% satisfied</th>
+                <!-- percent excluded -->
+                <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
+                <th v-else>% to-gain</th>
+              </tr>
+            </thead>
+            <tbody v-if="selectedVisualization === 'ATTRITION'">
+              <tr v-for="stat in draggableAttritionStats" :key="stat.id">
+                <td class="drag-icon">⋮⋮</td>
+                <td class="reorder-buttons">
+                  <ChevronButton
+                    direction="up"
+                    :disabled="getRowIndex(stat.id) === 0"
+                    title="Move up"
+                    @click="moveRowUp(stat.id)"
+                  />
+                  <ChevronButton
+                    direction="down"
+                    :disabled="getRowIndex(stat.id) === draggableAttritionStats.length - 1"
+                    title="Move down"
+                    @click="moveRowDown(stat.id)"
+                  />
+                </td>
+                <td class="rule-id">{{ stat.id + 1 }}</td>
+                <td class="rule-name">{{ stat.name }}</td>
+                <td>{{ stat.countSatisfying.toLocaleString() }}</td>
+                <td>{{ stat.percentSatisfying }}</td>
+                <td>{{ stat.pctDiff }}</td>
+              </tr>
+            </tbody>
+            <tbody v-else>
+              <tr
+                v-for="stat in inclusionReportResponse.inclusionRuleStats"
+                :key="stat.id"
+                :class="{ 'grayed-out': !isRuleChecked(stat.id) }"
+                class="cursor-move"
+              >
+                <td>
+                  <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />
+                </td>
+                <td class="rule-id">{{ stat.id + 1 }}</td>
+                <td class="rule-name">
+                  {{ stat.name }}
+                </td>
+                <td>{{ stat.countSatisfying.toLocaleString() }}</td>
+                <td>{{ stat.percentSatisfying }}</td>
+                <td>{{ stat.percentExcluded }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </VueDraggable>
 
         <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
           <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
