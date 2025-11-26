@@ -25,7 +25,7 @@ This will display the import-map-overrides UI in the bottom-right corner of the 
 
 1. Click the import-map-overrides UI button in the bottom-right
 2. Add a new override:
-   - **Module Name**: `/resources/notebook-ui-lite/lifecycles.js`
+   - **Module Name**: `/resources/notebook-ui/lifecycles.js`
    - **Override URL**: `http://localhost:8084/lifecycles.js`
 3. Click "Apply"
 4. **IMPORTANT: Reload the page** (Cmd+R or Ctrl+R) for changes to take effect
