@@ -190,7 +190,7 @@
             ],
             "route": "starboard",
             "data": {
-              "uiFilesUrl": "https://localhost:41100/"
+              "uiFilesUrl": "https://$$FQDN$$/"
             }
           },
           {
