@@ -145,15 +145,18 @@ jobs:
           PGPASSWORD=$(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
           PGPORT=5432
           PGHOST=localhost
-          PGDATABASE=postgres
+          PGDATABASE=alp
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
           echo "PGUSER: ${PGUSER}"
           echo "PGHOST: ${PGHOST}"
           echo "PGDATABASE: ${PGDATABASE}"
           sudo apt install -y postgresql-client
+          echo "**********************************************"
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
+          echo "++++++++++++++++++++++++++++++++++++++++++++++"
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
+          echo "=============================================="
 
       - name: Setup Test DB
         run: |
