@@ -34,7 +34,15 @@ RUN apt-get update && \
     libblas-dev \    
     liblapack-dev  \
     gfortran \
-    libmagick++-dev
+    libmagick++-dev \
+    software-properties-common \
+    wget
+
+# Upgrade R to 4.4.3
+RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
+    add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends r-base
 
 # GitHub setup & test
 RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
