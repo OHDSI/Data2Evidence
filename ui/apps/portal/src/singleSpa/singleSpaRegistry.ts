@@ -1,10 +1,14 @@
 import { registerApplication, start } from "single-spa";
 import { RegisteredApp, SingleSpaPluginConfig } from "./types";
 import { createActivityFunction, generateContainerId } from "./utils";
+import { resolveModuleUrl } from "./overrideUtils";
 
 declare global {
   interface Window {
     System: any;
+    importMapOverrides?: {
+      getOverrideMap: () => { imports?: Record<string, string> };
+    };
   }
 }
 
@@ -36,7 +40,8 @@ export async function registerSingleSpaApp(
         return moduleCache.get(config.id)!;
       }
 
-      const modulePromise = window.System.import(config.url).then((module: any) => {
+      const resolvedUrl = resolveModuleUrl(config.url);
+      const modulePromise = window.System.import(resolvedUrl).then((module: any) => {
         console.debug(`[singleSpaRegistry] ${config.id} - module loaded`);
         return module.default || module;
       });

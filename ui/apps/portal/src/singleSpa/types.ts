@@ -19,3 +19,8 @@ export interface RegisteredApp {
   registration: RegisterApplicationConfig<any>;
   isActive: boolean;
 }
+
+export interface PluginApp {
+  pluginPath?: string;
+  [key: string]: any;
+}

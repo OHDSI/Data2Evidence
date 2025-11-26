@@ -3,14 +3,14 @@ import ReactDOM from "react-dom";
 import * as ReactRouterDOM from "react-router-dom";
 import * as EmotionReact from "@emotion/react";
 import builtInPlugins from "../builtInPlugins";
-import { isSingleSpaApp } from "../../singleSpa";
+import { isSingleSpaApp, resolveModuleUrl } from "../../singleSpa";
 import { PluginType } from "../../types";
 
 //@ts-ignore
 import SystemJS from "systemjs/dist/system-production";
 
 function exposeToPlugin(name: string, component: any) {
-  SystemJS.registerDynamic(name, [], true, (require: any, exports: any, module: { exports: any }) => {
+  SystemJS.registerDynamic(name, [], true, (_require: any, _exports: any, module: { exports: any }) => {
     module.exports = component;
   });
 }
@@ -91,8 +91,10 @@ export const loadPlugin = async (
 
     let loadedModule;
     try {
-      loadedModule = await SystemJS.import(url);
+      const resolvedUrl = resolveModuleUrl(url);
+      loadedModule = await SystemJS.import(resolvedUrl);
     } catch (error: any) {
+      console.error("[PluginLoader] Failed to load module from:", url, error);
       throw error;
     }
 

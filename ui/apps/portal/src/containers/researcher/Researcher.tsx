@@ -9,6 +9,7 @@ import { IPluginItem, PluginDropdown } from "../../types";
 import { getPluginChildPathPattern, loadPlugins, sortPluginsByType } from "../../utils";
 import { ResearcherStudyPluginRenderer } from "../../plugins/core/ResearcherStudyPluginRenderer";
 import { useEnabledFeatures, useDataset } from "../../hooks";
+import { initializeImportMap } from "../../singleSpa";
 import { Overview } from "./Overview/Overview";
 import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
@@ -46,7 +47,7 @@ export const Researcher: FC = () => {
 
   const [dataset] = useDataset(activeDatasetId);
 
-  const [pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
+  const [_pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
   const [activeTenantId, setActiveTenantId] = useState<string>(state?.tenantId || "");
   const featureFlags = useEnabledFeatures();
 
@@ -97,6 +98,11 @@ export const Researcher: FC = () => {
   const legacyPlugins = useMemo(() => {
     return researcherPluginsFlat.filter((plugin) => plugin.type !== "app");
   }, [researcherPluginsFlat]);
+
+  // Initialize import map UI for import-map-overrides
+  useEffect(() => {
+    initializeImportMap(singleSpaApps);
+  }, [singleSpaApps]);
 
   const onFetchMenus = useCallback((route: string, menus: PluginDropdownItem[]) => {
     setPluginDropdown((current: any) => ({ ...current, [route]: menus }));
