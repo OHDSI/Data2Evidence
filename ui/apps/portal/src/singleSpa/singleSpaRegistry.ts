@@ -15,16 +15,13 @@ declare global {
 const registeredApps: Map<string, RegisteredApp> = new Map();
 const moduleCache: Map<string, Promise<any>> = new Map();
 
-export async function registerSingleSpaApp(
-  config: SingleSpaPluginConfig,
-  options?: { deferLoad?: boolean }
-): Promise<void> {
+export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promise<void> {
   if (registeredApps.has(config.id)) {
     console.warn(`[singleSpaRegistry] App ${config.id} is already registered`);
     return;
   }
 
-  console.debug(`[singleSpaRegistry] ${config.id} - register`, { config, options });
+  console.debug(`[singleSpaRegistry] ${config.id} - register`, { config });
 
   const activeWhen = createActivityFunction(
     config.basePath,

@@ -11,6 +11,10 @@ import env from "../../env";
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
+function generateAppId(path: string): string {
+  return `researcher-plugin-${path.replace(/[^a-zA-Z0-9]/g, "-")}`;
+}
+
 interface ResearcherStudyPluginRendererProps {
   path: string;
   tenantId: string;
@@ -48,7 +52,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
     if (configType === "app" && !isRegistered) {
       const registerApp = async () => {
         try {
-          const appId = `researcher-plugin-${path.replace(/[^a-zA-Z0-9]/g, "-")}`;
+          const appId = generateAppId(path);
           const basePath = `${env.PUBLIC_URL}/researcher/${route}`;
 
           console.debug(`[ResearcherStudyPluginRenderer] Registering single-spa app: ${appId}`);
@@ -58,7 +62,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
             basePath,
             url: path,
             customProps: {
-              getToken: async () => await getAuthToken(),
+              getToken: getAuthToken,
               username,
               datasetId: studyId,
               locale,
@@ -124,7 +128,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
   }
 
   if (pluginType === "app") {
-    const appId = `researcher-plugin-${path.replace(/[^a-zA-Z0-9]/g, "-")}`;
+    const appId = generateAppId(path);
     return <SingleSpaAppContainer appName={appId} />;
   }
 
