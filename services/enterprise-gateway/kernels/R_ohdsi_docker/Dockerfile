@@ -44,6 +44,8 @@ RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc |
     apt-get update && \
     apt-get install -y --no-install-recommends r-base
 
+RUN Rscript -e 'version'
+
 # GitHub setup & test
 RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
 # RUN ssh-add -l # debug only
@@ -70,11 +72,14 @@ RUN java -version && R CMD javareconf
 # Install renv for R package management
 RUN Rscript -e 'install.packages("renv", repos="https://cran.r-project.org")'
 
-# Copy renv.lock from the flows/hades directory
-COPY /flows/hades/renv.lock /app/renv.lock
-
 # Restore R packages using renv
-RUN Rscript -e 'renv::restore(lockfile = "/app/renv.lock", prompt = FALSE)'
+COPY ./flows/hades/renv.lock ./flows/build/.Rprofile ./flows/build/install_and_verify_r_packages.R /app/
+# Install R depdendencies in global library
+ARG REQUIRED_R_PACKAGES="Hades CohortGenerator CohortIncidence Strategus Characterization CirceR CohortDiagnostics CohortIncidence CohortMethod FeatureExtraction PatientLevelPrediction SelfControlledCaseSeries DatabaseConnector TreatmentPatterns Cyclops Andromeda BrokenAdaptiveRidge"
+RUN chmod +x /app/install_and_verify_r_packages.R && \
+    /app/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" && \
+    R CMD javareconf && \
+    rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
 
 COPY --chown=jovyan:user ./flows/drivers /app/inst/drivers
 COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app/rD2E
