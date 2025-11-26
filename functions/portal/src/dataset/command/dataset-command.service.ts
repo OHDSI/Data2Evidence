@@ -131,7 +131,15 @@ export class DatasetCommandService {
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
     const createSnapshotFn = async (entityMgr: EntityManager, snapshotDto: IDatasetSnapshotDto) => {
-      const { id: snapshotId, sourceDatasetId, newDatasetName, schemaName, timestamp, type: newType } = snapshotDto
+      const {
+        id: snapshotId,
+        sourceDatasetId,
+        newDatasetName,
+        schemaName,
+        timestamp,
+        type: newType,
+        flowParameters
+      } = snapshotDto
       const sourceDataset = await this.datasetRepo.getDataset(sourceDatasetId)
       if (!sourceDataset) {
         throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
@@ -153,7 +161,8 @@ export class DatasetCommandService {
         dataModel,
         plugin,
         sourceDatasetId,
-        visibilityStatus: "DEFAULT"
+        visibilityStatus: "DEFAULT",
+        flowParameters: flowParameters ?? null
       }
       this.logger.info(`Create dataset snapshot with id ${snapshotId} from source dataset ${sourceDatasetId}`)
       const datasetEntity = this.datasetRepo.create(datasetSnapshot)

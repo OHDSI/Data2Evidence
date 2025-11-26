@@ -1,4 +1,5 @@
 import { FlowRunJobStateTypes } from "../plugins/SystemAdmin/Jobs/types";
+import type { SnapshotCopyConfig } from "./study";
 
 export interface Flow {
   id: string;
@@ -88,6 +89,8 @@ export interface FlowRunFilters {
 
 export interface CreateCacheFlowRun {
   datasetId: string | undefined;
+  cacheDatasetId?: string;
+  snapshotCopyConfig?: SnapshotCopyConfig;
 }
 
 export interface CreateSemanticSearchFlowRun {
