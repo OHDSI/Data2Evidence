@@ -139,7 +139,8 @@ jobs:
         run: |
           # postgres://postgres:WJUFCC@demodb:5432/postgres
           docker ps
-          sudo apt install -y jq
+          docker exec d2e-trex printenv
+          echo $(docker exec d2e-trex printenv)
           PGUSER=postgres
           PGPASSWORD=$(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
           PGPORT=5432
