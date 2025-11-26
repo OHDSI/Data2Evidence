@@ -3,15 +3,6 @@ import { RegisteredApp, SingleSpaPluginConfig } from "./types";
 import { createActivityFunction, generateContainerId } from "./utils";
 import { resolveModuleUrl } from "./overrideUtils";
 
-declare global {
-  interface Window {
-    System: any;
-    importMapOverrides?: {
-      getOverrideMap: () => { imports?: Record<string, string> };
-    };
-  }
-}
-
 const registeredApps: Map<string, RegisteredApp> = new Map();
 const moduleCache: Map<string, Promise<any>> = new Map();
 
