@@ -143,7 +143,7 @@ jobs:
           PGUSER=postgres
           PGPASSWORD=$(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
           PGPORT=5432
-          PGHOST=demodb
+          PGHOST=localhost
           PGDATABASE=postgres
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
