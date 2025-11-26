@@ -155,7 +155,7 @@ jobs:
           echo "**********************************************"
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           echo "++++++++++++++++++++++++++++++++++++++++++++++"
-          psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
+          export PGPASSWORD='${PGPASSWORD}';psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
           echo "=============================================="
 
       - name: Setup Test DB
