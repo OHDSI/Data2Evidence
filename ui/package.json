@@ -184,7 +184,7 @@
             "featureFlag": "starboard",
             "name": "Notebooks",
             "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
-            "pluginPath": "/resources/notebook-ui-lite/lifecycles.js",
+            "pluginPath": "/resources/notebook-ui/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
