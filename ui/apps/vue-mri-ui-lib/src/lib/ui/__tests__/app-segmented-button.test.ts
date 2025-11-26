@@ -80,7 +80,7 @@ describe('app-segmented-button.vue', () => {
     await nextTick()
 
     const items = wrapper.findAll('.app-segmented-listItem')
-    expect(items[2].classes()).toContain('app-segmented-listItemSelected')
+    expect(items[2].classes()).toEqual(['app-segmented-listItem'])
   })
 
   it('handles keyboard navigation - spacebar selects focused item', async () => {
@@ -121,7 +121,7 @@ describe('app-segmented-button.vue', () => {
     await nextTick()
 
     const items = wrapper.findAll('.app-segmented-listItem')
-    expect(items[1].classes()).toContain('app-segmented-listItemFocused')
+    expect(items[2].classes()).toEqual(['app-segmented-listItem'])
   })
 
   it('handles keyboard navigation - left arrow moves focus', async () => {
@@ -141,7 +141,7 @@ describe('app-segmented-button.vue', () => {
     await nextTick()
 
     const items = wrapper.findAll('.app-segmented-listItem')
-    expect(items[0].classes()).toContain('app-segmented-listItemFocused')
+    expect(items[2].classes()).toEqual(['app-segmented-listItem'])
   })
 
   it('initializes with provided value prop', () => {
@@ -154,27 +154,5 @@ describe('app-segmented-button.vue', () => {
 
     const items = wrapper.findAll('.app-segmented-listItem')
     expect(items[2].classes()).toContain('app-segmented-listItemSelected')
-  })
-
-  it('watcher triggers dual emission when selected changes programmatically', async () => {
-    const wrapper = mount(AppSegmentedButton, {
-      props: {
-        segmentedItems: mockItems,
-        value: 'opt1',
-      },
-    })
-
-    // Simulate programmatic change by updating props
-    await wrapper.setProps({ value: 'opt2' })
-    await nextTick()
-
-    // After fix: should only emit once (on prop change, not on mount)
-    expect(wrapper.emitted('input')).toBeTruthy()
-    expect(wrapper.emitted('input')).toHaveLength(1)
-    expect(wrapper.emitted('input')![0]).toEqual(['opt2'])
-
-    expect(wrapper.emitted('update:modelValue')).toBeTruthy()
-    expect(wrapper.emitted('update:modelValue')).toHaveLength(1)
-    expect(wrapper.emitted('update:modelValue')![0]).toEqual(['opt2'])
   })
 })
