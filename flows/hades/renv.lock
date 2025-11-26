@@ -548,7 +548,7 @@
     },
     "CohortMethod": {
       "Package": "CohortMethod",
-      "Version": "5.5.1",
+      "Version": "5.5.2",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "New-User Cohort Method with Large Scale Propensity and Outcome Models",
@@ -610,10 +610,10 @@
       "Author": "Martijn Schuemie [aut, cre], Marc Suchard [aut], Patrick Ryan [aut]",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "ohdsi",
+      "RemoteUsername": "data2evidence",
       "RemoteRepo": "CohortMethod",
-      "RemoteRef": "main",
-      "RemoteSha": "2855e66b18f705b67f8c80d27eceaf6f07982682"
+      "RemoteRef": "fix-runtime-error-at-diagnostic-summary-export",
+      "RemoteSha": "879efc63277a6abfffd166bb255d93dfd4c4837d"
     },
     "CommonDataModel": {
       "Package": "CommonDataModel",
