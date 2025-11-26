@@ -54,7 +54,7 @@
     },
     "Andromeda": {
       "Package": "Andromeda",
-      "Version": "1.0.0",
+      "Version": "1.2.0",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "Asynchronous Disk-Based Representation of Massive Data",
@@ -98,8 +98,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "OHDSI",
       "RemoteRepo": "Andromeda",
-      "RemoteRef": "v1.0.0",
-      "RemoteSha": "45127eabb1ddf2f454ee587522ba54fde1a0efb8"
+      "RemoteRef": "v1.2.0",
+      "RemoteSha": "dec6a7dab2b654b3d46527db96b54bea0b347434"
     },
     "BeastJar": {
       "Package": "BeastJar",
