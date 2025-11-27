@@ -216,7 +216,7 @@ const StudyOverview: FC = () => {
       } else if (type === "fhir" || type === "non_omop") {
         // FHIR and non_omop datasets go to FHIR table
         fhir.push(dataset);
-      } else if (type === "source" || type === "omop" || type?.startsWith("hana")) {
+      } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop") {
         // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
         // Check if this is a child dataset (has source_dataset_id attribute)
         const sourceIdAttribute = dataset.attributes?.find(
