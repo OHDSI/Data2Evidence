@@ -1,6 +1,5 @@
 export type NodeType =
   | "python_node"
-  | "python_notebook_node"
   | "py2table_node"
   | "r_node"
   | "sql_node"
