@@ -6,6 +6,13 @@ import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
 import { computeAttritionStats } from './computeAttritionStats'
 import { convertTreemapData, formatTreemapTooltip } from './computeTreemapStats'
 import { shouldIncludeRect, calculateFilteredSummary } from './ruleSelectionFilter'
+import {
+  COLORS_ARRAY,
+  FUNNEL_THRESHOLDS,
+  FUNNEL_LEGEND_LABELS,
+  TREEMAP_LEGEND_ITEMS,
+  EXCLUDED_COLOR,
+} from './constants'
 import GroupButtons from '../GroupButtons.vue'
 import ChevronButton from '@/components/ChevronButton.vue'
 import * as echarts from 'echarts'
@@ -39,8 +46,6 @@ const visualizationOptions = [
   { value: 'ATTRITION', label: 'Attrition' },
   { value: 'INTERSECT', label: 'Intersect' },
 ]
-
-const colors = ['#fabfb4', '#fcdab6', '#dedcab', '#cdd99e', '#53bead']
 
 const inclusionReportResponse = computed(() => {
   return selectedPersonEventView.value === 'PERSON'
@@ -109,18 +114,15 @@ const funnelChartData = computed(() => {
 const renderFunnelChart = () => {
   if (!funnelChartRef.value || !funnelChartData.value) return
 
-  // Define thresholds and colors (hex codes from ohdsi atlas)
-  const thresholds = [0.1, 0.25, 0.5, 0.75]
-
   // Compute ratios relative to previous layer
   const ratios = funnelChartData.value.values.map((v, i) => (i === 0 ? 1 : v / funnelChartData.value.values[i - 1]))
 
   // Map each ratio to a color based on thresholds
   const layerColors = ratios.map(ratio => {
-    for (let i = 0; i < thresholds.length; i++) {
-      if (ratio <= thresholds[i]) return colors[i]
+    for (let i = 0; i < FUNNEL_THRESHOLDS.length; i++) {
+      if (ratio <= FUNNEL_THRESHOLDS[i]) return COLORS_ARRAY[i]
     }
-    return colors[colors.length - 1]
+    return COLORS_ARRAY[COLORS_ARRAY.length - 1]
   })
 
   const trace = {
@@ -130,7 +132,7 @@ const renderFunnelChart = () => {
     text: funnelChartData.value.hoverTexts,
     hoverinfo: 'text',
     textposition: 'inside',
-    texttemplate: '%{x}<br>%{percentInitial:.2%}',
+    texttemplate: 'N: %{x}<br> % remain: %{percentInitial:.2%}',
     constraintext: 'outside',
     textinfo: 'value+percent initial',
     marker: {
@@ -139,12 +141,47 @@ const renderFunnelChart = () => {
     hoverlabel: {
       bgcolor: '#f9f9f9', // css var doesn't work here
     },
+    showlegend: false, // Hide legend for main trace
   }
+
+  // Create dummy traces for legend - only for colors actually used
+  const usedColors = new Set(layerColors)
+  const legendTraces = COLORS_ARRAY.map((color, index) => ({
+    type: 'scatter',
+    x: [null],
+    y: [null],
+    mode: 'markers',
+    marker: {
+      size: 10,
+      color: color,
+    },
+    name: FUNNEL_LEGEND_LABELS[index],
+    showlegend: true,
+  })).filter((trace, index) => usedColors.has(COLORS_ARRAY[index]))
 
   const layout = {
     height: 800,
-    yaxis: { automargin: true },
-    xaxis: { automargin: true },
+    yaxis: {
+      automargin: true,
+      autorange: 'reversed',
+      showgrid: false,
+      zeroline: false,
+    },
+    xaxis: {
+      automargin: true,
+      showgrid: false,
+      showline: false,
+      showticklabels: false,
+      zeroline: false,
+    },
+    showlegend: true,
+    legend: {
+      orientation: 'v',
+      x: 1.02,
+      y: 1,
+      xanchor: 'left',
+      yanchor: 'top',
+    },
   }
 
   const chartConfig = {
@@ -152,7 +189,7 @@ const renderFunnelChart = () => {
     displayModeBar: false,
   }
 
-  plotly.newPlot(funnelChartRef.value, [trace], layout, chartConfig)
+  plotly.newPlot(funnelChartRef.value, [trace, ...legendTraces], layout, chartConfig)
 }
 
 const disposeTreemap = () => {
@@ -162,19 +199,77 @@ const disposeTreemap = () => {
   }
 }
 
-const renderTreemap = async () => {
-  if (!treemapChartRef.value || !treemapData.value) return
+// get colors used in the treemap data, except the EXCLUDED_COLOR (gray) used for filtered out rectangles
+const collectUsedColors = (node: any): Set<string> => {
+  const usedColors = new Set<string>()
 
-  await nextTick()
-  avaiableWidth.value = treemapChartRef.value.clientWidth
-  // Dispose and reinitialize chart
-  disposeTreemap()
-  echartsTreemap.value = echarts.init(treemapChartRef.value)
+  const collect = (n: any) => {
+    const isLeafNode = !n.children || n.children.length === 0
+    if (isLeafNode && n.itemStyle?.color && n.itemStyle.color !== EXCLUDED_COLOR) {
+      usedColors.add(n.itemStyle.color)
+    }
+    if (n.children) {
+      n.children.forEach(collect)
+    }
+  }
 
-  // Always apply filtering to treemap data
-  const dataToRender = applyFiltering(treemapData.value)
+  collect(node)
+  return usedColors
+}
 
-  const option: echarts.EChartsOption = {
+// filter legend items to only include colors that are actually used in the data
+const getActiveLegendItems = (usedColors: Set<string>) => {
+  return TREEMAP_LEGEND_ITEMS.filter(item => usedColors.has(item.color))
+}
+
+// create ECharts graphic for legend at the bottom center of the chart
+const createLegendGraphics = (legendItems: Array<{ name: string; color: string }>, chartWidth: number) => {
+  const ITEM_WIDTH = 180 // Approximate width per legend item
+  const LEGEND_BOTTOM = 17.5
+  const CIRCLE_RADIUS = 7.5
+  const TEXT_OFFSET = 20
+
+  const totalLegendWidth = legendItems.length * ITEM_WIDTH
+  const legendStartX = (chartWidth - totalLegendWidth) / 2
+
+  return legendItems
+    .map((item, index) => {
+      const xPos = legendStartX + index * ITEM_WIDTH
+      return [
+        {
+          type: 'circle',
+          id: `legend-circle-${index}`,
+          left: xPos,
+          bottom: LEGEND_BOTTOM,
+          z: 100,
+          shape: {
+            r: CIRCLE_RADIUS,
+          },
+          style: {
+            fill: item.color,
+          },
+        },
+        {
+          type: 'text',
+          id: `legend-text-${index}`,
+          left: xPos + TEXT_OFFSET,
+          bottom: LEGEND_BOTTOM,
+          z: 100,
+          style: {
+            text: item.name,
+            fontSize: 16,
+            fill: '#333',
+            textAlign: 'left',
+            textVerticalAlign: 'middle',
+          },
+        },
+      ]
+    })
+    .flat()
+}
+
+const createTreemapOption = (dataToRender: any, legendGraphics: any[]): echarts.EChartsOption => {
+  return {
     tooltip: {
       show: true,
       formatter: (params: any) => formatTreemapTooltip(params.data?.tooltip),
@@ -186,6 +281,7 @@ const renderTreemap = async () => {
       confine: true,
       padding: [8, 12],
     },
+    graphic: legendGraphics,
     series: [
       {
         type: 'treemap',
@@ -202,10 +298,32 @@ const renderTreemap = async () => {
           borderColor: '#000', // css var doesn't work here
           borderWidth: 0.3,
         },
+        bottom: 40, // Reserve space for legend at the bottom
       },
     ],
   }
+}
 
+const renderTreemap = async () => {
+  if (!treemapChartRef.value || !treemapData.value) return
+
+  await nextTick()
+  avaiableWidth.value = treemapChartRef.value.clientWidth
+
+  // Dispose and reinitialize chart
+  disposeTreemap()
+  echartsTreemap.value = echarts.init(treemapChartRef.value)
+
+  // Apply filtering to treemap data
+  const dataToRender = applyFiltering(treemapData.value)
+
+  // Collect colors and create legend
+  const usedColors = collectUsedColors(dataToRender)
+  const legendItems = getActiveLegendItems(usedColors)
+  const legendGraphics = createLegendGraphics(legendItems, treemapChartRef.value.clientWidth)
+
+  // Create and apply chart option
+  const option = createTreemapOption(dataToRender, legendGraphics)
   echartsTreemap.value.setOption(option)
 }
 
@@ -230,7 +348,7 @@ const applyFiltering = (node: any): any => {
   if (isLeafNode && !isIncluded) {
     // Gray out excluded leaf nodes
     newNode.itemStyle = {
-      color: '#CCCCCC', // gray out excluded rect in treemap
+      color: EXCLUDED_COLOR,
     }
   }
 
@@ -520,7 +638,7 @@ watch(
             </thead>
             <tbody v-if="selectedVisualization === 'ATTRITION'">
               <tr v-for="stat in draggableAttritionStats" :key="stat.id">
-                <td class="drag-icon">⋮⋮</td>
+                <td class="drag-icon">⋮</td>
                 <td class="reorder-buttons">
                   <ChevronButton
                     direction="up"
