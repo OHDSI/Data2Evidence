@@ -148,7 +148,7 @@ services:
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
         "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
         "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
-        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080"
+        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
         }
