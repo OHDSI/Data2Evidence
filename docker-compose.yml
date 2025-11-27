@@ -476,8 +476,6 @@ services:
         condition: service_completed_successfully
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
-      supabase-storage-post-init:
-        condition: service_completed_successfully
     healthcheck:
       interval: 30s
       retries: 30
