@@ -146,6 +146,16 @@ export class DatasetCommandService {
       }
 
       const { tenantId, databaseCode, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
+      
+      // Sanitize the new dataset name to create a valid token dataset code
+      const sanitizedName = newDatasetName
+        .trim()
+        .replace(/[^a-zA-Z0-9_]/g, '_') // Replace invalid characters with underscore
+        .replace(/_+/g, '_') // Replace multiple underscores with single underscore
+        .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+      
+      const newTokenDatasetCode = `${tokenDatasetCode}_dm_${sanitizedName}`.substring(0, 80);
+      
       // Copy dataset with new schema name
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
@@ -156,7 +166,7 @@ export class DatasetCommandService {
         schemaName,
         vocabSchemaName: schemaName,
         resultSchemaName: schemaName || resultSchemaName,
-        tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim().replace(/\s+/g, '_')}`,
+        tokenDatasetCode: newTokenDatasetCode,
         paConfigId,
         dataModel,
         plugin,
