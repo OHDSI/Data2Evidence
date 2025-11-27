@@ -56,6 +56,8 @@ export interface Study {
   attributes?: StudyAttribute[];
   tags?: StudyTag[];
   fhir_project_id?: string;
+  sourceStudyId?: string;
+  flowParameters?: DatasetFlowParameters | null;
 }
 
 export interface NewStudyInput {
@@ -120,6 +122,11 @@ export interface SnapshotCopyConfig {
   timestamp?: string;
   tableConfig?: SnapshotCopyTableConfig[];
   patientsToBeCopied?: string[];
+}
+
+export interface DatasetFlowParameters {
+  snapshotCopyConfig?: SnapshotCopyConfig;
+  [key: string]: any;
 }
 
 export interface SnapshotCopyTableConfig {
