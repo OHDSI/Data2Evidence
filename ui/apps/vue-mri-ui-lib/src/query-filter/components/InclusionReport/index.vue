@@ -308,7 +308,7 @@ const renderTreemap = async () => {
   if (!treemapChartRef.value || !treemapData.value) return
 
   await nextTick()
-  avaiableWidth.value = treemapChartRef.value.clientWidth
+  availableWidth.value = treemapChartRef.value.clientWidth
 
   // Dispose and reinitialize chart
   disposeTreemap()
@@ -460,7 +460,7 @@ function moveRowDown(statId: number) {
   }
 }
 
-const avaiableWidth = ref(0)
+const availableWidth = ref(0)
 
 onMounted(() => {
   inclusionReportPersonResponse.value = null

@@ -159,7 +159,6 @@ const hasCohortGenerated = computed(() => {
             v-if="selectedView === 'inclusion-report'"
             :cohort-definition-id="cohortDefinitionId"
             :source-key="activeDataset"
-            :modeId="1"
             :generation-status="generationStatus[activeDataset]"
             :patient-count="patientCounts?.[activeDataset]"
           />

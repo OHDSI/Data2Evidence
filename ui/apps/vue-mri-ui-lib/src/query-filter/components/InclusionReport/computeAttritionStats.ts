@@ -48,7 +48,9 @@ export function computeAttritionStats(report: InclusionReportResponse, order?: n
   let priorPct = 1.0
   const stats = ruleOrder.map((ruleId: number) => {
     const rule = report.inclusionRuleStats.find(r => r.id === ruleId)
-    if (!rule) return null
+    if (!rule) {
+      throw new Error(`Invalid rule ID: ${ruleId}`)
+    }
     const rulesToCheck = ruleOrder.slice(0, ruleOrder.indexOf(ruleId) + 1)
     const countSatisfying = countMatch(treemapData, rulesToCheck, report.inclusionRuleStats.length)
     const percentSatisfying = baseCount !== 0 ? countSatisfying / baseCount : 0
