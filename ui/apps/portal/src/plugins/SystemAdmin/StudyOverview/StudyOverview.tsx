@@ -1,8 +1,12 @@
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useMemo, useState } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
 import TableContainer from "@mui/material/TableContainer";
+import Collapse from "@mui/material/Collapse";
+import IconButton from "@mui/material/IconButton";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import {
   Loader,
   TableCell,
@@ -76,6 +80,7 @@ const StudyOverview: FC = () => {
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [loading, setLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
   const handleSourceInformation = useCallback(
     (dataset: Study) => {
@@ -184,6 +189,59 @@ const StudyOverview: FC = () => {
     },
     [openManageDashboardDialog]
   );
+
+  const toggleRow = useCallback((datasetId: string) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [datasetId]: !prev[datasetId],
+    }));
+  }, []);
+
+  // Organize datasets into parent-child structure for source/omop and separate list for others
+  const { sourceOmopDatasets, otherDatasets } = useMemo(() => {
+    if (!datasets) return { sourceOmopDatasets: [], otherDatasets: [] };
+
+    const sourceOmop: Study[] = [];
+    const others: Study[] = [];
+    const childrenMap = new Map<string, Study[]>();
+
+    // First pass: separate datasets by type and build children map
+    datasets.forEach((dataset: Study) => {
+      const type = dataset.type?.toLowerCase();
+      
+      if (type === "source" || type === "omop") {
+        // Check if this is a child dataset (has sourceStudyId)
+        const sourceIdAttribute = dataset.attributes?.find(
+          (attr) => attr.attributeId === "source_dataset_id"
+        );
+        
+        if (sourceIdAttribute && sourceIdAttribute.value) {
+          // This is a child dataset
+          const parentId = sourceIdAttribute.value;
+          if (!childrenMap.has(parentId)) {
+            childrenMap.set(parentId, []);
+          }
+          childrenMap.get(parentId)!.push(dataset);
+        } else {
+          // This is a parent or standalone dataset
+          sourceOmop.push(dataset);
+        }
+      } else {
+        others.push(dataset);
+      }
+    });
+
+    // Attach children to their parents
+    const datasetsWithChildren = sourceOmop.map((dataset) => ({
+      ...dataset,
+      children: childrenMap.get(dataset.id) || [],
+    }));
+
+    return {
+      sourceOmopDatasets: datasetsWithChildren,
+      otherDatasets: others,
+    };
+  }, [datasets]);
 
   const visibilityImgAlt = useCallback((value?: string) => {
     if (!value) return;
@@ -335,6 +393,83 @@ const StudyOverview: FC = () => {
     return currentSchemaVersion !== latestSchemaVersion;
   };
 
+  const renderDatasetRow = (dataset: Study, isChild = false, hasChildren = false) => {
+    const getCellClassName = () => {
+      if (isChild) return "icon-cell icon-cell--child";
+      if (hasChildren) return "icon-cell icon-cell--parent";
+      return "icon-cell icon-cell--no-children";
+    };
+
+    return (
+      <TableRow key={dataset.id}>
+        <TableCell className={getCellClassName()}>
+          {!isChild && hasChildren && (
+            <IconButton
+              aria-label="expand row"
+              size="small"
+              onClick={() => toggleRow(dataset.id)}
+              className="expand-icon-button"
+            >
+              {expandedRows[dataset.id] ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
+            </IconButton>
+          )}
+          {visibilityIcon(dataset.visibilityStatus)}
+        </TableCell>
+        <TableCell style={{ maxWidth: "120px" }}>
+          <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
+            {dataset.id}
+          </Text>
+        </TableCell>
+        <TableCell>
+          {dataset.studyDetail?.name ? dataset.studyDetail.name : getText(i18nKeys.STUDY_OVERVIEW__UNTITLED)}
+        </TableCell>
+        <TableCell style={{ maxWidth: "120px" }}>
+          <Text textFormat="wrap" {...(dataset.schemaName && { showCopy: true })} textStyle={{ paddingTop: "5px" }}>
+            {dataset.schemaName || "-"}
+          </Text>
+          {dataset.vocabSchemaName && dataset.schemaName !== dataset.vocabSchemaName && (
+            <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
+              {dataset.vocabSchemaName}
+            </Text>
+          )}
+        </TableCell>
+        <TableCell style={{ maxWidth: "120px" }}>
+          {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION)}
+        </TableCell>
+        <TableCell>{getAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION)}</TableCell>
+        <TableCell>
+          {dataset.dataModel
+            ? `${dataset.dataModel} [${dataset.plugin}]`
+            : dataset.fhir_project_id && (
+                <Tooltip placement="top" title={dataset.fhir_project_id}>
+                  <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
+                </Tooltip>
+              )}
+        </TableCell>
+        <TableCell>{dataset.type}</TableCell>
+        <TableCell className="col-action">
+          <ActionSelector
+            dataset={dataset}
+            isSchemaUpdatable={checkIfStudyIsUpdatable(dataset)}
+            handleSourceInformation={handleSourceInformation}
+            handleDeleteStudy={handleDeleteStudy}
+            handleCopyStudy={handleCopyStudy}
+            handleMetadata={handleUpdateStudy}
+            handleResources={handleResources}
+            handlePermissions={handlePermissions}
+            handleUpdate={handleUpdate}
+            handleRelease={handleRelease}
+            handleDataQuality={handleDataQuality}
+            handleDataCharacterization={handleDataCharacterization}
+            handleCreateCache={handleCreateCache}
+            handleSetupSemanticSearch={handleSetupSemanticSearch}
+            handleManageDashboard={handleManageDashboard}
+          />
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   if (error) console.error(error.message);
   if (loadingDatasets) return <Loader />;
 
@@ -362,106 +497,111 @@ const StudyOverview: FC = () => {
         </div>
 
         <div className="studyoverview__content">
-          <TableContainer className="studyoverview__list">
-            <Table>
-              <colgroup>
-                <col style={{ width: "1%" }} />
-                <col />
-                <col />
-                <col />
-                <col />
-                <col />
-                <col />
-                <col />
-              </colgroup>
-              <TableHead>
-                <TableRow>
-                  <TableCell></TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(!datasets || datasets.length === 0) && (
+          {/* Source and OMOP Datasets Table with Parent-Child Structure */}
+          {sourceOmopDatasets.length > 0 && (
+            <>
+              <h4 style={{ marginTop: "1.5em", marginBottom: "1em" }}>Source & OMOP Datasets</h4>
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <colgroup>
+                    <col style={{ width: "1%" }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sourceOmopDatasets.map((dataset: Study & { children?: Study[] }) => (
+                      <React.Fragment key={dataset.id}>
+                        {renderDatasetRow(dataset, false, (dataset.children?.length || 0) > 0)}
+                        {dataset.children && dataset.children.length > 0 && (
+                          <TableRow>
+                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
+                              <Collapse in={expandedRows[dataset.id]} timeout="auto" unmountOnExit>
+                                <Table size="small">
+                                  <TableBody>
+                                    {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
+                                  </TableBody>
+                                </Table>
+                              </Collapse>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+
+          {/* Other Datasets Table */}
+          {otherDatasets.length > 0 && (
+            <>
+              <h4 style={{ marginTop: "2em", marginBottom: "1em" }}>Other Datasets</h4>
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <colgroup>
+                    <col style={{ width: "1%" }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {otherDatasets.map((dataset: Study) => renderDatasetRow(dataset, false, false))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+
+          {/* No Data Message */}
+          {(!datasets || datasets.length === 0) && (
+            <TableContainer className="studyoverview__list">
+              <Table>
+                <TableBody>
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={9} align="center">
                       {getText(i18nKeys.STUDY_OVERVIEW__NO_DATA)}
                     </TableCell>
                   </TableRow>
-                )}
-                {datasets?.map((dataset: Study) => (
-                  <TableRow key={dataset.id}>
-                    <TableCell style={{ paddingLeft: "2.75em" }}>{visibilityIcon(dataset.visibilityStatus)}</TableCell>
-                    <TableCell style={{ maxWidth: "120px" }}>
-                      <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
-                        {dataset.id}
-                      </Text>
-                    </TableCell>
-                    <TableCell>
-                      {dataset.studyDetail?.name
-                        ? dataset.studyDetail.name
-                        : getText(i18nKeys.STUDY_OVERVIEW__UNTITLED)}
-                    </TableCell>
-                    <TableCell style={{ maxWidth: "120px" }}>
-                      <Text
-                        textFormat="wrap"
-                        {...(dataset.schemaName && { showCopy: true })}
-                        textStyle={{ paddingTop: "5px" }}
-                      >
-                        {dataset.schemaName || "-"}
-                      </Text>
-                      {dataset.vocabSchemaName && dataset.schemaName !== dataset.vocabSchemaName && (
-                        <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
-                          {dataset.vocabSchemaName}
-                        </Text>
-                      )}
-                    </TableCell>
-                    <TableCell style={{ maxWidth: "120px" }}>
-                      {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION)}
-                    </TableCell>
-                    <TableCell>
-                      {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION)}
-                    </TableCell>
-                    <TableCell>
-                      {dataset.dataModel
-                        ? `${dataset.dataModel} [${dataset.plugin}]`
-                        : dataset.fhir_project_id && (
-                            <Tooltip placement="top" title={dataset.fhir_project_id}>
-                              <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
-                            </Tooltip>
-                          )}
-                    </TableCell>
-                    <TableCell>{dataset.type}</TableCell>
-                    <TableCell className="col-action">
-                      <ActionSelector
-                        dataset={dataset}
-                        isSchemaUpdatable={checkIfStudyIsUpdatable(dataset)}
-                        handleSourceInformation={handleSourceInformation}
-                        handleDeleteStudy={handleDeleteStudy}
-                        handleCopyStudy={handleCopyStudy}
-                        handleMetadata={handleUpdateStudy}
-                        handleResources={handleResources}
-                        handlePermissions={handlePermissions}
-                        handleUpdate={handleUpdate}
-                        handleRelease={handleRelease}
-                        handleDataQuality={handleDataQuality}
-                        handleDataCharacterization={handleDataCharacterization}
-                        handleCreateCache={handleCreateCache}
-                        handleSetupSemanticSearch={handleSetupSemanticSearch}
-                        handleManageDashboard={handleManageDashboard}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
 
           {activeDataset && (
             <UpdateStudyDialog
