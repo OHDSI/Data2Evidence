@@ -105,6 +105,15 @@
 
   &__content {
     margin-bottom: 24px;
+
+    .dataset-section-title {
+      margin-top: 1.5em;
+      margin-bottom: 1em;
+
+      &--secondary {
+        margin-top: 2em;
+      }
+    }
   }
 
   .col-action {

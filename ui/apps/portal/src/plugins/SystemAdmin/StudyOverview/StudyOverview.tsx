@@ -197,20 +197,28 @@ const StudyOverview: FC = () => {
     }));
   }, []);
 
-  // Organize datasets into parent-child structure for source/omop and separate list for others
-  const { sourceOmopDatasets, otherDatasets } = useMemo(() => {
-    if (!datasets) return { sourceOmopDatasets: [], otherDatasets: [] };
+  // Organize datasets into parent-child structure for source/omop/hana and separate lists for studies and fhir
+  const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets } = useMemo(() => {
+    if (!datasets) return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [] };
 
-    const sourceOmop: Study[] = [];
-    const others: Study[] = [];
+    const sourceOmopHana: Study[] = [];
+    const studies: Study[] = [];
+    const fhir: Study[] = [];
     const childrenMap = new Map<string, Study[]>();
 
     // First pass: separate datasets by type and build children map
     datasets.forEach((dataset: Study) => {
       const type = dataset.type?.toLowerCase();
       
-      if (type === "source" || type === "omop") {
-        // Check if this is a child dataset (has sourceStudyId)
+      if (type === "study") {
+        // Only study type datasets go to studies table
+        studies.push(dataset);
+      } else if (type === "fhir" || type === "non_omop") {
+        // FHIR and non_omop datasets go to FHIR table
+        fhir.push(dataset);
+      } else if (type === "source" || type === "omop" || type?.startsWith("hana")) {
+        // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
+        // Check if this is a child dataset (has source_dataset_id attribute)
         const sourceIdAttribute = dataset.attributes?.find(
           (attr) => attr.attributeId === "source_dataset_id"
         );
@@ -223,23 +231,22 @@ const StudyOverview: FC = () => {
           }
           childrenMap.get(parentId)!.push(dataset);
         } else {
-          // This is a parent or standalone dataset
-          sourceOmop.push(dataset);
+          // This is a parent or standalone dataset (hana datasets won't have children)
+          sourceOmopHana.push(dataset);
         }
-      } else {
-        others.push(dataset);
       }
     });
 
     // Attach children to their parents
-    const datasetsWithChildren = sourceOmop.map((dataset) => ({
+    const datasetsWithChildren = sourceOmopHana.map((dataset) => ({
       ...dataset,
       children: childrenMap.get(dataset.id) || [],
     }));
 
     return {
-      sourceOmopDatasets: datasetsWithChildren,
-      otherDatasets: others,
+      sourceOmopHanaDatasets: datasetsWithChildren,
+      studyDatasets: studies,
+      fhirDatasets: fhir,
     };
   }, [datasets]);
 
@@ -497,10 +504,9 @@ const StudyOverview: FC = () => {
         </div>
 
         <div className="studyoverview__content">
-          {/* Source and OMOP Datasets Table with Parent-Child Structure */}
-          {sourceOmopDatasets.length > 0 && (
+          {sourceOmopHanaDatasets.length > 0 && (
             <>
-              <h4 style={{ marginTop: "1.5em", marginBottom: "1em" }}>Source & OMOP Datasets</h4>
+              <h4 className="dataset-section-title">CDM Datasets</h4>
               <TableContainer className="studyoverview__list">
                 <Table>
                   <colgroup>
@@ -527,7 +533,7 @@ const StudyOverview: FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sourceOmopDatasets.map((dataset: Study & { children?: Study[] }) => (
+                    {sourceOmopHanaDatasets.map((dataset: Study & { children?: Study[] }) => (
                       <React.Fragment key={dataset.id}>
                         {renderDatasetRow(dataset, false, (dataset.children?.length || 0) > 0)}
                         {dataset.children && dataset.children.length > 0 && (
@@ -551,10 +557,10 @@ const StudyOverview: FC = () => {
             </>
           )}
 
-          {/* Other Datasets Table */}
-          {otherDatasets.length > 0 && (
+          {/* Studies Table */}
+          {studyDatasets.length > 0 && (
             <>
-              <h4 style={{ marginTop: "2em", marginBottom: "1em" }}>Other Datasets</h4>
+              <h4 className="dataset-section-title dataset-section-title--secondary">Studies</h4>
               <TableContainer className="studyoverview__list">
                 <Table>
                   <colgroup>
@@ -581,7 +587,44 @@ const StudyOverview: FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {otherDatasets.map((dataset: Study) => renderDatasetRow(dataset, false, false))}
+                    {studyDatasets.map((dataset: Study) => renderDatasetRow(dataset, false, false))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+
+          {/* FHIR Datasets Table */}
+          {fhirDatasets.length > 0 && (
+            <>
+              <h4 className="dataset-section-title dataset-section-title--secondary">FHIR Datasets</h4>
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <colgroup>
+                    <col style={{ width: "1%" }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {fhirDatasets.map((dataset: Study) => renderDatasetRow(dataset, false, false))}
                   </TableBody>
                 </Table>
               </TableContainer>
