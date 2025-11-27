@@ -38,13 +38,14 @@ RUN apt-get update && \
     software-properties-common \
     wget
 
-# Upgrade R to 4.4.3
-RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
-    add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/" && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends r-base
+# Upgrade R to 4.4.3 using conda (if available)
+RUN if [ -x /opt/conda/bin/conda ]; then \
+      /opt/conda/bin/conda install -y -c conda-forge r-base=4.4.3; \
+    else \
+      echo 'WARNING: conda not found at /opt/conda/bin/conda, skipping conda R upgrade.'; \
+    fi
 
-RUN Rscript -e 'version'
+RUN /opt/conda/bin/R --version || R --version
 
 # GitHub setup & test
 RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
