@@ -135,34 +135,6 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
 
-      - name: Check PG DB connection
-        run: |
-          # postgres://postgres:WJUFCC@demodb:5432/postgres
-          docker ps
-          docker exec d2e-trex printenv
-          echo $(docker exec d2e-trex printenv)
-          PGUSER=postgres
-          PGPASSWORD=$(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
-          PGPORT=5432
-          PGHOST=localhost
-          PGDATABASE=alp
-          echo "PGPORT: ${PGPORT}"
-          echo "PGPASSWORD: ${PGPASSWORD}"
-          echo "PGUSER: ${PGUSER}"
-          echo "PGHOST: ${PGHOST}"
-          echo "PGDATABASE: ${PGDATABASE}"
-          sudo apt install -y postgresql-client
-          echo "**********************************************"
-          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
-          echo "++++++++++++++++++++++++++++++++++++++++++++++"
-          export PGPASSWORD='${PGPASSWORD}';psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
-          echo "=============================================="
-
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn inittestdb
-
       - name: Logs
         if: success() || failure()
         run: |
@@ -392,6 +364,33 @@ jobs:
       #     cd ./tests/e2e
       #     npm test
 
+            - name: Check PG DB connection
+        run: |
+          # postgres://postgres:WJUFCC@demodb:5432/postgres
+          docker ps
+          docker exec d2e-trex printenv
+          echo $(docker exec d2e-trex printenv)
+          PGUSER=postgres
+          PGPASSWORD=$(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
+          PGPORT=5432
+          PGHOST=localhost
+          PGDATABASE=alp
+          echo "PGPORT: ${PGPORT}"
+          echo "PGPASSWORD: ${PGPASSWORD}"
+          echo "PGUSER: ${PGUSER}"
+          echo "PGHOST: ${PGHOST}"
+          echo "PGDATABASE: ${PGDATABASE}"
+          sudo apt install -y postgresql-client
+          echo "**********************************************"
+          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
+          echo "++++++++++++++++++++++++++++++++++++++++++++++"
+          export PGPASSWORD='${PGPASSWORD}';psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
+          echo "=============================================="
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn inittestdb
       - name: Upload Error Context
         if: always() # Always run, even if the previous step fails
         uses: actions/upload-artifact@v4
