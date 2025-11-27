@@ -24,7 +24,6 @@ def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
 
     flow_run_id = runtime.flow_run.id
-    output_folder = f"/output/{flow_run_id}"
 
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
@@ -48,7 +47,6 @@ def dqd_plugin(options: DqdOptionsType):
     # Todo: Update implementation if Hana uses trex
     dqd_parameters = DqdParams(
         **options.model_dump(),
-        outputFolder=output_folder,
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
         use_trex_connection=use_trex_connection,

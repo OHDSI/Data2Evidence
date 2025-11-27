@@ -1,6 +1,6 @@
 import fs from "fs";
-import http from "isomorphic-git/http";
 import git from "isomorphic-git";
+import http from "isomorphic-git/http";
 import { JwtPayload, decode } from "jsonwebtoken";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -19,6 +19,7 @@ import {
   TemplateDto,
   TemplateFhirDto,
 } from "../types.ts";
+import { sanitizeFileName } from "../utils/utils.ts";
 
 export class TransformationService {
   private readonly logger = console;
@@ -329,8 +330,16 @@ export class TransformationService {
     }
     const repoDir = this.gitRepoPath; // Use a single repository for all flows
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`; // Each flow gets its own file
-    const filePath = path.join(repoDir, subDir, fileName);
+    const safeCanvasId = sanitizeFileName(canvasId);
+    const fileName = `${safeCanvasId}.json`; // Each flow gets its own file
+    const resolvedSubDir = path.resolve(repoDir, subDir);
+    const filePath = path.resolve(resolvedSubDir, fileName);
+    if (!filePath.startsWith(resolvedSubDir + path.sep)) {
+      this.logger.error(
+        `Invalid canvas id detected: ${canvasId} leads to path traversal`
+      );
+      throw new Error('Invalid canvas id: path traversal attempt detected');
+    }
     const gitConfigValue = JSON.parse(gitConfig.value);
     const defaultBranch = gitConfigValue.branch;
     const gitRemoteUrl = gitConfigValue.repoUrl;
@@ -573,14 +582,19 @@ export class TransformationService {
       return;
     }
 
-    const repoDir = this.gitRepoPath;
-    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
-
-    const author = this.gitConfig.defaultAuthor;
-
     try {
+      const repoDir = this.gitRepoPath;
+      const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
+      const safeCanvasId = sanitizeFileName(canvasId);
+      const fileName = `${safeCanvasId}.json`;
+      const resolvedSubDir = path.resolve(repoDir, subDir);
+      const filePath = path.join(resolvedSubDir, fileName);
+      if(!filePath.startsWith(resolvedSubDir + path.sep)) {
+        throw new Error('Invalid canvas id: path traversal attempt detected');
+      }
+
+      const author = this.gitConfig.defaultAuthor;
+
       let isGitRepo = false;
       try {
         await git.resolveRef({ fs, dir: repoDir, ref: "HEAD" });
@@ -711,13 +725,13 @@ export class TransformationService {
     if (!gitRemoteUrl || !defaultBranch) {
       throw new Error("Git remote URL or default branch not configured");
     }
-
-    const repoDir = this.gitRepoPath;
-    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
-
     try {
+      const repoDir = this.gitRepoPath;
+      const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
+      const safeCanvasId = sanitizeFileName(canvasId);
+      const fileName = `${safeCanvasId}.json`;
+      const filePath = path.join(repoDir, subDir, fileName);
+
       await this.ensureLatestFromGitRemote(
         repoDir,
         gitRemoteUrl,
@@ -852,6 +866,7 @@ export class TransformationService {
           dir: repoDir,
           url: gitRemoteUrl,
           singleBranch: true,
+          ref: defaultBranch,
           depth: 1,
           ref: defaultBranch,
           ...authConfig,
@@ -864,28 +879,28 @@ export class TransformationService {
     } else {
       this.logger.info(`Updating existing repository`);
       try {
-        await git.fetch({
-          fs,
-          http,
-          dir: repoDir,
-          remote: "origin",
-          ref: defaultBranch,
-          ...authConfig,
-        });
-        this.logger.info(`Successfully fetched from remote`);
+        const remotes = await git.listRemotes({ fs, dir: repoDir });
+        const hasOrigin = remotes.some((r) => r.remote === "origin");
 
-        // Get current branch
-        const currentBranch = await git.currentBranch({ fs, dir: repoDir });
-        this.logger.info(`Current branch: ${currentBranch}`);
+        if (hasOrigin) {
+          console.log(
+            `Fetching latest changes from origin/${defaultBranch}...`
+          );
+          await git.fetch({
+            fs,
+            http,
+            dir: repoDir,
+            remote: "origin",
+            ref: defaultBranch,
+          });
 
-        // Reset to match remote current branch
-        if (currentBranch) {
           await git.checkout({
             fs,
             dir: repoDir,
             ref: `origin/${defaultBranch}`,
             force: true,
           });
+
           this.logger.info(
             `Updated local repository to match origin/${defaultBranch}`
           );
@@ -922,8 +937,16 @@ export class TransformationService {
 
     const repoDir = this.gitRepoPath;
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${canvasId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
+    const safeTemplateId = sanitizeFileName(canvasId);
+    const fileName = `${safeTemplateId}.json`;
+    const resolvedSubDir = path.resolve(repoDir, subDir);
+    const filePath = path.resolve(resolvedSubDir, fileName);
+    if (!filePath.startsWith(resolvedSubDir + path.sep)) {
+      this.logger.error(
+        `Invalid canvas id detected: ${canvasId} leads to path traversal`
+      );
+      throw new Error('Invalid canvas id: path traversal attempt detected');
+    }
 
     try {
       await this.ensureLatestFromGitRemote(
@@ -1111,7 +1134,7 @@ export class TransformationService {
     const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
     const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
     const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-  
+
     const repoDir = this.templateRepoPath;
     const subDirPath = path.join(repoDir, subDir);
     try {
@@ -1163,7 +1186,7 @@ export class TransformationService {
   }
 
   async getFhirTemplates() {
-    this.logger.info('Fetching FHIR Structure Map templates');
+    this.logger.info("Fetching FHIR Structure Map templates");
     const templateRepoUrl = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL;
     const templateBranch = env.FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH;
     const subDir = GIT_REPO_CONSTANTS.FHIR_SUBDIR;
@@ -1188,7 +1211,7 @@ export class TransformationService {
       }
 
       const templates: TemplateFhirDto[] = [];
-      
+
       for (const fileName of files) {
         const templateId = fileName.replace(".json", "");
         const filePath = path.join(subDirPath, fileName);
@@ -1200,7 +1223,7 @@ export class TransformationService {
             id: templateId,
             name: templateData.name || templateId,
             description: templateData.description || `Template: ${templateId}`,
-            structureMap: templateData || '',
+            structureMap: templateData || "",
           });
         } catch (fileError) {
           this.logger.error(
@@ -1223,15 +1246,20 @@ export class TransformationService {
     comment: string,
     token: string
   ) {
-    const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
-    const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
-
-    const repoDir = this.templateRepoPath;
-    const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
-    const fileName = `${templateId}.json`;
-    const filePath = path.join(repoDir, subDir, fileName);
-
     try {
+      const templateRepoUrl = env.DATAFLOW_TEMPLATE_REPO_URL;
+      const templateBranch = env.DATAFLOW_TEMPLATE_BRANCH;
+
+      const repoDir = this.templateRepoPath;
+      const subDir = GIT_REPO_CONSTANTS.FLOWS_SUBDIR;
+      const safeTemplateId = sanitizeFileName(templateId);
+      const fileName = `${safeTemplateId}.json`;
+      const resolvedSubDir = path.resolve(repoDir, subDir);
+      const filePath = path.resolve(resolvedSubDir, fileName);
+      if (!filePath.startsWith(resolvedSubDir + path.sep)) {
+        throw new Error('Invalid template id: path traversal attempt detected');
+      }
+
       await this.ensureLatestFromGitRemote(
         repoDir,
         templateRepoUrl,

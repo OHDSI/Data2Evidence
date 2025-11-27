@@ -454,15 +454,18 @@
         "axios": ">=0.21.2",
         "bootstrap": "4.6.1",
         "canvg": "^3.0.7",
+        "core-js": "^3.8.2",
         "d3": "3.5.17",
         "file-saver": "1.3.3",
         "fuse.js": "^6.6.2",
+        "html-webpack-plugin": "^5.5.0",
         "import-map-overrides": "^6.1.0",
         "jquery": "^3.5.1",
         "jsonwebtoken": "^9.0.0",
         "jspdf": "2.3.1",
         "jszip": "3.10.1",
         "lodash": "^4.17.21",
+        "moment": "^2.30.1",
         "normalizr": "3.2.4",
         "pako": "1.0.11",
         "plotly.js": "^2.14.0",
@@ -475,6 +478,7 @@
         "vue": "3.5.17",
         "vue-multiselect": "^3.4.0",
         "vuex": "4.1.0",
+        "webpack": "^5.76.0",
         "zod": "^3.24.2",
       },
       "devDependencies": {
@@ -496,14 +500,17 @@
         "jest": "27.1.0",
         "jest-environment-jsdom": "27.1.0",
         "jest-junit": "^5.1.0",
+        "jest-serializer-vue": "^2.0.2",
+        "jest-transform-stub": "^2.0.0",
         "process": "^0.11.10",
         "sass": "^1.32.8",
         "sass-loader": "^13.0.0",
         "stream-browserify": "^3.0.0",
         "streamsaver": "2.0.6",
         "ts-jest": "27",
+        "tslib": "^2.6.2",
         "tslint-config-prettier": "^1.15.0",
-        "typescript": "4.4.4",
+        "typescript": "5.9.3",
         "vue-server-renderer": "2.6.14",
       },
     },
@@ -8044,8 +8051,6 @@
 
     "normalize-package-data/semver": ["semver@5.7.2", "", { "bin": { "semver": "bin/semver" } }, "sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g=="],
 
-    "notebook-ui/@data2evidence/d2e-starboard-wrap": ["@data2evidence/d2e-starboard-wrap@github:data2evidence/d2e-starboard-wrap#0682494", { "dependencies": { "@data2evidence/d2e-starboard-notebook": "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop", "@ungap/custom-elements": "^0.1.15" } }, "data2evidence-d2e-starboard-wrap-0682494"],
-
     "notebook-ui/axios": ["axios@0.27.2", "", { "dependencies": { "follow-redirects": "^1.14.9", "form-data": "^4.0.0" } }, "sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ=="],
 
     "notebook-ui/eslint": ["eslint@8.57.1", "", { "dependencies": { "@eslint-community/eslint-utils": "^4.2.0", "@eslint-community/regexpp": "^4.6.1", "@eslint/eslintrc": "^2.1.4", "@eslint/js": "8.57.1", "@humanwhocodes/config-array": "^0.13.0", "@humanwhocodes/module-importer": "^1.0.1", "@nodelib/fs.walk": "^1.2.8", "@ungap/structured-clone": "^1.2.0", "ajv": "^6.12.4", "chalk": "^4.0.0", "cross-spawn": "^7.0.2", "debug": "^4.3.2", "doctrine": "^3.0.0", "escape-string-regexp": "^4.0.0", "eslint-scope": "^7.2.2", "eslint-visitor-keys": "^3.4.3", "espree": "^9.6.1", "esquery": "^1.4.2", "esutils": "^2.0.2", "fast-deep-equal": "^3.1.3", "file-entry-cache": "^6.0.1", "find-up": "^5.0.0", "glob-parent": "^6.0.2", "globals": "^13.19.0", "graphemer": "^1.4.0", "ignore": "^5.2.0", "imurmurhash": "^0.1.4", "is-glob": "^4.0.0", "is-path-inside": "^3.0.3", "js-yaml": "^4.1.0", "json-stable-stringify-without-jsonify": "^1.0.1", "levn": "^0.4.1", "lodash.merge": "^4.6.2", "minimatch": "^3.1.2", "natural-compare": "^1.4.0", "optionator": "^0.9.3", "strip-ansi": "^6.0.1", "text-table": "^0.2.0" }, "bin": { "eslint": "bin/eslint.js" } }, "sha512-ypowyDxpVSYpkXr9WPv2PAZCtNip1Mv5KTW0SCurXv/9iOpcrH9PaqUElksqEB6pChqHGDRCFTyrZlGhnLNGiA=="],
@@ -8498,7 +8503,7 @@
 
     "vue-mri/file-saver": ["file-saver@1.3.3", "", {}, "sha512-2lGfU4gymmhXRUiPLeQlnlkMaSY8azJB9W8e/vFp44AlAOEvzf6XiBUoTHO9NBM4OVlehybxDM9B4SwLBh42mw=="],
 
-    "vue-mri/typescript": ["typescript@4.4.4", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-DqGhF5IKoBl8WNf8C1gu8q0xZSInh9j1kJJMqT3a94w1JzVaBU4EXOSMrz9yDqMT0xt3selp83fuFMQ0uzv6qA=="],
+    "vue-mri/html-webpack-plugin": ["html-webpack-plugin@5.6.5", "", { "dependencies": { "@types/html-minifier-terser": "^6.0.0", "html-minifier-terser": "^6.0.2", "lodash": "^4.17.21", "pretty-error": "^4.0.0", "tapable": "^2.0.0" }, "peerDependencies": { "@rspack/core": "0.x || 1.x", "webpack": "^5.20.0" }, "optionalPeers": ["@rspack/core", "webpack"] }, "sha512-4xynFbKNNk+WlzXeQQ+6YYsH2g7mpfPszQZUi3ovKlj+pDmngQ7vRXjrrmGROabmKwyQkcgcX5hqfOwHbFmK5g=="],
 
     "vue-mri/vue": ["vue@3.5.17", "", { "dependencies": { "@vue/compiler-dom": "3.5.17", "@vue/compiler-sfc": "3.5.17", "@vue/runtime-dom": "3.5.17", "@vue/server-renderer": "3.5.17", "@vue/shared": "3.5.17" }, "peerDependencies": { "typescript": "*" }, "optionalPeers": ["typescript"] }, "sha512-LbHV3xPN9BeljML+Xctq4lbz2lVHCR6DtbpTf5XIO6gugpXUN49j2QQPcMj086r9+AkJ0FfUT8xjulKKBkkr9g=="],
 
@@ -9869,8 +9874,6 @@
     "node-fetch/whatwg-url/tr46": ["tr46@0.0.3", "", {}, "sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw=="],
 
     "node-fetch/whatwg-url/webidl-conversions": ["webidl-conversions@3.0.1", "", {}, "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="],
-
-    "notebook-ui/@data2evidence/d2e-starboard-wrap/@data2evidence/d2e-starboard-notebook": ["@alp-os/d2e-starboard-notebook-base@github:data2evidence/d2e-starboard-notebook-base#25f009e", {}, "data2evidence-d2e-starboard-notebook-base-25f009e"],
 
     "notebook-ui/eslint/@eslint/eslintrc": ["@eslint/eslintrc@2.1.4", "", { "dependencies": { "ajv": "^6.12.4", "debug": "^4.3.2", "espree": "^9.6.0", "globals": "^13.19.0", "ignore": "^5.2.0", "import-fresh": "^3.2.1", "js-yaml": "^4.1.0", "minimatch": "^3.1.2", "strip-json-comments": "^3.1.1" } }, "sha512-269Z39MS6wVJtsoUl10L60WdkhJVdPG24Q4eZTH3nnF6lpvSShEK3wQjDX9JRWAUPvPh7COouPpU9IrqaZFvtQ=="],
 

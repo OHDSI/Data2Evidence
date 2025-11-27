@@ -135,6 +135,14 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
     setFormData((formData) => ({ ...formData, password: generateRandom(12) }));
   }, []);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleAdd();
+    },
+    [handleAdd]
+  );
+
   return (
     <Dialog
       className="add-user-dialog"
@@ -144,8 +152,9 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
     >
-      <Divider />
-      <div className="add-user-dialog__content">
+      <form onSubmit={handleSubmit}>
+        <Divider />
+        <div className="add-user-dialog__content">
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
             <TextField
@@ -155,6 +164,7 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
               onChange={(event) => setFormData((formData) => ({ ...formData, username: event.target.value }))}
               helperText={getText(i18nKeys.ADD_USER_DIALOG__USERNAME_HELPER)}
               error={formError.username.required || formError.username.valid}
+              autoFocus
             />
           </FormControl>
         </div>
@@ -193,18 +203,19 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
             <FormHelperText error={true}>{getText(i18nKeys.ADD_USER_DIALOG__REQUIRED)}</FormHelperText>
           )}
         </div>
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.ADD_USER_DIALOG__CANCEL)}
-          onClick={() => handleClose("cancelled")}
-          variant="outlined"
-          block
-          disabled={loading}
-        />
-        <Button text={getText(i18nKeys.ADD_USER_DIALOG__ADD)} onClick={handleAdd} block loading={loading} />
-      </div>
+        </div>
+        <Divider />
+        <div className="button-group-actions">
+          <Button
+            text={getText(i18nKeys.ADD_USER_DIALOG__CANCEL)}
+            onClick={() => handleClose("cancelled")}
+            variant="outlined"
+            block
+            disabled={loading}
+          />
+          <Button text={getText(i18nKeys.ADD_USER_DIALOG__ADD)} onClick={handleAdd} block loading={loading} type="submit" />
+        </div>
+      </form>
     </Dialog>
   );
 };

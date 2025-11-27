@@ -3,12 +3,24 @@ from re import match
 from pathlib import Path
 
 
-def get_failed_analysis_ids(output_folder: str) -> list[str] | None:
+def get_failed_analysis_ids(output_folder: str) -> list[int] | None:
     """
     Get the list of failed analysis IDs from the output folder.
     """
     error_files = list(Path(output_folder).glob("achillesError_*.txt"))
-    return [file.stem.split("_")[-1] for file in error_files if file.is_file()]
+    failed_ids = [int(file.stem.split("_")[-1]) for file in error_files if file.is_file()]
+
+    sorted_failed_ids = sorted(failed_ids)
+
+    return sorted_failed_ids if sorted_failed_ids else None
+
+
+def failed_analysis_ids_to_str(failed_ids: list[int]) -> str:
+    """
+    Convert the list of failed analysis IDs to a comma separated string.
+    """
+    failed_ids_str = ",".join(map(str, failed_ids))
+    return f'"{failed_ids_str}"'
 
 
 def is_safe_schema_name(schema: str) -> bool:
