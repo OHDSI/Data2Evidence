@@ -80,21 +80,24 @@ export async function getCohortDefinition(cohortId: number): Promise<any> {
 }
 
 export async function updateCohortDefinition(
-  cohortId: number,
-  cohortDefinition: any,
+  cohort: any,
   authorization: string
 ): Promise<any> {
   const webapi = new WebAPIAPI();
-  const data = await webapi.updateAtlasCohortDefinition(
-    cohortId,
-    cohortDefinition,
-    authorization
-  );
+  const data = await webapi.updateAtlasCohortDefinition(cohort, authorization);
   return data;
 }
 
-export async function deleteCohortDefinition(cohortId: number): Promise<any> {
+export async function deleteCohortDefinition(
+  cohortId: number,
+  authorization: string,
+  datasetId: string
+): Promise<any> {
   const webapi = new WebAPIAPI();
-  const data = await webapi.deleteAtlasCohortDefinition(cohortId);
+  const data = await webapi.deleteAtlasCohortDefinition(
+    cohortId,
+    authorization,
+    datasetId
+  );
   return data;
 }

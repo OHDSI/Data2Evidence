@@ -197,14 +197,16 @@ server.registerTool(
     inputSchema: {
       action: z.enum(["get", "create", "update", "delete"])
         .describe(`Action to perform on the cohort definition.
-          - "get": Retrieve an existing cohort definition from d2e with user provided cohortId.
+          - "get": Retrieve an existing cohort from d2e with user provided cohortId.
           - "create": Create a new cohort definition in d2e using atlastCohortDefinition.
           - "update": Update an existing cohort definition identified in d2e by cohortId with atlastCohortDefinition.
           - "delete": Delete an existing cohort definition identified in d2e by cohortId
           .`),
       atlastCohortDefinition: z
         .any()
-        .describe("Atlas cohort definition in json, include concept sets and expression"),
+        .describe(
+          "Atlas cohort definition in json, include concept sets and expression"
+        )
         .optional(),
       userName: z.string().describe("User name creating the cohort").optional(),
       cohortInfo: z.string().describe("The cohort description").optional(),
@@ -212,13 +214,18 @@ server.registerTool(
         .number()
         .describe("The cohort ID to update or delete")
         .optional(),
+      cohort: z
+        .any()
+        .describe("The complete cohort definition object")
+        .optional(),
     },
   },
   async (
-    { action, atlastCohortDefinition, userName, cohortInfo, cohortId },
+    { action, atlastCohortDefinition, userName, cohortInfo, cohortId, cohort },
     { requestInfo }
   ) => {
     let authorization = requestInfo?.headers?.authorization;
+    let datasetId = requestInfo?.headers?.datasetid;
     if (!authorization) {
       throw new Error("Cannot create cohort in D2E, authorization is missing");
     } else {
@@ -265,16 +272,8 @@ server.registerTool(
         break;
       }
       case "update": {
-        const cohortDefinition = {
-          expression: atlastCohortDefinition,
-          cohortInfo: cohortInfo,
-          userName: userName,
-        };
-        const res = await updateCohortDefinition(
-          cohortId as number,
-          cohortDefinition,
-          authorization
-        );
+        console.log("Updating cohort with data:", cohort);
+        const res = await updateCohortDefinition(cohort, authorization);
         content = [
           {
             type: "text",
@@ -284,11 +283,22 @@ server.registerTool(
         break;
       }
       case "delete": {
-        const res = await deleteCohortDefinition(cohortId as number);
+        const res = await deleteCohortDefinition(
+          cohortId as number,
+          authorization,
+          datasetId as string
+        );
+        console.log("Deleting cohort with cohort ID:", cohortId);
+        if (!res) {
+          throw new Error(
+            `Failed to delete cohort definition in D2E with cohortId: ${cohortId}`
+          );
+        }
+
         content = [
           {
             type: "text",
-            text: `${logMessage} ${res.id}`,
+            text: `${logMessage} ${cohortId}`,
           },
         ];
         break;
