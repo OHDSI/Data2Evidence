@@ -16,29 +16,56 @@ docker run -e WEBAPI_URL="https://atlas-demo.ohdsi.org/WebAPI" -e SOURCE="SYNPUF
 
 Open `http://localhost:3131` in your browser.
 
-### Using NPM
+### Local Development (Bun)
+
+**1. Configure environment variables**
+
+Edit `ui/apps/vue-mri-ui-lib/.env`:
 
 ```bash
-# From repo root: install dependencies
-cd ui && yarn
+VUE_APP_STANDALONE_ATLAS=true  # Enable standalone Atlas mode
+```
 
-# Build and start
-cd apps/vue-mri-ui-lib
+**2. Build and start mock server**
+
+```bash
+# From ui/apps/vue-mri-ui-lib directory
 npm run build:mock
 npm run start:mock
 ```
 
+**3. Start development server**
+
+```bash
+# From ui/ directory
+bun serve
+```
+
 Open `http://localhost:3131` in your browser.
+
+## Configuration
 
 ### Environment Variables
 
-| Variable     | Default                                                       | Description                 |
-| ------------ | ------------------------------------------------------------- | --------------------------- |
-| `SERVER_URL` | `http://localhost:3131`                                       | Server URL and port         |
-| `WEBAPI_URL` | `http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI` | External OHDSI WebAPI proxy |
-| `SOURCE`     | `vocab`                                                       | Vocabulary source key       |
-| `USE_CACHE`  | `true`                                                        | Enable response caching     |
-| `DEBUG`      | `false`                                                       | Show debug info in UI       |
+Configuration is managed in `ui/apps/vue-mri-ui-lib/.env`:
+
+| Variable                   | Default | Description                                       |
+| -------------------------- | ------- | ------------------------------------------------- |
+| `VUE_APP_STANDALONE_ATLAS` | `false` | Enable standalone Atlas mode (set `true` for dev) |
+| `VUE_APP_CLIENT_ID`        | -       | Logto client ID from main d2e `.env`              |
+| `VUE_APP_DATASET_ID`       | -       | Dataset UUID identifier                           |
+
+### Mock Server Runtime Variables
+
+Set these when starting the mock server:
+
+| Variable     | Default                               | Description                 |
+| ------------ | ------------------------------------- | --------------------------- |
+| `SERVER_URL` | `http://localhost:3131`               | Server URL and port         |
+| `WEBAPI_URL` | `https://atlas-demo.ohdsi.org/WebAPI` | External OHDSI WebAPI proxy |
+| `SOURCE`     | `vocab`                               | Vocabulary source key       |
+| `USE_CACHE`  | `true`                                | Enable response caching     |
+| `DEBUG`      | `false`                               | Show debug info in UI       |
 
 **Examples**:
 
@@ -62,30 +89,27 @@ Browser (3131) → Mock Server → External WebAPI
                  └─ API endpoints
 ```
 
-## Development Modes
+## Development Workflows
 
-### Hot-Reload Development
+### Full Build Development (Recommended)
 
-For active development with hot-reload:
+For testing the complete production-like build:
 
-1. **Configure**: Set `USE_MOCK_SERVER = true` in `public/authenticate.js`
-2. **Set proxy**: In `vue.config.js`, set `target: 'http://localhost:3001'`
-3. **Start mock server**:
-   ```bash
-   cd src/query-filter/mock-server && npm install && npm start
-   ```
-4. **Start dev server**: `nx serve vue-mri` (port 8081)
+1. Set `VUE_APP_STANDALONE_ATLAS=true` in `ui/apps/vue-mri-ui-lib/.env`
+2. Build mock server: `npm run build:mock`
+3. Start mock server: `npm run start:mock`
+4. Open `http://localhost:3131`
 
-### Built Application
+For vue server hot reload:
 
-Serves both UI and APIs from single server (port 3131):
+5. From `ui/` directory: `bun serve`
+6. Open `https://localhost:8081`
 
-```bash
-npm run build:mock
-npm run start:mock
-```
+The `build:mock` script:
 
-The `build:mock` script builds the Vue app and copies built files to the mock server directory.
+- Builds vue-mri-ui-lib, ui5, portal-components, and concept-sets
+- Copies built files to mock server static directory
+- Installs mock server dependencies
 
 ## Features
 
@@ -93,3 +117,4 @@ The `build:mock` script builds the Vue app and copies built files to the mock se
 - **Response Caching**: Caches external API responses for faster development
 - **URL Rewriting**: Automatically replaces URLs in served files and mock data with `SERVER_URL`
 - **CORS Support**: Enables cross-origin requests for development
+- **Bun Support**: Fast package installation and development workflow

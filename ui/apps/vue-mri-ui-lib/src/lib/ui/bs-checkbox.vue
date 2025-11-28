@@ -22,9 +22,6 @@
 <script lang="ts">
 export default {
   name: 'bs-checkbox',
-  compatConfig: {
-    MODE: 3, // Run in Vue 3 mode for proper v-model behavior
-  },
 }
 </script>
 

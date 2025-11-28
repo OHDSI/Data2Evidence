@@ -215,9 +215,6 @@ import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
   data() {
@@ -673,4 +670,3 @@ export default {
   },
 }
 </script>
-
