@@ -20,6 +20,15 @@ export class PrefectAPI {
     };
   }
 
+  private static readonly UNIQUE_VIOLATION_PATTERNS = [
+    'uniqueviolation',
+    'unique constraint',
+    'already exists',
+    'duplicate key',
+    'integrity conflict',
+    'integrityerror'
+  ];
+
   private isUniqueViolationError(status: number | undefined, errorData: any): boolean {
     if (status === 409) {
       return true;
@@ -27,23 +36,21 @@ export class PrefectAPI {
     if (status !== 500) {
       return false;
     }
-    // Check if detail field contains unique violation patterns
-    if (errorData?.detail?.includes?.('UniqueViolation') ||
-        errorData?.detail?.includes?.('unique constraint') ||
-        errorData?.detail?.includes?.('already exists')) {
-      return true;
-    }
-    // Safely stringify error data to search for patterns
+
+    // Safely stringify error data to search for patterns (case-insensitive)
     let errorString = '';
     try {
-      errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData ?? {});
+      if (typeof errorData === 'string') {
+        errorString = errorData.toLowerCase();
+      } else {
+        errorString = JSON.stringify(errorData ?? {}).toLowerCase();
+      }
     } catch {
       // Circular reference or other stringify error - skip string-based check
       return false;
     }
-    return errorString.includes('UniqueViolation') ||
-           errorString.includes('unique constraint') ||
-           errorString.includes('already exists');
+
+    return PrefectAPI.UNIQUE_VIOLATION_PATTERNS.some(pattern => errorString.includes(pattern));
   }
 
   public async createPrefectVariable(
