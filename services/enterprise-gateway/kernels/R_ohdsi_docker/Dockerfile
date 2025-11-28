@@ -112,16 +112,13 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
     R CMD javareconf && \
     rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
 
-# chmod +x /app/flows/build/install_and_verify_r_packages.R
-# /app/flows/build/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" /opt/conda/lib/R/site-library
-
-# RUN rm -f .Renviron
+RUN rm -f .Renviron
 
 WORKDIR /app/rD2E
-# RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
+RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
 RUN chown jovyan /app && chmod 711 /app
 
-# USER jovyan
+USER jovyan
 
 ENV KERNEL_LANGUAGE R
 
