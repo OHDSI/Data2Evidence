@@ -7,9 +7,6 @@
 <script lang="ts">
 export default {
   name: 'BsButton',
-  compatConfig: {
-    MODE: 3 as const,
-  },
 }
 </script>
 
@@ -68,7 +65,10 @@ const handleClick = (event: MouseEvent) => {
   font-size: 1rem;
   line-height: 1.5;
   border-radius: var(--border-radius-xs, 0.25rem);
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
     box-shadow 0.15s ease-in-out;
   cursor: pointer;
   font-family: var(--font-family-secondary, inherit);
