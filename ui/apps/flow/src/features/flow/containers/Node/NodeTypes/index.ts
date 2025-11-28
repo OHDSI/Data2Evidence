@@ -142,8 +142,8 @@ test_exec <- function(myinput) {
     },
   },
   transform_fhir_data_node: {
-    title: "Transform Data",
-    description: "Transform data from one format to another using mapping rules.",
+    title: "Transform FHIR Data",
+    description: "Transform fhir data from one format to another using mapping rules.",
     tag: NodeTag.Experimental,
     defaultData: {}
    },
