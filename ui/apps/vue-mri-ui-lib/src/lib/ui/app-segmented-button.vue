@@ -35,9 +35,6 @@
 <script lang="ts">
 export default {
   name: 'app-segmented-button',
-  compatConfig: {
-    MODE: 3, // Run in Vue 3 mode for proper v-model behavior
-  },
 }
 </script>
 
@@ -71,7 +68,7 @@ const emit = defineEmits<{
 
 // Merge both props - modelValue takes precedence for Vue 2/3 compat
 const mergedValue = computed(() => {
-  return props.modelValue !== undefined ? props.modelValue : props.value ?? ''
+  return props.modelValue !== undefined ? props.modelValue : (props.value ?? '')
 })
 
 // Template refs
