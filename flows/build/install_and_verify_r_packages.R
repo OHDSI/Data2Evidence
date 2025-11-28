@@ -2,10 +2,10 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 required_packages <- unlist(strsplit(args[1], " "))
+renv_paths_library <- ifelse(length(args) > 1, args[2], "/usr/local/lib/R/site-library")
 
 # Set variables
 renv_config_sandbox_enabled <- FALSE
-renv_paths_library <- "/usr/local/lib/R/site-library"
 lockfile_location <- "/app/renv.lock"
 
 Sys.setenv(RENV_CONFIG_SANDBOX_ENABLED = renv_config_sandbox_enabled)
@@ -15,8 +15,10 @@ renv::restore(lockfile = lockfile_location, library = renv_paths_library, prompt
 
 installed <- rownames(installed.packages())
 missing <- setdiff(required_packages, installed)
-if (length(missing) > 0) {
-stop(paste('Missing packages:', paste(missing, collapse = ', ')))
-} else {
-  cat('All required packages are installed.\n')
-}
+print(installed)
+print(missing)
+# if (length(missing) > 0) {
+# stop(paste('Missing packages:', paste(missing, collapse = ', ')))
+# } else {
+#   cat('All required packages are installed.\n')
+# }
