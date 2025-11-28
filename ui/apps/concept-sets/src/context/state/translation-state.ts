@@ -23,6 +23,8 @@ export const i18nDefault = {
     TERMINOLOGY__CREATE: "Create",
     TERMINOLOGY__CREATING: "creating",
     TERMINOLOGY__ERROR: "Error {0} concept set.",
+    TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR:
+      "Concept set name {0} already exists. Please enter another name.",
     TERMINOLOGY__MISSING_USER_ID: "Missing User Id",
     TERMINOLOGY__NAME: "Name",
     TERMINOLOGY__REFERENCE_CONCEPTS: "Reference concepts from dataset",
