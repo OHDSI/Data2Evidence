@@ -38,7 +38,7 @@ export class PrefectAPI {
       // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
       const status = error.response?.status;
       const errorData = error.response?.data;
-      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData || '');
+      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData ?? {});
       const isUniqueViolation = status === 409 ||
         (status === 500 && (
           errorData?.detail?.includes?.('UniqueViolation') ||
@@ -95,7 +95,7 @@ export class PrefectAPI {
       // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
       const status = error.response?.status;
       const errorData = error.response?.data;
-      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData || '');
+      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData ?? {});
       const isUniqueViolation = status === 409 ||
         (status === 500 && (
           errorData?.detail?.includes?.('UniqueViolation') ||
