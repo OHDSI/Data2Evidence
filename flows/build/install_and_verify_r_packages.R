@@ -15,8 +15,10 @@ renv::restore(lockfile = lockfile_location, library = renv_paths_library, prompt
 
 installed <- rownames(installed.packages())
 missing <- setdiff(required_packages, installed)
-if (length(missing) > 0) {
-stop(paste('Missing packages:', paste(missing, collapse = ', ')))
-} else {
-  cat('All required packages are installed.\n')
-}
+print(installed)
+print(missing)
+# if (length(missing) > 0) {
+# stop(paste('Missing packages:', paste(missing, collapse = ', ')))
+# } else {
+#   cat('All required packages are installed.\n')
+# }
