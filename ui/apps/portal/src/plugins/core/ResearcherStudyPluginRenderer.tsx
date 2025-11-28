@@ -88,24 +88,27 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
     }
   }, [path, studyId, locale, username, data, route, configType, isRegistered]);
 
-  // Load legacy plugins only when needed
+  // Load legacy plugins when path changes
   useEffect(() => {
-    if (configType !== "app" && !component && !isLoading) {
+    if (configType !== "app") {
+      setComponent(null);
+      setIsLoading(true);
+
       const loadLegacyPlugin = async () => {
-        setIsLoading(true);
         try {
           const { module, type } = await loadPlugin(path, "legacy");
           setPluginType(type);
           setComponent(module);
-          setIsLoading(false);
         } catch (error) {
           console.error(`[ResearcherStudyPluginRenderer] Failed to load legacy plugin:`, error);
+        } finally {
           setIsLoading(false);
         }
       };
+
       loadLegacyPlugin();
     }
-  }, [path, configType, component, isLoading]);
+  }, [path, configType]);
 
   const metadata = useMemo(
     () => ({
