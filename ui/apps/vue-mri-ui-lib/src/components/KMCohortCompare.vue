@@ -149,13 +149,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  name: 'kaplanMeierCompare',
-  compatConfig: { MODE: 3 },
-}
-</script>
-
 <script setup lang="ts">
 import axios from 'axios'
 import d3 from 'd3'
