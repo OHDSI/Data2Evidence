@@ -20,6 +20,32 @@ export class PrefectAPI {
     };
   }
 
+  private isUniqueViolationError(status: number | undefined, errorData: any): boolean {
+    if (status === 409) {
+      return true;
+    }
+    if (status !== 500) {
+      return false;
+    }
+    // Check if detail field contains unique violation patterns
+    if (errorData?.detail?.includes?.('UniqueViolation') ||
+        errorData?.detail?.includes?.('unique constraint') ||
+        errorData?.detail?.includes?.('already exists')) {
+      return true;
+    }
+    // Safely stringify error data to search for patterns
+    let errorString = '';
+    try {
+      errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData ?? {});
+    } catch {
+      // Circular reference or other stringify error - skip string-based check
+      return false;
+    }
+    return errorString.includes('UniqueViolation') ||
+           errorString.includes('unique constraint') ||
+           errorString.includes('already exists');
+  }
+
   public async createPrefectVariable(
     variableObj: PrefectVariable
   ): Promise<string> {
@@ -38,18 +64,8 @@ export class PrefectAPI {
       // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
       const status = error.response?.status;
       const errorData = error.response?.data;
-      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData ?? {});
-      const isUniqueViolation = status === 409 ||
-        (status === 500 && (
-          errorData?.detail?.includes?.('UniqueViolation') ||
-          errorData?.detail?.includes?.('unique constraint') ||
-          errorData?.detail?.includes?.('already exists') ||
-          errorString.includes('UniqueViolation') ||
-          errorString.includes('unique constraint') ||
-          errorString.includes('already exists')
-        ));
 
-      if (isUniqueViolation) {
+      if (this.isUniqueViolationError(status, errorData)) {
         // update variable which already exists
         url = `${this.baseURL}/variables/name/${encodeURIComponent(
           variableObj.name
@@ -95,18 +111,8 @@ export class PrefectAPI {
       // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
       const status = error.response?.status;
       const errorData = error.response?.data;
-      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData ?? {});
-      const isUniqueViolation = status === 409 ||
-        (status === 500 && (
-          errorData?.detail?.includes?.('UniqueViolation') ||
-          errorData?.detail?.includes?.('unique constraint') ||
-          errorData?.detail?.includes?.('already exists') ||
-          errorString.includes('UniqueViolation') ||
-          errorString.includes('unique constraint') ||
-          errorString.includes('already exists')
-        ));
 
-      if (isUniqueViolation) {
+      if (this.isUniqueViolationError(status, errorData)) {
         // update block which already exists
         url = `${this.baseURL}/block_types/slug/${encodeURIComponent(
           slugName
