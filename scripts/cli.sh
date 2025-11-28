@@ -164,6 +164,9 @@ case $cmd in
         source $node_modules_path/scripts/lib.sh # functions here
         hanapw=${HANAPW:-$(random-password 16)}
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
+        cat >> $ENVFILE << 'EOF'
+INSTALL_SQLALCHEMY="bash -c 'if [[ \$INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"
+EOF
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         $cmd
         ;;
@@ -318,6 +321,11 @@ case $cmd in
         setup_zx_cmd
         $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE" 
         $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
+    setupdemohana)
+        source "$ENVFILE"
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/setupdemohana.mjs" -n "$ENVFILE" 
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemohana-flow.mjs" -n "$ENVFILE"
         ;;
     checkflow) 
         setup_zx_cmd
