@@ -31,14 +31,6 @@ const hasHeader = computed(() => slots.header || props.title)
 const hasFooter = computed(() => slots.footer)
 </script>
 
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <style lang="scss">
 // Base Bootstrap card styles (self-contained since Bootstrap is removed)
 .card {

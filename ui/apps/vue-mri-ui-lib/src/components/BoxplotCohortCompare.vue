@@ -17,13 +17,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  name: 'boxplotChart',
-  compatConfig: { MODE: 3 },
-}
-</script>
-
 <script setup lang="ts">
 import d3 from 'd3'
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'

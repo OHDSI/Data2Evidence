@@ -7,9 +7,6 @@
 <script lang="ts">
 export default {
   name: 'bs-dropdown-item',
-  compatConfig: {
-    MODE: 3, // Run in Vue 3 mode for proper behavior
-  },
 }
 </script>
 
