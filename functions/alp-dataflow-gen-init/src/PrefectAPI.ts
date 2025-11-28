@@ -37,8 +37,17 @@ export class PrefectAPI {
     } catch (error) {
       // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
       const status = error.response?.status;
+      const errorData = error.response?.data;
+      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData || '');
       const isUniqueViolation = status === 409 ||
-        (status === 500 && error.response?.data?.detail?.includes?.('UniqueViolation'));
+        (status === 500 && (
+          errorData?.detail?.includes?.('UniqueViolation') ||
+          errorData?.detail?.includes?.('unique constraint') ||
+          errorData?.detail?.includes?.('already exists') ||
+          errorString.includes('UniqueViolation') ||
+          errorString.includes('unique constraint') ||
+          errorString.includes('already exists')
+        ));
 
       if (isUniqueViolation) {
         // update variable which already exists
@@ -85,8 +94,17 @@ export class PrefectAPI {
     } catch (error) {
       // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
       const status = error.response?.status;
+      const errorData = error.response?.data;
+      const errorString = typeof errorData === 'string' ? errorData : JSON.stringify(errorData || '');
       const isUniqueViolation = status === 409 ||
-        (status === 500 && error.response?.data?.detail?.includes?.('UniqueViolation'));
+        (status === 500 && (
+          errorData?.detail?.includes?.('UniqueViolation') ||
+          errorData?.detail?.includes?.('unique constraint') ||
+          errorData?.detail?.includes?.('already exists') ||
+          errorString.includes('UniqueViolation') ||
+          errorString.includes('unique constraint') ||
+          errorString.includes('already exists')
+        ));
 
       if (isUniqueViolation) {
         // update block which already exists
