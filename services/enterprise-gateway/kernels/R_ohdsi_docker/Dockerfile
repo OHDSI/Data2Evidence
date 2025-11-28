@@ -37,6 +37,9 @@ RUN apt-get update && \
     libfontconfig1-dev \
     libfreetype6-dev \
     libblas-dev \    
+    libgit2-dev \
+    libglpk-dev \
+    libnode-dev \
     liblapack-dev  \
     gfortran \
     libmagick++-dev \
