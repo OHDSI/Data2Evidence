@@ -30,10 +30,14 @@ export class PrefectAPI {
   ];
 
   private isUniqueViolationError(status: number | undefined, errorData: any): boolean {
+    console.log(`[PrefectAPI] isUniqueViolationError check - status: ${status}`);
+    
     if (status === 409) {
+      console.log(`[PrefectAPI] Status 409 detected - returning true`);
       return true;
     }
     if (status !== 500) {
+      console.log(`[PrefectAPI] Status is not 500 (it's ${status}) - returning false`);
       return false;
     }
 
@@ -45,12 +49,22 @@ export class PrefectAPI {
       } else {
         errorString = JSON.stringify(errorData ?? {}).toLowerCase();
       }
-    } catch {
+    } catch (e) {
       // Circular reference or other stringify error - skip string-based check
+      console.log(`[PrefectAPI] Failed to stringify error data: ${e}`);
       return false;
     }
 
-    return PrefectAPI.UNIQUE_VIOLATION_PATTERNS.some(pattern => errorString.includes(pattern));
+    console.log(`[PrefectAPI] Searching for unique violation patterns in: ${errorString.substring(0, 500)}...`);
+    
+    const matchedPattern = PrefectAPI.UNIQUE_VIOLATION_PATTERNS.find(pattern => errorString.includes(pattern));
+    if (matchedPattern) {
+      console.log(`[PrefectAPI] Found matching pattern: '${matchedPattern}' - returning true`);
+      return true;
+    }
+    
+    console.log(`[PrefectAPI] No unique violation patterns found - returning false`);
+    return false;
   }
 
   public async createPrefectVariable(
@@ -65,17 +79,23 @@ export class PrefectAPI {
 
     // First check if the variable already exists
     const checkUrl = `${this.baseURL}/variables/name/${encodeURIComponent(variableObj.name)}`;
+    console.log(`[PrefectAPI] Checking if variable '${variableObj.name}' exists at: ${checkUrl}`);
     try {
       await axios.get(checkUrl, options);
       // Variable exists, update it
+      console.log(`[PrefectAPI] Variable '${variableObj.name}' exists, updating...`);
       const result = await axios.patch(checkUrl, variableOptions, options);
       console.log(successMsg);
       return variableObj.name;
     } catch (getError) {
+      const getStatus = getError.response?.status;
+      console.log(`[PrefectAPI] GET request for variable '${variableObj.name}' returned status: ${getStatus}`);
+      
       // Variable doesn't exist (404), create it
-      if (getError.response?.status === 404) {
+      if (getStatus === 404) {
         try {
           const createUrl = `${this.baseURL}/variables`;
+          console.log(`[PrefectAPI] Variable '${variableObj.name}' not found (404), creating at: ${createUrl}`);
           const result = await axios.post(createUrl, variableOptions, options);
           console.log(successMsg);
           return result.data.name;
@@ -83,9 +103,15 @@ export class PrefectAPI {
           // Handle race condition: another process may have created the variable
           const status = createError.response?.status;
           const errorData = createError.response?.data;
+          const errorString = JSON.stringify(errorData ?? {});
+          
+          console.error(`[PrefectAPI] Create variable '${variableObj.name}' failed with status: ${status}`);
+          console.error(`[PrefectAPI] Error response data: ${errorString}`);
+          console.log(`[PrefectAPI] Checking if this is a unique violation error...`);
 
           if (this.isUniqueViolationError(status, errorData)) {
             // Variable was created by another process, update it
+            console.log(`[PrefectAPI] Detected unique violation, attempting to update instead...`);
             const result = await axios.patch(checkUrl, variableOptions, options);
             console.log(successMsg);
             return variableObj.name;
@@ -99,7 +125,7 @@ export class PrefectAPI {
         }
       } else {
         console.error(
-          `[${getError.response?.status}] Failed to check Prefect variable ${variableObj.name}!`,
+          `[${getStatus}] Failed to check Prefect variable ${variableObj.name}!`,
           getError.response?.data
         );
         throw getError;
@@ -114,8 +140,14 @@ export class PrefectAPI {
   ): Promise<string> {
     const slugName = blockType;
     const successMsg = `Successfully created/updated Prefect ${blockType} block '${blockName}'!`;
+    
+    console.log(`[PrefectAPI] Getting block type ID for slug: ${slugName}`);
     const blockTypeId = await this.getBlockTypeID(slugName);
+    console.log(`[PrefectAPI] Block type ID: ${blockTypeId}`);
+    
+    console.log(`[PrefectAPI] Getting block schema ID for block type ID: ${blockTypeId}`);
     const blockSchemaId = await this.getBlockSchemaId(blockTypeId);
+    console.log(`[PrefectAPI] Block schema ID: ${blockSchemaId}`);
 
     const blockDocOptions = {
       name: blockName,
@@ -136,6 +168,7 @@ export class PrefectAPI {
     // Helper function to update an existing block by ID
     const updateExistingBlock = async (blockId: string): Promise<string> => {
       const updateUrl = `${this.baseURL}/block_documents/${encodeURIComponent(blockId)}`;
+      console.log(`[PrefectAPI] Updating block '${blockName}' at: ${updateUrl}`);
       await axios.patch(updateUrl, updateBlockDocOptions, options);
       console.log(successMsg);
       return blockId;
@@ -146,15 +179,21 @@ export class PrefectAPI {
       slugName
     )}/block_documents/name/${encodeURIComponent(blockName)}`;
 
+    console.log(`[PrefectAPI] Checking if block '${blockName}' exists at: ${checkUrl}`);
     try {
       const existingBlock = await axios.get(checkUrl, options);
       // Block exists, update it
+      console.log(`[PrefectAPI] Block '${blockName}' exists with ID: ${existingBlock.data.id}, updating...`);
       return await updateExistingBlock(existingBlock.data.id);
     } catch (getError) {
+      const getStatus = getError.response?.status;
+      console.log(`[PrefectAPI] GET request for block '${blockName}' returned status: ${getStatus}`);
+      
       // Block doesn't exist (404), create it
-      if (getError.response?.status === 404) {
+      if (getStatus === 404) {
         try {
           const createUrl = `${this.baseURL}/block_documents`;
+          console.log(`[PrefectAPI] Block '${blockName}' not found (404), creating at: ${createUrl}`);
           const result = await axios.post(createUrl, blockDocOptions, options);
           console.log(successMsg);
           return result.data.id;
@@ -162,9 +201,15 @@ export class PrefectAPI {
           // Handle race condition: another process may have created the block
           const status = createError.response?.status;
           const errorData = createError.response?.data;
+          const errorString = JSON.stringify(errorData ?? {});
+          
+          console.error(`[PrefectAPI] Create block '${blockName}' failed with status: ${status}`);
+          console.error(`[PrefectAPI] Error response data: ${errorString}`);
+          console.log(`[PrefectAPI] Checking if this is a unique violation error...`);
 
           if (this.isUniqueViolationError(status, errorData)) {
             // Block was created by another process, update it
+            console.log(`[PrefectAPI] Detected unique violation, attempting to fetch and update instead...`);
             const existingBlock = await axios.get(checkUrl, options);
             return await updateExistingBlock(existingBlock.data.id);
           } else {
@@ -177,7 +222,7 @@ export class PrefectAPI {
         }
       } else {
         console.error(
-          `[${getError.response?.status}] Failed to check Prefect ${blockType} block '${blockName}'!`,
+          `[${getStatus}] Failed to check Prefect ${blockType} block '${blockName}'!`,
           getError.response?.data
         );
         throw getError;
