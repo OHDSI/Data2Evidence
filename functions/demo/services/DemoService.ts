@@ -180,14 +180,33 @@ export class DemoService {
     }
 
     const { cacheId: datasetId } = dataset;
+    this.logger.info(`Creating DC flow run for datasetId: ${datasetId}`);
+    
     const result = await jobPluginsAPI.createDcFlowRun({
       datasetId,
       releaseId: "",
       comment: "Demo setup",
     });
 
-    this.logger.info(`DC flow-run created: ${JSON.stringify(result.data)}`);
-    return result.flowRunId ? result : result.data;
+    this.logger.info(`DC flow-run create response: ${JSON.stringify(result)}`);
+    
+    // Normalize result to get flowRunId properly
+    let flowRunIdValue: string | undefined;
+    if (typeof result === 'object' && result !== null) {
+      if (result.flowRunId) {
+        flowRunIdValue = result.flowRunId;
+      } else if (result.data?.flowRunId) {
+        flowRunIdValue = result.data.flowRunId;
+      }
+    }
+
+    if (!flowRunIdValue) {
+      this.logger.error(`createDcFlowRun did not return a valid flowRunId. Full response: ${JSON.stringify(result)}`);
+      throw new Error(`createDcFlowRun failed: missing flowRunId. Full response: ${JSON.stringify(result)}`);
+    }
+
+    this.logger.info(`DC flow-run created with flowRunId: ${flowRunIdValue}`);
+    return { flowRunId: flowRunIdValue };
   }
 
   public async createCache(
@@ -207,20 +226,44 @@ export class DemoService {
     }
 
     const { id: datasetId, cacheId: cacheDatasetId } = dataset;
+    this.logger.info(`Creating cache flow run for datasetId: ${datasetId}, cacheDatasetId: ${cacheDatasetId}`);
+    
     const result = await jobPluginsAPI.createCacheFlowRun({
       datasetId,
       cacheDatasetId,
     });
 
-    this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
-    const flowRunId = result.flowRunId ? result : result.data;
+    this.logger.info(`Cache flow-run create response: ${JSON.stringify(result)}`);
 
-    const cacheStatusResponse = await jobPluginsAPI.getCacheFlowRunStatus(
-      flowRunId
-    );
+    // Normalize result to get flowRunId properly
+    // The API returns result.data from axios, which should contain { flowRunId: string }
+    // But result itself might have flowRunId directly if the API changed
+    let flowRunIdValue: string | undefined;
+    if (typeof result === 'object' && result !== null) {
+      if (result.flowRunId) {
+        flowRunIdValue = result.flowRunId;
+      } else if (result.data?.flowRunId) {
+        flowRunIdValue = result.data.flowRunId;
+      }
+    }
+
+    if (!flowRunIdValue) {
+      this.logger.error(`createCacheFlowRun did not return a valid flowRunId. Full response: ${JSON.stringify(result)}`);
+      throw new Error(`createCacheFlowRun failed: missing flowRunId. Full response: ${JSON.stringify(result)}`);
+    }
+
+    this.logger.info(`Cache flow-run created with flowRunId: ${flowRunIdValue}`);
+
+    const cacheStatusResponse = await jobPluginsAPI.getCacheFlowRunStatus({
+      flowRunId: flowRunIdValue,
+    });
     this.logger.info(
       `Cache flow-run status: ${JSON.stringify(cacheStatusResponse)}`
     );
+
+    if (!cacheStatusResponse) {
+      throw new Error(`getCacheFlowRunStatus returned undefined for flowRunId: ${flowRunIdValue}`);
+    }
 
     return cacheStatusResponse.flowRunId
       ? cacheStatusResponse
@@ -274,9 +317,26 @@ export class DemoService {
     });
 
     this.logger.info(
-      `Dataset metadata updated: ${JSON.stringify(result.data)}`
+      `Dataset metadata update response: ${JSON.stringify(result)}`
     );
-    return result.flowRunId ? result : result.data;
+    
+    // Normalize result to get flowRunId properly
+    let flowRunIdValue: string | undefined;
+    if (typeof result === 'object' && result !== null) {
+      if (result.flowRunId) {
+        flowRunIdValue = result.flowRunId;
+      } else if (result.data?.flowRunId) {
+        flowRunIdValue = result.data.flowRunId;
+      }
+    }
+
+    if (!flowRunIdValue) {
+      this.logger.error(`createGetVersionInfoFlowRun did not return a valid flowRunId. Full response: ${JSON.stringify(result)}`);
+      throw new Error(`createGetVersionInfoFlowRun failed: missing flowRunId. Full response: ${JSON.stringify(result)}`);
+    }
+
+    this.logger.info(`Dataset metadata updated with flowRunId: ${flowRunIdValue}`);
+    return { flowRunId: flowRunIdValue };
   }
 
   public async runPhenotype(
@@ -315,9 +375,26 @@ export class DemoService {
     });
 
     this.logger.info(
-      `Phenotype flow-run created: ${JSON.stringify(result.data || result)}`
+      `Phenotype flow-run create response: ${JSON.stringify(result)}`
     );
-    return result.flowRunId ? result : result.data;
+    
+    // Normalize result to get flowRunId properly
+    let flowRunIdValue: string | undefined;
+    if (typeof result === 'object' && result !== null) {
+      if (result.flowRunId) {
+        flowRunIdValue = result.flowRunId;
+      } else if (result.data?.flowRunId) {
+        flowRunIdValue = result.data.flowRunId;
+      }
+    }
+
+    if (!flowRunIdValue) {
+      this.logger.error(`createPhenotypeFlowRun did not return a valid flowRunId. Full response: ${JSON.stringify(result)}`);
+      throw new Error(`createPhenotypeFlowRun failed: missing flowRunId. Full response: ${JSON.stringify(result)}`);
+    }
+
+    this.logger.info(`Phenotype flow-run created with flowRunId: ${flowRunIdValue}`);
+    return { flowRunId: flowRunIdValue };
   }
 
   private async encrypt(data: string, salt: string) {

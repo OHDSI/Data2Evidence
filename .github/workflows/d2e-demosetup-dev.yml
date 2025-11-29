@@ -181,26 +181,46 @@ jobs:
             -H 'Content-Type: application/json' \
             -d '{"sort": "START_TIME_DESC", "limit": 50}' 2>/dev/null || echo "[]")
           
-          echo "Flow runs response length: $(echo "$FLOW_RUNS" | wc -c)"
+          echo "Flow runs raw response:" | tee -a $GITHUB_STEP_SUMMARY
+          echo "$FLOW_RUNS" | head -c 2000 | tee -a $GITHUB_STEP_SUMMARY
+          echo "" | tee -a $GITHUB_STEP_SUMMARY
           
-          # Parse and display each flow run with its logs
-          echo "$FLOW_RUNS" | jq -r '.[] | "\(.id) | \(.name) | \(.state_type) | \(.start_time)"' 2>/dev/null | head -20 | while read line; do
-            FLOW_RUN_ID=$(echo "$line" | cut -d'|' -f1 | tr -d ' ')
-            FLOW_NAME=$(echo "$line" | cut -d'|' -f2)
-            STATE=$(echo "$line" | cut -d'|' -f3)
-            START_TIME=$(echo "$line" | cut -d'|' -f4)
+          # Count flow runs
+          FLOW_COUNT=$(echo "$FLOW_RUNS" | jq 'length' 2>/dev/null || echo "0")
+          echo "Total flow runs found: $FLOW_COUNT" | tee -a $GITHUB_STEP_SUMMARY
+          
+          # For each flow run, get its logs
+          echo "$FLOW_RUNS" | jq -c '.[]' 2>/dev/null | head -20 | while read flow_run; do
+            FLOW_RUN_ID=$(echo "$flow_run" | jq -r '.id' 2>/dev/null)
+            FLOW_NAME=$(echo "$flow_run" | jq -r '.name' 2>/dev/null)
+            STATE=$(echo "$flow_run" | jq -r '.state_type' 2>/dev/null)
+            STATE_NAME=$(echo "$flow_run" | jq -r '.state_name' 2>/dev/null)
+            START_TIME=$(echo "$flow_run" | jq -r '.start_time' 2>/dev/null)
             
             echo "" | tee -a $GITHUB_STEP_SUMMARY
-            echo "=== Flow Run: $FLOW_NAME (State: $STATE) ===" | tee -a $GITHUB_STEP_SUMMARY
-            echo "ID: $FLOW_RUN_ID | Started: $START_TIME" | tee -a $GITHUB_STEP_SUMMARY
+            echo "========================================" | tee -a $GITHUB_STEP_SUMMARY
+            echo "Flow Run: $FLOW_NAME" | tee -a $GITHUB_STEP_SUMMARY
+            echo "ID: $FLOW_RUN_ID" | tee -a $GITHUB_STEP_SUMMARY
+            echo "State: $STATE ($STATE_NAME)" | tee -a $GITHUB_STEP_SUMMARY
+            echo "Started: $START_TIME" | tee -a $GITHUB_STEP_SUMMARY
+            echo "----------------------------------------" | tee -a $GITHUB_STEP_SUMMARY
             
             # Get logs for this flow run
-            if [ -n "$FLOW_RUN_ID" ]; then
+            if [ -n "$FLOW_RUN_ID" ] && [ "$FLOW_RUN_ID" != "null" ]; then
+              echo "Fetching logs for flow run $FLOW_RUN_ID..." | tee -a $GITHUB_STEP_SUMMARY
               LOGS=$(docker exec d2e-prefect-server curl -s 'http://localhost:4200/api/logs/filter' \
                 -H 'Content-Type: application/json' \
-                -d "{\"logs\": {\"flow_run_id\": {\"any_\": [\"$FLOW_RUN_ID\"]}}, \"sort\": \"TIMESTAMP_ASC\", \"limit\": 100}" 2>/dev/null || echo "[]")
+                -d "{\"logs\": {\"flow_run_id\": {\"any_\": [\"$FLOW_RUN_ID\"]}}, \"sort\": \"TIMESTAMP_ASC\", \"limit\": 200}" 2>/dev/null || echo "[]")
               
-              echo "$LOGS" | jq -r '.[] | "[\(.level)] \(.timestamp): \(.message)"' 2>/dev/null | head -50 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs found for this flow run"
+              LOG_COUNT=$(echo "$LOGS" | jq 'length' 2>/dev/null || echo "0")
+              echo "Found $LOG_COUNT log entries" | tee -a $GITHUB_STEP_SUMMARY
+              
+              if [ "$LOG_COUNT" != "0" ] && [ "$LOG_COUNT" != "null" ]; then
+                echo "$LOGS" | jq -r '.[] | "[\(.level // "INFO")] \(.timestamp // "N/A"): \(.message // "N/A")"' 2>/dev/null | head -100 | tee -a $GITHUB_STEP_SUMMARY
+              else
+                echo "No logs found for this flow run" | tee -a $GITHUB_STEP_SUMMARY
+                echo "Raw logs response: $LOGS" | head -c 500 | tee -a $GITHUB_STEP_SUMMARY
+              fi
             fi
           done
           
