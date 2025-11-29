@@ -56,36 +56,53 @@ export class PrefectAPI {
   public async createPrefectVariable(
     variableObj: PrefectVariable
   ): Promise<string> {
-    let url = `${this.baseURL}/variables`;
     const successMsg = `Successfully created/updated Prefect variable '${variableObj.name}'!`;
     const variableOptions = {
       name: variableObj.name,
       value: variableObj.value,
     };
     const options = this.createOptions();
-    try {
-      const result = await axios.post(url, variableOptions, options);
-      console.log(successMsg);
-      return result.data.name;
-    } catch (error) {
-      // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
-      const status = error.response?.status;
-      const errorData = error.response?.data;
 
-      if (this.isUniqueViolationError(status, errorData)) {
-        // update variable which already exists
-        url = `${this.baseURL}/variables/name/${encodeURIComponent(
-          variableObj.name
-        )}`;
-        const result = await axios.patch(url, variableOptions, options);
-        console.log(successMsg);
-        return variableObj.name;
+    // First check if the variable already exists
+    const checkUrl = `${this.baseURL}/variables/name/${encodeURIComponent(variableObj.name)}`;
+    try {
+      await axios.get(checkUrl, options);
+      // Variable exists, update it
+      const result = await axios.patch(checkUrl, variableOptions, options);
+      console.log(successMsg);
+      return variableObj.name;
+    } catch (getError) {
+      // Variable doesn't exist (404), create it
+      if (getError.response?.status === 404) {
+        try {
+          const createUrl = `${this.baseURL}/variables`;
+          const result = await axios.post(createUrl, variableOptions, options);
+          console.log(successMsg);
+          return result.data.name;
+        } catch (createError) {
+          // Handle race condition: another process may have created the variable
+          const status = createError.response?.status;
+          const errorData = createError.response?.data;
+
+          if (this.isUniqueViolationError(status, errorData)) {
+            // Variable was created by another process, update it
+            const result = await axios.patch(checkUrl, variableOptions, options);
+            console.log(successMsg);
+            return variableObj.name;
+          } else {
+            console.error(
+              `[${status}] Failed to create Prefect variable ${variableObj.name}!`,
+              createError.response?.data
+            );
+            throw createError;
+          }
+        }
       } else {
         console.error(
-          `[${status}] Failed to create/update Prefect variable ${variableObj.name}!`,
-          error.response?.data
+          `[${getError.response?.status}] Failed to check Prefect variable ${variableObj.name}!`,
+          getError.response?.data
         );
-        throw error;
+        throw getError;
       }
     }
   }
@@ -96,59 +113,74 @@ export class PrefectAPI {
     blockType: BlockType
   ): Promise<string> {
     const slugName = blockType;
-    let url = `${this.baseURL}/block_documents`;
     const successMsg = `Successfully created/updated Prefect ${blockType} block '${blockName}'!`;
     const blockTypeId = await this.getBlockTypeID(slugName);
     const blockSchemaId = await this.getBlockSchemaId(blockTypeId);
 
-    let blockDocOptions = {
+    const blockDocOptions = {
       name: blockName,
       data: blockOptions,
       block_schema_id: blockSchemaId,
       block_type_id: blockTypeId,
     };
 
+    // Options for updating an existing block
+    const updateBlockDocOptions = {
+      block_schema_id: blockSchemaId,
+      data: blockOptions,
+      merge_existing_data: false,
+    };
+
     const options = await this.createOptions();
 
-    try {
-      const result = await axios.post(url, blockDocOptions, options);
+    // Helper function to update an existing block by ID
+    const updateExistingBlock = async (blockId: string): Promise<string> => {
+      const updateUrl = `${this.baseURL}/block_documents/${encodeURIComponent(blockId)}`;
+      await axios.patch(updateUrl, updateBlockDocOptions, options);
       console.log(successMsg);
-      return result.data.id;
-    } catch (error) {
-      // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
-      const status = error.response?.status;
-      const errorData = error.response?.data;
+      return blockId;
+    };
 
-      if (this.isUniqueViolationError(status, errorData)) {
-        // update block which already exists
-        url = `${this.baseURL}/block_types/slug/${encodeURIComponent(
-          slugName
-        )}/block_documents/name/${encodeURIComponent(blockName)}`;
-        const existingBlock = await axios.get(url, options);
-        const existingBlockId = existingBlock.data.id;
+    // First check if the block document already exists
+    const checkUrl = `${this.baseURL}/block_types/slug/${encodeURIComponent(
+      slugName
+    )}/block_documents/name/${encodeURIComponent(blockName)}`;
 
-        // Update block
-        url = `${this.baseURL}/block_documents/${encodeURIComponent(
-          existingBlockId
-        )}`;
-        const newBlockDocOptions = {
-          block_schema_id: blockSchemaId,
-          data: blockOptions,
-          merge_existing_data: false,
-        };
-        const updatedBlockResult = await axios.patch(
-          url,
-          newBlockDocOptions,
-          options
-        );
-        console.log(successMsg);
-        return existingBlockId;
+    try {
+      const existingBlock = await axios.get(checkUrl, options);
+      // Block exists, update it
+      return await updateExistingBlock(existingBlock.data.id);
+    } catch (getError) {
+      // Block doesn't exist (404), create it
+      if (getError.response?.status === 404) {
+        try {
+          const createUrl = `${this.baseURL}/block_documents`;
+          const result = await axios.post(createUrl, blockDocOptions, options);
+          console.log(successMsg);
+          return result.data.id;
+        } catch (createError) {
+          // Handle race condition: another process may have created the block
+          const status = createError.response?.status;
+          const errorData = createError.response?.data;
+
+          if (this.isUniqueViolationError(status, errorData)) {
+            // Block was created by another process, update it
+            const existingBlock = await axios.get(checkUrl, options);
+            return await updateExistingBlock(existingBlock.data.id);
+          } else {
+            console.error(
+              `[${status}] Failed to create Prefect ${blockType} block '${blockName}'!`,
+              createError.response?.data
+            );
+            throw createError;
+          }
+        }
       } else {
         console.error(
-          `[${status}] Failed to create/update Prefect ${blockType} block '${blockName}'!`,
-          error.response?.data
+          `[${getError.response?.status}] Failed to check Prefect ${blockType} block '${blockName}'!`,
+          getError.response?.data
         );
-        throw error;
+        throw getError;
       }
     }
   }
