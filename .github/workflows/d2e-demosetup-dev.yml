@@ -170,6 +170,43 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: Display Prefect Flow Logs
+        if: success() || failure()
+        run: |
+          echo "=== Fetching Prefect Flow Run Logs ===" | tee -a $GITHUB_STEP_SUMMARY
+          
+          # Get all flow runs from Prefect API via docker exec
+          echo "Querying flow runs..."
+          FLOW_RUNS=$(docker exec d2e-prefect-server curl -s 'http://localhost:4200/api/flow_runs/filter' \
+            -H 'Content-Type: application/json' \
+            -d '{"sort": "START_TIME_DESC", "limit": 50}' 2>/dev/null || echo "[]")
+          
+          echo "Flow runs response length: $(echo "$FLOW_RUNS" | wc -c)"
+          
+          # Parse and display each flow run with its logs
+          echo "$FLOW_RUNS" | jq -r '.[] | "\(.id) | \(.name) | \(.state_type) | \(.start_time)"' 2>/dev/null | head -20 | while read line; do
+            FLOW_RUN_ID=$(echo "$line" | cut -d'|' -f1 | tr -d ' ')
+            FLOW_NAME=$(echo "$line" | cut -d'|' -f2)
+            STATE=$(echo "$line" | cut -d'|' -f3)
+            START_TIME=$(echo "$line" | cut -d'|' -f4)
+            
+            echo "" | tee -a $GITHUB_STEP_SUMMARY
+            echo "=== Flow Run: $FLOW_NAME (State: $STATE) ===" | tee -a $GITHUB_STEP_SUMMARY
+            echo "ID: $FLOW_RUN_ID | Started: $START_TIME" | tee -a $GITHUB_STEP_SUMMARY
+            
+            # Get logs for this flow run
+            if [ -n "$FLOW_RUN_ID" ]; then
+              LOGS=$(docker exec d2e-prefect-server curl -s 'http://localhost:4200/api/logs/filter' \
+                -H 'Content-Type: application/json' \
+                -d "{\"logs\": {\"flow_run_id\": {\"any_\": [\"$FLOW_RUN_ID\"]}}, \"sort\": \"TIMESTAMP_ASC\", \"limit\": 100}" 2>/dev/null || echo "[]")
+              
+              echo "$LOGS" | jq -r '.[] | "[\(.level)] \(.timestamp): \(.message)"' 2>/dev/null | head -50 | tee -a $GITHUB_STEP_SUMMARY || echo "No logs found for this flow run"
+            fi
+          done
+          
+          echo "" | tee -a $GITHUB_STEP_SUMMARY
+          echo "=== End of Prefect Flow Logs ===" | tee -a $GITHUB_STEP_SUMMARY
+
       - name: UI Setup bun
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         uses: oven-sh/setup-bun@v2
