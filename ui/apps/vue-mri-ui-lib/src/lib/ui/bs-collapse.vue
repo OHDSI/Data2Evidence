@@ -15,14 +15,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 

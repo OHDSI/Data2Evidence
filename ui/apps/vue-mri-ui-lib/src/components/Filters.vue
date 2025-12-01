@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'Filters',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 <template>

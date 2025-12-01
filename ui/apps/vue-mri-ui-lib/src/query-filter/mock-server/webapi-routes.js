@@ -4,12 +4,12 @@ const { default: axios } = require('axios')
 const _ = require('lodash')
 
 const api = axios.create({
-  baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
+  baseURL: process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI',
 })
 
-const SOURCE = process.env.SOURCE || 'EUNOMIA'
+const SOURCE = process.env.SOURCE || 'SYNPUF1K'
 
-console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI')
+console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI')
 console.log('SOURCE:', SOURCE)
 
 const sourceMap = [
@@ -448,6 +448,37 @@ const setupWebapiRoutes = app => {
     const mappedData = _mapConceptSet(data)
 
     return res.json(mappedData)
+  })
+
+  app.get('/d2e-webapi/conceptset/:conceptSetId/exists', async (req, res) => {
+    const { conceptSetId } = req.params
+    const { name } = req.query
+    logRequest(req)
+    if (!name) {
+      return res.status(400).json({ error: 'name query parameter is required' })
+    }
+
+    const cacheKey = CACHE_KEYS.CONCEPT_SETS
+    let data = cache[cacheKey]
+
+    if (!data || !USE_CACHE) {
+      try{
+        const response = await api.get(ALLOWED_ENDPOINTS.conceptset)
+        data = response.data
+        cache[cacheKey] = data
+      } catch (error) {
+        console.error('Error fetching concept sets from Atlas API:', error.message)
+        return res.status(500).json({
+          error: 'Failed to fetch concept sets from Atlas API',
+          message: error.message,
+          timestamp: new Date().toISOString(),
+        })
+      }
+    }
+
+    const result = data.find(conceptSet => conceptSet.name === name && conceptSet.id != conceptSetId)
+
+    return res.status(200).type('text/plain').send(String(result === undefined ? 0 : 1))
   })
 
   app.post('/d2e-webapi/conceptset', async (req, res) => {

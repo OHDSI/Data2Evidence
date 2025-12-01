@@ -33,11 +33,13 @@
     "@portal/components": "^1.0.0",
     "axios": "^0.27.2",
     "classnames": "^2.5.1",
+    "material-react-table": "^2.9.2",
     "memoizee": "^0.4.17",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "reactflow": "^11.11.4",
     "single-spa": "^6.0.0",
-    "single-spa-react": "^6.0.2"
+    "single-spa-react": "^6.0.2",
+    "uuid": "^9.0.0"
   }
 }
