@@ -80,11 +80,14 @@ export async function getCohortDefinition(cohortId: number): Promise<any> {
 }
 
 export async function updateCohortDefinition(
-  cohort: any,
+  cohortDefinition: any,
   authorization: string
 ): Promise<any> {
   const webapi = new WebAPIAPI();
-  const data = await webapi.updateAtlasCohortDefinition(cohort, authorization);
+  const data = await webapi.updateAtlasCohortDefinition(
+    cohortDefinition,
+    authorization
+  );
   return data;
 }
 
@@ -100,4 +103,16 @@ export async function deleteCohortDefinition(
     datasetId
   );
   return data;
+}
+
+export async function validateCohortDefinition(
+  cohortDefinition: any,
+  authorization: string
+): Promise<any> {
+  const webapi = new WebAPIAPI();
+  const validationResult = await webapi.checkAtlasCohortDefinition(
+    cohortDefinition,
+    authorization
+  );
+  return validationResult;
 }

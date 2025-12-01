@@ -87,32 +87,69 @@ export class WebAPIAPI {
     }
   }
 
-  async updateAtlasCohortDefinition(
-    cohort: any,
+  async checkAtlasCohortDefinition(
+    cohortDefinition: any,
     authorization: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
       options.headers["Authorization"] = authorization;
-      const url = `${this.baseURL}/cohortdefinition/${cohort.id}`;
+      const url = `${this.baseURL}/cohortdefinition/checkV2`;
 
       const currentTime = Date.now();
       const expression =
-        typeof cohort.definition.expression === "string"
-          ? JSON.parse(cohort.definition.expression)
-          : cohort.definition.expression;
+        typeof cohortDefinition.expression === "string"
+          ? JSON.parse(cohortDefinition.expression)
+          : cohortDefinition.expression;
 
       const payload = {
-        id: cohort.id,
-        name: `${cohort.definition.cohortInfo}`,
-        description: `${cohort.definition.cohortInfo}`,
+        id: cohortDefinition.id || 1,
+        name: `${cohortDefinition.cohortInfo || "New Cohort"}`,
+        description: `${cohortDefinition.cohortInfo || ""}`,
         expressionType: "SIMPLE_EXPRESSION",
         expression: expression,
-        modifiedBy: cohort.definition.userName || "researcher",
+        createdBy: cohortDefinition.userName || "researcher",
+        createdDate: currentTime,
+        modifiedBy: cohortDefinition.userName || "researcher",
+        modifiedDate: currentTime,
+        tags: cohortDefinition.tags || [],
+      };
+
+      const response = await this.channel.post(url, payload, options);
+      return response.status === 200 ? response.data : null;
+    } catch (error) {
+      console.error(error);
+      throw new Error(`Error while checking atlas cohort definition: ${error}`);
+    }
+  }
+
+  async updateAtlasCohortDefinition(
+    cohortDefinition: any,
+    authorization: string
+  ): Promise<any> {
+    try {
+      const options = await this.getRequestConfig();
+      options.headers["Authorization"] = authorization;
+      const url = `${this.baseURL}/cohortdefinition/${cohortDefinition.cohortId}`;
+
+      const currentTime = Date.now();
+      const expression =
+        typeof cohortDefinition.expression === "string"
+          ? JSON.parse(cohortDefinition.expression)
+          : cohortDefinition.expression;
+
+      const payload = {
+        id: cohortDefinition.cohortId,
+        name: cohortDefinition.name,
+        description: cohortDefinition.description,
+        expressionType: "SIMPLE_EXPRESSION",
+        expression: expression,
+        createdBy: cohortDefinition.createdBy,
+        createdDate: cohortDefinition.createdDate,
+        modifiedBy: cohortDefinition.userName,
         modifiedDate: currentTime,
         tags: [],
       };
-      console.log("Update Payload:", payload);
       const response = await this.channel.put(url, payload, options);
       return response.status === 200 ? response.data : null;
     } catch (error) {
