@@ -81,7 +81,7 @@ export type ICohortDefinitionIdInfoResponseDto = z.infer<
 export const CohortDefinitionCheckV2ResponseDto = z.object({
   warnings: z.array(
     z.object({
-      type: z.string(),
+      type: z.string().optional(),
       severity: z.string(),
       message: z.string(),
       conceptSetId: z.number().optional(),
