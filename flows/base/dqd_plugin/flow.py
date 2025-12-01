@@ -52,7 +52,7 @@ def dqd_plugin(options: DqdOptionsType):
         use_trex_connection=use_trex_connection,
     )
     # For TREX connections, set vocabSchemaName to schemaName
-    if use_trex_connection:
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
         dqd_parameters.vocabSchemaName = options.schemaName
 
     if (

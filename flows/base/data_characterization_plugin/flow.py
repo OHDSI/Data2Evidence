@@ -76,7 +76,7 @@ def data_characterization_plugin(options: DCOptionsType):
         use_trex_connection=use_trex_connection,
     )
     # For TREX connections, set vocabSchemaName to schemaName
-    if use_trex_connection:
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
         achilles_params.vocabSchemaName = options.schemaName
 
     dc_schema = create_results_schema(
