@@ -122,13 +122,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  name: 'CohortComparisonContainer',
-  compatConfig: { MODE: 3 },
-}
-</script>
-
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useStore } from 'vuex'

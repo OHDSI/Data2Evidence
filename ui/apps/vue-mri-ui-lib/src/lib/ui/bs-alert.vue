@@ -19,9 +19,6 @@
 <script lang="ts">
 export default {
   name: 'BsAlert',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 

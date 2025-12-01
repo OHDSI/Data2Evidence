@@ -192,3 +192,4 @@ export interface QueryFilterCriteriaManageData {
   inclusionCriteria?: InclusionCriteria
   exitEvents?: ExitEvent
 }
+

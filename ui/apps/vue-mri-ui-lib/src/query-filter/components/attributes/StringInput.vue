@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
 import { onMounted, ref, watch } from 'vue'
@@ -31,7 +23,7 @@ onMounted(() => {
 
 watch(
   props.value,
-  (newValue) => {
+  newValue => {
     if (newValue) {
       stringOptionsModel.value = newValue.Op || 'startsWith'
       textModel.value = newValue.Text || ''
@@ -96,4 +88,3 @@ watch(
   }
 }
 </style>
-
