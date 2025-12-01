@@ -163,6 +163,16 @@ export class PublicWebapiProxyAPI {
     });
   }
 
+  public checkIfConceptSetExists(conceptSetId: number, conceptSetName: string) {
+    return request({
+      baseURL: this.baseURL,
+      url: `d2e-webapi/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(
+        conceptSetName
+      )}`,
+      method: "GET",
+    });
+  }
+
   public createConceptSet(name: string) {
     return request<number>({
       baseURL: this.baseURL,

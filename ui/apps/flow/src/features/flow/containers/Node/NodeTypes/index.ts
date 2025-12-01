@@ -9,7 +9,6 @@ import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
 import { GroupNode } from "./GroupNode/GroupNode";
 import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
 import { PythonNode } from "./PythonNode/PythonNode";
-import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
 import { RNode } from "./RNode/RNode";
 import { SqlNode } from "./SqlNode/SqlNode";
 import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
@@ -21,7 +20,6 @@ export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
 } = {
   python_node: PythonNode,
-  python_notebook_node: PythonNotebookNode,
   py2table_node: Py2TableNode,
   r_node: RNode,
   sql_node: SqlNode,
@@ -40,7 +38,6 @@ export const NODE_COLORS: {
   [key in NodeType]: string;
 } = {
   python_node: "#999fcb",
-  python_notebook_node: "#999fcb",
   py2table_node: "#999fcb",
   r_node: "#999fcb",
   sql_node: "#999fcb",
@@ -52,7 +49,7 @@ export const NODE_COLORS: {
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
   white_rabbit_node: "#999fcb",
-  transform_fhir_data_node: "#999fcb"
+  transform_fhir_data_node: "#999fcb",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -66,12 +63,6 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
 def test_exec(myinput):
   return "This is test_exec function"`,
     },
-  },
-  python_notebook_node: {
-    title: "Python Notebook",
-    description: "Run python notebook with starboard.",
-    tag: NodeTag.Experimental,
-    defaultData: {},
   },
   py2table_node: {
     title: "Python To Table",
@@ -145,15 +136,15 @@ test_exec <- function(myinput) {
     title: "Transform FHIR Data",
     description: "Transform fhir data from one format to another using mapping rules.",
     tag: NodeTag.Experimental,
-    defaultData: {}
-   },
+    defaultData: {},
+  },
   file_node: {
     title: "Generic File",
     description: "Read file of a general type from a path.",
     tag: NodeTag.Experimental,
     defaultData: {
       file: "",
-      encoding: "utf-8"
+      encoding: "utf-8",
     },
   },
   db_reader_node: {

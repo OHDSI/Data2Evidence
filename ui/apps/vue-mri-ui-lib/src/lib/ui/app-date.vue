@@ -39,14 +39,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import VueDatePicker from '@vuepic/vue-datepicker'
@@ -54,7 +46,7 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import moment from 'moment'
 import appIcon from './app-icon.vue'
 import appLabel from './app-label.vue'
-import { useStore } from 'vuex' 
+import { useStore } from 'vuex'
 
 const store = useStore()
 // Component configuration
@@ -469,4 +461,3 @@ defineExpose({
   }
 }
 </style>
-
