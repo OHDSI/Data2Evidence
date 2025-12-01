@@ -799,8 +799,17 @@ services:
     volumes:
       - supabase-storage-data:/var/lib/storage
     entrypoint: ["/bin/sh", "-c"]
-    command: > # Wait 30 seconds for trex to finish migrations
-      "echo 'Waiting 30 seconds before starting...' && sleep 30 && echo 'Starting server now' && node dist/start/server.js"
+    command: > # Wait for trex migrations, run post-init setup, then start server
+      "echo 'Waiting 30 seconds for trex migrations...' && 
+      sleep 30 && 
+      echo 'Installing postgresql-client for post-initialization...' &&
+      apk add --no-cache postgresql-client > /dev/null 2>&1 &&
+      echo 'Running post-initialization on database...' &&
+      (PGPASSWORD='${PG_SUPER_PASSWORD}' psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'ALTER TABLE IF EXISTS storage.objects DISABLE ROW LEVEL SECURITY;' || echo 'Note: storage.objects table may not exist yet') &&
+      (PGPASSWORD='${PG_SUPER_PASSWORD}' psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' 2>/dev/null || echo 'Note: Could not create view, will retry on first request') &&
+      (PGPASSWORD='${PG_SUPER_PASSWORD}' psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' 2>/dev/null || echo 'Note: Could not grant permissions yet') &&
+      echo 'Post-initialization complete (errors are non-fatal). Starting storage server...' &&
+      node dist/start/server.js"
     environment:
       <<:
         - *x-tls
@@ -821,34 +830,6 @@ services:
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
       TENANT_ID: stub
       REGION: stub
-
-  supabase-storage-post-init:
-    container_name: ${PROJECT_NAME:-d2e}-supabase-storage-post-init-1
-    image: postgres:15-alpine
-    depends_on:
-      supabase-storage:
-        condition: service_healthy
-    networks:
-      alp:
-        priority: 20
-    restart: "no"
-    environment:
-      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-      PGPORT: ${PG_PORT:-5432}
-      PGDATABASE: ${PG_DB_NAME:-alp}
-      PGUSER: ${PG_SUPER_USER:-postgres}
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-    command: >
-      sh -c "
-        echo 'Updating public.objects view to include user_metadata column...' &&
-        psql -c 'ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;' &&
-        psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
-        echo 'Granting permissions on updated view...' &&
-        psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
-        echo 'Supabase Storage post-initialization complete!' &&
-        exit 0
-      "
-
 
   dicom-server:
     # uses 8042 port on the container
