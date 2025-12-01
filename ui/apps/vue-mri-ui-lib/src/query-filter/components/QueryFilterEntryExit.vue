@@ -352,7 +352,7 @@ const activeTooltipKey = computed(() => {
           @update-limit-value="updateLimitValue"
         />
         <!-- Tooltip for EXIT options -->
-        <Tooltip :tooltip-config="tooltipConfig" :active-key="activeTooltipKey" />
+        <Tooltip class="exit-tooltip" :tooltip-config="tooltipConfig" :active-key="activeTooltipKey" />
       </div>
 
       <div class="shadow-container">
@@ -850,5 +850,10 @@ const activeTooltipKey = computed(() => {
       font-weight: 500;
     }
   }
+
+  .exit-tooltip {
+    z-index: 50;
+  }
 }
 </style>
+
