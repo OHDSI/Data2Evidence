@@ -16,27 +16,20 @@ const main = () => {
     bodyLimit: 10485760, // 10MiB
   });
 
-  // Remove default content type parsers to handle invalid Content-Type
-  app.removeAllContentTypeParsers();
-
-  // Add back JSON parser for application/json
-  app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, done) => {
-    try {
-      const json = JSON.parse(body as string);
-      done(null, json);
-    } catch (err: any) {
-      done(err, undefined);
-    }
-  });
-
-  // Add wildcard parser - only permissive for DELETE requests
-  app.addContentTypeParser('*', (req, payload, done) => {
-    // For DELETE requests, allow any Content-Type (including undefined)
-    if (req.method === 'DELETE') {
-      done(null);
+  // Add wildcard parser for DELETE requests with invalid Content-Type
+  // This runs BEFORE default parsers, so it only catches requests they would reject
+  app.addContentTypeParser("*", { parseAs: "buffer" }, (req, payload, done) => {
+    // Only handle DELETE requests with invalid/undefined Content-Type
+    if (
+      req.method === "DELETE" &&
+      (!req.headers["content-type"] ||
+        req.headers["content-type"] === "undefined" ||
+        req.headers["content-type"] === "null")
+    ) {
+      done(null, null);
     } else {
-      // For other methods, require proper Content-Type
-      done(new Error('Content-Type must be application/json for this request'), undefined);
+      // Let default parsers handle everything else
+      done(null, payload);
     }
   });
 
