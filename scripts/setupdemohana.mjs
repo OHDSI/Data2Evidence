@@ -187,6 +187,7 @@ try {
     }
 } catch (err) { 
     console.log(`Failed to initiate HANA demo dataset setup.`);
+    console.error(err);
     process.exit(1);
 }
 

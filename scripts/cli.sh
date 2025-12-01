@@ -321,6 +321,7 @@ EOF
         setup_zx_cmd
         $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE" 
         $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
+        ;;
     setupdemohana)
         source "$ENVFILE"
         setup_zx_cmd
