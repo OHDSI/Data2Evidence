@@ -75,6 +75,9 @@ def data_characterization_plugin(options: DCOptionsType):
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
     )
+    # For TREX connections, set vocabSchemaName to schemaName
+    if use_trex_connection:
+        achilles_params.vocabSchemaName = options.schemaName
 
     dc_schema = create_results_schema(
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
