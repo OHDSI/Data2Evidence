@@ -35,7 +35,12 @@ export class PrefectAPI {
       console.log(successMsg);
       return result.data.name;
     } catch (error) {
-      if (error.response.status === 409) {
+      // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
+      const status = error.response?.status;
+      const isUniqueViolation = status === 409 ||
+        (status === 500 && error.response?.data?.detail?.includes?.('UniqueViolation'));
+
+      if (isUniqueViolation) {
         // update variable which already exists
         url = `${this.baseURL}/variables/name/${encodeURIComponent(
           variableObj.name
@@ -45,8 +50,8 @@ export class PrefectAPI {
         return variableObj.name;
       } else {
         console.error(
-          `[${error.response.status}] Failed to create/update Prefect variable ${variableObj.name}!`,
-          error.response.data
+          `[${status}] Failed to create/update Prefect variable ${variableObj.name}!`,
+          error.response?.data
         );
         throw error;
       }
@@ -78,7 +83,12 @@ export class PrefectAPI {
       console.log(successMsg);
       return result.data.id;
     } catch (error) {
-      if (error.response.status === 409) {
+      // Handle 409 (Conflict) or 500 with UniqueViolation (database constraint error)
+      const status = error.response?.status;
+      const isUniqueViolation = status === 409 ||
+        (status === 500 && error.response?.data?.detail?.includes?.('UniqueViolation'));
+
+      if (isUniqueViolation) {
         // update block which already exists
         url = `${this.baseURL}/block_types/slug/${encodeURIComponent(
           slugName
@@ -104,8 +114,8 @@ export class PrefectAPI {
         return existingBlockId;
       } else {
         console.error(
-          `[${error.response.status}] Failed to create/update Prefect ${blockType} block '${blockName}'!`,
-          error.response.data
+          `[${status}] Failed to create/update Prefect ${blockType} block '${blockName}'!`,
+          error.response?.data
         );
         throw error;
       }
