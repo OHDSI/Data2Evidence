@@ -831,6 +831,7 @@ services:
     networks:
       alp:
         priority: 20
+    restart: "no"
     environment:
       PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PGPORT: ${PG_PORT:-5432}
