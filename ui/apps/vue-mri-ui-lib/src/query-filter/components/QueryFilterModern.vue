@@ -24,6 +24,7 @@ import type { AtlasBookmark } from '../types/AtlasTypes'
 import { getTagInputTexts } from '../utils/ConceptSetHelpers'
 import { useConceptSets } from '../composables/useConceptSets'
 import { useDatasetId } from '../composables/useDatasetId'
+import { useUserRole } from '../../composables/useUserRole'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
 import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
@@ -63,6 +64,7 @@ interface TerminologyEventProps {
 }
 
 const store = useStore()
+const { canShare } = useUserRole()
 
 const showDebug = ref(false)
 
@@ -1399,7 +1401,7 @@ const generateCohort = async () => {
                 </div>
               </div>
 
-              <div class="row row-checkbox">
+              <div v-if="canShare" class="row row-checkbox">
                 <appCheckbox
                   v-model="shareBookmark"
                   :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT') || 'Share this cohort with other users'"
