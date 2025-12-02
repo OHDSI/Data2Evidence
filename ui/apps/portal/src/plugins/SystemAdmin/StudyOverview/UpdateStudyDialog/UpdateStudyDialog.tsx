@@ -347,6 +347,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
                 label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TYPE)}
                 value={formData.type}
                 onChange={(event) => handleFormDataChange({ type: event.target.value })}
+                disabled
               />
             </div>
 
@@ -408,6 +409,25 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
 
         {DATASET_SOURCE_TYPES.has(dataset.type) && (
           <>
+            <div style={{ marginTop: "32px", marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TOKEN_CODE)}
+                value={formData.tokenStudyCode}
+                onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+                error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+                disabled
+              />
+              {formError.tokenStudyCode.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+              {formError.tokenStudyCode.valid && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
+              )}
+              <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
+            </div>
+
             <div style={{ marginBottom: "32px" }}>
               <div style={{ marginTop: "32px", fontWeight: "bold" }}>
                 {getText(i18nKeys.UPDATE_STUDY_DIALOG__METADATA)}
