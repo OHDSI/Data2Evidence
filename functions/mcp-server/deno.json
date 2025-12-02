@@ -11,7 +11,7 @@
   },
   "imports": {
     "express": "npm:express@^4.19.2",
-    "axios": "npm:axios@^0.21.2",
+    "axios": "npm:axios@^1.7.9",
     "./src/routes/routes": "./src/routes/routes.ts",
     "./src/services/server": "./src/services/server.ts",
     "./src/utils/utils": "./src/utils/utils.ts",
