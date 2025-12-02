@@ -1,6 +1,6 @@
 import { FC, useEffect, useMemo, useState } from "react";
 import { loadPlugin } from "./pluginLoader";
-import { SingleSpaAppContainer, registerSingleSpaApp, startSingleSpa } from "../../singleSpa";
+import { SingleSpaAppContainer, registerSingleSpaApp, startSingleSpa, updateCustomProps } from "../../singleSpa";
 import { getAuthToken } from "../../containers/auth";
 import { useUser } from "../../contexts";
 import { useToken } from "../../contexts/app-context/hooks/use-token";
@@ -87,6 +87,19 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
       registerApp();
     }
   }, [path, studyId, locale, username, data, route, configType, isRegistered]);
+
+  useEffect(() => {
+    if (configType === "app" && isRegistered) {
+      const appId = generateAppId(path);
+      updateCustomProps(appId, {
+        getToken: getAuthToken,
+        username,
+        datasetId: studyId,
+        locale,
+        ...data,
+      });
+    }
+  }, [studyId, locale, username, data, path, configType, isRegistered]);
 
   // Load legacy plugins when path changes
   useEffect(() => {
