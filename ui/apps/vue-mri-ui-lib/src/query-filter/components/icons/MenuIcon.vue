@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'MenuIcon',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 <template>

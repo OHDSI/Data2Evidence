@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta name="description" content="Data2Evidence" />
+    <meta name="importmap-type" content="systemjs-importmap" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/assets/icon.png" />
     <link rel="manifest" href="%PUBLIC_URL%/assets/manifest.json" />
     <title>Data2Evidence</title>
@@ -26,5 +27,8 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+
+    <!-- Import Map Overrides UI - only shows when devtools=true in localStorage -->
+    <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
   </body>
 </html>

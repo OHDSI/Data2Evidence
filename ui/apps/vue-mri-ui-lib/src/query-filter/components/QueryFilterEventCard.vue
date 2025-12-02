@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'QueryFilterEventCard',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -464,8 +461,8 @@ const createAttributeModel = (attribute: QueryFilterAttribute) => {
         ? attribute.conceptItems
         : []
       : 'conceptSet' in attribute && attribute.conceptSet
-      ? [attribute.conceptSet]
-      : []
+        ? [attribute.conceptSet]
+        : []
   const model = {
     id: `attribute-${attribute.id}-${eventData.value.id}`,
     props: {
@@ -569,7 +566,9 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                 :max-selections="1"
                 @update:value="handleConceptSetChange"
                 @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
-                @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, eventId: eventData.id })"
+                @concept-set-action="
+                  (action: ConceptSetAction) => $emit('concept-set-action', { ...action, eventId: eventData.id })
+                "
               />
               <div v-else class="concept-set-readonly">
                 {{ getConceptSetDisplayName() || 'No concept set selected' }}
@@ -592,10 +591,10 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                     'title' in attribute
                       ? attribute.title
                       : 'name' in attribute
-                      ? attribute.name
-                      : attribute.attributeType === 'nested'
-                      ? 'Nested Criteria'
-                      : attribute.id
+                        ? attribute.name
+                        : attribute.attributeType === 'nested'
+                          ? 'Nested Criteria'
+                          : attribute.id
                   }}</span>
                   <button v-if="!readonly" class="attribute-remove" @click="handleAttributeRemoved(attribute.id)">
                     ×
@@ -616,7 +615,10 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                     :hide-header="true"
                     @update:nested-criteria="criteria => handleAttributeNestedCriteriaUpdate(attribute.id, criteria)"
                     @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
-                    @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', { ...action, parentAttributeId: attribute.id })"
+                    @concept-set-action="
+                      (action: ConceptSetAction) =>
+                        $emit('concept-set-action', { ...action, parentAttributeId: attribute.id })
+                    "
                   />
                 </div>
 
@@ -637,8 +639,8 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                         'conceptItems' in attribute && attribute.conceptItems
                           ? attribute.conceptItems
                           : 'conceptSet' in attribute && attribute.conceptSet
-                          ? [attribute.conceptSet]
-                          : []
+                            ? [attribute.conceptSet]
+                            : []
                       "
                       :external-domain-values="
                         // Using empty values so dropdown doesn't show for concepts type
@@ -663,9 +665,15 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
                         }
                       "
                       @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
-                      @concept-set-action="(action: ConceptSetAction) => {
-                    $emit('concept-set-action', { ...action, attributeId: attribute.attributeId, eventId: eventData.id })
-                  }"
+                      @concept-set-action="
+                        (action: ConceptSetAction) => {
+                          $emit('concept-set-action', {
+                            ...action,
+                            attributeId: attribute.attributeId,
+                            eventId: eventData.id,
+                          })
+                        }
+                      "
                     />
                     <div v-else class="attribute-concept-set-readonly">
                       {{

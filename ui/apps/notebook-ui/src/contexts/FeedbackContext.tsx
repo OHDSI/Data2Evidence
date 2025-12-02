@@ -1,52 +1,47 @@
-import React, { createContext, FC, ReactNode, useContext } from "react";
-import { ToastContainer, toast, ToastOptions } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import React, { createContext, FC, ReactNode, useCallback, useContext, useState } from "react";
 
-export interface FeedbackMessage {
-  type: "success" | "error" | "info" | "warning";
-  message: string;
-  duration?: number;
+export interface Feedback {
+  type?: "error" | "success";
+  message?: string | string[];
+  description?: string;
+  autoClose?: number;
 }
 
 interface FeedbackContextValue {
-  setFeedback: (feedback: FeedbackMessage) => void;
+  setFeedback: (feedback: Feedback) => void;
+  clearFeedback: () => void;
+  getFeedback: () => Feedback;
+  setGenericErrorFeedback: () => void;
 }
 
 const FeedbackContext = createContext<FeedbackContextValue | undefined>(undefined);
 
 export const FeedbackProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const setFeedback = (feedback: FeedbackMessage) => {
-    const options: ToastOptions = {
-      position: "top-right",
-      autoClose: feedback.duration || 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    };
+  const [feedback, setFeedbackState] = useState<Feedback>({});
 
-    switch (feedback.type) {
-      case "success":
-        toast.success(feedback.message, options);
-        break;
-      case "error":
-        toast.error(feedback.message, options);
-        break;
-      case "info":
-        toast.info(feedback.message, options);
-        break;
-      case "warning":
-        toast.warning(feedback.message, options);
-        break;
-      default:
-        toast(feedback.message, options);
-    }
-  };
+  const setFeedback = useCallback((feedback: Feedback) => {
+    setFeedbackState(feedback);
+  }, []);
+
+  const clearFeedback = useCallback(() => {
+    setFeedbackState({});
+  }, []);
+
+  const getFeedback = useCallback(() => {
+    return feedback;
+  }, [feedback]);
+
+  const setGenericErrorFeedback = useCallback(() => {
+    setFeedback({
+      type: "error",
+      message: "An error has occurred.",
+      description: "Please try again. To report the error, please contact support.",
+    });
+  }, [setFeedback]);
 
   return (
-    <FeedbackContext.Provider value={{ setFeedback }}>
+    <FeedbackContext.Provider value={{ setFeedback, clearFeedback, getFeedback, setGenericErrorFeedback }}>
       {children}
-      <ToastContainer />
     </FeedbackContext.Provider>
   );
 };

@@ -39,6 +39,9 @@ interface CopyDatasetInput {
   sourceDatasetId: string;
   newDatasetName: string;
   schemaName?: string;
+  timestamp: Date;
+  type: string;
+  flowParameters?: Record<string, unknown>;
 }
 
 export class PortalAPI {
