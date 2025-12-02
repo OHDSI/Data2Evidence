@@ -109,7 +109,7 @@ RUN set -e; \
     git config --global advice.detachedHead false
 
 
-ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_VERSION=1.4.0
 ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
 
 COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh

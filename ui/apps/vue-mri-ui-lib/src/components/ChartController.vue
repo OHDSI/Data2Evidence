@@ -133,9 +133,9 @@ export default {
     chartSelection() {
       return this.getChartSelection()
     },
-    displayShowCohortEntryExit() {      
-      return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
-    }
+    displayShowCohortEntryExit() {
+      return this.getMriFrontendConfig?._internalConfig?.panelOptions?.cohortEntryExit || false
+    },
   },
   methods: {
     ...mapActions(['setFireRequest', 'setKMDisplayInfo']),
