@@ -82,7 +82,37 @@ server.registerTool(
             3. Fetch cohort definition template with phenotype ID from 2 using tool **fetch_templates_for_cohort_generation**
             4. Looking at the template from 3 carefully, only use valid syntax (those exist in template), understand the cohort description, based on template and cohort information, draft and output a complete and valid ATLAS cohort definition in JSON format, without any additional explanation and without generating new file. Double check to make sure the syntax is valid ATLAS JSON format.
             5. Validate the generated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed. .
-            6. Wait for user's confirmation for next action, your question of "create in D2E" with "y" or "yes". If proceed to create the cohort definition in D2E, set parameter "isValidCohortDefinition" to true and call tool **manage_atlas_cohort_definition** with action "create"`,
+            6. Wait for user's confirmation for next action, your question of "create in D2E" with "y" or "yes". If proceed to create the cohort definition in D2E, set parameter "isValidCohortDefinition" to true and call tool **create_atlas_cohort_definition**`,
+        },
+      ],
+    };
+  }
+);
+
+// Tool to instruct ATLAS cohort definition creation in D2E
+server.registerTool(
+  "before_cohort_definition_update",
+  {
+    title: "Instruction to Update Cohort Definition",
+    description:
+      "Must follow this instruction before update cohort definition.",
+    inputSchema: {
+      cohortDescription: z
+        .string()
+        .describe("User's description of the desired cohort"),
+    },
+  },
+  async ({ cohortDescription }) => {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `
+          cohort description: ${cohortDescription}
+
+          Strictly follow to-do list below for update of ATLAS cohort definition:
+            1. Validate the updated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed. .
+            2. Wait for user's confirmation for next action, your question of "update in D2E" with "y" or "yes". If proceed to update the cohort definition in D2E, set parameter "isValidCohortDefinition" to true and call tool **update_atlas_cohort_definition**`,
         },
       ],
     };
@@ -154,38 +184,35 @@ server.registerTool(
   {
     title: "Validate Atlas Cohort Definition",
     description:
-      "Validate Atlas cohort definition JSON and return warnings for LLM analysis. Must be called before creating or updating cohorts.",
+      "Must be called before calling creating or updating cohorts tools. Validate Atlas cohort definition JSON and return warnings for LLM analysis.",
     inputSchema: {
-      atlastCohortDefinition: z
+      cohortDefinitionExpression: z
         .any()
         .describe(
           "Atlas cohort definition in json to be validated, include concept sets and expression"
         ),
       userName: z.string().describe("User name creating/updating the cohort"),
-      cohortInfo: z.string().describe("The cohort description").optional(),
     },
   },
-  async ({ atlastCohortDefinition, userName, cohortInfo }, { requestInfo }) => {
+  async ({ cohortDefinitionExpression }, { requestInfo }) => {
+    // Validate the cohort definition via D2E WebAPI, authorization and datasetId are required in headers although through Trex.tokioChannel
     let authorization = requestInfo?.headers?.authorization;
-    if (!authorization) {
-      throw new Error("Authorization is missing");
-    } else {
-      authorization = String(authorization);
+    let datasetId = requestInfo?.headers?.datasetid;
+    console.log("DatasetId:", datasetId);
+    if (!authorization || !datasetId) {
+      throw new Error("Authorization or datasetId is missing");
     }
-
-    const cohortDefinition = {
-      expression: atlastCohortDefinition,
-      cohortInfo: cohortInfo,
-      userName: userName,
-    };
-
+    authorization = String(authorization);
     const validationResult = await validateCohortDefinition(
-      cohortDefinition,
-      authorization
+      cohortDefinitionExpression,
+      authorization,
+      datasetId as string
     );
-
+    if (!validationResult) {
+      throw new Error("Failed to validate cohort definition in D2E");
+    }
     const warnings = validationResult?.warnings || [];
-
+    console.log("Validation Result:", JSON.stringify(validationResult));
     return {
       content: [
         {
@@ -207,161 +234,203 @@ server.registerTool(
   }
 );
 
-// Tool to manage ATLAS cohort definition in D2E
+// Tool to get ATLAS cohort definition from D2E
 server.registerTool(
-  "manage_atlas_cohort_definition",
+  "get_atlas_cohort_definition",
   {
-    title: "Manage Atlas Cohorts in D2E",
+    title: "Get Atlas Cohort Definition",
     description:
-      "Get, Create, Update or Delete the Atlas Cohort Definition in D2E. Each action requires specific parameters.",
+      "Retrieve an existing ATLAS cohort definition from D2E by its ID.",
     inputSchema: {
-      action: z.enum(["get", "create", "update", "delete"]).describe(`
-          - get: retrieve cohort definition by cohordId, requires cohortId
-          - create: create new cohort definition, requires "atlastCohortDefinition", "cohortInfo", "userName", "isValidCohortDefinition=true"
-          - update: update cohort defition, requires "atlastCohortDefinition", "cohortId", "userName", "isValidCohortDefinition=true"
-          - delete: delete cohort definition by cohortId, requires cohortId
-          `),
-      cohortId: z.number().optional(),
-      atlastCohortDefinition: z
+      cohortId: z.number().describe("The cohort ID to retrieve"),
+    },
+  },
+  async ({ cohortId }) => {
+    const cohortDefinition = await getCohortDefinition(cohortId);
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Retrieved cohort definition with ID: ${cohortDefinition.id}, Name: ${cohortDefinition.name}`,
+        },
+      ],
+      structuredContent: { cohortDefinition },
+    };
+  }
+);
+
+// Tool to create ATLAS cohort definition in D2E
+server.registerTool(
+  "create_atlas_cohort_definition",
+  {
+    title: "Create Atlas Cohort Definition",
+    description:
+      "Create a new ATLAS cohort definition in D2E. The cohort definition must be validated first using validate_atlas_cohort_definition tool.",
+    inputSchema: {
+      cohortDefinitionExpression: z
         .any()
         .describe(
-          "The Atlas cohort definition JSON including concept sets and expression"
-        )
-        .optional(),
-      cohortInfo: z.string().describe("The cohort description").optional(),
-      userName: z
-        .string()
-        .describe("User name performing the action")
-        .optional(),
+          "The validated ATLAS cohort definition JSON including concept sets and expression"
+        ),
+      cohortInfo: z.string().describe("The cohort description"),
+      userName: z.string().describe("User name creating the cohort"),
       isValidCohortDefinition: z
         .boolean()
         .describe(
-          "If the cohort definition is validated by tool validate_atlas_cohort_definition, set to true before create or update"
+          "Must be true. Set after validating with validate_atlas_cohort_definition tool"
         )
-        .optional()
         .default(false),
     },
   },
-  async (params, { requestInfo }) => {
-    let authorization = requestInfo?.headers?.authorization;
-    let datasetId = requestInfo?.headers?.datasetid;
-    if (!authorization) {
-      throw new Error("Cannot create cohort in D2E, authorization is missing");
-    } else {
-      authorization = String(authorization);
+  async (
+    {
+      cohortDefinitionExpression,
+      cohortInfo,
+      userName,
+      isValidCohortDefinition,
+    },
+    { requestInfo }
+  ) => {
+    if (!isValidCohortDefinition) {
+      throw new Error(
+        "Cohort definition must be validated before creation. Use validate_atlas_cohort_definition tool first and set isValidCohortDefinition=true"
+      );
     }
+    let authorization = requestInfo?.headers?.authorization; // valid JWT token is required to create cohort in D2E although through Trex.tokioChannel
+    if (!authorization) {
+      throw new Error("Authorization is missing");
+    }
+    authorization = String(authorization);
+    const cohortDefinition = {
+      expression: cohortDefinitionExpression,
+      cohortInfo: cohortInfo,
+      userName: userName,
+    };
 
-    const logMessage = `The cohort definition has been ${params.action} with ID: `;
-    let content: any[] = [];
-    let structuredContent: any = {};
-
-    switch (params.action) {
-      // Get the ATLAS cohort definition from D2E
-      case "get": {
-        const res = await getCohortDefinition(params.cohortId);
-        content = [
-          {
-            type: "text",
-            text: `${logMessage} ${res.id}`,
-          },
-        ];
-        console.log("Cohort Definition fetched:", res);
-        structuredContent = { cohortRetrieved: res };
-        break;
-      }
-
-      // Create the ATLAS cohort definition in D2E
-      case "create": {
-        if (!params.atlastCohortDefinition) {
-          throw new Error(
-            "atlastCohortDefinition is required for 'create' action"
-          );
-        }
-        const cohortDefinition = {
-          expression: params.atlastCohortDefinition,
-          cohortInfo: params.cohortInfo,
-          userName: params.userName,
-        };
-        const res = await createCohortDefinition(
-          cohortDefinition,
-          authorization
-        );
-        if (!res) {
-          throw new Error("Failed to create cohort definition in D2E");
-        }
-        content = [
-          {
-            type: "text",
-            text: `${logMessage} ${res.id} Name: ${res.name}`,
-          },
-        ];
-        break;
-      }
-
-      // Update the ATLAS cohort definition in D2E
-      case "update": {
-        // Fetch original cohort definition to preserve name, description, createdBy, createdDate
-        const orgCohortDefinition = await getCohortDefinition(params.cohortId);
-        const cohortDefinition = {
-          cohortId: params.cohortId,
-          name: orgCohortDefinition.name,
-          description: orgCohortDefinition.description,
-          createdBy: orgCohortDefinition.createdBy,
-          createdDate: orgCohortDefinition.createdDate,
-          expression: params.atlastCohortDefinition,
-          userName: params.userName,
-        };
-
-        console.log("Updating cohort with cohort ID:", params.cohortId);
-        const res = await updateCohortDefinition(
-          cohortDefinition,
-          authorization
-        );
-        if (!res) {
-          throw new Error(
-            `Failed to update cohort definition in D2E with cohortId: ${params.cohortId}`
-          );
-        }
-        content = [
-          {
-            type: "text",
-            text: `${logMessage} ${res.id}`,
-          },
-        ];
-        break;
-      }
-
-      // Delete the ATLAS cohort definition from D2E
-      case "delete": {
-        console.log("Deleting cohort with cohort ID:", params.cohortId);
-        const res = await deleteCohortDefinition(
-          params.cohortId,
-          authorization,
-          datasetId as string
-        );
-        if (!res) {
-          throw new Error(
-            `Failed to delete cohort definition in D2E with cohortId: ${params.cohortId}`
-          );
-        }
-        content = [
-          {
-            type: "text",
-            text: `${logMessage} ${params.cohortId}`,
-          },
-        ];
-        break;
-      }
-
-      default: {
-        // TypeScript should prevent this, but keep for runtime safety
-        throw new Error(`Unknown action: ${(params as any).action}`);
-      }
+    const res = await createCohortDefinition(cohortDefinition, authorization);
+    if (!res) {
+      throw new Error("Failed to create cohort definition in D2E");
     }
 
     return {
-      content: content,
-      structuredContent: structuredContent,
+      content: [
+        {
+          type: "text",
+          text: `Successfully created cohort definition with ID: ${res.id}, Name: ${res.name}`,
+        },
+      ],
+    };
+  }
+);
+
+// Tool to update ATLAS cohort definition in D2E
+server.registerTool(
+  "update_atlas_cohort_definition",
+  {
+    title: "Update Atlas Cohort Definition",
+    description:
+      "The cohort definition must be validated first using validate_atlas_cohort_definition tool. Update an existing ATLAS cohort definition in D2E, and creation metadata are preserved. ",
+    inputSchema: {
+      cohortDefinitionExpression: z
+        .any()
+        .describe(
+          "The validated ATLAS cohort definition JSON including concept sets and expression"
+        ),
+      userName: z.string().describe("User name updating the cohort"),
+      isValidCohortDefinition: z
+        .boolean()
+        .describe(
+          "Set after validating with validate_atlas_cohort_definition tool"
+        )
+        .default(false),
+      cohortId: z.number().describe("The cohort ID to update"),
+      cohortDescription: z
+        .string()
+        .describe("The cohort description to update"),
+    },
+  },
+  async ({
+    cohortId,
+    cohortDescription,
+    cohortDefinitionExpression,
+    userName,
+    isValidCohortDefinition,
+  }) => {
+    if (!isValidCohortDefinition) {
+      throw new Error(
+        "Cohort definition must be validated before update. Use validate_atlas_cohort_definition tool first and set isValidCohortDefinition=true"
+      );
+    }
+
+    // Fetch original cohort definition to preserve name, createdBy, createdDate
+    const orgCohortDefinition = await getCohortDefinition(cohortId);
+
+    const cohortDefinition = {
+      cohortId: cohortId,
+      name: orgCohortDefinition.name,
+      description: cohortDescription,
+      createdBy: orgCohortDefinition.createdBy,
+      createdDate: orgCohortDefinition.createdDate,
+      expression: cohortDefinitionExpression,
+      userName: userName,
+    };
+
+    const res = await updateCohortDefinition(cohortDefinition);
+    if (!res) {
+      throw new Error(
+        `Failed to update cohort definition in D2E with cohortId: ${cohortId}`
+      );
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully updated cohort definition with ID: ${res.id}`,
+        },
+      ],
+    };
+  }
+);
+
+// Tool to delete ATLAS cohort definition from D2E
+server.registerTool(
+  "delete_atlas_cohort_definition",
+  {
+    title: "Delete Atlas Cohort Definition",
+    description:
+      "Delete an ATLAS cohort definition from D2E by its ID. This action cannot be undone.",
+    inputSchema: {
+      cohortId: z.number().describe("The cohort ID to delete"),
+    },
+  },
+  async ({ cohortId }, { requestInfo }) => {
+    let authorization = requestInfo?.headers?.authorization;
+    let datasetId = requestInfo?.headers?.datasetid;
+    if (!authorization || !datasetId) {
+      throw new Error("Authorization or datasetId is missing");
+    }
+    authorization = String(authorization);
+
+    const res = await deleteCohortDefinition(
+      cohortId,
+      authorization,
+      datasetId as string
+    );
+
+    if (!res) {
+      throw new Error(
+        `Failed to delete cohort definition in D2E with cohortId: ${cohortId}`
+      );
+    }
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Successfully deleted cohort definition with ID: ${cohortId}`,
+        },
+      ],
     };
   }
 );

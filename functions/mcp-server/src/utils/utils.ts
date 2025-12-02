@@ -15,6 +15,22 @@ interface PhenotypeData {
   logicDescription: string;
 }
 
+// D2E Cohort Definition - matches CohortDefinitionResponseDto from d2e-webapi
+export interface D2ECohortDefinition {
+  id: number;
+  name: string;
+  description: string | null;
+  expressionType: string;
+  expression: any; // CohortExpression type
+  createdBy: string | null;
+  createdDate: number | null;
+  modifiedBy?: string | null;
+  modifiedDate?: number | null;
+  tags: string[];
+  hasWriteAccess?: boolean;
+  hasReadAccess?: boolean;
+}
+
 export async function fetchPhenotypeData(): Promise<PhenotypeData[]> {
   const url =
     "https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/Cohorts.csv";
@@ -73,21 +89,19 @@ export async function createCohortDefinition(
   return data;
 }
 
-export async function getCohortDefinition(cohortId: number): Promise<any> {
+export async function getCohortDefinition(
+  cohortId: number
+): Promise<D2ECohortDefinition> {
   const webapi = new WebAPIAPI();
   const data = await webapi.getAtlasCohortDefinition(cohortId);
   return data;
 }
 
 export async function updateCohortDefinition(
-  cohortDefinition: any,
-  authorization: string
+  cohortDefinition: any
 ): Promise<any> {
   const webapi = new WebAPIAPI();
-  const data = await webapi.updateAtlasCohortDefinition(
-    cohortDefinition,
-    authorization
-  );
+  const data = await webapi.updateAtlasCohortDefinition(cohortDefinition);
   return data;
 }
 
@@ -107,12 +121,14 @@ export async function deleteCohortDefinition(
 
 export async function validateCohortDefinition(
   cohortDefinition: any,
-  authorization: string
+  authorization: string,
+  datasetId: string
 ): Promise<any> {
   const webapi = new WebAPIAPI();
   const validationResult = await webapi.checkAtlasCohortDefinition(
     cohortDefinition,
-    authorization
+    authorization,
+    datasetId
   );
   return validationResult;
 }

@@ -1,5 +1,6 @@
 import { env } from "../env";
 import axios from "axios";
+import { D2ECohortDefinition } from "../utils/utils";
 
 export class WebAPIAPI {
   private readonly token: string;
@@ -67,7 +68,7 @@ export class WebAPIAPI {
           ? JSON.parse(cohortDefinition.expression)
           : cohortDefinition.expression;
 
-      const payload = {
+      const payload: D2ECohortDefinition = {
         id: 1,
         name: `${cohortDefinition.cohortInfo}`,
         description: `${cohortDefinition.cohortInfo}`,
@@ -88,31 +89,31 @@ export class WebAPIAPI {
   }
 
   async checkAtlasCohortDefinition(
-    cohortDefinition: any,
-    authorization: string
+    cohortDefinitionExpression: any,
+    authorziation: string,
+    datasetId: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
-      options.headers["Authorization"] = authorization;
+      options.headers["Authorization"] = authorziation;
+      options.headers["datasetId"] = datasetId;
       const url = `${this.baseURL}/cohortdefinition/checkV2`;
-
-      const currentTime = Date.now();
       const expression =
-        typeof cohortDefinition.expression === "string"
-          ? JSON.parse(cohortDefinition.expression)
-          : cohortDefinition.expression;
-
-      const payload = {
-        id: cohortDefinition.id || 1,
-        name: `${cohortDefinition.cohortInfo || "New Cohort"}`,
-        description: `${cohortDefinition.cohortInfo || ""}`,
+        typeof cohortDefinitionExpression === "string"
+          ? JSON.parse(cohortDefinitionExpression)
+          : cohortDefinitionExpression;
+      const currentTime = Date.now();
+      const payload: D2ECohortDefinition = {
+        id: 1, // Dummy ID for validation
+        name: "For validateion only", // Dummy name for validation
+        description: "For validateion only", // Dummy description for validation
         expressionType: "SIMPLE_EXPRESSION",
-        expression: expression,
-        createdBy: cohortDefinition.userName || "researcher",
-        createdDate: currentTime,
-        modifiedBy: cohortDefinition.userName || "researcher",
-        modifiedDate: currentTime,
-        tags: cohortDefinition.tags || [],
+        expression: expression, // Cohort definition to be validated
+        createdBy: "For validateion only", // Dummy creator for validation
+        createdDate: currentTime, // Dummy creation date for validation
+        modifiedBy: "For validateion only", // Dummy modifier for validation
+        modifiedDate: currentTime, // Dummy modification date for validation
+        tags: [],
       };
 
       const response = await this.channel.post(url, payload, options);
@@ -123,13 +124,9 @@ export class WebAPIAPI {
     }
   }
 
-  async updateAtlasCohortDefinition(
-    cohortDefinition: any,
-    authorization: string
-  ): Promise<any> {
+  async updateAtlasCohortDefinition(cohortDefinition: any): Promise<any> {
     try {
       const options = await this.getRequestConfig();
-      options.headers["Authorization"] = authorization;
       const url = `${this.baseURL}/cohortdefinition/${cohortDefinition.cohortId}`;
 
       const currentTime = Date.now();
@@ -138,7 +135,7 @@ export class WebAPIAPI {
           ? JSON.parse(cohortDefinition.expression)
           : cohortDefinition.expression;
 
-      const payload = {
+      const payload: D2ECohortDefinition = {
         id: cohortDefinition.cohortId,
         name: cohortDefinition.name,
         description: cohortDefinition.description,
