@@ -364,7 +364,7 @@ jobs:
       #     cd ./tests/e2e
       #     npm test
 
-            - name: Check PG DB connection
+      - name: Check PG DB connection
         run: |
           # postgres://postgres:WJUFCC@demodb:5432/postgres
           docker ps
