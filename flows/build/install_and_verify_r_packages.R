@@ -15,6 +15,8 @@ renv::restore(lockfile = lockfile_location, library = renv_paths_library, prompt
 
 installed <- rownames(installed.packages())
 missing <- setdiff(required_packages, installed)
+# TODO: Uncomment below to fail the build if packages are missing
+# Currently the check does not work as expected with conda R installations (in r-kernel)
 print(installed)
 print(missing)
 # if (length(missing) > 0) {
