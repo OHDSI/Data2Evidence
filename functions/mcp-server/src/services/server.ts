@@ -9,11 +9,12 @@ import {
   updateCohortDefinition,
   deleteCohortDefinition,
   validateCohortDefinition,
+  McpServerConfig,
 } from "../utils/utils";
 
 export const server = new McpServer({
-  name: "d2e-mcp-server",
-  version: "1.0.0",
+  name: McpServerConfig.NAME,
+  version: McpServerConfig.VERSION,
 });
 
 // Tool Get Cohorts ID Name List Tool from Phenotype Library
@@ -81,7 +82,7 @@ server.registerTool(
             2. Identify a most relevant phenotype ID from 1 that closely matches the cohort description.
             3. Fetch cohort definition template with phenotype ID from 2 using tool **fetch_templates_for_cohort_generation**
             4. Looking at the template from 3 carefully, only use valid syntax (those exist in template), understand the cohort description, based on template and cohort information, draft and output a complete and valid ATLAS cohort definition in JSON format, without any additional explanation and without generating new file. Double check to make sure the syntax is valid ATLAS JSON format.
-            5. Validate the generated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed. .
+            5. Validate the generated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed.
             6. Wait for user's confirmation for next action, your question of "create in D2E" with "y" or "yes". If proceed to create the cohort definition in D2E, set parameter "isValidCohortDefinition" to true and call tool **create_atlas_cohort_definition**`,
         },
       ],
@@ -111,7 +112,7 @@ server.registerTool(
           cohort description: ${cohortDescription}
 
           Strictly follow to-do list below for update of ATLAS cohort definition:
-            1. Validate the updated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed. .
+            1. Validate the updated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed.
             2. Wait for user's confirmation for next action, your question of "update in D2E" with "y" or "yes". If proceed to update the cohort definition in D2E, set parameter "isValidCohortDefinition" to true and call tool **update_atlas_cohort_definition**`,
         },
       ],
@@ -329,7 +330,7 @@ server.registerTool(
   {
     title: "Update Atlas Cohort Definition",
     description:
-      "The cohort definition must be validated first using validate_atlas_cohort_definition tool. Update an existing ATLAS cohort definition in D2E, and creation metadata are preserved. ",
+      "The cohort definition must be validated first using validate_atlas_cohort_definition tool. Update an existing ATLAS cohort definition in D2E, and creation metadata is preserved. ",
     inputSchema: {
       cohortDefinitionExpression: z
         .any()

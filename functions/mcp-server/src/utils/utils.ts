@@ -31,6 +31,11 @@ export interface D2ECohortDefinition {
   hasReadAccess?: boolean;
 }
 
+export enum McpServerConfig {
+  NAME = "d2e-mcp-server",
+  VERSION = "0.2.0",
+}
+
 export async function fetchPhenotypeData(): Promise<PhenotypeData[]> {
   const url =
     "https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/Cohorts.csv";
@@ -70,9 +75,11 @@ export async function fetchCohortDefinitionTemplate(
 ): Promise<any> {
   const url = `https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/cohorts/${phenotypeId}.json`;
   const response = await fetch(url);
-  let result = (await response.json()) || undefined;
-  if (result === undefined) {
-    result = response.text();
+  let result;
+  try {
+    result = await response.json();
+  } catch (e) {
+    result = await response.text();
   }
   return result;
 }

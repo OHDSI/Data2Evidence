@@ -90,12 +90,12 @@ export class WebAPIAPI {
 
   async checkAtlasCohortDefinition(
     cohortDefinitionExpression: any,
-    authorziation: string,
+    authorization: string,
     datasetId: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
-      options.headers["Authorization"] = authorziation;
+      options.headers["Authorization"] = authorization;
       options.headers["datasetId"] = datasetId;
       const url = `${this.baseURL}/cohortdefinition/checkV2`;
       const expression =
@@ -105,13 +105,13 @@ export class WebAPIAPI {
       const currentTime = Date.now();
       const payload: D2ECohortDefinition = {
         id: 1, // Dummy ID for validation
-        name: "For validateion only", // Dummy name for validation
-        description: "For validateion only", // Dummy description for validation
+        name: "For validation only", // Dummy name for validation
+        description: "For validation only", // Dummy description for validation
         expressionType: "SIMPLE_EXPRESSION",
         expression: expression, // Cohort definition to be validated
-        createdBy: "For validateion only", // Dummy creator for validation
+        createdBy: "For validation only", // Dummy creator for validation
         createdDate: currentTime, // Dummy creation date for validation
-        modifiedBy: "For validateion only", // Dummy modifier for validation
+        modifiedBy: "For validation only", // Dummy modifier for validation
         modifiedDate: currentTime, // Dummy modification date for validation
         tags: [],
       };
