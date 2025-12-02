@@ -15,32 +15,35 @@
   },
   "dependencies": {
     "@d4l/web-components-library": "3.15.1",
-    "@vue/compat": "3.5.17",
     "@vuepic/vue-datepicker": "^11.0.2",
     "axios": ">=0.21.2",
     "bootstrap": "4.6.1",
     "canvg": "^3.0.7",
+    "core-js": "^3.8.2",
     "d3": "3.5.17",
     "file-saver": "1.3.3",
     "fuse.js": "^6.6.2",
+    "html-webpack-plugin": "^5.5.0",
     "import-map-overrides": "^6.1.0",
     "jquery": "^3.5.1",
     "jsonwebtoken": "^9.0.0",
     "jspdf": "2.3.1",
     "jszip": "3.10.1",
     "lodash": "^4.17.21",
+    "moment": "^2.30.1",
     "normalizr": "3.2.4",
     "pako": "1.0.11",
     "plotly.js": "^2.14.0",
     "popper.js": "1.16.1",
     "process": "^0.11.10",
     "single-spa": "^6.0.0",
-    "splitpanes": "^2.4.1",
+    "splitpanes": "^4.0.4",
     "stream-browserify": "^3.0.0",
     "underscore": "^1.12.1",
     "vue": "3.5.17",
     "vue-multiselect": "^3.4.0",
     "vuex": "4.1.0",
+    "webpack": "^5.76.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -58,18 +61,24 @@
     "@vue/test-utils": "2",
     "@vue/vue3-jest": "27",
     "babel-core": "7.0.0-bridge.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "fflate": "0.7.4",
     "jest": "27.1.0",
     "jest-environment-jsdom": "27.1.0",
     "jest-junit": "^5.1.0",
+    "jest-serializer-vue": "^2.0.2",
+    "jest-transform-stub": "^2.0.0",
+    "prettier": "3.6.2",
     "process": "^0.11.10",
     "sass": "^1.32.8",
     "sass-loader": "^13.0.0",
     "stream-browserify": "^3.0.0",
     "streamsaver": "2.0.6",
     "ts-jest": "27",
+    "tslib": "^2.6.2",
     "tslint-config-prettier": "^1.15.0",
-    "typescript": "4.4.4",
+    "typescript": "5.9.3",
     "vue-server-renderer": "2.6.14"
   },
   "postcss": {
@@ -95,6 +104,7 @@
     "transform": {
       "^.+\\.vue$": "@vue/vue3-jest",
       ".+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2)$": "jest-transform-stub",
+      "^.+\\.jsx?$": "ts-jest",
       "^.+\\.(ts|tsx)$": "ts-jest"
     },
     "globals": {
@@ -103,7 +113,8 @@
       }
     },
     "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1"
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^axios$": "axios/dist/node/axios.cjs"
     },
     "snapshotSerializers": [
       "jest-serializer-vue"

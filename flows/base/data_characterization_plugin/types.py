@@ -25,7 +25,7 @@ class DCOptionsType(BaseModel):
 
 class AchillesParams(DCOptionsType):
     # Achilles-specific parameters with defaults
-    outputFolder: str
+    outputFolder: str = "achilles_output"
     setDBDriverEnv: str
     connectionDetails: str
 

@@ -55,6 +55,7 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "data-characterization",
     "setup-semantic-search",
     "manage-dashboard",
+    "create-cache",
   ],
   study: ["metadata", "permissions", "resources", "delete"],
   hana__omop: [

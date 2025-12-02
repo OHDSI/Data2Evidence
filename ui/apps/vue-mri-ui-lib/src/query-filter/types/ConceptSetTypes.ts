@@ -315,3 +315,4 @@ export interface IWebapiConceptSet {
   shared?: boolean
   userName?: string
 }
+

@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'GroupCriteriaMenu',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -186,7 +183,9 @@ const getGroupCriteriaCount = () => {
   background: white;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 400px;
   padding: 16px;
 
