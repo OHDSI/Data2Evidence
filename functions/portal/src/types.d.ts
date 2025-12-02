@@ -17,6 +17,8 @@ export interface ITenant {
 
 export type DatabaseDialect = (typeof DATABASE_DIALECTS)[number];
 
+export type DatasetFlowParameters = Record<string, unknown>;
+
 export interface IDataset {
   id: string;
   type?: string;
@@ -26,6 +28,7 @@ export interface IDataset {
   databaseCode: string;
   schemaName?: string;
   vocabSchemaName?: string;
+  sourceDatasetId?: string;
   dataModel?: string;
   studyDetail: {
     id: string;
@@ -34,6 +37,7 @@ export interface IDataset {
   };
   tenant?: ITenant;
   fhir_project_id?: string;
+  flowParameters?: DatasetFlowParameters | null;
 }
 
 // TODO: Remove when we switch from study to dataset entirely
@@ -73,6 +77,8 @@ export interface IDatasetSnapshotDto {
   newDatasetName: string;
   schemaName: string;
   timestamp: Date;
+  type: string;
+  flowParameters?: DatasetFlowParameters | null;
 }
 
 interface IDatasetDetailBaseDto {
@@ -168,6 +174,7 @@ export interface IDatasetResponseDto {
   dataModel: string;
   plugin: string;
   fhir_project_id?: string;
+  flowParameters?: DatasetFlowParameters | null;
 }
 
 export interface IDatasetSearchDto {

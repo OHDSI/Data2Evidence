@@ -8,6 +8,7 @@ import type {
   CohortInfoResponse,
   NotificationsResponse,
 } from '../types/ConceptSetTypes'
+import type { InclusionReportResponse } from '../types/InclusionReportTypes'
 
 const D2E_WEBAPI_BASE_URL = 'd2e-webapi'
 
@@ -195,6 +196,21 @@ export class D2eWebapiService {
     })
     return response.data
   }
+
+  public async getInclusionReport(
+    cohortDefinitionId: number,
+    sourceKey: string,
+    modeId: number
+  ): Promise<InclusionReportResponse> {
+    const response = await client({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/cohortdefinition/${cohortDefinitionId}/report/${sourceKey}?mode=${modeId}`,
+      method: 'GET',
+      headers: { datasetid: sourceKey },
+    })
+    return response.data
+  }
 }
 
 export const d2eWebapiService = new D2eWebapiService()
+

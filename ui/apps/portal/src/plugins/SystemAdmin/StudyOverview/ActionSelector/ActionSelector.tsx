@@ -1,15 +1,17 @@
-import React, { FC, useCallback } from "react";
+import React, { FC, useCallback, useMemo } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import { SelectChangeEvent } from "@mui/material/Select";
 import { FormControl } from "@mui/material";
-import { Study } from "../../../../types";
+import { Study, DatasetType, ActionValue } from "../../../../types";
+import { ActionSelectorMap } from "../../../../constant";
 import { SxProps } from "@mui/system";
 import { useTranslation, useUser } from "../../../../contexts";
 
 interface ActionSelectorProps {
   dataset: Study;
   isSchemaUpdatable: boolean | undefined;
+  handleSourceInformation: (dataset: Study) => void;
   handleCopyStudy: (dataset: Study) => void;
   handleDeleteStudy: (dataset: Study) => void;
   handleMetadata: (dataset: Study) => void;
@@ -54,6 +56,7 @@ const styles: SxProps = {
 const ActionSelector: FC<ActionSelectorProps> = ({
   dataset,
   isSchemaUpdatable,
+  handleSourceInformation,
   handleDeleteStudy,
   handleCopyStudy,
   handleMetadata,
@@ -71,24 +74,35 @@ const ActionSelector: FC<ActionSelectorProps> = ({
   const { user } = useUser();
   const isUserAdmin = user.isUserAdmin;
 
-  const actionsList: Action[] = [
-    { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_DATASET), value: "metadata" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_DATA_MART), value: "version" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__RESOURCES), value: "resources" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_SCHEMA), value: "update" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__DELETE_DATASET), value: "delete" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_RELEASE), value: "release" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_QUALITY), value: "data-quality" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_CHARACTERIZATION), value: "data-characterization" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_CACHE), value: "create-cache" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
-    { name: getText(i18nKeys.ACTION_SELECTOR__MANAGE_DASHBOARD), value: "manage-dashboard" },
-  ];
+  const actionsList: Action[] = useMemo(
+    () => [
+      { name: "Source Information", value: "info" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_DATASET), value: "metadata" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_DATA_MART), value: "version" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RESOURCES), value: "resources" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_SCHEMA), value: "update" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__DELETE_DATASET), value: "delete" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_RELEASE), value: "release" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_QUALITY), value: "data-quality" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_CHARACTERIZATION), value: "data-characterization" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_CACHE), value: "create-cache" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
+    ],
+    [getText, i18nKeys]
+  );
+
+  const filteredActions: Action[] = useMemo(() => {
+    const allowedValues: ActionValue[] = ActionSelectorMap[dataset.type as DatasetType] ?? [];
+    return actionsList.filter((action) => allowedValues.includes(action.value as ActionValue));
+  }, [dataset.type, actionsList]);
 
   const handleActionChange = useCallback(
     (event: SelectChangeEvent<string>) => {
       switch (event.target.value) {
+        case "info":
+          handleSourceInformation(dataset);
+          break;
         case "version":
           handleCopyStudy(dataset);
           break;
@@ -141,6 +155,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
       handleDataCharacterization,
       handleCreateCache,
       handleSetupSemanticSearch,
+      handleSourceInformation,
       handleManageDashboard,
       dataset,
     ]
@@ -155,7 +170,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
         if (dataset.dialect === "postgres" && actionVal === "release") {
           return true;
         }
-        if (dataset.dialect === "hana" && actionVal === "create-cache") {
+        if (actionVal === "create-cache" && dataset.dialect === "hana") {
           return true;
         }
         if (actionVal === "version" && !dataset.schemaName) {
@@ -174,7 +189,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
         <MenuItem value="" sx={styles} disableRipple>
           {getText(i18nKeys.ACTION_SELECTOR__SELECT_ACTION)}
         </MenuItem>
-        {actionsList.map((action: Action) => (
+        {filteredActions.map((action: Action) => (
           <MenuItem
             value={action.value}
             key={action.value}

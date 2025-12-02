@@ -24,9 +24,6 @@ import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'downloadMenu',
   data() {
     return {

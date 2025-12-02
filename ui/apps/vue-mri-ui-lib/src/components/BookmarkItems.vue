@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import { onMounted, defineProps, computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
@@ -397,8 +389,8 @@ onErrorCaptured((err, instance, info) => {
                         mriFrontEndConfig,
                         boolContainers: bookmarkDisplay.bookmark.filterCardData,
                         getText,
-                        getAttributeType:
-                          (attributeId:string) => mriFrontEndConfig.getAttributeByPath(attributeId)?.oInternalConfigAttribute?.type,
+                        getAttributeType: (attributeId: string) =>
+                          mriFrontEndConfig.getAttributeByPath(attributeId)?.oInternalConfigAttribute?.type,
                         getDomainValues,
                       })"
                       :key="container.content"

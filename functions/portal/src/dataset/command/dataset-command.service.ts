@@ -131,27 +131,48 @@ export class DatasetCommandService {
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
     const createSnapshotFn = async (entityMgr: EntityManager, snapshotDto: IDatasetSnapshotDto) => {
-      const { id: snapshotId, sourceDatasetId, newDatasetName, schemaName, timestamp } = snapshotDto
+      const {
+        id: snapshotId,
+        sourceDatasetId,
+        newDatasetName,
+        schemaName,
+        timestamp,
+        type: newType,
+        flowParameters
+      } = snapshotDto
       const sourceDataset = await this.datasetRepo.getDataset(sourceDatasetId)
       if (!sourceDataset) {
         throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
       }
 
-      const { type, tenantId, databaseCode, vocabSchemaName, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, plugin } = sourceDataset
+      const { tenantId, databaseCode, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
+      
+      // Sanitize the new dataset name to create a valid token dataset code
+      const sanitizedName = newDatasetName
+        .trim()
+        .replace(/[^a-zA-Z0-9_]/g, '_') // Replace invalid characters with underscore
+        .replace(/_+/g, '_') // Replace multiple underscores with single underscore
+        .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+      
+      const newTokenDatasetCode = `${tokenDatasetCode}_dm_${sanitizedName}`.substring(0, 80);
+      
       // Copy dataset with new schema name
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
-        type,
+        type: newType,
         tenantId,
         databaseCode,
+        dialect,
         schemaName,
-        vocabSchemaName,
-        resultSchemaName,
-        tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim()}`,
+        vocabSchemaName: schemaName,
+        resultSchemaName: schemaName || resultSchemaName,
+        tokenDatasetCode: newTokenDatasetCode,
         paConfigId,
         dataModel,
         plugin,
-        sourceDatasetId
+        sourceDatasetId,
+        visibilityStatus: "DEFAULT",
+        flowParameters: flowParameters ?? null
       }
       this.logger.info(`Create dataset snapshot with id ${snapshotId} from source dataset ${sourceDatasetId}`)
       const datasetEntity = this.datasetRepo.create(datasetSnapshot)
