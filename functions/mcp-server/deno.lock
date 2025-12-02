@@ -3,6 +3,7 @@
   "specifiers": {
     "npm:@modelcontextprotocol/sdk@*": "1.20.2_express@5.1.0_zod@3.25.76",
     "npm:@modelcontextprotocol/sdk@^1.20.2": "1.20.2_express@5.1.0_zod@3.25.76",
+    "npm:axios@~0.21.2": "0.21.4",
     "npm:express@^4.19.2": "4.21.2",
     "npm:papaparse@^5.4.1": "5.5.3",
     "npm:zod@^3.25.76": "3.25.76"
@@ -50,6 +51,12 @@
     },
     "array-flatten@1.1.1": {
       "integrity": "sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg=="
+    },
+    "axios@0.21.4": {
+      "integrity": "sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==",
+      "dependencies": [
+        "follow-redirects"
+      ]
     },
     "body-parser@1.20.3": {
       "integrity": "sha512-7rAxByjUMqQ3/bHJy7D6OGXvx/MMc4IqBn/X0fcM1QUcAItpZrBEYhWGem+tzXH90c+G01ypMcYJBO9Y30203g==",
@@ -302,6 +309,9 @@
         "parseurl",
         "statuses"
       ]
+    },
+    "follow-redirects@1.15.11": {
+      "integrity": "sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ=="
     },
     "forwarded@0.2.0": {
       "integrity": "sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow=="
@@ -697,6 +707,7 @@
     "dependencies": [
       "npm:@modelcontextprotocol/sdk@*",
       "npm:@modelcontextprotocol/sdk@^1.20.2",
+      "npm:axios@~0.21.2",
       "npm:express@^4.19.2",
       "npm:papaparse@^5.4.1",
       "npm:zod@^3.25.76"
