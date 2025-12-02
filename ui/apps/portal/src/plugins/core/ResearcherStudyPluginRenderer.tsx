@@ -38,7 +38,10 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
   route,
   type: configType,
 }) => {
-  const { userId } = useUser();
+  const {
+    userId,
+    user: { idpUserId },
+  } = useUser();
   const { idTokenClaims } = useToken();
   const { locale } = useTranslation();
   const username = idTokenClaims?.[nameProp] as string | undefined;
@@ -64,6 +67,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
             customProps: {
               getToken: getAuthToken,
               username,
+              idpUserId,
               datasetId: studyId,
               locale,
               ...data,
@@ -86,20 +90,21 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
       };
       registerApp();
     }
-  }, [path, studyId, locale, username, data, route, configType, isRegistered]);
+  }, [path, studyId, locale, idpUserId, username, data, route, configType, isRegistered]);
 
   useEffect(() => {
     if (configType === "app" && isRegistered) {
       const appId = generateAppId(path);
       updateCustomProps(appId, {
         getToken: getAuthToken,
+        idpUserId,
         username,
         datasetId: studyId,
         locale,
         ...data,
       });
     }
-  }, [studyId, locale, username, data, path, configType, isRegistered]);
+  }, [studyId, locale, idpUserId, username, data, path, configType, isRegistered]);
 
   // Load legacy plugins when path changes
   useEffect(() => {
