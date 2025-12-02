@@ -20,6 +20,7 @@ import shared from './modules/shared'
 import dqd from './modules/dqd'
 import ui5 from './modules/ui5'
 import cohortDefinition from './modules/cohortDefinition'
+import samples from './modules/samples'
 
 export default createStore({
   // strict: process.env.NODE_ENV !== 'production',
@@ -45,6 +46,7 @@ export default createStore({
     dqd,
     ui5,
     cohortDefinition,
+    samples,
   },
   state: {},
   getters: {},
