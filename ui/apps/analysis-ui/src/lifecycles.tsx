@@ -26,6 +26,25 @@ const lifecycles = singleSpaReact({
       </div>
     );
   },
+  domElementGetter: (props: any) => {
+    const containerId = props?.containerId;
+
+    if (containerId) {
+      const container = document.getElementById(containerId);
+      if (container) {
+        return container;
+      }
+      console.warn(
+        "[Analysis Flow] Container element not found in DOM:",
+        containerId
+      );
+    }
+
+    console.warn(
+      "[Analysis Flow] No containerId provided, using single-spa default"
+    );
+    return undefined;
+  },
 });
 
 export const { bootstrap, mount, unmount } = lifecycles;
