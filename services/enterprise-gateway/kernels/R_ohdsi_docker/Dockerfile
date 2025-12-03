@@ -94,6 +94,7 @@ COPY ./flows/hades/renv.lock ./flows/build/.Rprofile ./flows/build/install_and_v
 COPY --chown=jovyan:user ./flows/drivers /app/inst/drivers
 COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app/rD2E
 
+# Packages from https://packagemanager.posit.co/cran/__linux__/noble/2025-09-22/src/contrib/PACKAGES
 ARG POSIT_DATE=2025-09-22
 ARG CODENAME=noble
 
