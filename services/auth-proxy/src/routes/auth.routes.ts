@@ -17,7 +17,6 @@ const COOKIE_NAME = Deno.env.get('COOKIE_NAME') || 'atlas_auth';
 const ATLAS3_FRONTEND_URL = Deno.env.get('ATLAS3_FRONTEND_URL') || 'http://localhost:5173';
 const ATLAS3_REDIRECT_PATH = Deno.env.get('ATLAS3_REDIRECT_PATH') || '';
 const PORTAL_BACKEND_URL = Deno.env.get('PORTAL_BACKEND_URL') || 'https://localhost:4000';
-// ID token field mappings (same as portal)
 const IDP_SUBJECT_PROP = Deno.env.get('IDP_SUBJECT_PROP') || 'sub';
 const IDP_NAME_PROP = Deno.env.get('IDP_NAME_PROP') || 'username';
 
@@ -112,15 +111,11 @@ router.get('/auth/callback', async (ctx) => {
 
     const tokens = await oidcService.handleCallback(code, state, stateData.codeVerifier);
 
-    // Decode user info from ID token instead of calling userinfo endpoint
-    // since the access token is for API resource, not userinfo
     let userInfo;
     try {
       const idTokenParts = tokens.id_token?.split('.');
       if (idTokenParts && idTokenParts.length === 3) {
         const payload = JSON.parse(atob(idTokenParts[1]));
-
-        // Extract user info using configured field mappings (same as portal)
         const userId = payload[IDP_SUBJECT_PROP] || payload.sub;
         const username = payload[IDP_NAME_PROP] || payload.email || payload.preferred_username || payload.username || userId;
         const displayName = payload.name || username;
@@ -130,10 +125,8 @@ router.get('/auth/callback', async (ctx) => {
           name: payload.name,
           email: payload.email,
           picture: payload.picture,
-          // Atlas expects displayName or login
           displayName: displayName,
           login: username,
-          // Portal expects username field matching IDP_NAME_PROP
           username: username,
         };
       } else {
@@ -144,10 +137,7 @@ router.get('/auth/callback', async (ctx) => {
       userInfo = await oidcService.getUserInfo(tokens.access_token);
     }
 
-    // Use OIDC access token directly since WebAPI is not available
-    // The OIDC token works for API calls as we've seen in successful requests
     const webapiToken = tokens.access_token;
-    console.log('[Auth Callback] Using OIDC access token for Atlas authentication');
 
     const cookiePayload: AuthCookiePayload = {
       ...tokens,
@@ -172,9 +162,6 @@ router.get('/auth/callback', async (ctx) => {
 
     await ctx.cookies.set(COOKIE_NAME, encryptedCookie, cookieOptions);
 
-    // Redirect to Atlas frontend following WebAPI's SendTokenInUrlFilter pattern:
-    // {oauthUiCallback}/{client}/{jwt}/{redirectUrl}
-    // Example: http://localhost:5173/Atlas/OpenID/eyJhbGc.../dashboard
     const client = 'OpenID';
     const redirectUrl = stateData.redirect || '';
 
@@ -231,7 +218,6 @@ router.get('/user/refresh', authMiddleware, (ctx) => {
   };
 });
 
-// Logout handler function
 async function handleLogout(ctx: any) {
   const authCookie = await ctx.cookies.get(COOKIE_NAME);
   let idToken = null;
@@ -241,7 +227,6 @@ async function handleLogout(ctx: any) {
     idToken = tokens?.id_token;
   }
 
-  // Delete the auth cookie with the same domain/path options used when setting it
   const cookieDomain = Deno.env.get('COOKIE_DOMAIN');
   const deleteOptions: any = {
     path: '/',
@@ -260,9 +245,6 @@ async function handleLogout(ctx: any) {
     params.append('id_token_hint', idToken);
   }
 
-  // Use configurable post-logout redirect URI or fall back to frontend URL
-  // If OIDC_POST_LOGOUT_REDIRECT_URI is not set, omit the parameter
-  // This allows the OIDC provider to use its default logout redirect
   const postLogoutRedirectUri = Deno.env.get('OIDC_POST_LOGOUT_REDIRECT_URI');
 
   if (postLogoutRedirectUri) {
@@ -277,7 +259,6 @@ async function handleLogout(ctx: any) {
   };
 }
 
-// Support both GET and POST for logout (Atlas uses GET)
 router.get('/user/logout', handleLogout);
 router.post('/user/logout', handleLogout);
 

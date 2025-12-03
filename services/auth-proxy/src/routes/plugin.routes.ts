@@ -3,7 +3,6 @@ import { Router } from 'oak';
 const atlasRouter = new Router({ prefix: '/Atlas' });
 const PORTAL_BACKEND_URL = Deno.env.get('PORTAL_BACKEND_URL') || 'https://localhost:41100';
 
-// Helper function to serve static files from auth-proxy
 async function serveStaticFile(ctx: any, basePath: string, requestedPath: string) {
   let filePath = `${basePath}/${requestedPath}`;
 
@@ -19,8 +18,6 @@ async function serveStaticFile(ctx: any, basePath: string, requestedPath: string
     }
 
     const content = await Deno.readFile(filePath);
-
-    // Set appropriate content type based on file extension
     const ext = filePath.split('.').pop()?.toLowerCase();
     const contentTypes: Record<string, string> = {
       'html': 'text/html',
@@ -48,28 +45,23 @@ async function serveStaticFile(ctx: any, basePath: string, requestedPath: string
   }
 }
 
-// Serve plugins.json configuration under /Atlas prefix
 atlasRouter.get('/config/plugins.json', async (ctx) => {
   const staticPath = './static';
   await serveStaticFile(ctx, staticPath, 'plugins.json');
 });
 
-// Serve static assets (like logos) from /Atlas/config/*
 atlasRouter.get('/config/:filename', async (ctx) => {
   const filename = ctx.params.filename;
   const staticPath = './static';
   await serveStaticFile(ctx, staticPath, filename);
 });
 
-// Special route: Proxy cohorts plugin's js/* files to Portal's /mri/js/*
-// This is needed because vue-mri's webpack tries to load chunks relative to the plugin location
+// Proxy webpack chunks to backend
 atlasRouter.get('/plugins/cohorts/js/:filename', async (ctx) => {
   const filename = ctx.params.filename;
   const targetUrl = `${PORTAL_BACKEND_URL}/mri/js/${filename}`;
 
   try {
-    console.log(`[Cohorts Plugin] Proxying chunk: /Atlas/plugins/cohorts/js/${filename} → ${targetUrl}`);
-
     const response = await fetch(targetUrl, {
       headers: {
         ...(ctx.request.headers.get('Authorization') && {
@@ -78,7 +70,6 @@ atlasRouter.get('/plugins/cohorts/js/:filename', async (ctx) => {
       },
     });
 
-    // Copy response headers
     for (const [key, value] of response.headers.entries()) {
       ctx.response.headers.set(key, value);
     }
@@ -86,13 +77,12 @@ atlasRouter.get('/plugins/cohorts/js/:filename', async (ctx) => {
     ctx.response.status = response.status;
     ctx.response.body = response.body;
   } catch (error) {
-    console.error(`[Cohorts Plugin] Error proxying chunk ${filename}:`, error);
+    console.error(`[Plugin] Error proxying ${filename}:`, error);
     ctx.response.status = 502;
-    ctx.response.body = { error: 'Failed to fetch chunk from backend' };
+    ctx.response.body = { error: 'Failed to fetch from backend' };
   }
 });
 
-// Serve plugin files from static/plugins/ under /Atlas prefix
 atlasRouter.get('/plugins/:pluginId/(.*)', async (ctx) => {
   const pluginId = ctx.params.pluginId;
   const filePath = ctx.params[0] || 'index.js';

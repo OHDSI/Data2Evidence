@@ -44,13 +44,10 @@ export async function proxyMiddleware(ctx: Context) {
   console.log(`[Proxy] ${ctx.request.method} ${targetUrl}`);
   
   const headers = new Headers();
-
-  // Use WebAPI JWT token if available, otherwise fall back to OIDC access token
   const token = authTokens.webapi_token || authTokens.access_token;
   headers.set('Authorization', `Bearer ${token}`);
   headers.set('Content-Type', 'application/json');
 
-  // Add dataset ID header
   const ATLAS3_DEFAULT_DATASET_ID = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
   headers.set('datasetId', ATLAS3_DEFAULT_DATASET_ID);
   
@@ -75,7 +72,7 @@ export async function proxyMiddleware(ctx: Context) {
       body,
     });
 
-    console.log(`[Proxy] Response status from trex: ${response.status}`);
+    console.log(`[Proxy] Response: ${response.status}`);
 
     ctx.response.status = response.status;
     

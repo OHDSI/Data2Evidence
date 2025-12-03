@@ -4,7 +4,7 @@ export interface AuthCookiePayload {
   id_token?: string;
   expires_at: number;
   user_info?: UserInfo;
-  webapi_token?: string; // WebAPI JWT token for Atlas
+  webapi_token?: string;
 }
 
 export interface UserInfo {

@@ -37,5 +37,4 @@ export function initializeOidcClient(): void {
   };
 
   console.log('[OIDC] Configuration initialized');
-  console.log('[OIDC] End Session Endpoint:', endSessionEndpoint);
 }
