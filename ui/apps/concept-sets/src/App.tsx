@@ -82,7 +82,9 @@ function AppContent(props: PortalProps) {
 
   return (
     <>
-      {isActiveRoute && <ConceptSets isAtlas={!!props.isAtlas} />}
+      {(!props.autoMount || isActiveRoute) && (
+        <ConceptSets isAtlas={!!props.isAtlas} />
+      )}
       <TerminologyWithEventListener isAtlas={!!props.isAtlas} />
     </>
   );

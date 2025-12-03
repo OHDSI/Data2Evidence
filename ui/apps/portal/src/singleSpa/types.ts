@@ -5,6 +5,7 @@ export interface SingleSpaPluginConfig {
   name: string;
   basePath: string;
   url: string;
+  autoMount?: boolean;
   customProps?: Record<string, any>;
 }
 
