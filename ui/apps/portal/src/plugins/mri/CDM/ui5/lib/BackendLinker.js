@@ -44,7 +44,7 @@ sap.ui.define([
 	BackendLinker.getDatasets = function (fCallback) {
 
 		return ConfigUtils.ajax({
-			url: "/system-portal/dataset/list?role=researcher",
+			url: "/d2e/system-portal/dataset/list?role=researcher",
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json; charset=utf-8"

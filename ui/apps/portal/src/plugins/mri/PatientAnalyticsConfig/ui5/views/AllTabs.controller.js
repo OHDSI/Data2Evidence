@@ -80,7 +80,7 @@ sap.ui.define([
                 });
             } else {
                 ConfigUtils.ajax({
-                    url: "/pa-config-svc/db/configDefaultValues.json",
+                    url: "/d2e/pa-config-svc/db/configDefaultValues.json",
                     type: "GET",
                     dataType: "json",
                     contentType: "application/json;charset=utf-8"
