@@ -180,6 +180,10 @@ jobs:
       #   run: |
       #     sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
 
+      - name: Print env vars
+        run: |
+          echo $(docker exec d2e-trex printenv)
+          
       - name: Login to logto and get Bearer token and sub
         run: |
           # Get sign in page
