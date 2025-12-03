@@ -420,9 +420,18 @@ services:
             path /sign-in
             path /consent
             path /callback/* # For azure connector
+
+            path /d2e/index.*
+            path /d2e/assets/* # logto assets are moved to this path
+            path /d2e/api/*
+            path /d2e/oidc/*
+            path /d2e/sign-in
+            path /d2e/consent
+            path /d2e/callback/* # For azure connector
           }
 
           handle @logto {
+            uri strip_prefix /d2e
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001 {
               import ${PROXY_HEADERS_MODE:-proxy_headers_default}
               transport http {
