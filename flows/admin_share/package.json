@@ -42,7 +42,7 @@
                                         "anyOf": [
                                             {
                                                 "items": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "type": "array"
                                             },
@@ -57,7 +57,7 @@
                                         "anyOf": [
                                             {
                                                 "items": {
-                                                    "type": "integer"
+                                                    "type": "string"
                                                 },
                                                 "type": "array"
                                             },
@@ -67,6 +67,11 @@
                                         ],
                                         "default": null,
                                         "title": "Cohort Definition Ids"
+                                    },
+                                    "shared": {
+                                        "default": true,
+                                        "title": "Shared",
+                                        "type": "boolean"
                                     }
                                 },
                                 "title": "AdminSharePluginType",
