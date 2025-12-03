@@ -99,12 +99,7 @@ export async function _loadAllBookmarks(
   try {
     const portalAPI = new PortalAPI(token)
 
-    // Get pa_config_id via datasetId
-    const { paConfigId } = await portalAPI.getDatasetViaSystemAdmin(datasetId)
-    if (!paConfigId) {
-      throw `paConfigId does not exist for dataset with datasetId:${datasetId}`
-    }
-
+    const paConfigId = await portalAPI.getDatasetPaConfigId(datasetId)
     // Get and format bookmarks
     const bookmarks = await portalAPI.getBookmarks(datasetId)
     let formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName)

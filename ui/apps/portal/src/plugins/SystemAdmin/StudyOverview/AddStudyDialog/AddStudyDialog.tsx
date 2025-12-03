@@ -221,7 +221,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const [vocabSchemas] = useDbVocabSchemas(formData.databaseCode);
 
   const [feedback, setFeedback] = useState<Feedback>({});
-  const featureFlags = useEnabledFeatures();
+  const [featureFlags] = useEnabledFeatures();
 
   const SchemaOptions: dropdownOption[] = useMemo(() => {
     const result: dropdownOption[] = [
@@ -426,7 +426,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, paConfigId: { required: true } };
     }
 
-    if (!name) {
+    if (!name.trim()) {
       formError = { ...formError, name: { required: true } };
     }
 
@@ -497,7 +497,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const input: NewStudyInput = {
       tenantId: tenant?.id || "",
       detail: {
-        name,
+        name: name.trim(),
         summary,
         description,
         showRequestAccess,

@@ -60,13 +60,13 @@ class omop_transform_utils:
         "measurement":{
             "measurement_id": "id",
             "person_id": "referenceToId",
-            "measurement_concept_id": "map",
+            "measurement_concept_id": "copy",
             "measurement_date": "date",
             "measurement_datetime": "datetime",
-            "measurement_type_concept_id": "map",
+            "measurement_type_concept_id": "copy",
             "measurement_source_value": "string",
-            "unit_concept_id": "map",
-            "value_as_concept_id": "map",
+            "unit_concept_id": "copy",
+            "value_as_concept_id": "copy",
         },
         "procedure_occurrence":{
             "procedure_occurrence_id": "id",
@@ -87,14 +87,26 @@ class omop_transform_utils:
     def cast_value(value, target_type):
         if value is None:
             return None
+        # Handle numpy arrays by converting to list
+        if hasattr(value, 'tolist'):  # Check if it's a numpy array
+            value = value.tolist()
         try:
+            # If value is a list/array and target_type is 'integer', parse each value to int and return the list
             if target_type == "integer":
+                if isinstance(value, list):
+                    return [int(v) for v in value]
                 return int(value)
             elif target_type == "float":
+                if isinstance(value, list):
+                    return [float(v) for v in value]
                 return float(value)
             elif target_type == "string":
+                if isinstance(value, list):
+                    return [str(v) for v in value]
                 return str(value)
             elif target_type == "date":
+                if isinstance(value, list):
+                    return [datetime.fromisoformat(v).date() if isinstance(v, str) else v.date() if isinstance(v, datetime) else v for v in value]
                 if isinstance(value, str):
                     return datetime.fromisoformat(value).date()
                 elif isinstance(value, datetime):
@@ -102,6 +114,8 @@ class omop_transform_utils:
                 elif isinstance(value, date):
                     return value
             elif target_type == "datetime":
+                if isinstance(value, list):
+                    return [datetime.fromisoformat(v) if isinstance(v, str) else datetime.combine(v, datetime.min.time()) if isinstance(v, date) else v for v in value]
                 if isinstance(value, str):
                     return datetime.fromisoformat(value)
                 elif isinstance(value, date):
@@ -109,10 +123,22 @@ class omop_transform_utils:
                 elif isinstance(value, datetime):
                     return value
             elif target_type == "id":
+                if isinstance(value, list):
+                    return [random.randint(0, 100) * random.randint(0, 100) for _ in value]
                 random_number = random.randint(0, 100) * random.randint(0, 100)
                 return random_number
             elif target_type == "referenceToId":
                 print("Reference value:", value)
+                if isinstance(value, list):
+                    def extract_ref(val):
+                        if isinstance(val, dict) and "reference" in val:
+                            ref_str = val["reference"]
+                            if "/" in ref_str:
+                                return ref_str.split("/")[-1]
+                        if isinstance(val, str) and "/" in val:
+                            return val.split("/")[-1]
+                        return val
+                    return [extract_ref(v) for v in value]
                 # Handle dict with "reference" key, e.g. {"reference": "Patient/1234"}
                 if isinstance(value, dict) and "reference" in value:
                     ref_str = value["reference"]
@@ -122,6 +148,8 @@ class omop_transform_utils:
                 if isinstance(value, str) and "/" in value:
                     return value.split("/")[-1]
             elif target_type == "map":
+                if isinstance(value, list):
+                    return [38000280 for _ in value]  # Placeholder for mapping logic
                 return 38000280  # Placeholder for mapping logic
             else:
                 return value

@@ -1,10 +1,12 @@
 import os
 import json
 
-from rpy2 import robjects
 from string import Template
 from functools import partial
 from sqlalchemy import text
+
+from rpy2 import robjects
+from rpy2.rinterface_lib.embedded import RRuntimeError
 
 from prefect import runtime
 from prefect import flow, task
@@ -36,7 +38,6 @@ def data_characterization_plugin(options: DCOptionsType):
     )  # comma separated values in a string
 
     flow_run_id = runtime.flow_run.id
-    output_folder = f"/output/{flow_run_id}"
 
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
@@ -69,7 +70,6 @@ def data_characterization_plugin(options: DCOptionsType):
     achilles_params = AchillesParams(
         **options.model_dump(),
         numThreads=threads,
-        outputFolder=output_folder,
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
         excludeAnalysisIds=exclude_analysis_ids,
@@ -125,7 +125,15 @@ def data_characterization_plugin(options: DCOptionsType):
 def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger):
     try:
         # create results schema
-        create_schema_task(dbdao, results_schema)
+        existing_schema = dbdao.check_schema_exists(results_schema)
+
+        if existing_schema:
+            logger.warning(
+                f"Results schema '{results_schema}' already exists. This will drop existing achilles tables."
+            )
+            drop_existing_achilles_tables(results_schema, dbdao)
+        else:
+            create_schema_task(dbdao, results_schema)
 
         # create result tables
         schema_params = {
@@ -244,17 +252,20 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 createIndices=achilles_params.createIndices,
             )
 
-        # Todo: Task will succeed so need to check for error report or analyses
+        # Task might succeed if there are failed analyses so need to check for error report or failed analyses inside output folder
         error_message = get_error_message(
             "errorReportR.txt", achilles_params.outputFolder
         )
+        
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
+
         if error_message or failed_analysis_ids:
             raise RuntimeError(
                 f"Achilles run failed: Error report or analysis ID exists for flow run {flow_run_id}"
             )
+        
 
-    except Exception as e:
+    except RRuntimeError:
         error_file_name = "errorReportR.txt"
 
         error_message = (
@@ -265,7 +276,10 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         logger.error(f"Error message from Achilles run: {error_message}")
 
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
-        logger.error(f"The following analysis IDs failed: {failed_analysis_ids}")
+
+        if failed_analysis_ids:
+            failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
+            logger.error(f"The following analysis IDs failed: {failed_analysis_ids_str}")
 
         error_result = {
             "flow_run_id": flow_run_id,
@@ -275,7 +289,22 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             "failed_analysis_ids": failed_analysis_ids,
         }
 
-        # Create an artifact to store the error result
+        create_markdown_artifact(
+            key="data-characterization-error", markdown=json.dumps(error_result)
+        )
+
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in Achilles run: {e}")
+
+        error_result = {
+            "flow_run_id": flow_run_id,
+            "result": {},
+            "error": True,
+            "error_message": e.__str__(),
+            "failed_analysis_ids": "",
+        }
+
         create_markdown_artifact(
             key="data-characterization-error", markdown=json.dumps(error_result)
         )
@@ -285,6 +314,57 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         logger.info(
             f"Achilles run completed successfully for schema: {achilles_params.schemaName}"
         )
+
+
+@task(log_prints=True, task_run_name="drop_existing_achilles_tables_{results_schema}")
+def drop_existing_achilles_tables(results_schema: str, dbdao):
+    logger = get_run_logger()
+    tables = [
+        "cohort",
+        "cohort_censor_stats",
+        "cohort_inclusion",
+        "cohort_inclusion_result",
+        "cohort_inclusion_stats",
+        "cohort_summary_stats",
+        "cohort_cache",
+        "cohort_censor_stats_cache",
+        "cohort_inclusion_result_cache",
+        "cohort_inclusion_stats_cache",
+        "cohort_summary_stats_cache",
+        "feas_study_inclusion_stats",
+        "feas_study_index_stats",
+        "feas_study_result",
+        "heracles_analysis",
+        "heracles_heel_results",
+        "heracles_results",
+        "heracles_results_dist",
+        "heracles_periods",
+        "cohort_sample_element",
+        "ir_analysis_dist",
+        "ir_analysis_result",
+        "ir_analysis_strata_stats",
+        "ir_strata",
+        "cc_results",
+        "pathway_analysis_codes",
+        "pathway_analysis_events",
+        "pathway_analysis_paths",
+        "pathway_analysis_stats",
+        "concept_hierarchy",
+        "achilles_result_concept_count"
+    ]
+
+    logger.info(f"Dropping existing Achilles tables in schema '{results_schema}': {tables}")
+
+    for table in tables:
+        # Check if table exists
+        if dbdao.check_table_exists(results_schema, table):
+            logger.debug(
+                f"Dropping existing Achilles table '{results_schema}.{table}'.."
+            )
+            dbdao.drop_table(results_schema, table, cascade=True)
+            logger.info(
+                f"Successfully dropped existing Achilles table '{results_schema}.{table}'"
+            )
 
 
 @task(log_prints=True, task_run_name="execute_achilles_{achilles_params.schemaName}")
