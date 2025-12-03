@@ -13,12 +13,8 @@ Sys.setenv(RENV_PATHS_LIBRARY = renv_paths_library)
 .libPaths(renv_paths_library)
 renv::restore(lockfile = lockfile_location, library = renv_paths_library, prompt = FALSE)
 
-installed <- rownames(installed.packages())
+installed <- rownames(installed.packages(lib.loc = renv_paths_library))
 missing <- setdiff(required_packages, installed)
-# TODO: Uncomment below to fail the build if packages are missing
-# Currently the check does not work as expected with conda R installations (in r-kernel)
-print(installed)
-print(missing)
 if (length(missing) > 0) {
 stop(paste('Missing packages:', paste(missing, collapse = ', ')))
 } else {
