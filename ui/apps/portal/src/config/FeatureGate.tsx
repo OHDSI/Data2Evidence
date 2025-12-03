@@ -8,7 +8,7 @@ interface FeatureGateProps {
 
 export const FeatureGate: FC<FeatureGateProps> = (props) => {
   const { featureFlags } = props;
-  const features = useEnabledFeatures();
+  const [features] = useEnabledFeatures();
 
   if (!features.some((f) => featureFlags.includes(f))) return null;
   return <>{props.children}</>;
