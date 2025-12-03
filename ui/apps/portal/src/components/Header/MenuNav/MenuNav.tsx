@@ -34,7 +34,7 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
   const { activeDataset } = useActiveDataset();
 
   const { user } = useUser();
-  const featureFlags = useEnabledFeatures();
+  const [featureFlags, featuresLoading] = useEnabledFeatures();
   const requiredRoles = useMemo(() => plugin?.requiredRoles || [], [plugin?.requiredRoles]);
   const featureFlag = useMemo(() => plugin?.featureFlag || "", [plugin?.featureFlag]);
 
@@ -51,7 +51,7 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
   const isResearcherPluginAllowed = useCallback(() => {
     let allowed = (requiredRoles.length || 0) === 0;
     if (isSysAdmin) {
-      if(featureFlag != "" && !featureFlags.includes(featureFlag)) {
+      if (featureFlag != "" && !featureFlags.includes(featureFlag)) {
         allowed = false;
       }
       return allowed;
@@ -205,10 +205,14 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
     [anchorEl, closeMenu, handlePluginClick, isActivePlugin, getText]
   );
 
-  if (type === MenuType.Plugin && !isResearcherPluginAllowed()) {
+  if (type === MenuType.Plugin && !featuresLoading && !isResearcherPluginAllowed()) {
     if (isActiveTab()) {
       navigate(`${portalTypePath}/information`);
     }
+    return null;
+  }
+
+  if (type === MenuType.Plugin && featuresLoading) {
     return null;
   }
 
