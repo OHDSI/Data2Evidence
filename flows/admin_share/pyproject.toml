@@ -1,0 +1,15 @@
+[project]
+name = "admin-share"
+version = "0.1.0"
+requires-python = "==3.12.*"
+dependencies = [
+    "prefect[docker,shell]==3.0.3",
+    "pydantic==2.10.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.4.1",
+    "ruff==0.12.7",
+    "uv==0.8.4",
+]
