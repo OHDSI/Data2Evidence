@@ -19,8 +19,8 @@ missing <- setdiff(required_packages, installed)
 # Currently the check does not work as expected with conda R installations (in r-kernel)
 print(installed)
 print(missing)
-# if (length(missing) > 0) {
-# stop(paste('Missing packages:', paste(missing, collapse = ', ')))
-# } else {
-#   cat('All required packages are installed.\n')
-# }
+if (length(missing) > 0) {
+stop(paste('Missing packages:', paste(missing, collapse = ', ')))
+} else {
+  cat('All required packages are installed.\n')
+}
