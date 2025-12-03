@@ -10882,7 +10882,7 @@
     },
     "PatientProfiles": {
       "Package": "PatientProfiles",
-      "Version": "1.4.4",
+      "Version": "1.4.2",
       "Source": "Repository",
       "Type": "Package",
       "Title": "Identify Characteristics of Patients in the OMOP Common Data Model",
