@@ -54,10 +54,11 @@ async function serveAtlasFile(ctx: any) {
 
     ctx.response.headers.set('Content-Type', contentTypes[ext || ''] || 'application/octet-stream');
 
+    // Inject default source key into HTML for plugin fallback
     if (ext === 'html') {
-      const datasetId = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
+      const defaultSourceKey = Deno.env.get('ATLAS3_DEFAULT_SOURCE_KEY') || 'SYNPUF1K';
       const htmlContent = new TextDecoder().decode(content);
-      const injectedScript = `<script>window.__DATASET_ID__ = '${datasetId}';</script>`;
+      const injectedScript = `<script>window.__DEFAULT_SOURCE_KEY__ = '${defaultSourceKey}';</script>`;
       const modifiedHtml = htmlContent.includes('</head>')
         ? htmlContent.replace('</head>', `${injectedScript}\n</head>`)
         : `${injectedScript}\n${htmlContent}`;
@@ -72,13 +73,16 @@ async function serveAtlasFile(ctx: any) {
     try {
       const indexPath = `${atlasBasePath}/index.html`;
       let content = await Deno.readFile(indexPath);
-      const datasetId = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
+
+      // Inject default source key
+      const defaultSourceKey = Deno.env.get('ATLAS3_DEFAULT_SOURCE_KEY') || 'SYNPUF1K';
       const htmlContent = new TextDecoder().decode(content);
-      const injectedScript = `<script>window.__DATASET_ID__ = '${datasetId}';</script>`;
+      const injectedScript = `<script>window.__DEFAULT_SOURCE_KEY__ = '${defaultSourceKey}';</script>`;
       const modifiedHtml = htmlContent.includes('</head>')
         ? htmlContent.replace('</head>', `${injectedScript}\n</head>`)
         : `${injectedScript}\n${htmlContent}`;
       content = new TextEncoder().encode(modifiedHtml);
+
       ctx.response.headers.set('Content-Type', 'text/html');
       ctx.response.body = content;
     } catch {

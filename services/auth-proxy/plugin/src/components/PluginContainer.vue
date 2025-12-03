@@ -23,17 +23,73 @@ const pluginProps = inject<PluginProps>('pluginProps');
 const authContext = pluginProps?.authContext;
 const messageBus = pluginProps?.messageBus;
 
+// Get sourceKey from Atlas3's localStorage (same browsing context)
+// Falls back to server-provided default if localStorage is empty
+const getSourceKey = () => {
+  return localStorage.getItem('selectedVocabulary')
+    || (window as any).__DEFAULT_SOURCE_KEY__
+    || '';
+};
+
+const currentSourceKey = ref(getSourceKey());
+
+// Update portalAPI when sourceKey changes
+const updatePortalAPI = () => {
+  if (containerRef.value && (containerRef.value as any).portalAPI) {
+    (containerRef.value as any).portalAPI.studyId = currentSourceKey.value;
+    // Dispatch event to notify vue-mri of dataset change
+    window.dispatchEvent(new CustomEvent('alp-dataset-change'));
+  }
+};
+
+// Listen for localStorage changes (when user switches vocab in Atlas3)
+const handleStorageChange = (e: StorageEvent) => {
+  if (e.key === 'selectedVocabulary' && e.newValue) {
+    currentSourceKey.value = e.newValue;
+    updatePortalAPI();
+  }
+};
+
+// Intercept fetch to add x-source-key header for WebAPI calls
+const originalFetch = window.fetch;
+let fetchInterceptorInstalled = false;
+
+const installFetchInterceptor = () => {
+  if (fetchInterceptorInstalled) return;
+  fetchInterceptorInstalled = true;
+
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+
+    // Only intercept WebAPI calls and only if we have a sourceKey
+    if (url.includes('/WebAPI/') && currentSourceKey.value) {
+      const headers = new Headers(init?.headers);
+      // Add the source key header if not already present
+      if (!headers.has('x-source-key')) {
+        headers.set('x-source-key', currentSourceKey.value);
+      }
+      init = { ...init, headers };
+    }
+
+    return originalFetch(input, init);
+  };
+};
+
+const uninstallFetchInterceptor = () => {
+  if (fetchInterceptorInstalled) {
+    window.fetch = originalFetch;
+    fetchInterceptorInstalled = false;
+  }
+};
+
 // Watch for containerRef to be set and immediately add portalAPI
 watch(containerRef, (newVal) => {
   if (newVal && !(newVal as any).portalAPI) {
     // Expose portalAPI to the vue-mri application (similar to portal's PluginContainer)
-    // Get datasetId from environment variable (injected by the server)
-    const datasetId = (window as any).__DATASET_ID__ || '1';
-
     (newVal as any).portalAPI = {
       getToken: async () => authContext?.token || '',
       qeSvcUrl: '', // Empty - API calls should not be prefixed
-      studyId: datasetId, // Dataset ID from environment
+      studyId: currentSourceKey.value, // Dataset ID from Atlas3 localStorage
       releaseId: '1', // Default release ID
       username: authContext?.user?.username || 'Unknown',
       toggleAtlas: (value: boolean, path: string) => {
@@ -47,6 +103,12 @@ watch(containerRef, (newVal) => {
 }, { immediate: true });
 
 onMounted(() => {
+  // Install fetch interceptor to add x-source-key header
+  installFetchInterceptor();
+
+  // Listen for localStorage changes from Atlas3 (vocab selection)
+  window.addEventListener('storage', handleStorageChange);
+
   // Dispatch dataset change event for vue-mri
   const pluginEvent = new CustomEvent('alp-dataset-change');
   window.dispatchEvent(pluginEvent);
@@ -122,6 +184,12 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  // Cleanup: remove fetch interceptor
+  uninstallFetchInterceptor();
+
+  // Cleanup: remove storage event listener
+  window.removeEventListener('storage', handleStorageChange);
+
   // Cleanup: remove portalAPI reference
   if (containerRef.value) {
     delete (containerRef.value as any).portalAPI;

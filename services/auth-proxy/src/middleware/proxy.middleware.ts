@@ -48,8 +48,12 @@ export async function proxyMiddleware(ctx: Context) {
   headers.set('Authorization', `Bearer ${token}`);
   headers.set('Content-Type', 'application/json');
 
-  const ATLAS3_DEFAULT_DATASET_ID = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
-  headers.set('datasetId', ATLAS3_DEFAULT_DATASET_ID);
+  // Use x-source-key from frontend (sourced from Atlas3's localStorage selectedVocabulary)
+  // Falls back to env var default if header not provided
+  const sourceKey = ctx.request.headers.get('x-source-key')
+    || Deno.env.get('ATLAS3_DEFAULT_SOURCE_KEY')
+    || 'SYNPUF1K';
+  headers.set('datasetId', sourceKey);
   
   ctx.request.headers.forEach((value: string, key: string) => {
     if (key.toLowerCase() !== 'host' && 
