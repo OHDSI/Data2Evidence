@@ -21,6 +21,50 @@
         "description": "Patient Analytics and Cohort Management - Vue MRI PA Library integration",
         "homepage": "https://github.com/data2evidence"
       }
+    },
+    {
+      "id": "notebooks",
+      "name": "Notebooks",
+      "version": "1.0.0",
+      "type": "app",
+      "entryPoint": "/resources/notebook-ui/lifecycles.js",
+      "menuItems": [
+        {
+          "id": "main",
+          "name": "Notebooks",
+          "route": "/plugins/notebooks/main",
+          "icon": "mdi-notebook",
+          "order": 20,
+          "visible": true
+        }
+      ],
+      "metadata": {
+        "author": "Data2Evidence Team",
+        "description": "Interactive notebooks for data analysis",
+        "homepage": "https://github.com/data2evidence"
+      }
+    },
+    {
+      "id": "analysis",
+      "name": "Analysis",
+      "version": "1.0.0",
+      "type": "app",
+      "entryPoint": "/resources/analysis-ui/lifecycles.js",
+      "menuItems": [
+        {
+          "id": "main",
+          "name": "Analysis",
+          "route": "/plugins/analysis/main",
+          "icon": "mdi-chart-box",
+          "order": 30,
+          "visible": true
+        }
+      ],
+      "metadata": {
+        "author": "Data2Evidence Team",
+        "description": "Strategus analysis flow management",
+        "homepage": "https://github.com/data2evidence"
+      }
     }
   ],
   "settings": {

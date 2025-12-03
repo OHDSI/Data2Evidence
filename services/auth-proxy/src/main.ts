@@ -99,6 +99,7 @@ app.addEventListener('listen', ({ hostname, port, secure }) => {
   console.log(`   GET    /Atlas/config/plugins.json                     - Plugin manifest`);
   console.log(`   GET    /Atlas/plugins/*                               - Plugin files`);
   console.log(`   GET    /mri/*                                         - Vue MRI assets (proxied to Portal)`);
+  console.log(`   GET    /resources/*                                   - UI resources (notebook-ui, analysis-ui)`);
   console.log(`   *      ${API_BASE_PATH}/*                             - Proxy to Portal backend`);
   console.log('');
   console.log('✅ Stateless: No Redis required!');

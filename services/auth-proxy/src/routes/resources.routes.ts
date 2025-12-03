@@ -67,4 +67,36 @@ router.get('/ui/:path(.*)', async (ctx) => {
   }
 });
 
+// Proxy /resources/* to Portal backend
+// Serves notebook-ui, analysis-ui, and other single-spa micro-frontends
+router.get('/resources/:path(.*)', async (ctx) => {
+  const path = ctx.params.path;
+  const targetUrl = `${PORTAL_BACKEND_URL}/resources/${path}`;
+
+  try {
+    console.log(`[Resources] Proxying: /resources/${path} → ${targetUrl}`);
+
+    const response = await fetch(targetUrl, {
+      headers: {
+        // Forward auth header if present
+        ...(ctx.request.headers.get('Authorization') && {
+          Authorization: ctx.request.headers.get('Authorization')!,
+        }),
+      },
+    });
+
+    // Copy response headers
+    for (const [key, value] of response.headers.entries()) {
+      ctx.response.headers.set(key, value);
+    }
+
+    ctx.response.status = response.status;
+    ctx.response.body = response.body;
+  } catch (error) {
+    console.error(`[Resources] Error proxying /resources/${path}:`, error);
+    ctx.response.status = 502;
+    ctx.response.body = { error: 'Failed to fetch resource from backend' };
+  }
+});
+
 export default router;
