@@ -16,9 +16,7 @@ const STATE_SECRET = Deno.env.get('STATE_SECRET') || 'change-this-state-secret';
 const COOKIE_NAME = Deno.env.get('COOKIE_NAME') || 'atlas_auth';
 const ATLAS3_FRONTEND_URL = Deno.env.get('ATLAS3_FRONTEND_URL') || 'http://localhost:5173';
 const ATLAS3_REDIRECT_PATH = Deno.env.get('ATLAS3_REDIRECT_PATH') || '';
-const ATLAS3_DEFAULT_DATASET_ID = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
 const PORTAL_BACKEND_URL = Deno.env.get('PORTAL_BACKEND_URL') || 'https://localhost:4000';
-const PORTAL_BACKEND_PATH = Deno.env.get('PORTAL_BACKEND_PATH') || '/d2e-webapi';
 // ID token field mappings (same as portal)
 const IDP_SUBJECT_PROP = Deno.env.get('IDP_SUBJECT_PROP') || 'sub';
 const IDP_NAME_PROP = Deno.env.get('IDP_NAME_PROP') || 'username';
@@ -121,7 +119,6 @@ router.get('/auth/callback', async (ctx) => {
       const idTokenParts = tokens.id_token?.split('.');
       if (idTokenParts && idTokenParts.length === 3) {
         const payload = JSON.parse(atob(idTokenParts[1]));
-        console.log('[Auth Callback] Full ID token payload:', payload);
 
         // Extract user info using configured field mappings (same as portal)
         const userId = payload[IDP_SUBJECT_PROP] || payload.sub;
@@ -139,8 +136,6 @@ router.get('/auth/callback', async (ctx) => {
           // Portal expects username field matching IDP_NAME_PROP
           username: username,
         };
-        console.log('[Auth Callback] Using IDP_NAME_PROP:', IDP_NAME_PROP, '-> username:', username);
-        console.log('[Auth Callback] Processed user info:', userInfo);
       } else {
         throw new Error('Invalid ID token format');
       }
@@ -175,7 +170,6 @@ router.get('/auth/callback', async (ctx) => {
       cookieOptions.domain = cookieDomain;
     }
 
-    console.log('[Auth Callback] Setting auth cookie with options:', { ...cookieOptions, domain: cookieDomain });
     await ctx.cookies.set(COOKIE_NAME, encryptedCookie, cookieOptions);
 
     // Redirect to Atlas frontend following WebAPI's SendTokenInUrlFilter pattern:
@@ -192,14 +186,13 @@ router.get('/auth/callback', async (ctx) => {
       }
     }
 
-    console.log('[Auth Callback] Redirecting to Atlas with token in URL path:', callbackUrl);
+    console.log('[Auth Callback] Redirecting to Atlas');
     ctx.response.redirect(callbackUrl);
     
   } catch (error) {
     console.error('[Auth Callback] Error:', error);
     ctx.response.status = 500;
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    ctx.response.body = `Authentication failed: ${message}`;
+    ctx.response.body = 'Authentication failed';
   }
 });
 
@@ -258,7 +251,6 @@ async function handleLogout(ctx: any) {
     deleteOptions.domain = cookieDomain;
   }
 
-  console.log('[Logout] Deleting auth cookie with options:', deleteOptions);
   await ctx.cookies.delete(COOKIE_NAME, deleteOptions);
 
   const config = getOidcConfig();
@@ -275,15 +267,9 @@ async function handleLogout(ctx: any) {
 
   if (postLogoutRedirectUri) {
     params.append('post_logout_redirect_uri', postLogoutRedirectUri);
-    console.log('[Logout] Using configured post_logout_redirect_uri:', postLogoutRedirectUri);
-  } else {
-    console.log('[Logout] No post_logout_redirect_uri configured, using OIDC provider default');
   }
 
   const logoutUrl = `${config.endSessionEndpoint}?${params.toString()}`;
-
-  console.log('[Logout] OIDC config endSessionEndpoint:', config.endSessionEndpoint);
-  console.log('[Logout] Final logout URL with params:', logoutUrl);
 
   ctx.response.body = {
     redirect: logoutUrl,

@@ -1,6 +1,5 @@
 import { Router } from 'oak';
 
-const router = new Router();
 const atlasRouter = new Router({ prefix: '/Atlas' });
 const PORTAL_BACKEND_URL = Deno.env.get('PORTAL_BACKEND_URL') || 'https://localhost:41100';
 

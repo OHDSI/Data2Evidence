@@ -11,12 +11,7 @@ const PROXY_BASE_REGEX = new RegExp(`^${API_BASE_PATH}`, 'i');
 export async function proxyMiddleware(ctx: Context) {
   const authCookie = await ctx.cookies.get(COOKIE_NAME);
 
-  console.log('[Proxy] Cookie name:', COOKIE_NAME);
-  console.log('[Proxy] Auth cookie found:', !!authCookie);
-  console.log('[Proxy] All cookies:', await ctx.cookies.entries());
-
   if (!authCookie) {
-    console.log('[Proxy] No auth cookie - returning 401');
     ctx.response.status = 401;
     ctx.response.body = { error: 'Not authenticated' };
     return;
@@ -25,17 +20,14 @@ export async function proxyMiddleware(ctx: Context) {
   let authTokens;
   try {
     authTokens = await cookieService.parseAuthCookie(authCookie);
-    console.log('[Proxy] Parsed auth tokens:', authTokens ? 'success' : 'null');
-    console.log('[Proxy] Has access_token:', !!authTokens?.access_token);
   } catch (error) {
-    console.error('[Proxy] Error parsing cookie:', error);
+    console.error('[Proxy] Cookie parse error');
     ctx.response.status = 401;
     ctx.response.body = { error: 'Cookie parse error' };
     return;
   }
 
   if (!authTokens || !authTokens.access_token) {
-    console.log('[Proxy] Invalid auth - no access token');
     ctx.response.status = 401;
     ctx.response.body = { error: 'Invalid authentication' };
     return;
@@ -55,16 +47,12 @@ export async function proxyMiddleware(ctx: Context) {
 
   // Use WebAPI JWT token if available, otherwise fall back to OIDC access token
   const token = authTokens.webapi_token || authTokens.access_token;
-  const tokenType = authTokens.webapi_token ? 'WebAPI JWT' : 'OIDC token';
-  console.log(`[Proxy] Using ${tokenType}, first 50 chars:`, token?.substring(0, 50));
-  console.log(`[Proxy] Token length:`, token?.length);
   headers.set('Authorization', `Bearer ${token}`);
   headers.set('Content-Type', 'application/json');
 
   // Add dataset ID header
   const ATLAS3_DEFAULT_DATASET_ID = Deno.env.get('ATLAS3_DEFAULT_DATASET_ID') || '1';
   headers.set('datasetId', ATLAS3_DEFAULT_DATASET_ID);
-  console.log('[Proxy] Adding datasetId header:', ATLAS3_DEFAULT_DATASET_ID);
   
   ctx.request.headers.forEach((value: string, key: string) => {
     if (key.toLowerCase() !== 'host' && 
