@@ -16,9 +16,7 @@ import "./webcomponents/registerWebComponents";
 function AppContent(props: PortalProps) {
   const dispatch = useContext(ConceptSetsDispatchContext);
   const [userId, setUserId] = useState<string | undefined>();
-  const [isActiveRoute, setIsActiveRoute] = useState(
-    props.isActiveRoute || false
-  );
+  const [isActiveRoute, setIsActiveRoute] = useState(false);
 
   const initializeUserId = useCallback(async () => {
     if (!userId && props.getToken) {
@@ -63,10 +61,6 @@ function AppContent(props: PortalProps) {
       });
     }
   }, [dispatch, props.locale]);
-
-  useEffect(() => {
-    setIsActiveRoute(props.isActiveRoute || false);
-  }, [props.isActiveRoute]);
 
   useEffect(() => {
     const handleRouteChange: EventListener = (event: Event) => {
