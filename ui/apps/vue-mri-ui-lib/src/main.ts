@@ -29,7 +29,6 @@ const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
 import './styles/themes/_main.scss'
 
 if (isLocal) {
-  import('import-map-overrides')
   app = createApp(RootLayout as unknown as Component)
   applyTheme('atlas')
 
@@ -60,9 +59,13 @@ app.directive('position-center', positionCenter)
 app.directive('mouse-scroll', mouseScroll)
 app.directive('resize-table', resizeTable)
 
-app.config.errorHandler = () => null
-app.config.warnHandler = () => null
-app.config.compilerOptions.isCustomElement = tag => tag.startsWith('d4l-')
+// Suppress errors and warnings in production unless VUE_APP_DEBUG is enabled
+// @ts-ignore - process.env is provided by webpack DefinePlugin
+// eslint-disable-next-line no-undef
+if (process.env.VUE_APP_DEBUG !== 'true') {
+  app.config.errorHandler = () => null
+  app.config.warnHandler = () => null
+}
 
 // Bind the custom elements to the window object
 applyPolyfills().then(() => {
@@ -70,4 +73,3 @@ applyPolyfills().then(() => {
 })
 
 app.mount('.vue-main')
-

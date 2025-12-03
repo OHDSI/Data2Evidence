@@ -9,8 +9,8 @@
   >
     <multiselect
       size="sm"
-      :value="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
-      @input="handleUpdateValue"
+      :modelValue="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
+      @update:modelValue="handleUpdateValue"
       track-by="value"
       :hide-selected="true"
       :internal-search="false"
@@ -34,6 +34,8 @@
       ref="multiselect"
       :clear-on-select="true"
       open-direction="bottom"
+      name="multiselect"
+      :showNoOptions="false"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
@@ -98,9 +100,6 @@ function escapeStringRegExp(str) {
 
 export default {
   name: 'BaseTagInput',
-  compatConfig: {
-    MODE: 3 as const,
-  },
   props: {
     value: {
       type: Array,
@@ -157,6 +156,7 @@ export default {
       optionLimitSize: 200,
       selectedValuesTimeout: null,
       tagRefs: {},
+      isDropdownOpen: false,
     }
   },
   mounted() {
@@ -169,6 +169,10 @@ export default {
       handler(newVal, oldVal) {
         if (newVal.isLoading !== oldVal.isLoading && !newVal.isLoading) {
           this.currentTagPlaceholder = ''
+          // Recalculate dropdown height when data finishes loading (only if dropdown is open)
+          if (this.isDropdownOpen) {
+            this.adjustDropdownHeight()
+          }
         }
       },
       deep: true,
@@ -212,6 +216,9 @@ export default {
     },
     selectedValues() {
       return this.formatValues(this.value)
+    },
+    allOptionsSelected() {
+      return this.filteredList.length > 0 && this.filteredList.length === this.selectedValues.length
     },
     isLoading() {
       return this.domainValues.isLoading
@@ -327,6 +334,12 @@ export default {
         return
       }
 
+      // Don't open dropdown if all options are already selected
+      if (this.allOptionsSelected) {
+        return
+      }
+
+      this.isDropdownOpen = true
       this.currentPlaceholder = this.texts.enterSearchTerm
       this.handleSearchChange(this.searchQuery)
 
@@ -334,6 +347,7 @@ export default {
       this.adjustDropdownHeight()
     },
     close() {
+      this.isDropdownOpen = false
       if (this.selectedValues.length) {
         this.currentPlaceholder = this.texts.enterSearchTerm
       } else {
@@ -440,11 +454,9 @@ export default {
         // Only apply min-height if there's limited space below
         if (spaceBelow < 300) {
           if (content) {
-            // Get the actual content height
-            const contentHeight = content.scrollHeight
-
-            // Use the smaller of actual content height or 200px
-            const minHeight = Math.min(contentHeight, 200)
+            // Calculate expected height based on filteredList (each item is 40px)
+            const expectedHeight = (this.filteredList.length - this.selectedValues.length) * 40
+            const minHeight = Math.min(expectedHeight, 200)
             dropdown.style.minHeight = `${minHeight}px`
           } else {
             dropdown.style.minHeight = '200px'

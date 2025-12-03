@@ -53,6 +53,17 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Close' }).click()
   }
 
+  // await test.step('Attempt to create another concept set with the same name', async () => {
+  //   await page.getByTestId('button').click()
+  //   await page.getByRole('textbox', { name: 'Concept set name' }).click()
+  //   await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
+  //   await page.getByRole('button', { name: 'Create' }).click()
+  //   await expect(
+  //     page.getByText(`Concept set name "${conceptSetName}" already exists. Please enter another name.`)
+  //   ).toBeVisible()
+  //   await page.getByRole('button', { name: 'Close' }).click()
+  // })
+
   // Cohort builder
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
@@ -69,9 +80,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
   // Select the concept set we just created
   await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill(conceptSetName)
-  await page.waitForTimeout(2000)
-  await page.getByRole('textbox', { name: 'Enter search term' }).press('Enter')
+  await page.getByPlaceholder('Enter search term').fill(conceptSetName)
+  await expect(page.getByText('Concept Set Test 1 -')).toBeVisible()
+  await page.waitForTimeout(3000)
+  await page.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('1677 / 2694')).toBeVisible({ timeout: 10000 })
   await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
   await page.getByText('✎').click()

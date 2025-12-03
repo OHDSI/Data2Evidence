@@ -66,6 +66,7 @@ import {
   arrayBufferEquals,
   getCachedbDatabaseFormatProtocolA,
   getCachedbDatabaseFormatProtocolB,
+  validateIdentifierForSchemaOrTableName
 } from "./utils";
 
 export {
@@ -95,4 +96,5 @@ export {
   arrayBufferEquals,
   getCachedbDatabaseFormatProtocolA,
   getCachedbDatabaseFormatProtocolB,
+  validateIdentifierForSchemaOrTableName
 };

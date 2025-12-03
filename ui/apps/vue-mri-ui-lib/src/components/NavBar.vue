@@ -2,7 +2,7 @@
   <header class="nav-bar">
     <div class="nav-bar__container">
       <div class="nav-bar__logo" @click="handleLogoClick" role="button" tabindex="0">
-        <img :src="logoSrc" alt="ATLAS" height="20px" />
+        <img :src="logoSrc" alt="ATLAS" @error="handleLogoError" />
       </div>
       <nav class="nav-bar__nav">
         <ul class="nav-bar__nav-list">
@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import logoSvg from '@/assets/atlas-text.svg'
+import fallbackLogoSvg from '@/assets/atlas-text.svg'
 import logoOhdsiSvg from '@/assets/ohdsi.png'
 import { getNavigationItems } from '../utils/config'
 import { navigateToRoute } from '../utils/AppRegistry'
@@ -34,12 +34,15 @@ export default {
     const navigationItems = getNavigationItems()
 
     return {
-      logoSrc: logoSvg,
+      logoSrc: fallbackLogoSvg,
+      fallbackLogoSvg,
       logoOhdsiSrc: logoOhdsiSvg,
       navigationItems,
+      hasLogoError: false,
     }
   },
-  mounted() {
+  async mounted() {
+    await this.loadConfig()
     this.updateActiveNavFromRoute()
     window.addEventListener('single-spa:routing-event', this.updateActiveNavFromRoute)
   },
@@ -47,6 +50,28 @@ export default {
     window.removeEventListener('single-spa:routing-event', this.updateActiveNavFromRoute)
   },
   methods: {
+    async loadConfig() {
+      try {
+        const response = await fetch('/config.json')
+        if (!response.ok) {
+          throw new Error(`Failed to load config: ${response.statusText}`)
+        }
+        const config = await response.json()
+        if (config.logoUrl) {
+          this.logoSrc = config.logoUrl
+        }
+      } catch (error) {
+        console.warn('Failed to load config.json, using default logo:', error)
+        this.logoSrc = this.fallbackLogoSvg
+      }
+    },
+    handleLogoError() {
+      if (!this.hasLogoError) {
+        console.warn('Failed to load custom logo, falling back to default ATLAS logo')
+        this.logoSrc = this.fallbackLogoSvg
+        this.hasLogoError = true
+      }
+    },
     handleLogoClick() {
       navigateToRoute('/', { type: 'component', component: 'Landing' })
     },
@@ -98,6 +123,15 @@ export default {
   padding: 0.5rem 0;
   margin-left: 2rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.nav-bar__logo > img {
+  height: 100%;
+  width: auto;
+  max-height: 25px;
+  object-fit: contain;
 }
 
 .nav-bar__right {
@@ -106,7 +140,6 @@ export default {
   padding-right: 2rem;
 
   > img {
-    padding: 0.5rem 0;
     cursor: pointer;
   }
 }

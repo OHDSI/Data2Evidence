@@ -95,6 +95,18 @@ export class D2eWebapi {
     }
   }
 
+  public checkIfConceptSetExists(conceptSetId: number, conceptSetName: string, datasetId: string): Promise<number> {
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.checkIfConceptSetExists(conceptSetId, conceptSetName);
+    }
+    return request<number>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(conceptSetName)}`,
+      method: "GET",
+      headers: { datasetid: datasetId },
+    });
+  }
+
   public async createConceptSet(name: string, datasetId: string): Promise<number> {
     if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       const conceptSetId = await api.publicWebapiProxyAPI.createConceptSet(name);

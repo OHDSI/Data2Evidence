@@ -1,6 +1,7 @@
 import { registerApplication, start, navigateToUrl } from 'single-spa'
 import { getNavigationConfig } from './config'
 import { getPortalAPI } from './PortalUtils'
+import { NavigationItem } from '@/types/navigation'
 
 // Setup all import maps
 function setupImportMaps() {
@@ -46,7 +47,7 @@ function registerNavigationApps() {
   try {
     const { apps } = getNavigationConfig()
 
-    apps.forEach((item: any) => {
+    apps.forEach((item: NavigationItem) => {
       if (item.appName && item.importUrl && item.route) {
         console.log(`Registering single-spa app: ${item.appName} at ${item.route}`)
 
@@ -57,12 +58,14 @@ function registerNavigationApps() {
           customProps: () => {
             const portalAPI = getPortalAPI()
             return {
+              containerId: `single-spa-application:${item.appName}`,
               getToken: portalAPI?.getToken,
               username: portalAPI?.username,
               datasetId: portalAPI?.studyId,
               locale: portalAPI?.locale,
               isActiveRoute: location.pathname === item.route,
               isAtlas: portalAPI?.isLocal || false,
+              ...(item.customProps || {}),
             }
           },
         })
@@ -113,3 +116,4 @@ function initializeApps() {
 }
 
 export { initializeApps, navigateToRoute }
+

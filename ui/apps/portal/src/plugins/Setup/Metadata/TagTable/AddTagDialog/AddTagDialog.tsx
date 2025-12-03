@@ -41,9 +41,16 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
   const handleSave = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      
+      const trimmedName = formData.name.trim();
+      
+      if (!trimmedName) {
+        return;
+      }
+      
       try {
         setSaving(true);
-        await api.systemPortal.addDatasetTagConfig(formData);
+        await api.systemPortal.addDatasetTagConfig({ name: trimmedName });
         setFeedback({
           type: "success",
           message: getText(i18nKeys.ADD_TAG_DIALOG__SUCCESS),
@@ -84,6 +91,7 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
               sx={{ width: "100%" }}
               value={formData.name}
               onChange={(event) => handleFormDataChange({ name: event.target?.value })}
+              autoFocus
             />
           </div>
         </div>
@@ -94,7 +102,12 @@ export const AddTagDialog: FC<AddTagDialogProps> = ({ open, onClose, setRefetch 
               variant="outlined"
               onClick={() => handleClose("cancelled")}
             />
-            <Button type="submit" text={getText(i18nKeys.ADD_TAG_DIALOG__SAVE)} loading={saving} />
+            <Button 
+              type="submit" 
+              text={getText(i18nKeys.ADD_TAG_DIALOG__SAVE)} 
+              loading={saving}
+              disabled={!formData.name.trim()}
+            />
           </div>
         </div>
       </form>
