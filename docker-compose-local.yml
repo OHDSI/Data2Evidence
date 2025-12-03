@@ -151,8 +151,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3001:3001
-    volumes:
-      - ../atlas3/dist:/app/atlas-static:ro
     environment:
       - PORT=3001
       - NODE_ENV=development
