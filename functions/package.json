@@ -686,7 +686,6 @@
           "portal.userArtifact.delete",
           "portal.userArtifact.group.write",
           "portal.userArtifact.group.delete",
-          "portal.userArtifact.share",
           "portal.supabaseStorage.read",
           "portal.supabaseStorage.write",
           "portal.supabaseStorage.delete",
@@ -1767,6 +1766,16 @@
           ]
         },
         {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.write",
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
+          ]
+        },
+        {
           "path": "^/system-portal/user-artifact/([^/]+)/concept_sets/shared/list$",
           "scopes": [
             "portal.userArtifact.conceptSets.read"
@@ -1810,6 +1819,16 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.write",
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
           ]
         },
         {
@@ -1865,15 +1884,6 @@
           ],
           "httpMethods": [
             "DELETE"
-          ]
-        },
-        {
-          "path": "^/system-portal/user-artifact/([^/]+)/([^/]+)/share$",
-          "scopes": [
-            "portal.userArtifact.share"
-          ],
-          "httpMethods": [
-            "PATCH"
           ]
         },
         {
