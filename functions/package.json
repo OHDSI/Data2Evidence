@@ -686,6 +686,7 @@
           "portal.userArtifact.delete",
           "portal.userArtifact.group.write",
           "portal.userArtifact.group.delete",
+          "portal.userArtifact.share",
           "portal.supabaseStorage.read",
           "portal.supabaseStorage.write",
           "portal.supabaseStorage.delete",
@@ -1864,6 +1865,15 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/([^/]+)/([^/]+)/share$",
+          "scopes": [
+            "portal.userArtifact.share"
+          ],
+          "httpMethods": [
+            "PATCH"
           ]
         },
         {
