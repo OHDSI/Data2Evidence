@@ -204,7 +204,7 @@ export default {
       const that = this
       this.ajaxAuth({
         method: 'post',
-        url: '/analytics-svc/api/services/calcview',
+        url: '/d2e/analytics-svc/api/services/calcview',
         params: { bookmarkId: this.selectedBookmark.id },
         cancelToken,
       })
@@ -233,7 +233,7 @@ export default {
       }
       this.ajaxAuth({
         method: 'delete',
-        url: '/analytics-svc/api/services/calcview/' + this.displayedViewName,
+        url: '/d2e/analytics-svc/api/services/calcview/' + this.displayedViewName,
         cancelToken,
       })
         .then(callback)
