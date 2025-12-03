@@ -1,16 +1,18 @@
-import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   fetchPhenotypeData,
   fetchCohortDefinitionTemplate,
 } from "../utils/utils";
+import {
+  SearchPhenotypeLibraryInput,
+  FetchTemplatesInput,
+} from "../types/tool-schemas";
+import { createStructuredResponse } from "../utils/request-helpers";
 
 /**
  * Register phenotype library tools
  * - search_phenotype_library (no auth)
  * - fetch_templates_for_cohort_generation (no auth)
- *
- * Both tools interact with OHDSI Phenotype Library external API
  */
 export function registerPhenotypeLibraryTools(server: McpServer) {
   // ==================== SEARCH PHENOTYPE LIBRARY ====================
@@ -20,21 +22,14 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
       title: "Search OHDSI Phenotype Library",
       description:
         "Return phenotypes from OHDSI Phenotype Library with IDs, names, and logic descriptions. Use this to find phenotype IDs that are relevant to the user's cohort requirements.",
-      inputSchema: {}, // No input - returns everything for LLM to analyze
+      inputSchema: SearchPhenotypeLibraryInput,
     },
     async () => {
       const phenotypeData = await fetchPhenotypeData();
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Retrieved phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.`,
-          },
-        ],
-        structuredContent: {
-          phenotypes: phenotypeData,
-        },
-      };
+      return createStructuredResponse(
+        "Retrieved phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.",
+        { phenotypes: phenotypeData }
+      );
     }
   );
 
@@ -45,30 +40,18 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
       title: "Fetch Cohort Templates for Generation",
       description:
         "Fetches ATLAS cohort definition templates from OHDSI Phenotype Library for specified phenotype ID. The template serve as example to create a new cohort definition.",
-      inputSchema: {
-        phenotypeId: z
-          .number()
-          .describe("Most relevant phenotype ID to use as template examples"),
-        userCohortDescription: z
-          .string()
-          .describe("The user's description of the cohort they want to create"),
-      },
+      inputSchema: FetchTemplatesInput,
     },
     async ({ phenotypeId, userCohortDescription }) => {
       // Fetch templates for the selected phenotype ID
       const template = await fetchCohortDefinitionTemplate(phenotypeId);
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Fetched cohort definition template. User Requirements: ${userCohortDescription} Example Templates Retrieved: - Phenotype ID ${phenotypeId}. Continue to generate a complete ATLAS cohort definition JSON using these templates as structural examples.`,
-          },
-        ],
-        structuredContent: {
+      return createStructuredResponse(
+        `Fetched cohort definition template. User Requirements: ${userCohortDescription} Example Templates Retrieved: - Phenotype ID ${phenotypeId}. Continue to generate a complete ATLAS cohort definition JSON using these templates as structural examples.`,
+        {
           userRequirements: userCohortDescription,
           exampleTemplates: template,
-        },
-      };
+        }
+      );
     }
   );
 }

@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   getCohortDefinition,
@@ -7,6 +6,20 @@ import {
   deleteCohortDefinition,
   fetchCohortData,
 } from "../utils/utils";
+import {
+  GetCohortIdNameListInput,
+  GetCohortDefinitionInput,
+  CreateCohortDefinitionInput,
+  UpdateCohortDefinitionInput,
+  DeleteCohortDefinitionInput,
+  CohortIdNameOutput,
+} from "../types/tool-schemas";
+import {
+  requireAuth,
+  requireAuthAndDataset,
+  createStructuredResponse,
+  createTextResponse,
+} from "../utils/request-helpers";
 
 /**
  * Register all cohort management tools (CRUD operations + list)
@@ -24,35 +37,18 @@ export function registerCohortManagementTools(server: McpServer) {
       title: "Get Cohort ID and Name List",
       description:
         "Rank the cohort ids and names for the relevant cohort description extracted from the user query. Return the list of cohort ids and names in structured content. Automatically invoked when user query is related to cohort id information.",
-      inputSchema: {
-        cohortInfo: z
-          .string()
-          .describe("The cohort description extracted from user query"),
-      },
+      inputSchema: GetCohortIdNameListInput,
       outputSchema: {
-        cohortsId: z.array(
-          z.object({
-            cohortId: z.string(),
-            cohortName: z.string(),
-            cohortDescription: z.string(),
-          })
-        ),
+        cohortsId: CohortIdNameOutput.array(),
       },
     },
     async ({}) => {
       // Fetch d2e cohort list
       const cohortData = await fetchCohortData();
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Here is the list of cohort ids and names for all cohort description.`,
-          },
-        ],
-        structuredContent: {
-          cohortsId: cohortData,
-        },
-      };
+      return createStructuredResponse(
+        "Here is the list of cohort ids and names for all cohort description.",
+        { cohortsId: cohortData }
+      );
     }
   );
 
@@ -63,21 +59,14 @@ export function registerCohortManagementTools(server: McpServer) {
       title: "Get Atlas Cohort Definition",
       description:
         "Retrieve an existing ATLAS cohort definition from D2E by its ID.",
-      inputSchema: {
-        cohortId: z.number().describe("The cohort ID to retrieve"),
-      },
+      inputSchema: GetCohortDefinitionInput,
     },
     async ({ cohortId }) => {
       const cohortDefinition = await getCohortDefinition(cohortId);
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Retrieved cohort definition with ID: ${cohortDefinition.id}, Name: ${cohortDefinition.name}`,
-          },
-        ],
-        structuredContent: { cohortDefinition },
-      };
+      return createStructuredResponse(
+        `Retrieved cohort definition with ID: ${cohortDefinition.id}, Name: ${cohortDefinition.name}`,
+        { cohortDefinition }
+      );
     }
   );
 
@@ -88,21 +77,7 @@ export function registerCohortManagementTools(server: McpServer) {
       title: "Create Atlas Cohort Definition",
       description:
         "Create a new ATLAS cohort definition in D2E. The cohort definition must be validated first using validate_atlas_cohort_definition tool.",
-      inputSchema: {
-        cohortDefinitionExpression: z
-          .any()
-          .describe(
-            "The validated ATLAS cohort definition JSON including concept sets and expression"
-          ),
-        cohortInfo: z.string().describe("The cohort description"),
-        userName: z.string().describe("User name creating the cohort"),
-        isValidCohortDefinition: z
-          .boolean()
-          .describe(
-            "Must be true. Set after validating with validate_atlas_cohort_definition tool"
-          )
-          .default(false),
-      },
+      inputSchema: CreateCohortDefinitionInput,
     },
     async (
       {
@@ -120,11 +95,7 @@ export function registerCohortManagementTools(server: McpServer) {
       }
 
       // Extract authorization (required for create)
-      let authorization = requestInfo?.headers?.authorization;
-      if (!authorization) {
-        throw new Error("Authorization is missing");
-      }
-      authorization = String(authorization);
+      const authorization = requireAuth(requestInfo);
 
       const cohortDefinition = {
         expression: cohortDefinitionExpression,
@@ -137,14 +108,9 @@ export function registerCohortManagementTools(server: McpServer) {
         throw new Error("Failed to create cohort definition in D2E");
       }
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Successfully created cohort definition with ID: ${res.id}, Name: ${res.name}`,
-          },
-        ],
-      };
+      return createTextResponse(
+        `Successfully created cohort definition with ID: ${res.id}, Name: ${res.name}`
+      );
     }
   );
 
@@ -155,24 +121,7 @@ export function registerCohortManagementTools(server: McpServer) {
       title: "Update Atlas Cohort Definition",
       description:
         "The cohort definition must be validated first using validate_atlas_cohort_definition tool. Update an existing ATLAS cohort definition in D2E, and creation metadata is preserved. ",
-      inputSchema: {
-        cohortDefinitionExpression: z
-          .any()
-          .describe(
-            "The validated ATLAS cohort definition JSON including concept sets and expression"
-          ),
-        userName: z.string().describe("User name updating the cohort"),
-        isValidCohortDefinition: z
-          .boolean()
-          .describe(
-            "Set after validating with validate_atlas_cohort_definition tool"
-          )
-          .default(false),
-        cohortId: z.number().describe("The cohort ID to update"),
-        cohortDescription: z
-          .string()
-          .describe("The cohort description to update"),
-      },
+      inputSchema: UpdateCohortDefinitionInput,
     },
     async ({
       cohortId,
@@ -207,14 +156,9 @@ export function registerCohortManagementTools(server: McpServer) {
         );
       }
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Successfully updated cohort definition with ID: ${res.id}`,
-          },
-        ],
-      };
+      return createTextResponse(
+        `Successfully updated cohort definition with ID: ${res.id}`
+      );
     }
   );
 
@@ -225,24 +169,16 @@ export function registerCohortManagementTools(server: McpServer) {
       title: "Delete Atlas Cohort Definition",
       description:
         "Delete an ATLAS cohort definition from D2E by its ID. This action cannot be undone.",
-      inputSchema: {
-        cohortId: z.number().describe("The cohort ID to delete"),
-      },
+      inputSchema: DeleteCohortDefinitionInput,
     },
     async ({ cohortId }, { requestInfo }) => {
       // Extract authorization and datasetId (both required for delete)
-      let authorization = requestInfo?.headers?.authorization;
-      let datasetId = requestInfo?.headers?.datasetid;
-
-      if (!authorization || !datasetId) {
-        throw new Error("Authorization or datasetId is missing");
-      }
-      authorization = String(authorization);
+      const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
 
       const res = await deleteCohortDefinition(
         cohortId,
         authorization,
-        datasetId as string
+        datasetId
       );
 
       if (!res) {
@@ -251,14 +187,9 @@ export function registerCohortManagementTools(server: McpServer) {
         );
       }
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Successfully deleted cohort definition with ID: ${cohortId}`,
-          },
-        ],
-      };
+      return createTextResponse(
+        `Successfully deleted cohort definition with ID: ${cohortId}`
+      );
     }
   );
 }

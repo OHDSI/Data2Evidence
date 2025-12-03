@@ -22,6 +22,8 @@
     "./src/tools/cohort-validation.tools": "./src/tools/cohort-validation.tools.ts",
     "./src/tools/phenotype-library.tools": "./src/tools/phenotype-library.tools.ts",
     "./src/prompts/cohort.prompts": "./src/prompts/cohort.prompts.ts",
+    "./src/types/tool-schemas": "./src/types/tool-schemas.ts",
+    "./src/utils/request-helpers": "./src/utils/request-helpers.ts",
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk",
     "@modelcontextprotocol/sdk/server/streamableHttp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/streamableHttp.js",
     "@modelcontextprotocol/sdk/server/mcp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/mcp.js",
