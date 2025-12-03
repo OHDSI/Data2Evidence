@@ -43,7 +43,11 @@ export class JobPluginsAPI {
       this.logger.info(`Create cache flow run: ${JSON.stringify(dto)}`);
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cachedb/create-file`;
+      this.logger.info(`POST ${url}`);
       const result = await this.channel.post(url, dto, options);
+      this.logger.info(`Cache flow run result: ${JSON.stringify(result)}`);
+      this.logger.info(`Cache flow run result.data: ${JSON.stringify(result?.data)}`);
+      this.logger.info(`Cache flow run result.status: ${result?.status}`);
       return result.data;
     } catch (error) {
       console.error(`Error while creating cache flow run: ${error}`);

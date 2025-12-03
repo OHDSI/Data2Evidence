@@ -150,8 +150,8 @@ sap.ui.define([
     };
 
     SettingsController.prototype.checkCDWInputValues = function (val1, val2) {
-        var validNamespaceExpression = /^([a-zA-Z0-9]+\.*\_*)+$/;
-        var validSchemaExpression = /^([a-zA-Z0-9]+\_*)+$/;
+        var validNamespaceExpression = /^[a-zA-Z0-9]+([\._][a-zA-Z0-9]+)*$/;
+        var validSchemaExpression = /^[a-zA-Z0-9]+(_[a-zA-Z0-9]+)*$/;
         var namespaces = val1.split(",");
         var schemas = val2.split(",");
         for (var i = 0; i < namespaces.length; i++) {

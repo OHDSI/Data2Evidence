@@ -2,51 +2,54 @@ import { ComponentType } from "react";
 import { Node, NodeProps } from "reactflow";
 import { NodeDataState } from "../../../types";
 import { CsvNode } from "./CsvNode/CsvNode";
+import { FileNode } from "./FileNode/FileNode";
 import { DataMappingNode } from "./DataMappingNode/DataMappingNode";
 import { DbReaderNode } from "./DbReaderNode/DbReaderNode";
 import { DbWriterNode } from "./DbWriterNode/DbWriterNode";
 import { GroupNode } from "./GroupNode/GroupNode";
 import { Py2TableNode } from "./Py2TableNode/Py2TableNode";
 import { PythonNode } from "./PythonNode/PythonNode";
-import { PythonNotebookNode } from "./PythonNotebookNode/PythonNotebookNode";
 import { RNode } from "./RNode/RNode";
 import { SqlNode } from "./SqlNode/SqlNode";
 import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
 import { ConceptMappingNode } from "./ConceptMappingNode/ConceptMappingNode";
 import { WhiteRabbitNode } from "./WhiteRabbitNode/WhiteRabbitNode";
+import { TransformDataNode } from "./TransformNode/TransformDataNode";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
 } = {
   python_node: PythonNode,
-  python_notebook_node: PythonNotebookNode,
   py2table_node: Py2TableNode,
   r_node: RNode,
   sql_node: SqlNode,
   rabbit_in_a_hat: DataMappingNode,
   concept_mapping_node: ConceptMappingNode,
   csv_node: CsvNode,
+  file_node: FileNode,
   db_reader_node: DbReaderNode,
   db_writer_node: DbWriterNode,
   subflow: GroupNode,
   white_rabbit_node: WhiteRabbitNode,
+  transform_fhir_data_node: TransformDataNode,
 };
 
 export const NODE_COLORS: {
   [key in NodeType]: string;
 } = {
   python_node: "#999fcb",
-  python_notebook_node: "#999fcb",
   py2table_node: "#999fcb",
   r_node: "#999fcb",
   sql_node: "#999fcb",
   rabbit_in_a_hat: "#999fcb",
   concept_mapping_node: "#999fcb",
   csv_node: "#999fcb",
+  file_node: "#999fcb",
   db_reader_node: "#999fcb",
   db_writer_node: "#999fcb",
   subflow: "#999fcb",
   white_rabbit_node: "#999fcb",
+  transform_fhir_data_node: "#999fcb",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -60,12 +63,6 @@ export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
 def test_exec(myinput):
   return "This is test_exec function"`,
     },
-  },
-  python_notebook_node: {
-    title: "Python Notebook",
-    description: "Run python notebook with starboard.",
-    tag: NodeTag.Experimental,
-    defaultData: {},
   },
   py2table_node: {
     title: "Python To Table",
@@ -132,6 +129,21 @@ test_exec <- function(myinput) {
       delimiter: ",",
       hasheader: true,
       columns: [],
+      encoding: "utf-8",
+    },
+  },
+  transform_fhir_data_node: {
+    title: "Transform FHIR Data",
+    description: "Transform fhir data from one format to another using mapping rules.",
+    tag: NodeTag.Experimental,
+    defaultData: {},
+  },
+  file_node: {
+    title: "Generic File",
+    description: "Read file of a general type from a path.",
+    tag: NodeTag.Experimental,
+    defaultData: {
+      file: "",
       encoding: "utf-8",
     },
   },

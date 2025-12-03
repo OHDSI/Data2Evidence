@@ -96,9 +96,15 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       
       const datasets = await getDatasets()
       if (datasets.length > 0) {
-        const grantDatasetCodes = scopes
+        let grantDatasetCodes = scopes
           .filter(x => x.startsWith(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX))
           .map(x => x.replace(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX, ''))
+
+        // Auto-grant specific datasets
+        if (env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES) {
+          const autoGrantCodes = env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES.split(',').map(c => c.trim()).filter(c => c)
+          grantDatasetCodes = [...new Set([...grantDatasetCodes, ...autoGrantCodes])]
+        }
 
         await grantOrRevokeResearcherRole(userId, tenantId, ROLES.STUDY_RESEARCHER, datasets, grantDatasetCodes)
 

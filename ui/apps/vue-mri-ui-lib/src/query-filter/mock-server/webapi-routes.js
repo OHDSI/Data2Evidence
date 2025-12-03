@@ -4,12 +4,12 @@ const { default: axios } = require('axios')
 const _ = require('lodash')
 
 const api = axios.create({
-  baseURL: process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI',
+  baseURL: process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI',
 })
 
-const SOURCE = process.env.SOURCE || 'EUNOMIA'
+const SOURCE = process.env.SOURCE || 'SYNPUF1K'
 
-console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'http://alp-dev-sg-3.southeastasia.cloudapp.azure.com/WebAPI')
+console.log('WEBAPI_URL:', process.env.WEBAPI_URL || 'https://atlas-demo.ohdsi.org/WebAPI')
 console.log('SOURCE:', SOURCE)
 
 const sourceMap = [
@@ -189,6 +189,7 @@ const ALLOWED_ENDPOINTS = {
   conceptset: '/conceptset/',
   vocabulary: `/vocabulary/${SOURCE}/search`,
   concept: `/vocabulary/${SOURCE}/concept/`,
+  cohortsample: '/cohortsample/',
 }
 
 // server has 20,000
@@ -240,6 +241,19 @@ const validateDatasetId = (req, res, next) => {
       .status(400)
       .json({ error: 'Invalid datasetId: must be alphanumeric with dashes/underscores, max 50 chars' })
   }
+  next()
+}
+
+// Validate sourceKey against allowed sources to prevent SSRF
+const validateSourceKey = (req, res, next) => {
+  const { sourceKey } = req.params
+  const allowedSourceKeys = sourceMap.map(source => source.sourceKey)
+
+  if (!sourceKey || !allowedSourceKeys.includes(sourceKey)) {
+    return res.status(400).json({ error: `Invalid sourceKey: must be one of ${allowedSourceKeys.join(', ')}` })
+  }
+
+  req.safeSourceKey = sourceKey
   next()
 }
 
@@ -450,6 +464,37 @@ const setupWebapiRoutes = app => {
     return res.json(mappedData)
   })
 
+  app.get('/d2e-webapi/conceptset/:conceptSetId/exists', async (req, res) => {
+    const { conceptSetId } = req.params
+    const { name } = req.query
+    logRequest(req)
+    if (!name) {
+      return res.status(400).json({ error: 'name query parameter is required' })
+    }
+
+    const cacheKey = CACHE_KEYS.CONCEPT_SETS
+    let data = cache[cacheKey]
+
+    if (!data || !USE_CACHE) {
+      try{
+        const response = await api.get(ALLOWED_ENDPOINTS.conceptset)
+        data = response.data
+        cache[cacheKey] = data
+      } catch (error) {
+        console.error('Error fetching concept sets from Atlas API:', error.message)
+        return res.status(500).json({
+          error: 'Failed to fetch concept sets from Atlas API',
+          message: error.message,
+          timestamp: new Date().toISOString(),
+        })
+      }
+    }
+
+    const result = data.find(conceptSet => conceptSet.name === name && conceptSet.id != conceptSetId)
+
+    return res.status(200).type('text/plain').send(String(result === undefined ? 0 : 1))
+  })
+
   app.post('/d2e-webapi/conceptset', async (req, res) => {
     logRequest(req)
     try {
@@ -623,7 +668,10 @@ const setupWebapiRoutes = app => {
       const allSources = sourceMap
 
       // Filter to return only the source matching the SOURCE env var
-      const filteredSources = allSources.filter(source => source.sourceKey === SOURCE)
+      // const filteredSources = allSources.filter(source => source.sourceKey === SOURCE)
+
+      // Return all sources for testing
+      const filteredSources = allSources
 
       if (filteredSources.length === 0) {
         console.warn(`No source found with sourceKey matching SOURCE env var: ${SOURCE}`)
@@ -653,6 +701,36 @@ const setupWebapiRoutes = app => {
         return res.json(response.data)
       } catch (err) {
         console.error('Error fetching cohort info from WebAPI:', err)
+        const status =
+          err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
+        // Return empty array if cohort hasn't been generated yet (404)
+        if (status === 404) {
+          return res.json([])
+        }
+        return res.status(status).send()
+      }
+    }
+  )
+
+  // GET /cohortdefinition/:cohortDefinitionId/report/:sourceKey - Returns cohort inclusion report for a specific source
+  app.get(
+    '/d2e-webapi/cohortdefinition/:cohortDefinitionId/report/:sourceKey',
+    validateId('cohortDefinitionId'),
+    validateSourceKey,
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId } = req.params
+      const { mode: modeId } = req.query
+      const safeSourceKey = req.safeSourceKey
+
+      try {
+        // Forward to external WebAPI
+        const endpoint =
+          ALLOWED_ENDPOINTS.cohortdefinition + cohortDefinitionId + '/report/' + safeSourceKey + '?mode=' + modeId
+        const response = await api.get(endpoint)
+        return res.json(response.data)
+      } catch (err) {
+        console.error('Error fetching cohort inclusion report from WebAPI:', err)
         const status =
           err && typeof err === 'object' && 'status' in err && typeof err.status === 'number' ? err.status : 500
         // Return empty array if cohort hasn't been generated yet (404)
@@ -717,6 +795,67 @@ const setupWebapiRoutes = app => {
       }
     }
   )
+
+  app.get(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey',
+    validateId('cohortDefinitionId'),
+    validateSourceKey,
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey
+      const response = await api.get(endpoint)
+      const { data } = response
+      return res.send(data)
+    }
+  )
+
+  app.get(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey/:sampleId',
+    validateId('cohortDefinitionId'),
+    validateSourceKey,
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId, sampleId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      console.log('safeSourceKey', safeSourceKey)
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey + '/' + sampleId
+      const response = await api.get(endpoint)
+      const { data } = response
+      return res.send(data)
+    }
+  )
+
+  app.post(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey',
+    validateId('cohortDefinitionId'),
+    validateSourceKey,
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey
+      const response = await api.post(endpoint, req.body)
+      const { data } = response
+      return res.send(data)
+    }
+  )
+
+  app.delete(
+    '/d2e-webapi/cohortsample/:cohortDefinitionId/:sourceKey/:sampleId',
+    validateId('cohortDefinitionId'),
+    validateSourceKey,
+    async (req, res) => {
+      logRequest(req)
+      const { cohortDefinitionId, sampleId } = req.params
+      const safeSourceKey = req.safeSourceKey
+      const endpoint = ALLOWED_ENDPOINTS.cohortsample + cohortDefinitionId + '/' + safeSourceKey + '/' + sampleId
+      const response = await api.delete(endpoint)
+      const { data } = response
+      return res.send(data)
+    }
+  )
 }
 
 module.exports = setupWebapiRoutes
@@ -733,3 +872,4 @@ const _mapConceptSet = conceptSet => {
     userName: 'admin',
   }
 }
+

@@ -16,6 +16,7 @@ export * from "./config";
 export * from "./trex";
 export * from "./demo";
 export * from "./strategusStudy";
+export * from "./code";
 
 export interface NavLink {
   id: string;
@@ -153,3 +154,5 @@ export enum PORTAL_TYPE {
 }
 
 export type PortalType = `${PORTAL_TYPE}`;
+
+export type PluginType = "legacy" | "app";
