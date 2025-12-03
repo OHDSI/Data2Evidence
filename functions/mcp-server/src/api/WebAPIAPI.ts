@@ -1,6 +1,6 @@
 import { env } from "../env";
 import axios from "axios";
-import { D2ECohortDefinition } from "../utils/utils";
+import { D2ECohortDefinition } from "../types/tool-schemas";
 
 export class WebAPIAPI {
   private readonly token: string;

@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   fetchPhenotypeData,
   fetchCohortDefinitionTemplate,
-} from "../utils/utils";
+} from "../utils/phenotype-helpers";
 import {
   SearchPhenotypeLibraryInput,
   FetchTemplatesInput,

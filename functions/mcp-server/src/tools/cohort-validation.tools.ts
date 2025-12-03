@@ -1,10 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { validateCohortDefinition } from "../utils/utils";
+import { WebAPIAPI } from "../api/WebAPIAPI";
 import { ValidateCohortDefinitionInput } from "../types/tool-schemas";
 import {
   requireAuthAndDataset,
   createStructuredResponse,
 } from "../utils/request-helpers";
+
+// Initialize WebAPI client
+const d2eWebapi = new WebAPIAPI();
 
 /**
  * Register cohort validation tools
@@ -25,7 +28,7 @@ export function registerCohortValidationTools(server: McpServer) {
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       console.log("DatasetId:", datasetId);
 
-      const validationResult = await validateCohortDefinition(
+      const validationResult = await d2eWebapi.checkAtlasCohortDefinition(
         cohortDefinitionExpression,
         authorization,
         datasetId

@@ -1,5 +1,80 @@
 import { z } from "zod";
 
+// ==================== Type Definitions ====================
+
+/**
+ * Cohort data for list operations
+ */
+export interface CohortData {
+  cohortId: string;
+  cohortName: string;
+  cohortDescription: string;
+}
+
+/**
+ * D2E Cohort Definition
+ * Matches CohortDefinitionResponseDto from d2e-webapi
+ */
+export interface D2ECohortDefinition {
+  id: number;
+  name: string;
+  description: string | null;
+  expressionType: string;
+  expression: any;
+  createdBy: string | null;
+  createdDate: number | null;
+  modifiedBy?: string | null;
+  modifiedDate?: number | null;
+  tags: string[];
+  hasWriteAccess?: boolean;
+  hasReadAccess?: boolean;
+}
+
+/**
+ * Phenotype data from OHDSI Phenotype Library
+ */
+export interface PhenotypeData {
+  cohortId: string;
+  cohortName: string;
+  cohortNameFormatted: string;
+  cohortNameLong: string;
+  logicDescription: string;
+}
+
+/**
+ * Request payload for creating cohort definition
+ */
+export interface CreateCohortDefinitionRequest {
+  expression: any;
+  cohortInfo: string;
+  userName: string;
+}
+
+/**
+ * Request payload for updating cohort definition
+ */
+export interface UpdateCohortDefinitionRequest {
+  cohortId: number;
+  name: string;
+  description: string;
+  createdBy: string | null;
+  createdDate: number | null;
+  expression: any;
+  userName: string;
+}
+
+/**
+ * Validation result from D2E WebAPI
+ */
+export interface ValidationResult {
+  warnings: Array<{
+    type: string;
+    message: string;
+    severity?: string;
+  }>;
+  isValid?: boolean;
+}
+
 // ==================== Cohort Management Tool Schemas ====================
 
 export const GetCohortIdNameListInput = {
