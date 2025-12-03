@@ -2,6 +2,7 @@ import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModels } from "../utils/prepModels";
 import { StringOutputParser } from "@langchain/core/output_parsers";
+import { MCPManager } from "../mcp/mcpManager";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   const context = `
@@ -52,6 +53,42 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
 
   if (model === null) {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
+  }
+
+  // Initialize MCP if requested and available
+  let mcpContext = "";
+  if (uiChat.useMcp !== false) {
+    try {
+      const mcpManager = MCPManager.getInstance();
+      if (!mcpManager.isReady()) {
+        await mcpManager.initialize();
+      }
+
+      const mcpClient = mcpManager.getClient();
+
+      // Try to get cohort information using MCP if the query mentions cohorts
+      if (uiChat.userInput.toLowerCase().includes("cohort")) {
+        try {
+          const tools = await mcpClient.listTools();
+          const cohortTool = tools.find((t: any) => t.name === "get_cohort_id_name_list");
+
+          if (cohortTool) {
+            const toolResponse = await mcpClient.callTool("get_cohort_id_name_list", {
+              cohortInfo: uiChat.userInput,
+            });
+
+            if (toolResponse?.structuredContent?.cohortsId) {
+              const cohorts = toolResponse.structuredContent.cohortsId;
+              mcpContext = `\n\nAvailable cohorts from MCP:\n${JSON.stringify(cohorts, null, 2)}`;
+            }
+          }
+        } catch (mcpError) {
+          console.warn("MCP tool call failed, continuing without MCP data:", mcpError);
+        }
+      }
+    } catch (mcpError) {
+      console.warn("MCP initialization failed, continuing without MCP:", mcpError);
+    }
   }
 
   try {
@@ -187,7 +224,7 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
       3. Healthcare data analysis and cohort studies
       
       userInput: ${uiChat.userInput}
-      context: ${uiChat.context}
+      context: ${uiChat.context}${mcpContext}
 
       Core Directive: 
       1. Provide immediate, actionable solutions based on [userInput] and [context]. 
@@ -199,6 +236,7 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
       4. If uncertain about exact function syntax, better to provide incomplete but accurate code than complete but fictional code.
       5. Minimize follow-up questions unless absolutely critical information is missing.
       6. Start directly with the solution and end with the solution - no concluding summaries or "let me know if you need help" statements.
+      7. If cohort information was provided via MCP context, use the actual cohort IDs and names from that data.
 
       Response Structure:
       1. Direct solution with code example.
