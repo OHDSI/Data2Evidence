@@ -1,16 +1,42 @@
 import requests
+from prefect.variables import Variable
+from prefect.blocks.system import Secret
+from prefect.logging import get_run_logger
 
-from _shared_flow_utils.api.BaseAPI import BaseAPI
+from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 
-class PortalUserArtifactAPI(BaseAPI):
+class PortalUserArtifactAPI:
+    """
+    API client for Portal User Artifact endpoints.
+    Uses service token (client credentials) for authentication instead of user token.
+    """
     def __init__(self):
-        super().__init__()
-        # get_service_route() returns URL with trailing slash
-        self.url = self.get_service_route("portalServer")
-        # Concatenate without leading slash to avoid double slashes
-        self.user_artifact_url = f"{self.url}system-portal/user-artifact"
-        self.headers = self.get_options()
+        logger = get_run_logger()
+        logger.info("PortalUserArtifactAPI: Initializing with service token...")
+
+        # Get service token via client credentials
+        openid_api = OpenIdAPI()
+        service_token = openid_api.getClientCredentialToken()
+        logger.info("PortalUserArtifactAPI: Service token obtained")
+
+        # Get service route
+        service_routes = Variable.get("service_routes")
+        if service_routes is None:
+            raise ValueError("'service_routes' prefect variable is undefined")
+        self.url = service_routes.get("portalServer") + "/"
+        self.user_artifact_url = f"{self.url}user-artifact"
+
+        # SSL verification
+        python_verify_ssl = Variable.get("python_verify_ssl")
+        self.tls_internal_ca_cert = Secret.load("tls-internal-ca-cert")
+        self._verify = False if python_verify_ssl == 'false' else self.tls_internal_ca_cert.get()
+
+        self.headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {service_token}"
+        }
+        logger.info("PortalUserArtifactAPI: Initialized successfully")
 
     def patch_artifact(self, service_name: str, artifact_id: str | int, data: dict) -> dict:
         """
@@ -31,7 +57,7 @@ class PortalUserArtifactAPI(BaseAPI):
         result = requests.patch(
             url,
             headers=self.headers,
-            verify=self.get_verify_value(),
+            verify=self._verify,
             json=data
         )
         if ((result.status_code >= 400) and (result.status_code < 600)):

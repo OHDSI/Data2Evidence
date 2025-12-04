@@ -8,15 +8,18 @@ os.environ['plugin_name'] = 'admin_share_plugin'
 
 
 @task
-def share_artifact_task(api: PortalUserArtifactAPI, service_name: str, artifact_id: int, shared: bool) -> dict:
+def share_artifact_task(service_name: str, artifact_id: str, shared: bool) -> dict:
     """
     Task to share or unshare a single artifact.
 
     Returns:
-        dict with keys: 'success' (bool), 'service_name' (str), 'artifact_id' (int), 'error' (str or None)
+        dict with keys: 'success' (bool), 'service_name' (str), 'artifact_id' (str), 'error' (str or None)
     """
     logger = get_run_logger()
+    logger.info(f"Calling API to {'share' if shared else 'unshare'} {service_name}/{artifact_id}...")
     try:
+        # Initialize API client inside task (uses service token for authentication)
+        api = PortalUserArtifactAPI()
         result = api.share_artifact(service_name, artifact_id, shared)
         logger.info(f"Successfully {'shared' if shared else 'unshared'} {service_name}/{artifact_id}")
         return {
@@ -56,6 +59,7 @@ def admin_share_plugin(options: AdminSharePluginType):
     """
     logger = get_run_logger()
     logger.info(f"Starting admin_share_plugin with shared={options.shared}")
+    logger.info(f"concept_set_ids={options.concept_set_ids}, cohort_definition_ids={options.cohort_definition_ids}")
 
     # Validate that at least one artifact type is specified
     if not options.concept_set_ids and not options.cohort_definition_ids:
@@ -67,9 +71,6 @@ def admin_share_plugin(options: AdminSharePluginType):
             'total_success': 0,
             'total_failed': 0
         }
-
-    # Initialize API client
-    api = PortalUserArtifactAPI()
 
     results = {
         'concept_sets': [],
@@ -83,7 +84,7 @@ def admin_share_plugin(options: AdminSharePluginType):
     if options.concept_set_ids:
         logger.info(f"Processing {len(options.concept_set_ids)} concept sets")
         for concept_set_id in options.concept_set_ids:
-            result = share_artifact_task(api, 'concept_sets', concept_set_id, options.shared)
+            result = share_artifact_task('concept_sets', concept_set_id, options.shared)
             results['concept_sets'].append(result)
             results['total_processed'] += 1
             if result['success']:
@@ -95,7 +96,7 @@ def admin_share_plugin(options: AdminSharePluginType):
     if options.cohort_definition_ids:
         logger.info(f"Processing {len(options.cohort_definition_ids)} bookmarks")
         for bookmark_id in options.cohort_definition_ids:
-            result = share_artifact_task(api, 'bookmarks', bookmark_id, options.shared)
+            result = share_artifact_task('bookmarks', bookmark_id, options.shared)
             results['bookmarks'].append(result)
             results['total_processed'] += 1
             if result['success']:
