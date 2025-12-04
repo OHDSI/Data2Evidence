@@ -249,16 +249,33 @@ const StudyOverview: FC = () => {
     setFetchUpdatesLoading(true);
     const datasetsByFlow: Record<string, Study[]> = {};
     const apiRequests = [];
+
+    const sourceDatasets: Study[] = [];
+    const cacheDatasets: Study[] = [];
+
     datasets.forEach((item: Study) => {
       const flowName = item.plugin;
 
-      if (flowName === "custom-flow") return;
-      if (!datasetsByFlow[flowName]) {
-        datasetsByFlow[flowName] = [];
+      // Skip datasets with null plugin, custom-flow, or FHIR datasets
+      if (!flowName || flowName === "custom-flow" || item.type === "fhir" || item.type === "non_omop") return;
+
+      // Check if this is a cache/datamart dataset (has source_dataset_id attribute)
+      const hasSourceDatasetId = item.attributes?.some(
+        (attribute) => attribute.attributeId === "source_dataset_id"
+      );
+
+      if (hasSourceDatasetId) {
+        cacheDatasets.push(item);
+      } else if (item.type === "source") {
+        if (!datasetsByFlow[flowName]) {
+          datasetsByFlow[flowName] = [];
+        }
+        datasetsByFlow[flowName].push(item);
+        sourceDatasets.push(item);
       }
-      datasetsByFlow[flowName].push(item);
     });
 
+    // Create get_version_info flow runs for source datasets grouped by plugin
     for (const flow in datasetsByFlow) {
       apiRequests.push(
         api.dataflow.createGetVersionInfoFlowRun({
@@ -270,31 +287,31 @@ const StudyOverview: FC = () => {
               database_code: "",
               data_model: "",
               plugin: flow,
-              datasets: datasetsByFlow[flow].filter((dataset) =>
-                dataset.attributes?.some((attribute) => attribute.attributeId !== "source_dataset_id")
-              ),
+              datasets: datasetsByFlow[flow],
             },
           },
         })
       );
     }
-    apiRequests.push(
-      api.dataflow.createGetVersionInfoFlowRun({
-        flowRunName: "cache-get_version_info",
-        options: {
+
+    // Create get_version_info flow run for cache datasets
+    if (cacheDatasets.length > 0) {
+      apiRequests.push(
+        api.dataflow.createGetVersionInfoFlowRun({
+          flowRunName: "cache-get_version_info",
           options: {
-            flowActionType: "get_version_info",
-            token: "",
-            database_code: "",
-            data_model: "",
-            plugin: "create_cachedb_file_plugin",
-            datasets: datasets.filter(
-              (dataset) => dataset.attributes?.some((attribute) => attribute.attributeId === "source_dataset_id") // Filter out the datamart dataset
-            ),
+            options: {
+              flowActionType: "get_version_info",
+              token: "",
+              database_code: "",
+              data_model: "",
+              plugin: "create_cachedb_file_plugin",
+              datasets: cacheDatasets,
+            },
           },
-        },
-      })
-    );
+        })
+      );
+    }
 
     try {
       await Promise.all(apiRequests);

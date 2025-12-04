@@ -39,14 +39,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import VueDatePicker from '@vuepic/vue-datepicker'
@@ -54,7 +46,7 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import moment from 'moment'
 import appIcon from './app-icon.vue'
 import appLabel from './app-label.vue'
-import { useStore } from 'vuex' 
+import { useStore } from 'vuex'
 
 const store = useStore()
 // Component configuration
@@ -141,18 +133,6 @@ const normalizeValue = (value: unknown): Date | null => {
     }
   }
   return null
-}
-
-const isDifferent = (date1: unknown, date2: unknown): boolean => {
-  let dDate1: unknown = date1
-  let dDate2: unknown = date2
-  if (isDate(dDate1)) {
-    dDate1 = new Date(dDate1 as string | number | Date).getTime()
-  }
-  if (isDate(dDate2)) {
-    dDate2 = new Date(dDate2 as string | number | Date).getTime()
-  }
-  return dDate1 !== dDate2
 }
 
 // Reactive state
@@ -304,8 +284,18 @@ const onInputFocus = () => {
 
 const onInputBlur = () => {
   isActive.value = false
-  if (isDifferent(tempDate.value, props.date)) {
-    commitDate(displayValue.value)
+
+  // Compare what user typed vs what was there when they focused
+  const formattedTempDate = tempDate.value ? moment(tempDate.value).format(mergedConfig.value.format) : ''
+
+  // Only commit if the value actually changed
+  if (displayValue.value !== formattedTempDate) {
+    if (displayValue.value !== '') {
+      commitDate(displayValue.value)
+    } else {
+      // User cleared the field
+      emit('update', { date: '', isEmpty: true })
+    }
   }
 }
 
@@ -469,4 +459,3 @@ defineExpose({
   }
 }
 </style>
-
