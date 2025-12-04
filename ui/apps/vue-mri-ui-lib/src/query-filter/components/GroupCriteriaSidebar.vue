@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'GroupCriteriaSidebar',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 

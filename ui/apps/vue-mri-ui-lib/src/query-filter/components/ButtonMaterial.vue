@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'ButtonMaterial',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -105,8 +102,11 @@ const buttonClasses = computed<string[]>(() => {
   border: none;
   cursor: pointer;
   outline: none;
-  transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 250ms cubic-bezier(0.4, 0, 0.2, 1), color 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background-color 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 250ms cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
   vertical-align: middle;
   appearance: none;
@@ -138,17 +138,23 @@ const buttonClasses = computed<string[]>(() => {
 
 /* Variants */
 .material-button--contained {
-  box-shadow: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0px 3px 1px -2px rgba(0, 0, 0, 0.2),
+    0px 2px 2px 0px rgba(0, 0, 0, 0.14),
     0px 1px 5px 0px rgba(0, 0, 0, 0.12);
 }
 
 .material-button--contained:hover {
-  box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+    0px 4px 5px 0px rgba(0, 0, 0, 0.14),
     0px 1px 10px 0px rgba(0, 0, 0, 0.12);
 }
 
 .material-button--contained.material-button--pressed {
-  box-shadow: 0px 5px 5px -3px rgba(0, 0, 0, 0.2), 0px 8px 10px 1px rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0px 5px 5px -3px rgba(0, 0, 0, 0.2),
+    0px 8px 10px 1px rgba(0, 0, 0, 0.14),
     0px 3px 14px 2px rgba(0, 0, 0, 0.12);
 }
 

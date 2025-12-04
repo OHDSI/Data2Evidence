@@ -306,6 +306,7 @@ export class DatasetRouter {
           schemaName: parsedNewSchemaName,
           timestamp: new Date(),
           type,
+          flowParameters: snapshotCopyConfig ? { snapshotCopyConfig } : undefined,
         };
 
         this.logger.info("Copying dataset in Portal");

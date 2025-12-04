@@ -88,4 +88,3 @@ LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts_person c4 ON
 	concepts.descendant_id = c4.concept_id
 GROUP BY
 	concepts.ancestor_id;
-

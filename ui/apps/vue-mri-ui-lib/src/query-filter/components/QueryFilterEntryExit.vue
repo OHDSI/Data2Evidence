@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'QueryFilterEntryExit',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -43,7 +40,7 @@ const emit = defineEmits<{
     conceptSetName: string,
     gapDays: number,
     offset: number,
-    daysSupplyOverride: number
+    daysSupplyOverride: number,
   ]
   'update-primary-events': [events: QueryFilterEvent[]]
   'update-exit-events': [events: QueryFilterEvent[]]
@@ -55,7 +52,7 @@ const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : '
 const updateLimitValue = (value: string) => {
   // Type guard to ensure the value is valid
   const validLimits = ['ALL', 'EARLIEST', 'LATEST', 'CONT_OBS', 'FIXED', 'CONT_DRUG'] as const
-  type ValidLimit = typeof validLimits[number]
+  type ValidLimit = (typeof validLimits)[number]
 
   const isValidLimit = (val: string): val is ValidLimit => {
     return validLimits.includes(val as ValidLimit)
@@ -355,7 +352,7 @@ const activeTooltipKey = computed(() => {
           @update-limit-value="updateLimitValue"
         />
         <!-- Tooltip for EXIT options -->
-        <Tooltip :tooltip-config="tooltipConfig" :active-key="activeTooltipKey" />
+        <Tooltip class="exit-tooltip" :tooltip-config="tooltipConfig" :active-key="activeTooltipKey" />
       </div>
 
       <div class="shadow-container">
@@ -853,5 +850,10 @@ const activeTooltipKey = computed(() => {
       font-weight: 500;
     }
   }
+
+  .exit-tooltip {
+    z-index: 50;
+  }
 }
 </style>
+

@@ -106,6 +106,12 @@ export function validateRequestPath(path) {
   }
 }
 
+export function validateIdentifierForSchemaOrTableName(identifier: string): void {
+  if (!/^[A-Za-z_][A-Za-z0-9_]+$/.test(identifier)) {
+    throw new Error(`Invalid identifier: ${identifier}`);
+  }
+}
+
 export function isEmptyObject(o) {
   return Object.keys(o).length === 0;
 }
@@ -319,7 +325,7 @@ export function getJsonWalkFunction(obj) {
         case "*":
           return "[^\\.]+";
         default:
-          return subPath;
+          return escapeRegExp(subPath);
       }
     });
     const regexp = new RegExp("^" + regexpSplit.join("\\.") + "$");

@@ -1,5 +1,5 @@
 import { IMRIRequest, StudyDbMetadata } from "../../types";
-import { Logger } from "@alp/alp-base-utils";
+import { Logger, validateIdentifierForSchemaOrTableName } from "@alp/alp-base-utils";
 import * as Minio from "minio";
 import PortalServerAPI from "../PortalServerAPI";
 import { env } from "../../env";
@@ -7,9 +7,9 @@ import { env } from "../../env";
 const log = Logger.CreateLogger("analytics-log");
 
 export async function retrieveParquetStream(req: IMRIRequest, res) {
-    const datasetId = req.params.datasetId;
-    const tableName = req.params.tableName;
     try {
+        const datasetId = req.params.datasetId;
+        const tableName = req.params.tableName;
         const studies = await new PortalServerAPI().getStudies(
             req.headers.authorization
         );
@@ -62,6 +62,7 @@ export async function retrieveParquetStream(req: IMRIRequest, res) {
             });
         });
 
+        validateIdentifierForSchemaOrTableName(tableName);
         const searchString = `^(${schemaName}-${tableName}).*$`;
         const re = new RegExp(searchString);
         const match = objects.find((file) => re.test(file.name));
