@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
@@ -38,6 +38,7 @@ import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemantic
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
 import "./StudyOverview.scss";
 import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
+import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
 
 const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
@@ -77,10 +78,14 @@ const StudyOverview: FC = () => {
   const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
     useDialogHelper(false);
   const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
+  const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
+    useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [strategusStudies, setStrategusStudies] = useState<any[]>([]);
+  const [loadingStrategusStudies, setLoadingStrategusStudies] = useState(false);
 
   const handleSourceInformation = useCallback(
     (dataset: Study) => {
@@ -197,6 +202,23 @@ const StudyOverview: FC = () => {
     }));
   }, []);
 
+  useEffect(() => {
+    const fetchStrategusStudies = async () => {
+      setLoadingStrategusStudies(true);
+      try {
+        const studies = await api.strategusAnalysis.getAllStrategusAnalysis();
+        setStrategusStudies(studies);
+      } catch (error) {
+        console.error("Error fetching strategus studies:", error);
+        setStrategusStudies([]);
+      } finally {
+        setLoadingStrategusStudies(false);
+      }
+    };
+
+    fetchStrategusStudies();
+  }, [refetch]);
+
   // Organize datasets into parent-child structure for source/omop/hana and separate lists for studies and fhir
   const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets } = useMemo(() => {
     if (!datasets) return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [] };
@@ -237,7 +259,6 @@ const StudyOverview: FC = () => {
       }
     });
 
-    // Attach children to their parents
     const datasetsWithChildren = sourceOmopHana.map((dataset) => ({
       ...dataset,
       children: childrenMap.get(dataset.id) || [],
@@ -308,6 +329,16 @@ const StudyOverview: FC = () => {
       }
     },
     [closeDeleteStudyDialog]
+  );
+
+  const handleCloseAddStrategusStudyDialog = useCallback(
+    (success?: boolean) => {
+      closeAddStrategusStudyDialog();
+      if (success) {
+        setRefetch((refetch) => refetch + 1);
+      }
+    },
+    [closeAddStrategusStudyDialog]
   );
 
   const fetchDatamodelUpdates = useCallback(async () => {
@@ -557,43 +588,6 @@ const StudyOverview: FC = () => {
             </>
           )}
 
-          {/* Studies Table */}
-          {studyDatasets.length > 0 && (
-            <>
-              <h4 className="dataset-section-title dataset-section-title--secondary">Studies</h4>
-              <TableContainer className="studyoverview__list">
-                <Table>
-                  <colgroup>
-                    <col style={{ width: "1%" }} />
-                    <col />
-                    <col />
-                    <col />
-                    <col />
-                    <col />
-                    <col />
-                    <col />
-                  </colgroup>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell></TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
-                      <TableCell>Type</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {studyDatasets.map((dataset: Study) => renderDatasetRow(dataset, false, false))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
-          )}
-
           {/* FHIR Datasets Table */}
           {fhirDatasets.length > 0 && (
             <>
@@ -630,6 +624,86 @@ const StudyOverview: FC = () => {
               </TableContainer>
             </>
           )}
+
+          {/* Studies Table */}
+          <>
+            <div className="section-header-with-action" style={{ marginTop: "2em" }}>
+              <h4 className="dataset-section-title" style={{ margin: 0 }}>
+                Studies
+              </h4>
+              <Button text="Add Study" onClick={openAddStrategusStudyDialog} />
+            </div>
+            {loadingStrategusStudies ? (
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell colSpan={9} align="center">
+                        <Loader />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : strategusStudies.length > 0 ? (
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <colgroup>
+                    <col style={{ width: "1%" }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell>Study ID</TableCell>
+                      <TableCell>Analysis ID</TableCell>
+                      <TableCell>Mode</TableCell>
+                      <TableCell>Notebook Name</TableCell>
+                      <TableCell>Created At</TableCell>
+                      <TableCell>Updated At</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {strategusStudies.map((study: any) => (
+                      <TableRow key={study.analysisId || study.studyId}>
+                        <TableCell className="icon-cell icon-cell--no-children"></TableCell>
+                        <TableCell>
+                          <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
+                            {study.studyId}
+                          </Text>
+                        </TableCell>
+                        <TableCell>
+                          <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
+                            {study.analysisId || "-"}
+                          </Text>
+                        </TableCell>
+                        <TableCell>{study.mode || "-"}</TableCell>
+                        <TableCell>{study.notebookName || "-"}</TableCell>
+                        <TableCell>
+                          {study.createdAt ? new Date(study.createdAt).toLocaleDateString() : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}
+                        </TableCell>
+                        <TableCell>study</TableCell>
+                        <TableCell className="col-action">
+                          -
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : null}
+          </>
 
           {/* No Data Message */}
           {(!datasets || datasets.length === 0) && (
@@ -734,6 +808,10 @@ const StudyOverview: FC = () => {
               open={showManageDashboardDialog}
               onClose={closeManageDashboardDialog}
             />
+          )}
+
+          {showAddStrategusStudyDialog && (
+            <AddStrategusStudyDialog open={showAddStrategusStudyDialog} onClose={handleCloseAddStrategusStudyDialog} />
           )}
         </div>
       </div>
