@@ -58,6 +58,7 @@ function registerNavigationApps() {
           customProps: () => {
             const portalAPI = getPortalAPI()
             return {
+              containerId: `single-spa-application:${item.appName}`,
               getToken: portalAPI?.getToken,
               username: portalAPI?.username,
               datasetId: portalAPI?.studyId,
