@@ -49,7 +49,7 @@ export const Researcher: FC = () => {
 
   const [_pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
   const [activeTenantId, setActiveTenantId] = useState<string>(state?.tenantId || "");
-  const featureFlags = useEnabledFeatures();
+  const [featureFlags] = useEnabledFeatures();
 
   useEffect(() => {
     if ((feedback?.autoClose || 0) > 0) setTimeout(() => clearFeedback(), feedback?.autoClose);
