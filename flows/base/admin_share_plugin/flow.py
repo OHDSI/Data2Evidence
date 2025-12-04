@@ -107,4 +107,13 @@ def admin_share_plugin(options: AdminSharePluginType):
     # Log summary
     logger.info(f"Completed: {results['total_success']}/{results['total_processed']} successful, {results['total_failed']} failed")
 
+    # Fail the flow if any artifacts failed
+    if results['total_failed'] > 0:
+        failed_artifacts = [
+            f"{r['service_name']}/{r['artifact_id']}: {r['error']}"
+            for r in results['concept_sets'] + results['bookmarks']
+            if not r['success']
+        ]
+        raise Exception(f"Failed to update {results['total_failed']} artifact(s):\n" + "\n".join(failed_artifacts))
+
     return results
