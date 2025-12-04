@@ -549,6 +549,8 @@ class ConceptMappingNode(Node):
                     "domain_id": cm.domainId,
                     "concept_id": cm.conceptId,
                     "concept_name": cm.conceptName,
+                    "concept_code": cm.conceptCode,
+                    "vocabulary_id": cm.vocabularyId,
                     "source_code": cm.source_code,
                     "validity": cm.validity if cm.validity else None
                 } for item in self.concept_mapping_data
