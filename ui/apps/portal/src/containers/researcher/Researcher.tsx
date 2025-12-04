@@ -61,6 +61,14 @@ export const Researcher: FC = () => {
     }
   }, [state]);
 
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("route-change", {
+        detail: { activeRoute: location.pathname.replace("/researcher", "") },
+      })
+    );
+  }, [location.pathname]);
+
   const featureFlagsDict = useMemo(() => {
     // Convert to dictionary of { [featureFlag]: { [subFeatureFlag]: enabledBoolean } }
     const result: { [featureFlag: string]: SubFeatureFlags } = {};
@@ -159,6 +167,7 @@ export const Researcher: FC = () => {
                   data={item?.data}
                   fetchMenu={onFetchMenus}
                   subFeatureFlags={subFeatureFlags}
+                  autoMount={item.autoMount}
                 />
               </ErrorBoundary>
             </div>

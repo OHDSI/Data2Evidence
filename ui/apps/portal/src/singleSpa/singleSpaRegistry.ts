@@ -15,11 +15,7 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
   console.debug(`[singleSpaRegistry] ${config.id} - register`, { config });
 
   const initialProps = config.customProps || {};
-
-  const activeWhen = createActivityFunction(
-    config.basePath,
-    false // Not always active by default
-  );
+  const activeWhen = createActivityFunction(config.basePath, config.autoMount);
 
   const registration = {
     name: config.id,
