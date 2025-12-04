@@ -537,7 +537,7 @@ const StudyOverview: FC = () => {
         <div className="studyoverview__content">
           {sourceOmopHanaDatasets.length > 0 && (
             <>
-              <h4 className="dataset-section-title">CDM Datasets</h4>
+              <h4 className="dataset-section-title">{getText(i18nKeys.STUDY_OVERVIEW__CDM_DATASETS)}</h4>
               <TableContainer className="studyoverview__list">
                 <Table>
                   <colgroup>
@@ -559,7 +559,7 @@ const StudyOverview: FC = () => {
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
-                      <TableCell>Type</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__TYPE)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
                     </TableRow>
                   </TableHead>
@@ -591,7 +591,7 @@ const StudyOverview: FC = () => {
           {/* FHIR Datasets Table */}
           {fhirDatasets.length > 0 && (
             <>
-              <h4 className="dataset-section-title dataset-section-title--secondary">FHIR Datasets</h4>
+              <h4 className="dataset-section-title dataset-section-title--secondary">{getText(i18nKeys.STUDY_OVERVIEW__FHIR_DATASETS)}</h4>
               <TableContainer className="studyoverview__list">
                 <Table>
                   <colgroup>
@@ -613,7 +613,7 @@ const StudyOverview: FC = () => {
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
-                      <TableCell>Type</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__TYPE)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
                     </TableRow>
                   </TableHead>
@@ -629,7 +629,7 @@ const StudyOverview: FC = () => {
           <>
             <div className="section-header-with-action" style={{ marginTop: "2em" }}>
               <h4 className="dataset-section-title" style={{ margin: 0 }}>
-                Studies
+                {getText(i18nKeys.STUDY_OVERVIEW__STUDIES)}
               </h4>
               <Button text="Add Study" onClick={openAddStrategusStudyDialog} />
             </div>
@@ -661,13 +661,13 @@ const StudyOverview: FC = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell></TableCell>
-                      <TableCell>Study ID</TableCell>
-                      <TableCell>Analysis ID</TableCell>
-                      <TableCell>Mode</TableCell>
-                      <TableCell>Notebook Name</TableCell>
-                      <TableCell>Created At</TableCell>
-                      <TableCell>Updated At</TableCell>
-                      <TableCell>Type</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__STUDY_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ANALYSIS_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__MODE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NOTEBOOK_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__CREATED_AT)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__UPDATED_AT)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__TYPE)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
                     </TableRow>
                   </TableHead>
