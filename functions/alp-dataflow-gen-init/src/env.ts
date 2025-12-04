@@ -11,9 +11,7 @@ export const env = {
   VARIABLES: {
     // Prefect Variables
     service_routes: JSON.parse(_env.SERVICE_ROUTES) || {},
-    r_libs_user: _env.R_LIBS_USER,
     duckdb_data_folder: _env.DUCKDB__DATA_FOLDER,
-    cdw_config_duckdb_data_folder: _env.CDW_CONFIG_DUCKDB__DATA_FOLDER,
     fhir_schema_file: _env.FHIR_SCHEMA_JSON_PATH,
     flows_results_s3_dir_path: _env.DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH,
     flows_results_sb_name: _env.DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME,

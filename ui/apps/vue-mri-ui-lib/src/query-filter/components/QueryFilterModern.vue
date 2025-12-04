@@ -30,6 +30,8 @@ import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
 import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
+import ExecuteSidePanel from './ExecuteSidePanel.vue'
+import Drawer from '@/components/Drawer.vue'
 import appButton from '../../lib/ui/app-button.vue'
 import appCheckbox from '../../lib/ui/app-checkbox.vue'
 import GenerateCohortActiveIcon from '../../components/icons/GenerateCohortActiveIcon.vue'
@@ -69,6 +71,7 @@ const { canShare } = useUserRole()
 const showDebug = ref(false)
 
 const showSaveDialog = ref(false)
+const showExecuteDrawer = ref(false)
 const cohortName = ref('')
 const shareBookmark = ref(false)
 const isInvalidName = ref(false)
@@ -82,7 +85,7 @@ const patientCount = ref<number | null>(null)
 const isGeneratingCohort = ref(false)
 const cohortInfo = ref<CohortInfoResponse>([])
 const isLoadingCohortInfo = ref(false)
-const generationStatus = ref<'idle' | 'pending' | 'complete' | 'failed'>('idle')
+const generationStatus = ref<Record<string, 'idle' | 'pending' | 'complete' | 'failed'>>({})
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 const POLLING_INTERVAL_MS = 2000
 
@@ -198,13 +201,28 @@ const displayCohortName = computed(() => {
 })
 
 const displayPatientCount = computed(() => {
-  if (generationStatus.value === 'pending') {
+  const currentStatus = generationStatus.value[selectedDatasetForGeneration.value]
+  if (currentStatus === 'pending') {
     return 'Pending'
   }
-  if (generationStatus.value === 'failed') {
+  if (currentStatus === 'failed') {
     return 'Failed'
   }
   return patientCount.value !== null ? patientCount.value.toLocaleString() : '-'
+})
+
+// Compute patient counts by source for ExecuteSidePanel
+const patientCountsBySource = computed(() => {
+  const counts: Record<string, number | null> = {}
+  cohortInfo.value.forEach(info => {
+    const source = availableSources.value.find(s => s.sourceId === info.id.sourceId)
+    if (source && info.status === 'COMPLETE') {
+      counts[source.sourceKey] = info.personCount
+    } else if (source) {
+      counts[source.sourceKey] = null
+    }
+  })
+  return counts
 })
 
 // Helper to recursively check if event or its nested events are loading
@@ -836,6 +854,10 @@ const closeSaveDialog = () => {
   isInvalidName.value = false
 }
 
+const openExecuteDrawer = () => {
+  showExecuteDrawer.value = true
+}
+
 // Helper function to check if any events are still loading concept details
 const checkAndWaitForConceptDetails = async (): Promise<boolean> => {
   const criteria = criteriaManager.getCriteria()
@@ -1029,7 +1051,7 @@ const updatePatientCountFromInfo = () => {
 
   if (!selectedSource) {
     patientCount.value = null
-    generationStatus.value = 'idle'
+    generationStatus.value[selectedDatasetForGeneration.value] = 'idle'
     return
   }
 
@@ -1038,18 +1060,18 @@ const updatePatientCountFromInfo = () => {
 
   if (infoForSource && infoForSource.status === 'COMPLETE') {
     patientCount.value = infoForSource.personCount
-    generationStatus.value = 'complete'
+    generationStatus.value[selectedDatasetForGeneration.value] = 'complete'
     console.log('Found patient count from cohort info:', infoForSource.personCount)
   } else {
     patientCount.value = null
-    generationStatus.value = 'idle'
+    generationStatus.value[selectedDatasetForGeneration.value] = 'idle'
   }
 }
 
 // Start polling for generation status
-const startPolling = (cohortDefinitionId: number, sourceId: number) => {
+const startPolling = (cohortDefinitionId: number, sourceId: number, sourceKey: string) => {
   console.log('Starting polling for cohort generation', { cohortDefinitionId, sourceId })
-  generationStatus.value = 'pending'
+  generationStatus.value[sourceKey] = 'pending'
 
   // Clear any existing polling interval
   stopPolling()
@@ -1073,7 +1095,7 @@ const startPolling = (cohortDefinitionId: number, sourceId: number) => {
 
         if (relevantNotification.status === 'COMPLETED') {
           console.log('Generation completed, fetching cohort info')
-          generationStatus.value = 'complete'
+          generationStatus.value[sourceKey] = 'complete'
 
           // Fetch updated cohort info to get patient count
           await fetchCohortInfo(cohortDefinitionId)
@@ -1083,11 +1105,11 @@ const startPolling = (cohortDefinitionId: number, sourceId: number) => {
           isGeneratingCohort.value = false
         } else if (relevantNotification.status === 'STARTED') {
           console.log('Generation still in progress')
-          generationStatus.value = 'pending'
+          generationStatus.value[sourceKey] = 'pending'
         } else {
           // Unknown status - treat as potentially failed
           console.log('Unknown generation status:', relevantNotification.status)
-          generationStatus.value = 'failed'
+          generationStatus.value[sourceKey] = 'failed'
           patientCount.value = null
           stopPolling()
           isGeneratingCohort.value = false
@@ -1118,7 +1140,9 @@ const generateCohort = async () => {
   try {
     isGeneratingCohort.value = true
     patientCount.value = null
-    generationStatus.value = 'pending'
+    // Use selected source in Atlas mode, or portal datasetId in portal mode
+    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+    generationStatus.value[datasetId] = 'pending'
 
     // Get the active bookmark
     const activeBookmark = store?.getters?.getActiveBookmark
@@ -1127,8 +1151,6 @@ const generateCohort = async () => {
     }
 
     const atlasDefinitionId = parseInt(activeBookmark.bmkId)
-    // Use selected source in Atlas mode, or portal datasetId in portal mode
-    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
 
     // Get the sourceId for polling
     const selectedSource = availableSources.value.find(source => source.sourceKey === datasetId)
@@ -1143,13 +1165,21 @@ const generateCohort = async () => {
     })
 
     // Start polling to track generation progress
-    startPolling(atlasDefinitionId, selectedSource.sourceId)
+    startPolling(atlasDefinitionId, selectedSource.sourceId, datasetId)
   } catch (error) {
     console.error('Error generating cohort:', error)
     patientCount.value = null
-    generationStatus.value = 'failed'
+    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+    generationStatus.value[datasetId] = 'failed'
     isGeneratingCohort.value = false
   }
+}
+
+// Handler for ExecuteSidePanel generate-cohort event
+const handleExecutePanelGenerateCohort = (sourceKey: string) => {
+  // Update the selected dataset and trigger generation
+  selectedDatasetForGeneration.value = sourceKey
+  generateCohort()
 }
 </script>
 
@@ -1197,6 +1227,14 @@ const generateCohort = async () => {
           <div class="right-button-group">
             <ButtonMaterial @button-click="openSaveDialog" :disabled="!isReadyToSave">
               {{ isReadyToSave ? 'Save' : 'Loading...' }}
+            </ButtonMaterial>
+            <ButtonMaterial
+              class="cohort-actions-btn"
+              color="primary"
+              variant="outlined"
+              @button-click="openExecuteDrawer"
+            >
+              View more
             </ButtonMaterial>
           </div>
         </div>
@@ -1427,6 +1465,24 @@ const generateCohort = async () => {
         ></appButton>
       </template>
     </messageBox>
+
+    <!-- Execute Drawer -->
+    <Drawer
+      v-if="showExecuteDrawer"
+      :width="'85vw'"
+      :height="'100vh'"
+      :title="'Cohort Actions'"
+      @close="showExecuteDrawer = false"
+    >
+      <ExecuteSidePanel
+        :cohort-definition-id="store?.getters?.getActiveBookmark.bmkId"
+        :available-sources="availableSources"
+        :is-generating-cohort="isGeneratingCohort"
+        :generation-status="generationStatus"
+        :patient-counts="patientCountsBySource"
+        @generate-cohort="handleExecutePanelGenerateCohort"
+      />
+    </Drawer>
   </div>
 </template>
 
@@ -1435,3 +1491,4 @@ const generateCohort = async () => {
 // Import existing styles for backward compatibility
 @import '../styles/QueryFilter';
 </style>
+

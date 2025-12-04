@@ -11,13 +11,19 @@ interface UserContextValue {
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
 
-export const UserProvider: FC<{ children: ReactNode; username?: string }> = ({ children, username }) => {
+export const UserProvider: FC<{
+  children: ReactNode;
+  username?: string;
+  idpUserId?: string;
+}> = ({ children, username, idpUserId }) => {
   const user: User = {
     username,
-    idpUserId: username, // Use username as idpUserId for now
+    idpUserId, // Use username as idpUserId for now
   };
 
-  return <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={{ user }}>{children}</UserContext.Provider>
+  );
 };
 
 export const useUser = (): UserContextValue => {
