@@ -57,7 +57,8 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
 
   // Initialize MCP if requested and available
   let mcpContext = "";
-  if (uiChat.useMcp !== false) {
+  uiChat.useMcp = true;
+  if (uiChat.useMcp === true) {
     try {
       const mcpManager = MCPManager.getInstance();
       if (!mcpManager.isReady()) {
@@ -70,24 +71,40 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
       if (uiChat.userInput.toLowerCase().includes("cohort")) {
         try {
           const tools = await mcpClient.listTools();
-          const cohortTool = tools.find((t: any) => t.name === "get_cohort_id_name_list");
-
+          const cohortTool = tools.find(
+            (t: any) => t.name === "get_cohort_id_name_list"
+          );
+          console.log("Cohort Tool:", cohortTool);
           if (cohortTool) {
-            const toolResponse = await mcpClient.callTool("get_cohort_id_name_list", {
-              cohortInfo: uiChat.userInput,
-            });
+            const toolResponse = await mcpClient.callTool(
+              "get_cohort_id_name_list",
+              {
+                cohortInfo: uiChat.userInput,
+              }
+            );
 
             if (toolResponse?.structuredContent?.cohortsId) {
               const cohorts = toolResponse.structuredContent.cohortsId;
-              mcpContext = `\n\nAvailable cohorts from MCP:\n${JSON.stringify(cohorts, null, 2)}`;
+              mcpContext = `\n\nAvailable cohorts from MCP:\n${JSON.stringify(
+                cohorts,
+                null,
+                2
+              )}`;
+              console.log("mcpContext", mcpContext);
             }
           }
         } catch (mcpError) {
-          console.warn("MCP tool call failed, continuing without MCP data:", mcpError);
+          console.warn(
+            "MCP tool call failed, continuing without MCP data:",
+            mcpError
+          );
         }
       }
     } catch (mcpError) {
-      console.warn("MCP initialization failed, continuing without MCP:", mcpError);
+      console.warn(
+        "MCP initialization failed, continuing without MCP:",
+        mcpError
+      );
     }
   }
 

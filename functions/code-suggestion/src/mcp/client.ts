@@ -8,12 +8,6 @@ export interface MCPClientConfig {
   retryDelay?: number;
 }
 
-export interface MCPTool {
-  name: string;
-  description?: string;
-  inputSchema?: any;
-}
-
 export class MCPClient {
   private client: Client;
   private transport: StreamableHTTPClientTransport | null = null;
@@ -36,6 +30,7 @@ export class MCPClient {
         capabilities: {
           tools: {},
           prompts: {},
+          resources: {},
         },
       }
     );
@@ -87,19 +82,15 @@ export class MCPClient {
     }
   }
 
-  async listTools(): Promise<MCPTool[]> {
+  // High-level helper methods using SDK built-ins
+  async listTools(): Promise<any[]> {
     if (!this.isConnected) {
       throw new Error("MCP client is not connected");
     }
 
     try {
-      const response = await this.client.request(
-        {
-          method: "tools/list",
-        },
-        {}
-      );
-      return response.tools || [];
+      const result = await this.client.listTools();
+      return result.tools || [];
     } catch (error) {
       console.error("Error listing tools:", error);
       await this.handleRequestError(error);
@@ -107,26 +98,14 @@ export class MCPClient {
     }
   }
 
-  async callTool(
-    toolName: string,
-    args: Record<string, any>
-  ): Promise<any> {
+  async callTool(toolName: string, args: Record<string, any>): Promise<any> {
     if (!this.isConnected) {
       throw new Error("MCP client is not connected");
     }
 
     try {
-      const response = await this.client.request(
-        {
-          method: "tools/call",
-          params: {
-            name: toolName,
-            arguments: args,
-          },
-        },
-        {}
-      );
-      return response;
+      const result = await this.client.callTool({ name: toolName, arguments: args });
+      return result;
     } catch (error) {
       console.error(`Error calling tool ${toolName}:`, error);
       await this.handleRequestError(error);
@@ -140,13 +119,8 @@ export class MCPClient {
     }
 
     try {
-      const response = await this.client.request(
-        {
-          method: "prompts/list",
-        },
-        {}
-      );
-      return response.prompts || [];
+      const result = await this.client.listPrompts();
+      return result.prompts || [];
     } catch (error) {
       console.error("Error listing prompts:", error);
       await this.handleRequestError(error);
@@ -160,19 +134,42 @@ export class MCPClient {
     }
 
     try {
-      const response = await this.client.request(
-        {
-          method: "prompts/get",
-          params: {
-            name: promptName,
-            arguments: args || {},
-          },
-        },
-        {}
+      const result = await this.client.getPrompt(
+        { name: promptName, arguments: args || {} }
       );
-      return response;
+      return result;
     } catch (error) {
       console.error(`Error getting prompt ${promptName}:`, error);
+      await this.handleRequestError(error);
+      throw error;
+    }
+  }
+
+  async listResources(): Promise<any[]> {
+    if (!this.isConnected) {
+      throw new Error("MCP client is not connected");
+    }
+
+    try {
+      const result = await this.client.listResources();
+      return result.resources || [];
+    } catch (error) {
+      console.error("Error listing resources:", error);
+      await this.handleRequestError(error);
+      return [];
+    }
+  }
+
+  async readResource(uri: string): Promise<any> {
+    if (!this.isConnected) {
+      throw new Error("MCP client is not connected");
+    }
+
+    try {
+      const result = await this.client.readResource({ uri });
+      return result;
+    } catch (error) {
+      console.error(`Error reading resource ${uri}:`, error);
       await this.handleRequestError(error);
       throw error;
     }

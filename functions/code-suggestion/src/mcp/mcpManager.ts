@@ -22,7 +22,7 @@ export class MCPManager {
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Accept": "application/json, text/event-stream",
+      Accept: "application/json, text/event-stream",
     };
 
     if (env.MCP_AUTH_TOKEN) {
@@ -34,7 +34,8 @@ export class MCPManager {
     }
 
     const config: MCPClientConfig = {
-      serverUrl: env.MCP_SERVER_URL,
+      // serverUrl: ,
+      serverUrl: `${env.MCP_SERVER_URL}`,
       headers,
       maxRetries: 3,
       retryDelay: 2000,
@@ -61,6 +62,10 @@ export class MCPManager {
   }
 
   isReady(): boolean {
-    return this.isInitialized && this.client !== null && this.client.getConnectionStatus();
+    return (
+      this.isInitialized &&
+      this.client !== null &&
+      this.client.getConnectionStatus()
+    );
   }
 }
