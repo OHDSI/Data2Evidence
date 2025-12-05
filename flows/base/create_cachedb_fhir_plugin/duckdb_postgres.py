@@ -1,23 +1,25 @@
 from prefect import task
 from prefect.logging import get_run_logger
 
+from .config import CreateDuckdbDatabaseFileType
+
+
 @task(log_prints=True)
-def copy_schema_to_cache(con, dbdao: any, schema_name: str, cache_schema_name: str):
+def copy_schema_to_cache(con, dbdao: any, options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
     logger.info(
-        f"Copying FHIR tables from schema '{schema_name}' into cache schema '{cache_schema_name}'..."
+        f"Copying FHIR tables from source schema '{options.schemaName}' to cache schema '{options.cacheSchemaName}'..."
     )
-    db_credentials = dbdao.tenant_configs
     created_tables = []
     try:
-        con.execute(f"DROP SCHEMA IF EXISTS {cache_schema_name};")            
-        con.execute(f"""CREATE SCHEMA {cache_schema_name};""")
-        table_names = dbdao.get_table_names(schema_name)
-        CHUNK_SIZE = 10000
+        con.execute(f'''CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";''')
+        table_names = dbdao.get_table_names(options.schemaName)
+        chunk_size = 10000
         for table in table_names:
             try:
                 logger.info(f"Copying table: {table}")
-                columns = dbdao.get_columns(schema_name, table)
+                columns = dbdao.get_columns(options.schemaName, table)
+                
                 casted_columns = []
                 for col in columns:
                     # if col.lower().endswith('text') or col.lower().endswith('_text'):
@@ -26,27 +28,26 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str, cache_schema_name: s
                     else:
                         casted_columns.append(col)
                 select_columns = ', '.join(casted_columns)
-                # Todo: Use dbcode__src_db
-                count_sql = f"SELECT COUNT(*) FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}')"
+                count_sql = f'SELECT COUNT(*) FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}"'
                 con.execute(count_sql)
                 total_rows = con.fetchone()[0]
                 offset = 0
                 first_chunk = True
                 while offset < total_rows:
-                    limit_clause = f"LIMIT {CHUNK_SIZE} OFFSET {offset}"
+                    limit_clause = f"LIMIT {chunk_size} OFFSET {offset}"
                     if first_chunk:
-                        # Todo: Use dbcode__src_db
-                        create_sql = f"CREATE TABLE {cache_schema_name}.{table} AS FROM (SELECT {select_columns} FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_clause})"
+                        logger.info(f"Creating table: {table}")
+                        create_sql = f'CREATE TABLE IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS FROM (SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" {limit_clause})'
                     else:
-                        # Todo: Use dbcode__src_db
-                        create_sql = f"INSERT INTO {cache_schema_name}.{table} SELECT {select_columns} FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_clause}"
+                        logger.info(f"Inserting chunk into table: {table}")
+                        create_sql = f'INSERT INTO "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" {limit_clause}'
                     con.execute(create_sql)
-                    offset += CHUNK_SIZE
+                    offset += chunk_size
                     first_chunk = False
                 created_tables.append(table)
             except Exception as e:
                 logger.error(
-                        f"Table copy for table '{schema_name}.{table}' failed with error: {e}")
+                        f"Table copy for table '{options.schemaName}'.'{table}' failed with error: {e}")
                 raise e
         return created_tables
     except Exception as err:
