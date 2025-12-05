@@ -26546,7 +26546,7 @@ const paConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-        "usePaAtlas": true
+        "usePaAtlas": false
     }
 };
 
@@ -34254,7 +34254,7 @@ const pajsonfhirConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-        "usePaAtlas": true
+        "usePaAtlas": false
     }
 };
 
