@@ -19,6 +19,7 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
     duckdb_database_name = options.databaseCode
     schema_name = options.schemaName
+    cache_schema_name = options.cacheSchemaName
     dbdao = DBDao(use_cache_db=False,
                 database_code=duckdb_database_name)
 
@@ -32,28 +33,19 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
             password=Secret.load("trex-sql-password").get(),
             dbname=Variable.get("trex_sql_dbname")
         )
-    cur1 = None
+    cur = None
     try:
-        logger.info(f"Handling schema {schema_name}...")
-        cur1 = trex_conn.cursor()
-        created_tables = copy_schema_to_cache(cur1, dbdao, schema_name)
-        trex_conn.commit()
-        #cur2 = trex_conn.cursor()
-        #create_indexes_for_tables(cur2, dbdao, schema_name, created_tables)
-        #cur2.close()
-        #trex_conn.commit()
-        logger.info(
-            f"""Duckdb database file: {duckdb_database_name} successfully created.""")
+        logger.info(f"Copying FHIR schema '{schema_name}' to cache as schema '{cache_schema_name}'...")
+        cur = trex_conn.cursor()
+        created_tables = copy_schema_to_cache(cur, dbdao, schema_name, cache_schema_name)
     except Exception as e:
         logger.error(f"Error creating cachedb fhir plugin: {e}")
         raise e
+    else:
+        trex_conn.commit()
+        logger.info(
+            f"""Duckdb database file: {duckdb_database_name} successfully created.""")
     finally:
-        if cur1:
-            cur1.close()
+        if cur:
+            cur.close()
         trex_conn.close()
-        
-if __name__ == '__main__':
-    database_code = "fhir"
-    schema_name = "public"
-    options = CreateDuckdbDatabaseFileType(databaseCode=database_code)
-    create_cachedb_fhir_plugin(options)

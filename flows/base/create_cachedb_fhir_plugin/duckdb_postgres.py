@@ -1,19 +1,17 @@
-import duckdb
-
 from prefect import task
 from prefect.logging import get_run_logger
 
 @task(log_prints=True)
-def copy_schema_to_cache(con, dbdao: any, schema_name: str):
+def copy_schema_to_cache(con, dbdao: any, schema_name: str, cache_schema_name: str):
     logger = get_run_logger()
     logger.info(
-        f"Copying tables from schema '{schema_name}' into cache..."
+        f"Copying FHIR tables from schema '{schema_name}' into cache schema '{cache_schema_name}'..."
     )
     db_credentials = dbdao.tenant_configs
     created_tables = []
     try:
-        con.execute(f"DROP SCHEMA IF EXISTS {schema_name};")            
-        con.execute(f"""CREATE SCHEMA {schema_name};""")
+        con.execute(f"DROP SCHEMA IF EXISTS {cache_schema_name};")            
+        con.execute(f"""CREATE SCHEMA {cache_schema_name};""")
         table_names = dbdao.get_table_names(schema_name)
         CHUNK_SIZE = 10000
         for table in table_names:
@@ -28,6 +26,7 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str):
                     else:
                         casted_columns.append(col)
                 select_columns = ', '.join(casted_columns)
+                # Todo: Use dbcode__src_db
                 count_sql = f"SELECT COUNT(*) FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}')"
                 con.execute(count_sql)
                 total_rows = con.fetchone()[0]
@@ -36,9 +35,11 @@ def copy_schema_to_cache(con, dbdao: any, schema_name: str):
                 while offset < total_rows:
                     limit_clause = f"LIMIT {CHUNK_SIZE} OFFSET {offset}"
                     if first_chunk:
-                        create_sql = f"CREATE TABLE {schema_name}.{table} AS FROM (SELECT {select_columns} FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_clause})"
+                        # Todo: Use dbcode__src_db
+                        create_sql = f"CREATE TABLE {cache_schema_name}.{table} AS FROM (SELECT {select_columns} FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_clause})"
                     else:
-                        create_sql = f"INSERT INTO {schema_name}.{table} SELECT {select_columns} FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_clause}"
+                        # Todo: Use dbcode__src_db
+                        create_sql = f"INSERT INTO {cache_schema_name}.{table} SELECT {select_columns} FROM postgres_scan('host={db_credentials.host} port={db_credentials.port} dbname={db_credentials.databaseName} user={db_credentials.readUser} password={db_credentials.readPassword.get_secret_value()}', '{schema_name}', '{table}') {limit_clause}"
                     con.execute(create_sql)
                     offset += CHUNK_SIZE
                     first_chunk = False

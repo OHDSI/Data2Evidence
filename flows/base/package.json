@@ -766,11 +766,16 @@
                   "schemaName": {
                     "title": "Schemaname",
                     "type": "string"
+                  },
+                  "cacheSchemaName": {
+                    "title": "Cacheschemaname",
+                    "type": "string"
                   }
                 },
                 "required": [
                   "databaseCode",
-                  "schemaName"
+                  "schemaName",
+                  "cacheSchemaName"
                 ],
                 "title": "CreateDuckdbDatabaseFileType",
                 "type": "object"
