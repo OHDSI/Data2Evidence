@@ -848,6 +848,7 @@
   "TERMINOLOGY__CREATE": "Erstellen",
   "TERMINOLOGY__CREATING": "Erstellen",
   "TERMINOLOGY__ERROR": "Fehler {0} Konzeptsatz.",
+  "TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR": "Name des Konzeptsatzes {0} existiert bereits. Bitte geben Sie einen anderen Namen ein.",
   "TERMINOLOGY__MISSING_USER_ID": "Fehlende Benutzer-ID",
   "TERMINOLOGY__NAME": "Name",
   "TERMINOLOGY__REFERENCE_CONCEPTS": "Referenzkonzepte aus dem Datensatz",

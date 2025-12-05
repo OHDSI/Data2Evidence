@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <template>
   <div class="select-wrapper" ref="wrapper">
     <!-- Select trigger -->
@@ -164,4 +156,3 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
   opacity: 0;
 }
 </style>
-
