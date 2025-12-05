@@ -178,7 +178,7 @@ interface Datamodel {
 // hardcoded values for FHIR dataset creation
 const FHIR_DB_CODE = "alp_fhir";
 const FHIR_SCHEMA_NAME = "fhir";
-const FHIR_DIALECT = "postgresql";
+const FHIR_DIALECT = "postgres";
 
 
 export const SchemaTypes = {
