@@ -150,13 +150,6 @@ export class DatasetRouter {
           return res.status(400).send("Token dataset code is already used");
         }
 
-        // If this is a fhir dataset, fhir project id must be provided
-        if (type === SourceDatasetType.FHIR && !fhirProjectId) {
-          const fhirErrorMsg = `FHIR project ID not found for FHIR dataset type`;
-          this.logger.error(fhirErrorMsg);
-          return res.status(400).send(fhirErrorMsg);
-        }
-
         try {
           this.logger.info(`Create dataset ${id}`);
           const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
