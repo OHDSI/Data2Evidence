@@ -23,6 +23,18 @@ export class CachedbController {
       await this.createCachedbFileFlowRun(req, res);
     });
 
+    // POST /cachedb/create-fhir-file
+    this.router.post(
+      "/create-fhir-file",
+      async (req: Request, res: Response) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          return res.status(400).json({ errors: errors.array() });
+        }
+        await this.createFhirCacheFileFlowRun(req, res);
+      }
+    );
+
     // GET /cachedb/results/:flowRunId
     this.router.get(
       "/results/:flowRunId",
@@ -89,6 +101,20 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating cachedb file flow run: ${error}`);
+      res.status(500).send(`Error occurs: ${error}`);
+    }
+  }
+
+  private async createFhirCacheFileFlowRun(req: Request, res: Response) {
+    try {
+      const token = req.headers.authorization!;
+      const result = await this.cachedbService.createFhirCacheFileFlowRun(
+        req.body,
+        token
+      );
+      res.send(result);
+    } catch (error) {
+      console.error(`Error creating fhir cache file flow run: ${error}`);
       res.status(500).send(`Error occurs: ${error}`);
     }
   }

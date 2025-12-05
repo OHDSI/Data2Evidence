@@ -175,8 +175,11 @@ interface Datamodel {
   flowId: string;
 }
 
-const FHIR_DB_CODE = "alp_fhir"; // dummy value set for the database in FHIR dataset creation
-const FHIR_SCHEMA_NAME = "fhir"; // hardcoded schema name for FHIR dataset creation
+// hardcoded values for FHIR dataset creation
+const FHIR_DB_CODE = "alp_fhir";
+const FHIR_SCHEMA_NAME = "fhir";
+const FHIR_DIALECT = "postgresql";
+
 
 export const SchemaTypes = {
   CreateCDM: "create_cdm",
@@ -621,7 +624,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   isSameCdmSchemaForVocab: true,
                   vocabSchemaValue: "",
                   databaseCode: schemaOption === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
-                  dialect: "",
+                  dialect: schemaOption === SchemaTypes.FHIR ? FHIR_DIALECT : "",
                   type: newType,
                   cacheDatasetType: DatasetMap[newType][0],
                 });
