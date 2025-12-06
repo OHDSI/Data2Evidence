@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'GroupButtons',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -106,7 +103,10 @@ watch(selectedOption, (newValue: string) => {
   background-color: transparent;
   border: 1px solid transparent;
   border-radius: 0;
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
     box-shadow 0.15s ease-in-out;
 }
 

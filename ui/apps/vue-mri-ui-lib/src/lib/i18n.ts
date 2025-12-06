@@ -613,6 +613,8 @@ export const i18n = {
     MRI_PA_CONFIG_ADMIN_DUPLICATE_TOOLTIP: 'Duplicate this filter card',
     MRI_PA_CONFIG_ADMIN_DELETE_FILTER_TOOLTIP: 'Delete this filter card with all its associated attributes',
     MRI_PA_CONFIG_ADMIN_ACCEPT_FILTER_TOOLTIP: 'Accept this suggested filter card with all its associated attributes',
+    MRI_PA_INVALID_NAME_ERROR: 'Cohort name already exists. Please enter another name.',
+    MRI_PA_BMK_EMPTY_NAME_ERROR: 'Please enter a name.',
     MRI_PA_SAVE_BMK_ERROR: "Couldn't save the filters.",
     MRI_PA_SAVE_BMK_SUCCESS: 'Filters saved.',
     MRI_PA_UPDATE_BMK_ERROR: "Couldn't update the saved filter.",
@@ -661,6 +663,7 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_GEQ_LEQ: '{0} or {1} for greater than or equal to/less than or equal to',
     MRI_PA_RANGE_CONSTRAINT_HELP_INTERVAL: '{0} or {1} for an interval including or excluding the endpoints',
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0} for negative values',
+    MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT: 'Invalid input. Use a number, comparison, or interval.',
     MRI_PA_DISABLED_FC_HELP_HEADER: 'Disabled Filter Card',
     MRI_PA_DISABLED_FC_HELP_TEXT: 'To activate the filter card, enter a valid variant location.',
     MRI_PA_VARIANT_CONSTRAINT_HELP_TEXT: 'Enter one or more of the following:',
@@ -1519,6 +1522,8 @@ export const i18n = {
     MRI_PA_CONFIG_ADMIN_DELETE_FILTER_TOOLTIP: 'Diese Filterkachel mit allen zugehörigen Attributen löschen',
     MRI_PA_CONFIG_ADMIN_ACCEPT_FILTER_TOOLTIP:
       'Diese vorgeschlagene Filterkachel mit allen zugehörigen Attributen annehmen',
+    MRI_PA_INVALID_NAME_ERROR: 'Kohortenname existiert bereits. Bitte geben Sie einen anderen Namen ein.',
+    MRI_PA_BMK_EMPTY_NAME_ERROR: 'Bitte geben Sie einen Namen ein.',
     MRI_PA_SAVE_BMK_ERROR: 'Filter konnten nicht gesichert werden.',
     MRI_PA_SAVE_BMK_SUCCESS: 'Filter wurden gesichert.',
     MRI_PA_UPDATE_BMK_ERROR: 'Gesicherter Filter konnte nicht aktualisiert werden.',
@@ -1569,6 +1574,8 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_INTERVAL:
       '{0} oder {1} für ein Intervall einschließlich oder ausschließlich der Endpunkte',
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0} für negative Werte',
+    MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT:
+      'Ungültige Eingabe. Verwenden Sie eine Zahl, einen Vergleich oder ein Intervall.',
     MRI_PA_DISABLED_FC_HELP_HEADER: 'Deaktivierte Filterkachel',
     MRI_PA_DISABLED_FC_HELP_TEXT: 'Um die Filterkachel zu aktivieren, geben Sie eine gültige Variantenposition ein.',
     MRI_PA_VARIANT_CONSTRAINT_HELP_TEXT: 'Machen Sie eine oder mehrere der folgenden Angaben:',
@@ -2372,6 +2379,8 @@ export const i18n = {
     MRI_PA_CONFIG_ADMIN_DUPLICATE_TOOLTIP: '复制此过滤器卡',
     MRI_PA_CONFIG_ADMIN_DELETE_FILTER_TOOLTIP: '删除此过滤器卡及其所有相关属性',
     MRI_PA_CONFIG_ADMIN_ACCEPT_FILTER_TOOLTIP: '接受此建议过滤器卡及其所有相关属性',
+    MRI_PA_INVALID_NAME_ERROR: '群组名称已存在。请输入另一个名称。',
+    MRI_PA_BMK_EMPTY_NAME_ERROR: '请输入名称。',
     MRI_PA_SAVE_BMK_ERROR: '无法保存过滤器。',
     MRI_PA_SAVE_BMK_SUCCESS: '已保存过滤器。',
     MRI_PA_UPDATE_BMK_ERROR: '无法更新已保存的过滤器。',
@@ -2411,6 +2420,7 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_GEQ_LEQ: '{0} 或 {1}，表示大于或等于/小于或等于',
     MRI_PA_RANGE_CONSTRAINT_HELP_INTERVAL: '{0} 或 {1}，表示包括或排除端点的间隔',
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0}，表示负值',
+    MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT: '无效输入。请使用数字、比较或区间。',
     MRI_PA_DISABLED_FC_HELP_HEADER: '已禁用的过滤器卡',
     MRI_PA_DISABLED_FC_HELP_TEXT: '要激活过滤器卡，请输入有效的变式位置。',
     MRI_PA_VARIANT_CONSTRAINT_HELP_TEXT: '输入以下一项或多项内容：',
@@ -2637,3 +2647,4 @@ function getKeyMap<T extends object>(obj: T) {
 // can be getText(i18nKeys.MRI_PA_FILTERCARD_SELECTION_NONE)
 // to prevent typos with the values
 export const i18nKeys = getKeyMap(i18n.en)
+

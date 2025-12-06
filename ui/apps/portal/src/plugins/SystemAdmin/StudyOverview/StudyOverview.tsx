@@ -31,7 +31,9 @@ import { api } from "../../../axios/api";
 import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
+import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
 import "./StudyOverview.scss";
+import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
 
 const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
@@ -68,9 +70,20 @@ const StudyOverview: FC = () => {
   const [showCreateCacheDialog, openCreateCacheDialog, closeCreateCacheDialog] = useDialogHelper(false);
   const [showSetupSemanticSearchDialog, openSetupSemanticSearchDialog, closeSetupSemanticSearchDialog] =
     useDialogHelper(false);
+  const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
+    useDialogHelper(false);
+  const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [loading, setLoading] = useState(false);
+
+  const handleSourceInformation = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openSourceInformationDialog();
+    },
+    [openSourceInformationDialog]
+  );
 
   const handleUpdateStudy = useCallback(
     (dataset: Study) => {
@@ -164,6 +177,14 @@ const StudyOverview: FC = () => {
     [openSetupSemanticSearchDialog]
   );
 
+  const handleManageDashboard = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openManageDashboardDialog();
+    },
+    [openManageDashboardDialog]
+  );
+
   const visibilityImgAlt = useCallback((value?: string) => {
     if (!value) return;
     return value === "DEFAULT" ? "Normal" : value.charAt(0).toUpperCase() + value.substring(1).toLowerCase();
@@ -228,16 +249,33 @@ const StudyOverview: FC = () => {
     setFetchUpdatesLoading(true);
     const datasetsByFlow: Record<string, Study[]> = {};
     const apiRequests = [];
+
+    const sourceDatasets: Study[] = [];
+    const cacheDatasets: Study[] = [];
+
     datasets.forEach((item: Study) => {
       const flowName = item.plugin;
 
-      if (flowName === "custom-flow") return;
-      if (!datasetsByFlow[flowName]) {
-        datasetsByFlow[flowName] = [];
+      // Skip datasets with null plugin, custom-flow, or FHIR datasets
+      if (!flowName || flowName === "custom-flow" || item.type === "fhir" || item.type === "non_omop") return;
+
+      // Check if this is a cache/datamart dataset (has source_dataset_id attribute)
+      const hasSourceDatasetId = item.attributes?.some(
+        (attribute) => attribute.attributeId === "source_dataset_id"
+      );
+
+      if (hasSourceDatasetId) {
+        cacheDatasets.push(item);
+      } else if (item.type === "source") {
+        if (!datasetsByFlow[flowName]) {
+          datasetsByFlow[flowName] = [];
+        }
+        datasetsByFlow[flowName].push(item);
+        sourceDatasets.push(item);
       }
-      datasetsByFlow[flowName].push(item);
     });
 
+    // Create get_version_info flow runs for source datasets grouped by plugin
     for (const flow in datasetsByFlow) {
       apiRequests.push(
         api.dataflow.createGetVersionInfoFlowRun({
@@ -255,23 +293,25 @@ const StudyOverview: FC = () => {
         })
       );
     }
-    apiRequests.push(
-      api.dataflow.createGetVersionInfoFlowRun({
-        flowRunName: "datamart-get_version_info",
-        options: {
+
+    // Create get_version_info flow run for cache datasets
+    if (cacheDatasets.length > 0) {
+      apiRequests.push(
+        api.dataflow.createGetVersionInfoFlowRun({
+          flowRunName: "cache-get_version_info",
           options: {
-            flow_action_type: "get_version_info",
-            token: "",
-            database_code: "",
-            data_model: "",
-            plugin: "datamart_plugin",
-            datasets: datasets.filter(
-              (dataset) => dataset.attributes?.some((attribute) => attribute.attributeId === "source_dataset_id") // Filter out the datamart dataset
-            ),
+            options: {
+              flowActionType: "get_version_info",
+              token: "",
+              database_code: "",
+              data_model: "",
+              plugin: "create_cachedb_file_plugin",
+              datasets: cacheDatasets,
+            },
           },
-        },
-      })
-    );
+        })
+      );
+    }
 
     try {
       await Promise.all(apiRequests);
@@ -360,6 +400,7 @@ const StudyOverview: FC = () => {
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
+                  <TableCell>Type</TableCell>
                   <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
                 </TableRow>
               </TableHead>
@@ -413,11 +454,12 @@ const StudyOverview: FC = () => {
                             </Tooltip>
                           )}
                     </TableCell>
-
+                    <TableCell>{dataset.type}</TableCell>
                     <TableCell className="col-action">
                       <ActionSelector
                         dataset={dataset}
                         isSchemaUpdatable={checkIfStudyIsUpdatable(dataset)}
+                        handleSourceInformation={handleSourceInformation}
                         handleDeleteStudy={handleDeleteStudy}
                         handleCopyStudy={handleCopyStudy}
                         handleMetadata={handleUpdateStudy}
@@ -429,6 +471,7 @@ const StudyOverview: FC = () => {
                         handleDataCharacterization={handleDataCharacterization}
                         handleCreateCache={handleCreateCache}
                         handleSetupSemanticSearch={handleSetupSemanticSearch}
+                        handleManageDashboard={handleManageDashboard}
                       />
                     </TableCell>
                   </TableRow>
@@ -508,6 +551,22 @@ const StudyOverview: FC = () => {
               dataset={activeDataset}
               open={showSetupSemanticSearchDialog}
               onClose={closeSetupSemanticSearchDialog}
+            />
+          )}
+
+          {showSourceInformationDialog && (
+            <SourceInformationDialog
+              dataset={activeDataset}
+              open={showSourceInformationDialog}
+              onClose={closeSourceInformationDialog}
+            />
+          )}
+
+          {showManageDashboardDialog && (
+            <ManageDashboardDialog
+              study={activeDataset}
+              open={showManageDashboardDialog}
+              onClose={closeManageDashboardDialog}
             />
           )}
         </div>

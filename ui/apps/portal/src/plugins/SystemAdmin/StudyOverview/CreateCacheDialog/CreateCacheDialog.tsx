@@ -32,7 +32,30 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
     try {
       setUpdating(true);
 
-      const data: CreateCacheFlowRun = { datasetId: dataset?.id };
+      const studyFlowParameters = dataset?.flowParameters;
+      const sourceDatasetId = dataset?.sourceStudyId;
+      const targetDatasetId = sourceDatasetId ?? dataset?.id;
+
+      if (!targetDatasetId) {
+        setFeedback({
+          type: "error",
+          message: "Missing dataset identifier. Please refresh and try again.",
+        });
+        setUpdating(false);
+        return;
+      }
+
+      const data: CreateCacheFlowRun = { datasetId: targetDatasetId };
+
+      // If this is a datamart (has a source), include the cache dataset ID
+      if (sourceDatasetId) {
+        data.cacheDatasetId = dataset?.id;
+      }
+
+      if (studyFlowParameters?.snapshotCopyConfig) {
+        data.snapshotCopyConfig = studyFlowParameters.snapshotCopyConfig;
+      }
+
       await api.dataflow.createCacheFlowRun(data);
 
       setFeedback({
@@ -49,7 +72,7 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
     } finally {
       setUpdating(false);
     }
-  }, [handleClose, dataset?.id, getText]);
+  }, [handleClose, dataset, getText]);
 
   return (
     <Dialog

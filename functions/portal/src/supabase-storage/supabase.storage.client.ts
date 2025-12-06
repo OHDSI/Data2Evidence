@@ -2,21 +2,26 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  SCOPE,
 } from "@danet/core";
 import { contentType } from "mime-types";
 import pg from "npm:pg";
 import { env, services } from "../env.ts";
+import { RequestContextService } from "../common/request-context.service.ts";
 
-@Injectable()
+@Injectable({ scope: SCOPE.REQUEST })
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
   private readonly authToken: string;
+  private readonly requestContextService: RequestContextService;
   private pgclient;
   private pgOpt;
 
-  constructor() {
+  constructor(requestContextService: RequestContextService) {
+    this.requestContextService = requestContextService;
     this.baseUrl = services.supabaseStorage;
+    // this.authToken = this.requestContextService.getOriginalToken() || "";
     this.authToken = env.SUPABASE_STORAGE_JWT_TOKEN;
 
     const envObj = Deno.env.toObject();
@@ -97,7 +102,13 @@ export class SupabaseStorageClient {
 
   // Supabase storage API does not work for listing files, need further investigation.
   // Directly query the database to get the files.
-  async list(datasetId: string) {
+  async list(
+    id: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
+    const targetBucket = bucketName || this.DEFAULT_BUCKET;
+
     try {
       if (
         !this.pgclient ||
@@ -106,7 +117,14 @@ export class SupabaseStorageClient {
         await this.initializeDb();
       }
 
-      const folderPath = this.getDatasetFolderPath(datasetId);
+      let folderPath;
+
+      if (pathType === "data-transformation") {
+        folderPath = this.getDataTransformationFolderPath(id);
+      } else {
+        folderPath = this.getDatasetFolderPath(id);
+      }
+
       console.log(`Querying database for files in folder: ${folderPath}`);
 
       // Query the storage.objects table directly
@@ -119,14 +137,20 @@ export class SupabaseStorageClient {
       `;
 
       const result = await this.pgclient.query(query, [
-        this.DEFAULT_BUCKET,
+        targetBucket,
         `${folderPath}/%`,
         `${folderPath}/%/%`, // Exclude nested folders
       ]);
 
-      console.log(
-        `Found ${result.rows.length} files in database for dataset ${datasetId}`
-      );
+      if (pathType === "data-transformation") {
+        console.log(
+          `Found ${result.rows.length} files in database for data-transformation node ${id}`
+        );
+      } else {
+        console.log(
+          `Found ${result.rows.length} files in database for dataset ${id}`
+        );
+      }
 
       return result.rows.map((file) => {
         const fullPath = file.name;
@@ -151,13 +175,20 @@ export class SupabaseStorageClient {
     }
   }
 
-  async download(datasetId: string, fileName: string) {
+  async download(
+    datasetId: string,
+    fileName: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
     try {
-      const filePath = this.getFilePath(datasetId, fileName);
-      console.log(`Downloading file: ${filePath}`);
+      const targetBucket = bucketName || this.DEFAULT_BUCKET;
+
+      const filePath = this.getFilePath(datasetId, fileName, pathType);
+      console.log(`Downloading file: ${filePath} from bucket: ${targetBucket}`);
 
       // Direct request to download file
-      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {

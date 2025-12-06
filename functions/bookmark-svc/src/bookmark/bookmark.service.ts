@@ -99,12 +99,7 @@ export async function _loadAllBookmarks(
   try {
     const portalAPI = new PortalAPI(token)
 
-    // Get pa_config_id via datasetId
-    const { paConfigId } = await portalAPI.getDatasetViaSystemAdmin(datasetId)
-    if (!paConfigId) {
-      throw `paConfigId does not exist for dataset with datasetId:${datasetId}`
-    }
-
+    const paConfigId = await portalAPI.getDatasetPaConfigId(datasetId)
     // Get and format bookmarks
     const bookmarks = await portalAPI.getBookmarks(datasetId)
     let formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName)
@@ -465,6 +460,7 @@ export async function queryBookmarks(
     let cdmConfigVersion: string = requestParameters.cdmConfigVersion
     let shareBookmark: boolean = requestParameters.shareBookmark
     let datasetId: string = requestParameters.datasetId
+    let trimmedBookmarkName: string = requestParameters.bookmarkname?.trim() || requestParameters.newName?.trim() || ''
 
     let cb = (err, result) => {
       if (err) {
@@ -477,8 +473,13 @@ export async function queryBookmarks(
     switch (cmd) {
       case 'insert':
         // 'this' has to be used so we can use spyON in the tests
+
+        if (!trimmedBookmarkName.length) {
+          cb('Bookmark name cannot be empty', null)
+          return
+        }
         _insertBookmark(
-          requestParameters.bookmarkname,
+          trimmedBookmarkName,
           bookmark,
           userName,
           paConfigId,
@@ -507,9 +508,13 @@ export async function queryBookmarks(
         )
         break
       case 'rename':
+        if (!trimmedBookmarkName.length) {
+          cb('Bookmark name cannot be empty', null)
+          return
+        }
         _renameBookmark(
           bookmarkId,
-          requestParameters.newName,
+          trimmedBookmarkName,
           paConfigId,
           cdmConfigId,
           cdmConfigVersion,
@@ -593,7 +598,7 @@ const _filterUntaggedMaterializedCohorts = (
   return filteredMaterializedCohorts
 }
 
-const _getBookmarkMaterializedCohortDefinitionId   = (
+const _getBookmarkMaterializedCohortDefinitionId = (
   bookmarkId: string,
   materializedCohorts: IMaterializedCohort[]
 ): number | undefined => {

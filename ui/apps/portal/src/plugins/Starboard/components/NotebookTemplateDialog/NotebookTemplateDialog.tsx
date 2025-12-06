@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@portal/components";
+import { Button, Dialog, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@portal/components";
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../axios/api";
 import { NotebookTemplateDto } from "../../../../axios/study-notebook";
@@ -61,6 +61,9 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
 
   const onFormDataChange = useCallback((updates: Partial<FormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }));
+    if (updates.name !== undefined) {
+      setShowErrorMessage(false);
+    }
   }, []);
 
   const isDuplicateName = useCallback(
@@ -71,30 +74,40 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
   );
 
   const handleCreate = useCallback(() => {
-    if (!formData.name.trim()) {
+    const trimmedName = formData.name.trim();
+    
+    if (!trimmedName) {
       setFeedback({
         type: "error",
         message: getText(i18nKeys.STARBOARD__ERROR_NOTEBOOK_NAME_REQUIRED),
       });
       return;
     }
-    if (isDuplicateName(formData.name)) {
+    if (isDuplicateName(trimmedName)) {
       setShowErrorMessage(true);
       return;
     }
 
     if (formData.selectedTemplate) {
-      onCreateFromTemplate(formData.selectedTemplate, formData.name.trim());
+      onCreateFromTemplate(formData.selectedTemplate, trimmedName);
     } else {
       // Create blank notebook with custom name
-      onCreateBlank(formData.name.trim());
+      onCreateBlank(trimmedName);
     }
     onClose();
-  }, [formData, onCreateFromTemplate, onCreateBlank, onClose, setFeedback, isDuplicateName]);
+  }, [formData, onCreateFromTemplate, onCreateBlank, onClose, setFeedback, isDuplicateName, getText, i18nKeys]);
 
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleCreate();
+    },
+    [handleCreate]
+  );
 
   return (
     <Dialog
@@ -105,8 +118,9 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
       onClose={onClose}
       maxWidth="md"
     >
-      <div className="notebook-template-dialog__content">
-        <Box mb={4}>
+      <form onSubmit={handleSubmit}>
+        <div className="notebook-template-dialog__content">
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             label={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_LABEL)}
             sx={{ width: "100%" }}
@@ -114,14 +128,15 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
             value={formData.name}
             onChange={(e: ChangeEvent<HTMLInputElement>) => onFormDataChange({ name: e.target.value })}
             placeholder={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_PLACEHOLDER)}
+            autoFocus
           />
           {showErrorMessage && (
             <div className="notebook-template-dialog__content__error">
               {getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME__ALREADY_EXISTS)}
             </div>
           )}
-        </Box>
-        <Box mb={4}>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
           <InputLabel sx={{ mb: 1 }}>{getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_TEMPLATE_LABEL)}</InputLabel>
           <Select
             sx={{ width: "100%" }}
@@ -140,18 +155,20 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
               </MenuItem>
             ))}
           </Select>
-        </Box>
-      </div>
-      <div className="notebook-template-dialog__footer">
-        <Box display="flex" gap={1} className="notebook-template-dialog__footer-actions">
-          <Button text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CANCEL)} variant="outlined" onClick={handleClose} />
-          <Button
-            text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CREATE)}
-            onClick={handleCreate}
-            disabled={!formData.name.trim()}
-          />
-        </Box>
-      </div>
+        </div>
+        </div>
+        <div className="notebook-template-dialog__footer">
+          <div style={{ display: "flex", gap: "8px" }} className="notebook-template-dialog__footer-actions">
+            <Button text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CANCEL)} variant="outlined" onClick={handleClose} />
+            <Button
+              text={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_CREATE)}
+              onClick={handleCreate}
+              disabled={!formData.name.trim()}
+              type="submit"
+            />
+          </div>
+        </div>
+      </form>
     </Dialog>
   );
 };

@@ -274,25 +274,6 @@
         }
       }
     }
-
-    .feedback-btn {
-      padding: 6px 16px;
-      font-size: 14px;
-      font-weight: 500;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-
-      &.btn-outline-primary {
-        background-color: transparent;
-        color: var(--color-primary);
-        border: 1px solid var(--color-primary);
-
-        &:hover {
-          background-color: rgba(0, 0, 128, 0.04);
-        }
-      }
-    }
   }
   .query-filter-container {
     width: 90%;
@@ -474,6 +455,13 @@
         word-wrap: break-word;
         overflow-wrap: break-word;
       }
+    }
+  }
+  .cohort-actions-btn {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    &:hover {
+      border-color: var(--color-primary);
     }
   }
 }

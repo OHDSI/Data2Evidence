@@ -13,7 +13,7 @@ from .types import DqdOptionsType, DqdParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
-from _shared_flow_utils.rutils import set_trex_env_var
+from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMode
 
 os.environ["plugin_name"] = "dqd_plugin"
@@ -24,7 +24,6 @@ def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
 
     flow_run_id = runtime.flow_run.id
-    output_folder = f"/output/{flow_run_id}"
 
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
@@ -48,7 +47,6 @@ def dqd_plugin(options: DqdOptionsType):
     # Todo: Update implementation if Hana uses trex
     dqd_parameters = DqdParams(
         **options.model_dump(),
-        outputFolder=output_folder,
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
         use_trex_connection=use_trex_connection,
@@ -96,7 +94,7 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
             verboseMode = dqd_params.verboseMode,
             checkLevels = robjects.StrVector(dqd_params.checkLevels),
             checkNames = robjects.StrVector(dqd_params.checkNames) if dqd_params.checkNames else robjects.NULL,
-            cohortDefinitionId = robjects.StrVector(dqd_params.cohortDefinitionId) if dqd_params.cohortDefinitionId else robjects.NULL,
+            cohortDefinitionId = convert_to_int_vector(dqd_params.cohortDefinitionId),
             cdmVersion = dqd_params.cdmVersionNumber,
             cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
             cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",

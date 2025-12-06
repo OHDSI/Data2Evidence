@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
 import { onMounted, ref, watch } from 'vue'
@@ -36,14 +28,18 @@ onMounted(() => {
   }
 })
 
-watch(props.value, (newValue) => {
-  if (newValue) {
-    startWithModel.value = newValue.StartWith || 'START_DATE'
-    endWithModel.value = newValue.EndWith || 'END_DATE'
-    startOffsetModel.value = newValue.StartOffset || 0
-    endOffsetModel.value = newValue.EndOffset || 0
-  }
-}, { immediate: true })
+watch(
+  props.value,
+  newValue => {
+    if (newValue) {
+      startWithModel.value = newValue.StartWith || 'START_DATE'
+      endWithModel.value = newValue.EndWith || 'END_DATE'
+      startOffsetModel.value = newValue.StartOffset || 0
+      endOffsetModel.value = newValue.EndOffset || 0
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   [startWithModel, endWithModel, startOffsetModel, endOffsetModel],
@@ -114,4 +110,3 @@ watch(
   }
 }
 </style>
-

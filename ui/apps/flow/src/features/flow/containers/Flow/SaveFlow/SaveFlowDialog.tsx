@@ -113,12 +113,18 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   }, [props.open, dataflow, nameRef, commentRef]);
 
   const handleSave = useCallback(async () => {
+    const trimmedName = formData.name.trim();
+    
+    if (!trimmedName) {
+      return;
+    }
+    
     if (isNew && formData.selectedTemplate) {
       // Create from template
       const response = await createFromTemplate({
         templateId: formData.selectedTemplate,
-        name: formData.name,
-        comment: formData.comment,
+        name: trimmedName,
+        comment: formData.comment.trim(),
       });
 
       if ("error" in response) {
@@ -136,16 +142,16 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       // Without template
       const dataflow: SaveDataflowDto = {
         id: saveFlowDialog.dataflowId,
-        name: formData.name,
+        name: trimmedName,
         dataflow: isNew
           ? {
               nodes: [],
               edges: [],
               variables: [],
               importLibs: [],
-              comment: formData.comment,
+              comment: formData.comment.trim(),
             }
-          : { nodes, edges, variables, importLibs, comment: formData.comment },
+          : { nodes, edges, variables, importLibs, comment: formData.comment.trim() },
       };
       const response = await saveDataflow(dataflow);
 
@@ -174,11 +180,21 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     variables,
     importLibs,
     createFromTemplate,
+    saveDataflow,
+    onClose,
   ]);
 
   const handleClose = useCallback(() => {
     typeof onClose === "function" && onClose();
   }, [onClose]);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleSave();
+    },
+    [handleSave]
+  );
 
   return (
     <Dialog
@@ -187,7 +203,8 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       onClose={handleClose}
       {...props}
     >
-      <div className="save-flow-dialog__content">
+      <form onSubmit={handleSubmit}>
+        <div className="save-flow-dialog__content">
         <Snackbar
           type="error"
           message={error?.message}
@@ -255,21 +272,24 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
             </Select>
           </Box>
         )}
-      </div>
-      <div className="save-flow-dialog__footer">
-        <Box
-          display="flex"
-          gap={1}
-          className="save-flow-dialog__footer-actions"
-        >
-          <Button text="Cancel" variant="outlined" onClick={handleClose} />
-          <Button
-            text={isNew ? "Create" : !!revisionId ? "Overwrite latest" : "Save"}
-            onClick={handleSave}
-            loading={isLoading || createFromTemplateLoading}
-          />
-        </Box>
-      </div>
+        </div>
+        <div className="save-flow-dialog__footer">
+          <Box
+            display="flex"
+            gap={1}
+            className="save-flow-dialog__footer-actions"
+          >
+            <Button text="Cancel" variant="outlined" onClick={handleClose} />
+            <Button
+              text={isNew ? "Create" : !!revisionId ? "Overwrite latest" : "Save"}
+              onClick={handleSave}
+              loading={isLoading || createFromTemplateLoading}
+              type="submit"
+              disabled={!formData.name.trim()}
+            />
+          </Box>
+        </div>
+      </form>
     </Dialog>
   );
 };

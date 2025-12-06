@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'InfoIcon',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 <template>

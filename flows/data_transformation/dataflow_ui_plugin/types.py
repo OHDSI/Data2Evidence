@@ -6,6 +6,7 @@ from typing import Annotated, Union, Literal, Optional
 
 class NodeType(str, Enum):
     CSV = "csv_node"
+    FILE = "file_node"
     SQL = "sql_node"
     PYTHON = "python_node"
     PY2TABLE = "py2table_node"
@@ -16,6 +17,7 @@ class NodeType(str, Enum):
     DATAMAPPING = "data_mapping_node"
     CONCEPTMAPPING = "concept_mapping_node"
     SUBFLOW = "subflow"
+    TRANSFORMFHIRDATA = "transform_fhir_data_node"
 
 class DataflowUITraceConfigType(BaseModel):
     trace_db: str

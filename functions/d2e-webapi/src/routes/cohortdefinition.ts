@@ -13,7 +13,6 @@ import {
   CohortDefinitionResponseDto,
   GenerateCohortResponseDto,
   ICohortDefinitionIdInfoResponseDto,
-  ICohortDefinitionCheckV2ResponseDto,
 } from "../dto/cohortdefinition.ts";
 import {
   createCohortDefinition,
@@ -24,6 +23,7 @@ import {
   deleteCohortDefinition,
   copyCohortDefinition,
   checkIfAtlasCohortDefinitionExists,
+  checkV2,
 } from "../services/cohortdefinition.service.ts";
 
 // deno-lint-ignore require-await
@@ -42,11 +42,13 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
             datasetid: [],
           },
         ],
+        querystring: z.object({
+          source: z.string().optional(),
+        }),
       },
     },
     async (req, res) => {
-      const referer = req.headers.referer;
-      const isAtlas = referer?.includes("/atlas");
+      const isAtlas = !req.query.source || req.query.source !== "pa";
       const result = await getCohortDefinitionList(
         req.token,
         req.datasetId,
@@ -314,49 +316,14 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         ],
       },
     },
-    (_req, res) => {
-      // TODO: ADD  LOGIC
-      const dummyresult: ICohortDefinitionCheckV2ResponseDto = {
-        warnings: [
-          // {
-          //   type: "DefaultWarning",
-          //   severity: "WARNING",
-          //   message:
-          //     "Tags - no assigned tags from mandatory groups [Prod_Group]",
-          // },
-          // {
-          //   type: "ConceptSetWarning",
-          //   severity: "WARNING",
-          //   message: 'Concept Set "[blkrudolph] hospitalization" is not used',
-          //   conceptSetId: 0,
-          // },
-          // {
-          //   type: "ConceptSetWarning",
-          //   severity: "WARNING",
-          //   message: 'Concept Set "[blkrudolph] Emergency Room" is not used',
-          //   conceptSetId: 1,
-          // },
-          // {
-          //   type: "DefaultWarning",
-          //   severity: "CRITICAL",
-          //   message: "Inclusion rule No warfarin exposure.",
-          // },
-          // {
-          //   type: "DefaultWarning",
-          //   severity: "WARNING",
-          //   message:
-          //     ' "all events" are selected and cohort exit criteria has not been specified',
-          // },
-          // {
-          //   type: "DefaultWarning",
-          //   severity: "INFO",
-          //   message:
-          //     "It's not specified what type of records to look for in condition occurrence at initial event",
-          // },
-        ],
-      };
+    async (req, res) => {
+      const result = await checkV2(
+        req.token,
+        req.datasetId,
+        req.body.expression
+      );
 
-      res.send(dummyresult);
+      res.send(result);
     }
   );
 

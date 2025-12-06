@@ -3,6 +3,7 @@ import {
   ConceptSet,
   ConceptSetConcept,
   IWebapiConcept,
+  IWebapiConceptRecordCount,
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
 } from "../plugins/Researcher/Terminology/utils/types";
@@ -40,6 +41,16 @@ export class D2eWebapi {
       url: `/vocabulary/${datasetId}/search?${params}`,
       method: "POST",
       data,
+      headers: { datasetid: datasetId },
+    });
+  }
+
+  public getConceptRecordCounts(datasetId: string, conceptIds: number[]) {
+    return request<IWebapiConceptRecordCount[]>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/cdmresults/${datasetId}/conceptRecordCount`,
+      method: "POST",
+      data: conceptIds,
       headers: { datasetid: datasetId },
     });
   }
@@ -82,6 +93,18 @@ export class D2eWebapi {
         headers: { datasetid: datasetId },
       });
     }
+  }
+
+  public checkIfConceptSetExists(conceptSetId: number, conceptSetName: string, datasetId: string): Promise<number> {
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.checkIfConceptSetExists(conceptSetId, conceptSetName);
+    }
+    return request<number>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(conceptSetName)}`,
+      method: "GET",
+      headers: { datasetid: datasetId },
+    });
   }
 
   public async createConceptSet(name: string, datasetId: string): Promise<number> {

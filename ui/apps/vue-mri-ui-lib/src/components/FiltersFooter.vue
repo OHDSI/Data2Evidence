@@ -90,7 +90,7 @@
                   <div class="col">
                     <input
                       class="form-control"
-                      :class="{ 'is-invalid': isInvalidName }"
+                      :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
                       :placeholder="getText('MRI_PA_COLL_ENTER_NAME')"
                       v-model="cohortName"
                       tabindex="0"
@@ -99,11 +99,20 @@
                       maxlength="40"
                       @keydown.enter="saveBookmark"
                     />
-                    <div class="invalid-feedback" v-bind:style="[isInvalidName && 'display: block;']">
-                      Please enter another name
+                    <div
+                      class="invalid-feedback"
+                      v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']"
+                    >
+                      {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
                     </div>
                     <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
                       Filter name must not exceed 40 characters
+                    </div>
+                    <div
+                      class="invalid-feedback"
+                      v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']"
+                    >
+                      {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
                     </div>
                   </div>
                 </div>
@@ -173,9 +182,6 @@ import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'filtersFooter',
   props: {
     splitAddButton: {
@@ -190,7 +196,7 @@ export default {
       shareBookmark: false,
       showResetDialog: false,
       saveDialogWidth: 260,
-      isInvalidName: false,
+      cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
       cohortName: '',
       maxLength: 40,
       maxFiltercardCount: 10,
@@ -265,6 +271,7 @@ export default {
     },
     closeSaveBookmark() {
       this.showSaveBookmark = false
+      this.cohortNameValidationState = 'valid'
     },
     closeResetDialog() {
       this.showResetDialog = false
@@ -274,19 +281,31 @@ export default {
     },
     async saveBookmark() {
       if (this.hasChanges) {
+        this.cohortName = this.cohortName.trim()
         const bookmark = this.getBookmarksData
         const activeBookmark = this.getActiveBookmark
         const isNewBookmark = activeBookmark?.isNew || false
-        const username = getPortalAPI().username
 
-        for (const bookmark of this.getBookmarks) {
-          if (username === bookmark.user_id && bookmark.bookmarkname === this.cohortName) {
-            this.isInvalidName = true
-            return
-          }
+        // Check if the new name is empty only for new bookmarks
+        if (isNewBookmark && !this.cohortName.length) {
+          this.cohortNameValidationState = 'empty'
+          return
         }
 
-        const bookmarkName = this.cohortName ? this.cohortName : activeBookmark.bookmarkname
+        const username = getPortalAPI().username
+
+        // For updates without a new name, use the existing bookmark name
+        const bookmarkName = this.cohortName.length > 0 ? this.cohortName : activeBookmark.bookmarkname
+
+        // Check for duplicate names only if a new name is provided
+        if (this.cohortName.length > 0) {
+          for (const bookmark of this.getBookmarks) {
+            if (username === bookmark.user_id && bookmark.bookmarkname === this.cohortName) {
+              this.cohortNameValidationState = 'invalid'
+              return
+            }
+          }
+        }
 
         if (isNewBookmark || this.isNotUserSharedBookmark) {
           const params = {

@@ -15,9 +15,14 @@
             <div class="input-container">
               <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
             </div>
-
+            <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']">
+              {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
+            </div>
             <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
               Filter name must not exceed 40 characters
+            </div>
+            <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']">
+              {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
             </div>
           </div>
         </div>
@@ -210,9 +215,6 @@ import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
   data() {
@@ -233,7 +235,7 @@ export default {
       showAddCohortDialog: false,
       showIncompatibleMessage: false,
       cohortName: 'New cohort',
-      isInvalidName: false,
+      cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
       showSaveOrDiscardDialog: false,
       isAddNewCohort: false,
       selectedBmkId: '',
@@ -372,17 +374,40 @@ export default {
       }
     },
     closeRenameBookmark() {
+      this.cohortNameValidationState = 'valid'
       this.showRenameDialog = false
     },
     renameBookmark(bookmarkDisplay) {
       if (bookmarkDisplay) {
         this.selectedBookmark = bookmarkDisplay
         this.renamedBookmark = bookmarkDisplay.displayName
+        this.cohortNameValidationState = 'valid'
         this.showRenameDialog = true
       }
     },
     confirmRenameBookmark() {
       const bookmarkDisplay = this.selectedBookmark
+
+      this.renamedBookmark = this.renamedBookmark.trim()
+
+      // Check if the new name is empty
+      if (!this.renamedBookmark.length) {
+        this.cohortNameValidationState = 'empty'
+        return
+      }
+
+      // Check if the new name is already taken
+      const username = getPortalAPI().username
+      for (const bookmark of this.getBookmarks) {
+        if (
+          username === bookmark.user_id &&
+          bookmark.bookmarkname.trim() === this.renamedBookmark &&
+          bookmark.bmkId !== this.selectedBookmark.bookmark.id // Exclude the current bookmark
+        ) {
+          this.cohortNameValidationState = 'invalid'
+          return
+        }
+      }
 
       if (this.isMScohort(bookmarkDisplay)) {
         this.fireRenameMaterializedCohortQuery({

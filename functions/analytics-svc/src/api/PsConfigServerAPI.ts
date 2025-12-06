@@ -45,9 +45,11 @@ export default class PsConfigServerAPI {
         const options: AxiosRequestConfig = {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
-            },
-            httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+            }
         };
+        if (env.NODE_ENV === "development") {
+            options.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+        }
 
         const data = Object.keys(params)
             .map(

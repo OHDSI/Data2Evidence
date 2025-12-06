@@ -186,6 +186,12 @@ class IbisDao(SqlAlchemyDao):
     #                obj=df)
 
     # --- Delete methods ---
+
+    # Ibis does not have cascade option for drop table
+    # def drop_table(self, schema: str, table: str, cascade: bool = False):
+    #     with self.ibis_connect() as con:
+    #         con.drop_table(table, database=schema) 
+
     def drop_schema(self, schema: str, cascade: bool = False):
         with self.ibis_connect() as con:
             con.drop_database(schema, cascade=cascade)

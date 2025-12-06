@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import { computed, defineProps } from 'vue'
 import TrashIcon from '../icons/TrashIcon.vue'
@@ -45,7 +37,8 @@ const getUpdate = payload => {
 }
 
 const attributeType = computed(() => {
-  return 'configType' in props.attribute ? props.attribute.configType : 'text'
+  const type = 'configType' in props.attribute ? props.attribute.configType : 'text'
+  return type
 })
 </script>
 
@@ -59,6 +52,8 @@ const attributeType = computed(() => {
         :is="componentMap[attributeType]"
         @update="getUpdate"
         :value="props.attribute && 'value' in props.attribute && props.attribute.value"
+        :operator="props.attribute && 'operator' in props.attribute && props.attribute.operator"
+        :extent="props.attribute && 'extent' in props.attribute && props.attribute.extent"
       />
     </div>
     <div class="attribute-btn-container">

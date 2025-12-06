@@ -28,3 +28,4 @@ export * from "./useOverviewDescription";
 export * from "./useConfigsByTypes";
 export * from "./useOverwriteAllCanvasesFromRemote";
 export * from "./useOverwriteAllNotebooksFromRemote";
+export * from "./useKernelViewer";

@@ -2,7 +2,6 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import FormControl from "@mui/material/FormControl";
 import Divider from "@mui/material/Divider";
 import {
-  Box,
   Button,
   Dialog,
   IconButton,
@@ -81,6 +80,14 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
     }
   }, [formData.oldPassword, formData.password, getText]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleUpdate();
+    },
+    [handleUpdate]
+  );
+
   return (
     <Dialog
       className="change-my-password-dialog"
@@ -90,11 +97,12 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
       onClose={handleClose}
       feedback={feedback}
     >
-      <Divider />
-      <div className="change-my-password-dialog__content">
+      <form onSubmit={handleSubmit}>
+        <Divider />
+        <div className="change-my-password-dialog__content">
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <TextField
                 fullWidth
                 type="password"
@@ -102,13 +110,14 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
                 label={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TEXT_FIELD_LABEL_1)}
                 value={formData.oldPassword}
                 onChange={(event) => setFormData((formData) => ({ ...formData, oldPassword: event.target.value }))}
+                autoFocus
               />
-            </Box>
+            </div>
           </FormControl>
         </div>
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <TextField
                 fullWidth
                 type={passwordShown ? "text" : "password"}
@@ -134,26 +143,28 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
                 variant="text"
                 onClick={handleGeneratePassword}
               />
-            </Box>
+            </div>
           </FormControl>
         </div>
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL)}
-          onClick={handleClose}
-          variant="outlined"
-          block
-          disabled={loading}
-        />
-        <Button
-          text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_UPDATE)}
-          onClick={handleUpdate}
-          block
-          loading={loading}
-        />
-      </div>
+        </div>
+        <Divider />
+        <div className="button-group-actions">
+          <Button
+            text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL)}
+            onClick={handleClose}
+            variant="outlined"
+            block
+            disabled={loading}
+          />
+          <Button
+            text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_UPDATE)}
+            onClick={handleUpdate}
+            block
+            loading={loading}
+            type="submit"
+          />
+        </div>
+      </form>
     </Dialog>
   );
 };

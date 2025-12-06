@@ -22760,7 +22760,7 @@ export const cdwConfigDuckdb = {
             "@RESPONSE.START": "\"AUTHORED\"",
             "@RESPONSE.END": "\"AUTHORED\"",
             "@RESPONSE.INTERACTION_TYPE": "\"VALUE_TYPE\"",
-            "@COHORT": "$$SCHEMA_DIRECT_CONN$$.cohort",
+            "@COHORT": "$$RESULT_SCHEMA$$.cohort",
             "@COHORT.PATIENT_ID": "\"subject_id\"",
             "@COHORT.INTERACTION_ID": "\"cohort_definition_id\"",
             "@COHORT.CONDITION_ID": "\"cohort_definition_id\"",
@@ -26546,7 +26546,7 @@ const paConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-        "usePaAtlas": true
+        "usePaAtlas": false
     }
 };
 
@@ -34254,7 +34254,7 @@ const pajsonfhirConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-        "usePaAtlas": true
+        "usePaAtlas": false
     }
 };
 

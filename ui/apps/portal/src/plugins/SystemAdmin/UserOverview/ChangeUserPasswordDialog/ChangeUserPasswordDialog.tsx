@@ -2,7 +2,6 @@ import React, { FC, useCallback, useEffect, useState } from "react";
 import FormControl from "@mui/material/FormControl";
 import Divider from "@mui/material/Divider";
 import {
-  Box,
   Button,
   Dialog,
   IconButton,
@@ -82,6 +81,14 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
     }
   }, [userId, formData.password, getText]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleUpdate();
+    },
+    [handleUpdate]
+  );
+
   return (
     <Dialog
       className="change-user-password-dialog"
@@ -91,11 +98,12 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
       onClose={handleClose}
       feedback={feedback}
     >
-      <Divider />
-      <div className="change-user-password-dialog__content">
+      <form onSubmit={handleSubmit}>
+        <Divider />
+        <div className="change-user-password-dialog__content">
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <TextField
                 fullWidth
                 type={passwordShown ? "text" : "password"}
@@ -103,6 +111,7 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
                 label={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD)}
                 value={formData.password}
                 onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
+                autoFocus
               />
               <Tooltip
                 title={
@@ -121,26 +130,28 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
                 variant="text"
                 onClick={handleGeneratePassword}
               />
-            </Box>
+            </div>
           </FormControl>
         </div>
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__CANCEL)}
-          onClick={handleClose}
-          variant="outlined"
-          block
-          disabled={loading}
-        />
-        <Button
-          text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__UPDATE)}
-          onClick={handleUpdate}
-          block
-          loading={loading}
-        />
-      </div>
+        </div>
+        <Divider />
+        <div className="button-group-actions">
+          <Button
+            text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__CANCEL)}
+            onClick={handleClose}
+            variant="outlined"
+            block
+            disabled={loading}
+          />
+          <Button
+            text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__UPDATE)}
+            onClick={handleUpdate}
+            block
+            loading={loading}
+            type="submit"
+          />
+        </div>
+      </form>
     </Dialog>
   );
 };

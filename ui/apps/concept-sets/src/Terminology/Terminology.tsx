@@ -54,6 +54,7 @@ export interface TerminologyProps {
     value: string[];
   }[];
   initialSelectedConcepts?: FhirValueSetExpansionContainsWithExt[];
+  isAtlas: boolean;
 }
 
 const WithDrawer = ({
@@ -109,13 +110,21 @@ const NameSection = ({
   const { getText } = useTranslation();
 
   return (
-    <Box sx={{ borderBottom: "1px solid #d4d4d4" }}>
+    <Box
+      sx={{
+        borderBottom: "1px solid #d4d4d4",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
       <Box
         sx={{
           height: "60px",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          width: "100%",
           "& .MuiTextField-root": { width: "50%" },
         }}
       >
@@ -175,7 +184,9 @@ const NameSection = ({
         </Box>
       </Box>
       {errorMsg ? (
-        <div style={{ color: "red", textAlign: "center" }}>{errorMsg}</div>
+        <div style={{ color: "red", textAlign: "center", maxWidth: "62ch" }}>
+          {errorMsg}
+        </div>
       ) : null}
     </Box>
   );
@@ -185,11 +196,13 @@ const TabSection = ({
   changeTab,
   selectedConceptsCount,
   mode,
+  isAtlas,
 }: {
   currentTabNo: TabName;
   changeTab(tabName: TabName): void;
   selectedConceptsCount: number;
   mode?: string;
+  isAtlas: boolean;
 }) => {
   const { getText } = useTranslation();
   const tabWidthPx = 220;
@@ -205,8 +218,23 @@ const TabSection = ({
       ];
     }
     if (mode === "CONCEPT_SET") {
+      if (isAtlas) {
+        return [
+          {
+            name: tabNames.SEARCH,
+            label: getText(i18nKeys.TERMINOLOGY__SEARCH),
+          },
+          {
+            name: tabNames.SELECTED,
+            label: getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS),
+          },
+        ];
+      }
       return [
-        { name: tabNames.SEARCH, label: getText(i18nKeys.TERMINOLOGY__SEARCH) },
+        {
+          name: tabNames.SEARCH,
+          label: getText(i18nKeys.TERMINOLOGY__SEARCH),
+        },
         {
           name: tabNames.SELECTED,
           label: getText(i18nKeys.TERMINOLOGY__SELECTED_CONCEPTS),
@@ -302,6 +330,7 @@ export const Terminology: FC<TerminologyProps> = ({
   selectedDatasetId,
   defaultFilters,
   initialSelectedConcepts,
+  isAtlas,
 }: TerminologyProps) => {
   const { getText } = useTranslation();
   const [conceptId, setConceptId] = useState<null | number>(null);
@@ -315,8 +344,9 @@ export const Terminology: FC<TerminologyProps> = ({
   const [conceptSetShared, setConceptSetShared] = useState(false);
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
-  const [currentConceptSet, setCurrentConceptSet] =
-    useState<ConceptSet | null>(null);
+  const [currentConceptSet, setCurrentConceptSet] = useState<ConceptSet | null>(
+    null
+  );
   const [conceptsResult, setConceptsResult] =
     useState<TerminologyResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -372,6 +402,19 @@ export const Terminology: FC<TerminologyProps> = ({
     []
   );
 
+  const checkIfConceptSetExists = async (
+    conceptSetId: number,
+    conceptSetName: string,
+    datasetId: string
+  ): Promise<number> => {
+    const result = await api.d2eWebapi.checkIfConceptSetExists(
+      conceptSetId,
+      conceptSetName,
+      datasetId
+    );
+    return Number(result);
+  };
+
   const createConceptSet = async (
     conceptSet: Omit<ConceptSet, "id">,
     datasetId: string
@@ -397,7 +440,11 @@ export const Terminology: FC<TerminologyProps> = ({
     datasetId: string
   ): Promise<number> => {
     // Update concept set
-    await api.d2eWebapi.updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, datasetId);
+    await api.d2eWebapi.updateConceptSet(
+      conceptSetId,
+      { id: conceptSetId, ...conceptSet },
+      datasetId
+    );
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
@@ -424,8 +471,28 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
+      // 0 is the conceptSetId placeholder when creating a new concept set
+      const isNameUsed = await checkIfConceptSetExists(
+        conceptSetId || 0,
+        conceptSetName,
+        activeDatasetId
+      );
+
+      if (isNameUsed) {
+        setErrorMsg(
+          getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [
+            `"${conceptSetName}"`,
+          ])
+        );
+        return;
+      }
+
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, activeDatasetId)
+        ? await updateConceptSet(
+            conceptSetId,
+            { id: conceptSetId, ...conceptSet },
+            activeDatasetId
+          )
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
       setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
@@ -725,6 +792,7 @@ export const Terminology: FC<TerminologyProps> = ({
               changeTab={changeTab}
               selectedConceptsCount={selectedConcepts.length}
               mode={mode}
+              isAtlas={isAtlas}
             />
           ) : null}
           {getDomainContextMessage() && (
@@ -767,6 +835,7 @@ export const Terminology: FC<TerminologyProps> = ({
                   isDrawer={isDrawer}
                   defaultFilters={defaultFilters}
                   mode={mode}
+                  isAtlas={isAtlas}
                 />
               )}
             </div>
