@@ -5,8 +5,8 @@ export function addRoutes(app: Hono) {
   const GATEWAY_WO_PROTOCOL_FQDN = env.GATEWAY_WO_PROTOCOL_FQDN!
   const GATEWAY_PROTOCOL_FQDN = `https://${GATEWAY_WO_PROTOCOL_FQDN}/`
   const CLIENT_ID = env.LOGTO_CLIENT_ID
-  const AUTHORIZATION_URL = `${GATEWAY_PROTOCOL_FQDN}d2e/oidc/auth`
-  const END_SESSION_URL = `${GATEWAY_PROTOCOL_FQDN}d2e/oidc/session/end?client_id=${CLIENT_ID}&redirect={window.location.origin}/d2e/portal`
+  const AUTHORIZATION_URL = `${GATEWAY_PROTOCOL_FQDN}oidc/auth`
+  const END_SESSION_URL = `${GATEWAY_PROTOCOL_FQDN}oidc/session/end?client_id=${CLIENT_ID}&redirect={window.location.origin}/d2e/portal`
   const SCOPE = env.LOGTO_SCOPE
 
 
