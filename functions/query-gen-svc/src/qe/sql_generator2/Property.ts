@@ -230,19 +230,20 @@ export class Property extends AstElement {
                 if (attrConfig.__config.includeDescendants) {
 
                     //Please dont change the order of these joins as they are dependent on each other
-
-                    let refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
-
-                    if(!refAlias) {
-                        this.scopeEntityDef.addTableAlias(
-                            { baseEntity: "@REF", table: attrConfig.placeholderMap["@REF"] },
-                            false,
-                            "INNER JOIN",
-                            true
-                        );
+                    let refAlias;
+                    try {
                         refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+                    } catch (e) {
+                        if(!refAlias) {
+                            this.scopeEntityDef.addTableAlias(
+                                { baseEntity: "@REF", table: attrConfig.placeholderMap["@REF"] },
+                                false,
+                                "INNER JOIN",
+                                true
+                            );
+                            refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+                        }
                     }
-
 
                     //Build Concept Relationship
                     const conceptRelationshipPlaceholder = "@TEXT";
