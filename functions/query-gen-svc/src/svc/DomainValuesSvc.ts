@@ -406,7 +406,7 @@ function getDistinctValuesFromReference(
         "@COHORT_DEF": "CD",
     };
 
-    placeholderTableMap["@COHORT_DEF"] = `$$RESULT_SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@COHORT_DEF"] = `$$SCHEMA$$.cohort_definition`;
     placeholderTableMap["@COHORT_DEF.TEXT"] = `cohort_definition_name`;
 
     const objDescriptionExpression = getDescriptionExpression(baseEntity, placeholderTableMap);
