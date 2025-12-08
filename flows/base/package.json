@@ -137,6 +137,18 @@
                     "default": null,
                     "title": "Schemaname"
                   },
+                  "vocabSchemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Vocab Schema name"
+                  },
                   "resultsSchemaName": {
                     "anyOf": [
                       {

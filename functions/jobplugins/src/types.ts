@@ -341,6 +341,7 @@ export interface ICreateCachedbFileFlowRunDto {
   snapshotSchemaName?: string;
   resultsSchemaName?: string;
   snapshotCopyConfig?: object;
+  vocabSchemaName: string;
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {
