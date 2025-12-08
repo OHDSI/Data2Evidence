@@ -300,9 +300,11 @@ export default {
           if (!trace.selectedpoints) {
             return
           }
-          const xAxes = trace.customdata.x
-          const yAxis = trace.customdata.y
           trace.selectedpoints.forEach(pointIndex => {
+            const pointCustomData = trace.customdata[pointIndex]
+            const xAxes = pointCustomData.x
+            const yAxis = pointCustomData.y
+
             if (xAxes.length > 1) {
               xAxes.forEach((xAxis, axisIndex) => {
                 pushPoint(xAxis.id, trace.x[axisIndex][pointIndex])
