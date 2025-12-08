@@ -49,6 +49,7 @@ DUCKDB_FULLTEXT_SEARCH_CONFIG = {
     },
 }
 
+VOCAB_TABLES = ["concept", "vocabulary", "concept_relationship", "concept_synonym", "concept_ancestor", "concept_class", "relationship", "domain", "drug_strength", "source_to_concept_map"]
 
 def check_supported_dialects(dialect: str):
     supported_dialects = [

@@ -221,7 +221,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const [vocabSchemas] = useDbVocabSchemas(formData.databaseCode);
 
   const [feedback, setFeedback] = useState<Feedback>({});
-  const featureFlags = useEnabledFeatures();
+  const [featureFlags] = useEnabledFeatures();
 
   const SchemaOptions: dropdownOption[] = useMemo(() => {
     const result: dropdownOption[] = [

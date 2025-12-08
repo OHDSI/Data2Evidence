@@ -16,6 +16,7 @@ volumes:
   demodb-data:
   dicom-sqlite-storage:
   hana-data:
+  supabase-storage-data:
 
 x-envs:
   env_converter: &x-converter
@@ -147,7 +148,8 @@ services:
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
         "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
         "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
-        "supabaseStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/supabase-storage",
+        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
+        "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
@@ -157,7 +159,7 @@ services:
       PG_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
-      PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
@@ -167,6 +169,7 @@ services:
       GATEWAY__IDP_AUTH_TYPE: logto
       GATEWAY__IDP_SUBJECT_PROP: sub
       GATEWAY__WO_PROTOCOL_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
+      HANA__DRIVER_CLASS_PATH: ${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}
       CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
       IDP__ALP_DATA_CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
       IDP__ALP_SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
@@ -190,10 +193,11 @@ services:
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       NODE_ENV: development
+      POSTGRES__DRIVER_CLASS_PATH: ${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
-      PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
+      PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "storage"]}'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -243,6 +247,7 @@ services:
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
+      IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
 
   alp-minerva-pg-mgmt-init:
@@ -759,6 +764,85 @@ services:
       alp:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+
+  supabase-storage:
+    container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
+    depends_on:
+      trex:
+        condition: service_healthy
+      alp-minerva-postgres:
+        condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--proxy=off",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000/status",
+        ]
+      timeout: 30s
+      interval: 10s
+      retries: 20
+      start_period: 40s
+    image: supabase/storage-api:v1.14.5
+    logging:
+      options:
+        tag: *c19
+    networks:
+      alp:
+        priority: 20
+      data:
+        priority: 10
+    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+    volumes:
+      - supabase-storage-data:/var/lib/storage
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "set -e;
+      echo 'Waiting 30 seconds for trex migrations...';
+      sleep 30;
+      echo 'Installing postgresql-client...';
+      apk add --no-cache postgresql-client > /dev/null 2>&1;
+      echo 'Starting storage server in background (will run migrations)...';
+      node dist/start/server.js &
+      SERVER_PID=\$!;
+      echo 'Waiting 20 seconds for storage migrations to complete...';
+      sleep 20;
+      echo 'Updating public.objects view to include user_metadata...';
+      export PGPASSWORD='${PG_SUPER_PASSWORD}';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'ALTER TABLE IF EXISTS storage.objects DISABLE ROW LEVEL SECURITY;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'DROP VIEW IF EXISTS public.objects CASCADE;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'CREATE VIEW public.objects AS SELECT * FROM storage.objects;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO authenticated;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'GRANT SELECT ON public.objects TO anon;';
+      echo 'View setup complete. Storage server continuing...';
+      wait \$SERVER_PID;"
+    environment:
+      <<:
+        - *x-tls
+      PROJECT_REF: ${PROJECT_REF:-default}
+      PORT: 9000
+      FILE_SIZE_LIMIT: 52428800
+      DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
+      PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET:-mysecret}
+      SERVICE_KEY: ${SUPABASE_STORAGE_JWT_TOKEN:-mytoken}
+      MIGRATIONS_SCHEMA: storage
+      MIGRATIONS_TABLE: migrations
+      SKIP_MIGRATIONS: "false"
+      STORAGE_BACKEND: file
+      GLOBAL_S3_BUCKET: stub
+      GLOBAL_S3_ENDPOINT: http://supabase-storage:9000/s3
+      GLOBAL_S3_PROTOCOL: "http"
+      GLOBAL_S3_FORCE_PATH_STYLE: true
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
 
   dicom-server:
     # uses 8042 port on the container
