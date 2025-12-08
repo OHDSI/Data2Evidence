@@ -1,0 +1,213 @@
+:global(.dataset-card .card-header) {
+  background-color: transparent;
+  border-bottom: none;
+  padding: 12px;
+}
+
+.status-message {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-neutral);
+
+  &.error {
+    color: var(--color-feedback-error);
+  }
+}
+
+.dataset-card {
+  border-radius: 8px;
+  background-color: var(--color-ui-lightest-bg, white);
+}
+.active-dataset {
+  outline: 2px solid var(--color-primary);
+  box-sizing: content-box;
+}
+:global(.dataset-card .card-body) {
+  padding-top: 8px;
+  padding-bottom: 16px;
+}
+
+.card-body-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-left: 0;
+  padding-right: 0;
+
+  @media (max-width: 1400px) {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: start;
+  }
+}
+
+:global(.main-content .tabs .app-list) {
+  margin-top: 0;
+  margin-bottom: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  background-color: transparent;
+}
+
+:global(.main-content .tabs .app-listItem) {
+  width: 100%;
+  background-color: transparent !important;
+  color: var(--color-primary) !important;
+  font-size: 1.2rem !important;
+}
+
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  width: 70%;
+  .tabs {
+    width: 100%;
+    margin-bottom: -5px;
+    z-index: 1;
+    padding-bottom: 4px;
+  }
+
+  .tab-content {
+    background-color: var(--color-ui-lightest-bg, white);
+    height: 100%;
+    border-radius: 8px;
+    overflow-y: scroll;
+  }
+}
+
+.generate-spinner-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: end;
+
+  :global(.generate-spinner .spinner) {
+    width: 22px;
+    height: 22px;
+    border-width: 4px;
+  }
+}
+
+.card-header-content {
+  width: 100%;
+  h3 {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    color: var(--color-support-soft-red);
+    font-weight: normal;
+  }
+}
+
+.card-controls {
+  display: flex;
+  justify-content: end;
+  gap: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+
+  .generate-cohort-btn {
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: fit-content;
+    &.btn-primary {
+      background-color: var(--color-primary);
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-primary-light);
+      }
+
+      &:disabled {
+        background-color: var(--color-ui-light-bg);
+        color: var(--color-mri-disabled-text);
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-icon {
+      width: 14px;
+      height: 14px;
+
+      :deep(svg) {
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    &.btn-primary .btn-icon {
+      :deep(svg) {
+        fill: var(--color-ui-lightest-bg, white) !important;
+      }
+
+      :deep(path) {
+        fill: var(--color-ui-lightest-bg, white) !important;
+      }
+
+      :deep(g) {
+        fill: var(--color-ui-lightest-bg, white) !important;
+      }
+    }
+  }
+}
+.patient-count-display {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 4px;
+  min-height: 36px;
+
+  .patient-count-label {
+    font-size: 16px;
+    color: var(--color-neutral);
+    letter-spacing: 0.5px;
+    &.generating-label {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+    }
+  }
+
+  .patient-count-value {
+    font-size: 16px;
+    color: var(--color-neutral);
+    min-width: 40px;
+
+    &.patient-count-actual {
+      font-size: 20px;
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+  }
+}
+.side {
+  padding: 0 8px 0 4px;
+  height: 100%;
+  overflow-y: auto;
+  width: 30%;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-self: start;
+
+  .sidepanel-title {
+    text-align: center;
+    font-weight: normal;
+    margin: 0;
+  }
+}
+
+.execute-content {
+  padding: 0;
+  display: flex;
+  gap: 1.5rem;
+  height: calc(100vh - 49px - 16px);
+}

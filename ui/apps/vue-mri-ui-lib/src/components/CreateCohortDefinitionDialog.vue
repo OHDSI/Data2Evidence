@@ -28,9 +28,6 @@ import { getPortalAPI } from '../utils/PortalUtils'
 import { convertIFRToExtCohort } from '../utils/IfrToExtCohort'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'download-cohort-definition-dialog',
   props: ['closeEv'],
   data() {
@@ -48,7 +45,7 @@ export default {
       'getBookmarksData',
       'getIFR',
       'getBookmarkFromIFR',
-      'getMriFrontendConfig'
+      'getMriFrontendConfig',
     ]),
   },
   watch: {},
@@ -70,7 +67,11 @@ export default {
       const IFRDefinition = { filter: this.getIFR }
       const datasetId = this.getSelectedDataset?.id
       try {
-        const expression = await convertIFRToExtCohort(IFRDefinition, datasetId, this.getMriFrontendConfig.getPaConfigId())
+        const expression = await convertIFRToExtCohort(
+          IFRDefinition,
+          datasetId,
+          this.getMriFrontendConfig.getPaConfigId()
+        )
         const now = +new Date()
         const content = {
           id: 0, // 0 is used by webapi for new cohort definitions

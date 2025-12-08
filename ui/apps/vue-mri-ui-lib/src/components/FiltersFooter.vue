@@ -182,9 +182,6 @@ import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'filtersFooter',
   props: {
     splitAddButton: {
@@ -363,4 +360,3 @@ export default {
   },
 }
 </script>
-

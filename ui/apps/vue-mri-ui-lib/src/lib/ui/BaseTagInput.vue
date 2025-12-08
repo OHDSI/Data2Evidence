@@ -100,9 +100,6 @@ function escapeStringRegExp(str) {
 
 export default {
   name: 'BaseTagInput',
-  compatConfig: {
-    MODE: 3 as const,
-  },
   props: {
     value: {
       type: Array,
