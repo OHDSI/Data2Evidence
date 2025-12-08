@@ -1,0 +1,13 @@
+.treemap-tooltip {
+  max-width: 80ch;
+  word-wrap: break-word;
+  white-space: normal;
+
+  .tooltip-title {
+    div {
+      word-wrap: break-word;
+      white-space: normal;
+      overflow-wrap: break-word;
+    }
+  }
+}
