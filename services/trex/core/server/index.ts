@@ -12,8 +12,6 @@ import { addRoutes as addLogRoutes } from "./routes/log.ts"
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
-    // const app: Hono = new Hono().basePath('/d2e');
-    // const app: Hono = new Hono();
     const app: Hono = new Hono({
         getPath: (req) => {
             const url = new URL(req.url);
