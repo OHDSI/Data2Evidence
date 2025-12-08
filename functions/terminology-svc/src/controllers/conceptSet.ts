@@ -164,8 +164,10 @@ export const removeConceptSet = async (
 ) => {
   try {
     const { params, query } = schemas.removeConceptSet.parse(req);
+    const userId = getUserIdFromToken(req.headers["authorization"]!);
     const systemPortalApi = new SystemPortalAPI(req);
     await systemPortalApi.deleteConceptSet(
+      userId,
       params.conceptSetId,
       query.datasetId
     );
