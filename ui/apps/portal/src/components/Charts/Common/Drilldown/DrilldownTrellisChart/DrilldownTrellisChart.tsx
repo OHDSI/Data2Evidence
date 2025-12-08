@@ -9,9 +9,14 @@ import { useTranslation } from "../../../../../contexts";
 interface DrilldownTrellisChartProps {
   data: any;
   trellisXAxisKey?: string;
+  maxPlotsPerRow?: number;
 }
 
-const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXAxisKey = "YPREVALENCE1000PP" }) => {
+const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
+  data,
+  trellisXAxisKey = "YPREVALENCE1000PP",
+  maxPlotsPerRow = 5,
+}) => {
   const { getText, i18nKeys } = useTranslation();
   const title = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TITLE);
   const trellisTopLabel = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TRELLIS_TOP_LABEL);
@@ -19,25 +24,14 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
 
   const series: any[] = [];
   const grid: any[] = [];
-  const gridTitles: any[] = [
-    {
-      text: trellisTopLabel,
-      top: "0",
-      left: "center",
-    },
-    {
-      text: trellisBottomLabel,
-      top: "bottom",
-      left: "center",
-    },
-  ];
+  const gridTitles: any[] = [];
   const xAxis: any[] = [];
   const yAxis: any[] = [];
 
   if (data.length === 0) {
     return (
       <ChartContainer title={title}>
-        <div className="no_data_text">No data</div>
+        <div className="no_data_text">{getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__NO_DATA)}</div>
       </ChartContainer>
     );
   }
@@ -45,21 +39,64 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
   // Group by trellis name -> parallel line chart
   const trellisData = groupBy(data, (obj: any) => obj.TRELLISNAME);
 
-  // Calculate width for each grid
-  const GRID_WIDTH = 90 / Object.keys(trellisData).length;
-  const GRID_GAP = 5 / Object.keys(trellisData).length;
+  // Calculate dimensions for multi-row layout
+  const totalPlots = Object.keys(trellisData).length;
+  const plotsPerRow = Math.min(maxPlotsPerRow, totalPlots);
+  const numRows = Math.ceil(totalPlots / plotsPerRow);
+
+  const GRID_WIDTH = 90 / plotsPerRow;
+  const GRID_GAP = 5 / plotsPerRow;
   const GRID_LEFT_MARGIN = 5;
+  const GRID_HEIGHT = 60 / numRows;
+  const GRID_TOP_MARGIN = 8;
+  const GRID_VERTICAL_GAP = 30 / numRows;
 
   // Get keys from trellisData sorted
   const sortedTrellisNames = Object.keys(trellisData).sort();
 
+  // Calculate global y-axis range for harmonization across all plots
+  const allYValues = data.map((obj: any) => Number(obj[trellisXAxisKey])).filter((v: number) => !isNaN(v));
+  const globalYMin = Math.min(...allYValues);
+  const globalYMax = Math.max(...allYValues);
+
   for (const [index, trellisName] of sortedTrellisNames.entries()) {
     let seriesData = trellisData[trellisName];
+
+    // Calculate row and column position
+    const rowIndex = Math.floor(index / plotsPerRow);
+    const colIndex = index % plotsPerRow;
+
+    // Add top and bottom labels for each row (only once per row, when colIndex === 0)
+    if (colIndex === 0) {
+      const rowTop = rowIndex * (GRID_HEIGHT + GRID_VERTICAL_GAP) + GRID_TOP_MARGIN;
+      // Top label for this row (positioned above trellis names)
+      gridTitles.push({
+        text: trellisTopLabel,
+        top: `${rowTop - 5}%`,
+        left: "center",
+        textStyle: {
+          fontSize: 14,
+          color: "#6b6b6bff", // color to match Echart's default axis label color
+        },
+      });
+      // Bottom label for this row (positioned below x-axis labels)
+      gridTitles.push({
+        text: trellisBottomLabel,
+        top: `${rowTop + GRID_HEIGHT + 2}%`,
+        left: "center",
+        textStyle: {
+          fontSize: 14,
+          color: "#6b6b6bff",
+        },
+      });
+    }
+
     grid.push({
       show: true,
       width: `${GRID_WIDTH}%`,
-      height: "auto",
-      left: `${index * (GRID_WIDTH + GRID_GAP) + GRID_LEFT_MARGIN}%`,
+      height: `${GRID_HEIGHT}%`,
+      left: `${colIndex * (GRID_WIDTH + GRID_GAP) + GRID_LEFT_MARGIN}%`,
+      top: `${rowIndex * (GRID_HEIGHT + GRID_VERTICAL_GAP) + GRID_TOP_MARGIN}%`,
       borderColor: "black",
       borderWidth: 1,
       containLabel: true,
@@ -67,8 +104,12 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
     gridTitles.push({
       textAlign: "center",
       text: trellisName,
-      top: "5%",
-      left: `${index * (GRID_WIDTH + GRID_GAP) + GRID_WIDTH / 2 + GRID_LEFT_MARGIN}%`,
+      top: `${rowIndex * (GRID_HEIGHT + GRID_VERTICAL_GAP) + GRID_TOP_MARGIN - 2}%`,
+      left: `${colIndex * (GRID_WIDTH + GRID_GAP) + GRID_WIDTH / 2 + GRID_LEFT_MARGIN}%`,
+      textStyle: {
+        fontWeight: "normal",
+        fontSize: 14,
+      },
     });
 
     // Sort seriesData based on XCALENDARYEAR
@@ -120,12 +161,14 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
         show: true,
       },
       gridIndex: index,
-      // Only show y axis label only for leftmost chart in grid
+      min: globalYMin,
+      max: globalYMax,
+      // Only show y axis label for leftmost chart in each row
       axisLabel: {
-        show: index === 0 ? true : false,
+        show: colIndex === 0,
       },
-      // Only show y axis name for leftmost chart in grid
-      ...(index === 0 && {
+      // Only show y axis name for leftmost chart in each row
+      ...(colIndex === 0 && {
         name: getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__Y_AXIS_PREVALENCE_PER_1000_PEOPLE),
         nameLocation: "middle",
         nameGap: 50,
@@ -138,7 +181,17 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({ data, trellisXA
     });
   }
 
-  return <TrellisChart series={series} grid={grid} gridTitles={gridTitles} title={title} xAxis={xAxis} yAxis={yAxis} />;
+  return (
+    <TrellisChart
+      series={series}
+      grid={grid}
+      gridTitles={gridTitles}
+      title={title}
+      xAxis={xAxis}
+      yAxis={yAxis}
+      numRows={numRows}
+    />
+  );
 };
 
 export default DrilldownTrellisChart;
