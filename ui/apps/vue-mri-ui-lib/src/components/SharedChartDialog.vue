@@ -18,7 +18,12 @@
         :disabled="!allChartDataLoaded || queryExecuted || chartBusy"
         v-focus
       ></appButton>
-      <appButton :click="shareBookmarkEntry" :text="getSharingText" :disabled="!queryExecuted"></appButton>
+      <appButton
+        v-if="canShare"
+        :click="shareBookmarkEntry"
+        :text="getSharingText"
+        :disabled="!queryExecuted"
+      ></appButton>
       <appButton :click="close" :text="getText('MRI_PA_KAPLAN_CURVE_ANA_POPUP_BUT_CLOSE')"></appButton>
     </template>
   </messageBox>
@@ -26,17 +31,23 @@
 
 <script lang="ts">
 declare var sap
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions, mapGetters, useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import AnnotateBM from '../utils/AnnotateBM'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import MessageBox from './MessageBox.vue'
+import { useUserRole } from '../composables/useUserRole'
 
 let sharedChart
 let sharedChartController
 
 export default {
   name: 'sharedChartDialog',
+  setup() {
+    const store = useStore()
+    const { canShare } = useUserRole()
+    return { canShare }
+  },
   data() {
     return {
       userName: '',
@@ -142,7 +153,7 @@ export default {
       if (Object.keys(request).length !== 0 && request) {
         this.fireQuery({
           url: '/analytics-svc/api/services/population/json/barchart',
-          params: { mriquery: JSON.stringify(this.getBookmarksData), datasetId: this.getBookmarksData.datasetId, },
+          params: { mriquery: JSON.stringify(this.getBookmarksData), datasetId: this.getBookmarksData.datasetId },
         })
           .then(response => {
             const postProcessedData = postProcessBarChartData(response)
