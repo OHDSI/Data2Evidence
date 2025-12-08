@@ -137,7 +137,12 @@ const getters = {
             filterCardName = getters.getMriFrontendConfig.getFilterCardByPath(sParent).getName()
           }
 
-          measure.name = `${filterCardName} - ${getters.getMriFrontendConfig.getAttributeByPath(measure.id).getName()}`
+          // Only add prefix if it's not already there to prevent duplicate prefixes
+          const attributeName = getters.getMriFrontendConfig.getAttributeByPath(measure.id).getName()
+
+          if (!measure.name || !measure.name.startsWith(filterCardName + ' - ')) {
+            measure.name = `${filterCardName} - ${attributeName}`
+          }
         })
 
         let bHasDummyCategory = false
