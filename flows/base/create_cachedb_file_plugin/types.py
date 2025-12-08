@@ -29,6 +29,7 @@ class CopyParameters:
     target_database: str
     source_schema: str
     target_schema: str
+    vocab_schema: str | None
 
     patient_filter: List[int] | None
     table_filter: Dict[str, List[str]] | None
@@ -84,6 +85,7 @@ class CreateCacheOptions(BaseModel):
 
     database_code: Optional[str] = Field(default=None, alias="databaseCode")
     schema_name: Optional[str] = Field(default=None, alias="schemaName")
+    vocab_schema_name: Optional[str] = Field(default=None, alias="vocabSchemaName")
     results_schema_name: Optional[str] = Field(
         default=None, alias="resultsSchemaName")
 
