@@ -159,7 +159,7 @@ services:
       PG_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
-      PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
@@ -169,6 +169,7 @@ services:
       GATEWAY__IDP_AUTH_TYPE: logto
       GATEWAY__IDP_SUBJECT_PROP: sub
       GATEWAY__WO_PROTOCOL_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
+      HANA__DRIVER_CLASS_PATH: ${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}
       CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
       IDP__ALP_DATA_CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
       IDP__ALP_SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
@@ -192,6 +193,7 @@ services:
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       NODE_ENV: development
+      POSTGRES__DRIVER_CLASS_PATH: ${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data"]}'
       GH_TOKEN: ${GH_TOKEN}
@@ -245,6 +247,7 @@ services:
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
+      IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
 
   alp-minerva-pg-mgmt-init:
