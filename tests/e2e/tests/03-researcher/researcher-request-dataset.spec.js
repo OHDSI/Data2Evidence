@@ -17,9 +17,10 @@ test(TEST_NAME, async ({ page }) => {
 
   // Select the demo dataset and update it to show request access button
   await page.getByRole('link', { name: 'Datasets' }).click();
-  // Wait for table rows to appear (more reliable than waiting for table)
-  await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
-  const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first();
+  const datasetTable = page.locator('.studyoverview__list').first();
+  await expect(datasetTable).toBeVisible({ timeout: 30000 });
+  await expect(datasetTable.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
+  const demoRow = datasetTable.locator('tr', { hasText: /Demo dataset/i }).first();
   // Wait for the row to be visible and find the expand button
   await expect(demoRow).toBeVisible({ timeout: 30000 });
   
@@ -30,7 +31,7 @@ test(TEST_NAME, async ({ page }) => {
   
   // Wait for the child row to be visible
   // The child row will appear in a nested table after expansion
-  await page.waitForTimeout(1000); // Small delay for animation
+  await page.waitForTimeout(1000);
   await expect(page.locator('table table')).toBeVisible({ timeout: 10000 });
   const childRow = page.locator('table table tbody tr').first();
   await expect(childRow).toBeVisible({ timeout: 10000 });
@@ -76,10 +77,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'Datasets' }).click();
-  // Wait for table rows to appear again
-  await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
+  const datasetTableAgain = page.locator('.studyoverview__list').first();
+  await expect(datasetTableAgain).toBeVisible({ timeout: 30000 });
+  await expect(datasetTableAgain.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
   // Find the demo row again (can't reuse locator after navigation)
-  const demoRowAgain = page.locator('tr', { hasText: 'Demo dataset' }).first();
+  const demoRowAgain = datasetTableAgain.locator('tr', { hasText: /Demo dataset/i }).first();
   await expect(demoRowAgain).toBeVisible({ timeout: 30000 });
   // Expand if needed
   const expandButtonAgain = demoRowAgain.locator('button.expand-icon-button');
