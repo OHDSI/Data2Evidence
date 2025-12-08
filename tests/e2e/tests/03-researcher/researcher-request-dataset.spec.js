@@ -18,7 +18,22 @@ test(TEST_NAME, async ({ page }) => {
   // Select the demo dataset and update it to show request access button
   await page.getByRole('link', { name: 'Datasets' }).click();
   const demoRow = await page.locator('tr', { hasText: 'Demo dataset' }).first();
-  await demoRow.getByText('Select action').click();
+  // Wait for the row to be visible and find the expand button
+  await expect(demoRow).toBeVisible();
+  
+  // Try using the className selector instead
+  const expandButton = demoRow.locator('button.expand-icon-button');
+  await expect(expandButton).toBeVisible();
+  await expandButton.click();
+  
+  // Wait for the child row to be visible
+  // The child row will appear in a nested table after expansion
+  await page.waitForTimeout(500); // Small delay for animation
+  const childRow = page.locator('tr').filter({ hasText: 'Demo dataset' }).nth(1);
+  await expect(childRow).toBeVisible({ timeout: 10000 });
+  
+  // Click "Select action" on the child dataset row
+  await childRow.getByText('Select action').click();
   await page.getByRole('option', { name: 'Update dataset' }).click();
   await page.getByText('Show request access button').click();
   await page.getByRole('button', { name: 'Save' }).click();
