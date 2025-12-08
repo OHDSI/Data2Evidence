@@ -17,9 +17,11 @@ test(TEST_NAME, async ({ page }) => {
 
   // Select the demo dataset and update it to show request access button
   await page.getByRole('link', { name: 'Datasets' }).click();
-  const demoRow = await page.locator('tr', { hasText: 'Demo dataset' }).first();
+  // Wait for table rows to appear (more reliable than waiting for table)
+  await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
+  const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first();
   // Wait for the row to be visible and find the expand button
-  await expect(demoRow).toBeVisible();
+  await expect(demoRow).toBeVisible({ timeout: 30000 });
   
   // Try using the className selector instead
   const expandButton = demoRow.locator('button.expand-icon-button');
@@ -28,8 +30,9 @@ test(TEST_NAME, async ({ page }) => {
   
   // Wait for the child row to be visible
   // The child row will appear in a nested table after expansion
-  await page.waitForTimeout(500); // Small delay for animation
-  const childRow = page.locator('tr').filter({ hasText: 'Demo dataset' }).nth(1);
+  await page.waitForTimeout(1000); // Small delay for animation
+  await expect(page.locator('table table')).toBeVisible({ timeout: 10000 });
+  const childRow = page.locator('table table tbody tr').first();
   await expect(childRow).toBeVisible({ timeout: 10000 });
   
   // Click "Select action" on the child dataset row
@@ -73,7 +76,21 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click();
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
   await page.getByRole('link', { name: 'Datasets' }).click();
-  await demoRow.getByText('Select action').click();
+  // Wait for table rows to appear again
+  await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
+  // Find the demo row again (can't reuse locator after navigation)
+  const demoRowAgain = page.locator('tr', { hasText: 'Demo dataset' }).first();
+  await expect(demoRowAgain).toBeVisible({ timeout: 30000 });
+  // Expand if needed
+  const expandButtonAgain = demoRowAgain.locator('button.expand-icon-button');
+  if (await expandButtonAgain.isVisible({ timeout: 2000 })) {
+    await expandButtonAgain.click();
+    await page.waitForTimeout(1000);
+  }
+  // Find child row again
+  const childRowAgain = page.locator('table table tbody tr').first();
+  await expect(childRowAgain).toBeVisible({ timeout: 10000 });
+  await childRowAgain.getByText('Select action').click();
   await page.getByRole('option', { name: 'Permissions' }).click();
   await page.getByTestId('dialog').getByText('Select action').click();
   await page.getByRole('option', { name: 'Approve' }).click();
