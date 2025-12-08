@@ -69,7 +69,7 @@ export class CachedbController {
 
       const portalServerApi = new PortalServerAPI(token);
       const flowActionType = "create_datamart_cache";
-      const { databaseCode, schemaName, resultsSchemaName } =
+      const { databaseCode, schemaName, resultsSchemaName, vocabSchemaName } =
         await portalServerApi.getDataset(params.datasetId);
 
       const cacheDatasetId = params?.cacheDatasetId;
@@ -95,6 +95,7 @@ export class CachedbController {
           resultsSchemaName,
           snapshotSchemaName,
           snapshotCopyConfig,
+          vocabSchemaName
         },
         token
       );
