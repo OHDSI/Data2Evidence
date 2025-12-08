@@ -582,6 +582,7 @@ export const i18nDefault = {
     FEATURE__STRATEGUS: "Strategus",
     FEATURE__SUCCESS: "Changes saved",
     FEATURE__TERMINOLOGY: "Terminology",
+    FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
     HEADER__DELETE: "Delete",
     HEADER__DOWNLOAD: "Download source code",
     HEADER__ERROR_DELETE: "An error has occurred while deleting notebook",

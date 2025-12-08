@@ -1,7 +1,7 @@
-import { BadRequestException, Body, Controller, Delete, Get, Middleware, Param, Post, Put, Req } from '@danet/core'
+import { BadRequestException, Body, Controller, Delete, Get, Middleware, Param, Patch, Post, Put, Req } from '@danet/core'
 import { ServiceName } from './enums/index.ts'
 import { UserArtifactService } from './user-artifact.service.ts'
-import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
+import { RequestContextMiddleware } from "../common/request-context.middleware.ts"
 
 
 @Middleware(RequestContextMiddleware)
@@ -123,5 +123,17 @@ export class UserArtifactController {
       throw new BadRequestException(`Invalid service name: ${serviceName}`)
     }
     return await this.userArtifactService.deleteServiceArtifactEntity(serviceName, id)
+  }
+
+  @Patch(':serviceName/:id')
+  async patchArtifact(
+    @Param('serviceName') serviceName: ServiceName,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>
+  ) {
+    if (!(Object.values(ServiceName).includes(serviceName))) {
+      throw new BadRequestException(`Invalid service name: ${serviceName}`)
+    }
+    return await this.userArtifactService.patchArtifact(serviceName, id, body)
   }
 }

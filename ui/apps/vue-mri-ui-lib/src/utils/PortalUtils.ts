@@ -1,9 +1,16 @@
+interface Feature {
+  feature: string
+  isEnabled: boolean
+}
+
 export const getPortalAPI = (): {
   getToken
   qeSvcUrl?: string
   studyId?: string
   releaseId?: string
   username?: string
+  features?: Feature[]
+  featuresLoading?: boolean
   locale?: string
   isLocal?: boolean
   debug?: boolean
