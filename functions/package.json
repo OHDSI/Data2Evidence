@@ -378,7 +378,7 @@
           "IDP__ALP_ADMIN__CLIENT_ID": "${LOGTO_API_M2M_CLIENT_ID}",
           "IDP__ALP_ADMIN__CLIENT_SECRET": "${LOGTO_API_M2M_CLIENT_SECRET}",
           "IDP__ALP_ADMIN__RESOURCE": "https://default.logto.app/api",
-          "IDP__BASE_URL": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
+          "IDP__BASE_URL": "${IDP__BASE_URL:-http://${PROJECT_NAME:-d2e}-logto-1:3001}",
           "IDP__FETCH_USER_INFO_TYPE": "logto",
           "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
           "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
