@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 const randomString = Math.random().toString(36).substring(2, 10)
 

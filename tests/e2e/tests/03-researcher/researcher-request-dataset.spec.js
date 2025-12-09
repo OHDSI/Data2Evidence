@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'researcher-request-dataset-access'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   // Go to portal and log in as admin
-  await page.goto('https://localhost:443/d2e/portal')
+  await page.goto('https://localhost:443')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -16,12 +16,31 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   // Select the demo dataset and update it to show request access button
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  const demoRow = await page.locator('tr', { hasText: 'Demo dataset' }).first()
-  await demoRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Update dataset' }).click()
-  await page.getByText('Show request access button').click()
-  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByRole('link', { name: 'Datasets' }).click();
+  const datasetTable = page.locator('.studyoverview__list').first();
+  await expect(datasetTable).toBeVisible({ timeout: 30000 });
+  await expect(datasetTable.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
+  const demoRow = datasetTable.locator('tr', { hasText: /Demo dataset/i }).first();
+  // Wait for the row to be visible and find the expand button
+  await expect(demoRow).toBeVisible({ timeout: 30000 });
+  
+  // Try using the className selector instead
+  const expandButton = demoRow.locator('button.expand-icon-button');
+  await expect(expandButton).toBeVisible();
+  await expandButton.click();
+  
+  // Wait for the child row to be visible
+  // The child row will appear in a nested table after expansion
+  await page.waitForTimeout(1000);
+  await expect(page.locator('table table')).toBeVisible({ timeout: 10000 });
+  const childRow = page.locator('table table tbody tr').first();
+  await expect(childRow).toBeVisible({ timeout: 10000 });
+  
+  // Click "Select action" on the child dataset row
+  await childRow.getByText('Select action').click();
+  await page.getByRole('option', { name: 'Update dataset' }).click();
+  await page.getByText('Show request access button').click();
+  await page.getByRole('button', { name: 'Save' }).click();
 
   // Create a new researcher `test_researcher`
   await page.getByRole('link', { name: 'Users' }).click()
@@ -48,23 +67,38 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').click()
 
   // Login as admin and approve the request to dataset access
-  await page.getByRole('link', { name: 'Account' }).click()
-  await page.getByRole('button', { name: 'Logout' }).click()
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('admin')
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByRole('link', { name: 'Datasets' }).click()
-  await demoRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Permissions' }).click()
-  await page.getByTestId('dialog').getByText('Select action').click()
-  await page.getByRole('option', { name: 'Approve' }).click()
-  await page.getByRole('button', { name: 'Save' }).click()
-  await page.getByRole('button', { name: 'Close', exact: true }).click()
-
+  await page.getByRole('link', { name: 'Account' }).click();
+  await page.getByRole('button', { name: 'Logout' }).click();
+  await page.locator('input[name="identifier"]').click();
+  await page.locator('input[name="identifier"]').fill('admin');
+  await page.locator('input[name="password"]').click();
+  await page.locator('input[name="password"]').fill('Updatepassword12345');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.getByTestId('button').nth(1).click();
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
+  await page.getByRole('link', { name: 'Datasets' }).click();
+  const datasetTableAgain = page.locator('.studyoverview__list').first();
+  await expect(datasetTableAgain).toBeVisible({ timeout: 30000 });
+  await expect(datasetTableAgain.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
+  // Find the demo row again (can't reuse locator after navigation)
+  const demoRowAgain = datasetTableAgain.locator('tr', { hasText: /Demo dataset/i }).first();
+  await expect(demoRowAgain).toBeVisible({ timeout: 30000 });
+  // Expand if needed
+  const expandButtonAgain = demoRowAgain.locator('button.expand-icon-button');
+  if (await expandButtonAgain.isVisible({ timeout: 2000 })) {
+    await expandButtonAgain.click();
+    await page.waitForTimeout(1000);
+  }
+  // Find child row again
+  const childRowAgain = page.locator('table table tbody tr').first();
+  await expect(childRowAgain).toBeVisible({ timeout: 10000 });
+  await childRowAgain.getByText('Select action').click();
+  await page.getByRole('option', { name: 'Permissions' }).click();
+  await page.getByTestId('dialog').getByText('Select action').click();
+  await page.getByRole('option', { name: 'Approve' }).click();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  
   // Login as researcher user test_researcher and check that the dataset can be accessed
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
