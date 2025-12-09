@@ -8,8 +8,10 @@ import {
   ConceptSetItemListDto,
   ConceptSetItemsResponseDto,
   ConceptSetCreateDto,
+  ConceptSetInUseErrorDto,
   IConceptSetCheckResponseDto,
 } from "../dto/conceptset.ts";
+import { ConceptSetInUseError } from "../errors/ConceptSetErrors.ts";
 
 import {
   getConceptSet,
@@ -237,10 +239,14 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     "/:id",
     {
       schema: {
-        description: "Delete the concept set by identifier",
+        description:
+          "Delete the concept set by identifier. Returns 409 if concept set is in use by cohort definitions or bookmarks.",
         tags: ["conceptset"],
         params: z.object({ id: z.coerce.number() }),
-        response: { 204: z.null() },
+        response: {
+          204: z.null(),
+          409: ConceptSetInUseErrorDto,
+        },
         security: [
           {
             bearerAuth: [],
@@ -251,8 +257,30 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
     },
     async (req, res) => {
       const { id } = req.params;
-      await deleteConceptSet(req.token, req.datasetId, id);
-      res.status(204).send();
+      try {
+        await deleteConceptSet(req.token, req.datasetId, id);
+        res.status(204).send();
+      } catch (error) {
+        if (error instanceof ConceptSetInUseError) {
+          const cohortCount = error.cohortDefinitions.length;
+          const bookmarkCount = error.bookmarks.length;
+          const parts = [];
+          if (cohortCount > 0)
+            parts.push(`${cohortCount} cohort definition(s)`);
+          if (bookmarkCount > 0) parts.push(`${bookmarkCount} bookmark(s)`);
+
+          res.status(409).send({
+            error: "CONCEPT_SET_IN_USE",
+            message: `Cannot delete concept set. Currently used by ${parts.join(
+              " and "
+            )}.`,
+            cohortDefinitions: error.cohortDefinitions,
+            bookmarks: error.bookmarks,
+          });
+          return;
+        }
+        throw error;
+      }
     }
   );
 };

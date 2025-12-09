@@ -13,6 +13,12 @@ import {
 } from "../api/types.ts";
 import { UserMgmtAPI } from "../api/UserMgmtAPI.ts";
 import { _getInvalidReasonFromCaption } from "./vocabulary.service.ts";
+import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { BookmarksAPI } from "../api/BookmarksAPI.ts";
+import {
+  ConceptSetInUseError,
+  ConceptSetValidationError,
+} from "../errors/ConceptSetErrors.ts";
 
 export const getConceptSet = async (
   token: string,
@@ -127,8 +133,85 @@ export const deleteConceptSet = async (
   datasetId: string,
   conceptSetId: number
 ): Promise<void> => {
+  // Check if concept set is in use
+  // Note: There is a potential race condition between this check and the deletion.
+  // If another user adds a reference to the concept set between this check and the
+  // actual deletion, the reference could become broken. This is an acceptable risk
+  // for this feature, as the window is small and the impact is limited.
+  const usage = await getConceptSetUsage(token, datasetId, conceptSetId);
+
+  if (usage.inUse) {
+    throw new ConceptSetInUseError(usage.cohortDefinitions, usage.bookmarks);
+  }
+
+  // Proceed with deletion if not in use
   const terminologySvcApi = new TerminologySvcAPI(token);
   await terminologySvcApi.deleteConceptSet(datasetId, conceptSetId);
+};
+
+export const getConceptSetUsage = async (
+  token: string,
+  datasetId: string,
+  conceptSetId: number
+): Promise<{
+  inUse: boolean;
+  cohortDefinitions: Array<{ id: number; name: string }>;
+  bookmarks: Array<{ id: string; name: string }>;
+}> => {
+  // Validate concept set ID is a valid positive integer
+  if (!Number.isInteger(conceptSetId) || conceptSetId <= 0) {
+    throw new ConceptSetValidationError(
+      `Invalid concept set ID: ${conceptSetId}. Must be a positive integer.`
+    );
+  }
+
+  const portalServerApi = new PortalServerAPI(token);
+  const bookmarksApi = new BookmarksAPI(token);
+
+  // Fetches all cohorts/bookmarks and filters in-memory; may need optimized APIs for large datasets.
+  const [cohortDefinitions, bookmarksData] = await Promise.all([
+    portalServerApi.getAtlasCohortDefinitionList(datasetId).catch((_error) => {
+      // Wrap external API errors to avoid leaking internal implementation details
+      throw new Error(
+        "Failed to check cohort definitions for concept set usage"
+      );
+    }),
+    bookmarksApi.getAllBookmarks(datasetId).catch((_error) => {
+      // Wrap external API errors to avoid leaking internal implementation details
+      throw new Error("Failed to check bookmarks for concept set usage");
+    }),
+  ]);
+
+  const usingCohorts = cohortDefinitions.filter((cohort) => {
+    const json = JSON.stringify(cohort.expression);
+    // Check for CodesetId references in OHDSI Atlas JSON format
+    // Use regex with negative lookahead to prevent partial matches
+    // This prevents ID 12 from matching 123, 1234, etc.
+    const codesetIdPattern = new RegExp(
+      `"CodesetId"\\s*:\\s*${conceptSetId}(?![0-9])`
+    );
+    return codesetIdPattern.test(json);
+  });
+
+  // Check Bookmarks (D2E filters) using string matching
+  const bookmarks = bookmarksData.bookmarks || [];
+  const conceptSetIdStr = String(conceptSetId);
+
+  const usingBookmarks = bookmarks.filter((bookmark) => {
+    const bookmarkJson = bookmark.bookmark;
+    // Concept set ID is stored as "value":"869" in bookmark constraint expressions
+    const valuePattern = new RegExp(`"value"\\s*:\\s*"${conceptSetIdStr}"`);
+    return valuePattern.test(bookmarkJson);
+  });
+
+  return {
+    inUse: usingCohorts.length > 0 || usingBookmarks.length > 0,
+    cohortDefinitions: usingCohorts.map((c) => ({ id: c.id, name: c.name })),
+    bookmarks: usingBookmarks.map((b) => ({
+      id: b.bmkId,
+      name: b.bookmarkname,
+    })),
+  };
 };
 
 export const updateConceptSetItems = async (

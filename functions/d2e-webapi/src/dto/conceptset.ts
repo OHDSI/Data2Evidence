@@ -127,3 +127,21 @@ export const ConceptSetListResponseDto = z.array(ConceptSetResponseDto);
 export type IConceptSetListResponseDto = z.infer<
   typeof ConceptSetListResponseDto
 >;
+
+export const ConceptSetInUseErrorDto = z.object({
+  error: z.literal("CONCEPT_SET_IN_USE"),
+  message: z.string(),
+  cohortDefinitions: z.array(
+    z.object({
+      id: z.number(),
+      name: z.string(),
+    })
+  ),
+  bookmarks: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+    })
+  ),
+});
+export type IConceptSetInUseErrorDto = z.infer<typeof ConceptSetInUseErrorDto>;

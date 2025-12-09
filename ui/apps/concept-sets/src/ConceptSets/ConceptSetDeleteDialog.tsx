@@ -48,7 +48,9 @@ const ConceptSetDeleteDialog: FC<ConceptSetDeleteDialogProps> = ({
       console.error("An error occurred while deleting concept set", err);
 
       // Parse error response for specific status codes
-      const status = err?.response?.status;
+      // Note: request() rejects with error.response directly, not the full axios error
+      const status = err?.status;
+      const responseData = err?.data;
       let errorMessage = getText(
         i18nKeys.CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED
       );
@@ -56,7 +58,34 @@ const ConceptSetDeleteDialog: FC<ConceptSetDeleteDialogProps> = ({
         i18nKeys.CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED_DESCRIPTION
       );
 
-      if (status === 403) {
+      if (status === 409 && responseData?.error === "CONCEPT_SET_IN_USE") {
+        // Concept set is in use - show detailed message
+        errorMessage = getText(
+          i18nKeys.CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE
+        );
+        const usageDetails: string[] = [];
+        if (responseData.cohortDefinitions?.length > 0) {
+          const cohortNames = responseData.cohortDefinitions
+            .map((c: { name: string }) => c.name)
+            .join(", ");
+          usageDetails.push(
+            `${getText(
+              i18nKeys.CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE_COHORTS
+            )}: ${cohortNames}`
+          );
+        }
+        if (responseData.bookmarks?.length > 0) {
+          const bookmarkNames = responseData.bookmarks
+            .map((b: { name: string }) => b.name)
+            .join(", ");
+          usageDetails.push(
+            `${getText(
+              i18nKeys.CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE_BOOKMARKS
+            )}: ${bookmarkNames}`
+          );
+        }
+        errorDescription = usageDetails.join("\n");
+      } else if (status === 403) {
         errorMessage = getText(
           i18nKeys.CONCEPT_SET_DELETE_DIALOG__ERROR_FORBIDDEN
         );

@@ -27,6 +27,10 @@ export const i18nDefault = {
       "Please try again later",
     CONCEPT_SET_DELETE_DIALOG__ERROR_FORBIDDEN:
       "You do not have permission to delete this concept set",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE:
+      "Cannot delete concept set. It is currently in use.",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE_COHORTS: "Atlas Cohort Definitions",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE_BOOKMARKS: "D2E Cohort Definitions",
     CONCEPT_SET_DELETE_DIALOG__ERROR_NOT_FOUND: "Concept set not found",
     CONCEPT_SET_DELETE_DIALOG__ERROR_SERVER: "Server error occurred",
     SEARCH_BAR__SEARCH_TERMS: "search terms",
