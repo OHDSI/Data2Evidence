@@ -127,6 +127,7 @@ const NameSection = ({
           variant="standard"
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
+          onBlur={(e) => setConceptSetName(e.target.value.trim())}
           disabled={isLoading}
         />
         <div style={actionBoxStyle} className="action-box-with-button-width">
@@ -288,7 +289,7 @@ export const Terminology: FC<TerminologyProps> = ({
 
   // Check if user can share based on adminOnlySharing feature flag
   // Default to hiding share option while features are loading to prevent flash
-  const adminOnlySharingEnabled = features.find(f => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ?? false;
+  const adminOnlySharingEnabled = features.find((f) => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ?? false;
   const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
   const [conceptId, setConceptId] = useState<null | number>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -395,16 +396,16 @@ export const Terminology: FC<TerminologyProps> = ({
           isExcluded: !!concept.isExcluded,
         };
       }),
-      name: conceptSetName,
+      name: conceptSetName.trim(),
       shared: conceptSetShared,
       ...(!conceptSetId && { userName }),
     };
     setIsConceptSetLoading(true);
     try {
       // 0 is the conceptSetId placeholder when creating a new concept set
-      const isNameUsed = await checkIfConceptSetExists(conceptSetId || 0, conceptSetName, activeDatasetId);
+      const isNameUsed = await checkIfConceptSetExists(conceptSetId || 0, conceptSet.name, activeDatasetId);
       if (isNameUsed) {
-        setErrorMsg(getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [`"${conceptSetName}"`]));
+        setErrorMsg(getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [`"${conceptSet.name}"`]));
         return;
       }
       const updatedConceptSetId = conceptSetId
@@ -459,7 +460,7 @@ export const Terminology: FC<TerminologyProps> = ({
       setIsConceptSetLoading(true);
       try {
         const conceptSet = await getConceptSetWithConceptDetails(conceptSetId, activeDatasetId);
-        setConceptSetName(conceptSet.name);
+        setConceptSetName(conceptSet.name.trim());
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);

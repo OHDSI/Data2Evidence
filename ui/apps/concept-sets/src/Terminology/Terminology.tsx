@@ -142,6 +142,7 @@ const NameSection = ({
           variant="standard"
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
+          onBlur={(e) => setConceptSetName(e.target.value.trim())}
           disabled={isLoading}
         />
         <Box
@@ -366,7 +367,9 @@ export const Terminology: FC<TerminologyProps> = ({
   const portalAPI = getPortalAPI();
   const features = portalAPI?.features ?? [];
   const featuresLoading = portalAPI?.featuresLoading ?? true;
-  const adminOnlySharingEnabled = features.find(f => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ?? false;
+  const adminOnlySharingEnabled =
+    features.find((f) => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ??
+    false;
   const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
   const isConceptMultiSelect = mode === "CONCEPT_MULTI_SELECT";
 
@@ -480,7 +483,7 @@ export const Terminology: FC<TerminologyProps> = ({
           isExcluded: !!concept.isExcluded,
         };
       }),
-      name: conceptSetName,
+      name: conceptSetName.trim(),
       shared: conceptSetShared,
       ...(!conceptSetId && { userName }),
     };
@@ -489,14 +492,14 @@ export const Terminology: FC<TerminologyProps> = ({
       // 0 is the conceptSetId placeholder when creating a new concept set
       const isNameUsed = await checkIfConceptSetExists(
         conceptSetId || 0,
-        conceptSetName,
+        conceptSet.name,
         activeDatasetId
       );
 
       if (isNameUsed) {
         setErrorMsg(
           getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [
-            `"${conceptSetName}"`,
+            `"${conceptSet.name}"`,
           ])
         );
         return;
@@ -569,7 +572,7 @@ export const Terminology: FC<TerminologyProps> = ({
           conceptSetId,
           activeDatasetId
         );
-        setConceptSetName(conceptSet.name);
+        setConceptSetName(conceptSet.name.trim());
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
