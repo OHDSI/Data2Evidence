@@ -113,6 +113,7 @@ export const createProject = async (token: string, id: string, description: stri
         project: {
           reference: `Project/${projectId}`,
         },
+        "admin": true,
         meta: {
           project: projectId,
           compartment: [
