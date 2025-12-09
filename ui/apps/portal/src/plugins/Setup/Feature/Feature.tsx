@@ -11,6 +11,7 @@ import {
   FEATURE_FHIR_SERVER,
   FEATURE_MAPPING_SUGGESTION,
   FEATURE_DOCKER_LOGS,
+  FEATURE_ADMIN_ONLY_SHARING,
 } from "../../../config";
 
 interface FormData {
@@ -59,6 +60,9 @@ export const Feature: FC = () => {
       },
       [FEATURE_DOCKER_LOGS]: {
         name: getText(i18nKeys.FEATURE__DOCKER_LOGS),
+      },
+      [FEATURE_ADMIN_ONLY_SHARING]: {
+        name: getText(i18nKeys.FEATURE__ADMIN_ONLY_SHARING),
       },
     }),
     [getText]

@@ -70,3 +70,4 @@ ui/**/library-parameters.json
 ui/**/*private*
 ui/.nx
 ui/pyqetest
+scripts/dist/
