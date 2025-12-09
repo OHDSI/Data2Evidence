@@ -45,7 +45,12 @@ export const getConceptSets = async (
       userId,
       query.datasetId
     );
-    res.send(conceptSets);
+    // Filter to only return owned concept sets or shared concept sets from others
+    const filteredConceptSets = conceptSets.filter(
+      (cs: { createdBy: string; shared: boolean }) =>
+        cs.createdBy === userId || cs.shared === true
+    );
+    res.send(filteredConceptSets);
   } catch (e) {
     next(e);
   }

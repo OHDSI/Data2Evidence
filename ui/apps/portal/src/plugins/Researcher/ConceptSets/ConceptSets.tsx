@@ -76,24 +76,19 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
       setIsLoading(true);
 
       const response = (await api.d2eWebapi.getConceptSets(activeDatasetId)).map(mapd2eWebapiConceptSet);
+      // Sort by name, with user's own concept sets first
       const sortFn = (a: ConceptSet, b: ConceptSet) => {
-        if (a.name < b.name) {
-          return -1;
-        }
+        // User's own concept sets come first
+        const aIsOwn = a.createdBy === userName;
+        const bIsOwn = b.createdBy === userName;
+        if (aIsOwn && !bIsOwn) return -1;
+        if (!aIsOwn && bIsOwn) return 1;
+        // Then sort by name
+        if (a.name < b.name) return -1;
+        if (a.name > b.name) return 1;
         return 0;
       };
-      const userConceptSets = response
-        .filter((conceptSet) => {
-          return conceptSet.createdBy === userName;
-        })
-        .sort(sortFn);
-      const sharedConceptSets = response
-        .filter((conceptSet) => {
-          return conceptSet.createdBy !== userName && conceptSet.shared;
-        })
-        .sort(sortFn);
-      const list = [...userConceptSets, ...sharedConceptSets];
-      setData(list);
+      setData(response.sort(sortFn));
     } catch (e) {
       console.error(e);
       setFeedback({
