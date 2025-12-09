@@ -33,8 +33,8 @@ export CADDY__CONFIG=${CADDY__CONFIG:-./.deploy/caddy-config}
 export ENV_TYPE=${ENV_TYPE:-remote}
 DOCKER_LOG_LEVEL=${DOCKER_LOG_LEVEL:-ERROR}
 
-export ENV_EXAMPLE=$node_modules_path/env.example
-export GIT_BASE_DIR=.
+ENV_EXAMPLE=$node_modules_path/env.example
+GIT_BASE_DIR=.
 
 env=.env
 context=""
@@ -59,10 +59,11 @@ while [[ $# -gt 0 ]]; do
         -v|--version) version="$2"; shift ;;
         -a|--args) args="$2"; shift ;;
         -n|--env-file) env="$2"; shift ;;
-        -p|--port) export PORT="$2"; shift ;;
+        -p|--port) PORT="$2"; shift ;;
         -s|--services) services="$2"; shift ;;
         -m|--mlflow) mlflow=--profile="mlflow" ;;
         --hana) hana=--profile="hana" ;;
+        --pull) pull=true;;
         *) if [[ -z ${cmd:-} ]]; then
                cmd=$1
            else
@@ -80,7 +81,7 @@ if [ -n "${function_path:-}" ]; then
 else
     dev="--env-file $env"
 fi
-export ENVFILE=$env
+ENVFILE=$env
 # export PROJECT_NAME=${PROJECT_NAME:-d2e}
 
 if [[ $version = "develop" ]]; then
@@ -89,7 +90,7 @@ if [[ $version = "develop" ]]; then
   #export DOCKER_IMAGE_PREFIX=ghcr.io/ohdsi/
   export PLUGINS_IMAGE_TAG=${PLUGINS_IMAGE_TAG:-develop}
   export PLUGINS_REGISTRY=${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
-  DOCKER_LOG_LEVEL=INFO
+  export DOCKER_LOG_LEVEL=INFO
 else
   export PLUGINS_API_VERSION=${PLUGINS_API_VERSION:-~$version}
   export DOCKER_TAG_NAME=${DOCKER_TAG_NAME:-${LATEST_DOCKER_TAG_NAME}}
@@ -136,8 +137,11 @@ case $cmd in
         if [ -n "$services" ]; then
             cmd="$cmd --no-deps $services"
         fi
-        echo . $cmd
-        $cmd
+        if [[ -n "$pull" ]]; then
+            cmd="$cmd --pull always"
+        fi
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     inithana)
         echo "This will initialize SAP HANA Express Edition."
@@ -165,49 +169,50 @@ case $cmd in
         hanapw=${HANAPW:-$(random-password 16)}
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     stop)
         cmd="$dockerbasecmd stop"
         if [ -n "$services" ]; then
             cmd="$cmd $services"
         fi
-        echo . $cmd
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     build)
         cmd="$dockerbasecmd build"
         if [ -n "$services" ]; then      
             cmd="$cmd $services"
         fi
-        echo . $cmd
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     status)
         cmd="$dockerbasecmd ps"
-        echo . $cmd
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     logs)
         cmd="$dockerbasecmd logs -t"
         if [ -n "$services" ]; then
             cmd="$cmd $services"
         fi
-        echo . $cmd
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     config)
         cmd="$dockerbasecmd config"
-        echo "# $cmd"
-        $cmd 2> /dev/null
+        echo "# ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd"
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd 2> /dev/null
         ;;
     clean)
         read -p "This action will delete all docker containers and volumes. Continue (y/n)?" choice
         case "$choice" in
             y|Y)
                 cmd="$dockerbasecmd down --volumes --remove-orphans"
-                echo . $cmd
-                $cmd
+                echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+                ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
                 ;;
             *)
                 echo "Aborting";;
@@ -215,8 +220,8 @@ case $cmd in
         ;;
     cleanci)
         cmd="$dockerbasecmd down --volumes --remove-orphans"
-        echo . $cmd
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     patchdemodb)
         source "$ENVFILE"
@@ -224,104 +229,120 @@ case $cmd in
         docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
         ;;
     init)
-        CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
-        ENV_TYPE=${ENV_TYPE:-local}
-        TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
-        PROJECT_NAME=${PROJECT_NAME:-d2e}
-        [ -v DOTENV_FILE ] || DOTENV_FILE=$env
-        DOTENV_KEYS=$DOTENV_FILE.keys
+        if [[ -n "${init_choice:-}" ]]; then
+            echo "CI environment detected. Auto-accepting to overwite all values in .env file..."
+            init_choice="y"
+        else
+            echo "WARNING: Re-running this command again will require you to run \`d2e clean\` to remove all existing containers and volumes before starting services again with \`d2e start\`."
+            read -p "Do you wish to overwrite .env file? (y/n):" init_choice
+        fi
 
-        echo . INPUTS TLS__CADDY_DIRECTIVE=\"$TLS__CADDY_DIRECTIVE\" DOTENV_FILE=$DOTENV_FILE
+        case "$init_choice" in
+          y|Y)
+            CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
+            ENV_TYPE=${ENV_TYPE:-local}
+            TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
+            PROJECT_NAME=${PROJECT_NAME:-d2e}
+            [ -v DOTENV_FILE ] || DOTENV_FILE=$env
+            DOTENV_KEYS=$DOTENV_FILE.keys
 
-        # vars
+            echo . INPUTS TLS__CADDY_DIRECTIVE=\"$TLS__CADDY_DIRECTIVE\" DOTENV_FILE=$DOTENV_FILE
 
-        source $node_modules_path/scripts/lib.sh # functions here
+            # vars
 
-        echo ". INFO generate public & private keys - DB_CREDENTIALS__INTERNAL"
-        DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$(random-password 41)
-        DB_CREDENTIALS__INTERNAL__PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl genpkey -algorithm RSA -aes-256-cbc -pkeyopt rsa_keygen_bits:4096 -pass env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE -quiet)"
-        DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
-        DB_CREDENTIALS__INTERNAL__PUBLIC_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -pubout -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
+            source $node_modules_path/scripts/lib.sh # functions here
 
-        # Generate random supabase JWT secret
-        JWT_SECRET=$(generate_random_secret)
-        # Generate supabase service role JWT token
-        ROLE="service_role"
-        ISSUER="supabase"
-        JWT_TOKEN=$(generate_jwt "$JWT_SECRET" "$ROLE" "$ISSUER")
+            echo ". INFO generate public & private keys - DB_CREDENTIALS__INTERNAL"
+            DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$(random-password 41)
+            DB_CREDENTIALS__INTERNAL__PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl genpkey -algorithm RSA -aes-256-cbc -pkeyopt rsa_keygen_bits:4096 -pass env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE -quiet)"
+            DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
+            DB_CREDENTIALS__INTERNAL__PUBLIC_KEY="$(DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE openssl rsa -in <(echo "${DB_CREDENTIALS__INTERNAL__PRIVATE_KEY}") -pubout -passin env:DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE)"
 
-        # action
-        echo -n '' > $DOTENV_FILE
-        echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
-        echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
-        echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
-        echo FHIR__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-        echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
-        echo LOGTO__ALP_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-        echo LOGTO__ALP_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-        echo LOGTO__ALP_DATA__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-        echo LOGTO__ALP_DATA__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-        echo LOGTO__ALP_SVC__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-        echo LOGTO__ALP_SVC__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-        echo LOGTO_API_M2M_CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-        echo LOGTO_API_M2M_CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-        echo MINIO__SECRET_KEY=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo PG_STUDY_RESULTS_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo PG_STUDY_RESULTS_READ_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
-        echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
-        echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
-        echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
-        echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
-        echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
-        echo TREX__SQL__PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            # Generate random supabase JWT secret
+            JWT_SECRET=$(generate_random_secret)
+            # Generate supabase service role JWT token
+            ROLE="service_role"
+            ISSUER="supabase"
+            JWT_TOKEN=$(generate_jwt "$JWT_SECRET" "$ROLE" "$ISSUER")
 
-        source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
-        #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
-        echo PG__LOGTO_MANAGER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            # action
+            echo -n '' > $DOTENV_FILE
+            echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
+            echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
+            echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
+            echo FHIR__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
+            echo LOGTO__ALP_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo LOGTO__ALP_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
+            echo LOGTO__ALP_DATA__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo LOGTO__ALP_DATA__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
+            echo LOGTO__ALP_SVC__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo LOGTO__ALP_SVC__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
+            echo LOGTO_API_M2M_CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo LOGTO_API_M2M_CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
+            echo MINIO__SECRET_KEY=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo PG_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo PG_SUPER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo PG_WRITE_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo PG_STUDY_RESULTS_ADMIN_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo PG_STUDY_RESULTS_READ_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo DEMO__DB_PASSWORD=$(random-password 6) >> $DOTENV_FILE
+            echo REDIS_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo DICOM__HEALTH_CHECK_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
+            echo TLS__CADDY_DIRECTIVE=\'"$TLS__CADDY_DIRECTIVE"\' >> $DOTENV_FILE
+            echo "SUPABASE_STORAGE_JWT_SECRET=$JWT_SECRET" >> $DOTENV_FILE
+            echo "SUPABASE_STORAGE_JWT_TOKEN=$JWT_TOKEN" >> $DOTENV_FILE
+            echo PROJECT_NAME=$PROJECT_NAME >> $DOTENV_FILE
+            echo TREX__SQL__PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
 
-        set-cpu-limit
-        set-memory-limit
-        gen-tls-internal
+            source $DOTENV_FILE && echo LOGTO__CLIENTID_PASSWORD__BASIC_AUTH=$(echo -n "${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}" | base64) >> $DOTENV_FILE
+            #echo PG__LOGTO_MANAGER_USER=postgres >> $DOTENV_FILE
+            echo PG__LOGTO_MANAGER_PASSWORD=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
 
-        # echo DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=\'"$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE"\' >> $DOTENV_FILE
-        # echo DB_CREDENTIALS__INTERNAL__PRIVATE_KEY=\'"$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY"\' >> $DOTENV_FILE
-        echo DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY=\'"$DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY"\' >> $DOTENV_FILE
-        echo DB_CREDENTIALS__INTERNAL__PUBLIC_KEY=\'"$DB_CREDENTIALS__INTERNAL__PUBLIC_KEY"\' >> $DOTENV_FILE
+            set-cpu-limit
+            set-memory-limit
+            gen-tls-internal
 
-        # finalize
-        cat $DOTENV_FILE | grep = | awk -F= '{print $1}' | grep _ | sort -u > $DOTENV_KEYS
-        echo . INFO linecounts
-        wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
+            # echo DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE=\'"$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE"\' >> $DOTENV_FILE
+            # echo DB_CREDENTIALS__INTERNAL__PRIVATE_KEY=\'"$DB_CREDENTIALS__INTERNAL__PRIVATE_KEY"\' >> $DOTENV_FILE
+            echo DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY=\'"$DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY"\' >> $DOTENV_FILE
+            echo DB_CREDENTIALS__INTERNAL__PUBLIC_KEY=\'"$DB_CREDENTIALS__INTERNAL__PUBLIC_KEY"\' >> $DOTENV_FILE
+
+            # finalize
+            cat $DOTENV_FILE | grep = | awk -F= '{print $1}' | grep _ | sort -u > $DOTENV_KEYS
+            echo . INFO linecounts
+            wc -l $DOTENV_FILE $DOTENV_KEYS | sed '$d'
+            ;;
+          *)
+            echo "Aborting"
+            exit 1
+            ;;
+        esac
         ;;
     pull)
         cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e/flow-base:${PLUGINS_IMAGE_TAG}" # not part of dc.yml
-        echo . $cmd
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         if [[ -n "$jupyter" ]]; then
             cmd="docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-r-ohdsi-kernel:${DOCKER_TAG_NAME}"
             echo . $cmd
             $cmd
         fi
         cmd="$dockerbasecmd pull"
-        echo . $cmd
-        $cmd
+        echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ;;
     setupdemo)
         source "$ENVFILE"
         $node_modules_path/scripts/cli.sh patchdemodb -n "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
         setup_zx_cmd
-        $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE" 
-        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
+        PORT=$PORT $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE"
+        PORT=$PORT $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
     checkflow) 
         setup_zx_cmd
-        $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
+        PORT=$PORT $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
     getnoproxy)
         setup_zx_cmd

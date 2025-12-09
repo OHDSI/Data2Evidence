@@ -156,7 +156,11 @@ export default {
           } else {
             filterCardName = this.getMriFrontendConfig.getFilterCardByPath(sParent).getName()
           }
-          category.name = `${filterCardName} - ${this.getMriFrontendConfig.getAttributeByPath(category.id).getName()}`
+          const attributeName = this.getMriFrontendConfig.getAttributeByPath(category.id).getName()
+          // prevent duplicate prefixes
+          if (!category.name || !category.name.startsWith(filterCardName + ' - ')) {
+            category.name = `${filterCardName} - ${attributeName}`
+          }
         } else {
           category.name = this.getText('MRI_PA_VIEW_COHORT_TITLE')
           category.id = 'cohortName' // Use saved name for bar label

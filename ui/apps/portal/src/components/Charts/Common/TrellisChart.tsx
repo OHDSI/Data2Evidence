@@ -12,9 +12,10 @@ interface TrellisChartProps {
   title: string;
   xAxis: any[];
   yAxis: any[];
+  numRows?: number;
 }
 
-const TrellisChart: FC<TrellisChartProps> = ({ series, grid, gridTitles, title, xAxis, yAxis }) => {
+const TrellisChart: FC<TrellisChartProps> = ({ series, grid, gridTitles, title, xAxis, yAxis, numRows = 1 }) => {
   const option = {
     legend: { left: 0 },
     tooltip: {
@@ -44,12 +45,14 @@ const TrellisChart: FC<TrellisChartProps> = ({ series, grid, gridTitles, title, 
     color: chartColors,
   };
 
+  const minHeight = 500 * numRows;
+
   return (
     <ChartContainer title={title}>
       <ReactECharts
         style={{
           height: "100%",
-          minHeight: 500,
+          minHeight,
           width: "100%",
         }}
         option={option}

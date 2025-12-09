@@ -1,68 +1,21 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
-import { fetchCohortData } from "../utils/utils";
+import { MCP_SERVER_CONFIG } from "../config/server.config";
+import { registerCohortManagementTools } from "../tools/cohort-management.tools";
+import { registerPhenotypeLibraryTools } from "../tools/phenotype-library.tools";
+import { registerCohortInstructionTools } from "../tools/cohort-instruction.tools";
+import { registerCohortValidationTools } from "../tools/cohort-validation.tools";
+import { registerCohortPrompts } from "../prompts/cohort.prompts";
 
 export const server = new McpServer({
-  name: "example-server",
-  version: "1.0.0",
+  name: MCP_SERVER_CONFIG.NAME,
+  version: MCP_SERVER_CONFIG.VERSION,
 });
 
-// Tool Get Cohorts ID Name List Tool from Phenotype Library
-server.registerTool(
-  "get_cohort_id_name_list",
-  {
-    title: "Get Cohort ID and Name List",
-    description:
-      "Rank the cohort ids and names for the relevant cohort description extracted from the user query. Return the list of cohort ids and names in structured content. Automatically invoked when user query is related to cohort id information.",
-    inputSchema: {
-      cohortInfo: z
-        .string()
-        .describe("The cohort description extracted from user query"),
-    },
-    outputSchema: {
-      cohortsId: z.array(
-        z.object({
-          cohortId: z.string(),
-          cohortName: z.string(),
-          cohortDescription: z.string(),
-        })
-      ),
-    },
-  },
-  async ({}) => {
-    // Fetch d2e cohort list
-    const cohortData = await fetchCohortData();
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Here is the list of cohort ids and names for all cohort description.`,
-        },
-      ],
-      structuredContent: {
-        cohortsId: cohortData,
-      },
-    };
-  }
-);
+// Register all tool groups
+registerCohortManagementTools(server);
+registerPhenotypeLibraryTools(server);
+registerCohortInstructionTools(server);
+registerCohortValidationTools(server);
 
-server.registerPrompt(
-  "organize_cohort_ids_names_list",
-  {
-    title: "Organize Cohort IDs and Names List",
-    description:
-      "Rank and order the cohort_ids and names based on relevance of cohortInfo and clinical practices.",
-    argsSchema: { cohortInfo: z.string() },
-  },
-  ({ cohortInfo }) => ({
-    messages: [
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text: `Please rank and organize the output after getting cohort id and names based on relevance of ${cohortInfo} with clinical practices. Output in format of cohortId: cohortName.`,
-        },
-      },
-    ],
-  })
-);
+// Register prompts
+registerCohortPrompts(server);
