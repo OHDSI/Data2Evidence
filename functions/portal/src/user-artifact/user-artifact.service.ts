@@ -202,6 +202,37 @@ export class UserArtifactService {
     };
   }
 
+  async patchArtifact(
+    serviceName: ServiceName,
+    id: string,
+    partialData: Record<string, unknown>
+  ): Promise<IUserArtifact> {
+    const parsedId = this.parseUserArtifactId(id);
+    const artifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, parsedId);
+
+    if (!artifact) {
+      throw new HttpException(400, `Artifact not found: ${serviceName}/${id}`)
+    }
+
+    // Strip id from partial data (id should not be patchable)
+    const { id: _id, ...patchFields } = partialData;
+
+    // Merge partial data with existing artifact
+    const artifactData = artifact.artifact as Record<string, unknown>;
+    const mergedArtifact = { ...artifactData, ...patchFields };
+
+    // Update the artifact without changing user_id (original owner preserved)
+    const updatedArtifact = await this.userArtifactRepository.create({
+      id: artifact.id,
+      serviceName,
+      userId: artifact.userId, // Preserve original owner
+      artifact: mergedArtifact,
+    });
+
+    const updated = await this.userArtifactRepository.update(this.addOwner(updatedArtifact));
+    return this.convertUserArtifactEntityToUserArtifact(updated);
+  }
+
   private removeIdFromUserArtifact(
     userArtifact: IUserArtifact
   ): UserArtifactEntity {

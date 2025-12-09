@@ -101,7 +101,7 @@ const getters = {
 
         axisInfo.binsize =
           allAxes[i].props.binsize === ''
-            ? rootGetters.getMriFrontendConfig.getAttributeByPath(axisInfo.attributeId).getDefaultBinSize() ?? 'n/a'
+            ? (rootGetters.getMriFrontendConfig.getAttributeByPath(axisInfo.attributeId).getDefaultBinSize() ?? 'n/a')
             : allAxes[i].props.binsize
       }
       axisSelection.push(axisInfo)
@@ -149,6 +149,8 @@ const getters = {
       // cohort definitions without bookmark
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
+        // displayBookmarkDateFormat expects ISO String
+        cohortDefinition.createdOn = new Date(cohortDefinition.createdOn).toISOString()
         // check bookmark exists, if yes, should use the bookmark name
         const bookmark = bookmarks.find(
           bookmark =>

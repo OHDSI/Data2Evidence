@@ -7,20 +7,25 @@ import { useTranslation } from "../../../../contexts";
 interface TreeMapTableProps {
   data: any;
   setSelectedConceptId: (value: string) => void;
+  isSimpleFormat?: boolean;
 }
-const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => {
+const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId, isSimpleFormat = false }) => {
   const { getText, i18nKeys } = useTranslation();
   // column properties
-  const columns = useMemo<MRT_ColumnDef<any>[]>(
-    () => [
+  const columns = useMemo<MRT_ColumnDef<any>[]>(() => {
+    const baseColumns: MRT_ColumnDef<any>[] = [
       {
         accessorKey: "CONCEPTID",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_CONCEPT_ID),
-        Cell: ({ cell }) => (
-          <div className="concept_id_text" onClick={() => setSelectedConceptId(cell.getValue<string>())}>
-            {cell.getValue<string>()}
-          </div>
-        ),
+        ...(isSimpleFormat
+          ? {}
+          : {
+              Cell: ({ cell }) => (
+                <div className="concept_id_text" onClick={() => setSelectedConceptId(cell.getValue<string>())}>
+                  {cell.getValue<string>()}
+                </div>
+              ),
+            }),
       },
       {
         accessorKey: "CONCEPTPATH",
@@ -37,7 +42,7 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => 
         },
       },
       {
-        accessorKey: "PERCENTPERSONS",
+        accessorKey: isSimpleFormat ? "PERCENT_PERSONS" : "PERCENTPERSONS",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_PERCENT_PERSONS),
         muiTableHeadCellProps: {
           align: "right",
@@ -46,7 +51,11 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => 
           align: "right",
         },
       },
-      {
+    ];
+
+    // Add RECORDSPERPERSON column only for non-simple format
+    if (!isSimpleFormat) {
+      baseColumns.push({
         accessorKey: "RECORDSPERPERSON",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_RECORDS_PER_PERSON),
         muiTableHeadCellProps: {
@@ -55,10 +64,11 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId }) => 
         muiTableBodyCellProps: {
           align: "right",
         },
-      },
-    ],
-    [setSelectedConceptId]
-  );
+      });
+    }
+
+    return baseColumns;
+  }, [setSelectedConceptId, isSimpleFormat, getText, i18nKeys]);
 
   return (
     <MaterialReactTable

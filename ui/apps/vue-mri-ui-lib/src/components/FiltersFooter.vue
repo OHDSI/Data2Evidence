@@ -118,7 +118,7 @@
                 </div>
               </div>
 
-              <div class="row row-checkbox">
+              <div v-if="canShare" class="row row-checkbox">
                 <appCheckbox
                   v-model="shareBookmark"
                   :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
@@ -171,7 +171,7 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations, useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
@@ -180,6 +180,7 @@ import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
+import { useUserRole } from '../composables/useUserRole'
 
 export default {
   name: 'filtersFooter',
@@ -189,6 +190,11 @@ export default {
       required: false,
       default: false,
     },
+  },
+  setup() {
+    const store = useStore()
+    const { canShare } = useUserRole()
+    return { canShare }
   },
   data() {
     return {
