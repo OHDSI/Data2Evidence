@@ -139,7 +139,7 @@ sap.ui.define([
                             configVersion: mriConfig.meta.configVersion
                         };
                         ConfigUtils.ajax({
-                            url: "/pa-config-svc/services/config.xsjs",
+                            url: "/d2e/pa-config-svc/services/config.xsjs",
                             type: "POST",
                             dataType: "json",
                             contentType: "application/json;charset=utf-8",
@@ -174,7 +174,7 @@ sap.ui.define([
             ConfigUtils.notifyUser(sap.ui.core.MessageType.Error, "MRI_PA_CFG_ERROR_INVALID_CONFIG");
         } else if (!mriConfig.config) {
             ConfigUtils.ajax({
-                url: "/pa-config-svc/services/config.xsjs",
+                url: "/d2e/pa-config-svc/services/config.xsjs",
                 type: "POST",
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
@@ -213,7 +213,7 @@ sap.ui.define([
             };
 
             ConfigUtils.ajax({
-                url: "/pa-config-svc/services/config.xsjs",
+                url: "/d2e/pa-config-svc/services/config.xsjs",
                 type: "POST",
                 dataType: "json",
                 contentType: "application/json;charset=utf-8",
@@ -309,7 +309,7 @@ sap.ui.define([
                 };
 
                 ConfigUtils.ajax({
-                    url: "/pa-config-svc/services/config.xsjs",
+                    url: "/d2e/pa-config-svc/services/config.xsjs",
                     type: "POST",
                     dataType: "json",
                     contentType: "application/json;charset=utf-8",
@@ -928,7 +928,7 @@ sap.ui.define([
      * @returns {string}          Config download link
      */
     ConfigListController.prototype._getConfigDownloadLink = function (meta) {
-        var url = "/pa-config-svc/services/config.xsjs";
+        var url = "/d2e/pa-config-svc/services/config.xsjs";
         url += "?action=export";
         url += "&configId=" + meta.configId;
         url += "&configVersion=" + meta.configVersion;

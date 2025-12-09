@@ -33,7 +33,7 @@ export function addPlugin(app: Hono, value: any, dir: string) {
     });
   // Redirect root to portal
   app.get("/", (c) => {
-    return c.redirect(`/portal/`);
+    return c.redirect(`/d2e/portal/`);
   });
 
   // Serve portal index.html for client-side routing

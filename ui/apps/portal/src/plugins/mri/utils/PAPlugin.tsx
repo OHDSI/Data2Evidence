@@ -14,8 +14,8 @@ interface PAPluginProps {
 
 const PA_ASSETS_URL = "mri/assets.json";
 const VUE_APP_HOST = env.REACT_APP_DN_BASE_URL.endsWith("/")
-  ? env.REACT_APP_DN_BASE_URL.slice(0, -1)
-  : env.REACT_APP_DN_BASE_URL;
+  ? `${env.REACT_APP_DN_BASE_URL}d2e`
+  : `${env.REACT_APP_DN_BASE_URL}/d2e`;
 
 const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas }) => {
   const [isLoading, setIsLoading] = useState(false);
