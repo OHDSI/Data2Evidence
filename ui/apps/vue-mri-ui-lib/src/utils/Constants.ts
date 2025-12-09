@@ -292,6 +292,7 @@ const PlotlyConsts = {
       automargin: true,
       tickson: 'boundaries',
       ticks: 'outside',
+      dividercolor: 'rgba(0,0,0,0.3)',
       type: 'multicategory', // Dynamically toggled with "category" while converting data into Plotly traces
     },
     yaxis: {
@@ -315,6 +316,8 @@ const CohortEntryExit = {
   EXIT_KEY: 'isExit',
 }
 
+const XAxisLabelMaxLength = 30
+
 export default {
   sap,
   events,
@@ -331,4 +334,6 @@ export default {
   AxisIcons,
   AxisId,
   CohortEntryExit,
+  XAxisLabelMaxLength,
 }
+

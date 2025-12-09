@@ -848,9 +848,6 @@ services:
     # uses 8042 port on the container
     image: orthancteam/orthanc:24.6.1
     container_name: &c27 ${PROJECT_NAME:-d2e}-dicom-server-${BASE_PORT:-1}
-    depends_on:
-      alp-minio-post-init:
-        condition: service_completed_successfully
     logging:
       options:
         tag: *c27

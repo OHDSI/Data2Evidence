@@ -24,7 +24,17 @@ export default class InputParser {
       return
     }
 
-    const aSplittedInputs = sInput.split(' ')
+    // remove spaces between operators/brackets and numbers
+    // but preserve spaces between separate expressions
+    const normalizedInput = sInput
+      .replace(/([><=]+)\s+(-?(?:\d*\.)?\d+)/g, '$1$2') // "> 30" -> ">30"
+      .replace(/(\[|\])\s+(-?(?:\d*\.)?\d+)/g, '$1$2') // "[ 10" -> "[10"
+      .replace(/(-?(?:\d*\.)?\d+)\s+(\[|\])/g, '$1$2') // "10 ]" -> "10]"
+      .replace(/(-?(?:\d*\.)?\d+)\s+-\s+(-?(?:\d*\.)?\d+)/g, '$1-$2') // "10 - 20" -> "10-20"
+
+    // const normalizedInput = sInput.replace(/([><=\[\]-])\s+/g, '$1').replace(/\s+([><=\[\]-])/g, '$1')
+
+    const aSplittedInputs = normalizedInput.split(' ')
 
     while (aSplittedInputs.length > 0) {
       const sInputPart = aSplittedInputs[0].trim()
