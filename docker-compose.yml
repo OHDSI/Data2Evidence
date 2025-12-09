@@ -427,7 +427,7 @@ services:
           }
 
           handle @logto {
-              uri strip_prefix /d2e/logto
+            uri strip_prefix /d2e/logto
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001 {
               import ${PROXY_HEADERS_MODE:-proxy_headers_default}
               transport http {
