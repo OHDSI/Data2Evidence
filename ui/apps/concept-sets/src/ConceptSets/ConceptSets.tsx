@@ -22,6 +22,7 @@ import {
   TableRow,
   VisibilityOnIcon,
 } from "@portal/components";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { api } from "../axios/api";
 import Terminology from "../Terminology/Terminology";
 import { ConceptSet } from "../Terminology/utils/types";
@@ -29,8 +30,9 @@ import { TerminologyProps } from "../Terminology/Terminology";
 import SearchBar from "../components/SearchBar/SearchBar";
 import { useFeedback, usePortal, useTranslation } from "../hooks";
 import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
-import { i18nKeys } from "../context/state";
+import { i18nKeys } from "../context/state/translation-state";
 import "./ConceptSets.scss";
+import ConceptSetDeleteDialog from "./ConceptSetDeleteDialog";
 
 enum ConceptSetTab {
   ConceptSearch = "ConceptSearch",
@@ -51,6 +53,10 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
   const { setFeedback } = useFeedback();
   const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conceptSetToDelete, setConceptSetToDelete] = useState<
+    { id: number; name: string } | undefined
+  >(undefined);
 
   const handleTabSelectionChange = async (
     _event: React.SyntheticEvent,
@@ -86,12 +92,12 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
         return 0;
       };
       const userConceptSets = response
-        .filter((conceptSet: any) => {
+        .filter((conceptSet: ConceptSet) => {
           return conceptSet.createdBy === userName;
         })
         .sort(sortFn);
       const sharedConceptSets = response
-        .filter((conceptSet: any) => {
+        .filter((conceptSet: ConceptSet) => {
           return conceptSet.createdBy !== userName && conceptSet.shared;
         })
         .sort(sortFn);
@@ -159,6 +165,20 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
     },
     []
   );
+
+  const handleDeleteClick = useCallback((conceptSet: ConceptSet) => {
+    setConceptSetToDelete({ id: conceptSet.id, name: conceptSet.name });
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteDialogClose = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setConceptSetToDelete(undefined);
+  }, []);
+
+  const handleConceptSetDeleted = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredData = data.filter((row) =>
     row.name.toLowerCase().includes(searchText.toLowerCase())
@@ -262,6 +282,12 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
                               }
                               onClick={() => handleAddAndEditConceptSet(row.id)}
                             />
+                            {row.createdBy === userName && (
+                              <IconButton
+                                startIcon={<DeleteIcon />}
+                                onClick={() => handleDeleteClick(row)}
+                              />
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -292,6 +318,14 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
           )}
         </div>
       </div>
+      <ConceptSetDeleteDialog
+        conceptSet={conceptSetToDelete}
+        open={deleteDialogOpen}
+        datasetId={datasetId}
+        setMainFeedback={setFeedback}
+        onClose={handleDeleteDialogClose}
+        onDeleted={handleConceptSetDeleted}
+      />
     </>
   );
 };

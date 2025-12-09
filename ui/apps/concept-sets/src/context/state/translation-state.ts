@@ -14,6 +14,21 @@ export const i18nDefault = {
     CONCEPT_SETS__REFERENCE_CONCEPTS: "Reference concepts from dataset",
     CONCEPT_SETS__SHARED: "Shared",
     CONCEPT_SETS__UPDATED: "Updated",
+    CONCEPT_SET_DELETE_DIALOG__DELETE_CONCEPT_SET: "Delete concept set",
+    CONCEPT_SET_DELETE_DIALOG__ARE_YOU_SURE:
+      "Are you sure you want to delete this concept set",
+    CONCEPT_SET_DELETE_DIALOG__CANCEL: "Cancel",
+    CONCEPT_SET_DELETE_DIALOG__CONFIRM: "Confirm",
+    CONCEPT_SET_DELETE_DIALOG__DELETE_SUCCESSFUL:
+      "Concept set deleted successfully",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED:
+      "An error occurred while deleting the concept set",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED_DESCRIPTION:
+      "Please try again later",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_FORBIDDEN:
+      "You do not have permission to delete this concept set",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_NOT_FOUND: "Concept set not found",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_SERVER: "Server error occurred",
     SEARCH_BAR__SEARCH_TERMS: "search terms",
     SEARCH_BAR__SEARCH: "Search",
     TERMINOLOGY__CLOSE: "Close",
