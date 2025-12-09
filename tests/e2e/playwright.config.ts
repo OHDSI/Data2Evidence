@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 export default defineConfig({
-  testDir: 'tests/03-researcher',
+  testDir: 'tests',
   timeout: 180000, // 3 minutes per test
   expect: {
     timeout: 120000 // 20 seconds for expect conditions
