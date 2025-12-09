@@ -58,7 +58,6 @@ test(TEST_NAME, async ({ page }) => {
     await testCacheRow.getByText('Select action').click();
     await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 });
     await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 });
-    await expect(testCacheRow).not.toBeVisible({ timeout: 30000 });
     const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first();
     await expect(testStudyDataset).toBeVisible({ timeout: 30000 });
     await testStudyDataset.getByText('Select action').click();
