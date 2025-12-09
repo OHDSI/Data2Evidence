@@ -7,7 +7,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 const randomString = 'omop53' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
