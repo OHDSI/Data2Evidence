@@ -19,6 +19,7 @@ import {
   updateConceptSet,
   updateConceptSetItems,
   getConceptSetExpression,
+  deleteConceptSet,
 } from "../services/conceptset.service.ts";
 
 // deno-lint-ignore require-await
@@ -229,6 +230,29 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         req.body
       );
       res.send(result);
+    }
+  );
+
+  app.delete(
+    "/:id",
+    {
+      schema: {
+        description: "Delete the concept set by identifier",
+        tags: ["conceptset"],
+        params: z.object({ id: z.coerce.number() }),
+        response: { 204: z.null() },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const { id } = req.params;
+      await deleteConceptSet(req.token, req.datasetId, id);
+      res.status(204).send();
     }
   );
 };

@@ -122,6 +122,15 @@ export const updateConceptSet = async (
   return true;
 };
 
+export const deleteConceptSet = async (
+  token: string,
+  datasetId: string,
+  conceptSetId: number
+): Promise<void> => {
+  const terminologySvcApi = new TerminologySvcAPI(token);
+  await terminologySvcApi.deleteConceptSet(datasetId, conceptSetId);
+};
+
 export const updateConceptSetItems = async (
   token: string,
   datasetId: string,

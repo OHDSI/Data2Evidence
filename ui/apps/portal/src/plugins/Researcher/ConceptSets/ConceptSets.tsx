@@ -15,6 +15,9 @@ import {
   VisibilityOnIcon,
 } from "@portal/components";
 import { Tabs, Tab } from "@mui/material";
+// DeleteIcon is not available in @portal/components (only trash/trashcan icons exist in assets)
+// so we import it directly from @mui/icons-material
+import DeleteIcon from "@mui/icons-material/Delete";
 import { api } from "../../../axios/api";
 import Terminology from "../../Researcher/Terminology/Terminology";
 import { ConceptSet } from "../../Researcher/Terminology/utils/types";
@@ -25,6 +28,7 @@ import { useActiveDataset, useFeedback, useToken, useTranslation, useUser } from
 import "./ConceptSets.scss";
 import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
 import env from "../../../env";
+import ConceptSetDeleteDialog from "./ConceptSetDeleteDialog";
 enum ConceptSetTab {
   ConceptSearch = "ConceptSearch",
   ConceptSets = "ConceptSets",
@@ -44,6 +48,8 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
   const { setFeedback } = useFeedback();
   const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conceptSetToDelete, setConceptSetToDelete] = useState<{ id: number; name: string } | undefined>(undefined);
 
   // Get current user's username
   const nameProp = env.REACT_APP_IDP_NAME_PROP;
@@ -98,7 +104,14 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [getText, setFeedback, i18nKeys.CONCEPT_SETS__ERROR, i18nKeys.CONCEPT_SETS__ERROR_DESCRIPTION, activeDatasetId]);
+  }, [
+    getText,
+    setFeedback,
+    i18nKeys.CONCEPT_SETS__ERROR,
+    i18nKeys.CONCEPT_SETS__ERROR_DESCRIPTION,
+    activeDatasetId,
+    userName,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -135,7 +148,21 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
     setPage(page);
   }, []);
 
-  const filteredData = data.filter((row) => row.name.toLowerCase().includes(searchText.toLowerCase()));
+  const handleDeleteClick = useCallback((conceptSet: ConceptSet) => {
+    setConceptSetToDelete({ id: conceptSet.id, name: conceptSet.name });
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteDialogClose = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setConceptSetToDelete(undefined);
+  }, []);
+
+  const handleConceptSetDeleted = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filteredData = data.filter((row: ConceptSet) => row.name.toLowerCase().includes(searchText.toLowerCase()));
   const pageData = filteredData.slice(rowsPerPage * page, rowsPerPage * (page + 1));
 
   if (isLoading || !activeDatasetId) return <Loader />;
@@ -207,6 +234,9 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
                               startIcon={row.createdBy === userName ? <EditIcon /> : <VisibilityOnIcon />}
                               onClick={() => handleAddAndEditConceptSet(row.id)}
                             />
+                            {row.createdBy === userName && (
+                              <IconButton startIcon={<DeleteIcon />} onClick={() => handleDeleteClick(row)} />
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -235,6 +265,14 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
           )}
         </div>
       </div>
+      <ConceptSetDeleteDialog
+        conceptSet={conceptSetToDelete}
+        open={deleteDialogOpen}
+        datasetId={activeDatasetId}
+        setMainFeedback={setFeedback}
+        onClose={handleDeleteDialogClose}
+        onDeleted={handleConceptSetDeleted}
+      />
     </>
   );
 };
