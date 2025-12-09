@@ -174,7 +174,7 @@ export default {
       return ['MriPaToken', item.valid ? 'MriPaValidToken' : 'MriPaFailToken']
     },
     closeInput(event) {
-      if (this.inputVisible && !this.$refs.container.contains(event.target)) {
+      if (this.inputVisible && this.$refs.container && !this.$refs.container.contains(event.target)) {
         this.selection = ''
         this.inputVisible = false
       }

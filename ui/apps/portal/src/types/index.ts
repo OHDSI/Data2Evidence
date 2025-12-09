@@ -154,3 +154,5 @@ export enum PORTAL_TYPE {
 }
 
 export type PortalType = `${PORTAL_TYPE}`;
+
+export type PluginType = "legacy" | "app";
