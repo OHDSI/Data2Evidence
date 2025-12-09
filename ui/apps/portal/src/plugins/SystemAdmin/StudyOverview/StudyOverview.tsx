@@ -271,6 +271,29 @@ const StudyOverview: FC = () => {
     };
   }, [datasets]);
 
+  // Initialize expandedRows to have all parent datasets expanded by default
+  useEffect(() => {
+    if (sourceOmopHanaDatasets.length > 0) {
+      const initialExpandedRows: Record<string, boolean> = {};
+      sourceOmopHanaDatasets.forEach((dataset) => {
+        if (dataset.children && dataset.children.length > 0) {
+          initialExpandedRows[dataset.id] = true;
+        }
+      });
+      setExpandedRows((prev) => {
+        // Only update if there are new parent datasets to expand
+        // Preserve existing expanded state for datasets that are already in prev
+        const merged = { ...prev };
+        Object.keys(initialExpandedRows).forEach((id) => {
+          if (!(id in merged)) {
+            merged[id] = true;
+          }
+        });
+        return merged;
+      });
+    }
+  }, [sourceOmopHanaDatasets]);
+
   const visibilityImgAlt = useCallback((value?: string) => {
     if (!value) return;
     return value === "DEFAULT" ? "Normal" : value.charAt(0).toUpperCase() + value.substring(1).toLowerCase();
