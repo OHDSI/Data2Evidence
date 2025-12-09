@@ -32,8 +32,3 @@ test(TEST_NAME, async ({ page, context }) => {
   await expect(page.locator('tr', { hasText: dataset_id }).first()).toBeVisible({ timeout: 30000 });
   await expect(page.locator('tr', { hasText: schema_name }).first()).toBeVisible({ timeout: 30000 });
 });
-
-  // Check if the cell contains the dataset ID and schema name
-  await expect(page.locator('tbody')).toContainText(dataset_id)
-  await expect(page.locator('tbody')).toContainText(schema_name)
-})
