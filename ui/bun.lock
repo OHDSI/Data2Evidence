@@ -141,7 +141,7 @@
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "reactflow": "^11.11.4",
-        "single-spa": "^6.0.0",
+        "single-spa": "^6.0.3",
         "single-spa-react": "^6.0.2",
         "uuid": "^9.0.0",
       },
@@ -149,6 +149,7 @@
         "@types/react": "^18.0.0",
         "@types/react-dom": "^18.0.0",
         "@types/systemjs": "^6.1.1",
+        "@types/uuid": "^9.0.0",
         "@vitejs/plugin-basic-ssl": "^1.1.0",
         "@vitejs/plugin-react": "^4.3.1",
         "concurrently": "^9.2.1",
@@ -8137,8 +8138,6 @@
 
     "plotly.js/style-loader": ["style-loader@4.0.0", "", { "peerDependencies": { "webpack": "^5.27.0" } }, "sha512-1V4WqhhZZgjVAVJyt7TdDPZoPBPNHbekX4fWnCJL1yQukhCeZhJySUL+gL9y6sNdN95uEOS83Y55SqHcP7MzLA=="],
 
-    "portal/@data2evidence/d2e-starboard-wrap": ["@data2evidence/d2e-starboard-wrap@github:data2evidence/d2e-starboard-wrap#0682494", { "dependencies": { "@data2evidence/d2e-starboard-notebook": "https://github.com/data2evidence/d2e-starboard-notebook-base.git#d4l-0.15.7-develop", "@ungap/custom-elements": "^0.1.15" } }, "data2evidence-d2e-starboard-wrap-0682494"],
-
     "portal/@testing-library/react": ["@testing-library/react@13.4.0", "", { "dependencies": { "@babel/runtime": "^7.12.5", "@testing-library/dom": "^8.5.0", "@types/react-dom": "^18.0.0" }, "peerDependencies": { "react": "^18.0.0", "react-dom": "^18.0.0" } }, "sha512-sXOGON+WNTh3MLE9rve97ftaZukN3oNf2KjDy7YTx6hcTO2uuLHuCGynMDhFwGw/jYf4OJ2Qk0i4i79qMNNkyw=="],
 
     "portal/@testing-library/user-event": ["@testing-library/user-event@13.5.0", "", { "dependencies": { "@babel/runtime": "^7.12.5" }, "peerDependencies": { "@testing-library/dom": ">=7.21.4" } }, "sha512-5Kwtbo3Y/NowpkbRuSepbyMFkZmHgD+vPzYB/RJ4oxt5Gj/avFFBYjhw27cqSVPVw/3a67NK1PbiIr9k4Gwmdg=="],
@@ -9904,8 +9903,6 @@
     "pkg-dir/find-up/locate-path": ["locate-path@5.0.0", "", { "dependencies": { "p-locate": "^4.1.0" } }, "sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g=="],
 
     "pkg-up/find-up/locate-path": ["locate-path@3.0.0", "", { "dependencies": { "p-locate": "^3.0.0", "path-exists": "^3.0.0" } }, "sha512-7AO748wWnIhNqAuaty2ZWHkQHRSNfPVIsPIfwEOWO22AmaoVrWavlOcMR5nzTLNYvp36X220/maaRsrec1G65A=="],
-
-    "portal/@data2evidence/d2e-starboard-wrap/@data2evidence/d2e-starboard-notebook": ["@alp-os/d2e-starboard-notebook-base@github:data2evidence/d2e-starboard-notebook-base#25f009e", {}, "data2evidence-d2e-starboard-notebook-base-25f009e"],
 
     "portal/eslint/@eslint/eslintrc": ["@eslint/eslintrc@2.1.4", "", { "dependencies": { "ajv": "^6.12.4", "debug": "^4.3.2", "espree": "^9.6.0", "globals": "^13.19.0", "ignore": "^5.2.0", "import-fresh": "^3.2.1", "js-yaml": "^4.1.0", "minimatch": "^3.1.2", "strip-json-comments": "^3.1.1" } }, "sha512-269Z39MS6wVJtsoUl10L60WdkhJVdPG24Q4eZTH3nnF6lpvSShEK3wQjDX9JRWAUPvPh7COouPpU9IrqaZFvtQ=="],
 
