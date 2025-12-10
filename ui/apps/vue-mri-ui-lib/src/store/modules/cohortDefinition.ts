@@ -279,7 +279,17 @@ const actions = {
         })
       })
       .catch(error => {
-        throw rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT')
+        // Extract error details from axios error response
+        const errorDetails = {
+          statusCode: error.response?.status,
+          error: error.response?.statusText || error.response?.data?.error,
+          message: error.response?.data?.message || error.message,
+        }
+
+        throw {
+          message: rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT'),
+          ...errorDetails,
+        }
       })
   },
 }

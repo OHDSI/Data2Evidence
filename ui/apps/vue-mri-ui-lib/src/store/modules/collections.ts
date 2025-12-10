@@ -114,13 +114,26 @@ const actions = {
         }
       })
       .catch(error => {
-        if (newRequest) {
-          throw rootGetters.getText(
-            'MRI_PA_COLL_EXISTING_COLLECTION',
-            params.addItemsToCollectionParams.collection.title
-          )
+        // Extract error details from axios error response
+        const errorDetails = {
+          statusCode: error.response?.status,
+          error: error.response?.statusText || error.response?.data?.error,
+          message: error.response?.data?.message || error.message,
         }
-        throw rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT')
+
+        if (newRequest) {
+          throw {
+            message: rootGetters.getText(
+              'MRI_PA_COLL_EXISTING_COLLECTION',
+              params.addItemsToCollectionParams.collection.title
+            ),
+            ...errorDetails,
+          }
+        }
+        throw {
+          message: rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT'),
+          ...errorDetails,
+        }
       })
   },
   loadOldCollections({ state, commit, dispatch, rootGetters }) {

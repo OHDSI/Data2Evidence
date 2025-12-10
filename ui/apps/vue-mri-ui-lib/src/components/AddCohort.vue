@@ -3,7 +3,7 @@
     <template v-slot:header>{{
       getText('MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION') + ` (${this.bookmarkName})`
     }}</template>
-    <template v-slot:body v-if="cohortDefinitionType === 'D2E'">
+    <template v-slot:body>
       <div class="cohort-dialog">
         <appMessageStrip
           :messageType="messageStrip.messageType"
@@ -12,7 +12,7 @@
           @closeEv="resetMessageStrip"
         />
 
-        <div class="form-group">
+        <div class="form-group" v-if="cohortDefinitionType === 'D2E'">
           <div class="row">
             <div class="col-sm-4 form-check col-form-label">
               <label class="form-check-label" for="cohort-radio-newcollection">{{
@@ -29,11 +29,20 @@
             </div>
           </div>
         </div>
+
+        <!-- TODO: Customize dialog body for Atlas -->
+        <div v-if="cohortDefinitionType === 'Atlas' && !messageStrip.show" style="padding: 10px">
+          Click OK to materialize this cohort.
+        </div>
       </div>
     </template>
     <template v-slot:footer>
       <div class="flex-spacer"></div>
-      <appButton :disabled="cohortBusy" :click="onOkButtonPress" :text="getText('MRI_PA_COLL_BUT_OK')"></appButton>
+      <appButton
+        :disabled="cohortBusy || (messageStrip.show && messageStrip.messageType === 'error')"
+        :click="onOkButtonPress"
+        :text="getText('MRI_PA_COLL_BUT_OK')"
+      ></appButton>
       <appButton :disabled="cohortBusy" :click="closeWindow" :text="getText('MRI_PA_COLL_BUT_CANCEL')"></appButton>
     </template>
   </messageBox>
@@ -162,9 +171,30 @@ export default {
         }
         const failureCallback = err => {
           this.cohortBusy = false
+
+          // Format error message with details
+          let errorMessage = ''
+
+          // Check if err is an object with error details
+          if (typeof err === 'object' && err !== null) {
+            const parts = []
+            if (err.message) {
+              parts.push(err.message)
+            }
+            if (err.statusCode) {
+              parts.push(`Status Code: ${err.statusCode}`)
+            }
+            if (err.error) {
+              parts.push(`Error: ${err.error}`)
+            }
+            errorMessage = parts.join(' | ')
+          } else {
+            errorMessage = String(err)
+          }
+
           this.messageStrip = {
             show: true,
-            message: err,
+            message: errorMessage,
             messageType: 'error',
           }
           return err
