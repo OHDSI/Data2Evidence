@@ -438,13 +438,16 @@ function getDistinctValuesFromReference(
 }
 
 function getDescriptionExpression(baseEntity: string, placeholderTableMap: PholderTableMapType) {
-    if (baseEntity === "@RESULT_COHORT_DEF") {
-        return {"descSelectText": `RCD.${placeholderTableMap["@RESULT_COHORT_DEF.TEXT"]}`, 
-                "descFromText": ` ${placeholderTableMap["@RESULT_COHORT_DEF"]} RCD `};
-    } else if (baseEntity === "@CDM_COHORT_DEF") {
-        return {"descSelectText": `CCD.${placeholderTableMap["@CDM_COHORT_DEF.TEXT"]}`, 
-                "descFromText": ` ${placeholderTableMap["@CDM_COHORT_DEF"]} CCD `};
+    const descObject = {
+        "descSelectText": `R.${placeholderTableMap["@REF.TEXT"]}`,
+        "descFromText": ` ${placeholderTableMap["@REF"]} R `
     }
-    return {"descSelectText": `R.${placeholderTableMap["@REF.TEXT"]}`, 
-            "descFromText": ` ${placeholderTableMap["@REF"]} R `};
+    if (baseEntity === "@RESULT_COHORT_DEF") {
+        descObject["descSelectText"] = `RCD.${placeholderTableMap["@RESULT_COHORT_DEF.TEXT"]}`;
+        descObject["descFromText"] = ` ${placeholderTableMap["@RESULT_COHORT_DEF"]} RCD `;
+    } else if (baseEntity === "@CDM_COHORT_DEF") {
+        descObject["descSelectText"] = `CCD.${placeholderTableMap["@CDM_COHORT_DEF.TEXT"]}`;
+        descObject["descFromText"] = ` ${placeholderTableMap["@CDM_COHORT_DEF"]} CCD `;
+    }
+    return descObject;
 }
