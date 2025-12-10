@@ -182,26 +182,34 @@ export const getConceptSetUsage = async (
     }),
   ]);
 
+  // conceptSetId is validated as a positive integer above, safe to use in string matching
+  const conceptSetIdStr = String(conceptSetId);
+
   const usingCohorts = cohortDefinitions.filter((cohort) => {
     const json = JSON.stringify(cohort.expression);
     // Check for CodesetId references in OHDSI Atlas JSON format
-    // Use regex with negative lookahead to prevent partial matches
-    // This prevents ID 12 from matching 123, 1234, etc.
-    const codesetIdPattern = new RegExp(
-      `"CodesetId"\\s*:\\s*${conceptSetId}(?![0-9])`
-    );
-    return codesetIdPattern.test(json);
+    // Matches "CodesetId":123} or "CodesetId":123, (with optional space after colon)
+    // prevents 12 matching 123
+    const patterns = [
+      `"CodesetId":${conceptSetIdStr}}`,
+      `"CodesetId":${conceptSetIdStr},`,
+      `"CodesetId": ${conceptSetIdStr}}`,
+      `"CodesetId": ${conceptSetIdStr},`,
+    ];
+    return patterns.some((pattern) => json.includes(pattern));
   });
 
   // Check Bookmarks (D2E filters) using string matching
   const bookmarks = bookmarksData.bookmarks || [];
-  const conceptSetIdStr = String(conceptSetId);
 
   const usingBookmarks = bookmarks.filter((bookmark) => {
     const bookmarkJson = bookmark.bookmark;
     // Concept set ID is stored as "value":"869" in bookmark constraint expressions
-    const valuePattern = new RegExp(`"value"\\s*:\\s*"${conceptSetIdStr}"`);
-    return valuePattern.test(bookmarkJson);
+    const patterns = [
+      `"value":"${conceptSetIdStr}"`,
+      `"value": "${conceptSetIdStr}"`,
+    ];
+    return patterns.some((pattern) => bookmarkJson.includes(pattern));
   });
 
   return {
