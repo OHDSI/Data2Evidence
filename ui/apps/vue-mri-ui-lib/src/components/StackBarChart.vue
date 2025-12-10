@@ -272,10 +272,15 @@ export default {
             filterCardPath.pop()
             if (filterCardPath.length <= 1) {
               const defaultTitle = this.getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
-              category.name = `${defaultTitle} - ${category.name}`
+              // Only add prefix if it's not already there to prevent duplicate prefixes
+              if (!category.name || !category.name.startsWith(defaultTitle + ' - ')) {
+                category.name = `${defaultTitle} - ${category.name}`
+              }
             } else {
               const filterCard = this.getChartableFilterCardByInstanceId(filterCardPath.join('.'))
-              category.name = `${filterCard.name} - ${category.name}`
+              if (!category.name || !category.name.startsWith(filterCard.name + ' - ')) {
+                category.name = `${filterCard.name} - ${category.name}`
+              }
             }
           }
         })
@@ -300,9 +305,11 @@ export default {
           if (!trace.selectedpoints) {
             return
           }
-          const xAxes = trace.customdata.x
-          const yAxis = trace.customdata.y
           trace.selectedpoints.forEach(pointIndex => {
+            const pointCustomData = trace.customdata[pointIndex]
+            const xAxes = pointCustomData.x
+            const yAxis = pointCustomData.y
+
             if (xAxes.length > 1) {
               xAxes.forEach((xAxis, axisIndex) => {
                 pushPoint(xAxis.id, trace.x[axisIndex][pointIndex])
@@ -335,4 +342,3 @@ export default {
   },
 }
 </script>
-

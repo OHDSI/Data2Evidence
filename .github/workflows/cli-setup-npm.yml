@@ -96,7 +96,7 @@ jobs:
           delete-only-pre-release-versions: "true"
       - name: Pack
         run: |
-          NPM_FILENAME=$(npm pack)
+          NPM_FILENAME=$(npm pack | tail -n 1)
           echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
       - name: Prepare
         run: |

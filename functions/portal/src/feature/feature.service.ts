@@ -24,6 +24,10 @@ export class FeatureService {
     {
       featureFlag: 'mappingSuggestion',
       enabled: false
+    },
+    {
+      featureFlag: 'adminOnlySharing',
+      enabled: false
     }
   ]
 

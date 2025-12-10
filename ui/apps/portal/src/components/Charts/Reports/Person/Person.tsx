@@ -11,6 +11,7 @@ import { parsePieChartData, parseBarChartData } from "../../util";
 import { PERSON_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
 import "./Person.scss";
 import { useTranslation } from "../../../../contexts";
+import TreeMapChartTable from "../../Common/TreeMap/TreeMapChartTable";
 
 interface PersonProps {
   flowRunId: string;
@@ -70,12 +71,16 @@ const Person: FC<PersonProps> = ({ flowRunId, datasetId }) => {
           />
           <div className="chart__container">
             <PieChart data={parsePieChartData(personData.gender)} title={getText(i18nKeys.PERSON__PIE_CHART_1_TITLE)} />
-            <PieChart data={parsePieChartData(personData.race)} title={getText(i18nKeys.PERSON__PIE_CHART_2_TITLE)} />
             <PieChart
               data={parsePieChartData(personData.ethnicity)}
               title={getText(i18nKeys.PERSON__PIE_CHART_3_TITLE)}
             />
           </div>
+          <TreeMapChartTable
+            data={personData.race}
+            title={getText(i18nKeys.PERSON__PIE_CHART_2_TITLE)}
+            setSelectedConceptId={() => {}} //drilldown disabled for race
+          />
         </>
       )}
     </>
