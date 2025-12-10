@@ -490,8 +490,7 @@ const setupWebapiRoutes = app => {
       }
     }
 
-    const result = data.find(conceptSet => conceptSet.name === name && conceptSet.id != conceptSetId)
-
+    const result = data.find(conceptSet => conceptSet.name === name && Number(conceptSet.id) !== Number(conceptSetId))
     return res.status(200).type('text/plain').send(String(result === undefined ? 0 : 1))
   })
 
