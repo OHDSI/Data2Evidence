@@ -850,7 +850,8 @@
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
-          "whiteRabbit.post"
+          "whiteRabbit.post",
+          "portal.userArtifact.write"
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
@@ -1765,6 +1766,15 @@
           ]
         },
         {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
+          ]
+        },
+        {
           "path": "^/system-portal/user-artifact/([^/]+)/concept_sets/shared/list$",
           "scopes": [
             "portal.userArtifact.conceptSets.read"
@@ -1808,6 +1818,15 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
           ]
         },
         {

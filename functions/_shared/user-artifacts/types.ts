@@ -52,6 +52,7 @@ export const ConceptSetArtifact = z.object({
   createdDate: z.string(),
   modifiedDate: z.string(),
 });
+export type IConceptSetArtifact = z.infer<typeof ConceptSetArtifact>;
 
 export const NotebookArtifact = z.object({
   id: z.string(),

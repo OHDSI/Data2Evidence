@@ -3,25 +3,25 @@
 /.github/workflows                                   @brandantck @mwaiyee @SantanM @satish-a0 @p-hoffmann
 /.github/workflows/pr-approval.yml                   @p-hoffmann
 /fhir_functions/                                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
-/functions/_shared                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/functions/_shared                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/alp-usermgmt                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/alpdb                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/functions/analytics-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/functions/bookmark-svc                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/functions/cdw-svc                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/functions/analytics-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/functions/bookmark-svc                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/functions/cdw-svc                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/code-suggestion                           @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /functions/concept-mapping                           @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/functions/d2e-webapi                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/functions/d2e-webapi                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/dataset                                   @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/demo                                      @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/files-manager                             @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/jobplugins                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/functions/mri-pa-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/functions/mri-pg-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/functions/mri-pa-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/functions/mri-pg-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/portal                                    @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/prefect                                   @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/functions/query-gen-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/functions/terminology-svc                           @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/functions/query-gen-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/functions/terminology-svc                           @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/alp-dataflow-gen-init                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /flows                                               @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /flows/strategus_plugin                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
@@ -30,17 +30,17 @@
 /services/alp-fhir                                   @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /services/alp-logto                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /services/alp-db-management                          @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
-/services/cachedb                                    @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/services/envConverter                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/services/mri-db                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/services/cachedb                                    @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/services/envConverter                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/services/mri-db                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/trex                                       @p-hoffmann
-/tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /tests/e2e                                           @csafreen @SantanM @satish-a0 @suwarnoong @p-hoffmann
 /ui                                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/ui/apps/vue-mri-ui-lib                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/ui/apps/portal/src/plugins/mri                      @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/ui/apps/portal/src/plugins/Researcher/ConceptSets   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
-/ui/apps/concept-sets                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann
+/ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/ui/apps/vue-mri-ui-lib                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/ui/apps/portal/src/plugins/mri                      @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/ui/apps/portal/src/plugins/Researcher/ConceptSets   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/ui/apps/concept-sets                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
