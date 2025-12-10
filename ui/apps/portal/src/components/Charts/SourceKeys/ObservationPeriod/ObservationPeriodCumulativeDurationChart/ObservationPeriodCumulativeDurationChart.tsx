@@ -8,9 +8,13 @@ import { useTranslation } from "../../../../../contexts";
 
 interface ObservationPeriodCumulativeDurationChartProps {
   data: any;
+  axisBaseGap?: number;
 }
 
-const ObservationPeriodCumulativeDurationChart: FC<ObservationPeriodCumulativeDurationChartProps> = ({ data }) => {
+const ObservationPeriodCumulativeDurationChart: FC<ObservationPeriodCumulativeDurationChartProps> = ({
+  data,
+  axisBaseGap,
+}) => {
   const { getText, i18nKeys } = useTranslation();
   const title = getText(i18nKeys.OBSERVATION_PERIOD_CUMULATIVE_DURATION_CHART__TITLE);
   const xAxisName = getText(i18nKeys.OBSERVATION_PERIOD_CUMULATIVE_DURATION_CHART__X_AXIS_NAME);
@@ -47,6 +51,7 @@ const ObservationPeriodCumulativeDurationChart: FC<ObservationPeriodCumulativeDu
         xAxisName={xAxisName}
         yAxisName={yAxisName}
         lineChartFormatConfig={{ tooltipFormat, yAxisFormat }}
+        axisBaseGap={axisBaseGap}
       />
     </div>
   );

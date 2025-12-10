@@ -327,8 +327,8 @@
           "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
-          "PG__DB_NAME": "alp",
-          "PG__FHIR_DB_NAME": "alp",
+          "PG__DB_NAME": "${PG_DB_NAME:-alp}",
+          "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
           "PG__DEBUG": "${PG_DEBUG:-1}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG__SSL": "${PG__SSL:-false}",
@@ -382,7 +382,7 @@
           "IDP__FETCH_USER_INFO_TYPE": "logto",
           "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
           "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
-          "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY}",
+          "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY:-logto}",
           "AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}",
           "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
           "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -436,7 +436,7 @@
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
         },
         "jobplugins": {
-          "PREFECT_API_URL": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
           "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
@@ -524,12 +524,10 @@
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
-          "PREFECT_API_URL": "http://alp-dataflow-gen-${BASE_PORT:-1}:41${BASE_PORT:-1}20/api",
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
           "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
-          "R_LIBS_USER": "/home/docker/plugins/R/site-library",
           "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",
-          "CDW_CONFIG_DUCKDB__DATA_FOLDER": "/app/cdw-config/duckdb_data",
           "FHIR_SCHEMA_JSON_PATH": "/home/docker/fhir",
           "PYTHON_VERIFY_SSL": "false",
           "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
@@ -540,8 +538,8 @@
           "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
           "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
           "LIQUIBASE_PATH": "",
-          "HANA__DRIVER_CLASS_PATH": "",
-          "POSTGRES__DRIVER_CLASS_PATH": "",
+          "HANA__DRIVER_CLASS_PATH": "${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}",
+          "POSTGRES__DRIVER_CLASS_PATH": "${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}",
           "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
           "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
           "DATABASE_CREDENTIALS": "{}",
@@ -574,7 +572,8 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
-          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}"
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}",
+          "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},
         "jupyter-gateway-viewer": {},
@@ -851,7 +850,8 @@
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
-          "whiteRabbit.post"
+          "whiteRabbit.post",
+          "portal.userArtifact.write"
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
@@ -1766,6 +1766,15 @@
           ]
         },
         {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
+          ]
+        },
+        {
           "path": "^/system-portal/user-artifact/([^/]+)/concept_sets/shared/list$",
           "scopes": [
             "portal.userArtifact.conceptSets.read"
@@ -1809,6 +1818,15 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
           ]
         },
         {

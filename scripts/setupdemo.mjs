@@ -1,158 +1,265 @@
-#!/usr/bin/env zx
+#!/usr/bin/env node
 import dotenv from 'dotenv';
+import fs from "node:fs/promises";
+import https from "node:https";
+import fetch from "node-fetch";
 
-const args = process.argv.slice(2); 
+// Helper functions
+function getCookie(setCookieHeaders, name) {
+  for (const cookie of setCookieHeaders) {
+    const match = cookie.match(new RegExp(`${name}=([^;]+)`));
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function extractAuthCode(url) {
+    if (!url) return '';
+    const regex = /code=([^&]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : '';
+}
+
+const args = process.argv.slice(2);
 const vIndex_envfile = args.indexOf("-n");
 let envfile;
-if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
-    envfile = (args[vIndex_envfile + 1]);
+if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith("-")) {
+  envfile = args[vIndex_envfile + 1];
 } else {
-    envfile = ".env";
+  envfile = ".env";
 }
 try {
-    await $`test -f ${envfile}`;
-    dotenv.config({ path: `${envfile}` });
-} catch (error) {
-    console.log(chalk.red(`FATAL ${envfile} not found`));
-    process.exit(1)
+  await fs.access(envfile);
+  dotenv.config({ path: envfile, debug: false });
+} catch {
+  console.log(`FATAL ${envfile} not found`);
+  process.exit(1);
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
 const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
-let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
-let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
+let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
+let port = process.env.PORT ? `:${process.env.PORT}` : ":443";
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
+const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
-var response= await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256"`
+var url= `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
+var response = await fetch(url, {
+  method: "GET",
+  agent: insecureAgent,   
+  redirect: 'manual', 
+});
+var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
+var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
+var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
+var interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
+var logto_cookie = getCookie(setCookieHeaders, '_logto');
+var logtoObj = JSON.parse(logto_cookie);
+var appId = logtoObj.appId;
 
-// Extract cookies
-var interaction_cookie=await $`echo ${response} | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_sig_cookie=await $`echo ${response} | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_cookie=await $`echo ${response} | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_sig_cookie=await $` echo ${response} | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var logto_cookie=await $` echo ${response} | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
 
 // Sign in
-var response=await $`(curl -iks --request PUT 'https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction' \
-    --header 'content-type: application/json' \
-    --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}" \
-    --data '{
-    "event": "SignIn",
-    "identifier": {
-        "username": "admin",
-        "password": "Updatepassword12345"
-    }
-}')`
-
-// Submit sign in page
-var response=await $`curl -iks --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction/submit' \
---header 'accept: application/json' \
---header 'origin: https://${CADDY__ALP__PUBLIC_FQDN}' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
-
-// Get session
-var response=await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}" \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
-
-var interaction_cookie=await $`echo ${response} | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_sig_cookie=await $`echo ${response} | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_cookie=await $`echo ${response} | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_sig_cookie=await $` echo ${response} | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var logto_cookie=await $` echo ${response} | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var session_cookie=await $` echo ${response} | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var session_sig_cookie=await $` echo ${response} | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-
-// Submit consent page
-var response=await $`curl -iks 'https://${CADDY__ALP__PUBLIC_FQDN}/consent' \
-    --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
-    
-// Get authorization code
-var response=await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}" \
-    --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
-
-var authorization_code=await $`echo ${response} | sed -n 's/.*code=\\([^&]*\\).*/\\1/p' | head -n 1`;
-
-// Complete login
-var response=await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
-    --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
-
-// Get Bearer token
-var response=await $`curl -iks 'https://${CADDY__ALP__PUBLIC_FQDN}/oauth/token' \
-    --header 'accept: application/json, text/javascript, */*; q=0.01' \
-    --header 'content-type: application/x-www-form-urlencoded' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}" \
-    --header 'origin: https://${CADDY__ALP__PUBLIC_FQDN}' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
-    --data-urlencode 'grant_type=authorization_code' \
-    --data-urlencode "client_id=${app_client_id}" \
-    --data-urlencode 'redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback' \
-    --data-urlencode "code=${authorization_code}" \
-    --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I'`
-
-var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\\([^"]*\\)"/\\1/'`
-
-// Setup demo dataset
-const encryptionKeysObj = {
-    DataPlatform: "",
-    Internal: public_key
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction`;
+const body = {
+  event: "SignIn",
+  identifier: {
+    username: "admin",
+    password: "Updatepassword12345"
+  }
 };
-const payload = JSON.stringify({
-    encryptionKeys: JSON.stringify(encryptionKeysObj)
+
+var response = await fetch(url, {
+  method: "PUT",
+  headers: {
+    "content-type": "application/json",
+    "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+    "Cookie": `_interaction=${interaction_cookie}; ` +
+              `_interaction.sig=${interaction_sig_cookie}; ` +
+               `_logto={\"appId\":\"${app_client_id}\"}; `
+  },
+  body: JSON.stringify(body),
+  redirect: 'manual',
+  agent: insecureAgent   
 });
 
-var resp = await $`curl -X POST -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/setup/' \
-    --header 'Content-Type: application/json' \
-    --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-    --data ${payload}`;
 
-var resp_message = await $`echo ${resp} | grep -o '"message":"[^"]*"' | sed 's/"message":"\\([^"]*\\)"/\\1/'`
-var progress_id = await $`echo ${resp} | grep -o '"id":"[^"]*"' | sed 's/"id":"\\([^"]*\\)"/\\1/'`
-console.log(chalk.blue(`${resp_message}`));       
+// Submit sign in page
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction/submit`;
+var response = await fetch(url, {
+  method: "POST",
+  headers: {
+    "content-type": "application/json",
+    "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+    "Cookie": `_interaction=${interaction_cookie}; ` +
+              `_interaction.sig=${interaction_sig_cookie}; ` +
+               `_logto=$ `
+  },
+  body: JSON.stringify(body),
+  agent: insecureAgent   
+});
+var text = await response.text();
+
+// Get session
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent  
+});
+
+var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
+var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
+var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
+var interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
+var logto_cookie = getCookie(setCookieHeaders, '_logto');
+var session_cookie = getCookie(setCookieHeaders, '_session');
+var session_sig_cookie = getCookie(setCookieHeaders, '_session.sig');
+
+//Submit consent page
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/consent`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent
+});
+
+//Get authorization code
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    agent: insecureAgent,   
+    redirect: 'manual',
+});
+
+const authCodeLocation = await response.text();
+const authorization_code = extractAuthCode(authCodeLocation || '');
+
+// Complete Login
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent   
+});
+
+// Get Bearer token
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/oauth/token`;
+var params = new URLSearchParams();
+params.append('grant_type', 'authorization_code');
+params.append('client_id', app_client_id);
+params.append('redirect_uri', `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback`);
+params.append('code', authorization_code);
+params.append('code_verifier', 'kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I');
+var response = await fetch(url, {
+    method: "POST",
+    headers: {
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "content-type": "application/x-www-form-urlencoded",
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`,
+        "origin": `https://${CADDY__ALP__PUBLIC_FQDN}`,
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A%2F41100%2Foidc`
+    },
+    body: params,
+    agent: insecureAgent   
+});
+const tokenResponse = await response.json();
+const BEARER_TOKEN = tokenResponse.access_token;
+
+
+// Setup demo dataset
+console.log('\nSetup demo dataset...\n');  
+
+const encryptionKeysObj = {
+  DataPlatform: "",
+  Internal: public_key,
+};
+const encryptionKeysString = JSON.stringify(encryptionKeysObj);
+const payloadObj = {
+    encryptionKeys: encryptionKeysString
+};
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/demo/setup/`;
+var response = await fetch(url, {
+    method: "POST",
+    headers: {
+        "content-type": "application/json",
+        "Authorization": `Bearer ${BEARER_TOKEN}`
+    },
+    body: JSON.stringify(payloadObj),
+    agent: insecureAgent
+});
+const setupResponse = await response.json();
+const resp_message = setupResponse.message;
+const progress_id = setupResponse.id;
+console.log(resp_message);
 var progress_status = "inprogress";
 
-try { 
+
+try {
     while (progress_status == "inprogress") {
-        var resp = await $`curl -ks --location --request GET 'https://${CADDY__ALP__PUBLIC_FQDN}/demo/progress/${progress_id}' \
-        --header 'Content-Type: application/x-www-form-urlencoded' \
-        --header 'Authorization: Bearer ${BEARER_TOKEN}'`
-        const data = JSON.parse(resp);
-        for (const step of data.steps) {
-            console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`)
+        var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/demo/progress/${progress_id}`;
+        var response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "content-type": "application/x-www-form-urlencoded",
+                "Authorization": `Bearer ${BEARER_TOKEN}`
+            },
+            agent: insecureAgent
+        });
+        const resp = await response.json();
+        for (const step of resp.steps) {
+            console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`);
         }
-        var progress_status = await $`echo ${resp} | grep -o '"status":"[^"]*"' | tail -n 1 | sed 's/"status":"\\([^"]*\\)"/\\1/'`
+        progress_status = resp.status;
         console.log(`progress_status: ${progress_status}\n`);
-        if (progress_status == "inprogress") { 
-            console.log(`Setup in progress...`);  
-           await $`sleep 15`
+        if (progress_status == "inprogress") {
+            console.log(`Setup in progress...`);
+            await new Promise(resolve => setTimeout(resolve, 15000));
         } else if (progress_status == "completed") {
-            console.log(chalk.green(`Setup completed succcessfully. Go to Job Runs to view the result.\n`));
+            console.log(`Setup completed succcessfully. Go to Job Runs to view the result.\n`);
         }
         else {
             console.log(`Setup unsuccessful. progress_status: ${progress_status}`);
-            process.exit(1)
+            process.exit(1);
         }
     }
-} catch (error) { 
+} catch (error) {
     console.error(error);
-    process.exit(1)
+    process.exit(1);   
 }
 
 if (progress_status == "completed") {
     // Adding admin user access permissions to demo dataset  
-    console.log(chalk.blue(`Adding admin user access permissions to demo dataset...\n`));
-    var resp = await $`curl -ks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/system-portal/dataset/list/systemadmin' \
-            --header 'Content-Type: application/x-www-form-urlencoded' \
-            --header 'Authorization: Bearer ${BEARER_TOKEN}'`    
-    var resp = JSON.parse(resp);
+    console.log(`Adding admin user access permissions to demo dataset...\n`);
+    var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/system-portal/dataset/list/systemadmin`;
+    var response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "content-type": "application/x-www-form-urlencoded",  
+            "Authorization": `Bearer ${BEARER_TOKEN}`
+        },
+        agent: insecureAgent
+    });
+    var resp = await response.json();
     for (var i = 0; i < resp.length; i++) {
         var data = resp[i];
         var databaseName = data['databaseName'];
@@ -162,16 +269,23 @@ if (progress_status == "completed") {
             var tenantId = data['tenant']['id'];
         }
     }
-    var response = await $`curl -iks --location 'https://${CADDY__ALP__PUBLIC_FQDN}/usermgmt/api/user-group/register-study-roles' \
-            --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-            --header 'client_id: ${app_client_id}' \
-            --header 'Content-Type: application/json' \
-            --header 'Authorization: Bearer ${BEARER_TOKEN}' \
-            --data '{
-            "userIds": ["a6660e40-261e-4782-873e-f76b4328aecf"],
-            "tenantId": "${tenantId}",
-            "studyId": "${studyId}",
-            "roles": ["RESEARCHER"]
-            }'`
-    console.log(chalk.green(`Completed adding admin user access permissions to demo dataset.`));
-} 
+    var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/usermgmt/api/user-group/register-study-roles`;
+    var bodyObj = {
+        userIds: ["a6660e40-261e-4782-873e-f76b4328aecf"],
+        tenantId: tenantId,
+        studyId: studyId,
+        roles: ["RESEARCHER"]
+    };
+    var response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+            "client_id": app_client_id,
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${BEARER_TOKEN}`
+        },
+        body: JSON.stringify(bodyObj), 
+        agent: insecureAgent
+    });
+    console.log('Completed adding admin user access permissions to demo dataset.');
+}  
