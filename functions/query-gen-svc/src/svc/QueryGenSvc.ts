@@ -14,7 +14,6 @@ import {
 import * as queryEngine from "../qe/sql_generator2/SqlGenerator";
 const logger = Logger.CreateLogger("query-gen-log");
 
-
 export class QueryGenSvc {
     private isNormalizedCsv: boolean = false;
     private forCsvDownload;
@@ -226,7 +225,7 @@ export class QueryGenSvc {
         switch (this.queryType) {
             case "patientdetail":
                 let interactionId: string = "_interaction_id";
-                for (const [Key, Value] of Object.entries(
+                for (const Key of Object.keys(
                     this.config.patient.interactions
                 )) {
                     let attributeKeys = Object.keys(
@@ -354,9 +353,13 @@ export class QueryGenSvc {
 
         const sql = `${startOfQuery}
                         FROM (
-                            SELECT ${createCohort ? `*` : `"patient.attributes.pcount.0"`} FROM (%(subquery)Q ${
-                                limit ? limitOffsetQueryString : ""
-                            }) AS alias2
+                            SELECT ${
+                                createCohort
+                                    ? `*`
+                                    : `"patient.attributes.pcount.0"`
+                            } FROM (%(subquery)Q ${
+            limit ? limitOffsetQueryString : ""
+        }) AS alias2
                         ) AS alias1
                 JOIN ${confHelper.getColumn(
                     this.settings.getFactTablePlaceholder()
