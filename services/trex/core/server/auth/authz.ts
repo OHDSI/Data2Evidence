@@ -147,11 +147,11 @@ const buildUserFromToken = (
     }
     if (userMgmtGroups.alp_role_study_researcher?.length > 0) {
       //roles.push(ROLES.RESEARCHER)
-      for (const datasetId of userMgmtGroups.alp_role_study_researcher) {
-        //if (url.includes(datasetId) || url.includes('/system-portal/notebook') || url.includes('/terminology')) {
-        //  break
-        //}
-      }
+      //for (const datasetId of userMgmtGroups.alp_role_study_researcher) {
+      //if (url.includes(datasetId) || url.includes('/system-portal/notebook') || url.includes('/terminology')) {
+      //  break
+      //}
+      //}
     }
   }
   const mriRoles: string[] = Array.from(roles);
@@ -277,7 +277,11 @@ export async function authz(c: Context, next: any) {
     let bearerToken = c.req.raw.headers.get("authorization");
     // Check for cookie if no token in authorization header
     // And for req with /fhir-server path, token is part of cookie
-    if (!bearerToken || bearerToken === "" || (bearerToken && originalUrl.startsWith("/fhir-server/"))) {
+    if (
+      !bearerToken ||
+      bearerToken === "" ||
+      (bearerToken && originalUrl.startsWith("/fhir-server/"))
+    ) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
