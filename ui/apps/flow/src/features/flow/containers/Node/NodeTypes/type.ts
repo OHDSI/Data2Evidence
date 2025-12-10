@@ -1,16 +1,17 @@
 export type NodeType =
   | "python_node"
-  | "python_notebook_node"
   | "py2table_node"
   | "r_node"
   | "sql_node"
   | "rabbit_in_a_hat"
   | "concept_mapping_node"
   | "csv_node"
+  | "file_node"
   | "db_reader_node"
   | "db_writer_node"
   | "subflow"
-  | "white_rabbit_node";
+  | "white_rabbit_node"
+  | "transform_fhir_data_node";
 
 export type NodeTypeChoice = Exclude<Exclude<NodeType, "start">, "subflow">;
 

@@ -7,7 +7,7 @@
       :options="options"
       track-by="value"
       label="text"
-      @input="updateValue"
+      @update:modelValue="updateValue"
       selectLabel=""
       selectedLabel=""
       deselectLabel=""

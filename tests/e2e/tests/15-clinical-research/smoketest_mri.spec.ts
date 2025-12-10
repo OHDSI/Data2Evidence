@@ -5,7 +5,7 @@ const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -68,7 +68,7 @@ test(TEST_NAME, async ({ page }) => {
 
     //Add Concept set
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist')
+    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Sprain of wrist')
     try {
       await expect(page.getByText('Sprain of wrist')).toBeVisible({ timeout: 10000 })
       await page.getByText('Sprain of wrist').click()
@@ -88,8 +88,8 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
       await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Sprain of wrist')
       await expect(page.getByText('Sprain of wrist')).toBeVisible({ timeout: 10000 })
       await page.getByText('Sprain of wrist').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
@@ -118,7 +118,7 @@ test(TEST_NAME, async ({ page }) => {
       )
       .first()
       .click()
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media')
+    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Otitis media')
     try {
       await expect(page.getByText('Otitis media')).toBeVisible({ timeout: 10000 })
       await page.getByText('Otitis media').click()
@@ -142,8 +142,8 @@ test(TEST_NAME, async ({ page }) => {
         )
         .first()
         .click()
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Otitis media')
       await expect(page.getByText('Otitis media')).toBeVisible({ timeout: 10000 })
       await page.getByText('Otitis media').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
@@ -157,7 +157,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click()
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis')
+    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Viral sinusitis')
     try {
       // If the concept is already created, it will be visible
       await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 })
@@ -177,8 +177,8 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click()
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Viral sinusitis')
       await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 })
       await page.getByText('Viral sinusitis').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })

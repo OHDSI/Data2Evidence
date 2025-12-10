@@ -46,6 +46,16 @@ export const DeleteFlowDialog: FC<DeleteFlowDialogProps> = ({
     typeof onClose === "function" && onClose();
   }, [dataflowId, onClose]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (confirmText === dataflow?.canvas.name) {
+        handleDelete();
+      }
+    },
+    [handleDelete, confirmText, dataflow?.canvas.name]
+  );
+
   return (
     <Dialog
       className="delete-flow-dialog"
@@ -53,40 +63,44 @@ export const DeleteFlowDialog: FC<DeleteFlowDialogProps> = ({
       onClose={onClose}
       {...props}
     >
-      <div className="delete-flow-dialog__content">
-        <Box mb={4}>
-          Are you sure you want to delete "{dataflow?.canvas.name}" flow?
-        </Box>
-        <Box mb={4}>
-          <InputLabel sx={{ fontSize: 13 }}>
-            Type "{dataflow?.canvas.name}" to confirm:
-          </InputLabel>
-          <TextField
-            InputLabelProps={{ shrink: false }}
-            fullWidth
-            variant="standard"
-            value={confirmText}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setConfirmText(e.target.value)
-            }
-          />
-        </Box>
-      </div>
-      <div className="delete-flow-dialog__footer">
-        <Box
-          display="flex"
-          gap={1}
-          className="delete-flow-dialog__footer-actions"
-        >
-          <Button text="Cancel" variant="outlined" onClick={onClose} />
-          <Button
-            text="Delete"
-            onClick={handleDelete}
-            loading={isLoading}
-            disabled={confirmText !== dataflow?.canvas.name}
-          />
-        </Box>
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="delete-flow-dialog__content">
+          <Box mb={4}>
+            Are you sure you want to delete "{dataflow?.canvas.name}" flow?
+          </Box>
+          <Box mb={4}>
+            <InputLabel sx={{ fontSize: 13 }}>
+              Type "{dataflow?.canvas.name}" to confirm:
+            </InputLabel>
+            <TextField
+              InputLabelProps={{ shrink: false }}
+              fullWidth
+              variant="standard"
+              value={confirmText}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setConfirmText(e.target.value)
+              }
+              autoFocus
+            />
+          </Box>
+        </div>
+        <div className="delete-flow-dialog__footer">
+          <Box
+            display="flex"
+            gap={1}
+            className="delete-flow-dialog__footer-actions"
+          >
+            <Button text="Cancel" variant="outlined" onClick={onClose} />
+            <Button
+              text="Delete"
+              onClick={handleDelete}
+              loading={isLoading}
+              disabled={confirmText !== dataflow?.canvas.name}
+              type="submit"
+            />
+          </Box>
+        </div>
+      </form>
     </Dialog>
   );
 };

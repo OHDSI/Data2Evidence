@@ -5,7 +5,7 @@
     </template>
     <template v-else>
       <div class="km-chart-containter">
-        <div class="km-chart" id="kmCompare-chart" ref="chart" v-mouse-scroll="this.mousewheelHandler"></div>
+        <div class="km-chart" id="kmCompare-chart" ref="chart" v-mouse-scroll="mousewheelHandler"></div>
         <div class="km-slider-row">
           <div class="km-slider" @mouseover="sliderHover" @mouseleave="sliderOut">
             <vue-slider ref="slider" v-model="rangeSliderValue" :max="sliderMaxRange" :real-time="true" :lazy="true">
@@ -21,7 +21,7 @@
                   <input
                     v-model="cachedRangeSliderValue[tooltip.index]"
                     v-on:click.stop="onInputClick"
-                    v-on:keypress="sliderInputCheck(event, tooltip.index)"
+                    v-on:keypress="sliderInputCheck($event, tooltip.index)"
                     v-on:mousedown.stop="onInputClick"
                     @focus="tooltipFocus(tooltip.index)"
                     @blur="tooltipBlur(tooltip.index)"
@@ -65,7 +65,7 @@
           </div>
         </div>
         <div class="flexItem">
-          <kmLegend v-if="showSubComponents" :series="this.series" :categories="this.chartData.categories" />
+          <kmLegend v-if="showSubComponents" :series="series" :categories="chartData.categories" />
         </div>
       </div>
       <chartPopover v-if="showTooltip" :position="tooltipPosition">
@@ -95,7 +95,7 @@
           <div class="flex-spacer">
             <div style="padding: 30px 30px 30px 30px">
               <div class="body-container label-for">
-                <kmStatisticsTable :dof="getGlobalDoF()" :pvalue="globalPValue" :chartData="this.chartData" />
+                <kmStatisticsTable :dof="getGlobalDoF()" :pvalue="globalPValue" :chartData="chartData" />
               </div>
             </div>
           </div>
@@ -128,6 +128,7 @@
         :arrow="'arrowUp'"
         :arrowPosition="kmLogRankHelpArrowPosition"
         dialogWidth="300px"
+        :dim="false"
       >
         <template v-slot:header>
           <span class="km-logrank-help-popover-header">{{
@@ -148,24 +149,18 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import axios from 'axios'
 import d3 from 'd3'
-import VueSlider from 'vue-slider-component'
-import { mapActions, mapGetters } from 'vuex'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
-import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
-import DateUtils from '../utils/DateUtils'
-import processCSV from '../utils/ProcessCSV'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import ChartPopover from './ChartPopover.vue'
 import DialogBox from './DialogBox.vue'
-import KMEndEventMenu from './KMEndEventMenu.vue'
-import KMInteractionList from './KMInteractionList.vue'
 import kmLegend from './KMLegend.vue'
-import KMStartEventMenu from './KMStartEventMenu.vue'
 import kmStatisticsTable from './KMStatisticsTable.vue'
 import KMUnitMenu from './KMUnitMenu.vue'
 import messageBox from './MessageBox.vue'
@@ -179,16 +174,6 @@ const DAYS_PER_WEEK = 7
 const DAYS_PER_YEAR = 365.24
 const DAYS_PER_MONTH = DAYS_PER_YEAR / 12
 
-/*
-const MULTIPLIER = [
-  5000, 2000, 1000,
-  500, 200, 100,
-  50, 20, 10,
-  5, 2, 1,
-  0.5, 0.2, 0.1,
-  0.05, 0.02, 0.01,
-];
-*/
 const MULTIPLIER = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000]
 
 const UNIT_DATA = {
@@ -231,1335 +216,1357 @@ const UNIT_DATA = {
 }
 
 const CancelToken = axios.CancelToken
-let cancel
+let cancel: any
 
-export default {
-  name: 'kaplanMeierCompare',
-  props: [
-    'busyEv',
-    'bookmarkList',
-    'xAxes',
-    'yAxis',
-    'kmStartEvent',
-    'kmStartEventOccurence',
-    'kmEndEvent',
-    'kmEndEventOccurence',
-    'censoring',
-    'errorLines',
-  ],
-  data() {
-    return {
-      chartData: {},
-      series: [],
-      errorMessage: '',
-      maxDataday: 0,
-      maxDay: 0,
-      minDay: 0,
-      minProb: 0.0,
-      xScale: 0,
-      yScale: 0,
-      kmChartStyle: {},
-      selection: [],
-      showTooltip: false,
-      tooltipPosition: {},
-      tooltipCategories: [],
-      tooltipMeasures: [],
-      showCensoring: false,
-      showErrorLines: false,
-      rangeSliderValue: [0, 0],
-      cachedRangeSliderValue: [0, 0],
-      sliderHoverState: false,
-      tooltipHoverState: false,
-      tooltipFocusLeft: false,
-      tooltipFocusRight: false,
-      sliderFocus: false,
-      sliderWidth: 0,
-      kmInterval: '',
-      kmUnit: 'years',
-      showKMStatisticsPopup: false,
-      showKMStatisticsErrPopupForMoreCurves: false,
-      showKMStatisticsErrPopupForOneCurve: false,
-      showKMLogRankHelpPopOverHover: false,
-      showKMLogRankHelpPopOverIcon: false,
-      showKMLogRankHelpPopOver: false,
-      globalPValue: '',
-      allCurves: {},
-      kmLogRankHelpPopoverPosition: {
-        right: '8px',
-      },
-      kmLogRankHelpArrowPosition: {
-        left: '270px',
-      },
-      // Other components need data to be setup first
-      showSubComponents: false,
-      kmStartEv: '',
-      kmStartEvOcc: '',
-      kmEndEv: '',
-      kmEndEvOcc: '',
-      selectedAxis: {
-        x: {},
-        y: {},
-      },
-    }
-  },
-  created() {
-    this.showCensoring = this.censoring
-    this.showErrorLines = this.errorLines
-  },
-  mounted() {
-    this.setUpSelectedAxis()
-    this.$parent.$emit('lowerAxisMenu', this.getLowerAxisProperties())
-    this.fireCompareRequest()
-    this.$nextTick(() => {
-      window.addEventListener('resize', this.renderChart)
+interface Props {
+  busyEv?: boolean
+  bookmarkList?: any[]
+  xAxes?: string
+  yAxis?: string
+  kmStartEvent?: string
+  kmStartEventOccurence?: string
+  kmEndEvent?: string
+  kmEndEventOccurence?: string
+  censoring?: boolean
+  errorLines?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  busyEv: false,
+  bookmarkList: () => [],
+  xAxes: '',
+  yAxis: '',
+  kmStartEvent: '',
+  kmStartEventOccurence: '',
+  kmEndEvent: '',
+  kmEndEventOccurence: '',
+  censoring: false,
+  errorLines: false,
+})
+
+const emit = defineEmits<{
+  busyEv: [value: boolean]
+  response: [data: any]
+  lowerAxisMenu: [properties: any]
+}>()
+
+const store = useStore()
+
+const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
+const getText = (key: string) => store?.getters?.getText?.(key) || key
+const getChartSize = computed(() => store?.getters?.getChartSize)
+const getCsvFireDownload = computed(() => store?.getters?.getCsvFireDownload)
+const getChartProperty = (property: any) => store?.getters?.getChartProperty?.(property)
+const getKMDisplayInfo = computed(() => store?.getters?.getKMDisplayInfo)
+const getKMFirstLoad = computed(() => store?.getters?.getKMFirstLoad)
+const getFireRequest = computed(() => store?.getters?.getFireRequest)
+const getBookmarksData = computed(() => store?.getters?.getBookmarksData)
+const translate = (data: any) => store?.getters?.translate?.(data) || data
+const processResponseGetter = (data: any) => store?.getters?.processResponse?.(data) || data
+
+// Methods from Vuex actions
+const ajaxAuth = (config: any) => store?.dispatch('ajaxAuth', config)
+const setAxisValue = (payload: any) => store?.dispatch('setAxisValue', payload)
+const fireQuery = () => store?.dispatch('fireQuery')
+const disableAllAxesandProperties = () => store?.dispatch('disableAllAxesandProperties')
+const setTicks = (payload: any) => store?.dispatch('setTicks', payload)
+const setTicksData = (payload: any) => store?.dispatch('setTicksData', payload)
+const setCurrentPatientCount = (payload: any) => store?.dispatch('setCurrentPatientCount', payload)
+const setKMLegends = (payload: any) => store?.dispatch('setKMLegends', payload)
+const setKMFirstLoad = (payload: any) => store?.dispatch('setKMFirstLoad', payload)
+const setChartPropertyValue = (payload: any) => store?.dispatch('setChartPropertyValue', payload)
+
+// Reactive state
+const chartData = ref<any>({})
+const series = ref<any[]>([])
+const errorMessage = ref('')
+const maxDataday = ref(0)
+const maxDay = ref(0)
+const minDay = ref(0)
+const minProb = ref(0.0)
+const xScale = ref<any>(0)
+const yScale = ref<any>(0)
+const showTooltip = ref(false)
+const tooltipPosition = ref<any>({})
+const tooltipCategories = ref<any[]>([])
+const tooltipMeasures = ref<any[]>([])
+const showCensoring = ref(props.censoring)
+const showErrorLines = ref(props.errorLines)
+const rangeSliderValue = ref([0, 0])
+const cachedRangeSliderValue = ref([0, 0])
+const sliderHoverState = ref(false)
+const tooltipHoverState = ref(false)
+const tooltipFocusLeft = ref(false)
+const tooltipFocusRight = ref(false)
+const sliderWidth = ref(0)
+const kmInterval = ref('')
+const kmUnit = ref('years')
+const showKMStatisticsPopup = ref(false)
+const showKMStatisticsErrPopupForMoreCurves = ref(false)
+const showKMStatisticsErrPopupForOneCurve = ref(false)
+const showKMLogRankHelpPopOverHover = ref(false)
+const showKMLogRankHelpPopOverIcon = ref(false)
+const showKMLogRankHelpPopOver = ref(false)
+const globalPValue = ref('')
+const allCurves = ref<any>({})
+const kmLogRankHelpPopoverPosition = ref<any>({
+  right: '8px',
+})
+const kmLogRankHelpArrowPosition = ref<any>({
+  left: '270px',
+})
+const showSubComponents = ref(false)
+const kmStartEv = ref('')
+const kmStartEvOcc = ref('')
+const kmEndEv = ref('')
+const kmEndEvOcc = ref('')
+const selectedAxis = ref<any>({
+  x: {},
+  y: {},
+})
+
+// Template refs
+const kmChart = ref<any>(null)
+const chart = ref<any>(null)
+const slider = ref<any>(null)
+const info = ref<any>(null)
+const kmLogRankHelp = ref<any>(null)
+
+// Computed properties
+const kmEndEventModel = computed(() => getChartProperty(Constants.MRIChartProperties.KMEndEvent))
+const kmStartEventModel = computed(() => getChartProperty(Constants.MRIChartProperties.KMStartEvent))
+const sliderMaxRange = computed(() => (maxDataday.value ? maxDataday.value : 0))
+const kmLogRankValue = computed(() => {
+  const data = chartData.value
+  if (
+    data &&
+    data.logRankTestResults &&
+    data.logRankTestResults.overallResult &&
+    data.logRankTestResults.overallResult.pValue
+  ) {
+    return data.logRankTestResults.overallResult.pValue
+  }
+  return '0'
+})
+const getCurves = computed(() => {
+  const data = chartData.value
+  const pairResults = data.kaplanMeierStatistics?.curvePairResults
+
+  if (pairResults) {
+    Object.keys(pairResults).forEach(key => {
+      const { outerEl, outerElTitle, innerEl, innerElTitle } = pairResults[key]
+      if (!allCurves.value[outerEl]) {
+        allCurves.value[outerEl] = {
+          title: outerElTitle,
+        }
+      }
+      if (!allCurves.value[innerEl]) {
+        allCurves.value[innerEl] = {
+          title: innerElTitle,
+        }
+      }
     })
-  },
-  beforeDestroy() {
-    window.removeEventListener('resize', this.renderChart)
-  },
-  computed: {
-    ...mapGetters([
-      'getMriFrontendConfig',
-      'getText',
-      'getChartSize',
-      'getCsvFireDownload',
-      'getChartProperty',
-      'getKMDisplayInfo',
-      'getKMFirstLoad',
-      'getFireRequest',
-      'getBookmarksData',
-      'translate',
-    ]),
-    kmEndEventModel() {
-      return this.getChartProperty(Constants.MRIChartProperties.KMEndEvent)
-    },
-    kmStartEventModel() {
-      return this.getChartProperty(Constants.MRIChartProperties.KMStartEvent)
-    },
-    sliderMaxRange() {
-      return this.maxDataday ? this.maxDataday : 0
-    },
-    kmLogRankValue() {
-      const data = this.chartData
-      if (
-        data &&
-        data.logRankTestResults &&
-        data.logRankTestResults.overallResult &&
-        data.logRankTestResults.overallResult.pValue
-      ) {
-        return data.logRankTestResults.overallResult.pValue
-      }
-      return '0'
-    },
-    getCurves() {
-      const data = this.chartData
-      const pairResults = data.kaplanMeierStatistics.curvePairResults
+  }
+  return allCurves.value
+})
 
-      Object.keys(pairResults).forEach(key => {
-        const { outerEl, outerElTitle, innerEl, innerElTitle } = pairResults[key]
-        if (!this.allCurves[outerEl]) {
-          this.allCurves[outerEl] = {
-            title: outerElTitle,
-          }
-        }
-        if (!this.allCurves[innerEl]) {
-          this.allCurves[innerEl] = {
-            title: innerElTitle,
-          }
-        }
-      })
-      return this.allCurves
+// Methods
+const buildRequest = () => {
+  const kmRequest = JSON.parse(JSON.stringify(getBookmarksData.value))
+  const kmEndEvent = kmEndEventModel.value
+  const kmStartEvent = kmStartEventModel.value
+  if (kmEndEvent && kmEndEvent.props && kmEndEvent.props.value) {
+    kmRequest.kmEndEventIdentifier = kmEndEvent.props.value.kmEndEventIdentifier
+    kmRequest.kmEndEventOccurence = kmEndEvent.props.value.kmEndEventOccurence
+  }
+
+  if (!kmRequest.kmEndEventIdentifier) {
+    kmRequest.kmEndEventIdentifier = 'patient.dateOfDeath'
+  }
+
+  if (!kmRequest.kmEndEventOccurence) {
+    kmRequest.kmEndEventOccurence = ''
+  }
+
+  if (kmStartEvent && kmStartEvent.props && kmStartEvent.props.value) {
+    kmRequest.kmEventIdentifier = kmStartEvent.props.value.kmEventIdentifier
+    kmRequest.kmStartEventOccurence = kmStartEvent.props.value.kmStartEventOccurence
+  }
+
+  if (!kmRequest.kmEventIdentifier) {
+    kmRequest.kmEventIdentifier = 'patient.dateOfBirth'
+  }
+
+  if (!kmRequest.kmStartEventOccurence) {
+    kmRequest.kmStartEventOccurence = 'start_min'
+  }
+  return kmRequest
+}
+
+const zoom = (day: number, factor: number) => {
+  if (day > 0) {
+    let minday = minDay.value
+    let maxday = maxDay.value
+    const width = maxday - minday
+
+    minday = Math.floor(day * (1.0 - factor) + factor * minday)
+    maxday = Math.ceil(minday + factor * width)
+
+    if (minday < 0) {
+      minday = 0
+    }
+
+    if (maxday > maxDataday.value) {
+      maxday = maxDataday.value
+    }
+
+    if (minday > maxday) {
+      minday = maxday
+    }
+
+    const newRangeSliderValue = [minday, maxday]
+    rangeSliderValue.value = newRangeSliderValue
+  }
+}
+
+const mousewheelHandler = (event: any) => {
+  event.stopImmediatePropagation()
+
+  const zoomScrollArea = chart.value.getBoundingClientRect()
+  const xScroll = event.clientX
+  const yScroll = event.clientY
+
+  if (
+    zoomScrollArea.left <= xScroll &&
+    zoomScrollArea.right >= xScroll &&
+    zoomScrollArea.top <= yScroll &&
+    zoomScrollArea.bottom >= yScroll
+  ) {
+    event.stopImmediatePropagation()
+
+    const offsetX = xScroll - zoomScrollArea.left
+    const day = xScale.value.invert(offsetX)
+    let normalizedDelta = 0 // positive = UP, negative = DOWN
+    if (event.detail) {
+      normalizedDelta = -event.detail / 3
+    } else if (event.wheelDelta) {
+      normalizedDelta = event.wheelDelta / 120
+    }
+    if (normalizedDelta > 0) {
+      zoom(day, 0.75)
+    } else if (normalizedDelta < 0) {
+      zoom(day, 1.0 / 0.75)
+    }
+  }
+}
+
+const logRankMouseIn = () => {
+  showKMLogRankHelpPopOverHover.value = true
+}
+
+const logRankMouseOut = () => {
+  showKMLogRankHelpPopOverHover.value = false
+}
+
+const translateSeries = (chartData: any) => {
+  if (chartData) {
+    const duplicateResponse = JSON.parse(JSON.stringify(chartData))
+    return translate(duplicateResponse.data)
+  }
+  return []
+}
+
+const updateUnit = (event: any) => {
+  const newUnit = getUnitInfo(event.newKey)
+  if (kmInterval.value) {
+    const oldUnit = getUnitInfo(event.oldKey)
+    kmInterval.value = String((+kmInterval.value * newUnit.avgDaysInUnit) / oldUnit.avgDaysInUnit)
+  }
+  cachedRangeSliderValue.value[0] = Math.round((rangeSliderValue.value[0] * 100) / newUnit.avgDaysInUnit) / 100
+  cachedRangeSliderValue.value[1] = Math.round((rangeSliderValue.value[1] * 100) / newUnit.avgDaysInUnit) / 100
+  kmUnit.value = event.newKey
+  renderChart()
+}
+
+const sliderHover = () => {
+  sliderHoverState.value = true
+}
+
+const sliderOut = () => {
+  sliderHoverState.value = false
+}
+
+const tooltipHover = () => {
+  tooltipHoverState.value = true
+}
+
+const tooltipOut = () => {
+  tooltipHoverState.value = false
+}
+
+const tooltipFocus = (index: number) => {
+  if (index === 0) {
+    tooltipFocusLeft.value = true
+  }
+  if (index === 1) {
+    tooltipFocusRight.value = true
+  }
+}
+
+const tooltipBlur = (index: number) => {
+  if (index === 0) {
+    tooltipFocusLeft.value = false
+  }
+  if (index === 1) {
+    tooltipFocusRight.value = false
+  }
+}
+
+const onInputClick = (event: any) => {
+  if (event && event.stopPropagation) {
+    event.stopPropagation()
+  }
+}
+
+const updateSliderValue = (sliderIndex: number) => {
+  let newValue = rangeSliderValue.value[sliderIndex]
+  if (
+    cachedRangeSliderValue.value &&
+    (cachedRangeSliderValue.value[sliderIndex] || cachedRangeSliderValue.value[sliderIndex] === 0) &&
+    !isNaN(cachedRangeSliderValue.value[sliderIndex])
+  ) {
+    newValue = parseFloat(cachedRangeSliderValue.value[String(sliderIndex)])
+
+    const currentUnitInfo = getOptimalUnitInfo(minDay.value, maxDay.value)
+    newValue *= currentUnitInfo.avgDaysInUnit
+  }
+  const newRangeSliderValue = [0, 0]
+  for (let i = 0; i < 2; i += 1) {
+    newRangeSliderValue[i] = i === sliderIndex ? newValue : rangeSliderValue.value[i]
+  }
+  if (newRangeSliderValue[0] > newRangeSliderValue[1]) {
+    const temp = newRangeSliderValue[0]
+    newRangeSliderValue[0] = newRangeSliderValue[1]
+    newRangeSliderValue[1] = temp
+  }
+  rangeSliderValue.value = newRangeSliderValue
+}
+
+const sliderInputCheck = (event: any, sliderIndex: number) => {
+  const evt = event || window.event
+  const code = evt.which ? evt.which : evt.keyCode
+  if (code === 13) {
+    updateSliderValue(sliderIndex)
+    evt.preventDefault()
+  } else if (!((code >= 48 && code <= 57) || code === 46 || code === 69 || code === 101)) {
+    // Not 0-9, e, E, or .
+    evt.preventDefault()
+  }
+  return true
+}
+
+const intervalInputCheck = () => {
+  const evt: any = event || window.event
+  const code = evt.which ? evt.which : evt.keyCode
+  if (code === 13) {
+    evt.preventDefault()
+  } else if (!((code >= 48 && code <= 57) || code === 46 || code === 69 || code === 101)) {
+    // Not 0-9, e, E, or .
+    evt.preventDefault()
+  }
+  return true
+}
+
+const resetRangeSlider = () => {
+  rangeSliderValue.value = [0, maxDataday.value]
+}
+
+const setupAxes = () => {
+  disableAllAxesandProperties()
+
+  setChartPropertyValue({
+    id: Constants.MRIChartProperties.KMStartEvent,
+    props: {
+      layoutLeft: 0,
+      layoutTop: 153.7,
+      layoutBottom: '',
+      active: true,
     },
-  },
-  watch: {
-    yAxis(val) {
-      if (val) {
-        this.yAxis = val
-        this.fireCompareRequest()
+  })
+
+  setChartPropertyValue({
+    id: Constants.MRIChartProperties.KMEndEvent,
+    props: {
+      layoutLeft: 0,
+      layoutTop: 293.5,
+      layoutBottom: '',
+      active: true,
+    },
+  })
+
+  const iLevelHeight = 41
+  for (let i = 0; i <= Constants.MRIChartDimensions.X3; i += 1) {
+    setAxisValue({
+      id: i,
+      props: {
+        layoutLeft: '0px',
+        layoutTop: '',
+        layoutBottom: `${20 + i * iLevelHeight}px`,
+        icon: { 0: '', 1: '', 2: '' }[i],
+        iconFamily: 'app-MRI-icons',
+        isCategory: true,
+        isMeasure: false,
+        active: true,
+      },
+    })
+  }
+}
+
+const selectOptimalUnitForInterval = (minDay: number, maxDay: number) => {
+  const keysSortedByUnitLength = Object.keys(UNIT_DATA).sort((a, b) => {
+    const aUnitNo = UNIT_DATA[a].avgDaysInUnit
+    const bUnitNo = UNIT_DATA[b].avgDaysInUnit
+    if (aUnitNo < bUnitNo) {
+      return -1
+    }
+    if (aUnitNo > bUnitNo) {
+      return 1
+    }
+    return 0
+  })
+  if (typeof minDay !== 'number' || typeof maxDay !== 'number') {
+    return keysSortedByUnitLength[keysSortedByUnitLength.length - 1]
+  }
+  if (minDay > maxDay) {
+    throw new Error(`The start of the interval (${minDay}) is smaller than the end (${maxDay})!`)
+  }
+  const lengthInDays = maxDay - minDay
+  const allowedUnitLabels = keysSortedByUnitLength.filter(unitKey => {
+    const currentRangeLimit = UNIT_DATA[unitKey].upperRangeLimit
+    return typeof currentRangeLimit !== 'number' || lengthInDays <= currentRangeLimit
+  })
+  if (allowedUnitLabels.length === 0) {
+    throw new Error(`No allowed unit found for the interval (${minDay},${maxDay})!`)
+  }
+  const smallestAllowedUnitLabel = allowedUnitLabels[0]
+  return smallestAllowedUnitLabel
+}
+
+const getUnitInfo = (unitLabel: string) => {
+  return UNIT_DATA[unitLabel]
+}
+
+const getOptimalUnitInfo = (minDay: number, maxDay: number) => {
+  let unitKey = kmUnit.value
+  if (!unitKey) {
+    unitKey = selectOptimalUnitForInterval(minDay, maxDay)
+  }
+  const unitInfo = getUnitInfo(unitKey)
+  return unitInfo
+}
+
+const genericDayFormatter = (days: number, unitInfo: any, unitLabelIsNeeded: boolean) => {
+  if (typeof days !== 'number') {
+    return ''
+  }
+  const convertedValue = days / unitInfo.avgDaysInUnit
+  let returnString = convertedValue.toFixed(unitInfo.digitsAfterDecimalPoint)
+  if (unitLabelIsNeeded) {
+    returnString += ` ${unitInfo.label}`
+  }
+  return returnString
+}
+
+const getActiveDayFormatter = (unitLabelIsNeeded: boolean) => {
+  const minDayVal = minDay.value
+  const maxDayVal = maxDay.value
+  const currentUnitInfo = getOptimalUnitInfo(minDayVal, maxDayVal)
+  const formatFunc = (daysNo: number) => genericDayFormatter(daysNo, currentUnitInfo, unitLabelIsNeeded)
+  return formatFunc
+}
+
+const computeCensoredPoints = (
+  serie: any,
+  minday: number,
+  maxday: number,
+  minprob: number,
+  minDistance: number,
+  xScaleLocal: any
+) => {
+  serie.mCensored = []
+  if (showCensoring.value && serie.censored && serie.mPoints.length > 0) {
+    // compute y values for censored data
+    let j = 0
+    let iClusterStart = 0
+    let nClusterY = 0
+    let iClusterCount = 0
+
+    // Use some() to allow ending the loop early by returning true
+    serie.censored.some((censored: any, i: number) => {
+      const xvalue = censored[0]
+      const iPointCount = censored[1]
+
+      if (xvalue > maxday) {
+        return true
       }
-    },
-    xAxes(val) {
-      if (val) {
-        this.xAxes = val
+      if (iPointCount <= 0 || xvalue < minday) {
+        return false
       }
-      this.fireCompareRequest()
-    },
-    censoring(val) {
-      this.showCensoring = val
-      this.renderChart()
-    },
-    errorLines(val) {
-      this.showErrorLines = val
-      this.renderChart()
-    },
-    kmStartEvent(val) {
-      if (val === 'patient.dateOfBirth') {
-        this.kmStartEv = val
-        this.kmStartEvOcc = ''
-        this.fireCompareRequest()
+      while (j < serie.mPoints.length - 1 && xvalue > serie.mPoints[j + 1][0]) {
+        j += 1
+      }
+      const yvalue = serie.mPoints[i][1]
+      if (yvalue < minprob) {
+        return true
+      }
+      const refPoint = iClusterCount > 0 ? iClusterStart : xvalue
+      const k = i + 1
+      if (k < serie.censored.length && serie.mPoints[k][1] !== serie.mPoints[i][1]) {
+        // Check if the interval has ended
+        if (iClusterCount === 0) {
+          serie.mCensored.push([xvalue, yvalue, iPointCount])
+        } else {
+          serie.mCensored.push([iClusterStart, nClusterY, iClusterCount])
+          iClusterCount = 0
+        }
+      } else if (k < serie.censored.length && xScaleLocal(serie.censored[k][0]) - xScaleLocal(refPoint) < minDistance) {
+        if (iClusterCount === 0) {
+          iClusterStart = refPoint
+          nClusterY = yvalue
+          iClusterCount = iPointCount
+        }
+        iClusterCount += serie.censored[k][1]
+      } else if (iClusterCount === 0) {
+        serie.mCensored.push([xvalue, yvalue, iPointCount])
       } else {
-        this.kmStartEv = val
-        if (this.kmStartEvOcc === this.kmStartEventOccurence) {
-          this.fireCompareRequest()
+        serie.mCensored.push([iClusterStart, nClusterY, iClusterCount])
+        iClusterCount = 0
+      }
+      return false
+    })
+  }
+}
+
+const pickColor = (index: number) => {
+  return [
+    '#EB7300',
+    '#93C939',
+    '#F0AB00',
+    '#960981',
+    '#EB7396',
+    '#E35500',
+    '#4FB81C',
+    '#D29600',
+    '#760A85',
+    '#C87396',
+    '#BC3618',
+    '#247230',
+    '#BE8200',
+    '#45157E',
+    '#A07396',
+  ][index % 15]
+}
+
+const processResponseMethod = (resp: any) => {
+  const newResponse = JSON.parse(JSON.stringify(resp))
+
+  newResponse.data.forEach((mData: any) => {
+    props.bookmarkList.forEach((bookmark: any) => {
+      if (bookmark.id === mData.cohortId) {
+        mData.name = bookmark.name
+        mData.cohortId = bookmark.name
+      }
+    })
+
+    // Remove all entries that have a negative value for x
+    // That can be caused by bad patient data (eg. DoD before DoB and interactions)
+    mData.censored = mData.censored.filter((aCensor: any) => aCensor[0] >= 0)
+    mData.points = mData.points.filter((aPoint: any) => aPoint[0] >= 0)
+  })
+
+  const curvePairResults = newResponse.kaplanMeierStatistics.curvePairResults
+  Object.keys(curvePairResults).forEach((mData: any) => {
+    props.bookmarkList.forEach((bookmark: any) => {
+      if (bookmark.id === curvePairResults[mData].innerEl) {
+        curvePairResults[mData].innerEl = bookmark.name
+        curvePairResults[mData].innerElTitle = bookmark.name
+      }
+      if (bookmark.id === curvePairResults[mData].outerEl) {
+        curvePairResults[mData].outerEl = bookmark.name
+        curvePairResults[mData].outerElTitle = bookmark.name
+      }
+    })
+    curvePairResults[curvePairResults[mData].innerEl + curvePairResults[mData].outerEl] = curvePairResults[mData]
+  })
+
+  newResponse.categories.forEach((mCategory: any) => {
+    if (mCategory.id === 'dummy_category') {
+      mCategory.name = getText('MRI_PA_DUMMY_CATEGORY')
+    }
+  })
+
+  return newResponse
+}
+
+const renderChart = () => {
+  if (!chart.value) {
+    return
+  }
+  if (chart.value.firstChild) {
+    chart.value.removeChild(chart.value.firstChild)
+  }
+
+  if (getKMFirstLoad.value && Object.keys(getKMFirstLoad.value).length > 0) {
+    if (getKMFirstLoad.value.init) {
+      showCensoring.value = false
+      showErrorLines.value = false
+    }
+
+    showCensoring.value = getKMFirstLoad.value.censoring
+
+    showErrorLines.value = getKMFirstLoad.value.errorlines
+
+    setKMFirstLoad({ firstLoad: {} })
+  }
+  const height = Math.floor(chart.value.getBoundingClientRect().bottom - chart.value.getBoundingClientRect().top)
+  const width = Math.floor(chart.value.getBoundingClientRect().right - chart.value.getBoundingClientRect().left)
+  sliderWidth.value = (width * 90) / 100
+
+  const ypadding = Y_PADDING
+  const xpadding = X_PADDING
+  const seriesLocal = series.value
+  const minprob = minProb.value
+  let minday = minDay.value
+  let maxday = maxDay.value
+  const dayFormatterNoUnitLabel = getActiveDayFormatter(false)
+  const axislabelverticalpadding = 30
+  const offsetVerticalSpacingXAxisUnit = 14
+  const offsetHorizontalSpacingXAxisUnit = 2
+
+  // Set the unit to optimal value
+  const currentUnitInfo = getOptimalUnitInfo(minday, maxday)
+
+  const xTicks = Math.min(width / 40, 10) // how many ticks to show on the x axis
+  const yTicks = Math.min(height / 40, 10) // ... and on the y axis
+
+  // Find the largest day no (time interval) in data set
+  let iMaxdayInData = 0
+  seriesLocal.forEach((serie: any) => {
+    if (serie.points.length > 0) {
+      const lastpoint = serie.points[serie.points.length - 1]
+      iMaxdayInData = lastpoint[0] >= iMaxdayInData ? lastpoint[0] : iMaxdayInData
+    }
+  })
+
+  maxDataday.value = iMaxdayInData
+
+  // Ensure that mainday and maxday have sensible values
+  if (iMaxdayInData && (typeof maxday === 'undefined' || maxday > iMaxdayInData)) {
+    maxday = iMaxdayInData
+    maxDay.value = maxday
+  }
+
+  if (maxday === 0) {
+    maxDay.value = iMaxdayInData
+    maxday = iMaxdayInData
+  }
+
+  if ((typeof maxday !== 'undefined' && minday > maxday) || minday < 0 || typeof minday === 'undefined') {
+    minday = 0
+    minDay.value = minday
+  }
+
+  // Set x-axis scale
+  const xScaleLocal = d3.scale
+    .linear()
+    .domain([minday, maxday])
+    .range([xpadding, width - xpadding])
+  xScale.value = xScaleLocal
+
+  // Set y-axis scale
+  const yScaleLocal = d3.scale
+    .linear()
+    .domain([minprob, 1])
+    .range([height - ypadding - axislabelverticalpadding, ypadding])
+  yScale.value = yScaleLocal
+
+  const svg = d3.select(document.createElementNS(d3.ns.prefix.svg, 'svg'))
+
+  if (seriesLocal.length > 0) {
+    const dataLines = []
+
+    svg
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'none')
+      .attr('pointer-events', 'all')
+      .attr('width', width)
+      .attr('height', height)
+
+    // If we don't add an invisible rectangle that comprises the whole SVG,
+    // click events to this latter won't be propagated correctly in IE.
+    svg.append('rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', height).attr('fill', 'none')
+
+    const line = d3.svg
+      .line()
+      .x((d: any) => xScaleLocal(d[0]))
+      .y((d: any) => yScaleLocal(d[1]))
+      .interpolate('step-after')
+
+    const standardAxisFontSize = '14px'
+
+    // Do we have enforceable TickValues?
+    // For Automated Behavior, we will look at first option that
+    let tickValues
+    const kmIntervalVal = parseFloat(kmInterval.value)
+    const bisector = d3.bisector((d: any) => d[0]).left
+
+    if (kmIntervalVal && kmIntervalVal > 0) {
+      tickValues = []
+      let tickPoint = 0
+      tickValues.push(minday)
+      while (tickPoint <= maxday) {
+        if (tickPoint > minday) {
+          tickValues.push(tickPoint)
+        }
+        tickPoint += kmIntervalVal * currentUnitInfo.avgDaysInUnit
+      }
+    } else {
+      for (let i = 0; i < MULTIPLIER.length; i += 1) {
+        let tickPoint = 0
+        tickValues = []
+        tickValues.push(minday)
+        while (tickPoint <= maxday) {
+          if (tickPoint > minday) {
+            tickValues.push(tickPoint)
+          }
+          tickPoint += MULTIPLIER[i] * currentUnitInfo.avgDaysInUnit
+        }
+        if (tickValues.length <= xTicks) {
+          break
         }
       }
-    },
-    kmStartEventOccurence(val) {
-      if (val) {
-        this.kmStartEvOcc = val
-        this.fireCompareRequest()
-      }
-    },
-    kmEndEvent(val) {
-      if (val === 'patient.dateOfDeath') {
-        this.kmEndEv = val
-        this.kmEndEvOcc = ''
-        this.fireCompareRequest()
-      } else {
-        this.kmEndEv = val
-        if (this.kmEndEvOcc === this.kmEndEventOccurence) {
-          this.fireCompareRequest()
-        }
-      }
-    },
-    kmEndEventOccurence(val) {
-      if (val) {
-        this.kmEndEvOcc = val
-        this.fireCompareRequest()
-      }
-    },
-    rangeSliderValue() {
-      this.minDay = this.rangeSliderValue[0]
-      this.maxDay = this.rangeSliderValue[1]
-      const currentUnitInfo = this.getOptimalUnitInfo(this.minDay, this.maxDay)
-      this.cachedRangeSliderValue[0] =
-        Math.round((this.rangeSliderValue[0] * 100) / currentUnitInfo.avgDaysInUnit) / 100
-      this.cachedRangeSliderValue[1] =
-        Math.round((this.rangeSliderValue[1] * 100) / currentUnitInfo.avgDaysInUnit) / 100
-      this.renderChart()
-    },
-  },
-  methods: {
-    ...mapActions([
-      'ajaxAuth',
-      'setAxisValue',
-      'fireQuery',
-      'disableAllAxesandProperties',
-      'setTicks',
-      'setTicksData',
-      'setCurrentPatientCount',
-      'setKMLegends',
-      'setKMFirstLoad',
-      'setChartPropertyValue',
-    ]),
-    fireCompareRequest() {
-      const configMetadata = this.getMriFrontendConfig.getConfigMetadata()
+    }
 
-      this.$emit('response', null)
-      this.$emit('busyEv', true)
-      const cancelToken = new CancelToken(c => {
-        cancel = c
-      })
-      const callback = chartData => {
-        const data = chartData.data
-        this.showSubComponents = false
-        this.chartData = this.processResponse(data)
-        this.series = []
-        this.setCurrentPatientCount({
-          currentPatientCount: data.totalPatientCount,
-        })
-        this.errorMessage = this.chartData.noDataReason || ''
+    // X-axis
+    const xAxis = d3.svg
+      .axis()
+      .scale(xScaleLocal)
+      .tickFormat(dayFormatterNoUnitLabel)
+      .tickSize(6, 10)
+      .tickValues(tickValues)
+      .ticks(xTicks)
+    svg
+      .append('g')
+      .attr('class', 'axis kmXAxis')
+      .attr('transform', `translate(0,${height - ypadding - axislabelverticalpadding})`)
+      .call(xAxis)
+      .selectAll('text')
+      .style('text-anchor', 'middle')
+      .style('font-size', standardAxisFontSize)
+      .style('font-style', currentUnitInfo.fontStyle)
+      .style('font-weight', currentUnitInfo.fontWeight)
+      .attr('dy', '1em')
 
-        if (!this.errorMessage) {
-          if (
-            this.chartData &&
-            this.chartData.kaplanMeierStatistics &&
-            this.chartData.kaplanMeierStatistics.overallResult &&
-            this.chartData.kaplanMeierStatistics.overallResult.pValue
-          ) {
-            if (this.chartData.kaplanMeierStatistics.overallResult.pValue === '--') {
-              this.showKMLogRankHelpPopOverIcon = true
-              this.globalPValue = this.chartData.kaplanMeierStatistics.overallResult.pValue
-            } else {
-              this.showKMLogRankHelpPopOverIcon = false
-              this.globalPValue = this.formatPValue(this.chartData.kaplanMeierStatistics.overallResult.pValue)
-            }
-          } else {
-            this.showKMLogRankHelpPopOverIcon = false
-            this.globalPValue = this.formatPValue(' = 0')
-          }
-          this.series = this.translateSeries(this.chartData)
-          /* categories will always be more than 1 if there is an x axis selected. 
-                 this will get the x axis to assemble the legend and get the attribute name
-              */
-          this.series.forEach(item => {
-            if (this.chartData.categories.length > 1 && item[this.chartData.categories[0].id]) {
-              item.name = item[this.chartData.categories[0].id] + ', ' + item.name
-            }
-          })
-          if (this.chartData.categories.length > 1) {
-            this.chartData.categories[0].name = this.getMriFrontendConfig.getAttributeByPath(
-              this.chartData.categories[0].id
-            ).oInternalConfigAttribute.name
-          }
-          this.setKMLegends({
-            categories: this.chartData.categories,
-            series: this.series,
-          })
-          this.renderChart()
-          this.resetRangeSlider()
-          this.showSubComponents = true
-        }
+    // Add x-axis label
+    svg
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr(
+        'transform',
+        `translate(${width / offsetHorizontalSpacingXAxisUnit},${height - offsetVerticalSpacingXAxisUnit})`
+      )
+      .style('font-size', standardAxisFontSize)
+      .style('font-style', currentUnitInfo.fontStyle)
+      .style('font-weight', currentUnitInfo.fontWeight)
+      .text(getText(currentUnitInfo.label))
+      .attr('dy', '.2em')
 
-        // hardcode to a positive value as png download expects this value
-        this.chartData.totalPatientCount = 1
-        this.$emit('response', this.chartData)
-        this.$emit('busyEv', false)
-      }
+    // Y-axis
+    const yAxis = d3.svg.axis().scale(yScaleLocal).orient('left').tickFormat(d3.format('p%')).ticks(yTicks)
+    svg
+      .append('g')
+      .attr('class', 'axis')
+      .attr('transform', `translate(${xpadding},0)`)
+      .call(yAxis)
+      .selectAll('text')
+      .style('font-size', standardAxisFontSize)
 
-      this.ajaxAuth({
-        method: 'get',
-        url:
-          '/analytics-svc/api/services/patient/cohorts/compare/km?' +
-          'ids=' +
-          this.bookmarkList.map(e => e.id).join(',') +
-          '&xaxis=' +
-          this.xAxes +
-          '&yaxis=' +
-          this.yAxis +
-          '&configId=' +
-          configMetadata.configId +
-          '&configVersion=' +
-          configMetadata.configVersion +
-          '&kmstartevent=' +
-          this.kmStartEv +
-          '&kmeventofinterest=' +
-          this.kmEndEv +
-          '&kmstarteventocc=' +
-          this.kmStartEvOcc +
-          '&kmeventofinterestocc=' +
-          this.kmEndEvOcc,
-        cancelToken,
-      })
-        .then(callback)
-        .catch(({ message, response }) => {
-          if (message !== 'cancel') {
-            this.$emit('busyEv', false)
-          }
-          this.errorMessage = message
-          if (response && response.status === 500) {
-            callback({
-              data: [],
-              measures: [],
-              categories: [],
-              totalPatientCount: 0,
-              noDataReason: response.data.errorMessage,
-            })
-          }
-        })
-      this.$emit('busyEv', true)
-    },
-    buildRequest() {
-      const kmRequest = JSON.parse(JSON.stringify(this.getBookmarksData))
-      const kmEndEvent = this.kmEndEventModel
-      const kmStartEvent = this.kmStartEventModel
-      if (kmEndEvent && kmEndEvent.props && kmEndEvent.props.value) {
-        kmRequest.kmEndEventIdentifier = kmEndEvent.props.value.kmEndEventIdentifier
-        kmRequest.kmEndEventOccurence = kmEndEvent.props.value.kmEndEventOccurence
-      }
+    // Add grid (Horizontal lines)
+    const gridYAxis = d3.svg
+      .axis()
+      .scale(yScaleLocal)
+      .orient('left')
+      .ticks(yTicks)
+      .tickSize(-(width - 2 * xpadding), 0)
+      .tickFormat('')
+    svg.append('g').attr('class', 'grid').attr('transform', `translate(${xpadding},0)`).call(gridYAxis)
 
-      if (!kmRequest.kmEndEventIdentifier) {
-        kmRequest.kmEndEventIdentifier = 'patient.dateOfDeath'
+    seriesLocal.forEach((s: any, i: number) => {
+      if (!s.mColor) {
+        s.mColor = pickColor(i)
       }
+    })
 
-      if (!kmRequest.kmEndEventOccurence) {
-        kmRequest.kmEndEventOccurence = ''
-      }
-
-      if (kmStartEvent && kmStartEvent.props && kmStartEvent.props.value) {
-        kmRequest.kmEventIdentifier = kmStartEvent.props.value.kmEventIdentifier
-        kmRequest.kmStartEventOccurence = kmStartEvent.props.value.kmStartEventOccurence
-      }
-
-      if (!kmRequest.kmEventIdentifier) {
-        kmRequest.kmEventIdentifier = 'patient.dateOfBirth'
-      }
-
-      if (!kmRequest.kmStartEventOccurence) {
-        kmRequest.kmStartEventOccurence = 'start_min'
-      }
-      return kmRequest
-    },
-    zoom(day, factor) {
-      if (day > 0) {
-        let minday = this.minDay
-        let maxday = this.maxDay
-        const width = maxday - minday
-
-        minday = Math.floor(day * (1.0 - factor) + factor * minday)
-        maxday = Math.ceil(minday + factor * width)
-
-        if (minday < 0) {
-          minday = 0
-        }
-
-        if (maxday > this.maxDataday) {
-          maxday = this.maxDataday
-        }
-
-        if (minday > maxday) {
-          minday = maxday
-        }
-
-        const newRangeSliderValue = [minday, maxday]
-        this.rangeSliderValue = newRangeSliderValue
-      }
-    },
-    mousewheelHandler(event) {
-      event.stopImmediatePropagation()
-
-      const zoomScrollArea = this.$refs.chart.getBoundingClientRect()
-      const xScroll = event.clientX
-      const yScroll = event.clientY
-
-      if (
-        zoomScrollArea.left <= xScroll &&
-        zoomScrollArea.right >= xScroll &&
-        zoomScrollArea.top <= yScroll &&
-        zoomScrollArea.bottom >= yScroll
-      ) {
-        event.stopImmediatePropagation()
-
-        const offsetX = xScroll - zoomScrollArea.left
-        const day = this.xScale.invert(offsetX)
-        let normalizedDelta = 0 // positive = UP, negative = DOWN
-        if (event.detail) {
-          normalizedDelta = -event.detail / 3
-        } else if (event.wheelDelta) {
-          normalizedDelta = event.wheelDelta / 120
-        }
-        if (normalizedDelta > 0) {
-          this.zoom(day, 0.75)
-        } else if (normalizedDelta < 0) {
-          this.zoom(day, 1.0 / 0.75)
-        }
-      }
-    },
-
-    logRankMouseIn() {
-      this.showKMLogRankHelpPopOverHover = true
-    },
-    logRankMouseOut() {
-      this.showKMLogRankHelpPopOverHover = false
-    },
-    translateSeries(chartData) {
-      if (chartData) {
-        const duplicateResponse = JSON.parse(JSON.stringify(chartData))
-        return this.translate(duplicateResponse.data)
-      }
-      return []
-    },
-    updateUnit(event) {
-      const newUnit = this.getUnitInfo(event.newKey)
-      if (this.kmInterval) {
-        const oldUnit = this.getUnitInfo(event.oldKey)
-        this.kmInterval *= newUnit.avgDaysInUnit / oldUnit.avgDaysInUnit
-      }
-      this.cachedRangeSliderValue[0] = Math.round((this.rangeSliderValue[0] * 100) / newUnit.avgDaysInUnit) / 100
-      this.cachedRangeSliderValue[1] = Math.round((this.rangeSliderValue[1] * 100) / newUnit.avgDaysInUnit) / 100
-      this.kmUnit = event.newKey
-      this.renderChart()
-    },
-    sliderHover() {
-      this.sliderHoverState = true
-    },
-    sliderOut() {
-      this.sliderHoverState = false
-    },
-    tooltipHover() {
-      this.tooltipHoverState = true
-    },
-    tooltipOut() {
-      this.tooltipHoverState = false
-    },
-    tooltipFocus(index) {
-      if (index === 0) {
-        this.tooltipFocusLeft = true
-      }
-      if (index === 1) {
-        this.tooltipFocusRight = true
-      }
-    },
-    tooltipBlur(index) {
-      if (index === 0) {
-        this.tooltipFocusLeft = false
-      }
-      if (index === 1) {
-        this.tooltipFocusRight = false
-      }
-    },
-    onInputClick(event) {
-      if (event && event.stopPropagation) {
-        event.stopPropagation()
-      }
-    },
-    updateSliderValue(sliderIndex) {
-      let newValue = this.rangeSliderValue[sliderIndex]
-      if (
-        this.cachedRangeSliderValue &&
-        (this.cachedRangeSliderValue[sliderIndex] || this.cachedRangeSliderValue[sliderIndex] === 0) &&
-        !isNaN(this.cachedRangeSliderValue[sliderIndex])
-      ) {
-        newValue = parseFloat(this.cachedRangeSliderValue[sliderIndex])
-
-        const currentUnitInfo = this.getOptimalUnitInfo(this.minDay, this.maxDay)
-        newValue *= currentUnitInfo.avgDaysInUnit
-      }
-      const newRangeSliderValue = [0, 0]
-      for (let i = 0; i < 2; i += 1) {
-        newRangeSliderValue[i] = i === sliderIndex ? newValue : this.rangeSliderValue[i]
-      }
-      if (newRangeSliderValue[0] > newRangeSliderValue[1]) {
-        const temp = newRangeSliderValue[0]
-        newRangeSliderValue[0] = newRangeSliderValue[1]
-        newRangeSliderValue[1] = temp
-      }
-      this.rangeSliderValue = newRangeSliderValue
-    },
-    sliderInputCheck(event, sliderIndex) {
-      const evt = event || window.event
-      const code = evt.which ? evt.which : evt.keyCode
-      if (code === 13) {
-        this.updateSliderValue(sliderIndex)
-        evt.preventDefault()
-      } else if (!((code >= 48 && code <= 57) || code === 46 || code === 69 || code === 101)) {
-        // Not 0-9, e, E, or .
-        evt.preventDefault()
-      }
-      return true
-    },
-    intervalInputCheck() {
-      const evt: any = event || window.event
-      const code = evt.which ? evt.which : evt.keyCode
-      if (code === 13) {
-        // this.updateSliderValue(sliderIndex);
-        evt.preventDefault()
-      } else if (!((code >= 48 && code <= 57) || code === 46 || code === 69 || code === 101)) {
-        // Not 0-9, e, E, or .
-        evt.preventDefault()
-      }
-      return true
-    },
-    resetRangeSlider() {
-      this.rangeSliderValue = [0, this.maxDataday]
-    },
-    setupAxes() {
-      this.disableAllAxesandProperties()
-
-      this.setChartPropertyValue({
-        id: Constants.MRIChartProperties.KMStartEvent,
-        props: {
-          layoutLeft: 0,
-          layoutTop: 153.7,
-          layoutBottom: '',
-          active: true,
-        },
-      })
-
-      this.setChartPropertyValue({
-        id: Constants.MRIChartProperties.KMEndEvent,
-        props: {
-          layoutLeft: 0,
-          layoutTop: 293.5,
-          layoutBottom: '',
-          active: true,
-        },
-      })
-
-      const iLevelHeight = 41
-      for (let i = 0; i <= Constants.MRIChartDimensions.X3; i += 1) {
-        this.setAxisValue({
-          id: i,
-          props: {
-            layoutLeft: '0px',
-            layoutTop: '',
-            layoutBottom: `${20 + i * iLevelHeight}px`,
-            icon: { 0: '', 1: '', 2: '' }[i],
-            iconFamily: 'app-MRI-icons',
-            isCategory: true,
-            isMeasure: false,
-            active: true,
-          },
-        })
-      }
-    },
-    selectOptimalUnitForInterval(minDay, maxDay) {
-      const keysSortedByUnitLength = Object.keys(UNIT_DATA).sort((a, b) => {
-        const aUnitNo = UNIT_DATA[a].avgDaysInUnit
-        const bUnitNo = UNIT_DATA[b].avgDaysInUnit
-        if (aUnitNo < bUnitNo) {
-          return -1
-        }
-        if (aUnitNo > bUnitNo) {
-          return 1
-        }
-        return 0
-      })
-      if (typeof minDay !== 'number' || typeof maxDay !== 'number') {
-        return keysSortedByUnitLength[keysSortedByUnitLength.length - 1]
-      }
-      if (minDay > maxDay) {
-        throw new Error(`The start of the interval (${minDay}) is smaller than the end (${maxDay})!`)
-      }
-      const lengthInDays = maxDay - minDay
-      const allowedUnitLabels = keysSortedByUnitLength.filter(unitKey => {
-        const currentRangeLimit = UNIT_DATA[unitKey].upperRangeLimit
-        return typeof currentRangeLimit !== 'number' || lengthInDays <= currentRangeLimit
-      })
-      if (allowedUnitLabels.length === 0) {
-        throw new Error(`No allowed unit found for the interval (${minDay},${maxDay})!`)
-      }
-      const smallestAllowedUnitLabel = allowedUnitLabels[0]
-      return smallestAllowedUnitLabel
-    },
-    getUnitInfo(unitLabel) {
-      return UNIT_DATA[unitLabel]
-    },
-    getOptimalUnitInfo(minDay, maxDay) {
-      let unitKey = this.kmUnit
-      if (!unitKey) {
-        unitKey = this.selectOptimalUnitForInterval(minDay, maxDay)
-      }
-      const unitInfo = this.getUnitInfo(unitKey)
-      return unitInfo
-    },
-    genericDayFormatter(days, unitInfo, unitLabelIsNeeded) {
-      if (typeof days !== 'number') {
-        return ''
-      }
-      const convertedValue = days / unitInfo.avgDaysInUnit
-      let returnString = convertedValue.toFixed(unitInfo.digitsAfterDecimalPoint)
-      if (unitLabelIsNeeded) {
-        returnString += ` ${unitInfo.label}`
-      }
-      return returnString
-    },
-    getActiveDayFormatter(unitLabelIsNeeded) {
-      const minDay = this.minDay
-      const maxDay = this.maxDay
-      const currentUnitInfo = this.getOptimalUnitInfo(minDay, maxDay)
-      const formatFunc = daysNo => this.genericDayFormatter(daysNo, currentUnitInfo, unitLabelIsNeeded)
-      return formatFunc
-    },
-    computeCensoredPoints(series, minday, maxday, minprob, minDistance, xScale) {
-      series.mCensored = []
-      if (this.showCensoring && series.censored && series.mPoints.length > 0) {
-        // compute y values for censored data
-        let j = 0
-        let iClusterStart = 0
-        let nClusterY = 0
-        let iClusterCount = 0
-
-        // Use some() to allow ending the loop early by returning true
-        series.censored.some((censored, i) => {
-          const xvalue = censored[0]
-          const iPointCount = censored[1]
-
-          if (xvalue > maxday) {
-            return true
-          }
-          if (iPointCount <= 0 || xvalue < minday) {
-            return false
-          }
-          while (j < series.mPoints.length - 1 && xvalue > series.mPoints[j + 1][0]) {
-            j += 1
-          }
-          const yvalue = series.mPoints[i][1]
-          if (yvalue < minprob) {
-            return true
-          }
-          const refPoint = iClusterCount > 0 ? iClusterStart : xvalue
-          const k = i + 1
-          if (k < series.censored.length && series.mPoints[k][1] !== series.mPoints[i][1]) {
-            // Check if the interval has ended
-            if (iClusterCount === 0) {
-              series.mCensored.push([xvalue, yvalue, iPointCount])
-            } else {
-              series.mCensored.push([iClusterStart, nClusterY, iClusterCount])
-              iClusterCount = 0
-            }
-          } else if (k < series.censored.length && xScale(series.censored[k][0]) - xScale(refPoint) < minDistance) {
-            if (iClusterCount === 0) {
-              iClusterStart = refPoint
-              nClusterY = yvalue
-              iClusterCount = iPointCount
-            }
-            iClusterCount += series.censored[k][1]
-          } else if (iClusterCount === 0) {
-            series.mCensored.push([xvalue, yvalue, iPointCount])
-          } else {
-            series.mCensored.push([iClusterStart, nClusterY, iClusterCount])
-            iClusterCount = 0
-          }
-          return false
-        })
-      }
-    },
-    pickColor(index) {
-      return [
-        '#EB7300',
-        '#93C939',
-        '#F0AB00',
-        '#960981',
-        '#EB7396',
-        '#E35500',
-        '#4FB81C',
-        '#D29600',
-        '#760A85',
-        '#C87396',
-        '#BC3618',
-        '#247230',
-        '#BE8200',
-        '#45157E',
-        '#A07396',
-      ][index % 15]
-    },
-    processResponse(resp) {
-      const newResponse = JSON.parse(JSON.stringify(resp))
-
-      newResponse.data.forEach(mData => {
-        this.bookmarkList.forEach(bookmark => {
-          if (bookmark.id === mData.cohortId) {
-            mData.name = bookmark.name
-            mData.cohortId = bookmark.name
-          }
-        })
-
-        // Remove all entries that have a negative value for x
-        // That can be caused by bad patient data (eg. DoD before DoB and interactions)
-        mData.censored = mData.censored.filter(aCensor => aCensor[0] >= 0)
-        mData.points = mData.points.filter(aPoint => aPoint[0] >= 0)
-      })
-
-      const curvePairResults = newResponse.kaplanMeierStatistics.curvePairResults
-      Object.keys(curvePairResults).forEach(mData => {
-        this.bookmarkList.forEach(bookmark => {
-          if (bookmark.id === curvePairResults[mData].innerEl) {
-            curvePairResults[mData].innerEl = bookmark.name
-            curvePairResults[mData].innerElTitle = bookmark.name
-          }
-          if (bookmark.id === curvePairResults[mData].outerEl) {
-            curvePairResults[mData].outerEl = bookmark.name
-            curvePairResults[mData].outerElTitle = bookmark.name
-          }
-        })
-        curvePairResults[curvePairResults[mData].innerEl + curvePairResults[mData].outerEl] = curvePairResults[mData]
-      })
-
-      newResponse.categories.forEach(mCategory => {
-        if (mCategory.id === 'dummy_category') {
-          mCategory.name = this.getText('MRI_PA_DUMMY_CATEGORY')
-        }
-      })
-
-      return newResponse
-    },
-    renderChart() {
-      if (!this.$refs.chart) {
+    // Draw actual curves
+    seriesLocal.forEach((serie: any, i: number) => {
+      if (serie.points.length === 0) {
         return
       }
-      if (this.$refs.chart.firstChild) {
-        this.$refs.chart.removeChild(this.$refs.chart.firstChild)
+      // compute y values for censored data points
+      serie.mPoints = serie.points.slice(0)
+      // consoring events within this interval from each other will get a numeric label
+      const iMinDistance = 10
+      computeCensoredPoints(serie, minday, maxday, minprob, iMinDistance, xScaleLocal)
+
+      // fix extremes by adding extra points
+      // FIX LEFT-HAND SIDE: remove all points before minday.
+      // Then, if first point does not has X=minday, add an extra point (0,firstpoint.Y)
+      let j = 0
+      while (j < serie.mPoints.length && serie.mPoints[j][0] < minday) {
+        j += 1
+      }
+      serie.mPoints.splice(0, j)
+
+      if (serie.mPoints.length > 0 && serie.mPoints[0][0] !== minday) {
+        const newpoint = serie.mPoints[0].slice(0)
+        newpoint[0] = minday
+        serie.mPoints.splice(0, 0, newpoint)
       }
 
-      if (this.getKMFirstLoad && Object.keys(this.getKMFirstLoad).length > 0) {
-        if (this.getKMFirstLoad.init) {
-          this.showCensoring = false
-          this.showErrorLines = false
-        }
-
-        this.showCensoring = this.getKMFirstLoad.censoring
-
-        this.showErrorLines = this.getKMFirstLoad.errorlines
-
-        this.setKMFirstLoad({ firstLoad: {} })
+      // FIX RIGHT-HAND SIDE:
+      // remove points (X,Y) with X > maxday || Y < minprob
+      j = serie.mPoints.length - 1
+      while (j > 0 && (serie.mPoints[j][0] > maxday || serie.mPoints[j][1] < minprob)) {
+        j -= 1
       }
-      const height = Math.floor(
-        this.$refs.chart.getBoundingClientRect().bottom - this.$refs.chart.getBoundingClientRect().top
-      )
-      const width = Math.floor(
-        this.$refs.chart.getBoundingClientRect().right - this.$refs.chart.getBoundingClientRect().left
-      )
-      this.sliderWidth = (width * 90) / 100
+      serie.mPoints.splice(j + 1, serie.mPoints.length - j - 1)
 
-      const ypadding = Y_PADDING
-      const xpadding = X_PADDING
-      const series = this.series
-      const minprob = this.minProb
-      let minday = this.minDay
-      let maxday = this.maxDay
-      const dayFormatterNoUnitLabel = this.getActiveDayFormatter(false)
-      const axislabelverticalpadding = 30
-      const offsetVerticalSpacingXAxisUnit = 14
-      const offsetHorizontalSpacingXAxisUnit = 2
+      // Draw curves
+      svg
+        .append('g')
+        .attr('class', 'curve')
+        .append('path')
+        .style('stroke', serie.mColor)
+        .style('pointer-events', 'stroke')
+        .attr('d', line(serie.mPoints))
 
-      // Set the unit to optimal value
-      const currentUnitInfo = this.getOptimalUnitInfo(minday, maxday)
+      svg
+        .append('g')
+        .attr('class', 'shadow-curve')
+        .append('path')
+        .style('pointer-events', 'stroke')
+        .style('opacity', 0)
+        .style('stroke-width', 2)
+        .attr('d', line(serie.mPoints))
+        .attr('series', i)
+        .on('mouseenter', () => {
+          const seriesKey = d3.event.currentTarget.getAttribute('series')
+          const gridElement = document.querySelector('g.grid')
+          const gLeft = gridElement.getBoundingClientRect().left
+          const cX = d3.event.clientX
+          const cY = d3.event.clientY
+          let mouseX = cX - gLeft + xpadding
+          if (mouseX < xpadding) {
+            mouseX = xpadding
+          }
+          const seriesData = seriesLocal[seriesKey]
+          const data = seriesData.mPoints
+          const approximateXDomainValue = Math.round(xScaleLocal.invert(mouseX))
 
-      const xTicks = Math.min(width / 40, 10) // how many ticks to show on the x axis
-      const yTicks = Math.min(height / 40, 10) // ... and on the y axis
+          const position = bisector(data, approximateXDomainValue)
+          const larger = data[position]
+          const smaller = data[position - 1]
 
-      // Find the largest day no (time interval) in data set
-      let iMaxdayInData = 0
-      series.forEach(serie => {
-        if (serie.points.length > 0) {
-          const lastpoint = serie.points[serie.points.length - 1]
-          iMaxdayInData = lastpoint[0] >= iMaxdayInData ? lastpoint[0] : iMaxdayInData
-        }
-      })
+          // use the x value derived from the mouse coordinate x position
+          // also convert x value to the current x axis unit
+          const currentUnit = getUnitInfo(kmUnit.value)
+          const daysInUnit = currentUnit.avgDaysInUnit
+          const xValUnit = currentUnit.unitLabel
+          const decimalPlaces = currentUnit.digitsAfterDecimalPoint
+          const xVal = (approximateXDomainValue / daysInUnit).toFixed(decimalPlaces)
+          const finalValueSet: any = { x: xVal }
+          // compare which data x value is closest to x value derived from mouse x position
+          let finalElement
 
-      this.maxDataday = iMaxdayInData
+          finalElement = smaller || larger
 
-      // Ensure that mainday and maxday have sensible values
-      if (iMaxdayInData && (typeof maxday === 'undefined' || maxday > iMaxdayInData)) {
-        maxday = iMaxdayInData
-        this.maxDay = maxday
-      }
+          finalValueSet.y = finalElement[1]
+          finalValueSet.underRisk = finalElement[3]
 
-      if (maxday === 0) {
-        this.maxDay = iMaxdayInData
-        maxday = iMaxdayInData
-      }
+          tooltipPosition.value = {
+            left: `${cX + 10}px`,
+            top: `${cY + 10}px`,
+            position: 'fixed',
+          }
 
-      if ((typeof maxday !== 'undefined' && minday > maxday) || minday < 0 || typeof minday === 'undefined') {
-        minday = 0
-        this.minDay = minday
-      }
+          showTooltip.value = true
 
-      // Set x-axis scale
-      const xScale = d3.scale
-        .linear()
-        .domain([minday, maxday])
-        .range([xpadding, width - xpadding])
-      this.xScale = xScale
+          tooltipCategories.value = [
+            {
+              bg: seriesData.mColor,
+              value: seriesData.name,
+            },
+          ]
 
-      // Set y-axis scale
-      const yScale = d3.scale
-        .linear()
-        .domain([minprob, 1])
-        .range([height - ypadding - axislabelverticalpadding, ypadding])
-      this.yScale = yScale
+          tooltipMeasures.value = [
+            {
+              name: getText('MRI_PA_KAPLAN_TLTIP_PATIENTS_LABEL'),
+              value: seriesData.pcount.toLocaleString(),
+            },
+            {
+              name: `${getText('MRI_PA_KAPLAN_TLTIP_SURVIVAL_PERIOD_LABEL')} (${getText(xValUnit)}):`,
+              value: finalValueSet.x.toLocaleString(),
+            },
+            {
+              name: getText('MRI_PA_KAPLAN_TLTIP_PROBABILITY_LABEL'),
+              value: `${(finalValueSet.y * 100).toFixed(2)}%`,
+            },
+            {
+              name: getText('MRI_PA_KAPLAN_TLTIP_NUMBER_AT_RISK_LABEL'),
+              value: finalValueSet.underRisk.toLocaleString(),
+            },
+          ]
+        })
+        .on('mouseleave', () => {
+          showTooltip.value = false
+        })
 
-      const svg = d3.select(document.createElementNS(d3.ns.prefix.svg, 'svg'))
-
-      if (series.length > 0) {
-        const dataLines = []
-
-        svg
-          .attr('viewBox', `0 0 ${width} ${height}`)
-          .attr('preserveAspectRatio', 'none')
-          .attr('pointer-events', 'all')
-          .attr('width', width)
-          .attr('height', height)
-
-        // If we don't add an invisible rectangle that comprises the whole SVG,
-        // click events to this latter won't be propagated correctly in IE.
-        svg.append('rect').attr('x', 0).attr('y', 0).attr('width', width).attr('height', height).attr('fill', 'none')
-
-        const line = d3.svg
+      // Draw uncertainty intervcal
+      if (
+        showErrorLines.value &&
+        (serie.errorlines || typeof serie.errorlines === 'undefined') &&
+        serie.mPoints.length > 0 &&
+        serie.mPoints[0].length > 2
+      ) {
+        const d3upperErrorLine = d3.svg
           .line()
-          .x(d => xScale(d[0]))
-          .y(d => yScale(d[1]))
+          .x((d: any) => xScaleLocal(d[0]))
+          .y((d: any) => (d.length > 2 ? yScaleLocal(Math.min(d[1] + d[2], 1.0)) : yScaleLocal(d[1])))
           .interpolate('step-after')
 
-        const standardAxisFontSize = '14px'
+        const d3lowerErrorLine = d3.svg
+          .line()
+          .x((d: any) => xScaleLocal(d[0]))
+          .y((d: any) => (d.length > 2 ? yScaleLocal(Math.max(d[1] - d[2], minprob)) : yScaleLocal(d[1])))
+          .interpolate('step-after')
 
-        // Do we have enforceable TickValues?
-        // For Automated Behavior, we will look at first option that
-        let tickValues
-        const kmInterval = parseFloat(this.kmInterval)
-        const bisector = d3.bisector(d => d[0]).left
-
-        if (kmInterval && kmInterval > 0) {
-          tickValues = []
-          let tickPoint = 0
-          tickValues.push(minday)
-          while (tickPoint <= maxday) {
-            if (tickPoint > minday) {
-              tickValues.push(tickPoint)
-            }
-            tickPoint += kmInterval * currentUnitInfo.avgDaysInUnit
-          }
-        } else {
-          for (let i = 0; i < MULTIPLIER.length; i += 1) {
-            let tickPoint = 0
-            tickValues = []
-            tickValues.push(minday)
-            while (tickPoint <= maxday) {
-              if (tickPoint > minday) {
-                tickValues.push(tickPoint)
-              }
-              tickPoint += MULTIPLIER[i] * currentUnitInfo.avgDaysInUnit
-            }
-            if (tickValues.length <= xTicks) {
-              break
-            }
-          }
-        }
-
-        // X-axis
-        const xAxis = d3.svg
-          .axis()
-          .scale(xScale)
-          .tickFormat(dayFormatterNoUnitLabel)
-          .tickSize(6, 10)
-          .tickValues(tickValues)
-          .ticks(xTicks)
         svg
           .append('g')
-          .attr('class', 'axis kmXAxis')
-          .attr('transform', `translate(0,${height - ypadding - axislabelverticalpadding})`)
-          .call(xAxis)
-          .selectAll('text')
-          .style('text-anchor', 'middle')
-          .style('font-size', standardAxisFontSize)
-          .style('font-style', currentUnitInfo.fontStyle)
-          .style('font-weight', currentUnitInfo.fontWeight)
-          .attr('dy', '1em')
+          .attr('class', 'error-curve')
+          .append('path')
+          .style('stroke', serie.mColor)
+          .attr('d', d3upperErrorLine(serie.mPoints))
 
-        // Add x-axis label
         svg
+          .append('g')
+          .attr('class', 'error-curve')
+          .append('path')
+          .style('stroke', serie.mColor)
+          .attr('d', d3lowerErrorLine(serie.mPoints))
+      }
+
+      // Add censoring events
+      if (serie.mCensored.length > 0) {
+        svg
+          .append('g')
+          .style('stroke', serie.mColor)
+          .style('fill', 'none')
+          .selectAll('line')
+          .data(serie.mCensored)
+          .enter()
+          .append('line')
+          .attr('x1', (d: any) => xScaleLocal(d[0]))
+          .attr('y1', (d: any) => yScaleLocal(d[1] - 0.02))
+          .attr('x2', (d: any) => xScaleLocal(d[0]))
+          .attr('y2', (d: any) => yScaleLocal(d[1] + 0.01))
+
+        // Cluster number Text for censoring ticks
+        svg
+          .append('g')
+          .attr('class', 'censored-label')
+          .selectAll('text')
+          .data(serie.mCensored.filter((el: any) => el[2] > 1))
+          .enter()
           .append('text')
-          .attr('text-anchor', 'middle')
-          .attr(
-            'transform',
-            `translate(${width / offsetHorizontalSpacingXAxisUnit},${height - offsetVerticalSpacingXAxisUnit})`
+          .attr('x', (d: any) => xScaleLocal(d[0]))
+          .attr('y', (d: any) => yScaleLocal(d[1]))
+          .attr('dy', -6)
+          .attr('text-anchor', 'start')
+          .style('fill', serie.mColor)
+          .text((d: any) => d[2])
+      }
+      dataLines.push(serie)
+    })
+
+    // Store Tick Values in States
+    if (tickValues && tickValues.length > 0) {
+      const tickData = []
+      for (let i = 0; i < seriesLocal.length; i += 1) {
+        const data = seriesLocal[i].mPoints
+        const dataForSeries = []
+        for (let ii = 0; ii < tickValues.length; ii += 1) {
+          const tickValue = tickValues[ii]
+          const position = bisector(data, tickValue)
+          const larger = data[position]
+          const smaller = data[position - 1]
+
+          // use the x value derived from the mouse coordinate x position
+          const finalValueSet: any = { x: tickValue }
+          // compare which data x value is closest to x value derived from mouse x position
+          let finalElement
+
+          finalElement = smaller || larger
+
+          finalValueSet.y = finalElement ? finalElement[1] : 'NoData'
+          finalValueSet.underRisk = finalElement ? finalElement[3] : 'NoData'
+          dataForSeries.push(
+            finalElement ? `${Math.round(finalElement[1] * 10000) / 100}% (${finalElement[3]})` : 'NoData'
           )
-          .style('font-size', standardAxisFontSize)
-          .style('font-style', currentUnitInfo.fontStyle)
-          .style('font-weight', currentUnitInfo.fontWeight)
-          .text(this.getText(currentUnitInfo.label))
-          .attr('dy', '.2em')
-
-        // Y-axis
-        const yAxis = d3.svg.axis().scale(yScale).orient('left').tickFormat(d3.format('p%')).ticks(yTicks)
-        svg
-          .append('g')
-          .attr('class', 'axis')
-          .attr('transform', `translate(${xpadding},0)`)
-          .call(yAxis)
-          .selectAll('text')
-          .style('font-size', standardAxisFontSize)
-
-        // Add grid (Horizontal lines)
-        const gridYAxis = d3.svg
-          .axis()
-          .scale(yScale)
-          .orient('left')
-          .ticks(yTicks)
-          .tickSize(-(width - 2 * xpadding), 0)
-          .tickFormat('')
-        svg.append('g').attr('class', 'grid').attr('transform', `translate(${xpadding},0)`).call(gridYAxis)
-
-        // todo ? this.addColors(series);
-        series.forEach((s, i) => {
-          if (!s.mColor) {
-            s.mColor = this.pickColor(i)
-          }
-        })
-
-        // todo ? this.destroyPopups();
-        // todo ? this._popup = [];
-        // todo ? var oNumberFormatter = NumberFormat.getIntegerInstance({
-        // groupingEnabled: true,
-        // });
-
-        // Draw actual curves
-        series.forEach((serie, i) => {
-          if (serie.points.length === 0) {
-            return
-          }
-          // compute y values for censored data points
-          serie.mPoints = serie.points.slice(0)
-          // consoring events within this interval from each other will get a numeric label
-          const iMinDistance = 10
-          this.computeCensoredPoints(serie, minday, maxday, minprob, iMinDistance, xScale)
-
-          // fix extremes by adding extra points
-          // FIX LEFT-HAND SIDE: remove all points before minday.
-          // Then, if first point does not has X=minday, add an extra point (0,firstpoint.Y)
-          let j = 0
-          while (j < serie.mPoints.length && serie.mPoints[j][0] < minday) {
-            j += 1
-          }
-          serie.mPoints.splice(0, j)
-
-          if (serie.mPoints.length > 0 && serie.mPoints[0][0] !== minday) {
-            const newpoint = serie.mPoints[0].slice(0)
-            newpoint[0] = minday
-            serie.mPoints.splice(0, 0, newpoint)
-          }
-
-          // FIX RIGHT-HAND SIDE:
-          // remove points (X,Y) with X > maxday || Y < minprob
-          j = serie.mPoints.length - 1
-          while (j > 0 && (serie.mPoints[j][0] > maxday || serie.mPoints[j][1] < minprob)) {
-            j -= 1
-          }
-          serie.mPoints.splice(j + 1, serie.mPoints.length - j - 1)
-
-          // Draw curves
-          svg
-            .append('g')
-            .attr('class', 'curve')
-            .append('path')
-            .style('stroke', serie.mColor)
-            .style('pointer-events', 'stroke')
-            .attr('d', line(serie.mPoints))
-
-          svg
-            .append('g')
-            .attr('class', 'shadow-curve')
-            .append('path')
-            .style('pointer-events', 'stroke')
-            .style('opacity', 0)
-            .style('stroke-width', 2)
-            .attr('d', line(serie.mPoints))
-            .attr('series', i)
-            .on('mouseenter', () => {
-              const seriesKey = d3.event.currentTarget.getAttribute('series')
-              const gridElement = document.querySelector('g.grid')
-              const gLeft = gridElement.getBoundingClientRect().left
-              const cX = d3.event.clientX
-              const cY = d3.event.clientY
-              let mouseX = cX - gLeft + xpadding
-              if (mouseX < xpadding) {
-                mouseX = xpadding
-              }
-              const seriesData = series[seriesKey]
-              const data = seriesData.mPoints
-              const approximateXDomainValue = Math.round(xScale.invert(mouseX))
-
-              const position = bisector(data, approximateXDomainValue)
-              const larger = data[position]
-              const smaller = data[position - 1]
-
-              // use the x value derived from the mouse coordinate x position
-              // also convert x value to the current x axis unit
-              const currentUnit = this.getUnitInfo(this.kmUnit)
-              const daysInUnit = currentUnit.avgDaysInUnit
-              const xValUnit = currentUnit.unitLabel
-              const decimalPlaces = currentUnit.digitsAfterDecimalPoint
-              const xVal = (approximateXDomainValue / daysInUnit).toFixed(decimalPlaces)
-              const finalValueSet: any = { x: xVal }
-              // compare which data x value is closest to x value derived from mouse x position
-              let finalElement
-
-              finalElement = smaller || larger
-
-              finalValueSet.y = finalElement[1]
-              finalValueSet.underRisk = finalElement[3]
-
-              this.tooltipPosition = {
-                left: `${cX + 10}px`,
-                top: `${cY + 10}px`,
-                position: 'fixed',
-              }
-
-              this.showTooltip = true
-
-              this.tooltipCategories = [
-                {
-                  bg: seriesData.mColor,
-                  value: seriesData.name,
-                },
-              ]
-
-              this.tooltipMeasures = [
-                {
-                  name: this.getText('MRI_PA_KAPLAN_TLTIP_PATIENTS_LABEL'),
-                  value: seriesData.pcount.toLocaleString(),
-                },
-                {
-                  name: `${this.getText('MRI_PA_KAPLAN_TLTIP_SURVIVAL_PERIOD_LABEL')} (${this.getText(xValUnit)}):`,
-                  value: finalValueSet.x.toLocaleString(),
-                },
-                {
-                  name: this.getText('MRI_PA_KAPLAN_TLTIP_PROBABILITY_LABEL'),
-                  value: `${(finalValueSet.y * 100).toFixed(2)}%`,
-                },
-                {
-                  name: this.getText('MRI_PA_KAPLAN_TLTIP_NUMBER_AT_RISK_LABEL'),
-                  value: finalValueSet.underRisk.toLocaleString(),
-                },
-              ]
-            })
-            .on('mouseleave', () => {
-              this.showTooltip = false
-            })
-
-          /* this._popup.push(
-            new Popup(
-              new VBox({
-                items: [
-                  new Text({
-                    text: serie.name,
-                  }),
-                  new HTML({
-                    content: '<hr class="MriPaKMDivider" />',
-                  }),
-                  new HBox({
-                    items: [
-                      new Text({
-                        text: '{i18n>MRI_PA_KAPLAN_TLTIP_PATIENTS_LABEL}',
-                      }).addStyleClass('sapUiSmallMarginEnd').
-                      setModel(this.getModel('i18n'), 'i18n'),
-                      new Text({
-                        text: oNumberFormatter.format(serie.pcount),
-                      }),
-                    ],
-                  }),
-                ],
-              }).addStyleClass('MriPaKMPopup'),
-              false, false, false,
-            ).setModel(this.getModel('i18n'), 'i18n'),
-          ); */
-
-          // Draw uncertainty intervcal
-          if (
-            this.showErrorLines &&
-            (serie.errorlines || typeof serie.errorlines === 'undefined') &&
-            serie.mPoints.length > 0 &&
-            serie.mPoints[0].length > 2
-          ) {
-            const d3upperErrorLine = d3.svg
-              .line()
-              .x(d => xScale(d[0]))
-              .y(d => (d.length > 2 ? yScale(Math.min(d[1] + d[2], 1.0)) : yScale(d[1])))
-              .interpolate('step-after')
-
-            const d3lowerErrorLine = d3.svg
-              .line()
-              .x(d => xScale(d[0]))
-              .y(d => (d.length > 2 ? yScale(Math.max(d[1] - d[2], minprob)) : yScale(d[1])))
-              .interpolate('step-after')
-
-            svg
-              .append('g')
-              .attr('class', 'error-curve')
-              .append('path')
-              .style('stroke', serie.mColor)
-              .attr('d', d3upperErrorLine(serie.mPoints))
-
-            svg
-              .append('g')
-              .attr('class', 'error-curve')
-              .append('path')
-              .style('stroke', serie.mColor)
-              .attr('d', d3lowerErrorLine(serie.mPoints))
-          }
-
-          // Add censoring events
-          if (serie.mCensored.length > 0) {
-            svg
-              .append('g')
-              .style('stroke', serie.mColor)
-              .style('fill', 'none')
-              .selectAll('line')
-              .data(serie.mCensored)
-              .enter()
-              .append('line')
-              .attr('x1', d => xScale(d[0]))
-              .attr('y1', d => yScale(d[1] - 0.02))
-              .attr('x2', d => xScale(d[0]))
-              .attr('y2', d => yScale(d[1] + 0.01))
-
-            // Cluster number Text for censoring ticks
-            svg
-              .append('g')
-              .attr('class', 'censored-label')
-              .selectAll('text')
-              .data(serie.mCensored.filter(el => el[2] > 1))
-              .enter()
-              .append('text')
-              .attr('x', d => xScale(d[0]))
-              .attr('y', d => yScale(d[1]))
-              .attr('dy', -6)
-              .attr('text-anchor', 'start')
-              .style('fill', serie.mColor)
-              .text(d => d[2])
-          }
-          dataLines.push(serie)
-        }, this)
-
-        // Store Tick Values in States
-        if (tickValues && tickValues.length > 0) {
-          const tickData = []
-          for (let i = 0; i < series.length; i += 1) {
-            const data = series[i].mPoints
-            const dataForSeries = []
-            for (let ii = 0; ii < tickValues.length; ii += 1) {
-              const tickValue = tickValues[ii]
-              const position = bisector(data, tickValue)
-              const larger = data[position]
-              const smaller = data[position - 1]
-
-              // use the x value derived from the mouse coordinate x position
-              const finalValueSet: any = { x: tickValue }
-              // compare which data x value is closest to x value derived from mouse x position
-              let finalElement
-
-              finalElement = smaller || larger
-
-              finalValueSet.y = finalElement ? finalElement[1] : 'NoData'
-              finalValueSet.underRisk = finalElement ? finalElement[3] : 'NoData'
-              dataForSeries.push(
-                finalElement ? `${Math.round(finalElement[1] * 10000) / 100}% (${finalElement[3]})` : 'NoData'
-              )
-            }
-            tickData.push(dataForSeries)
-          }
-          this.setTicksData({ kmTicksData: tickData })
-          const kmTickType = currentUnitInfo
-          const kmTicks = tickValues.map(val => `${Math.round((val / currentUnitInfo.avgDaysInUnit) * 100) / 100}`)
-          this.setTicks({ kmTickType, kmTicks })
         }
+        tickData.push(dataForSeries)
       }
+      setTicksData({ kmTicksData: tickData })
+      const kmTickType = currentUnitInfo
+      const kmTicks = tickValues.map(
+        (val: number) => `${Math.round((val / currentUnitInfo.avgDaysInUnit) * 100) / 100}`
+      )
+      setTicks({ kmTickType, kmTicks })
+    }
+  }
 
-      let newypos = 0
-      let newxpos = 0
-      let ypos
-      let xpos
-      let maxwidth = 0
-      const maxlegendwidth = MAX_LEGEND_WIDTH
+  let newypos = 0
+  let newxpos = 0
+  let ypos
+  let xpos
+  let maxwidth = 0
+  const maxlegendwidth = MAX_LEGEND_WIDTH
 
-      d3.select(this.$el)
-        .selectAll('.label-slot')
-        .attr('transform', function todo2() {
-          const length = d3.select(this).select('text').node().getComputedTextLength() + 30
-          xpos = newxpos
-          ypos = newypos
-          if (maxlegendwidth < xpos + length) {
-            xpos = 0
-            newxpos = 0
-            newypos += 20
-            ypos = newypos
-          }
-          newxpos += length
-          if (newxpos > maxwidth) {
-            maxwidth = newxpos
-          }
-          return `translate(${xpos},${ypos})`
-        })
+  d3.select(kmChart.value)
+    .selectAll('.label-slot')
+    .attr('transform', function todo2() {
+      const length = d3.select(this).select('text').node().getComputedTextLength() + 30
+      xpos = newxpos
+      ypos = newypos
+      if (maxlegendwidth < xpos + length) {
+        xpos = 0
+        newxpos = 0
+        newypos += 20
+        ypos = newypos
+      }
+      newxpos += length
+      if (newxpos > maxwidth) {
+        maxwidth = newxpos
+      }
+      return `translate(${xpos},${ypos})`
+    })
 
-      ypos = Y_PADDING + 20
-      xpos =
-        Math.floor(this.$refs.chart.getBoundingClientRect().right - this.$refs.chart.getBoundingClientRect().left) -
-        X_PADDING -
-        maxwidth
-      // position legend as far right as possible within the total width
-      d3.select(this.$el).select('.label-area').attr('transform', `translate(${xpos},${ypos})`)
+  ypos = Y_PADDING + 20
+  xpos =
+    Math.floor(chart.value.getBoundingClientRect().right - chart.value.getBoundingClientRect().left) -
+    X_PADDING -
+    maxwidth
+  // position legend as far right as possible within the total width
+  d3.select(kmChart.value).select('.label-area').attr('transform', `translate(${xpos},${ypos})`)
 
-      this.$refs.chart.appendChild(svg.node())
+  chart.value.appendChild(svg.node())
+}
+
+const openKMStatisticsPopup = () => {
+  const data = chartData.value
+  if (data && data.data) {
+    if (data.data.length > 5) {
+      showKMStatisticsErrPopupForMoreCurves.value = true
+    } else if (data.data.length === 1) {
+      showKMStatisticsErrPopupForOneCurve.value = true
+    } else {
+      allCurves.value = {}
+      showKMStatisticsPopup.value = true
+    }
+  }
+}
+
+const openKMLogRankHelpPopOver = () => {
+  kmLogRankHelpPopoverPosition.value.top = `${kmLogRankHelp.value.getBoundingClientRect().bottom + 16}px`
+  showKMLogRankHelpPopOver.value = true
+}
+
+const closeKMStatisticsPopup = () => {
+  showKMStatisticsPopup.value = false
+}
+
+const closeKMStatisticsErrPopupForMoreCurves = () => {
+  showKMStatisticsErrPopupForMoreCurves.value = false
+}
+
+const closeKMStatisticsErrPopupForOneCurve = () => {
+  showKMStatisticsErrPopupForOneCurve.value = false
+}
+
+const formatPValue = (val: string) => {
+  return `${getText('MRI_PA_KAPLAN_LOG_RANK_P')}${val}`
+}
+
+const getGlobalDoF = () => {
+  const data = chartData.value
+  if (data.kaplanMeierStatistics.overallResult.dof) {
+    return data.kaplanMeierStatistics.overallResult.dof
+  } else {
+    return ''
+  }
+}
+
+const getLowerAxisProperties = () => {
+  const xAxisProperties = [
+    {
+      chart: 'bar',
+      type: 'x',
+      order: 0,
+      layoutLeft: 0,
+      layoutTop: 0,
+      layoutBottom: 60,
+      icon: '',
+      iconFamily: '',
+      active: true,
+      isCategory: true,
+      isMeasure: false,
+      axisPropertyTooltip: selectedAxis.value.x.axisPropertyTooltip,
+      axisPropertyText: selectedAxis.value.x.axisPropertyText,
+      axisAttrText: selectedAxis.value.x.axisAttrText,
     },
-    openKMStatisticsPopup() {
-      const data = this.chartData
-      if (data && data.data) {
-        if (data.data.length > 5) {
-          this.showKMStatisticsErrPopupForMoreCurves = true
-        } else if (data.data.length === 1) {
-          this.showKMStatisticsErrPopupForOneCurve = true
+  ]
+  return xAxisProperties
+}
+
+const setUpSelectedAxis = () => {
+  const config = getMriFrontendConfig.value
+  const axes = [
+    { name: 'x', val: props.xAxes },
+    { name: 'y', val: props.yAxis },
+  ]
+  axes.forEach((axis: any) => {
+    if (axis.val) {
+      const filterCardName = config.getFilterCardByPath(config.getAttributeByPath(axis.val).sParentPath)
+        .oInternalConfigFilterCard.name
+        ? config.getFilterCardByPath(config.getAttributeByPath(axis.val).sParentPath).oInternalConfigFilterCard.name
+        : getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
+      const attributeName = config.getAttributeByPath(axis.val).oInternalConfigAttribute.name
+      selectedAxis.value[axis.name].axisPropertyText = filterCardName
+      selectedAxis.value[axis.name].axisAttrText = attributeName
+      selectedAxis.value[axis.name].axisPropertyTooltip = filterCardName + ' - ' + attributeName
+    } else {
+      selectedAxis.value[axis.name].axisPropertyText = getText('MRI_PA_CHART_AXIS_PLACEHOLDER')
+      selectedAxis.value[axis.name].axisAttrText = ''
+      selectedAxis.value[axis.name].axisPropertyTooltip = ''
+    }
+  })
+}
+
+const fireCompareRequest = () => {
+  const configMetadata = getMriFrontendConfig.value.getConfigMetadata()
+
+  emit('response', null)
+  emit('busyEv', true)
+  const cancelToken = new CancelToken((c: any) => {
+    cancel = c
+  })
+  const callback = (chartDataResponse: any) => {
+    const data = chartDataResponse.data
+    showSubComponents.value = false
+    chartData.value = processResponseMethod(data)
+    series.value = []
+    setCurrentPatientCount({
+      currentPatientCount: data.totalPatientCount,
+    })
+    errorMessage.value = chartData.value.noDataReason ?? ''
+
+    if (!errorMessage.value) {
+      if (
+        chartData.value &&
+        chartData.value.kaplanMeierStatistics &&
+        chartData.value.kaplanMeierStatistics.overallResult &&
+        chartData.value.kaplanMeierStatistics.overallResult.pValue
+      ) {
+        if (chartData.value.kaplanMeierStatistics.overallResult.pValue === '--') {
+          showKMLogRankHelpPopOverIcon.value = true
+          globalPValue.value = chartData.value.kaplanMeierStatistics.overallResult.pValue
         } else {
-          this.allCurves = {}
-          this.showKMStatisticsPopup = true
+          showKMLogRankHelpPopOverIcon.value = false
+          globalPValue.value = formatPValue(chartData.value.kaplanMeierStatistics.overallResult.pValue)
         }
-      }
-    },
-    openKMLogRankHelpPopOver() {
-      this.kmLogRankHelpPopoverPosition.top = `${this.$refs.kmLogRankHelp.getBoundingClientRect().bottom + 16}px`
-      this.showKMLogRankHelpPopOver = true
-    },
-    closeKMStatisticsPopup() {
-      this.showKMStatisticsPopup = false
-    },
-    closeKMStatisticsErrPopupForMoreCurves() {
-      this.showKMStatisticsErrPopupForMoreCurves = false
-    },
-    closeKMStatisticsErrPopupForOneCurve() {
-      this.showKMStatisticsErrPopupForOneCurve = false
-    },
-    formatPValue(val) {
-      return `${this.getText('MRI_PA_KAPLAN_LOG_RANK_P')}${val}`
-    },
-    getGlobalDoF() {
-      const data = this.chartData
-      if (data.kaplanMeierStatistics.overallResult.dof) {
-        return data.kaplanMeierStatistics.overallResult.dof
       } else {
-        return ''
+        showKMLogRankHelpPopOverIcon.value = false
+        globalPValue.value = formatPValue(' = 0')
       }
-    },
-    getLowerAxisProperties() {
-      const xAxisProperties = [
-        {
-          chart: 'bar',
-          type: 'x',
-          order: 0,
-          layoutLeft: 0,
-          layoutTop: 0,
-          layoutBottom: 60,
-          icon: '',
-          iconFamily: '',
-          active: true,
-          isCategory: true,
-          isMeasure: false,
-          axisPropertyTooltip: this.selectedAxis.x.axisPropertyTooltip,
-          axisPropertyText: this.selectedAxis.x.axisPropertyText,
-          axisAttrText: this.selectedAxis.x.axisAttrText,
-        },
-      ]
-      return xAxisProperties
-    },
-    setUpSelectedAxis() {
-      const config = this.getMriFrontendConfig
-      const axes = [
-        { name: 'x', val: this.xAxes },
-        { name: 'y', val: this.yAxis },
-      ]
-      axes.forEach(axis => {
-        if (axis.val) {
-          const filterCardName = config.getFilterCardByPath(config.getAttributeByPath(axis.val).sParentPath)
-            .oInternalConfigFilterCard.name
-            ? config.getFilterCardByPath(config.getAttributeByPath(axis.val).sParentPath).oInternalConfigFilterCard.name
-            : this.getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
-          const attributeName = config.getAttributeByPath(axis.val).oInternalConfigAttribute.name
-          this.selectedAxis[axis.name].axisPropertyText = filterCardName
-          this.selectedAxis[axis.name].axisAttrText = attributeName
-          this.selectedAxis[axis.name].axisPropertyTooltip = filterCardName + ' - ' + attributeName
-        } else {
-          this.selectedAxis[axis.name].axisPropertyText = this.getText('MRI_PA_CHART_AXIS_PLACEHOLDER')
-          this.selectedAxis[axis.name].axisAttrText = ''
-          this.selectedAxis[axis.name].axisPropertyTooltip = ''
+      series.value = translateSeries(chartData.value)
+      /* categories will always be more than 1 if there is an x axis selected.
+             this will get the x axis to assemble the legend and get the attribute name
+          */
+      series.value.forEach(item => {
+        if (chartData.value.categories.length > 1 && item[chartData.value.categories[0].id]) {
+          item.name = item[chartData.value.categories[0].id] + ', ' + item.name
         }
       })
-    },
-  },
-  components: {
-    VueSlider,
-    ChartPopover,
-    KMStartEventMenu,
-    KMEndEventMenu,
-    KMInteractionList,
-    KMUnitMenu,
-    chartErrorMessage,
-    DialogBox,
-    appButton,
-    messageBox,
-    appCheckbox,
-    kmStatisticsTable,
-    errorMessageBox,
-    kmLegend,
-    appLabel,
-  },
+      if (chartData.value.categories.length > 1) {
+        chartData.value.categories[0].name = getMriFrontendConfig.value.getAttributeByPath(
+          chartData.value.categories[0].id
+        ).oInternalConfigAttribute.name
+      }
+      setKMLegends({
+        categories: chartData.value.categories,
+        series: series.value,
+      })
+      renderChart()
+      resetRangeSlider()
+      showSubComponents.value = true
+    }
+
+    // hardcode to a positive value as png download expects this value
+    chartData.value.totalPatientCount = 1
+    emit('response', chartData.value)
+    emit('busyEv', false)
+  }
+
+  ajaxAuth({
+    method: 'get',
+    url:
+      '/analytics-svc/api/services/patient/cohorts/compare/km?' +
+      'ids=' +
+      props.bookmarkList.map(e => e.id).join(',') +
+      '&xaxis=' +
+      props.xAxes +
+      '&yaxis=' +
+      props.yAxis +
+      '&configId=' +
+      configMetadata.configId +
+      '&configVersion=' +
+      configMetadata.configVersion +
+      '&kmstartevent=' +
+      kmStartEv.value +
+      '&kmeventofinterest=' +
+      kmEndEv.value +
+      '&kmstarteventocc=' +
+      kmStartEvOcc.value +
+      '&kmeventofinterestocc=' +
+      kmEndEvOcc.value,
+    cancelToken,
+  })
+    .then(callback)
+    .catch(({ message, response }: any) => {
+      if (message !== 'cancel') {
+        emit('busyEv', false)
+      }
+      errorMessage.value = message
+      if (response && response.status === 500) {
+        callback({
+          data: [],
+          measures: [],
+          categories: [],
+          totalPatientCount: 0,
+          noDataReason: response.data.errorMessage,
+        })
+      }
+    })
+  emit('busyEv', true)
 }
+
+// Watchers
+watch(
+  () => props.xAxes,
+  val => {
+    if (val) {
+      fireCompareRequest()
+    }
+  }
+)
+
+watch(
+  () => props.yAxis,
+  val => {
+    if (val) {
+      fireCompareRequest()
+    }
+  }
+)
+
+watch(
+  () => props.kmStartEvent,
+  val => {
+    if (val) {
+      kmStartEv.value = val
+      fireCompareRequest()
+    }
+  }
+)
+
+watch(
+  () => props.kmStartEventOccurence,
+  val => {
+    if (val) {
+      kmStartEvOcc.value = val
+      fireCompareRequest()
+    }
+  }
+)
+
+watch(
+  () => props.kmEndEvent,
+  val => {
+    if (val) {
+      kmEndEv.value = val
+      fireCompareRequest()
+    }
+  }
+)
+
+watch(
+  () => props.kmEndEventOccurence,
+  val => {
+    if (val) {
+      kmEndEvOcc.value = val
+      fireCompareRequest()
+    }
+  }
+)
+
+watch(
+  () => props.censoring,
+  val => {
+    showCensoring.value = val
+    renderChart()
+  }
+)
+
+watch(
+  () => props.errorLines,
+  val => {
+    showErrorLines.value = val
+    renderChart()
+  }
+)
+
+watch(rangeSliderValue, (newVal, oldVal) => {
+  if (newVal && oldVal && (newVal[0] !== oldVal[0] || newVal[1] !== oldVal[1])) {
+    minDay.value = newVal[0]
+    maxDay.value = newVal[1]
+    const currentUnitInfo = getOptimalUnitInfo(minDay.value, maxDay.value)
+    cachedRangeSliderValue.value[0] = Math.round((newVal[0] * 100) / currentUnitInfo.avgDaysInUnit) / 100
+    cachedRangeSliderValue.value[1] = Math.round((newVal[1] * 100) / currentUnitInfo.avgDaysInUnit) / 100
+    renderChart()
+  }
+})
+
+// Lifecycle hooks
+onMounted(() => {
+  setupAxes()
+  setUpSelectedAxis()
+  emit('lowerAxisMenu', getLowerAxisProperties())
+  window.addEventListener('resize', renderChart)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', renderChart)
+  if (cancel) {
+    cancel()
+  }
+})
 </script>

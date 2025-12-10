@@ -8,10 +8,12 @@ import { useActiveDataset, useFeedback } from "../../contexts";
 import { IPluginItem, PluginDropdown } from "../../types";
 import { getPluginChildPathPattern, loadPlugins, sortPluginsByType } from "../../utils";
 import { ResearcherStudyPluginRenderer } from "../../plugins/core/ResearcherStudyPluginRenderer";
-import { useEnabledFeatures } from "../../hooks";
+import { useEnabledFeatures, useDataset } from "../../hooks";
+import { initializeImportMap } from "../../singleSpa";
 import { Overview } from "./Overview/Overview";
 import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
+import { ResearcherFeatureMap, ResearcherFeatures } from "../../constant";
 import "./Researcher.scss";
 
 const plugins = loadPlugins();
@@ -43,9 +45,11 @@ export const Researcher: FC = () => {
   const activeDatasetId = activeDataset.id;
   const activeReleaseId = activeDataset.releaseId;
 
-  const [pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
+  const [dataset] = useDataset(activeDatasetId);
+
+  const [_pluginDropdown, setPluginDropdown] = useState<PluginDropdown>({});
   const [activeTenantId, setActiveTenantId] = useState<string>(state?.tenantId || "");
-  const featureFlags = useEnabledFeatures();
+  const [featureFlags] = useEnabledFeatures();
 
   useEffect(() => {
     if ((feedback?.autoClose || 0) > 0) setTimeout(() => clearFeedback(), feedback?.autoClose);
@@ -77,6 +81,7 @@ export const Researcher: FC = () => {
 
   const researcherPluginsFlat = useMemo(() => {
     const flatPlugins: IPluginItem[] = [];
+
     plugins.researcher.forEach((plugin) => {
       flatPlugins.push(plugin);
       plugin.children?.forEach((childPlugin) => {
@@ -84,13 +89,38 @@ export const Researcher: FC = () => {
       });
     });
     return flatPlugins;
-  }, [plugins]);
+  }, [dataset]);
+
+  const singleSpaApps = useMemo(() => {
+    return researcherPluginsFlat.filter((plugin) => plugin.type === "app");
+  }, [researcherPluginsFlat]);
+
+  const legacyPlugins = useMemo(() => {
+    return researcherPluginsFlat.filter((plugin) => plugin.type !== "app");
+  }, [researcherPluginsFlat]);
+
+  // Initialize import map UI for import-map-overrides
+  useEffect(() => {
+    initializeImportMap(singleSpaApps);
+  }, [singleSpaApps]);
 
   const onFetchMenus = useCallback((route: string, menus: PluginDropdownItem[]) => {
     setPluginDropdown((current: any) => ({ ...current, [route]: menus }));
   }, []);
 
-  const sortedResearcherPlugins = useMemo(() => sortPluginsByType(plugins.researcher), []);
+  const sortedResearcherPlugins = useMemo(() => {
+    if (!dataset) return [];
+    const allowed = ResearcherFeatureMap.hasOwnProperty(dataset.type)
+      ? (ResearcherFeatureMap[dataset.type] as string[])
+      : [];
+    return sortPluginsByType(plugins.researcher).filter((plugin) => {
+      if (ResearcherFeatures.includes(plugin.name)) {
+        return allowed.includes(plugin.name);
+      }
+      return true;
+    });
+  }, [dataset]);
+
   const sortedPlugins = JSON.parse(JSON.stringify(plugins));
   sortedPlugins.researcher = sortedResearcherPlugins;
 
@@ -105,23 +135,54 @@ export const Researcher: FC = () => {
           description={feedback?.description}
           visible={feedback?.message != null}
         />
+        {/* Pre-render all single-spa app containers - visibility controlled by route matching */}
+        {singleSpaApps.map((item: IPluginItem) => {
+          const subFeatureFlags = item.featureFlag ? featureFlagsDict[item.featureFlag] : {};
+          const isActiveRoute = location.pathname.includes(`/researcher/${item.route}`);
+          return (
+            <div
+              key={item.route}
+              style={{
+                display: isActiveRoute ? "block" : "none",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <ErrorBoundary name={item.name}>
+                <ResearcherStudyPluginRenderer
+                  path={item.pluginPath}
+                  route={item.route}
+                  type={item.type}
+                  tenantId={activeTenantId}
+                  studyId={activeDatasetId}
+                  releaseId={activeReleaseId}
+                  data={item?.data}
+                  fetchMenu={onFetchMenus}
+                  subFeatureFlags={subFeatureFlags}
+                />
+              </ErrorBoundary>
+            </div>
+          );
+        })}
+        {/* Legacy plugins use React Router */}
         <Routes>
           <Route path="/">
             <Route index element={<Overview />} />
             <Route path={ROUTES.overview} element={<Overview />} />
             <Route path={ROUTES.info} element={<Information />} />
             <Route path={ROUTES.account} element={<Account portalType="researcher" />} />
-            {researcherPluginsFlat.map((item: IPluginItem) => {
+            {legacyPlugins.map((item: IPluginItem) => {
               const subFeatureFlags = item.featureFlag ? featureFlagsDict[item.featureFlag] : {};
               return (
                 <Route
                   key={item.name}
                   path={getPluginChildPathPattern(item)}
                   element={
-                    <ErrorBoundary name={item.name} key={item.route}>
+                    <ErrorBoundary name={item.name}>
                       <ResearcherStudyPluginRenderer
-                        key={item.route}
                         path={item.pluginPath}
+                        route={item.route}
+                        type={item.type}
                         tenantId={activeTenantId}
                         studyId={activeDatasetId}
                         releaseId={activeReleaseId}

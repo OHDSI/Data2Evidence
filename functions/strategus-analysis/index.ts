@@ -3,6 +3,7 @@ import http from "http";
 import dataSource from "./src/db/datasource.ts";
 import { StrategusResultsRouter } from "./src/strategus-results/routes.ts";
 import StrategusAnalysisRouter from "./src/analysis/routes.ts";
+import StrategusViewerTemplateRouter from "./src/templates/routes.ts";
 
 export class App {
   private app: Application;
@@ -19,6 +20,10 @@ export class App {
     this.app.use(
       "/strategus-results",
       new StrategusResultsRouter(this.server).router
+    );
+    this.app.use(
+      "/strategus/template",
+      new StrategusViewerTemplateRouter().router
     );
     this.app.use("/strategus/analysis", new StrategusAnalysisRouter().router);
     this.server.listen(10000);

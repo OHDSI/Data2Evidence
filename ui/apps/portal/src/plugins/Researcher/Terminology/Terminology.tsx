@@ -15,9 +15,12 @@ import {
 import { tabNames } from "./utils/constants";
 import { TabName, ConceptSet } from "./utils/types";
 import { useActiveDataset, useToken, useTranslation, useUser } from "../../../contexts";
+import { useFeatures } from "../../../hooks";
+import { FEATURE_ADMIN_ONLY_SHARING } from "../../../config";
 import env from "../../../env";
 import { api } from "../../../axios/api";
 import { mapd2eWebapiConcept, mapd2eWebapiConceptSet } from "./utils/d2eWebapiMappers";
+import { CSSProperties } from "react";
 
 const nameProp = env.REACT_APP_IDP_NAME_PROP;
 
@@ -75,6 +78,7 @@ const NameSection = ({
   conceptSetId,
   onClickClose,
   errorMsg,
+  canShare,
 }: {
   conceptSetName: string;
   setConceptSetName: React.Dispatch<React.SetStateAction<string>>;
@@ -86,6 +90,7 @@ const NameSection = ({
   conceptSetId: number | null;
   onClickClose(): void;
   errorMsg: string;
+  canShare: boolean;
 }) => {
   const { getText, i18nKeys } = useTranslation();
 
@@ -95,6 +100,8 @@ const NameSection = ({
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    width: "100%",
+    padding: "0 20px",
   };
   const actionBoxStyle = {
     display: "flex",
@@ -103,8 +110,14 @@ const NameSection = ({
     height: "32px",
   };
 
+  const flexColumnStyle: CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  };
+
   return (
-    <div style={borderBoxStyle}>
+    <div style={{ ...borderBoxStyle, ...flexColumnStyle }}>
       <div style={headerBoxStyle}>
         <Typography>{getText(i18nKeys.TERMINOLOGY__NAME)}:</Typography>
         <TextField
@@ -117,16 +130,18 @@ const NameSection = ({
           disabled={isLoading}
         />
         <div style={actionBoxStyle} className="action-box-with-button-width">
-          <div style={{ marginBottom: -15, marginLeft: 10 }}>
-            <Checkbox
-              checked={conceptSetShared}
-              label={getText(i18nKeys.TERMINOLOGY__SHARED)}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                setConceptSetShared(event.target.checked);
-              }}
-              disabled={!isUserConceptSet}
-            />
-          </div>
+          {canShare && (
+            <div style={{ marginBottom: -15, marginLeft: 10 }}>
+              <Checkbox
+                checked={conceptSetShared}
+                label={getText(i18nKeys.TERMINOLOGY__SHARED)}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  setConceptSetShared(event.target.checked);
+                }}
+                disabled={!isUserConceptSet}
+              />
+            </div>
+          )}
           {isUserConceptSet && (
             <Button
               text={conceptSetId ? getText(i18nKeys.TERMINOLOGY__UPDATE) : getText(i18nKeys.TERMINOLOGY__CREATE)}
@@ -143,7 +158,7 @@ const NameSection = ({
           />
         </div>
       </div>
-      {errorMsg ? <div style={{ color: "red", textAlign: "center" }}>{errorMsg}</div> : null}
+      {errorMsg ? <div style={{ color: "red", textAlign: "center", maxWidth: "62ch" }}>{errorMsg}</div> : null}
     </div>
   );
 };
@@ -269,6 +284,12 @@ export const Terminology: FC<TerminologyProps> = ({
   const { getText, i18nKeys } = useTranslation();
   const userId = baseUserId || metadata?.userId;
   const { user } = useUser();
+  const [features, featuresLoading] = useFeatures();
+
+  // Check if user can share based on adminOnlySharing feature flag
+  // Default to hiding share option while features are loading to prevent flash
+  const adminOnlySharingEnabled = features.find(f => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ?? false;
+  const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
   const [conceptId, setConceptId] = useState<null | number>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedConcepts, setSelectedConcepts] = useState<FhirValueSetExpansionContainsWithExt[]>(
@@ -334,7 +355,7 @@ export const Terminology: FC<TerminologyProps> = ({
   }, []);
 
   const createConceptSet = async (conceptSet: Omit<ConceptSet, "id">, datasetId: string): Promise<number> => {
-    const conceptSetId = await api.d2eWebapi.createConceptSet(conceptSet.name, datasetId);
+    const conceptSetId = await api.d2eWebapi.createConceptSet(conceptSet.name, datasetId, conceptSet.shared);
 
     if (conceptSet.concepts.length !== 0) {
       await api.d2eWebapi.updateConceptSetItems(conceptSetId, conceptSet.concepts, datasetId);
@@ -355,6 +376,15 @@ export const Terminology: FC<TerminologyProps> = ({
     return conceptSetId;
   };
 
+  const checkIfConceptSetExists = async (
+    conceptSetId: number,
+    conceptSetName: string,
+    datasetId: string
+  ): Promise<number> => {
+    const result = await api.d2eWebapi.checkIfConceptSetExists(conceptSetId, conceptSetName, datasetId);
+    return Number(result);
+  };
+
   const saveConceptSet = useCallback(async () => {
     const conceptSet = {
       concepts: selectedConcepts.map((concept) => {
@@ -371,6 +401,12 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
+      // 0 is the conceptSetId placeholder when creating a new concept set
+      const isNameUsed = await checkIfConceptSetExists(conceptSetId || 0, conceptSetName, activeDatasetId);
+      if (isNameUsed) {
+        setErrorMsg(getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [`"${conceptSetName}"`]));
+        return;
+      }
       const updatedConceptSetId = conceptSetId
         ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
@@ -607,6 +643,7 @@ export const Terminology: FC<TerminologyProps> = ({
             conceptSetId={conceptSetId}
             onClickClose={onClickClose}
             errorMsg={errorMsg}
+            canShare={canShare}
           />
         ) : null}
         <div

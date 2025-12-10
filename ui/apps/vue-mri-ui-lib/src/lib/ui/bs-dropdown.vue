@@ -22,9 +22,6 @@
 <script lang="ts">
 export default {
   name: 'bs-dropdown',
-  compatConfig: {
-    MODE: 3, // Run in Vue 3 mode for proper behavior
-  },
 }
 </script>
 
@@ -130,7 +127,6 @@ const open = async () => {
   checkFlipNeeded()
 }
 
-
 const close = () => {
   isOpen.value = false
   shouldFlipUp.value = false
@@ -139,10 +135,7 @@ const close = () => {
 
 const onMenuClick = (event: Event) => {
   const target = event.target as HTMLElement
-  if (
-    target.closest('.bs-dropdown-item') ||
-    target.closest('.bs-dropdown-item-button')
-  ) {
+  if (target.closest('.bs-dropdown-item') || target.closest('.bs-dropdown-item-button')) {
     close()
   }
 }

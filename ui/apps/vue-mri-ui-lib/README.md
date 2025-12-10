@@ -38,6 +38,29 @@ yarn lint
 yarn test:unit
 ```
 
+## Configuration
+
+### Logo Customization
+
+Configure the application logo at runtime via `public/config.json`:
+
+```json
+{
+  "logoUrl": "/logos/your-logo.svg"
+}
+```
+
+**Supported formats:** SVG (recommended), PNG, JPEG, WebP
+
+The application will automatically fall back to the default ATLAS logo if the configured logo fails to load.
+
+For Docker deployments, mount a custom config file:
+
+```yaml
+volumes:
+  - ./custom-config.json:/app/config.json:ro
+```
+
 ## Theme Development
 
 - To switch to sap_bluecrystal, run this in the browser control

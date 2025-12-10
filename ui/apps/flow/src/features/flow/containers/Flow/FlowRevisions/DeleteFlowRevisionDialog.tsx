@@ -28,6 +28,14 @@ export const DeleteFlowRevisionDialog: FC<DeleteFlowRevisionDialogProps> = ({
     typeof onClose === "function" && onClose();
   }, [onClose]);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleDelete();
+    },
+    [handleDelete]
+  );
+
   return (
     <Dialog
       className="delete-flow-revision-dialog"
@@ -35,19 +43,21 @@ export const DeleteFlowRevisionDialog: FC<DeleteFlowRevisionDialogProps> = ({
       onClose={handleClose}
       {...props}
     >
-      <div className="delete-flow-revision-dialog__content">
-        <Box mb={4}>Delete the selected version?</Box>
-      </div>
-      <div className="delete-flow-revision-dialog__footer">
-        <Box
-          display="flex"
-          gap={1}
-          className="delete-flow-revision-dialog__footer-actions"
-        >
-          <Button text="Cancel" variant="outlined" onClick={handleClose} />
-          <Button text="Delete" onClick={handleDelete} loading={isLoading} />
-        </Box>
-      </div>
+      <form onSubmit={handleSubmit}>
+        <div className="delete-flow-revision-dialog__content">
+          <Box mb={4}>Delete the selected version?</Box>
+        </div>
+        <div className="delete-flow-revision-dialog__footer">
+          <Box
+            display="flex"
+            gap={1}
+            className="delete-flow-revision-dialog__footer-actions"
+          >
+            <Button text="Cancel" variant="outlined" onClick={handleClose} />
+            <Button text="Delete" onClick={handleDelete} loading={isLoading} type="submit" />
+          </Box>
+        </div>
+      </form>
     </Dialog>
   );
 };

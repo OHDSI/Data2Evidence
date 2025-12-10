@@ -2,11 +2,11 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-  SCOPE
+  SCOPE,
 } from "@danet/core";
 import { contentType } from "mime-types";
 import pg from "npm:pg";
-import { services } from "../env.ts";
+import { env, services } from "../env.ts";
 import { RequestContextService } from "../common/request-context.service.ts";
 
 @Injectable({ scope: SCOPE.REQUEST })
@@ -21,7 +21,8 @@ export class SupabaseStorageClient {
   constructor(requestContextService: RequestContextService) {
     this.requestContextService = requestContextService;
     this.baseUrl = services.supabaseStorage;
-    this.authToken = this.requestContextService.getOriginalToken() || "";
+    // this.authToken = this.requestContextService.getOriginalToken() || "";
+    this.authToken = env.SUPABASE_STORAGE_JWT_TOKEN;
 
     const envObj = Deno.env.toObject();
     this.pgOpt = {
@@ -50,6 +51,11 @@ export class SupabaseStorageClient {
     };
     this.pgclient = new pg.Client(this.pgOpt);
     this.initializeDb();
+
+    this.createBucket(this.DEFAULT_BUCKET);
+
+    // Create the data transformation bucket to store uploaded files
+    this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
   }
 
   private async initializeDb() {
@@ -61,9 +67,48 @@ export class SupabaseStorageClient {
     }
   }
 
+  private async createBucket(bucketName: string) {
+    try {
+      console.info(`Creating bucket ${bucketName}...`);
+
+      const url = `${this.baseUrl}/bucket`;
+      console.log(`Making request to create bucket: ${url}`);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: bucketName,
+          public: false,
+        }),
+      });
+
+      if (!response.ok && response.status !== 409) {
+        // 409 means bucket already exists
+        const errorText = await response.text();
+        console.error(
+          `Error creating bucket: ${response.status} - ${errorText}`
+        );
+      } else {
+        console.info(`Bucket ${bucketName} created or already exists`);
+      }
+    } catch (e) {
+      console.error(`Error creating default bucket: ${e}`);
+    }
+  }
+
   // Supabase storage API does not work for listing files, need further investigation.
   // Directly query the database to get the files.
-  async list(datasetId: string) {
+  async list(
+    id: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
+    const targetBucket = bucketName || this.DEFAULT_BUCKET;
+
     try {
       if (
         !this.pgclient ||
@@ -72,7 +117,14 @@ export class SupabaseStorageClient {
         await this.initializeDb();
       }
 
-      const folderPath = this.getDatasetFolderPath(datasetId);
+      let folderPath;
+
+      if (pathType === "data-transformation") {
+        folderPath = this.getDataTransformationFolderPath(id);
+      } else {
+        folderPath = this.getDatasetFolderPath(id);
+      }
+
       console.log(`Querying database for files in folder: ${folderPath}`);
 
       // Query the storage.objects table directly
@@ -85,14 +137,20 @@ export class SupabaseStorageClient {
       `;
 
       const result = await this.pgclient.query(query, [
-        this.DEFAULT_BUCKET,
+        targetBucket,
         `${folderPath}/%`,
         `${folderPath}/%/%`, // Exclude nested folders
       ]);
 
-      console.log(
-        `Found ${result.rows.length} files in database for dataset ${datasetId}`
-      );
+      if (pathType === "data-transformation") {
+        console.log(
+          `Found ${result.rows.length} files in database for data-transformation node ${id}`
+        );
+      } else {
+        console.log(
+          `Found ${result.rows.length} files in database for dataset ${id}`
+        );
+      }
 
       return result.rows.map((file) => {
         const fullPath = file.name;
@@ -117,19 +175,26 @@ export class SupabaseStorageClient {
     }
   }
 
-  async download(datasetId: string, fileName: string) {
+  async download(
+    datasetId: string,
+    fileName: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
     try {
-      const filePath = this.getFilePath(datasetId, fileName);
-      console.log(`Downloading file: ${filePath}`);
+      const targetBucket = bucketName || this.DEFAULT_BUCKET;
+
+      const filePath = this.getFilePath(datasetId, fileName, pathType);
+      console.log(`Downloading file: ${filePath} from bucket: ${targetBucket}`);
 
       // Direct request to download file
-      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
         method: "GET",
         headers: {
-          Authorization: `${this.authToken}`,
+          Authorization: `Bearer ${this.authToken}`,
         },
       });
 
@@ -197,7 +262,7 @@ export class SupabaseStorageClient {
       const response = await fetch(url, {
         method: "POST",
         headers: {
-          Authorization: `${this.authToken}`,
+          Authorization: `Bearer ${this.authToken}`,
           "Content-Type": file.mimetype || "application/octet-stream",
           "Cache-Control": "3600",
           "x-upsert": "true", // For overwriting existing files
@@ -252,7 +317,7 @@ export class SupabaseStorageClient {
       const response = await fetch(url, {
         method: "DELETE",
         headers: {
-          Authorization: `${this.authToken}`,
+          Authorization: `Bearer ${this.authToken}`,
         },
       });
 

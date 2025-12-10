@@ -12,7 +12,6 @@
     "clean": "rimraf ./dist"
   },
   "dependencies": {
-    "@data2evidence/d2e-starboard-wrap": "https://github.com/data2evidence/d2e-starboard-wrap.git#develop",
     "@reduxjs/toolkit": "^1.9.5",
     "dayjs": "^1.11.7",
     "jsonata": "^2.0.3",

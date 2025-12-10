@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -23,8 +23,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Comment' }).fill('DE Testing')
   await page.getByRole('button', { name: 'Create' }).click()
   await page.getByText('PythonStableRun python code.').click()
-  await expect(page.getByRole('button', { name: 'TestDE' })).toBeVisible()
-  await page.getByRole('button', { name: 'TestDE' }).click()
+  await expect(page.getByRole('combobox', { name: 'TestDE' })).toBeVisible()
+  await page.getByRole('combobox', { name: 'TestDE' }).click()
   await expect(page.getByRole('option', { name: 'TestDE' })).toBeVisible()
   await page.getByRole('option', { name: 'TestDE' }).click()
 
@@ -53,7 +53,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Describe your changes' }).click()
   await page.getByRole('textbox', { name: 'Describe your changes' }).fill('Test_DE for testing')
   await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByRole('button', { name: 'Test_DE' })).toBeVisible()
+  await expect(page.getByRole('combobox', { name: 'Test_DE' })).toBeVisible()
   await page.getByLabel('Show version history').getByRole('button').click()
   await expect(page.getByText('Version history of "Test_DE"')).toBeVisible()
   await expect(page.getByText('Version #2')).toBeVisible()

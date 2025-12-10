@@ -5,9 +5,6 @@ import { MESSAGE_ALERT_SHOW_TOGGLE, MESSAGE_FATAL_SHOW_TOGGLE } from '../store/m
 
 export default {
   name: 'NotificationStack',
-  compatConfig: {
-    MODE: 3,
-  },
   components: {
     fatal: notification,
     alert: notification,
@@ -45,8 +42,6 @@ export default {
   </div>
 </template>
 
-
-
 <style scoped>
 .notification-stack {
   position: absolute;
@@ -59,4 +54,3 @@ export default {
   width: 100%;
 }
 </style>
-

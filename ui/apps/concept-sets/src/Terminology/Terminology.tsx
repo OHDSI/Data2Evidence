@@ -26,13 +26,17 @@ import {
 import { tabNames } from "./utils/constants";
 import { TabName, ConceptSet } from "./utils/types";
 import { usePortal, useTranslation } from "../hooks";
+import { getPortalAPI } from "../utils/PortalUtils";
 import { api } from "../axios/api";
 import {
   mapd2eWebapiConcept,
   mapd2eWebapiConceptSet,
 } from "./utils/d2eWebapiMappers";
+
 import { i18nKeys } from "../context/state";
 import "./Terminology.scss";
+
+const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
 
 export interface TerminologyProps {
   onConceptIdSelect?: (
@@ -95,6 +99,7 @@ const NameSection = ({
   conceptSetId,
   onClickClose,
   errorMsg,
+  canShare,
 }: {
   conceptSetName: string;
   setConceptSetName: React.Dispatch<React.SetStateAction<string>>;
@@ -106,17 +111,26 @@ const NameSection = ({
   conceptSetId: number | null;
   onClickClose(): void;
   errorMsg: string;
+  canShare: boolean;
 }) => {
   const { getText } = useTranslation();
 
   return (
-    <Box sx={{ borderBottom: "1px solid #d4d4d4" }}>
+    <Box
+      sx={{
+        borderBottom: "1px solid #d4d4d4",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
       <Box
         sx={{
           height: "60px",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
+          width: "100%",
           "& .MuiTextField-root": { width: "50%" },
         }}
       >
@@ -141,20 +155,22 @@ const NameSection = ({
             },
           }}
         >
-          <div style={{ marginBottom: -15, marginLeft: 10 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={conceptSetShared}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                    setConceptSetShared(event.target.checked);
-                  }}
-                  disabled={!isUserConceptSet}
-                />
-              }
-              label={getText(i18nKeys.TERMINOLOGY__SHARED)}
-            />
-          </div>
+          {canShare && (
+            <div style={{ marginBottom: -15, marginLeft: 10 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={conceptSetShared}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      setConceptSetShared(event.target.checked);
+                    }}
+                    disabled={!isUserConceptSet}
+                  />
+                }
+                label={getText(i18nKeys.TERMINOLOGY__SHARED)}
+              />
+            </div>
+          )}
           {isUserConceptSet && (
             <Button
               style={{ marginLeft: 10 }}
@@ -176,7 +192,9 @@ const NameSection = ({
         </Box>
       </Box>
       {errorMsg ? (
-        <div style={{ color: "red", textAlign: "center" }}>{errorMsg}</div>
+        <div style={{ color: "red", textAlign: "center", maxWidth: "62ch" }}>
+          {errorMsg}
+        </div>
       ) : null}
     </Box>
   );
@@ -343,6 +361,13 @@ export const Terminology: FC<TerminologyProps> = ({
   const { datasetId, userName } = usePortal();
   const activeDatasetId = selectedDatasetId || datasetId;
   const isConceptSet = mode === "CONCEPT_SET";
+
+  // Check if user can share based on adminOnlySharing feature flag
+  const portalAPI = getPortalAPI();
+  const features = portalAPI?.features ?? [];
+  const featuresLoading = portalAPI?.featuresLoading ?? true;
+  const adminOnlySharingEnabled = features.find(f => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ?? false;
+  const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
   const isConceptMultiSelect = mode === "CONCEPT_MULTI_SELECT";
 
   // Show simplified interface for multi-select mode
@@ -392,6 +417,19 @@ export const Terminology: FC<TerminologyProps> = ({
     []
   );
 
+  const checkIfConceptSetExists = async (
+    conceptSetId: number,
+    conceptSetName: string,
+    datasetId: string
+  ): Promise<number> => {
+    const result = await api.d2eWebapi.checkIfConceptSetExists(
+      conceptSetId,
+      conceptSetName,
+      datasetId
+    );
+    return Number(result);
+  };
+
   const createConceptSet = async (
     conceptSet: Omit<ConceptSet, "id">,
     datasetId: string
@@ -417,7 +455,11 @@ export const Terminology: FC<TerminologyProps> = ({
     datasetId: string
   ): Promise<number> => {
     // Update concept set
-    await api.d2eWebapi.updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, datasetId);
+    await api.d2eWebapi.updateConceptSet(
+      conceptSetId,
+      { id: conceptSetId, ...conceptSet },
+      datasetId
+    );
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
@@ -444,8 +486,28 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
+      // 0 is the conceptSetId placeholder when creating a new concept set
+      const isNameUsed = await checkIfConceptSetExists(
+        conceptSetId || 0,
+        conceptSetName,
+        activeDatasetId
+      );
+
+      if (isNameUsed) {
+        setErrorMsg(
+          getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [
+            `"${conceptSetName}"`,
+          ])
+        );
+        return;
+      }
+
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(conceptSetId, { id: conceptSetId, ...conceptSet }, activeDatasetId)
+        ? await updateConceptSet(
+            conceptSetId,
+            { id: conceptSetId, ...conceptSet },
+            activeDatasetId
+          )
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
       setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
@@ -728,6 +790,7 @@ export const Terminology: FC<TerminologyProps> = ({
             conceptSetId={conceptSetId}
             onClickClose={onClickClose}
             errorMsg={errorMsg}
+            canShare={canShare}
           />
         ) : null}
         <div

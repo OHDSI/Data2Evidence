@@ -7,9 +7,6 @@
 <script lang="ts">
 export default {
   name: 'BsBadge',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 

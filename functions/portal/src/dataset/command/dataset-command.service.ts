@@ -22,7 +22,8 @@ import {
   DatasetDetailRepository,
   DatasetReleaseRepository,
   DatasetRepository,
-  DatasetTagRepository
+  DatasetTagRepository,
+  DatasetCodeRepository
 } from '../repository/index.ts'
 
 const SWAP_TO = {
@@ -44,6 +45,7 @@ export class DatasetCommandService {
     private readonly dashboardRepo: DatasetDashboardRepository,
     private readonly attributeRepo: DatasetAttributeRepository,
     private readonly tagRepo: DatasetTagRepository,
+    private readonly datasetCodeRepo: DatasetCodeRepository,
     private readonly requestContextService: RequestContextService
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub
@@ -129,27 +131,48 @@ export class DatasetCommandService {
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
     const createSnapshotFn = async (entityMgr: EntityManager, snapshotDto: IDatasetSnapshotDto) => {
-      const { id: snapshotId, sourceDatasetId, newDatasetName, schemaName, timestamp } = snapshotDto
+      const {
+        id: snapshotId,
+        sourceDatasetId,
+        newDatasetName,
+        schemaName,
+        timestamp,
+        type: newType,
+        flowParameters
+      } = snapshotDto
       const sourceDataset = await this.datasetRepo.getDataset(sourceDatasetId)
       if (!sourceDataset) {
         throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
       }
 
-      const { type, tenantId, databaseCode, vocabSchemaName, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, plugin } = sourceDataset
+      const { tenantId, databaseCode, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
+      
+      // Sanitize the new dataset name to create a valid token dataset code
+      const sanitizedName = newDatasetName
+        .trim()
+        .replace(/[^a-zA-Z0-9_]/g, '_') // Replace invalid characters with underscore
+        .replace(/_+/g, '_') // Replace multiple underscores with single underscore
+        .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+      
+      const newTokenDatasetCode = `${tokenDatasetCode}_dm_${sanitizedName}`.substring(0, 80);
+      
       // Copy dataset with new schema name
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
-        type,
+        type: newType,
         tenantId,
         databaseCode,
+        dialect,
         schemaName,
-        vocabSchemaName,
-        resultSchemaName,
-        tokenDatasetCode: `${tokenDatasetCode}_copy_${newDatasetName.trim()}`,
+        vocabSchemaName: schemaName,
+        resultSchemaName: schemaName || resultSchemaName,
+        tokenDatasetCode: newTokenDatasetCode,
         paConfigId,
         dataModel,
         plugin,
-        sourceDatasetId
+        sourceDatasetId,
+        visibilityStatus: "DEFAULT",
+        flowParameters: flowParameters ?? null
       }
       this.logger.info(`Create dataset snapshot with id ${snapshotId} from source dataset ${sourceDatasetId}`)
       const datasetEntity = this.datasetRepo.create(datasetSnapshot)
@@ -335,6 +358,32 @@ export class DatasetCommandService {
     }
 
     return this.transactionRunner.run(updateAttributeFn, datasetAttributeDto)
+  }
+
+  async updateDatasetDashboardCode(datasetId: string, code: string, type: string = 'dashboard') {
+    const updateDashboardCodeFn = async (_entityMgr: EntityManager, dto: { datasetId: string; code: string; type: string }) => {
+      const datasetCode = await this.datasetCodeRepo.getDatasetCode(dto.datasetId, dto.type)
+      const isNewEntity = !datasetCode
+
+      const datasetCodeEntity = this.addOwner(
+        this.datasetCodeRepo.create({
+          datasetId: dto.datasetId,
+          type: dto.type,
+          code: dto.code
+        }),
+        isNewEntity
+      )
+
+      // Add previous user to created entity if is not new entity
+      if (!isNewEntity) {
+        datasetCodeEntity.createdBy = datasetCode.createdBy
+      }
+      
+      const result = await this.datasetCodeRepo.upsert(datasetCodeEntity, ['datasetId', 'type'])
+      return result.identifiers[0].id
+    }
+
+    return this.transactionRunner.run(updateDashboardCodeFn, { datasetId, code, type })
   }
 
   private async addCustomAttribute(entityMgr: EntityManager, datasetId: string, customAttribute: IDatasetAttribute) {

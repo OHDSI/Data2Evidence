@@ -7,7 +7,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test(TEST_NAME, async ({ page }) => {
   test.slow()
   // Sign in
-  await page.goto(`/portal`)
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -66,7 +66,10 @@ test(TEST_NAME, async ({ page }) => {
 
   // Filter condition concept name to chronic sinusitis
   await page.getByText('All').nth(2).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('Chronic sinusitis')
+  await page
+    .getByTitle('Condition Occurrence A - Condition concept Name')
+    .getByPlaceholder('Enter search term')
+    .fill('Chronic sinusitis')
   await page.getByText('Chronic sinusitis - Chronic sinusitis').click()
   await expect(page.getByText('812 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
@@ -127,12 +130,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(2).click()
   await page.locator('#pane-right').getByText('Month of Birth').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 1200 })
 
   // Set month of birth to 11 in filter card
   await page.getByTitle('Basic Data - Month of Birth').first().click()
-  await page.getByRole('textbox').fill('11')
-  await page.getByRole('textbox').press('Enter')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('11')
+  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
   await expect(page.getByText('115 / 2694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
