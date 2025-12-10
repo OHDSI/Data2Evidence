@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'dataset-new-schema-i2b2-plugin'
 const SHOULD_SKIP = false
@@ -6,7 +6,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 const randomString = Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal');
+  await page.goto('/d2e');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
@@ -41,10 +41,12 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: 120000 })
   await page.getByRole('link', { name: 'Jobs' }).click();
   // Get the first (top) entry link
-  const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_tsi2b2_"))').first();
+  const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_tsi2b2_"))').first()
   // Find the closest state badge to this entry (adjust the selector as needed)
-  const stateBadge = firstEntry.locator('xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]');
-  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 });  
+  const stateBadge = firstEntry.locator(
+    'xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]'
+  )
+  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
@@ -60,4 +62,4 @@ test(TEST_NAME, async ({ page }) => {
   await testStudyDataset.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
   await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
-});
+})

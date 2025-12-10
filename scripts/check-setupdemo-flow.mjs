@@ -20,13 +20,13 @@ function extractAuthCode(url) {
     return match ? match[1] : '';
 }
 
-const args = process.argv.slice(2); 
+const args = process.argv.slice(2);
 const vIndex_envfile = args.indexOf("-n");
 let envfile;
-if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
-    envfile = (args[vIndex_envfile + 1]);
+if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith("-")) {
+  envfile = args[vIndex_envfile + 1];
 } else {
-    envfile = ".env";
+  envfile = ".env";
 }
 try {
   await fs.access(envfile);
@@ -43,7 +43,7 @@ let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
-var url= `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
+var url= `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
 var response = await fetch(url, {
   method: "GET",
   agent: insecureAgent,   
@@ -151,7 +151,7 @@ const authCodeLocation = await response.text();
 const authorization_code = extractAuthCode(authCodeLocation || '');
 
 // Complete Login
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc`;
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc`;
 var response = await fetch(url, {
     method: "GET",
     headers: {
@@ -163,11 +163,11 @@ var response = await fetch(url, {
 });
 
 // Get Bearer token
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/oauth/token`;
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/oauth/token`;
 var params = new URLSearchParams();
 params.append('grant_type', 'authorization_code');
 params.append('client_id', app_client_id);
-params.append('redirect_uri', `https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback`);
+params.append('redirect_uri', `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback`);
 params.append('code', authorization_code);
 params.append('code_verifier', 'kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I');
 var response = await fetch(url, {
@@ -177,7 +177,7 @@ var response = await fetch(url, {
         "content-type": "application/x-www-form-urlencoded",
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`,
         "origin": `https://${CADDY__ALP__PUBLIC_FQDN}`,
-        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A%2F41100%2Foidc`
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A%2F41100%2Foidc`
     },
     body: params,
     agent: insecureAgent   
@@ -192,7 +192,7 @@ let num_of_jobs = 0;
 try {
     var inprogress_count=1;
     while (inprogress_count>0 && Date.now() < duration + start) { 
-        var progressRespObj = await fetch(`https://${CADDY__ALP__PUBLIC_FQDN}/prefect/api/flow_runs/filter`, {
+        var progressRespObj = await fetch(`https://${CADDY__ALP__PUBLIC_FQDN}/d2e/prefect/api/flow_runs/filter`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
