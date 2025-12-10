@@ -326,7 +326,7 @@ export class DemoService {
     _input: any,
     progress?: IProgress
   ) {
-    this.logger.info("Add admin to demo dataset");
+    this.logger.info("Adding researcher role to demo dataset");
     const dataset = progress?.steps?.find(
       (step) => step.code === "dataset"
     )?.result;
