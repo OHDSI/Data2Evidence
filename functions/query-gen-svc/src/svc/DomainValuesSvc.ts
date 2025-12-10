@@ -426,7 +426,6 @@ function getDistinctValuesFromReference(
           )} `
         : "";
     const refTextSelect = useRefText
-        ? ` , R.${placeholderTableMap["@REF.TEXT"]} as "text" `
         ? ` , ${objDescriptionExpression.descSelectText} as "text" `
         : "";
 
