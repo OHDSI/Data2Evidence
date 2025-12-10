@@ -8,9 +8,13 @@ import { useTranslation } from "../../../../../contexts";
 
 interface ObservationPeriodObservedByMonthChartProps {
   data: any;
+  axisBaseGap?: number;
 }
 
-const ObservationPeriodObservedByMonthChart: FC<ObservationPeriodObservedByMonthChartProps> = ({ data }) => {
+const ObservationPeriodObservedByMonthChart: FC<ObservationPeriodObservedByMonthChartProps> = ({
+  data,
+  axisBaseGap,
+}) => {
   const { getText, i18nKeys } = useTranslation();
   const title = getText(i18nKeys.OBSERVATION_PERIOD_OBSERVED_BY_MONTH_CHART__TITLE);
   const xAxisName = getText(i18nKeys.OBSERVATION_PERIOD_OBSERVED_BY_MONTH_CHART__X_AXIS_NAME);
@@ -48,6 +52,7 @@ const ObservationPeriodObservedByMonthChart: FC<ObservationPeriodObservedByMonth
         xAxisName={xAxisName}
         yAxisName={yAxisName}
         lineChartFormatConfig={{ tooltipFormat }}
+        axisBaseGap={axisBaseGap}
       />
     </div>
   );

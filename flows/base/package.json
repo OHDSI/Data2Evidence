@@ -137,6 +137,18 @@
                     "default": null,
                     "title": "Schemaname"
                   },
+                  "vocabSchemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Vocab Schema name"
+                  },
                   "resultsSchemaName": {
                     "anyOf": [
                       {
@@ -778,6 +790,68 @@
             }
           },
           "type": "create_cachedb_fhir"
+        },
+        {
+          "name": "admin_share_plugin",
+          "entrypoint": "flows.admin_share_plugin.flow.admin_share_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/AdminSharePluginType",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "AdminSharePluginType": {
+                "properties": {
+                  "concept_set_ids": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Concept Set Ids"
+                  },
+                  "cohort_definition_ids": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Cohort Definition Ids"
+                  },
+                  "shared": {
+                    "default": true,
+                    "title": "Shared",
+                    "type": "boolean"
+                  }
+                },
+                "title": "AdminSharePluginType",
+                "type": "object"
+              }
+            }
+          },
+          "type": "adminshare"
         }
       ]
     }

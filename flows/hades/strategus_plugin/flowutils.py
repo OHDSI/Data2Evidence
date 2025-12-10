@@ -118,7 +118,7 @@ def install_r_packages_from_lockfile(lockfile_path):
     logger = Logger()
     with ro.default_converter.context():
         try:
-            renv = importr ('renv')
+            renv = importr('renv')
             # R_ENV_LIBRARY_PATH = Variable.get("R_ENV_LIBRARY_PATH")
             R_ENV_LIBRARY_PATH = "/usr/local/lib/R/site-library"
             renv.restore(lockfile=lockfile_path, library = R_ENV_LIBRARY_PATH, prompt=False)

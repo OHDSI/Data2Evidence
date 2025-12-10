@@ -19,9 +19,10 @@ interface SharedDrilldownProps {
   flowRunId: string;
   sourceKey: string;
   datasetId: string;
+  title?: string;
 }
 
-const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datasetId }) => {
+const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datasetId, title }) => {
   const { getText, i18nKeys } = useTranslation();
   const [data, setData] = useState({
     treemap: [],
@@ -167,11 +168,7 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
               <Loader text={getText(i18nKeys.SHARED_DRILLDOWN__LOADER, [sourceKey, selectedConceptId])} />
             </div>
           )}
-          <TreeMapChartTable
-            title={getText(i18nKeys.SHARED_DRILLDOWN__TREE_MAP_CHART_TITLE)}
-            data={data}
-            setSelectedConceptId={setSelectedConceptId}
-          />
+          <TreeMapChartTable title={title ?? sourceKey} data={data} setSelectedConceptId={setSelectedConceptId} />
         </div>
       )}
 
