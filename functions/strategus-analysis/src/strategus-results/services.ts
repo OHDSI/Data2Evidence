@@ -6,7 +6,6 @@ import {
 } from "@jupyterlab/services";
 import { services } from "../env.ts";
 import { env } from "../env.ts";
-import { PortalServerAPI } from "./api/PortalServerAPI.ts";
 
 interface IKernelModel extends Kernel.IModel {
   id: string;
@@ -35,13 +34,6 @@ export const startStrategusResultsViewer = async (
       studyId,
       manager
     );
-
-    // const portalServerApi = new PortalServerAPI(token);
-    // const { databaseCode, schemaName, vocabSchemaName, resultSchemaName } =
-    //   await portalServerApi.getDataset(datasetId);
-
-    // const dbm = Trex.databaseManager();
-    // const credentials = await dbm.getCredentialsDecrypted();
 
     const r_code = viewerCode
       .replace("$DATABASE_SCHEMA", "results_" + studyId)
