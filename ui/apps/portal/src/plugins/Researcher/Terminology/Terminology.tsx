@@ -460,7 +460,7 @@ export const Terminology: FC<TerminologyProps> = ({
       setIsConceptSetLoading(true);
       try {
         const conceptSet = await getConceptSetWithConceptDetails(conceptSetId, activeDatasetId);
-        setConceptSetName(conceptSet.name.trim());
+        setConceptSetName(conceptSet.name);
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);

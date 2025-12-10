@@ -572,7 +572,7 @@ export const Terminology: FC<TerminologyProps> = ({
           conceptSetId,
           activeDatasetId
         );
-        setConceptSetName(conceptSet.name.trim());
+        setConceptSetName(conceptSet.name);
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
