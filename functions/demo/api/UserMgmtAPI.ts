@@ -12,7 +12,7 @@ export class UserMgmtAPI {
   constructor(token: string) {
     this.token = token;
     if (!token) {
-      throw new Error("No token passed for PortalAPI!");
+      throw new Error("No token passed for UserMgmtAPI!");
     }
 
     if (services.usermgmt) {
