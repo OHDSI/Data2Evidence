@@ -21,7 +21,7 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
 
     dbdao = DBDao(use_cache_db=False,
-                  database_code=options.database_code)
+                  database_code=options.databaseCode)
 
     # Check if dialect is supported by duckdb
     check_supported_duckdb_dialects(dbdao.dialect, logger)
