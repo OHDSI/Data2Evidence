@@ -31,9 +31,7 @@
         </div>
 
         <!-- TODO: Customize dialog body for Atlas -->
-        <div v-if="cohortDefinitionType === 'Atlas' && !messageStrip.show" style="padding: 10px">
-          Click OK to materialize this cohort.
-        </div>
+        <div v-if="cohortDefinitionType === 'Atlas' && !messageStrip.show">Click OK to materialize this cohort.</div>
       </div>
     </template>
     <template v-slot:footer>
@@ -171,23 +169,23 @@ export default {
         }
         const failureCallback = err => {
           this.cohortBusy = false
-
-          // Format error message with details
           let errorMessage = ''
 
-          // Check if err is an object with error details
           if (typeof err === 'object' && err !== null) {
             const parts = []
             if (err.message) {
               parts.push(err.message)
             }
+            if (err.serverMessage) {
+              parts.push(`Server message: ${err.serverMessage}`)
+            }
             if (err.statusCode) {
-              parts.push(`Status Code: ${err.statusCode}`)
+              parts.push(`Status code: ${err.statusCode}`)
             }
-            if (err.error) {
-              parts.push(`Error: ${err.error}`)
+            if (err.errorType) {
+              parts.push(`Error: ${err.errorType}`)
             }
-            errorMessage = parts.join(' | ')
+            errorMessage = parts.join('<br>')
           } else {
             errorMessage = String(err)
           }

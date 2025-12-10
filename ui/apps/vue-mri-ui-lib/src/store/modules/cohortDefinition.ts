@@ -279,14 +279,14 @@ const actions = {
         })
       })
       .catch(error => {
-        // Extract error details from axios error response
         const errorDetails = {
           statusCode: error.response?.status,
-          error: error.response?.statusText || error.response?.data?.error,
-          message: error.response?.data?.message || error.message,
+          errorType: error.response?.statusText || error.response?.data?.error,
+          serverMessage: error.response?.data?.message || error.message,
         }
 
         throw {
+          code: 'ADD_PATIENT_FAILED',
           message: rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT'),
           ...errorDetails,
         }
