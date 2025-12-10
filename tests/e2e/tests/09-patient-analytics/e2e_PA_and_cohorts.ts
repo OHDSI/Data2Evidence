@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.getByTestId('button').nth(1).click()
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('test_researcher_1')
