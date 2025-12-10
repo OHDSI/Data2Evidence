@@ -2,6 +2,7 @@ import { DatasetAPI } from "../api/DatasetAPI.ts";
 import { DbCredentialsAPI } from "../api/DbCredentialsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalAPI } from "../api/PortalAPI.ts";
+import { UserMgmtAPI } from "../api/UserMgmtAPI.ts";
 import { env } from "../env.ts";
 import {
   IDbCreateDto,
@@ -318,6 +319,35 @@ export class DemoService {
       `Phenotype flow-run created: ${JSON.stringify(result.data || result)}`
     );
     return result.flowRunId ? result : result.data;
+  }
+
+  public async addResearcherRoleToDataset(
+    token: string,
+    _input: any,
+    progress?: IProgress
+  ) {
+    this.logger.info("Add admin to demo dataset");
+    const dataset = progress?.steps?.find(
+      (step) => step.code === "dataset"
+    )?.result;
+    const { cacheId: datasetId } = dataset;
+
+    if (!dataset) {
+      this.logger.error("Dataset not found in progress");
+      throw new Error("Dataset not found");
+    }
+
+    const userMgmtAPI = new UserMgmtAPI(token);
+    const result = await userMgmtAPI.registerStudyRoles({
+      userIds: ["a6660e40-261e-4782-873e-f76b4328aecf"],
+      tenantId: "e0348e4d-2e17-43f2-a3c6-efd752d17c23",
+      studyId: datasetId,
+      roles: ["RESEARCHER"],
+    });
+    this.logger.info(
+      `Researcher role added to admin: ${JSON.stringify(result)}`
+    );
+    return result;
   }
 
   private async encrypt(data: string, salt: string) {
