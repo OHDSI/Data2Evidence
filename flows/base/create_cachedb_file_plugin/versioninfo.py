@@ -133,8 +133,23 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
                 logger=logger
                 )
             
+            logger.info(f"CDM Version for dataset id '{dataset_id}': {cdm_version}")
+            
             update_metadata_last_fetched_date(
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 logger=logger
+            )
+
+            schema_version = None
+            if dataset.get("type") == "omop" and dataset.get("plugin") in ("omop_cdm_plugin", "data_management_plugin"):
+                schema_version = cdm_version
+            else:
+                schema_version = "Not Available"
+
+            portal_server_api.update_dataset_attributes_table(
+                dataset_id, "schema_version", str(schema_version)
+            )
+            portal_server_api.update_dataset_attributes_table(
+                dataset_id, "latest_schema_version", str(schema_version)
             )
