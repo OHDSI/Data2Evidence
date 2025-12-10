@@ -16666,53 +16666,6 @@ export const cdwConfigDuckdb = {
                         "cohortDefinitionKey": "ValueAsNumber",
                         "conceptIdentifierType": ""
                     },
-                    "measurementdate": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Measurement date"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "time",
-                        "expression": "@MEAS.\"MEASUREMENT_DATE\"",
-                        "order": 4,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "cohortDefinitionKey": "OccurrenceStartDate",
-                        "conceptIdentifierType": ""
-                    },
                     "pid": {
                         "name": [
                             {
@@ -16754,7 +16707,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@MEAS.person_id",
-                        "order": 5,
+                        "order": 2,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
@@ -16801,7 +16754,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@MEAS.\"MEASUREMENT_ID\"",
-                        "order": 6,
+                        "order": 3,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
@@ -16848,7 +16801,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@MEAS.\"MEASUREMENT_TYPE_CONCEPT_ID\"",
-                        "order": 10,
+                        "order": 4,
                         "domainFilter": "Type Concept",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "MeasurementType",
@@ -16897,7 +16850,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@MEAS.\"VALUE_AS_CONCEPT_ID\"",
-                        "order": 12,
+                        "order": 5,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ValueAsConcept",
@@ -16944,7 +16897,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@MEAS.\"UNIT_CONCEPT_ID\"",
-                        "order": 14,
+                        "order": 6,
                         "domainFilter": "Unit",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Unit",
@@ -16991,7 +16944,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@MEAS.\"MEASUREMENT_CONCEPT_ID\"",
-                        "order": 16,
+                        "order": 7,
                         "domainFilter": "Measurement",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
@@ -17044,11 +16997,47 @@ export const cdwConfigDuckdb = {
                         "defaultFilter": "@REF.concept_id = @MEAS.measurement_concept_id",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Measurement' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "@REF.CONCEPT_NAME",
-                        "order": 0,
+                        "order": 8,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
+                    },
+                    "enddate": {
+                        "name": [{ "lang": "", "value": "Measurement End Date" }],
+                        "disabledLangName": [
+                        { "lang": "en", "value": "", "visible": true },
+                        { "lang": "de", "value": "", "visible": true },
+                        { "lang": "fr", "value": "", "visible": true },
+                        { "lang": "es", "value": "", "visible": true },
+                        { "lang": "pt", "value": "", "visible": true },
+                        { "lang": "zh", "value": "", "visible": true }
+                        ],
+                        "type": "time",
+                        "expression": "@MEAS.\"MEASUREMENT_DATE\"",
+                        "order": 9,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "MeasurementEndDate",
+                        "conceptIdentifierType": ""
+                    },
+                    "startdate": {
+                        "name": [{ "lang": "", "value": "Measurement Start Date" }],
+                        "disabledLangName": [
+                        { "lang": "en", "value": "", "visible": true },
+                        { "lang": "de", "value": "", "visible": true },
+                        { "lang": "fr", "value": "", "visible": true },
+                        { "lang": "es", "value": "", "visible": true },
+                        { "lang": "pt", "value": "", "visible": true },
+                        { "lang": "zh", "value": "", "visible": true }
+                        ],
+                        "type": "time",
+                        "expression": "@MEAS.\"MEASUREMENT_DATE\"",
+                        "order": 10,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "MeasurementStartDate",
+                        "conceptIdentifierType": ""
                     }
                 }
             },
@@ -18401,7 +18390,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "datetime",
                         "expression": "@PROC.\"PROCEDURE_DATETIME\"",
-                        "order": 2,
+                        "order": 1,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
@@ -18448,57 +18437,10 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@PROC.\"PROCEDURE_CONCEPT_ID\"",
-                        "order": 4,
+                        "order": 2,
                         "domainFilter": "Procedure",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
-                        "conceptIdentifierType": ""
-                    },
-                    "procdate": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Procedure Date"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "time",
-                        "expression": "@PROC.\"PROCEDURE_DATE\"",
-                        "order": 5,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
                     },
                     "qty": {
@@ -18542,7 +18484,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "num",
                         "expression": "@PROC.\"QUANTITY\"",
-                        "order": 7,
+                        "order": 3,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Quantity",
@@ -18589,7 +18531,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@PROC.person_id",
-                        "order": 10,
+                        "order": 4,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
@@ -18636,7 +18578,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@PROC.\"PROCEDURE_TYPE_CONCEPT_ID\"",
-                        "order": 17,
+                        "order": 5,
                         "domainFilter": "Type Concept",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ProcedureType",
@@ -18685,13 +18627,13 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@PROC.\"MODIFIER_CONCEPT_ID\"",
-                        "order": 19,
+                        "order": 6,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Modifier",
                         "conceptIdentifierType": ""
                     },
-                    "proc_occ_concept_name": {
+                    "procconceptname": {
                         "name": [
                             {
                                 "lang": "",
@@ -18736,13 +18678,13 @@ export const cdwConfigDuckdb = {
                         "defaultFilter": "@REF.concept_id = @PROC.PROCEDURE_CONCEPT_ID",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Procedure' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "@REF.CONCEPT_NAME",
-                        "order": 0,
+                        "order": 7,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
                     },
-                    "Procedure_concept_id_copy_cf2468c2_0849_4d67_8fa7_e876aef757a1": {
+                    "procconceptid": {
                         "name": [
                             {
                                 "lang": "",
@@ -18786,7 +18728,7 @@ export const cdwConfigDuckdb = {
                         "defaultPlaceholder": "@EPISODEEVENT",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Procedure' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "CAST (@REF.CONCEPT_ID AS VARCHAR)",
-                        "order": 16,
+                        "order": 8,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
@@ -18794,54 +18736,7 @@ export const cdwConfigDuckdb = {
                         "useRefValue": true,
                         "useRefText": true
                     },
-                    "Procedure_End_Date_a596fdf2_9ba8_4155_b72f_783ea85ae669": {
-                        "name": [
-                            {
-                                "lang": "",
-                                "value": "Procedure End Date"
-                            }
-                        ],
-                        "disabledLangName": [
-                            {
-                                "lang": "en",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "de",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "fr",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "es",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "pt",
-                                "value": "",
-                                "visible": true
-                            },
-                            {
-                                "lang": "zh",
-                                "value": "",
-                                "visible": true
-                            }
-                        ],
-                        "type": "time",
-                        "expression": "@PROC.\"PROCEDURE_END_DATE\"",
-                        "order": 6,
-                        "domainFilter": "",
-                        "standardConceptCodeFilter": "",
-                        "cohortDefinitionKey": "OccurrenceEndDate",
-                        "conceptIdentifierType": ""
-                    },
-                    "Procedure_event_id": {
+                    "proceventid": {
                         "name": [
                             {
                                 "lang": "",
@@ -18885,11 +18780,49 @@ export const cdwConfigDuckdb = {
                         "defaultPlaceholder": "@EPISODEEVENT",
                         "_referenceFilter": "@REF.DOMAIN_ID = 'Procedure' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "_referenceExpression": "@REF.CONCEPT_NAME",
-                        "order": 1,
+                        "order": 9,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "id"
+                    },
+                    "enddate": {
+                        "name": [{ "lang": "", "value": "Procedure Occurrence End Date" }],
+                        "disabledLangName": [
+                        { "lang": "en", "value": "", "visible": true },
+                        { "lang": "de", "value": "", "visible": true },
+                        { "lang": "fr", "value": "", "visible": true },
+                        { "lang": "es", "value": "", "visible": true },
+                        { "lang": "pt", "value": "", "visible": true },
+                        { "lang": "zh", "value": "", "visible": true }
+                        ],
+                        "type": "time",
+                        "expression": "@PROC.\"PROCEDURE_END_DATE\"",
+                        "order": 10,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "ProcedureOccurrenceEndDate",
+                        "conceptIdentifierType": ""
+                    },
+                    "startdate": {
+                        "name": [
+                        { "lang": "", "value": "Procedure Occurrence Start Date" }
+                        ],
+                        "disabledLangName": [
+                        { "lang": "en", "value": "", "visible": true },
+                        { "lang": "de", "value": "", "visible": true },
+                        { "lang": "fr", "value": "", "visible": true },
+                        { "lang": "es", "value": "", "visible": true },
+                        { "lang": "pt", "value": "", "visible": true },
+                        { "lang": "zh", "value": "", "visible": true }
+                        ],
+                        "type": "time",
+                        "expression": "@PROC.\"PROCEDURE_DATE\"",
+                        "order": 11,
+                        "domainFilter": "",
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "ProcedureOccurrenceStartDate",
+                        "conceptIdentifierType": ""
                     }
                 }
             },
@@ -23552,49 +23485,9 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.proc",
             "visible": true,
-            "order": 4,
+            "order": 5,
             "initial": false,
             "attributes": [
-                {
-                    "source": "patient.interactions.proc.attributes.proc_occ_concept_name",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure concept name"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.Procedure_event_id",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 2
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Event ID"
-                },
                 {
                     "source": "patient.interactions.proc.attributes.procdatetime",
                     "ordered": false,
@@ -23606,7 +23499,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 3
+                        "order": 1
                     },
                     "patientlist": {
                         "initial": false,
@@ -23624,56 +23517,16 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": true,
+                        "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 2
                     },
                     "patientlist": {
-                        "initial": true,
+                        "initial": false,
                         "visible": true,
                         "linkColumn": false
                     },
                     "modelName": "Procedure Occurrence Concept Set"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.procdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 5
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure Date"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.Procedure_End_Date_a596fdf2_9ba8_4155_b72f_783ea85ae669",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 6
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure End Date"
                 },
                 {
                     "source": "patient.interactions.proc.attributes.qty",
@@ -23686,7 +23539,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 7
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -23706,7 +23559,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 8
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -23714,26 +23567,6 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Person id"
-                },
-                {
-                    "source": "patient.interactions.proc.attributes.Procedure_concept_id_copy_cf2468c2_0849_4d67_8fa7_e876aef757a1",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 9
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Procedure concept id"
                 },
                 {
                     "source": "patient.interactions.proc.attributes.proctypeconceptset",
@@ -23746,7 +23579,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 10
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -23766,7 +23599,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 11
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -23774,10 +23607,110 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Modifier concept set"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.procconceptname",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure concept name"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.procconceptid",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure concept id"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.proceventid",
+                    "ordered": true,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": true,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 9
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Event ID"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Occurrence End Date"
+                },
+                {
+                    "source": "patient.interactions.proc.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Procedure Occurrence Start Date"
                 }
             ],
-            "initialPatientlistColumn": false,
-            "modelName": "Procedure Occurrence"
+            "modelName": "Procedure Occurrence",
+            "initialPatientlistColumn": false
         },
         {
             "source": "patient.interactions.ppperiod",
@@ -24302,29 +24235,9 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.measurement",
             "visible": true,
-            "order": 9,
+            "order": 12,
             "initial": false,
             "attributes": [
-                {
-                    "source": "patient.interactions.measurement.attributes.meas_concept_name",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": true,
-                    "useRefValue": true,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 1
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement concept name"
-                },
                 {
                     "source": "patient.interactions.measurement.attributes.numval",
                     "ordered": true,
@@ -24336,7 +24249,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 2
+                        "order": 1
                     },
                     "patientlist": {
                         "initial": false,
@@ -24344,26 +24257,6 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Value As Number"
-                },
-                {
-                    "source": "patient.interactions.measurement.attributes.measurementdate",
-                    "ordered": false,
-                    "cached": true,
-                    "useRefText": false,
-                    "useRefValue": false,
-                    "category": true,
-                    "measure": false,
-                    "filtercard": {
-                        "initial": false,
-                        "visible": true,
-                        "order": 3
-                    },
-                    "patientlist": {
-                        "initial": false,
-                        "visible": true,
-                        "linkColumn": false
-                    },
-                    "modelName": "Measurement date"
                 },
                 {
                     "source": "patient.interactions.measurement.attributes.pid",
@@ -24376,7 +24269,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 4
+                        "order": 2
                     },
                     "patientlist": {
                         "initial": false,
@@ -24396,7 +24289,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 5
+                        "order": 3
                     },
                     "patientlist": {
                         "initial": false,
@@ -24416,7 +24309,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 6
+                        "order": 4
                     },
                     "patientlist": {
                         "initial": false,
@@ -24436,7 +24329,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 7
+                        "order": 5
                     },
                     "patientlist": {
                         "initial": false,
@@ -24456,7 +24349,7 @@ const paConfigDuckdb = {
                     "filtercard": {
                         "initial": false,
                         "visible": true,
-                        "order": 8
+                        "order": 6
                     },
                     "patientlist": {
                         "initial": false,
@@ -24474,7 +24367,47 @@ const paConfigDuckdb = {
                     "category": true,
                     "measure": false,
                     "filtercard": {
-                        "initial": true,
+                        "initial": false,
+                        "visible": true,
+                        "order": 7
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement concept set"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.meas_concept_name",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 8
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement concept name"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.enddate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
                         "visible": true,
                         "order": 9
                     },
@@ -24483,11 +24416,31 @@ const paConfigDuckdb = {
                         "visible": true,
                         "linkColumn": false
                     },
-                    "modelName": "Measurement concept set"
+                    "modelName": "Measurement End Date"
+                },
+                {
+                    "source": "patient.interactions.measurement.attributes.startdate",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": false,
+                    "useRefValue": false,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 10
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Measurement Start Date"
                 }
             ],
-            "initialPatientlistColumn": false,
-            "modelName": "Measurement"
+            "modelName": "Measurement",
+            "initialPatientlistColumn": false
         },
         {
             "source": "patient.interactions.drugexposure",
