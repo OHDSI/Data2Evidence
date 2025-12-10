@@ -133,8 +133,6 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
                 logger=logger
                 )
             
-            logger.info(f"CDM Version for dataset id '{dataset_id}': {cdm_version}")
-            
             update_metadata_last_fetched_date(
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
