@@ -15,7 +15,7 @@ test(TEST_NAME, async ({ browser }) => {
   const page = await context.newPage()
 
   // Step 1 - navigate to the portal
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
