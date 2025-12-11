@@ -22,8 +22,8 @@ def strategus_plugin(json_graph, options):
     logger = Logger()
 
     # TODO: use prefect variable instead of hardcoding
-    lockfile_location = "/app/renv.lock"
-    install_r_packages_from_lockfile(lockfile_location)
+    # lockfile_location = "/app/renv.lock"
+    # install_r_packages_from_lockfile(lockfile_location)
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
