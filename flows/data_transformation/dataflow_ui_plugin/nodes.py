@@ -42,7 +42,8 @@ class Node:
 
 
 class Flow(Node):
-    def __init__(self, _node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
         self.graph = _node["graph"]
         self.executor_type = _node["executor_options"]["executor_type"]
         self.executor_host = _node["executor_options"]["executor_address"]["host"]
@@ -715,7 +716,7 @@ class DataMappingNode(Node):
 
         
     def test(self, task_run_context) -> Result:
-        return self.task(self, task_run_context)
+        return self.task(task_run_context)
 
 
     def task(self, task_run_context) -> Result:
