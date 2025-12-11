@@ -28,6 +28,10 @@
     margin-top: 0;
     line-height: 18px;
     text-align: center;
+    
+    &.cursorDefault {
+      cursor: default;
+    }
   }
   .axisMenuButton {
     position: relative;

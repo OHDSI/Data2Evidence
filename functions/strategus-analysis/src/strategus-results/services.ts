@@ -24,7 +24,7 @@ export const startStrategusResultsViewer = async (
     const manager = new KernelManager({
       standby: "when-hidden",
       serverSettings: ServerConnection.makeSettings({
-        baseUrl: services["jupyter-gateway"],
+        baseUrl: services["jupyter-gateway-viewer"],
         token: token,
         appendToken: true,
       }),
@@ -39,10 +39,10 @@ export const startStrategusResultsViewer = async (
       .replace("$DATABASE_SCHEMA", "results_" + studyId)
       .replace(
         "$DATABASE_CONNECTION_STRING",
-        `jdbc:postgresql://${env.PG__HOST}:${env.PG__PORT}/${env.PG__RESULTS_DB_NAME}`
+        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${env.TREX__SQL__DBNAME}?preferQueryMode=simple&autocommit=true`
       )
-      .replace("$DATABASE_USER", env.PG__STUDY_RESULTS_READ_USER)
-      .replace("$DATABASE_PASSWORD", env.PG__STUDY_RESULTS_READ_PASSWORD)
+      .replace("$DATABASE_USER", env.TREX__SQL__USER)
+      .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
       .replace("$STUDY_ID", encodeURIComponent(studyId));
 
     const future = await kernelConnection.requestExecute({
@@ -97,7 +97,7 @@ export const stopStrategusResultsViewer = async (
     const manager = new KernelManager({
       standby: "when-hidden",
       serverSettings: ServerConnection.makeSettings({
-        baseUrl: services["jupyter-gateway"],
+        baseUrl: services["jupyter-gateway-viewer"],
         token: token,
         appendToken: true,
       }),

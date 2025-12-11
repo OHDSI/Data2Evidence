@@ -9,8 +9,8 @@
   >
     <multiselect
       size="sm"
-      :value="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
-      @input="handleUpdateValue"
+      :modelValue="maxSelections === 1 ? selectedValues[0] || null : selectedValues"
+      @update:modelValue="handleUpdateValue"
       track-by="value"
       :hide-selected="true"
       :internal-search="false"
@@ -27,13 +27,15 @@
       :multiple="maxSelections !== 1"
       :options-limit="optionLimitSize"
       :loading="isLoading"
-      :close-on-select="false"
+      :close-on-select="componentType === 'conceptSet' && maxSelections === 1"
       @search-change="handleSearchChange"
-      @select="openControl"
+      @select="componentType === 'conceptSet' && maxSelections === 1 ? null : openControl"
       :preserveSearch="true"
       ref="multiselect"
       :clear-on-select="true"
       open-direction="bottom"
+      name="multiselect"
+      :showNoOptions="false"
     >
       <template v-slot:option="props">{{ formatCustomOption(props.option) }}</template>
       <template v-slot:clear>
@@ -98,9 +100,6 @@ function escapeStringRegExp(str) {
 
 export default {
   name: 'BaseTagInput',
-  compatConfig: {
-    MODE: 3 as const,
-  },
   props: {
     value: {
       type: Array,
@@ -218,6 +217,9 @@ export default {
     selectedValues() {
       return this.formatValues(this.value)
     },
+    allOptionsSelected() {
+      return this.filteredList.length > 0 && this.filteredList.length === this.selectedValues.length
+    },
     isLoading() {
       return this.domainValues.isLoading
     },
@@ -332,6 +334,11 @@ export default {
         return
       }
 
+      // Don't open dropdown if all options are already selected
+      if (this.allOptionsSelected) {
+        return
+      }
+
       this.isDropdownOpen = true
       this.currentPlaceholder = this.texts.enterSearchTerm
       this.handleSearchChange(this.searchQuery)
@@ -345,6 +352,12 @@ export default {
         this.currentPlaceholder = this.texts.enterSearchTerm
       } else {
         this.currentPlaceholder = this.texts.placeholder
+      }
+      // Clear the search filter when dropdown closes to reset the list for other dropdowns
+      // Only for conceptSet type (PA-Atlas) to prevent global filter affecting all dropdowns
+      if (this.componentType === 'conceptSet' && this.searchQuery !== '') {
+        this.searchQuery = ''
+        this.$emit('search-change', '')
       }
     },
     addTag(newTag) {
@@ -442,11 +455,11 @@ export default {
         if (spaceBelow < 300) {
           if (content) {
             // Calculate expected height based on filteredList (each item is 40px)
-            const expectedHeight = this.filteredList.length * 40
+            const expectedHeight = (this.filteredList.length - this.selectedValues.length) * 40
             const minHeight = Math.min(expectedHeight, 200)
             dropdown.style.minHeight = `${minHeight}px`
           } else {
-          dropdown.style.minHeight = '200px'
+            dropdown.style.minHeight = '200px'
           }
         } else {
           dropdown.style.minHeight = 'auto'

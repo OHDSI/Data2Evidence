@@ -1,0 +1,15 @@
+.select-node-type-dialog {
+  &__content {
+    padding: 0.5em 1.5em;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 15px;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  &__footer {
+    padding: 1em 1.5em 0.5em;
+  }
+}

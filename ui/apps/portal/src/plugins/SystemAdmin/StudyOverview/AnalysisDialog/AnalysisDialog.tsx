@@ -1,5 +1,5 @@
 import { Divider, TextField } from "@mui/material";
-import { Box, Button, Dialog } from "@portal/components";
+import { Button, Dialog } from "@portal/components";
 import React, { FC, useCallback, useState } from "react";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
@@ -117,12 +117,12 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
       <Divider />
 
       <div className="analysis-dialog__content">
-        <Box mt={4} mb={4} fontWeight="bold">
+        <div style={{ marginTop: "32px", marginBottom: "32px", fontWeight: "bold" }}>
           {getText(i18nKeys.ANALYSIS_DIALOG__FORM_TITLE)}
-        </Box>
+        </div>
 
         {runType === JobRunTypes.DataCharacterization && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               fullWidth
               variant="standard"
@@ -130,10 +130,10 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
               value={formData.resultsSchema}
               onChange={(event) => handleFormDataChange({ resultsSchema: event.target.value })}
             />
-          </Box>
+          </div>
         )}
 
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -141,7 +141,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
             value={formData.comment}
             onChange={(event) => handleFormDataChange({ comment: event.target.value })}
           />
-        </Box>
+        </div>
       </div>
 
       <Divider />

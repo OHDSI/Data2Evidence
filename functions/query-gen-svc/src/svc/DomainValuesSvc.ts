@@ -398,16 +398,19 @@ function getDistinctValuesFromReference(
         ? configAttrObj.referenceFilter
         : "";
 
-    const baseEntity = attrRefExpression.match(/@REF|@COHORT_DEF/g)?.[0] || "@REF";
+    const baseEntity = attrRefExpression.match(/@REF|@RESULT_COHORT_DEF|@CDM_COHORT_DEF/g)?.[0] || "@REF";
 
     let placeholderAliasMap = <PholderTableMapType>{
         "@REF": "R",
         "@SEARCH_QUERY": searchQuery,
-        "@COHORT_DEF": "CD",
+        "@RESULT_COHORT_DEF": "RCD",
+        "@CDM_COHORT_DEF": "CCD"
     };
 
-    placeholderTableMap["@COHORT_DEF"] = `$$SCHEMA$$.cohort_definition`;
-    placeholderTableMap["@COHORT_DEF.TEXT"] = `cohort_definition_name`;
+    placeholderTableMap["@CDM_COHORT_DEF"] = `$$SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@CDM_COHORT_DEF.TEXT"] = `cohort_definition_name`;
+    placeholderTableMap["@RESULT_COHORT_DEF"] = `$$RESULT_SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@RESULT_COHORT_DEF.TEXT"] = `cohort_definition_name`;
 
     const objDescriptionExpression = getDescriptionExpression(baseEntity, placeholderTableMap);
 
@@ -435,13 +438,16 @@ function getDistinctValuesFromReference(
 }
 
 function getDescriptionExpression(baseEntity: string, placeholderTableMap: PholderTableMapType) {
-    if (baseEntity === "@COHORT_DEF") {
-        return {"descSelectText": `CD.${placeholderTableMap["@COHORT_DEF.TEXT"]}`, 
-                "descFromText": ` ${placeholderTableMap["@COHORT_DEF"]} CD `};
+    const descObject = {
+        "descSelectText": `R.${placeholderTableMap["@REF.TEXT"]}`,
+        "descFromText": ` ${placeholderTableMap["@REF"]} R `
     }
-    return {"descSelectText": `R.${placeholderTableMap["@REF.TEXT"]}`, 
-            "descFromText": ` ${placeholderTableMap["@REF"]} R `};
+    if (baseEntity === "@RESULT_COHORT_DEF") {
+        descObject["descSelectText"] = `RCD.${placeholderTableMap["@RESULT_COHORT_DEF.TEXT"]}`;
+        descObject["descFromText"] = ` ${placeholderTableMap["@RESULT_COHORT_DEF"]} RCD `;
+    } else if (baseEntity === "@CDM_COHORT_DEF") {
+        descObject["descSelectText"] = `CCD.${placeholderTableMap["@CDM_COHORT_DEF.TEXT"]}`;
+        descObject["descFromText"] = ` ${placeholderTableMap["@CDM_COHORT_DEF"]} CCD `;
+    }
+    return descObject;
 }
-
-
-

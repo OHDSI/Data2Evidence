@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'GroupCriteriaMenu',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -11,7 +8,7 @@ export default {
 import Popper from '@/components/Popper.vue'
 import ButtonMaterial from './ButtonMaterial.vue'
 import DropdownMenu from './DropdownMenu.vue'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 interface Props {
   target: HTMLElement
@@ -41,6 +38,18 @@ const countDropdownRef = ref<HTMLElement | null>(null)
 // State variables
 const activeGroupCriteriaType = ref<GroupCriteriaType>(props.groupCriteria?.type || 'ALL')
 const currentCount = ref(props.groupCriteria?.count?.toString() || '1')
+
+// Watch for prop changes to sync state
+watch(
+  () => props.groupCriteria,
+  newGroupCriteria => {
+    if (newGroupCriteria) {
+      activeGroupCriteriaType.value = newGroupCriteria.type || 'ALL'
+      currentCount.value = newGroupCriteria.count?.toString() || '1'
+    }
+  },
+  { immediate: false, deep: true }
+)
 
 // Show count dropdown only for AT_LEAST and AT_MOST
 const showCountDropdown = computed(() => {
@@ -174,7 +183,9 @@ const getGroupCriteriaCount = () => {
   background: white;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 400px;
   padding: 16px;
 
@@ -253,7 +264,7 @@ const getGroupCriteriaCount = () => {
 
         // Adjust background opacity when selected
         &.segment-button--all {
-          background: var(--color-cardinality-all)
+          background: var(--color-cardinality-all);
         }
 
         &.segment-button--any {

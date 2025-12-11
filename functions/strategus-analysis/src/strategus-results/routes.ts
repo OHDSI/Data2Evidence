@@ -1,6 +1,5 @@
 import express, { Request, Response } from "express";
 import { Readable } from "stream";
-import { WebSocketServer, WebSocket } from "ws";
 import { Server } from "http";
 import {
   startStrategusResultsViewer,
@@ -22,6 +21,11 @@ export class StrategusResultsRouter {
   }
 
   private registerRoutes() {
+    this.router.get("/", (req: Request, res: Response) => {
+      // This endpoint is for testing purposes only - STUDY_RESULTS_READ_RESEARCHER can access this endpoint
+      res.status(200).send("Hello, world!");
+    });
+
     this.router.post("/", async (req: Request, res: Response) => {
       try {
         const token = req.headers["authorization"];
@@ -96,11 +100,6 @@ export class StrategusResultsRouter {
               running: true,
               message: `Strategus Viewer for study ${studyId} is up.`,
             });
-          } else {
-            res.status(403).end({
-              running: false,
-              message: `Strategus Viewer for study ${studyId} is down.`,
-            });
           }
         } catch (error) {
           res.status(503).json({
@@ -146,7 +145,7 @@ export class StrategusResultsRouter {
           res.status(response.status);
 
           if (response.body) {
-            Readable.fromWeb(response.body).pipe(res);
+            Readable.fromWeb(response.body as any).pipe(res);
           } else {
             res.end();
           }

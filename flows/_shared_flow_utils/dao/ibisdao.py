@@ -21,9 +21,8 @@ class IbisDao(SqlAlchemyDao):
         use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
-        is_study_results_db: bool = False,
     ):
-        super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
+        super().__init__(use_cache_db, database_code, user_type)
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
@@ -186,6 +185,12 @@ class IbisDao(SqlAlchemyDao):
     #                obj=df)
 
     # --- Delete methods ---
+
+    # Ibis does not have cascade option for drop table
+    # def drop_table(self, schema: str, table: str, cascade: bool = False):
+    #     with self.ibis_connect() as con:
+    #         con.drop_table(table, database=schema) 
+
     def drop_schema(self, schema: str, cascade: bool = False):
         with self.ibis_connect() as con:
             con.drop_database(schema, cascade=cascade)

@@ -21,7 +21,7 @@ from prefect.runtime import flow_run
 from prefect.context import TaskRunContext
 from prefect.artifacts import create_markdown_artifact
 
-from .types import CohortNodeType, USE_TREX_CONNECTION
+from .custom_types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
 from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json
 
@@ -41,6 +41,7 @@ class Node:
 
 class Flow(Node):
     def __init__(self, _node):
+        super().__init__(_node)
         self.graph = _node["graph"]
         self.executor_type = _node["executor_options"]["executor_type"]
         self.executor_host = _node["executor_options"]["executor_address"]["host"]
@@ -501,6 +502,8 @@ class CMOutcomes(Node):
                 ro.r(set_trex_env_var(USE_TREX_CONNECTION))
                 cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
                 self.cohortId = cohortDefNodes[0].cohortId if cohortDefNodes else None
+                if(not self.cohortId):
+                    raise ValueError("CohortDefinitionSharedResource is required as input to Outcomes node")
                 rCohortMethod = ro.packages.importr('CohortMethod')
                 rlapply = ro.r['lapply']
                 kwargs = {i[0]: i[1] for i in self.config.items() if (i[1] != "" or i[1] is False)}
@@ -1182,7 +1185,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
-            rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
             databaseConnectorJarFolder = '/app/inst/drivers'
@@ -1244,13 +1246,12 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
                 use_cache_db=False,
-                database_code=database_code, 
-                is_study_results_db = True
+                database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                dbms='postgresql', 
-                connectionString=construct_jdbc_url(db_credentials),
+                dbms=dbdao.get_database_connector_dbms_val(), 
+                connectionString=dbdao.get_database_connector_connection_string(),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
@@ -1311,7 +1312,7 @@ def drop_strategus_results_schema(dbSettings):
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
         use_cache_db=False,
-        database_code=database_code, is_study_results_db=True
+        database_code=database_code
     )
 
     if(dbdao.check_schema_exists(results_schema)):

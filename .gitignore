@@ -19,6 +19,7 @@ yarn-error.log
 run_ssh.sh
 .DS_Store
 *eszip
+**/.parcel-cache/
 
 
 pkg/*.tgz
@@ -69,3 +70,4 @@ ui/**/library-parameters.json
 ui/**/*private*
 ui/.nx
 ui/pyqetest
+scripts/dist/

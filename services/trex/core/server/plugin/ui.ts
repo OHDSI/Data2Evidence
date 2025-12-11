@@ -2,6 +2,13 @@ import { serveStatic } from "npm:hono/deno";
 import { env, global, logger } from "../env.ts";
 import { Hono, Context } from "npm:hono";
 
+const portalRoutes = [
+  "/portal/login",
+  "/portal/researcher/*",
+  "/portal/systemadmin/*",
+  "/portal/public/*",
+];
+
 function _addStatic(app: Hono, url: string, path: string) {
   logger.log(url + "   " + path);
   app.use(
@@ -24,21 +31,15 @@ export function addPlugin(app: Hono, value: any, dir: string) {
     value.routes.forEach((r: any) => {
       _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
     });
+  // Redirect root to portal
   app.get("/", (c) => {
-    return c.redirect(`/portal/`);
+    return c.redirect(`/d2e/portal/`);
   });
-  app.use(
-    "/portal/login",
-    serveStatic({ path: `${dir}resources/portal/index.html` })
-  );
-  app.use(
-    "/portal/researcher/*",
-    serveStatic({ path: `${dir}resources/portal/index.html` })
-  );
-  app.use(
-    "/portal/systemadmin/*",
-    serveStatic({ path: `${dir}resources/portal/index.html` })
-  );
+
+  // Serve portal index.html for client-side routing
+  portalRoutes.forEach((route) => {
+    app.use(route, serveStatic({ path: `${dir}resources/portal/index.html` }));
+  });
   if (value.uiplugins) {
     global.PLUGINS_JSON = updatePluginJson(
       JSON.parse(global.PLUGINS_JSON),

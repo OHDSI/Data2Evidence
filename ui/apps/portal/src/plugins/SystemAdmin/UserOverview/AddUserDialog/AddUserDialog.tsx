@@ -4,7 +4,6 @@ import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import FormHelperText from "@mui/material/FormHelperText";
 import {
-  Box,
   Button,
   Dialog,
   Feedback,
@@ -136,6 +135,14 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
     setFormData((formData) => ({ ...formData, password: generateRandom(12) }));
   }, []);
 
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      handleAdd();
+    },
+    [handleAdd]
+  );
+
   return (
     <Dialog
       className="add-user-dialog"
@@ -145,8 +152,9 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
     >
-      <Divider />
-      <div className="add-user-dialog__content">
+      <form onSubmit={handleSubmit}>
+        <Divider />
+        <div className="add-user-dialog__content">
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
             <TextField
@@ -156,12 +164,13 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
               onChange={(event) => setFormData((formData) => ({ ...formData, username: event.target.value }))}
               helperText={getText(i18nKeys.ADD_USER_DIALOG__USERNAME_HELPER)}
               error={formError.username.required || formError.username.valid}
+              autoFocus
             />
           </FormControl>
         </div>
         <div className="u-padding-vertical--normal">
           <FormControl fullWidth>
-            <Box display="flex" alignItems="flex-end">
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
               <TextField
                 fullWidth
                 type={passwordShown ? "text" : "password"}
@@ -188,24 +197,25 @@ const AddUserDialog: FC<AddUserDialogProps> = ({ open, onClose }) => {
                 variant="text"
                 onClick={handleGeneratePassword}
               />
-            </Box>
+            </div>
           </FormControl>
           {formError.password.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_USER_DIALOG__REQUIRED)}</FormHelperText>
           )}
         </div>
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.ADD_USER_DIALOG__CANCEL)}
-          onClick={() => handleClose("cancelled")}
-          variant="outlined"
-          block
-          disabled={loading}
-        />
-        <Button text={getText(i18nKeys.ADD_USER_DIALOG__ADD)} onClick={handleAdd} block loading={loading} />
-      </div>
+        </div>
+        <Divider />
+        <div className="button-group-actions">
+          <Button
+            text={getText(i18nKeys.ADD_USER_DIALOG__CANCEL)}
+            onClick={() => handleClose("cancelled")}
+            variant="outlined"
+            block
+            disabled={loading}
+          />
+          <Button text={getText(i18nKeys.ADD_USER_DIALOG__ADD)} onClick={handleAdd} block loading={loading} type="submit" />
+        </div>
+      </form>
     </Dialog>
   );
 };

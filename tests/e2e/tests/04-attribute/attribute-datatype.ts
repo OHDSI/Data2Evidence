@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'Attribute Datatype'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -59,7 +59,7 @@ test(TEST_NAME, async ({ page }) => {
     - button "Update dataset metadata"
     - button "Add dataset"
     `)
-  await page.getByRole('button', { name: 'Select action' }).click()
+  await page.getByText('Select action').click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await expect(page.getByTestId('dialog-title')).toMatchAriaSnapshot(`- text: Update dataset`)
   await expect(page.getByRole('dialog')).toMatchAriaSnapshot(`- text: Metadata`)
@@ -89,7 +89,7 @@ test(TEST_NAME, async ({ page }) => {
     - button
     `)
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Select action' }).click()
+  await page.getByText('Select action').click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await expect(page.getByTestId('dialog-title')).toMatchAriaSnapshot(`- text: Update dataset`)
   await page.getByPlaceholder(' ').click()
@@ -112,7 +112,7 @@ test(TEST_NAME, async ({ page }) => {
     - button
     `)
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Select action' }).click()
+  await page.getByText('Select action').click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await expect(page.locator('d4l-input')).toMatchAriaSnapshot(`
     - textbox

@@ -38,7 +38,12 @@ export function addRoutes(app: Hono) {
         if(token && token[getDecodedToken(c.req.raw)] != null) {
             y["user"] = {sub: getDecodedToken(c.req.raw)[env.GATEWAY_IDP_SUBJECT_PROP]};
         }
-        let r = new Request(c.req.raw.url, y);
+        const url = new URL(c.req.url);
+        if (url.pathname.startsWith('/d2e/')) {
+            url.pathname = url.pathname.replace(/^\/d2e/, '');
+        }
+        logger.log(`Proxying request to Trex backend: ${url.toString()}`);
+        let r = new Request(url.toString(), y);
         Trex.applySupabaseTag(c.req.raw, r);
         c.req.raw = r;
         await next(); 

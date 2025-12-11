@@ -7,6 +7,9 @@ import {
   HTTPMethod,
   Headers,
 } from "../utils/types";
+import { createLogger } from "../logger";
+
+const logger = createLogger();
 
 const getDatasetId = async (
   token: string,
@@ -41,7 +44,7 @@ const getProjectCredentials = async (
   const searchResult = await fhirApi.forwardRequest(`ClientApplication?name=${projectName}`, adminCredentials, HTTPMethod.GET, '', '');
   if (searchResult?.data) {
     const entry = searchResult.data.entry || [];
-    if(entry.length == 0){
+    if(entry.length === 0){
         throw new Error(
           `Client application with project name '${projectName}' not found!`
         );
@@ -63,76 +66,90 @@ const getProjectCredentials = async (
 };
 
 export const createProject = async (token: string, id: string, description: string) => {
-  console.info(`Creating a fhir project for the dataset '${id}'..`);
-  let fhirApi = new FhirAPI(token);
-  // check if project with same id already exists
-  const projectExists = await checkProjectNameExists(fhirApi, id, fhirApi.getAdminCredentials());
-  if (projectExists === true) {
-    throw new Error(`Project with id '${id}' already exists!`);
+  try{
+    console.info(`Creating a fhir project for the dataset '${id}'..`);
+      let fhirApi = new FhirAPI(token);
+      // check if project with same id already exists
+      const projectExists = await checkProjectNameExists(fhirApi, id, fhirApi.getAdminCredentials());
+      if (projectExists === true) {
+        throw new Error(`Project with id '${id}' already exists!`);
+      }
+      const projectDetails = {
+        resourceType: "Project",
+        name: id,
+        strictMode: true, // whether this project uses strict FHIR validation
+        description: description,
+      };
+      const projectResult = await fhirApi.forwardRequest("Project", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectDetails);
+      if(projectResult === undefined)
+        throw new Error("Error creating fhir project!");
+      const projectId = projectResult?.data.id;
+      console.log(`Created fhir project with id '${projectId}'`);
+      // Create a client application for the project
+      console.info(`Creating a client application for project '${id}'..`);
+      const clientSecret = uuidv4();
+      const clientApplicationDetails = {
+        resourceType: "ClientApplication",
+        name: id,
+        description: description,
+        meta: {
+          project: projectId,
+          compartment: [
+            {
+              reference: `Project/${projectId}`,
+            },
+          ],
+        },
+        secret: clientSecret,
+      };
+      const clientApplicationResult = await fhirApi.forwardRequest("ClientApplication", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', clientApplicationDetails);
+      if(clientApplicationResult === undefined)
+        throw new Error("Error creating client application for fhir project!");
+      const clientId = clientApplicationResult?.data.id;
+      //Create a project membership for the client application
+      console.info(`Creating project membership for project ${id}..`);
+      const projectMembershipDetails = {
+        resourceType: "ProjectMembership",
+        project: {
+          reference: `Project/${projectId}`,
+        },
+        "admin": true,
+        meta: {
+          project: projectId,
+          compartment: [
+            {
+              reference: `Project/${projectId}`,
+            },
+          ],
+        },
+        user: {
+          reference: `ClientApplication/${clientId}`,
+          display: id,
+        },
+        profile: {
+          reference: `ClientApplication/${clientId}`,
+          display: id,
+        },
+      };
+      const projectMembershipResult = await fhirApi.forwardRequest("ProjectMembership", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectMembershipDetails);
+      if(projectMembershipResult?.status !==201)
+        throw new Error("Error creating project membership for fhir project!");
+      //Update dataset information
+      const portalAPI = new PortalAPI(token);
+      const dataset: Dataset = await portalAPI.getDatasetById(id);
+      if(dataset === undefined)
+        throw new Error("Error fetching dataset!");
+      dataset.fhir_project_id = projectId
+      const updateDatasetResult = await portalAPI.updateDataset(dataset)
+      if(updateDatasetResult === undefined)
+        throw new Error("Error updating dataset with fhir project id!");
+      console.log(`Updated dataset '${id}' with fhir project id '${projectId}'`);
+      return true
   }
-  const projectDetails = {
-    resourceType: "Project",
-    name: id,
-    strictMode: true, // whether this project uses strict FHIR validation
-    description: description,
-  };
-  const projectResult = await fhirApi.forwardRequest("Project", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectDetails);
-  if(projectResult == undefined)
-    throw new Error("Error creating fhir project!");
-  const projectId = projectResult?.data.id;
-  console.log(`Created fhir project with id '${projectId}'`);
-  // Create a client application for the project
-  console.info(`Creating a client application for project '${id}'..`);
-  const clientSecret = uuidv4();
-  const clientApplicationDetails = {
-    resourceType: "ClientApplication",
-    name: id,
-    description: description,
-    meta: {
-      project: projectId,
-      compartment: [
-        {
-          reference: `Project/${projectId}`,
-        },
-      ],
-    },
-    secret: clientSecret,
-  };
-  const clientApplicationResult = await fhirApi.forwardRequest("ClientApplication", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', clientApplicationDetails);
-  if(clientApplicationResult == undefined)
-    throw new Error("Error creating client application for fhir project!");
-  const clientId = clientApplicationResult?.data.id;
-  //Create a project membership for the client application
-  console.info(`Creating project membership for project ${id}..`);
-  const projectMembershipDetails = {
-    resourceType: "ProjectMembership",
-    project: {
-      reference: `Project/${projectId}`,
-    },
-    meta: {
-      project: projectId,
-      compartment: [
-        {
-          reference: `Project/${projectId}`,
-        },
-      ],
-    },
-    user: {
-      reference: `ClientApplication/${clientId}`,
-      display: id,
-    },
-    profile: {
-      reference: `ClientApplication/${clientId}`,
-      display: id,
-    },
-  };
-  await fhirApi.forwardRequest("ProjectMembership", fhirApi.getAdminCredentials(), HTTPMethod.POST, '', projectMembershipDetails);
-  //Update dataset information
-  const portalAPI = new PortalAPI(token);
-  const dataset: Dataset = await portalAPI.getDatasetById(id);
-  dataset.fhir_project_id = projectId
-  await portalAPI.updateDataset(dataset)
-  return true
+  catch(error){
+    console.error(`Error creating fhir project for dataset '${id}': ${error.message}`);
+    throw error;
+  }
 };
 
 export const deleteProject = async(token, id: string) =>{
@@ -161,7 +178,7 @@ export const forwardRequest = async (
 
   //Get datasetId for incoming token study code
   const datasetId = await getDatasetId(token, projectName);
-  if(datasetId == null){
+  if(datasetId === null){
     throw new Error(`No dataset id found for project '${projectName}'`);
   }
   //DatasetId is the Fhir project name
@@ -173,7 +190,7 @@ export const forwardRequest = async (
 
   //Check fhir project exists which has unique name
   const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
-  if (projectExists !==undefined && projectExists === false) {
+  if (projectExists !== undefined && projectExists === false) {
     throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
   }
 
@@ -202,10 +219,4 @@ export const forwardRequest = async (
     resourceDetails,
     fhirHeaders
   );
-};
-
-export const testClientCredentials = async (token: string): Promise<boolean> => {
-  let fhirApi = new FhirAPI(token);
-  await fhirApi.testConnection();
-  return true;
 };

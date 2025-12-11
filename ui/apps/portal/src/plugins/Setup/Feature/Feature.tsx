@@ -1,5 +1,5 @@
 import React, { ChangeEvent, FC, useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Button, Checkbox, Loader, Title } from "@portal/components";
+import { Button, Checkbox, Loader, Title } from "@portal/components";
 import { useFeatures } from "../../../hooks";
 import { useFeedback, useTranslation } from "../../../contexts";
 import { api } from "../../../axios/api";
@@ -11,6 +11,7 @@ import {
   FEATURE_FHIR_SERVER,
   FEATURE_MAPPING_SUGGESTION,
   FEATURE_DOCKER_LOGS,
+  FEATURE_ADMIN_ONLY_SHARING,
 } from "../../../config";
 
 interface FormData {
@@ -59,6 +60,9 @@ export const Feature: FC = () => {
       },
       [FEATURE_DOCKER_LOGS]: {
         name: getText(i18nKeys.FEATURE__DOCKER_LOGS),
+      },
+      [FEATURE_ADMIN_ONLY_SHARING]: {
+        name: getText(i18nKeys.FEATURE__ADMIN_ONLY_SHARING),
       },
     }),
     [getText]
@@ -121,7 +125,7 @@ export const Feature: FC = () => {
                 return indexA - indexB;
               })
               .map((feat) => (
-                <Box key={feat.feature} className="feature__item">
+                <div key={feat.feature} className="feature__item">
                   <Checkbox
                     checked={feat.isEnabled}
                     label={FEATURES[feat.feature]?.name ?? feat.feature}
@@ -133,13 +137,13 @@ export const Feature: FC = () => {
                       })
                     }
                   />
-                </Box>
+                </div>
               ))}
           </div>
           <div className="feature__footer">
-            <Box display="flex" gap={1} className="feature__footer-actions">
+            <div style={{ display: "flex", gap: "8px" }} className="feature__footer-actions">
               <Button text={getText(i18nKeys.FEATURE__SAVE)} onClick={handleSave} loading={saving} />
-            </Box>
+            </div>
           </div>
         </div>
       )}

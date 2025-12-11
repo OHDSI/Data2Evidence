@@ -4,7 +4,7 @@
             <PageHeadingTaskRun :task-run-id="taskRun.id" @delete="goToFlowRun" />
         </template>
 
-        <p-tabs v-model="tab" :tabs="tabs">
+        <p-tabs v-model:selected="tab" :tabs="tabs">
             <template #details>
                 <TaskRunDetails :task-run="taskRun" />
             </template>

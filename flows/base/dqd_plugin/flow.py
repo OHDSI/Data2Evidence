@@ -23,7 +23,6 @@ def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
 
     flow_run_id = runtime.flow_run.id
-    output_folder = f"/output/{flow_run_id}"
 
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
@@ -37,7 +36,7 @@ def dqd_plugin(options: DqdOptionsType):
         if dbdao.dialect == SupportedDatabaseDialects.HANA
         else options.use_trex_connection
     )
-
+    
     r_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
@@ -47,11 +46,13 @@ def dqd_plugin(options: DqdOptionsType):
     # Todo: Update implementation if Hana uses trex
     dqd_parameters = DqdParams(
         **options.model_dump(),
-        outputFolder=output_folder,
         setDBDriverEnv=db_driver_string,
         connectionDetails=r_connection_string,
         use_trex_connection=use_trex_connection,
     )
+    # For TREX connections, set vocabSchemaName to schemaName
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        dqd_parameters.vocabSchemaName = options.schemaName
 
     if (
         options.cohortDefinitionId

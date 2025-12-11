@@ -1,62 +1,99 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <script setup lang="ts">
 import SelectMaterial from '../SelectMaterial.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { numericRangeOptions } from '../../utils/AtlasUtils'
 
+// Props now use internal format: operator (string like 'GREATER_THAN'), value (string), and extent (string)
 const props = defineProps<{
-  value?: { Op: string; Value: number; Extent?: number }
-}>()
-const emit = defineEmits<{
-  (e: 'update', value: { Op: string; Value: number; Extent?: number }): void
+  value?: string
+  operator?: string
+  extent?: string
 }>()
 
+// Emit internal format: operator and value as strings
+const emit = defineEmits<{
+  (e: 'update', payload: { operator: string; value: string; extent?: string }): void
+}>()
+
+// Internal state uses Atlas format for the dropdown compatibility
 const numRangeModel = ref<string>('lt')
-const numValueModel = ref<number>(0)
-const numExtentModel = ref<number>(0)
+const numValueModel = ref<string>('0')
+const numExtentModel = ref<string>('0')
 
 const isDualNumRange = computed(() => {
   return numRangeModel.value === 'btw' || numRangeModel.value === '!btw'
 })
 
+// Convert internal operator format to Atlas format for dropdown
+const internalToAtlasOperator = (internal: string): string => {
+  const map: Record<string, string> = {
+    GREATER_THAN: 'gt',
+    LESS_THAN: 'lt',
+    GREATER_THAN_OR_EQUAL: 'gte',
+    LESS_THAN_OR_EQUAL: 'lte',
+    EQUAL: 'eq',
+    BETWEEN: 'btw',
+    NOT_BETWEEN: '!btw',
+  }
+  return map[internal] || 'lt'
+}
+
+// Convert Atlas operator format to internal format
+const atlasToInternalOperator = (atlas: string): string => {
+  const map: Record<string, string> = {
+    gt: 'GREATER_THAN',
+    lt: 'LESS_THAN',
+    gte: 'GREATER_THAN_OR_EQUAL',
+    lte: 'LESS_THAN_OR_EQUAL',
+    eq: 'EQUAL',
+    btw: 'BETWEEN',
+    '!btw': 'NOT_BETWEEN',
+  }
+  return map[atlas] || 'LESS_THAN'
+}
+
 onMounted(() => {
+  if (props.operator) {
+    numRangeModel.value = internalToAtlasOperator(props.operator)
+  }
   if (props.value) {
-    numRangeModel.value = props.value.Op || 'lt'
-    numValueModel.value = props.value.Value || 0
-    numExtentModel.value = props.value.Extent || 0
+    numValueModel.value = props.value
+  }
+  if (props.extent) {
+    numExtentModel.value = props.extent
   }
 })
 
-watch(props.value, (newValue) => {
-  if (newValue) {
-    numRangeModel.value = newValue.Op || 'lt'
-    numValueModel.value = newValue.Value || 0
-    numExtentModel.value = newValue.Extent || 0
+watch(
+  () => [props.operator, props.value, props.extent],
+  ([newOperator, newValue, newExtent]) => {
+    if (newOperator) {
+      numRangeModel.value = internalToAtlasOperator(newOperator)
+    }
+    if (newValue) {
+      numValueModel.value = newValue
+    }
+    if (newExtent) {
+      numExtentModel.value = newExtent
+    }
   }
-}, { immediate: true })
+)
 
 watch(
   [numRangeModel, numValueModel, numExtentModel, isDualNumRange],
   ([range, value, extent, dual]) => {
-    const payload: { Op: string; Value: number; Extent?: number } = {
-      Op: range,
-      Value: value || 0,
+    const payload: { operator: string; value: string; extent?: string } = {
+      operator: atlasToInternalOperator(range),
+      value: value || '0',
     }
-    if (dual && extent) {
-      payload.Extent = extent
+    if (dual) {
+      payload.extent = extent || '0'
     } else {
-      numExtentModel.value = 0
+      numExtentModel.value = '0'
     }
     emit('update', payload)
   },
-  { immediate: true }
+  { immediate: false } // Don't emit on mount - wait for props to be set first
 )
 </script>
 
@@ -107,4 +144,3 @@ watch(
   }
 }
 </style>
-

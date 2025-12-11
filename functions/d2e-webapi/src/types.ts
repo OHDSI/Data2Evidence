@@ -25,6 +25,7 @@ export const ConceptSetExpression = z.object({
 
 // TODO: ADD TYPE
 export const CohortExpression = z.record(z.string(), z.unknown());
+export type ICohortExpression = z.infer<typeof CohortExpression>;
 // TODO: ADD TYPE
 export const CohortExpressionQueryOptions = z.unknown();
 

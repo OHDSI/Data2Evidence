@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -14,7 +14,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page.getByRole('button', { name: 'Select action' }).click()
+  await page.getByText('Select action').click()
   await page.getByRole('option', { name: 'Resources' }).click()
   await expect(page.getByRole('dialog')).toMatchAriaSnapshot(`- button "Add file"`)
   await expect(page.getByTestId('dialog').locator('thead')).toMatchAriaSnapshot(`- columnheader "Filename"`)
@@ -26,7 +26,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('dialog')).toContainText('Add file')
   await page.getByRole('button', { name: 'Add' }).click()
   await page.getByRole('button', { name: 'Done' }).click()
-  await page.getByRole('button', { name: 'Select action' }).click()
+  await page.getByText('Select action').click()
   await page.getByRole('option', { name: 'Resources' }).click()
   await page.getByRole('button', { name: 'Add file' }).click()
   await page.getByRole('button', { name: 'Add file' }).setInputFiles('METADATA.csv')

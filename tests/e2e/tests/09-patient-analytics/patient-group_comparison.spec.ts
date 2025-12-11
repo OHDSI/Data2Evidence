@@ -165,8 +165,8 @@ async function addAgeFilter(page, ageRange) {
   // ========================
   // Add age restriction filter: patients between 35-80 years old
   await page.getByTitle('Basic Data - Age').click()
-  await page.getByRole('textbox').fill(ageRange)
-  await page.getByRole('textbox').press('Enter')
+  await page.getByTitle('Basic Data - Age').getByRole('textbox').fill(ageRange)
+  await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
 
   await page.waitForTimeout(3000)
 }

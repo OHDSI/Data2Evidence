@@ -736,34 +736,29 @@ export class NotebookService {
       console.log(`Successfully cloned repository`);
     } else {
       try {
-        await git.fetch({
-          fs,
-          http,
-          dir: repoDir,
-          remote: "origin",
-          ref: defaultBranch,
-          onAuth: () => ({
-            username: gitCredentials,
-          }),
-        });
+        const remotes = await git.listRemotes({ fs, dir: repoDir });
+        const hasOrigin = remotes.some((r) => r.remote === "origin");
 
-        const currentBranch = await git.currentBranch({ fs, dir: repoDir });
-        if (currentBranch !== defaultBranch) {
-          await git.checkout({ fs, dir: repoDir, ref: defaultBranch });
-        }
+        if (hasOrigin) {
+          console.log(
+            `Fetching latest changes from origin/${defaultBranch}...`
+          );
+          await git.fetch({
+            fs,
+            http,
+            dir: repoDir,
+            remote: "origin",
+            ref: defaultBranch,
+          });
 
-        // Force update to match remote exactly
-        try {
           await git.checkout({
             fs,
             dir: repoDir,
             ref: `origin/${defaultBranch}`,
             force: true,
           });
-          console.log(`Force updated local repository to match remote`);
-        } catch (checkoutError) {
-          console.error(`Failed to force checkout: ${checkoutError.message}`);
-          throw new Error(`Failed to force checkout: ${checkoutError.message}`);
+
+          console.log(`Updated local repository to match origin/${defaultBranch}`);
         }
       } catch (fetchError) {
         console.error(`Failed to fetch from remote: ${fetchError.message}`);

@@ -6,11 +6,12 @@ import { App } from "./App";
 import { theme } from "./theme";
 import "./webcomponents/registerWebComponents";
 import "./index.scss";
+import "import-map-overrides";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <StrictMode>
-    <BrowserRouter basename="/portal">
+    <BrowserRouter basename="/d2e/portal">
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <App />

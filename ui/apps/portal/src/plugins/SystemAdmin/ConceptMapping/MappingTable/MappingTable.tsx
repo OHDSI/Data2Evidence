@@ -3,7 +3,7 @@ import { MaterialReactTable, MRT_ColumnDef, MRT_RowData, useMaterialReactTable }
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import "./MappingTable.scss";
 import { useTranslation } from "../../../../contexts";
-import { Box, Button } from "@portal/components";
+import { Button } from "@portal/components";
 import { Terminology } from "../../../../axios/terminology";
 import { RowObject } from "../types";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers/reducer";
@@ -67,13 +67,19 @@ const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId }) => {
       },
       {
         id: "7",
+        accessorKey: "conceptCode",
+        header: getText(i18nKeys.MAPPING_TABLE__CONCEPT_CODE),
+        size: 150,
+      },
+      {
+        id: "8",
         accessorKey: "domainId",
         header: getText(i18nKeys.MAPPING_TABLE__DOMAIN_ID),
         size: 150,
       },
       {
-        id: "8",
-        accessorKey: "system",
+        id: "9",
+        accessorKey: "vocabularyId",
         header: getText(i18nKeys.MAPPING_TABLE__VOCABULARY),
         size: 150,
       },
@@ -128,14 +134,14 @@ const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId }) => {
       },
     },
     renderTopToolbarCustomActions: () => (
-      <Box sx={{ display: "flex", gap: "1rem", p: "4px" }}>
+      <div style={{ display: "flex", gap: "1rem", padding: "4px" }}>
         <Button
           onClick={() => populateConcepts()}
           text={getText(i18nKeys.MAPPING_TABLE__POPULATE_CONCEPTS)}
           loading={isLoading}
           disabled={getAvailableRows().length === 0}
         />
-      </Box>
+      </div>
     ),
   });
 

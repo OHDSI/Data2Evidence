@@ -1,16 +1,11 @@
 from functools import wraps
 from typing import Any, Callable
 from datetime import datetime
-import pandas as pd
-
 
 import sqlalchemy as sql
-from sqlalchemy.engine import Connection
-from sqlalchemy.sql.selectable import Select
-from sqlalchemy.types import Text, UnicodeText
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.schema import Table, Column
-from sqlalchemy.engine.cursor import CursorResult
-from sqlalchemy.schema import CreateSchema, DropSchema
+from sqlalchemy.schema import CreateSchema, DropSchema, DropTable
 
 from _shared_flow_utils.dao.daobase import DaoBase
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType
@@ -26,9 +21,8 @@ class SqlAlchemyDao(DaoBase):
         use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
-        is_study_results_db: bool = False,
     ):
-        super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
+        super().__init__(use_cache_db, database_code, user_type)
 
     # --- Property methods ---
 
@@ -95,6 +89,8 @@ class SqlAlchemyDao(DaoBase):
     # --- Read methods ---
 
     def check_schema_exists(self, schema: str) -> bool:
+        if self.dialect == SupportedDatabaseDialects.HANA:
+            schema = schema.upper()
         return self.inspector.has_schema(schema)
 
     def check_empty_schema(self, schema: str) -> bool:
@@ -255,6 +251,23 @@ class SqlAlchemyDao(DaoBase):
             print(f"Updated data ingestion date for {schema}")
 
     # --- Delete methods ---
+
+    
+
+    def drop_table(self, schema: str, table: str, cascade: bool = False):
+        with self.engine.connect() as connection:
+            metadata_obj = sql.MetaData(schema=schema)
+            table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
+            
+            @compiles(DropTable, connection.dialect.name)
+            def _compile_drop_table(element, compiler, **kwargs):
+                sql_str = compiler.visit_drop_table(element)
+                if cascade:
+                    sql_str += " CASCADE"
+                return sql_str
+    
+            table_obj.drop(connection)
+            connection.commit()
 
     def drop_schema(self, schema: str, cascade: bool = False):
         with self.engine.connect() as connection:

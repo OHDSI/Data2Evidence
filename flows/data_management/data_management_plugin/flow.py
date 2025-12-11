@@ -110,6 +110,7 @@ def rollback_count_flow(options: RollbackCountType, logger):
         db_dialect = get_db_dialect(options)
 
         rollback_count_task(
+            use_cache_db=options.use_cache_db,
             database_code=options.database_code,
             data_model=options.data_model,
             schema_name=options.schema_name,
@@ -130,6 +131,7 @@ def rollback_tag_flow(options: RollbackTagType, logger):
         db_dialect = get_db_dialect(options)
 
         rollback_tag_task(
+            use_cache_db=options.use_cache_db,
             database_code=options.database_code,
             data_model=options.data_model,
             schema_name=options.schema_name,

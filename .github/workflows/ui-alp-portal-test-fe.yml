@@ -50,24 +50,19 @@ jobs:
         with:
           filters: |
             portal_fe_changed:
-              - 'apps/portal/**'
+              - './ui/apps/portal/**'
               - '.github/workflows/ui-alp-portal-test-fe.yml'
 
-      - name: Setup node if files have changed
-        uses: actions/setup-node@v4
+      - name: Setup bun if files have changed
+        uses: oven-sh/setup-bun@v2
         if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
         with:
-          node-version: "18.14.0"
+          bun-version: 1.2.23
 
       # Run the step only with "portal_fe_changed" equals "True"
       - name: Run unit tests if files have changed
         if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_fe_changed == 'true'
         run: |
-          cd libs/portal-plugin
-          yarn --prefer-offline
-          cd ../portal-components
-          yarn --prefer-offline
-          yarn build
-          cd ../../apps/portal
-          yarn --prefer-offline
-          yarn test
+          bun install
+          bunx nx run @portal/components:build
+          bunx nx run portal:test

@@ -3,7 +3,7 @@ import path from 'path'
 
 test('concept-mapping', async ({ page }) => {
   // Authentication
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
@@ -74,20 +74,24 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(2000)
 
   // First dropdown - Source code column (keep as Source)
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).first().click()
+  const sourceCodeGroup = page.getByText('Source code colum').locator('..')
+  const sourceCombo = sourceCodeGroup.locator('[role="combobox"]')
+  await expect(sourceCombo).toBeVisible()
+  await expect(sourceCombo).toBeEnabled()
+  await sourceCombo.click({ force: true })
   await page.getByRole('option', { name: 'Source' }).click()
 
   // Second dropdown - Source name column
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
-  await page.getByRole('option', { name: 'Name', exact: true }).click()
+  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.getByRole('option', { name: 'Name', exact: true }).click({ force: true })
 
   // Third dropdown - Source frequency column
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
-  await page.getByRole('option', { name: 'Frequency' }).click()
+  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.getByRole('option', { name: 'Frequency' }).click({ force: true })
 
   // Fourth dropdown - Additional info column
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
-  await page.getByRole('option', { name: 'Description' }).click()
+  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.getByRole('option', { name: 'Description' }).click({ force: true })
 
   await page.waitForTimeout(1000) // Wait for dropdown to fully open
 

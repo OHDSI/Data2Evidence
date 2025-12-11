@@ -109,17 +109,15 @@ RUN set -e; \
     git config --global advice.detachedHead false
 
 
-ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_VERSION=1.4.0
 ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
 
 COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
 
 RUN \
-    # Create output directory and set ownership
-    mkdir -p /output \
-    && chown -R docker:docker /output \
-    # Create directory for DuckDB extensions
-    && mkdir -p /app/duckdb_extensions \
+    # Create directory for duckdb extensions, achilles & dqd output logs
+    mkdir -p /app/duckdb_extensions /app/achilles_output /app/dqd_output \
+    && chown -R docker:docker /app/achilles_output /app/dqd_output \
     && chmod -R 711 /app/duckdb_extensions \
     # Make the download script executable
     && chmod +x /app/download_duckdb_extensions.sh \

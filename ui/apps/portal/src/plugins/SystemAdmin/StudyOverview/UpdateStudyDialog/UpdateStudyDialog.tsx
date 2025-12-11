@@ -14,13 +14,21 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import { SxProps } from "@mui/system";
 import SimpleMdeReact from "react-simplemde-editor";
-import { AddSquareIcon, Box, Button, Checkbox, Dialog, Feedback, IconButton } from "@portal/components";
+import { AddSquareIcon, Button, Checkbox, Dialog, Feedback, IconButton } from "@portal/components";
 import { api } from "../../../../axios/api";
-import { NewStudyMetadataInput, CloseDialogType, UpdateStudyMetadataInput, Study } from "../../../../types";
+import {
+  NewStudyMetadataInput,
+  CloseDialogType,
+  UpdateStudyMetadataInput,
+  Study,
+  SourceDatasetType,
+} from "../../../../types";
 import { usePaConfigs, useDatasetTagConfigs, useDatasetAttributeConfigs } from "../../../../hooks";
 import MetadataForm from "./MetadataForm/MetadataForm";
 import "./UpdateStudyDialog.scss";
 import { useTranslation } from "../../../../contexts";
+
+const DATASET_SOURCE_TYPES = new Set<string>(Object.values(SourceDatasetType));
 
 interface UpdateStudyDialogProps {
   dataset: Study;
@@ -29,7 +37,7 @@ interface UpdateStudyDialogProps {
 }
 
 const mdeOptions = {
-  hideIcons: ["side-by-side", "fullscreen"],
+  hideIcons: ["side-by-side", "fullscreen"] as readonly ("side-by-side" | "fullscreen")[],
   maxHeight: "150px",
 };
 
@@ -287,179 +295,216 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
     >
       <Divider />
       <div className="update-study-dialog__content">
-        <Box mt={4} fontWeight="bold">
-          {getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_INFO_CONFIG)}
-        </Box>
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_NAME)}
-            value={formData.name}
-            onChange={(event) => handleFormDataChange({ name: event.target.value })}
-            error={formError.name.required}
-          />
-          {formError.name.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-        </Box>
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_SUMMARY)}
-            value={formData.summary}
-            onChange={(event) => handleFormDataChange({ summary: event.target.value })}
-          />
-        </Box>
-        <div>
-          <Checkbox
-            checked={formData.showRequestAccess}
-            checkbox-id="request-access"
-            label={getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUEST)}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              handleFormDataChange({ showRequestAccess: event.target.checked });
-            }}
-          />
-        </div>
-        <div>{getText(i18nKeys.UPDATE_STUDY_DIALOG__DESCRIPTION)}</div>
-        <SimpleMdeReact
-          value={formData.description}
-          onChange={(value) => handleFormDataChange({ description: value })}
-          options={mdeOptions}
-          style={{ marginTop: "11px" }}
-        />
+        {!DATASET_SOURCE_TYPES.has(dataset.type) && (
+          <>
+            <div style={{ marginTop: "32px", fontWeight: "bold" }}>
+              {getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_INFO_CONFIG)}
+            </div>
+            <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_NAME)}
+                value={formData.name}
+                onChange={(event) => handleFormDataChange({ name: event.target.value })}
+                error={formError.name.required}
+              />
+              {formError.name.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+            </div>
+            <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_SUMMARY)}
+                value={formData.summary}
+                onChange={(event) => handleFormDataChange({ summary: event.target.value })}
+              />
+            </div>
+            <div>
+              <Checkbox
+                checked={formData.showRequestAccess}
+                checkbox-id="request-access"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUEST)}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  handleFormDataChange({ showRequestAccess: event.target.checked });
+                }}
+              />
+            </div>
+            <div>{getText(i18nKeys.UPDATE_STUDY_DIALOG__DESCRIPTION)}</div>
+            <SimpleMdeReact
+              value={formData.description}
+              onChange={(value) => handleFormDataChange({ description: value })}
+              options={mdeOptions}
+              style={{ marginTop: "11px" }}
+            />
 
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TYPE)}
-            value={formData.type}
-            onChange={(event) => handleFormDataChange({ type: event.target.value })}
-          />
-        </Box>
+            <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TYPE)}
+                value={formData.type}
+                onChange={(event) => handleFormDataChange({ type: event.target.value })}
+                disabled
+              />
+            </div>
 
-        <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TOKEN_CODE)}
-            value={formData.tokenStudyCode}
-            onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
-            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
-          />
-          {formError.tokenStudyCode.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-          {formError.tokenStudyCode.valid && (
-            <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
-          )}
-          <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
-        </Box>
+            <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TOKEN_CODE)}
+                value={formData.tokenStudyCode}
+                onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+                error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+                disabled
+              />
+              {formError.tokenStudyCode.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+              {formError.tokenStudyCode.valid && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
+              )}
+              <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
+            </div>
 
-        <Box mb={4}>
-          <FormControl
-            sx={styles}
-            className="select"
-            variant="standard"
-            fullWidth
-            {...(formError.paConfigId.required ? { error: true } : {})}
-          >
-            <InputLabel htmlFor="pa-config-option">{getText(i18nKeys.UPDATE_STUDY_DIALOG__PA_CONFIG)}</InputLabel>
-            <Select
-              sx={styles}
-              value={formData.paConfigId}
-              onChange={(event: SelectChangeEvent<string>) => handleFormDataChange({ paConfigId: event.target.value })}
-              inputProps={{
-                name: "paConfigOption",
-                id: "pa-config-option",
-              }}
-            >
-              <MenuItem sx={styles} value="">
-                &nbsp;
-              </MenuItem>
-              {paConfigs?.map((config) => (
-                <MenuItem sx={styles} key={config.configId} value={config.configId}>
-                  {config.configName}
-                </MenuItem>
-              ))}
-            </Select>
-            {formError.paConfigId.required && (
-              <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-            )}
-          </FormControl>
-        </Box>
-
-        <Box mb={4}>
-          <Box fontWeight="bold">{getText(i18nKeys.UPDATE_STUDY_DIALOG__METADATA)}</Box>
-          {attributeConfigs.length !== 0 &&
-            studyMetadata.map((data, index) => (
-              <MetadataForm
-                key={index}
-                studyMetadata={data}
-                index={index}
-                attributeConfigs={attributeConfigs.filter(
-                  (a) => !studyMetadata.some((m) => m.attributeId === a.id) || data.attributeId === a.id
+            <div style={{ marginBottom: "32px" }}>
+              <FormControl
+                sx={styles}
+                className="select"
+                variant="standard"
+                fullWidth
+                {...(formError.paConfigId.required ? { error: true } : {})}
+              >
+                <InputLabel htmlFor="pa-config-option">{getText(i18nKeys.UPDATE_STUDY_DIALOG__PA_CONFIG)}</InputLabel>
+                <Select
+                  sx={styles}
+                  value={formData.paConfigId}
+                  onChange={(event: SelectChangeEvent<string>) =>
+                    handleFormDataChange({ paConfigId: event.target.value })
+                  }
+                  inputProps={{
+                    name: "paConfigOption",
+                    id: "pa-config-option",
+                  }}
+                >
+                  <MenuItem sx={styles} value="">
+                    &nbsp;
+                  </MenuItem>
+                  {paConfigs?.map((config) => (
+                    <MenuItem sx={styles} key={config.configId} value={config.configId}>
+                      {config.configName}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {formError.paConfigId.required && (
+                  <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
                 )}
-                handleRemoveMetadata={() => handleRemoveLine(index, studyMetadata, setStudyMetadata)}
-                handleMetadataChange={handleMetadataChange}
-                error={formMetadataErrorIndex.includes(index)}
-              />
-            ))}
-          <IconButton
-            startIcon={<AddSquareIcon />}
-            title={getText(i18nKeys.UPDATE_STUDY_DIALOG__ADD_METADATA)}
-            onClick={handleAddMetadataForm}
-          />
-        </Box>
+              </FormControl>
+            </div>
+          </>
+        )}
 
-        <Box fontWeight="bold">{getText(i18nKeys.UPDATE_STUDY_DIALOG__TAGS)}</Box>
-        <Box mb={4}>
-          <Autocomplete
-            multiple
-            sx={styles}
-            id="autocomplete-tags"
-            options={tagConfigs}
-            renderTags={(value: string[], getTagProps) =>
-              value.map((option: string, index: number) => (
-                <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
-              ))
-            }
-            renderInput={(params) => <TextField {...params} label="Tags" variant="standard" />}
-            value={studyTagsData}
-            onChange={handleTagChange}
-          />
-        </Box>
+        {DATASET_SOURCE_TYPES.has(dataset.type) && (
+          <>
+            <div style={{ marginTop: "32px", marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TOKEN_CODE)}
+                value={formData.tokenStudyCode}
+                onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
+                error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+                disabled
+              />
+              {formError.tokenStudyCode.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+              {formError.tokenStudyCode.valid && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
+              )}
+              <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
+            </div>
 
-        <Box mb={4}>
-          <FormControl component="fieldset">
-            <FormLabel component="legend">{getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_VISIBILITY)}</FormLabel>
-            <RadioGroup
-              name="visibilityStatusGroup"
-              value={formData.visibilityStatus}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleFormDataChange({ visibilityStatus: event.target.value });
-              }}
-            >
-              <FormControlLabel
-                value="PUBLIC"
-                control={<Radio />}
-                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__PUBLIC)}
+            <div style={{ marginBottom: "32px" }}>
+              <div style={{ marginTop: "32px", fontWeight: "bold" }}>
+                {getText(i18nKeys.UPDATE_STUDY_DIALOG__METADATA)}
+              </div>
+              {attributeConfigs.length !== 0 &&
+                studyMetadata.map((data, index) => (
+                  <MetadataForm
+                    key={index}
+                    studyMetadata={data}
+                    index={index}
+                    attributeConfigs={attributeConfigs.filter(
+                      (a) => !studyMetadata.some((m) => m.attributeId === a.id) || data.attributeId === a.id
+                    )}
+                    handleRemoveMetadata={() => handleRemoveLine(index, studyMetadata, setStudyMetadata)}
+                    handleMetadataChange={handleMetadataChange}
+                    error={formMetadataErrorIndex.includes(index)}
+                  />
+                ))}
+              <IconButton
+                startIcon={<AddSquareIcon />}
+                title={getText(i18nKeys.UPDATE_STUDY_DIALOG__ADD_METADATA)}
+                onClick={handleAddMetadataForm}
               />
-              <FormControlLabel
-                value="DEFAULT"
-                control={<Radio />}
-                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__PRIVATE)}
+            </div>
+          </>
+        )}
+
+        {!DATASET_SOURCE_TYPES.has(dataset.type) && (
+          <>
+            <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__TAGS)}</div>
+            <div style={{ marginBottom: "32px" }}>
+              <Autocomplete
+                multiple
+                sx={styles}
+                id="autocomplete-tags"
+                options={tagConfigs}
+                renderTags={(value: string[], getTagProps) =>
+                  value.map((option: string, index: number) => (
+                    <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
+                  ))
+                }
+                renderInput={(params) => <TextField {...params} label="Tags" variant="standard" />}
+                value={studyTagsData}
+                onChange={handleTagChange}
               />
-              <FormControlLabel
-                value="HIDDEN"
-                control={<Radio />}
-                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__HIDDEN)}
-              />
-            </RadioGroup>
-          </FormControl>
-        </Box>
+            </div>
+
+            <div style={{ marginBottom: "32px" }}>
+              <FormControl component="fieldset">
+                <FormLabel component="legend">{getText(i18nKeys.UPDATE_STUDY_DIALOG__DATASET_VISIBILITY)}</FormLabel>
+                <RadioGroup
+                  name="visibilityStatusGroup"
+                  value={formData.visibilityStatus}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    handleFormDataChange({ visibilityStatus: event.target.value });
+                  }}
+                >
+                  <FormControlLabel
+                    value="PUBLIC"
+                    control={<Radio />}
+                    label={getText(i18nKeys.UPDATE_STUDY_DIALOG__PUBLIC)}
+                  />
+                  <FormControlLabel
+                    value="DEFAULT"
+                    control={<Radio />}
+                    label={getText(i18nKeys.UPDATE_STUDY_DIALOG__PRIVATE)}
+                  />
+                  <FormControlLabel
+                    value="HIDDEN"
+                    control={<Radio />}
+                    label={getText(i18nKeys.UPDATE_STUDY_DIALOG__HIDDEN)}
+                  />
+                </RadioGroup>
+              </FormControl>
+            </div>
+          </>
+        )}
       </div>
 
       <Divider />

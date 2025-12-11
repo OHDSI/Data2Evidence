@@ -101,7 +101,7 @@ const getters = {
 
         axisInfo.binsize =
           allAxes[i].props.binsize === ''
-            ? rootGetters.getMriFrontendConfig.getAttributeByPath(axisInfo.attributeId).getDefaultBinSize() ?? 'n/a'
+            ? (rootGetters.getMriFrontendConfig.getAttributeByPath(axisInfo.attributeId).getDefaultBinSize() ?? 'n/a')
             : allAxes[i].props.binsize
       }
       axisSelection.push(axisInfo)
@@ -149,6 +149,8 @@ const getters = {
       // cohort definitions without bookmark
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
+        // displayBookmarkDateFormat expects ISO String
+        cohortDefinition.createdOn = new Date(cohortDefinition.createdOn).toISOString()
         // check bookmark exists, if yes, should use the bookmark name
         const bookmark = bookmarks.find(
           bookmark =>
@@ -245,7 +247,7 @@ const actions = {
     })
     let url = ''
     if (params.cmd === 'loadAll') {
-      url = webApiCohortDefinitionURL
+      url = `${webApiCohortDefinitionURL}?source=pa`
     } else {
       url = `${bookmarkURL}/${bookmarkId || ''}`
       params.paConfigId = rootGetters.getMriFrontendConfig.getPaConfigId()
@@ -268,13 +270,15 @@ const actions = {
       .then(({ data }) => {
         let toastMessage = ''
         if (params.cmd === 'loadAll') {
+          commit(types.RESET_ALL_BOOKMARKS)
           const { bookmarks, materializedCohorts, atlasCohortDefinitions } = processBookmarksData(
             data,
             rootGetters.getMriFrontendConfig.getPaConfigId()
           )
+          const isAtlasEnabled = rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition
           commit(types.SET_BOOKMARKS, bookmarks)
           commit(types.SET_MATERIALIZED_COHORTS, materializedCohorts)
-          if (rootGetters.getMriFrontendConfig._internalConfig.panelOptions.atlasCohortDefinition) {
+          if (isAtlasEnabled) {
             commit(types.SET_ATLAS_COHORT_DEFINITIONS, atlasCohortDefinitions)
           }
         }
@@ -435,6 +439,11 @@ const mutations = {
   },
   [types.SET_ADD_NEW_COHORT](modulestate, { addNewCohort }) {
     modulestate.addNewCohort = addNewCohort
+  },
+  [types.RESET_ALL_BOOKMARKS](modulestate) {
+    modulestate.bookmarks = []
+    modulestate.materializedCohorts = []
+    modulestate.atlasCohortDefinitions = []
   },
 }
 

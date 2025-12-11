@@ -14,6 +14,25 @@ export const i18nDefault = {
     CONCEPT_SETS__REFERENCE_CONCEPTS: "Reference concepts from dataset",
     CONCEPT_SETS__SHARED: "Shared",
     CONCEPT_SETS__UPDATED: "Updated",
+    CONCEPT_SET_DELETE_DIALOG__DELETE_CONCEPT_SET: "Delete concept set",
+    CONCEPT_SET_DELETE_DIALOG__ARE_YOU_SURE:
+      "Are you sure you want to delete this concept set",
+    CONCEPT_SET_DELETE_DIALOG__CANCEL: "Cancel",
+    CONCEPT_SET_DELETE_DIALOG__CONFIRM: "Confirm",
+    CONCEPT_SET_DELETE_DIALOG__DELETE_SUCCESSFUL:
+      "Concept set deleted successfully",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED:
+      "An error occurred while deleting the concept set",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED_DESCRIPTION:
+      "Please try again later",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_FORBIDDEN:
+      "You do not have permission to delete this concept set",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE:
+      "Cannot delete concept set. It is currently in use.",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE_COHORTS: "Atlas Cohort Definitions",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_IN_USE_BOOKMARKS: "D2E Cohort Definitions",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_NOT_FOUND: "Concept set not found",
+    CONCEPT_SET_DELETE_DIALOG__ERROR_SERVER: "Server error occurred",
     SEARCH_BAR__SEARCH_TERMS: "search terms",
     SEARCH_BAR__SEARCH: "Search",
     TERMINOLOGY__CLOSE: "Close",
@@ -23,6 +42,8 @@ export const i18nDefault = {
     TERMINOLOGY__CREATE: "Create",
     TERMINOLOGY__CREATING: "creating",
     TERMINOLOGY__ERROR: "Error {0} concept set.",
+    TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR:
+      "Concept set name {0} already exists. Please enter another name.",
     TERMINOLOGY__MISSING_USER_ID: "Missing User Id",
     TERMINOLOGY__NAME: "Name",
     TERMINOLOGY__REFERENCE_CONCEPTS: "Reference concepts from dataset",

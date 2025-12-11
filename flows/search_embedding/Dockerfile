@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 FROM python:${PYTHON_VERSION}-slim AS runtime
 
-ARG DUCKDB_VERSION=1.3.2
+ARG DUCKDB_VERSION=1.4.0
 ARG DUCKDB_EXTENSIONS="postgres_scanner,fts,vss"
 
 ARG USER=docker

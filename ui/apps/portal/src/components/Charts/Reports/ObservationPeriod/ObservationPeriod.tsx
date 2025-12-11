@@ -82,6 +82,7 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_Y_AXIS_NAME)}
+              axisBaseGap={10}
             />
           </div>
           <div className="imbalanced__container">
@@ -101,15 +102,20 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_Y_AXIS_NAME)}
+              axisBaseGap={10}
             />
           </div>
           <div className="chart__container">
-            <ObservationPeriodCumulativeDurationChart data={observationPeriodData.cumulativeObservation} />
+            <ObservationPeriodCumulativeDurationChart
+              data={observationPeriodData.cumulativeObservation}
+              axisBaseGap={21}
+            />
             <BoxPlotChart
               data={parseDaysToYears(observationPeriodData.durationByAgeDecile)}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_Y_AXIS_NAME)}
+              axisBaseGap={12}
             />
           </div>
           <div className="imbalanced__container">

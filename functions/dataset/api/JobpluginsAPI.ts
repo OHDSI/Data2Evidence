@@ -2,7 +2,7 @@
 import { AxiosRequestConfig } from "npm:axios";
 import { ICreateDatamodelFlowRunDto } from "../../jobplugins/src/types.ts";
 import { services } from "../env.ts";
-import { get, post } from "./request-util.ts";
+import { post } from "./request-util.ts";
 
 export class JobPluginsAPI {
   private readonly baseURL: string;
@@ -10,6 +10,8 @@ export class JobPluginsAPI {
   private readonly logger = console; //createLogger(this.constructor.name)
   private readonly token: string;
   private readonly endpoint: string = "/jobplugins";
+  private readonly channel;
+
   constructor(token: string) {
     this.token = token;
     if (!token) {
@@ -17,6 +19,7 @@ export class JobPluginsAPI {
     }
     if (services.jobplugins) {
       this.baseURL = services.jobplugins + this.endpoint;
+      this.channel = Trex.tokioChannel("d2e-functions/jobplugins");
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: true,
       //   ca: env.GATEWAY_CA_CERT
@@ -44,7 +47,7 @@ export class JobPluginsAPI {
     this.logger.info("Running create datamodel flow run");
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/datamodel/create_datamodel_run`;
-    const result = await post(url, data, options);
+    const result = await this.channel.post(url, data, options);
     if (result.data) {
       return result.data;
     }
@@ -55,7 +58,7 @@ export class JobPluginsAPI {
     this.logger.info("Running get datamodel list");
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/datamodel/list`;
-    const result = await get(url, options);
+    const result = await this.channel.get(url, options);
     if (result.data) {
       return result.data;
     }
@@ -66,7 +69,7 @@ export class JobPluginsAPI {
     this.logger.info(`Getting schemas version information`);
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/db-svc/fetch-version-info`;
-    const result = await post(url, options);
+    const result = await this.channel.post(url, options);
     if (result.data) {
       return result.data;
     }
@@ -95,7 +98,7 @@ export class JobPluginsAPI {
         vocabSchema: vocabSchema,
       },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
@@ -125,7 +128,7 @@ export class JobPluginsAPI {
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshot/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
       requestBody: { snapshotCopyConfig: snapshotCopyConfig },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
@@ -157,7 +160,7 @@ export class JobPluginsAPI {
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshotparquet/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
       requestBody: { snapshotCopyConfig: snapshotCopyConfig },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
@@ -182,31 +185,40 @@ export class JobPluginsAPI {
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}?schema=${schemaName}`,
       requestBody: { vocabSchema },
     };
-    const result = await post(url, body, options);
+    const result = await this.channel.post(url, body, options);
     if (result.data) {
       return result.data;
     }
     throw new Error(`Failed to update schema for ${schemaName}`);
   }
 
-  async createDatamartFlowRun(
-    options: object,
+  async createDatamartCacheFlowRun(
+    datasetId: string,
+    cacheDatasetId: string,
+    snapshotCopyConfig: object,
     flowId?: string,
     flowRunName?: string
   ): Promise<any> {
-    this.logger.info(`Running datamart flow run`);
-    const postOptions = await this.getRequestConfig();
-    const url = `${this.baseURL}/datamodel/create_datamart_run`;
-    const body = {
-      flowId,
-      options,
-      flowRunName,
-    };
-    const result = await post(url, body, postOptions);
+    this.logger.info(`Running datamart cache flow run`);
 
-    if (result.data) {
-      return result.data;
+    try {
+      const postOptions = await this.getRequestConfig();
+      const url = `${this.baseURL}/cachedb/create-file`;
+      const body = {
+        datasetId,
+        cacheDatasetId,
+        flowId,
+        snapshotCopyConfig,
+        flowRunName,
+      };
+      const result = await post(url, body, postOptions);
+
+      if (result.data) {
+        return result.data;
+      }
+    } catch (error) {
+      this.logger.error(`Error running datamart flow run: ${error}`);
+      throw new Error(`Error running datamart flow run: ${error}`);
     }
-    throw new Error(`Failed to run flow`);
   }
 }

@@ -1,14 +1,11 @@
 <script lang="ts">
 export default {
   name: 'QueryFilterEntryExit',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { EntryEvent, ExitEvent, QueryFilterEvent } from '../types/QueryFilterTypes'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues, ConceptSetAction } from '../types/ConceptSetTypes'
 import QueryFilterEventContainer from './QueryFilterEventContainer.vue'
@@ -38,9 +35,16 @@ const emit = defineEmits<{
   'update-entry-days': [type: 'PRIOR' | 'POST', days: number]
   'concept-set-action': [action: ConceptSetAction]
   'update-fixed-duration': [eventDateOffset: 'StartDate' | 'EndDate', daysOffset: number]
-  'update-cont-drug-settings': [conceptSetId: string, gapDays: number, offset: number, daysSupplyOverride: number]
+  'update-cont-drug-settings': [
+    conceptSetId: string,
+    conceptSetName: string,
+    gapDays: number,
+    offset: number,
+    daysSupplyOverride: number,
+  ]
   'update-primary-events': [events: QueryFilterEvent[]]
   'update-exit-events': [events: QueryFilterEvent[]]
+  'search-change': [searchQuery: string]
 }>()
 
 const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : 'Cohort Exit'))
@@ -48,7 +52,7 @@ const title = computed(() => (props.type === 'ENTRY' ? 'Cohort Entry Events' : '
 const updateLimitValue = (value: string) => {
   // Type guard to ensure the value is valid
   const validLimits = ['ALL', 'EARLIEST', 'LATEST', 'CONT_OBS', 'FIXED', 'CONT_DRUG'] as const
-  type ValidLimit = typeof validLimits[number]
+  type ValidLimit = (typeof validLimits)[number]
 
   const isValidLimit = (val: string): val is ValidLimit => {
     return validLimits.includes(val as ValidLimit)
@@ -57,14 +61,19 @@ const updateLimitValue = (value: string) => {
   if (isValidLimit(value)) {
     emit('update-limit', value)
 
-    // Emit default values when switching to FIXED or CONT_DRUG
-    if (!isEntry.value) {
+    // Only emit settings when user actively switches mode (not during initialization)
+    // Check if the value is different from current prop to detect user action
+    const currentStrategy = props.exitCriteriaData?.endStrategy
+    const isUserAction = currentStrategy && currentStrategy !== value
+
+    if (!isEntry.value && isUserAction) {
       if (value === 'FIXED') {
         emit('update-fixed-duration', selectedEventDateOffset.value, selectedDaysOffset.value)
       } else if (value === 'CONT_DRUG') {
         emit(
           'update-cont-drug-settings',
           selectedConceptSet.value?.value.toString() || '',
+          selectedConceptSet.value?.text || selectedConceptSet.value?.display_value || '',
           selectedGapDays.value,
           selectedOffset.value,
           selectedDaysSupplyOverride.value
@@ -138,6 +147,15 @@ const daysOffsetOptions = ['1', '2', '3', '4', '5', '6', '7', '14', '21', '30', 
 const selectedEventDateOffset = ref<'StartDate' | 'EndDate'>('StartDate')
 const selectedDaysOffset = ref<number>(30)
 
+// Initialize fixed duration settings from exitCriteriaData when component mounts or data changes
+const initializeFixedDurationSettings = () => {
+  if (props.exitCriteriaData?.fixedDuration) {
+    const settings = props.exitCriteriaData.fixedDuration
+    selectedEventDateOffset.value = settings.dateField || 'StartDate'
+    selectedDaysOffset.value = settings.offset ?? 30
+  }
+}
+
 // Show fixed duration inputs only when limit is FIXED and not ENTRY
 const showFixedDurationInputs = computed(() => {
   return !isEntry.value && initialEventsLimit.value === 'FIXED'
@@ -173,6 +191,62 @@ const selectedConceptSet = ref<ConceptSetItemDisplay | null>(null)
 const selectedGapDays = ref<number>(30)
 const selectedOffset = ref<number>(0)
 const selectedDaysSupplyOverride = ref<number>(1)
+
+// Initialize CONT_DRUG settings from exitCriteriaData when component mounts or data changes
+const initializeContDrugSettings = () => {
+  if (props.exitCriteriaData?.contDrugSettings) {
+    const settings = props.exitCriteriaData.contDrugSettings
+
+    // Set numeric values
+    selectedGapDays.value = settings.gapDays ?? 30
+    selectedOffset.value = settings.offset ?? 0
+    selectedDaysSupplyOverride.value = settings.daysSupplyOverride ?? 1
+
+    // Find and set the concept set from the available concept sets
+    if (settings.conceptSetId && props.conceptSets) {
+      const conceptSet = props.conceptSets.find(cs => cs.value.toString() === settings.conceptSetId)
+      if (conceptSet) {
+        selectedConceptSet.value = conceptSet
+      }
+    }
+  }
+}
+
+// Initialize on mount
+onMounted(() => {
+  initializeFixedDurationSettings()
+  initializeContDrugSettings()
+})
+
+// Watch for changes to exitCriteriaData.fixedDuration and re-initialize
+watch(
+  () => props.exitCriteriaData?.fixedDuration,
+  () => {
+    initializeFixedDurationSettings()
+  },
+  { deep: true, immediate: true }
+)
+
+// Watch for changes to exitCriteriaData.contDrugSettings and re-initialize
+watch(
+  () => props.exitCriteriaData?.contDrugSettings,
+  () => {
+    initializeContDrugSettings()
+  },
+  { deep: true, immediate: true }
+)
+
+// Also watch for conceptSets to become available (they may load after the component mounts)
+watch(
+  () => props.conceptSets,
+  () => {
+    // Re-initialize to pick up the concept set once it's loaded
+    if (props.exitCriteriaData?.contDrugSettings?.conceptSetId && !selectedConceptSet.value) {
+      initializeContDrugSettings()
+    }
+  },
+  { deep: true }
+)
 
 // Show CONT_DRUG inputs only when limit is CONT_DRUG and not ENTRY
 const showContDrugInputs = computed(() => {
@@ -234,9 +308,13 @@ const updateDaysSupplyOverride = (value: string) => {
 }
 
 const emitContDrugUpdate = () => {
+  const conceptSetId = selectedConceptSet.value?.value.toString() || ''
+  const conceptSetName = selectedConceptSet.value?.text || selectedConceptSet.value?.display_value || ''
+
   emit(
     'update-cont-drug-settings',
-    selectedConceptSet.value?.value.toString() || '',
+    conceptSetId,
+    conceptSetName,
     selectedGapDays.value,
     selectedOffset.value,
     selectedDaysSupplyOverride.value
@@ -274,7 +352,7 @@ const activeTooltipKey = computed(() => {
           @update-limit-value="updateLimitValue"
         />
         <!-- Tooltip for EXIT options -->
-        <Tooltip :tooltip-config="tooltipConfig" :active-key="activeTooltipKey" />
+        <Tooltip class="exit-tooltip" :tooltip-config="tooltipConfig" :active-key="activeTooltipKey" />
       </div>
 
       <div class="shadow-container">
@@ -383,6 +461,7 @@ const activeTooltipKey = computed(() => {
         :concept-set-texts="props.conceptSetTexts || {}"
         :readonly="readonly"
         @update-events="handleEventsUpdate"
+        @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
         @concept-set-action="(action: ConceptSetAction) => $emit('concept-set-action', action)"
       />
     </div>
@@ -771,5 +850,10 @@ const activeTooltipKey = computed(() => {
       font-weight: 500;
     }
   }
+
+  .exit-tooltip {
+    z-index: 50;
+  }
 }
 </style>
+
