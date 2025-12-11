@@ -363,7 +363,6 @@ services:
         priority: 20
       enterprise-gateway-viewer:
         priority: 20
-    platform: linux/amd64
     command: >
       sh -c "
         mkdir -p /srv/caddy-config &&
