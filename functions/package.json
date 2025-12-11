@@ -861,7 +861,9 @@
           "portal.dataset.read"
         ],
         "STUDY_RESULTS_READ_RESEARCHER": [
-          "strategus.results.read"
+          "strategus.results.read",
+          "strategus.results.write",
+          "strategus.results.delete"
         ]
       },
       "scopes": [
@@ -2841,19 +2843,13 @@
         {
           "path": "^/strategus-results",
           "scopes": [
-            "strategus.results.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/strategus-results",
-          "scopes": [
+            "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+
           ],
           "httpMethods": [
+            "GET",
             "POST",
             "DELETE"
           ]
