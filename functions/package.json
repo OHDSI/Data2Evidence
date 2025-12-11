@@ -861,6 +861,7 @@
           "portal.dataset.read"
         ],
         "STUDY_RESULTS_READ_RESEARCHER": [
+          "strategus.analysis.read",
           "strategus.results.read",
           "strategus.results.write",
           "strategus.results.delete"
