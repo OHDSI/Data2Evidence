@@ -924,8 +924,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
-      "RemoteRef": "csafreen/set_autoCommit_true",
-      "RemoteSha": "e381b0f307d3b8dcbfecac71fe4670dd429f043a"
+      "RemoteRef": "alp-dqd",
+      "RemoteSha": "497c24aaf80c1677c0f263e20014372305547d32"
     },
     "DeepPatientLevelPrediction": {
       "Package": "DeepPatientLevelPrediction",
