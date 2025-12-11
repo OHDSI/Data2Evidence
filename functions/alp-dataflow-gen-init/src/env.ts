@@ -80,24 +80,3 @@ export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
 export const INSTALL_SQLALCHEMY = env.INSTALL_SQLALCHEMY;
 export const CUSTOM_WORK_POOL_CONFIGURATION =
   env.CUSTOM_WORK_POOL_CONFIGURATION;
-
-export function getStudyResultsDbCredentials(): TransformedDBCredentials {
-  return {
-    readUser: _env.PG__STUDY_RESULTS_READ_USER || null,
-    readPassword: _env.PG__STUDY_RESULTS_READ_PASSWORD || null,
-    adminUser: _env.PG__STUDY_RESULTS_ADMIN_USER || null,
-    adminPassword: _env.PG__STUDY_RESULTS_ADMIN_PASSWORD || null,
-    dialect: DatabaseDialect.PG,
-    databaseCode: "study_results",
-    databaseName: _env.PG__STUDY_RESULTS_DB_NAME || "study_results",
-    host: _env.PG__HOST || "",
-    port: parseInt(_env.PG__PORT || "5432", 10),
-    encrypt: false,
-    validateCertificate: false,
-    sslTrustStore: "",
-    hostnameInCertificate: "",
-    enableAuditPolicies: false,
-    readRole: "",
-    authMode: AuthMode.PASSWORD,
-  };
-}
