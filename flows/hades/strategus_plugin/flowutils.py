@@ -5,8 +5,10 @@ import importlib
 import numpy as np
 import pandas as pd
 
+from prefect.variables import Variable
 from rpy2 import robjects as ro
 from rpy2.robjects import pandas2ri
+from rpy2.robjects.packages import importr
 
 from _shared_flow_utils.logger.logger import Logger
 
@@ -110,3 +112,16 @@ def serialize_to_json(data):
         return data.r_repr()
     else:
         return data
+
+# use renv.lock file to install R packages
+def install_r_packages_from_lockfile(lockfile_path):
+    logger = Logger()
+    with ro.default_converter.context():
+        try:
+            renv = importr('renv')
+            # R_ENV_LIBRARY_PATH = Variable.get("R_ENV_LIBRARY_PATH")
+            R_ENV_LIBRARY_PATH = "/usr/local/lib/R/site-library"
+            renv.restore(lockfile=lockfile_path, library = R_ENV_LIBRARY_PATH, prompt=False)
+            logger.info("R packages installed successfully from lockfile.")
+        except Exception as e:
+            logger.error(f"Error in installing R packages from lockfile: {str(e)}")

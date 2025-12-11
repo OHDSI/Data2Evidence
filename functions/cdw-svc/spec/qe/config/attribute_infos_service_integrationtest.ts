@@ -109,8 +109,12 @@ describe("Attributes infos service integration test", () => {
   });
 
   afterAll(function () {
-    connection.close();
-    analyticsConnection.close();
+    if (connection) {
+      connection.close();
+    }
+    if (analyticsConnection) {
+      analyticsConnection.close();
+    }
   });
 
   describe("Test Attribute", () => {

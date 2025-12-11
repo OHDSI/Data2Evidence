@@ -41,6 +41,7 @@ class Node:
 
 class Flow(Node):
     def __init__(self, _node):
+        super().__init__(_node)
         self.graph = _node["graph"]
         self.executor_type = _node["executor_options"]["executor_type"]
         self.executor_host = _node["executor_options"]["executor_address"]["host"]
