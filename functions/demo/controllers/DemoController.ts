@@ -51,6 +51,11 @@ export class DemoController {
         message: "Updating metadata for dataset...",
         task: this.service.updateDatasetMetadata.bind(this.service),
       },
+      {
+        code: "addResearcherRole",
+        message: "Add user as researcher role...",
+        task: this.service.addResearcherRoleToDataset.bind(this.service),
+      },
     ];
 
     return await this.executeSteps(req, res, steps);
