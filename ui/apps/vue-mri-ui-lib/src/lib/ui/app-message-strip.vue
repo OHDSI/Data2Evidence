@@ -1,7 +1,9 @@
 <template>
   <div v-bind:class="['appMessageStrip', messageTypeClass]">
     <span class="appMessageStripIcon" v-html="icon"></span>
-    <span class="appMessageStripMessage" v-html="text"> </span>
+    <span class="appMessageStripMessage">
+      {{ text }}
+    </span>
     <button @click="closeMessageStrip" class="app-message-strip-button"></button>
   </div>
 </template>

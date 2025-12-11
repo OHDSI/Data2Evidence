@@ -114,12 +114,6 @@ const actions = {
         }
       })
       .catch(error => {
-        const errorDetails = {
-          statusCode: error.response?.status,
-          errorType: error.response?.statusText || error.response?.data?.error,
-          serverMessage: error.response?.data?.message || error.message,
-        }
-
         if (newRequest) {
           throw {
             code: 'EXISTING_COLLECTION',
@@ -127,13 +121,11 @@ const actions = {
               'MRI_PA_COLL_EXISTING_COLLECTION',
               params.addItemsToCollectionParams.collection.title
             ),
-            ...errorDetails,
           }
         }
         throw {
           code: 'ADD_PATIENT_FAILED',
           message: rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT'),
-          ...errorDetails,
         }
       })
   },

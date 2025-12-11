@@ -279,16 +279,9 @@ const actions = {
         })
       })
       .catch(error => {
-        const errorDetails = {
-          statusCode: error.response?.status,
-          errorType: error.response?.statusText || error.response?.data?.error,
-          serverMessage: error.response?.data?.message || error.message,
-        }
-
         throw {
           code: 'ADD_PATIENT_FAILED',
           message: rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT'),
-          ...errorDetails,
         }
       })
   },

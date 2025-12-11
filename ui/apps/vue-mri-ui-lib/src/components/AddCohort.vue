@@ -169,26 +169,7 @@ export default {
         }
         const failureCallback = err => {
           this.cohortBusy = false
-          let errorMessage = ''
-
-          if (typeof err === 'object' && err !== null) {
-            const parts = []
-            if (err.message) {
-              parts.push(err.message)
-            }
-            if (err.serverMessage) {
-              parts.push(`Server message: ${err.serverMessage}`)
-            }
-            if (err.statusCode) {
-              parts.push(`Status code: ${err.statusCode}`)
-            }
-            if (err.errorType) {
-              parts.push(`Error: ${err.errorType}`)
-            }
-            errorMessage = parts.join('<br>')
-          } else {
-            errorMessage = String(err)
-          }
+          const errorMessage = err?.message || this.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT')
 
           this.messageStrip = {
             show: true,
