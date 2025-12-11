@@ -1195,8 +1195,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
                 database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
-            print(f"Connecting to database...: {dbdao.get_database_connector_connection_string()}")
-            print(f"Using schema: {db_credentials.adminUser} {db_credentials.adminPassword.get_secret_value()}")
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms=dbdao.get_database_connector_dbms_val(), 
                 connectionString=dbdao.get_database_connector_connection_string(),
