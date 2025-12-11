@@ -41,7 +41,7 @@ const {
 const isLocal = computed(() => getPortalAPI()?.isLocal)
 
 // Get current username from JWT token for ownership checks
-const currentUsername = computed(() => store.getters.getJwtTokenValue?.sub || '')
+const currentUsername = computed(() => getPortalAPI()?.username || '')
 
 const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
