@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import https from "node:https";
 import fetch from "node-fetch";
+import * as crypto from 'crypto';
 
 // Helper functions
 function getCookie(setCookieHeaders, name) {
