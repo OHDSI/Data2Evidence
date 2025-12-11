@@ -36,7 +36,7 @@ const DeathPrevalenceByMonthChart: FC<DeathPrevalenceByMonthChartProps> = ({ dat
   const lineChartXAxisData = sortedData.map(
     (obj: any) => obj["XCALENDARMONTH"].toString().slice(-2) + "/" + obj["XCALENDARMONTH"].toString().slice(0, 4)
   );
-  // Convert YPREVALENCE1000PP to percentage
+  // Format YPREVALENCE1000PP to 3dp
   const series = [
     {
       type: "line",
