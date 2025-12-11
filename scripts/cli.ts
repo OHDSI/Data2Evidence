@@ -563,6 +563,31 @@ class D2ECli {
       process.exit(1);
     }
   }
+  setupdemohana() {
+    console.log("Setting up demo database for hana...");
+    const zx_cmd = this.setup_zx_cmd();
+    const setupdemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setupdemohana.mjs -n ${this.ENVFILE}`;
+    const setupdemohana = spawnSync(setupdemohanaCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (setupdemohana.error) {
+      console.error("Failed to run script:", setupdemohana.error);
+      process.exit(1);
+    }
+
+    const checkSetupDemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemohana-flow.mjs -n ${this.ENVFILE}`;
+    const check_setupdemohana = spawnSync(checkSetupDemohanaCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (check_setupdemohana.error) {
+      console.error("Failed to run script:", check_setupdemohana.error);
+      process.exit(1);
+    }
+  }
 
   checkflow() {
     console.log("Checking flow...");
@@ -686,7 +711,9 @@ class D2ECli {
           process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
         const envVariables = {
-          HANAPW: this.hanapw,
+          HANA_SYSTEM_PASSWORD: this.hanapw,
+          INSTALL_SQLALCHEMY:
+            "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
@@ -959,6 +986,14 @@ class D2ECli {
         this.setupdemo();
       });
 
+    this.program
+      .command("setupdemohana")
+      .description(
+        "Load d2e services for hana. Requires d2e init and d2e setup to be run."
+      )
+      .action(async () => {
+        this.setupdemohana();
+      });
     const checkflow_cmd = this.program
       .command("checkflow")
       .description("Check setupdemo flow")
