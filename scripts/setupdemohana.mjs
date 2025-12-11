@@ -268,9 +268,9 @@ var response = await fetch(url, {
     agent: insecureAgent   
 });
 
-
+var resp = await response.json();
 try { 
-    const hana_db = JSON.parse(response).id;
+    const hana_db = resp.id;
     if (hana_db === "demo_database_hana") {
         console.log(`HANA demo dataset setup initiated successfully.`);
     } else {
@@ -312,7 +312,7 @@ let encryptionKeysObjDataset = {
 };
 
 
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/gateway/api/dataset/`;
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/gateway/api/dataset`;
 var response = await fetch(url, {
     method: "POST",
     headers: {
@@ -323,7 +323,8 @@ var response = await fetch(url, {
     agent: insecureAgent
 });
 
-if (response['id'] !== undefined) {
+var resp = await response.json();
+if (resp.id !== undefined) {
     console.log(`HANA demo dataset added successfully.`);
     var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/system-portal/dataset/list/systemadmin`;
     var response = await fetch(url, {
