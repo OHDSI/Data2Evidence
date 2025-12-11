@@ -130,7 +130,8 @@ def execute_nodes_flow(graph, sorted_nodes, test):
                 "patient_level_prediction_node",
                 "exposure_node",
                 "treatment_patterns_node",
-                "kaplan_meier_node"
+                "kaplan_meier_node", 
+                "cohort_survival_module_node"
             ]:
                 logger.error(f"gen.py: execute_nodes: {node['type']} Node Type not known")
             else: 
