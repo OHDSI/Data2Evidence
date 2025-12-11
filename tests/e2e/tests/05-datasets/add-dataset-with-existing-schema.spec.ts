@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
 const SHOULD_SKIP = false
@@ -27,7 +27,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible({ timeout: 10000 })
   for (const dataset of [datasetNewSchema, datasetNewCacheSchema, datasetExistingSchema, datasetExistingCacheSchema]) {
     const datasetRow = page.locator('tr', { hasText: `${dataset}` }).first()
@@ -36,8 +36,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('option', { name: 'Delete dataset' }).click()
       await page.getByRole('button', { name: 'Yes, delete' }).click()
       await page.reload()
-      await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
-      // await expect(datasetRow).not.toBeVisible({ timeout: 10000 })
+      await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
     }
   }
 
@@ -52,7 +51,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(stateBadge).toHaveText('Completed', { timeout: 720000 })
     await page.getByRole('link', { name: 'Datasets' }).click()
     // Wait for table to load
-    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   }
 
   // Add new dataset
@@ -74,13 +73,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetNewCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Wait for table to load first
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   // Wait for parent dataset to appear in the table (with parent-child structure, use row locators)
   await expect(page.locator('tr', { hasText: datasetNewSchema }).first()).toBeVisible({ timeout: 120000 })
-  
+
   // Wait for schema to be created in the database (this also creates the cache dataset)
   await createComplete()
-  
+
   // After the job completes, the cache dataset should be visible
   // Parent rows are automatically expanded by default, so child rows should be visible
   await expect(page.locator('tr', { hasText: datasetNewCacheSchema }).first()).toBeVisible({ timeout: 120000 })
@@ -90,7 +89,7 @@ test(TEST_NAME, async ({ page }) => {
   const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
   // Delete the newly created dataset
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   // Find and delete the child dataset first (datasetNewCacheSchema)
   const newCacheRow = page.locator('tr', { hasText: datasetNewCacheSchema }).first()
   await expect(newCacheRow).toBeVisible({ timeout: 30000 })
@@ -123,12 +122,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetExistingCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await page.waitForTimeout(3000) // Wait for the table to refresh
-  await expect(page.getByRole('cell', { name: `${datasetExistingSchema}` })).toBeVisible({ timeout: 10000 })
-  await expect(page.getByRole('cell', { name: `${datasetExistingCacheSchema}` })).toBeVisible({ timeout: 10000 })
+  // Wait for table to load and datasets to appear
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('tr', { hasText: datasetExistingSchema }).first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('tr', { hasText: datasetExistingCacheSchema }).first()).toBeVisible({ timeout: 30000 })
 
   // Clean up
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   // Find and delete the child dataset first (datasetExistingCacheSchema)
   const existingCacheRow = page.locator('tr', { hasText: datasetExistingCacheSchema }).first()
   await expect(existingCacheRow).toBeVisible({ timeout: 30000 })
