@@ -68,40 +68,17 @@ export class FhirAPI {
       } else if (response && response.response) {
         // errors occur in response.response when posting a resource
         this.logger.error(`[${response.response.status}] ${log_msg}`);
-        return {
-          status: response.response.status,
-          headers: response.response.headers,
-          data: response.response.data,
-        };
+        throw new Error(`[${response.response.status}] ${log_msg}: ${JSON.stringify(response.response.data)}`);
       }
     } catch (error) {
       if (error.response) {
         this.logger.error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
-        return {
-          status: error.response.status,
-          headers: error.response.headers,
-          data: error.response.data,
-        };
+        throw new Error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
       } else {
         this.logger.error(`[500] ${log_msg}: ${error.message}`);
-        return {
-          status: 500,
-          data: {
-            error: `An error occurred while forwarding the ${httpMethod} request: ${error.message}`,
-          },
-        };
+        throw new Error(`[500] ${log_msg}: ${error.message}`);
       }
     }
-  }
-
-  async testConnection() {
-    await this.startMedplumClientLogin()
-    console.log(this.adminAccessToken)
-  }
-
-  async startMedplumClientLogin(){
-    this.adminAccessToken = await this.getAccessToken(this.getAdminCredentials());
-    return;
   }
 
   private async getAccessToken(
