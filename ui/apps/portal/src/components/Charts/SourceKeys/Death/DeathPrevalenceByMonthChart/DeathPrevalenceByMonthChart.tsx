@@ -26,15 +26,22 @@ const DeathPrevalenceByMonthChart: FC<DeathPrevalenceByMonthChartProps> = ({ dat
     );
   }
 
+  // Sort data by XCALENDARMONTH
+  const sortedData = [...data].sort((a: any, b: any) => {
+    return Number(a["XCALENDARMONTH"]) - Number(b["XCALENDARMONTH"]);
+  });
+
   // Parse and format line chart data
-  // Divide XCALENDARMONTH by number of days in a year and round to 1 decimal place
-  const lineChartXAxisData = data.map((obj: any) => (obj["XCALENDARMONTH"] / 365.25).toFixed(1));
+  // XCALENDARMONTH should be in YYYYMM format
+  const lineChartXAxisData = sortedData.map(
+    (obj: any) => obj["XCALENDARMONTH"].toString().slice(-2) + "/" + obj["XCALENDARMONTH"].toString().slice(0, 4)
+  );
   // Convert YPREVALENCE1000PP to percentage
   const series = [
     {
       type: "line",
       step: "start",
-      data: data.map((obj: any) => (Number(obj["YPREVALENCE1000PP"]) * 100).toFixed(0)),
+      data: sortedData.map((obj: any) => Number(Number(obj["YPREVALENCE1000PP"]).toFixed(3))),
     },
   ];
 
