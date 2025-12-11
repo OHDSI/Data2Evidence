@@ -1133,7 +1133,7 @@ class CohortSurvivalModuleNode(Node):
                     targetCohortTable = convert_py_to_R(self.targetCohortTable),
                     outcomeCohortId = convert_py_to_R(outcomeCohortIds[0]),
                     outcomeCohortTable = convert_py_to_R(self.outcomeCohortTable),
-                    strata = convert_py_to_R(self.strata.split(",")) if self.strata else convert_py_to_R(None),
+                    strata = convert_py_to_R([s.strip() for s in self.strata.split(",")]) if self.strata else convert_py_to_R(None),
                     eventGap = convert_py_to_R(self.eventGap),
                     followUpDays = convert_py_to_R(self.followupDays),
                     competingOutcomeCohortTable = convert_py_to_R(self.competingOutcomeCohortTable) if self.competingOutcomeCohortTable else convert_py_to_R(None),
