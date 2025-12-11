@@ -139,11 +139,10 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
                 logger=logger
             )
 
-            schema_version = None
+            schema_version = "Not Available"
             if dataset.get("type") == "omop" and dataset.get("plugin") in ("omop_cdm_plugin", "data_management_plugin"):
-                schema_version = cdm_version
-            else:
-                schema_version = "Not Available"
+                if cdm_version and check_valid_version(cdm_version):
+                    schema_version = cdm_version
 
             portal_server_api.update_dataset_attributes_table(
                 dataset_id, "schema_version", str(schema_version)
@@ -151,3 +150,22 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
             portal_server_api.update_dataset_attributes_table(
                 dataset_id, "latest_schema_version", str(schema_version)
             )
+
+    
+def check_valid_version(cdm_version: str) -> bool:
+    minor = get_minor_version(cdm_version)
+    return minor is not None and minor in ["5.3", "5.4"]
+
+
+def get_minor_version(cdm_version_str: str) -> str | None:
+    """
+    Extract the minor version from a CDM version string.
+    """
+    cdm_version_str = cdm_version_str.strip().lstrip("v")
+    parts = [p for p in cdm_version_str.split(".") if p]
+    if parts and parts[0].isdigit():
+        if len(parts) == 1:
+            return f"{parts[0]}.0"
+        elif len(parts) >= 2 and parts[1].isdigit():
+            return f"{parts[0]}.{parts[1]}"
+    return None
