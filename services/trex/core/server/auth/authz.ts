@@ -273,7 +273,11 @@ export async function authz(c: Context, next: any) {
     let bearerToken = c.req.raw.headers.get("authorization");
     // Check for cookie if no token in authorization header
     // And for req with /fhir-server path, token is part of cookie
-    if (!bearerToken || bearerToken === "" || (bearerToken && originalUrl.startsWith("/fhir-server/"))) {
+    if (
+      !bearerToken ||
+      bearerToken === "" ||
+      (bearerToken && originalUrl.startsWith("/fhir-server/"))
+    ) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
@@ -286,13 +290,6 @@ export async function authz(c: Context, next: any) {
             break;
           }
         }
-      }
-    }
-    if (!bearerToken && c.req.url) {
-      const requestUrl = new URL(c.req.url);
-      const urlToken = requestUrl.searchParams.get("token");
-      if (urlToken) {
-        bearerToken = `Bearer ${urlToken}`;
       }
     }
 

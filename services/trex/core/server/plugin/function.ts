@@ -8,92 +8,6 @@ import { proxy } from "npm:hono/proxy";
 
 import { STATUS_CODE } from "https://deno.land/std/http/status.ts";
 
-function createWebSocketProxy(clientSocket: WebSocket, serviceUrl: string) {
-  const serviceSocket = new WebSocket(serviceUrl);
-  const clientMessageBuffer: any[] = [];
-  const serviceMessageBuffer: any[] = [];
-
-  // Set up bidirectional message forwarding with buffering
-  clientSocket.onmessage = (event) => {
-    if (serviceSocket.readyState === WebSocket.OPEN) {
-      serviceSocket.send(event.data);
-    } else {
-      // Buffer message until service socket is ready
-      clientMessageBuffer.push(event.data);
-    }
-  };
-
-  serviceSocket.onmessage = (event) => {
-    if (clientSocket.readyState === WebSocket.OPEN) {
-      clientSocket.send(event.data);
-    } else {
-      // Buffer message until client socket is ready
-      serviceMessageBuffer.push(event.data);
-    }
-  };
-
-  // Handle service socket opening - flush buffered client messages
-  serviceSocket.onopen = () => {
-    logger.info(`Service WebSocket connected to ${serviceUrl}`);
-    // Send any buffered messages from client to service
-    while (clientMessageBuffer.length > 0) {
-      const message = clientMessageBuffer.shift();
-      if (serviceSocket.readyState === WebSocket.OPEN) {
-        serviceSocket.send(message);
-      }
-    }
-  };
-
-  // Handle client socket opening - flush buffered service messages (if any)
-  clientSocket.onopen = () => {
-    logger.info(`Client WebSocket connection established`);
-    // Send any buffered messages from service to client
-    while (serviceMessageBuffer.length > 0) {
-      const message = serviceMessageBuffer.shift();
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.send(message);
-      }
-    }
-  };
-
-  // Handle connection closures
-  clientSocket.onclose = (event) => {
-    logger.info(`Client WebSocket closed: ${event.code} ${event.reason}`);
-    if (serviceSocket.readyState === WebSocket.OPEN) {
-      serviceSocket.close();
-    }
-  };
-
-  serviceSocket.onclose = (event) => {
-    logger.info(`Service WebSocket closed: ${event.code} ${event.reason}`);
-    if (clientSocket.readyState === WebSocket.OPEN) {
-      clientSocket.close();
-    }
-  };
-
-  clientSocket.onerror = (event) => {
-    logger.error(`WebSocket connection request failed: ${event}`);
-
-    if (serviceSocket.readyState === WebSocket.OPEN) {
-      serviceSocket.close(1011, "Client socket error");
-    }
-
-    if (clientSocket.readyState === WebSocket.OPEN) {
-      clientSocket.close();
-    }
-  };
-
-  serviceSocket.onerror = (event) => {
-    logger.error(`WebSocket connection to service failed: ${event}`);
-    if (
-      clientSocket.readyState === WebSocket.OPEN ||
-      clientSocket.readyState === WebSocket.CONNECTING
-    ) {
-      clientSocket.close(1011, "Service WebSocket connection error");
-    }
-  };
-}
-
 function substituteEnvVars(input: string): string {
   let result = input;
   let maxIterations = 10;
@@ -397,20 +311,6 @@ function _addFunction(
   fnmap[`${name}${fncfg.function}`] = (req) =>
     _callWorker(req, `${path}`, imports, fncfg, dir, xenv);
   app.all(url + "/*", authn, authz, (c: Context) => {
-    const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
-    const urlObj = new URL(c.req.raw.url);
-    const match = urlObj.pathname.match(
-      /^\/strategus-results\/([^/]+)\/websocket\/?$/
-    );
-    if (isWs && match) {
-      const req = c.req.raw;
-      const studyId = match[1];
-      const { socket, response } = Deno.upgradeWebSocket(req);
-      const serviceUrl = `ws://${encodeURIComponent(studyId)}:3838/websocket`;
-
-      createWebSocketProxy(socket, serviceUrl);
-      return response;
-    }
     return _callWorker(c.req.raw, `${path}`, imports, fncfg, dir, xenv);
   });
 }
@@ -422,19 +322,6 @@ function _addService(app: Hono, url: string, service: string, rmsrc: boolean) {
     postfix = "/*";
   }
   app.all(url + postfix, authn, authz, async (c: Context) => {
-    const isWs = c.req.header("upgrade")?.toLowerCase() === "websocket";
-
-    if (isWs) {
-      const req = c.req.raw;
-      const url = new URL(c.req.url);
-      const { hostname, port } = new URL(service_url);
-      const serviceUrl = `ws://${hostname}:${port}${url.pathname}${url.search}`;
-      const { socket, response } = Deno.upgradeWebSocket(req);
-      createWebSocketProxy(socket, serviceUrl);
-
-      return response;
-    }
-
     let newHeaders = new Headers(c.req.raw.headers);
     newHeaders.append("x-source-origin", env.GATEWAY_WO_PROTOCOL_FQDN);
     const path = rmsrc
