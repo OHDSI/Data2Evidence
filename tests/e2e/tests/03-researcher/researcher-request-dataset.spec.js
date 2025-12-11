@@ -32,7 +32,6 @@ test(TEST_NAME, async ({ page }) => {
   // The table structure is: [icon] [Dataset ID] [Name] [Schema name] [Schema version] ...
   const cacheDatasetNameCell = childRow.locator('td').nth(2);
   const cacheDatasetName = (await cacheDatasetNameCell.textContent()).trim();
-  console.log('Cache dataset name:', cacheDatasetName);
   
   // Click "Select action" on the child dataset row
   await childRow.getByText('Select action').click();
