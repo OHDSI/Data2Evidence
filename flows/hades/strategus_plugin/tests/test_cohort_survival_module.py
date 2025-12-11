@@ -1,4 +1,3 @@
-import pytest
 from flows.hades.strategus_plugin.nodes import CohortSurvivalModuleNode, CohortDefinitionSharedResource, Result
 from unittest.mock import patch, MagicMock
 
