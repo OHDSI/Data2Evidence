@@ -39,11 +39,7 @@ def get_version_info(options: DataloadOptions):
     logger = get_run_logger()
     try:
         logger.info("Starting GET_VERSION_INFO for HANA load plugin")
-        logger.info("Use cache DB: %s", options.use_cache_db)
         result = get_version_info_tasks(options)
-
-        logger.info("GET_VERSION_INFO completed successfully")
-        logger.debug("GET_VERSION_INFO result: %s", result)
         return result
     except Exception as e:
         logger.error("GET_VERSION_INFO failed: %s", e)
@@ -155,7 +151,7 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
         table_name = csv_file.stem.lower()
         logger.info(f"Loading {csv_file.name} -> {schema}.{table_name}")
         df = pd.read_csv(csv_file)
-        if table_name in ("vocabulary", "concept"):
+        if table_name in ('vocabulary', 'concept'):
             df['VOCABULARY_ID'] = df['VOCABULARY_ID'].fillna('None')
         df.to_sql(
             table_name,
