@@ -190,4 +190,12 @@ export class PublicWebapiProxyAPI {
       data,
     });
   }
+
+  public deleteConceptSet(conceptSetId: number) {
+    return request<number>({
+      baseURL: this.baseURL,
+      url: `d2e-webapi/conceptset/${conceptSetId}`,
+      method: "DELETE",
+    });
+  }
 }

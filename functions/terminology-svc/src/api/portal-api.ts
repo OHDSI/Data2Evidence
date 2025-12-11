@@ -158,14 +158,18 @@ export class SystemPortalAPI {
     }
   }
 
-  async deleteConceptSet(id: number, datasetId: string): Promise<any> {
+  async deleteConceptSet(
+    userId: string,
+    id: number,
+    datasetId: string
+  ): Promise<any> {
     console.info(`Portal request to delete concept set for id: ${id}`);
     const errorMessage = `Error while deleting concept set for id: ${id}`;
     try {
       const options = await this.createOptions();
       const url = `${
         this.url
-      }/user-artifact/concept_sets/${id}?datasetId=${encodeURIComponent(
+      }/user-artifact/${userId}/concept_sets/${id}?datasetId=${encodeURIComponent(
         datasetId
       )}`;
       const result = await this.portalapi.delete(url, options);
