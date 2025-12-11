@@ -3,8 +3,7 @@ import { validationResult } from "express-validator";
 import {
   createProject,
   deleteProject,
-  forwardRequest,
-  testClientCredentials,
+  forwardRequest
 } from "./services";
 
 import { validateCreateFhirProjectDto, validateDeleteFhirProjectDto, validateProxyDto } from "./middleware";
