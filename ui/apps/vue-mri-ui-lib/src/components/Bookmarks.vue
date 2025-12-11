@@ -117,7 +117,7 @@
             v-if="!isLocal"
           >
           </Button>
-          <div class="shared-toggle-container" v-if="!isLocal && canShare">
+          <div class="shared-toggle-container" v-if="!isLocal">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
             <SlideToggle v-model="showSharedBookmarks" />
           </div>
@@ -198,7 +198,7 @@
 
 <script lang="ts">
 declare var sap: any
-import { mapActions, mapGetters, mapMutations, useStore } from 'vuex'
+import { mapActions, mapGetters, mapMutations } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import cohortComparisonDialog from './CohortComparisonDialog.vue'
@@ -213,16 +213,9 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
-import { useUserRole } from '../composables/useUserRole'
-
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
-  setup() {
-    const store = useStore()
-    const { canShare } = useUserRole()
-    return { canShare }
-  },
   data() {
     return {
       maxLength: 40,
