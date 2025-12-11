@@ -111,19 +111,19 @@ export function processRequest({
     const jsonWalk = utilsLib.getJsonWalkFunction(config);
     const configAttrObj = jsonWalk(attributePath)[0].obj;
 
-    if (configAttrObj.refFilter) {
+    if (configAttrObj.referenceFilter) {
       utilsLib.assert(
-        configAttrObj.refFilter.match(/@[^.^\s]+/g).length ===
-          configAttrObj.refFilter.match(/@REF/gi).length,
-        `The only allowed placeholder in the reference filter is @REF`
+        configAttrObj.referenceFilter.match(/@[^.^\s]+/g).length ===
+          configAttrObj.referenceFilter.match(/(@REF|@RESULT_COHORT_DEF|@CDM_COHORT_DEF|@SEARCH_QUERY)/gi).length,
+        `The only allowed placeholders in the reference filter are @REF, @RESULT_COHORT_DEF, @CDM_COHORT_DEF, @SEARCH_QUERY`
       );
     }
 
     if (configAttrObj.referenceExpression) {
       utilsLib.assert(
         configAttrObj.referenceExpression.match(/@[^.^\s]+/g).length ===
-          configAttrObj.referenceExpression.match(/@REF/gi).length,
-        `The only allowed placeholder in the reference expression is @REF`
+          configAttrObj.referenceExpression.match(/(@REF|@RESULT_COHORT_DEF|@CDM_COHORT_DEF)/gi).length,
+        `The only allowed placeholders in the reference expression are @REF, @RESULT_COHORT_DEF, @CDM_COHORT_DEF`
       );
     }
 
@@ -300,7 +300,18 @@ function attributeValidationReference(
 
     const placeholderAliasMap = {
       "@REF": "R",
+      "@RESULT_COHORT_DEF": "RCD",
+      "@CDM_COHORT_DEF": "CCD"
     } as PholderTableMapType;
+
+    const baseEntity = attrRefExpression.match(/@REF|@RESULT_COHORT_DEF|@CDM_COHORT_DEF/g)?.[0] || "@REF";
+
+    placeholderTableMap["@CDM_COHORT_DEF"] = `$$SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@CDM_COHORT_DEF.TEXT"] = `cohort_definition_name`;
+    placeholderTableMap["@RESULT_COHORT_DEF"] = `$$RESULT_SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@RESULT_COHORT_DEF.TEXT"] = `cohort_definition_name`;
+
+    const objDescriptionExpression = getDescriptionExpression(baseEntity, placeholderTableMap);
 
     let sQuery: queryObjectLib.QueryObject;
     const aliasedRefExpression = queryUtils.replacePlaceholderWithCustomString(
@@ -317,8 +328,7 @@ function attributeValidationReference(
     sQuery = queryObjectLib.QueryObject.format(
       'SELECT  top 1 ( %UNSAFE ) AS "min" ' +
         " FROM " +
-        placeholderTableMap["@REF"] +
-        " R " +
+        objDescriptionExpression.descFromText +
         " %UNSAFE ",
       aliasedRefExpression,
       aliasedRefFilter
@@ -433,7 +443,19 @@ function getInfosFromReference({
 
     const placeholderAliasMap = {
       "@REF": "R",
+      "@RESULT_COHORT_DEF": "RCD",
+      "@CDM_COHORT_DEF": "CCD"
     } as PholderTableMapType;
+
+    const baseEntity = attrRefExpression.match(/@REF|@RESULT_COHORT_DEF|@CDM_COHORT_DEF/g)?.[0] || "@REF";
+    const { placeholderTableMap } = placeholderSettings;
+
+    placeholderTableMap["@CDM_COHORT_DEF"] = `$$SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@CDM_COHORT_DEF.TEXT"] = `cohort_definition_name`;
+    placeholderTableMap["@RESULT_COHORT_DEF"] = `$$RESULT_SCHEMA$$.cohort_definition`;
+    placeholderTableMap["@RESULT_COHORT_DEF.TEXT"] = `cohort_definition_name`;
+
+    const objDescriptionExpression = getDescriptionExpression(baseEntity, placeholderTableMap);
 
     let sQuery;
     const aliasedRefExpression = queryUtils.replacePlaceholderWithCustomString(
@@ -451,8 +473,7 @@ function getInfosFromReference({
       'SELECT COUNT( DISTINCT ( %UNSAFE ) )  AS "count" ,' +
         ' MIN ( %UNSAFE ) AS "min" , MAX( %UNSAFE ) AS "max" ' +
         " FROM " +
-        placeholderSettings.placeholderTableMap["@REF"] +
-        " R " +
+        objDescriptionExpression.descFromText +
         " %UNSAFE ",
       aliasedRefExpression,
       aliasedRefExpression,
@@ -465,4 +486,19 @@ function getInfosFromReference({
   } catch (err) {
     callback(err, null);
   }
+}
+
+function getDescriptionExpression(baseEntity: string, placeholderTableMap: PholderTableMapType) {
+    const descObject = {
+        "descSelectText": `R.${placeholderTableMap["@REF.TEXT"]}`,
+        "descFromText": ` ${placeholderTableMap["@REF"]} R `
+    }
+    if (baseEntity === "@RESULT_COHORT_DEF") {
+        descObject["descSelectText"] = `RCD.${placeholderTableMap["@RESULT_COHORT_DEF.TEXT"]}`;
+        descObject["descFromText"] = ` ${placeholderTableMap["@RESULT_COHORT_DEF"]} RCD `;
+    } else if (baseEntity === "@CDM_COHORT_DEF") {
+        descObject["descSelectText"] = `CCD.${placeholderTableMap["@CDM_COHORT_DEF.TEXT"]}`;
+        descObject["descFromText"] = ` ${placeholderTableMap["@CDM_COHORT_DEF"]} CCD `;
+    }
+    return descObject;
 }

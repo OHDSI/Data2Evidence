@@ -190,6 +190,8 @@ export const defaultInterfaceViewsPholderTableMap: PholderTableMapType = {
   "@COHORT": '$$SCHEMA$$.cohort',
   "@COHORT.PATIENT_ID": '"subject_id"',
   "@COHORT.INTERACTION_TYPE": '"cohort_definition_id"',
+  "@CDM_COHORT_DEF": '$$SCHEMA$$.cohort_definition',
+  "@RESULT_COHORT_DEF": '$$RESULT_SCHEMA$$.cohort_definition',
 };
 
 export const defaultInterfaceViewsSettings: GlobalSettingsType = {
@@ -363,6 +365,8 @@ export const defaultPholderTableMap: PholderTableMapType = {
   "@COHORT": '$$SCHEMA$$.cohort',
   "@COHORT.PATIENT_ID": '"subject_id"',
   "@COHORT.INTERACTION_TYPE": '"cohort_definition_id"',
+  "@CDM_COHORT_DEF": '$$SCHEMA$$.cohort_definition',
+  "@RESULT_COHORT_DEF": '$$RESULT_SCHEMA$$.cohort_definition',
 };
 
 export const defaultSettings: GlobalSettingsType = {
