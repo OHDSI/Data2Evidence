@@ -128,5 +128,3 @@ def get_version_info_tasks(options: DataloadOptions):
         entity_name="version",
         logger=logger,
     )
-
-    logger.info(f"Completed GET_VERSION_INFO for schema '{schema_name}'")
