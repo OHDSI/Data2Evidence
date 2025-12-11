@@ -21,6 +21,7 @@ export const i18nDefault = {
     IMPORT_DIALOG__SOURCE_DOMAIN_COLUMN: "Source domain column",
     MAPPING_TABLE__CONCEPT_ID: "Concept ID",
     MAPPING_TABLE__CONCEPT_NAME: "Concept Name",
+    MAPPING_TABLE__CONCEPT_CODE: "Concept Code",
     MAPPING_TABLE__DESCRIPTION: "Description",
     MAPPING_TABLE__DOMAIN_ID: "Domain",
     MAPPING_TABLE__FREQUENCY: "Frequency",

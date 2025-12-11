@@ -11,7 +11,7 @@ from prefect.context import TaskRunContext, FlowRunContext, get_run_context
 from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
-from .flowutils import get_node_list, get_incoming_edges
+from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
@@ -20,6 +20,10 @@ from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
 @flow(log_prints=True)
 def strategus_plugin(json_graph, options):
     logger = Logger()
+
+    # TODO: use prefect variable instead of hardcoding
+    # lockfile_location = "/app/renv.lock"
+    # install_r_packages_from_lockfile(lockfile_location)
 
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
@@ -38,6 +42,10 @@ def strategus_plugin(json_graph, options):
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
     upload_results = _options.get('uploadResults', False)
+    databaseCode = options.get('databaseCode', None)
+    datasetId = options.get('datasetId', None)
+    studyName = options.get("studyName", "")
+    studyId = options.get('studyId', None)
 
     generate_nodes_flow_wo = generate_nodes_flow.with_options(
         on_completion=[
@@ -73,9 +81,9 @@ def strategus_plugin(json_graph, options):
         )
         if(upload_results):
             result_db_settings = {
-                'database_code': get_study_results_db_code(),
-                "dataset_id": options.get('datasetId', None),
-                "study_id": options.get('studyId', None)
+                'database_code': databaseCode,
+                "dataset_id": datasetId,
+                "study_id": studyId
             }
             upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
 
@@ -83,8 +91,8 @@ def strategus_plugin(json_graph, options):
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
     finally:
         strategus_api = StrategusAnalysisAPI()
-        study_name = options.get("studyName", "")
-        study_id = options.get("studyId", "")
+        study_name = studyName
+        study_id = studyId
         if(strategus_api.update_study_analysis(study_id, study_name, study_analysis_result.data)):
             logger.info(f"Successfully updated strategus analysis specification for study '{study_id}'")
 
@@ -238,7 +246,7 @@ def runStrategus(json_graph, options):
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
     if(upload_results):
         result_db_settings = {
-            'database_code': get_study_results_db_code(),
+            'database_code': database_code,
             "dataset_id": datasetId,
             "study_id": study_id
         }
@@ -257,16 +265,10 @@ def drop_strategus_results(options):
        raise Exception('Database code is missing')
 
     drop_strategus_results_schema(dbSettings={
-        'database_code': get_study_results_db_code(),
+        'database_code': database_code,
         'dataset_id': datasetId,
         'study_id': study_id
     })
-
-def get_study_results_db_code():
-    """
-    Returns the database code for the Strategus results database.
-    """
-    return "study_results"
 
 # Following __main__ is meant for development purposes
 # Enables to run the flow as a simple method, and not a prefect flow 

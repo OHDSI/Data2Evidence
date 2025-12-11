@@ -9,7 +9,7 @@ test(TEST_NAME, async ({ page }) => {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
   }
 
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()

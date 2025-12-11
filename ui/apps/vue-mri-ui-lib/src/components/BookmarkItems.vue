@@ -537,6 +537,7 @@ onErrorCaptured((err, instance, info) => {
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
             @click="onSelectBookmark(bookmarkDisplay)"
+            :title="getText('MRI_PA_TOOLTIP_SELECT_BOOKMARK')"
           >
             <PlusInBoxIcon
               :type="

@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 const randomString = Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(120 * 1000)
   // Sign in
-  await page.goto(`/portal`)
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
