@@ -308,7 +308,7 @@ services:
            "schemas": {
             "+public": {}
            }
-          },
+          }
          }
         }
       POSTGRES_ALTER_EXTENSION_CONFIG: |-
