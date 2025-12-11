@@ -26,10 +26,10 @@ Miscellaneous Functions:
 
 export class ExpressionDefinition {
     public expressions: Array<{ regex: RegExp; placeholder?: string }>;
-    private aPlaceholders: string[];
+    private aPlaceholders: string[] = ["CDM_COHORT_DEF", "RESULT_COHORT_DEF"];
 
     constructor(defaultPholderTableMap: any) {
-        this.aPlaceholders = Object.keys(defaultPholderTableMap).map((key) => key.replace("@", ""));
+        this.aPlaceholders = this.aPlaceholders.concat(Object.keys(defaultPholderTableMap).map((key) => key.replace("@", "")));
 
         this.expressions = [
             // Column access
