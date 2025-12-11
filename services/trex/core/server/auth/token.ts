@@ -21,7 +21,7 @@ export const getClientCredentialsToken = async () => {
     return
   }
 
-  const client = new OpenIDAPI({ issuerUrl: `https://${env.GATEWAY_WO_PROTOCOL_FQDN}/oauth/` })
+  const client = new OpenIDAPI({ issuerUrl: `https://${env.GATEWAY_WO_PROTOCOL_FQDN}/d2e/oauth/` })
   return await client.getClientCredentialsToken({ clientId, clientSecret, scope })
 }
 

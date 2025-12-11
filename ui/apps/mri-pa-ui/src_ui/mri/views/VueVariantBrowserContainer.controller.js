@@ -467,8 +467,7 @@ sap.ui.define([
                                     request: "search.searchField.listSearchHistory",
                                     parameters: {}
                                 }),
-                                dataType: "json",
-                                contentType: "application/json"
+                                dataType: "json"
                             }).done(function(oData) {
                                     // put the data from backend to JSON model
                                     that.searchTermsModel.setData($.extend({}, that.searchTermsModel.getData(), oData.result));

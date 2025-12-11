@@ -815,7 +815,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         {displaySameCdmVocabSchemaCheckbox && (
           <div style={{ marginBottom: "32px" }}>
             <Checkbox
-              disabled
               checked={formData.isSameCdmSchemaForVocab}
               checkbox-id="is-same-cdm-schema-for-vocab-checkbox"
               label={getText(i18nKeys.ADD_STUDY_DIALOG__USE_SAME_SCHEMA)}

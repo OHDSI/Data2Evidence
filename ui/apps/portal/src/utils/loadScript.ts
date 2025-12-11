@@ -45,10 +45,10 @@ export const loadSapScript = (onloadCallback: Callback): Callback => {
     "data-sap-ui-compatVersion": "edge",
     "data-sap-ui-preload": "async",
     "data-sap-ui-resourceroots": JSON.stringify({
-      hc: `${env.REACT_APP_DN_BASE_URL}hc`,
-      "hc.hph": `${env.REACT_APP_DN_BASE_URL}hc/hph`,
-      "hc.hph.cdw.config": `${env.REACT_APP_DN_BASE_URL}hc/hph/cdw/config`,
-      "hc.mri.pa.config": `${env.REACT_APP_DN_BASE_URL}hc/mri/pa/config`,
+      hc: `${env.REACT_APP_DN_BASE_URL}d2e/hc`,
+      "hc.hph": `${env.REACT_APP_DN_BASE_URL}d2e/hc/hph`,
+      "hc.hph.cdw.config": `${env.REACT_APP_DN_BASE_URL}d2e/hc/hph/cdw/config`,
+      "hc.mri.pa.config": `${env.REACT_APP_DN_BASE_URL}d2e/hc/mri/pa/config`,
     }),
   });
 };

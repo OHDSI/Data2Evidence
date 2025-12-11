@@ -11,7 +11,7 @@ sap.ui.define(
       ConfigUtils.ajax(
         jQuery.extend(
           {
-            url: "/hc/hph/config/services/global.xsjs",
+            url: "/d2e/hc/hph/config/services/global.xsjs",
             type: "POST",
             dataType: "json",
             contentType: "application/json; charset=utf-8",
