@@ -2847,7 +2847,6 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
-
           ],
           "httpMethods": [
             "GET",
