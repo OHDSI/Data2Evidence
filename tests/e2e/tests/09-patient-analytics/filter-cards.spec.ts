@@ -83,7 +83,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('row', { name: '260139 10509002 Acute bronchitis' }).getByRole('img').click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('439777 271737000 Anemia')
   await page.getByRole('button', { name: 'Search' }).click()
-  await page.getByRole('row', { name: '439777 271737000 Anemia 102.' }).getByRole('img').click()
+  await page.getByRole('row', { name: '439777 271737000 Anemia' }).getByRole('img').click()
   await page.getByRole('button', { name: 'Create' }).click()
   await page.getByRole('tab', { name: 'Selected concepts' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
