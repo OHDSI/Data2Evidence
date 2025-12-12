@@ -197,7 +197,7 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server"]}'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "fhir"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -308,11 +308,6 @@ services:
            "schemas": {
             "+public": {}
            }
-          },
-          "+${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
-           "schemas": {
-            "+public": {}
-           }
           }
          }
         }
@@ -344,14 +339,6 @@ services:
           "readerPassword": "${PG_WRITE_PASSWORD}",
           "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
           "writerPassword": "${PG_WRITE_PASSWORD}"
-         },
-         "${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
-          "manager": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "managerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "writer": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "writerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "reader": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-          "readerPassword": "${PG_STUDY_RESULTS_READ_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
