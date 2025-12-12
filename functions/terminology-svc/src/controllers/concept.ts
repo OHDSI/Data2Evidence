@@ -349,7 +349,9 @@ export const getStandardConcepts = async (
             index,
             conceptId: conceptResults.conceptId,
             conceptName: conceptResults.display,
+            conceptCode: conceptResults.code,
             domainId: conceptResults.domainId,
+            vocabularyId: conceptResults.system,
           };
         } catch (error) {
           console.error(error);

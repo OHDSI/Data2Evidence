@@ -308,11 +308,6 @@ services:
            "schemas": {
             "+public": {}
            }
-          },
-          "+${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
-           "schemas": {
-            "+public": {}
-           }
           }
          }
         }
@@ -344,14 +339,6 @@ services:
           "readerPassword": "${PG_WRITE_PASSWORD}",
           "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
           "writerPassword": "${PG_WRITE_PASSWORD}"
-         },
-         "${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
-          "manager": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "managerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "writer": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "writerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "reader": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-          "readerPassword": "${PG_STUDY_RESULTS_READ_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}

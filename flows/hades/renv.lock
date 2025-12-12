@@ -925,7 +925,7 @@
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
       "RemoteRef": "alp-dqd",
-      "RemoteSha": "4a20bfccf83ac8a738091184cffed62429d262f2"
+      "RemoteSha": "497c24aaf80c1677c0f263e20014372305547d32"
     },
     "DeepPatientLevelPrediction": {
       "Package": "DeepPatientLevelPrediction",
