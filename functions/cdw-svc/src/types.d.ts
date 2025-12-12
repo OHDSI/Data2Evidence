@@ -167,6 +167,8 @@ declare global {
     ["@COHORT"]: string;
     ["@COHORT.PATIENT_ID"]: string;
     ["@COHORT.INTERACTION_TYPE"]: string;
+    ["@CDM_COHORT_DEF"]: string;
+    ["@RESULT_COHORT_DEF"]: string;
   }
 
   type PlaceholderMapType = {
