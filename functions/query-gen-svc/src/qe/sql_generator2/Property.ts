@@ -315,15 +315,31 @@ export class Property extends AstElement {
                         );
 
                         //Add the ON condition between additional concept table and the descendant expression
-                        const maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
+                        let maxRefAlias;
+                        try {
+                         maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
+                        } catch (e) {
+                            //Expected scenario and handled
+                            maxRefAlias = null;
+                        }
                         const maxRefAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[newRefPlaceholder]);
-                        const finalmaxDescendantsJoinExpression = QueryObject.format("%UNSAFE", 
+                        if (maxRefAlias){
+                            const finalmaxDescendantsJoinExpression = QueryObject.format("%UNSAFE", 
                                             `${conRelAliasObj.alias}.FACET_CONCEPT_ID = ${maxRefAliasObj.alias}.CONCEPT_ID`)
-                        maxRefAliasObj.on = []; //initialize
-                        this.pushOnCondition(
-                            maxRefAliasObj.on,
-                            finalmaxDescendantsJoinExpression
-                        )
+                            if(!maxRefAliasObj.on) maxRefAliasObj.on = []; //initialize
+                            this.pushOnCondition(
+                                maxRefAliasObj.on,
+                                finalmaxDescendantsJoinExpression
+                            )
+                        } else { //This indicated that no new node has been created for this new placeholder and it reused the existing node for @REF
+                            if(!maxRefAliasObj.on) {
+                                maxRefAliasObj.on = []; //initialize
+                                this.pushOnCondition(
+                                    maxRefAliasObj.on,
+                                    "1=1"
+                                )
+                            }
+                        }
                     }
                 }
             }
