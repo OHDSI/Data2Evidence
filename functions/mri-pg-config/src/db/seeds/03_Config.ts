@@ -23487,7 +23487,7 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.proc",
             "visible": true,
-            "order": 5,
+            "order": 4,
             "initial": false,
             "attributes": [
                 {
@@ -24237,7 +24237,7 @@ const paConfigDuckdb = {
         {
             "source": "patient.interactions.measurement",
             "visible": true,
-            "order": 12,
+            "order": 9,
             "initial": false,
             "attributes": [
                 {
