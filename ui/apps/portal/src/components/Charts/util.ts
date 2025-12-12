@@ -66,7 +66,7 @@ export const parseBarChartData = (
 export const getAxisNameGap = (series: any[], formatter?: string, baseGap: number = 16): number => {
   const charWidth = 8; // approximate width per character
 
-  // Check if data contains strings and find max lengths/values
+  // Find max value or max string length
   let maxLabelLength = 0;
   let maxValue = 0;
   let isStringData = false;
@@ -76,10 +76,10 @@ export const getAxisNameGap = (series: any[], formatter?: string, baseGap: numbe
       s.data.forEach((val: any) => {
         if (typeof val === "string") {
           isStringData = true;
-          if (val.length > maxLabelLength) maxLabelLength = val.length;
+          maxLabelLength = Math.max(maxLabelLength, val.length);
         } else {
           const numVal = typeof val === "number" ? val : val?.value ?? 0;
-          if (numVal > maxValue) maxValue = numVal;
+          maxValue = Math.max(maxValue, Math.abs(numVal));
         }
       });
     }
@@ -89,17 +89,27 @@ export const getAxisNameGap = (series: any[], formatter?: string, baseGap: numbe
   if (isStringData) {
     // For strings, use the max length directly
     formattedLabel = "x".repeat(maxLabelLength);
-  } else if (formatter) {
-    formattedLabel = formatter.replace("{value}", String(maxValue));
   } else {
-    // estimate interval (ECharts typically uses 5 splits)
-    const absoluteInterval = Math.abs(maxValue) / 5;
+    // Add ~20% margin since ECharts rounds up to nice numbers
+    const estimatedMax = maxValue * 1.2;
 
-    // determine decimal places from interval
-    const decimalPlaces = absoluteInterval > 0 && absoluteInterval < 1 ? Math.ceil(-Math.log10(absoluteInterval)) : 0;
+    // ECharts typically uses 5 splits, so calculate interval
+    const interval = estimatedMax / 5;
 
-    formattedLabel = maxValue.toFixed(decimalPlaces);
+    if (formatter) {
+      formattedLabel = formatter.replace("{value}", String(Math.ceil(estimatedMax)));
+    } else {
+      // Determine decimal places based on the interval (not the max)
+      // This ensures we account for labels like 1.25, 2.5, 3.75 when max is 5
+      let decimalPlaces = 0;
+      if (interval > 0 && interval < 1) {
+        decimalPlaces = Math.ceil(-Math.log10(interval));
+      }
+
+      formattedLabel = estimatedMax.toFixed(decimalPlaces);
+    }
   }
+
   const labelWidth = formattedLabel.length * charWidth;
   return baseGap + labelWidth;
 };
