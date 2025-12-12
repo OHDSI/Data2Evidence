@@ -78,7 +78,7 @@ const Dashboard: FC<DashboardProps> = ({ flowRunId, datasetId }) => {
             yAxisName={getText(i18nKeys.DASHBOARD__BAR_CHART_Y_AXIS_NAME)}
             tooltipFormat={getText(i18nKeys.DASHBOARD__BAR_CHART_TOOLTIP_FORMAT)}
           />
-          <ObservationPeriodCumulativeDurationChart data={dashboardData.cumulativeObservation} axisBaseGap={30} />
+          <ObservationPeriodCumulativeDurationChart data={dashboardData.cumulativeObservation} axisBaseGap={36} />
           <ObservationPeriodObservedByMonthChart data={dashboardData.observedByMonth} axisBaseGap={18} />
         </>
       )}
