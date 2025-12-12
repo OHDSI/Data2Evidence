@@ -31,13 +31,15 @@ const getters = {
   dataToTraces:
     (state, getters) =>
     (chartData, selection = [], totalSelected = 0) => {
-      const xAxes = chartData.categories.filter(category => category.axis === Constants.AxisId.X)
+      const xAxes: { id: string; axis: number; name: string }[] = chartData.categories.filter(
+        category => category.axis === Constants.AxisId.X
+      )
       // Flag to toggle the bar chart category type
       chartData.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
       // Get the unique y-axis attribute id if any
       const yAxis = chartData.categories.filter(category => category.axis === Constants.AxisId.Y)
 
-      const categoryArray = []
+      const categoryArray: { name: string | number; data: Record<string, string | number>[] }[] = []
       if (yAxis.length !== 0) {
         // Dictionary-based data categorization based on the unique y-axis attribute
         const yAttrKey = yAxis[0].id
@@ -76,7 +78,9 @@ const getters = {
         // Custom tooltip labelling
         let hoverTemplate = ''
         if (xAxes.length === 1) {
-          xData = category.data.map(data => truncateAtWordBoundary(data[xAxes[0].id], Constants.XAxisLabelMaxLength))
+          xData = category.data.map(data =>
+            truncateAtWordBoundary(String(data[xAxes[0].id]), Constants.XAxisLabelMaxLength)
+          )
           customdataArray = category.data.map(dataPoint => ({
             x: xAxes,
             y: yAxis,
@@ -86,7 +90,7 @@ const getters = {
         } else {
           // Truncate labels for x-axis display
           xData = xAxes.map(xAxis =>
-            category.data.map(data => truncateAtWordBoundary(data[xAxis.id], Constants.XAxisLabelMaxLength))
+            category.data.map(data => truncateAtWordBoundary(String(data[xAxis.id]), Constants.XAxisLabelMaxLength))
           )
           // Build customdata array with full labels for each data point
           customdataArray = category.data.map(dataPoint => {
@@ -325,4 +329,3 @@ export default {
   actions,
   mutations,
 }
-

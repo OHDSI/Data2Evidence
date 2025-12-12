@@ -3,7 +3,7 @@
     <template v-slot:header>{{
       getText('MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION') + ` (${this.bookmarkName})`
     }}</template>
-    <template v-slot:body v-if="cohortDefinitionType === 'D2E'">
+    <template v-slot:body>
       <div class="cohort-dialog">
         <appMessageStrip
           :messageType="messageStrip.messageType"
@@ -12,7 +12,7 @@
           @closeEv="resetMessageStrip"
         />
 
-        <div class="form-group">
+        <div class="form-group" v-if="cohortDefinitionType === 'D2E'">
           <div class="row">
             <div class="col-sm-4 form-check col-form-label">
               <label class="form-check-label" for="cohort-radio-newcollection">{{
@@ -29,11 +29,18 @@
             </div>
           </div>
         </div>
+
+        <!-- TODO: Customize dialog body for Atlas -->
+        <div v-if="cohortDefinitionType === 'Atlas' && !messageStrip.show">Click OK to materialize this cohort.</div>
       </div>
     </template>
     <template v-slot:footer>
       <div class="flex-spacer"></div>
-      <appButton :disabled="cohortBusy" :click="onOkButtonPress" :text="getText('MRI_PA_COLL_BUT_OK')"></appButton>
+      <appButton
+        :disabled="cohortBusy || (messageStrip.show && messageStrip.messageType === 'error')"
+        :click="onOkButtonPress"
+        :text="getText('MRI_PA_COLL_BUT_OK')"
+      ></appButton>
       <appButton :disabled="cohortBusy" :click="closeWindow" :text="getText('MRI_PA_COLL_BUT_CANCEL')"></appButton>
     </template>
   </messageBox>
@@ -162,9 +169,11 @@ export default {
         }
         const failureCallback = err => {
           this.cohortBusy = false
+          const errorMessage = err?.message || this.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT')
+
           this.messageStrip = {
             show: true,
-            message: err,
+            message: errorMessage,
             messageType: 'error',
           }
           return err
