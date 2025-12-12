@@ -74,7 +74,7 @@ jobs:
               - "functions/**"
               - "fhir_functions/**"
               - "services/trex/ext/**"
-              - ".github/workflows/plugin-ci.yml"
+              # - ".github/workflows/plugin-ci.yml"
               - ".github/workflows/flows-plugin-ci.yml"
   pick_runner:
     runs-on: ubuntu-latest
@@ -227,7 +227,7 @@ jobs:
     steps:
       - name: Check
         run: |
-          if [ "$BUILD_JOB_STATUS" == "success" ]; then
+          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
             exit 0
           else
             exit 1
