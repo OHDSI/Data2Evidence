@@ -115,12 +115,18 @@ const actions = {
       })
       .catch(error => {
         if (newRequest) {
-          throw rootGetters.getText(
-            'MRI_PA_COLL_EXISTING_COLLECTION',
-            params.addItemsToCollectionParams.collection.title
-          )
+          throw {
+            code: 'EXISTING_COLLECTION',
+            message: rootGetters.getText(
+              'MRI_PA_COLL_EXISTING_COLLECTION',
+              params.addItemsToCollectionParams.collection.title
+            ),
+          }
         }
-        throw rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT')
+        throw {
+          code: 'ADD_PATIENT_FAILED',
+          message: rootGetters.getText('MRI_PA_COLL_FAILURE_ADD_PATIENT'),
+        }
       })
   },
   loadOldCollections({ state, commit, dispatch, rootGetters }) {
