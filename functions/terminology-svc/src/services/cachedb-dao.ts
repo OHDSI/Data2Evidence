@@ -516,13 +516,21 @@ export class CachedbDAO {
       }
     });
 
+    const individualFilterWhereOR = (comparators: string[]): string => {
+      if (comparators.length === 0) {
+        return "";
+      } else {
+        return `(${comparators.join(" OR ")})`;
+      }
+    };
+
     const filterList = [
-      ...conceptClassIdFilter,
-      ...domainIdFilter,
-      ...standardConceptFilter,
-      ...vocabularyIdFilter,
-      ...validityFilter,
-    ];
+      individualFilterWhereOR(conceptClassIdFilter),
+      individualFilterWhereOR(domainIdFilter),
+      individualFilterWhereOR(standardConceptFilter),
+      individualFilterWhereOR(vocabularyIdFilter),
+      individualFilterWhereOR(validityFilter),
+    ].filter(Boolean); // Remove empty strings from array
 
     if (filterList.length === 0) {
       return "";
