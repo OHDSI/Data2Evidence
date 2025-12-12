@@ -818,6 +818,8 @@ const getDBConnections = async ({
         analyticsConnection,
     };
 };
+
+
 const main = async () => {
     /**
      * Handle Environment Variables
