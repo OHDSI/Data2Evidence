@@ -394,12 +394,27 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
     await page.getByText('Demo dataset').first().click()
+
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    // Click delete for "Atlas Cohort Definition"
-    await page
-      .locator('.item-card', { hasText: 'Atlas Cohort Definition' })
-      .locator('.footer .icon-button[title="Delete Saved Filter"]')
-      .click()
-    await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
+    //Delete the Shared saved filter
+    await test.step('Delete Shared saved filter', async () => {
+      await expect(page.getByText('Shared saved filter')).toBeVisible({ timeout: 20000 })
+      await page
+        .locator('.item-card', { hasText: 'D2E Cohort Definition' })
+        .locator('.footer .icon-button[title="Delete Saved Filter"]')
+        .click()
+      await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
+      await expect(page.getByText('Shared saved filter')).not.toBeVisible({ timeout: 20000 })
+    })
+    //Delete the Atlas Cohort Definition
+    await test.step('Delete Atlas Cohort Definition', async () => {
+      await expect(page.getByText('Test Another Patient List')).toBeVisible({ timeout: 20000 })
+      await page
+        .locator('.item-card', { hasText: 'Atlas Cohort Definition' })
+        .locator('.footer .icon-button[title="Delete Saved Filter"]')
+        .click()
+      await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
+      await expect(page.getByText('Test Another Patient List')).not.toBeVisible({ timeout: 20000 })
+    })
   })
 })
