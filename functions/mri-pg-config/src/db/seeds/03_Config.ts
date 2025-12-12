@@ -26430,7 +26430,7 @@ const paConfigDuckdb = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": []
+            "categories": ["patient.attributes.Gender_concept_name"]
         },
         "initialChart": "stacked",
         "stacked": {
@@ -33896,7 +33896,7 @@ const pajsonfhirConfigDuckdb = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": []
+            "categories": ["patient.attributes.gender"]
         },
         "initialChart": "stacked",
         "stacked": {
@@ -37369,7 +37369,7 @@ const omopHanaLeanPAConfig = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": []
+            "categories": ["patient.attributes.Gender"]
         },
         "initialChart": "stacked",
         "stacked": {

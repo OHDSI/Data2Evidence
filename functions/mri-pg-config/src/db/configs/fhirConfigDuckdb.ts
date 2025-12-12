@@ -1188,7 +1188,7 @@ export const paFHIRConfigDuckdb = {
   chartOptions: {
     initialAttributes: {
       measures: ["patient.attributes.pcount"],
-      categories: [],
+      categories: ["patient.attributes.gendersourcevalue"],
     },
     initialChart: "stacked",
     stacked: {
