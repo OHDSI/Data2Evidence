@@ -25,7 +25,7 @@ test('atlas-lite cohort creation', async ({ page }) => {
   let atlasOffCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' })
   await expect(atlasOffCheckbox).not.toBeChecked()
   await page.getByRole('button', { name: 'Save' }).click()
-  // await expect(page.getByText('Configuration saved.')).toBeVisible()
+  await expect(page.getByText('Configuration saved.')).toBeVisible()
 
   // Go to cohorts screen and test CEE
   await page.getByRole('link', { name: 'Account' }).click()
