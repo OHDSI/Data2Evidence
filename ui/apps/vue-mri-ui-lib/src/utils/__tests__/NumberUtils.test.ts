@@ -38,8 +38,13 @@ describe('formatNumber', () => {
     expect(formatNumber(-1234567)).toBe('-1,234,567')
   })
 
-  it('returns string values as-is (for error states)', () => {
+  it('returns non-numeric string values as-is (for error states)', () => {
     expect(formatNumber('--')).toBe('--')
     expect(formatNumber('N/A')).toBe('N/A')
+  })
+
+  it('formats numeric strings with comma separator', () => {
+    expect(formatNumber('1000')).toBe('1,000')
+    expect(formatNumber('1234567')).toBe('1,234,567')
   })
 })

@@ -13,7 +13,12 @@ export function formatNumber(value: number | string | null | undefined): string 
     return '0'
   }
   if (typeof value === 'string') {
-    return value
+    // Try to parse as number, if it fails return the string as-is (for error states like '--')
+    const parsed = Number(value)
+    if (isNaN(parsed)) {
+      return value
+    }
+    return parsed.toLocaleString('en-US')
   }
   if (isNaN(value)) {
     return '0'
