@@ -74,7 +74,7 @@ jobs:
               - "./services/enterprise-gateway/r-strategus-lib/**"
               - "./flows/hades/renv.lock"
               - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
-              # - ".github/workflows/docker-build-push.yaml"
+              - ".github/workflows/docker-build-push.yaml"
 
   bld:
     needs: [pick_runner, check_file_changes]
