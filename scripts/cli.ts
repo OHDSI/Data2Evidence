@@ -124,7 +124,7 @@ class D2ECli {
     const DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY = keyObject.export({
       type: "pkcs8",
       format: "pem",
-    });
+    }) as string;
 
     const DB_CREDENTIALS__INTERNAL__PUBLIC_KEY = publicKey;
 
@@ -187,18 +187,15 @@ class D2ECli {
         this.DEFAULT_PASSWORD_LENGTH
       )}`,
       DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY:
-        DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.toString(),
+        DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.trim(),
       DB_CREDENTIALS__INTERNAL__PUBLIC_KEY:
-        DB_CREDENTIALS__INTERNAL__PUBLIC_KEY.toString(),
+        DB_CREDENTIALS__INTERNAL__PUBLIC_KEY.trim(),
     };
 
     const envContent = Object.entries(envVariables)
       .map(([key, value]) => {
-        // Quote values containing newlines
-        if (typeof value === "string" && value.includes("\n")) {
-          // Escape backslashes first, then double quotes
-          const escaped = value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-          return `${key}="${escaped}"`;
+        if (key.includes("DECRYPT_PRIVATE_KEY") || key.includes("PUBLIC_KEY")) {
+          return `${key}='${value}'`;
         }
         return `${key}=${value}`;
       })

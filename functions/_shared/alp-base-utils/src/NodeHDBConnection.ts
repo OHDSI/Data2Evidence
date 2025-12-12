@@ -479,14 +479,7 @@ export class NodeHDBConnection implements ConnectionInterface {
       throw error;
     }
     const replacement = schemaName === "" ? "" : `${schemaName}.`;
-    sql = sql.replace(
-            /\$\$SCHEMA\$\$."?COHORT_DEFINITION"?/g,
-            `"${cohortSchemaName}".COHORT_DEFINITION`
-          );
-    sql = sql.replace(
-            /\$\$SCHEMA\$\$."?COHORT"?/g,
-            `"${cohortSchemaName}".COHORT`
-            );
+
     sql = sql.replace(/\$\$SCHEMA\$\$./g, replacement);
     sql = sql.replace(/\$\$VOCAB_SCHEMA\$\$./g, `${vocabSchemaName}.`);
     sql = sql.replace(/\$\$RESULT_SCHEMA\$\$./g, `${cohortSchemaName}.`);
