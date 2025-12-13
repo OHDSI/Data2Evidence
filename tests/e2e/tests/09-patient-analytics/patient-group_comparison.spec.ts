@@ -1,9 +1,7 @@
 import { test, expect } from '@playwright/test'
 
-
-
 test('pa-compare-cohorts', async ({ page }) => {
-  test.slow();
+  test.slow()
   // Generate unique cohort name to avoid conflicts with other tests
   const cohortA = `CohortA_${new Date().getTime()}`
   const cohortB = `CohortB_${new Date().getTime()}`
@@ -32,31 +30,31 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.getByRole('link', { name: 'Cohorts' }).click()
 
   await page.waitForTimeout(10000)
-  await createCohortWithOneConditionOccurrenceFilercard(page, cohortA);
+  await createCohortWithOneConditionOccurrenceFilercard(page, cohortA)
   await addAgeFilter(page, '[35-80]')
   await page.waitForTimeout(3000)
   // do not add the concept set for "Acute allergic reaction"
   // await createConceptSet(page, 'Acute allergic reaction', 'Acute allergic reaction', '4084167 241929008 Acute')
-  
+
   // ========================
   // COHORT RESULTS VERIFICATION
   // ========================
   // Verify that the combined filters (age 35-80 + acute allergic reaction) result in 104 patients
-  await expect(page.locator('#pane-right')).toContainText('2223')
-  
+  await expect(page.locator('#pane-right')).toContainText('2,223')
+
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click();
-  await page.getByTitle('Enter Fullscreen').click();
-  await expect(page.locator('#pane-left')).toContainText(cohortA);
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.getByTitle('Enter Fullscreen').click()
+  await expect(page.locator('#pane-left')).toContainText(cohortA)
 
   // Cohort B creation: with Condition Occurrence A filtercard
   await page.waitForTimeout(10000)
-  await createCohortWithOneConditionOccurrenceFilercard(page, cohortB);
+  await createCohortWithOneConditionOccurrenceFilercard(page, cohortB)
   await addAgeFilter(page, '[10-50]')
   await page.waitForTimeout(3000)
   await expect(page.locator('#pane-right')).toContainText('358')
@@ -73,27 +71,27 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click();
-  await page.getByTitle('Enter Fullscreen').click();
-  await expect(page.locator('#pane-left')).toContainText(cohortB);
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.getByTitle('Enter Fullscreen').click()
+  await expect(page.locator('#pane-left')).toContainText(cohortB)
 
-  await page.locator('div:nth-child(1) > .footer > div > svg').first().click();
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click();
-  await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled();
+  await page.locator('div:nth-child(1) > .footer > div > svg').first().click()
+  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
+  await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
 
-  await page.getByRole('button', { name: 'Compare' }).click();
-  await page.waitForTimeout(15000);
+  await page.getByRole('button', { name: 'Compare' }).click()
+  await page.waitForTimeout(15000)
 
   // Verify the comparison modal is visible
-  await expect(page.locator('.modal-body')).toBeVisible();
-  await page.locator('.mainChartToolbar').getByTitle('Export to File').click();
+  await expect(page.locator('.modal-body')).toBeVisible()
+  await page.locator('.mainChartToolbar').getByTitle('Export to File').click()
 
-  const downloadPromise = page.waitForEvent('download');
-  await page.locator('#pane-left').getByText('Export to PNG File').click();  
-  const download = await downloadPromise;
+  const downloadPromise = page.waitForEvent('download')
+  await page.locator('#pane-left').getByText('Export to PNG File').click()
+  const download = await downloadPromise
 
   // Verify the downloaded file is a PNG
-  expect(download.suggestedFilename()).toMatch(/MRI Chart\.png$/);
+  expect(download.suggestedFilename()).toMatch(/MRI Chart\.png$/)
 
   // ========================
   // CLEANUP SECTION
@@ -108,18 +106,18 @@ test('pa-compare-cohorts', async ({ page }) => {
   // await page.locator('.footer > div:nth-child(5)').first().click()
   // await page.getByRole('button', { name: 'Delete' }).click()
 
-  await page.getByTitle('Delete Saved Filter').first().click();
-  await page.getByRole('button', { name: 'Delete' }).click();
-  await page.waitForTimeout(25000);
-  await page.getByTitle('Delete Saved Filter').first().click();
-  await page.getByRole('button', { name: 'Delete' }).click();
-  await page.waitForTimeout(25000);
-  
-  await expect(page.getByText('You have not yet saved any')).toBeVisible();
+  await page.getByTitle('Delete Saved Filter').first().click()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.waitForTimeout(25000)
+  await page.getByTitle('Delete Saved Filter').first().click()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.waitForTimeout(25000)
+
+  await expect(page.getByText('You have not yet saved any')).toBeVisible()
 })
 
 async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName) {
-// ========================
+  // ========================
   // COHORT CREATION SECTION
   // ========================
   // Start creating a new cohort using D2E cohort builder
