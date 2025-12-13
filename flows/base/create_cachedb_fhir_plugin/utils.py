@@ -1,5 +1,3 @@
-import os
-
 from prefect import task
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
