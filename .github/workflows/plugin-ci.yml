@@ -227,7 +227,7 @@ jobs:
     steps:
       - name: Check
         run: |
-          if [ "$BUILD_JOB_STATUS" == "success" ]; then
+          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
             exit 0
           else
             exit 1
