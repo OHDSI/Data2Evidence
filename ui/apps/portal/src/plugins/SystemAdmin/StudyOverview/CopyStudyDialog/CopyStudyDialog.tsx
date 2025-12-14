@@ -255,6 +255,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       const input: CopyStudyInput = {
         newStudyName: name,
         sourceStudyId: study.id,
+        sourceType: study.type as SourceDatasetType,
         snapshotLocation: "DB",
         dataModel: study.dataModel,
         type: formData.type,

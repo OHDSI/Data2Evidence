@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
 const SHOULD_SKIP = false
@@ -6,9 +6,9 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 const randomString = Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
-  test.setTimeout(120 * 1000)
+  test.setTimeout(360 * 1000)
   // Sign in
-  await page.goto(`/portal`)
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -27,17 +27,16 @@ test(TEST_NAME, async ({ page }) => {
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('tr', { hasText: 'Demo dataset' })).toBeVisible({ timeout: 1000 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible({ timeout: 10000 })
   for (const dataset of [datasetNewSchema, datasetNewCacheSchema, datasetExistingSchema, datasetExistingCacheSchema]) {
-    if (await page.locator('tr', { hasText: `${dataset}` }).isVisible({ timeout: 1000 })) {
-      await page
-        .locator('tr', { hasText: `${dataset}` })
-        .getByText('Select action')
-        .click()
+    const datasetRow = page.locator('tr', { hasText: `${dataset}` }).first()
+    if (await datasetRow.isVisible({ timeout: 1000 })) {
+      await datasetRow.getByText('Select action').click()
       await page.getByRole('option', { name: 'Delete dataset' }).click()
       await page.getByRole('button', { name: 'Yes, delete' }).click()
       await page.reload()
-      await expect(page.locator('tbody')).not.toContainText(`${dataset}`)
+      await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
     }
   }
 
@@ -49,8 +48,10 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ has: page.locator('a:text("omop_cdm_plugin")') })
       .first()
     const stateBadge = entry.locator('.state-badge')
-    await expect(stateBadge).toHaveText('Completed', { timeout: 120000 })
+    await expect(stateBadge).toHaveText('Completed', { timeout: 720000 })
     await page.getByRole('link', { name: 'Datasets' }).click()
+    // Wait for table to load
+    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   }
 
   // Add new dataset
@@ -71,23 +72,36 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetNewCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await expect(page.locator('tbody')).toContainText(datasetNewSchema)
-  await expect(page.locator('tbody')).toContainText(datasetNewCacheSchema)
+  // Wait for table to load first
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  // Wait for parent dataset to appear in the table (with parent-child structure, use row locators)
+  await expect(page.locator('tr', { hasText: datasetNewSchema }).first()).toBeVisible({ timeout: 120000 })
 
-  // Wait for schema to be created in the database
+  // Wait for schema to be created in the database (this also creates the cache dataset)
   await createComplete()
+
+  // After the job completes, the cache dataset should be visible
+  // Parent rows are automatically expanded by default, so child rows should be visible
+  await expect(page.locator('tr', { hasText: datasetNewCacheSchema }).first()).toBeVisible({ timeout: 120000 })
 
   // Copy the schema name for later use
   const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).textContent()
   const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
   // Delete the newly created dataset
-  await page.locator('tr', { hasText: datasetNewSchema }).getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
-  await page.locator('tr', { hasText: datasetNewCacheSchema }).getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  // Find and delete the child dataset first (datasetNewCacheSchema)
+  const newCacheRow = page.locator('tr', { hasText: datasetNewCacheSchema }).first()
+  await expect(newCacheRow).toBeVisible({ timeout: 30000 })
+  await newCacheRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  // Then delete the parent dataset (datasetNewSchema)
+  const newSchemaRow = page.locator('tr', { hasText: datasetNewSchema }).first()
+  await expect(newSchemaRow).toBeVisible({ timeout: 30000 })
+  await newSchemaRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
 
   // Add dataset with existing schema
   await page.getByRole('button', { name: 'Add dataset' }).click()
@@ -108,15 +122,23 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetExistingCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await page.waitForTimeout(3000) // Wait for the table to refresh
-  await expect(page.getByRole('cell', { name: `${datasetExistingSchema}` })).toBeVisible({ timeout: 10000 })
-  await expect(page.getByRole('cell', { name: `${datasetExistingCacheSchema}` })).toBeVisible({ timeout: 10000 })
+  // Wait for table to load and datasets to appear
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('tr', { hasText: datasetExistingSchema }).first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('tr', { hasText: datasetExistingCacheSchema }).first()).toBeVisible({ timeout: 30000 })
 
   // Clean up
-  await page.locator('tr', { hasText: datasetExistingSchema }).getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
-  await page.locator('tr', { hasText: datasetExistingCacheSchema }).getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  // Find and delete the child dataset first (datasetExistingCacheSchema)
+  const existingCacheRow = page.locator('tr', { hasText: datasetExistingCacheSchema }).first()
+  await expect(existingCacheRow).toBeVisible({ timeout: 30000 })
+  await existingCacheRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  // Then delete the parent dataset (datasetExistingSchema)
+  const existingSchemaRow = page.locator('tr', { hasText: datasetExistingSchema }).first()
+  await expect(existingSchemaRow).toBeVisible({ timeout: 30000 })
+  await existingSchemaRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
 })

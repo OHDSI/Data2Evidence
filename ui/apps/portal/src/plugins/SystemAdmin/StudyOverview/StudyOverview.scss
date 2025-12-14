@@ -48,6 +48,36 @@
       }
     }
   }
+
+  .icon-cell {
+    &--parent {
+      padding-left: 2.75em !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5em;
+      height: 100%;
+      
+      > * {
+        display: flex;
+        align-items: center;
+      }
+    }
+
+    &--child {
+      padding-left: 4.5em !important;
+    }
+
+    &--no-children {
+      padding-left: 3.25em !important;
+    }
+
+    .expand-icon-button {
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
 }
 .studyoverview {
   &__actions {
@@ -75,6 +105,23 @@
 
   &__content {
     margin-bottom: 24px;
+
+    .dataset-section-title {
+      margin-top: 1.5em;
+      margin-bottom: 1em;
+
+      &--secondary {
+        margin-top: 2em;
+      }
+    }
+
+    .section-header-with-action {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2em;
+      margin-bottom: 1em;
+    }
   }
 
   .col-action {

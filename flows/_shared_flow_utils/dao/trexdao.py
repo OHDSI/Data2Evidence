@@ -20,9 +20,8 @@ class TrexDao(DaoBase):
         use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
-        is_study_results_db: bool = False,
     ):
-        super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
+        super().__init__(use_cache_db, database_code, user_type)
 
     @property
     def dialect(self):

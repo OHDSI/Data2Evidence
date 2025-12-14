@@ -42,7 +42,7 @@ export class PortalAPI {
   async getDatasets(): Promise<Dataset[]> {
     try {
       const options = await this.getRequestConfig()
-      const url = `${this.baseURL}/dataset/list`
+      const url = `${this.baseURL}/dataset/list/systemadmin?role=systemAdmin`
       const result = await axios.get(url, options)
       return result.data
     } catch (error) {

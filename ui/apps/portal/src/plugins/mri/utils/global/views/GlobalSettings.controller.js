@@ -131,7 +131,7 @@ sap.ui.define(
         jQuery.extend(
           {
             type: "POST",
-            url: "/hc/hph/config/services/cdwMetadataConfig.xsjs",
+            url: "/d2e/hc/hph/config/services/cdwMetadataConfig.xsjs",
           },
           {
             data: JSON.stringify({
@@ -169,7 +169,7 @@ sap.ui.define(
           jQuery.extend(
             {
               type: "POST",
-              url: "/hc/hph/config/services/cdwMetadataConfig.xsjs",
+              url: "/d2e/hc/hph/config/services/cdwMetadataConfig.xsjs",
             },
             {
               data: JSON.stringify({

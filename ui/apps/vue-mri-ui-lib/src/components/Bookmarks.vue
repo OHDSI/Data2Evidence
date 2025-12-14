@@ -13,7 +13,14 @@
           <div class="div-bookmark-dialog">
             <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span>
             <div class="input-container">
-              <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
+              <input
+                class="form-control"
+                v-focus
+                required
+                maxlength="40"
+                v-model="renamedBookmark"
+                @keydown.enter="!hasExceededLength && confirmRenameBookmark"
+              />
             </div>
             <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']">
               {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
@@ -213,7 +220,6 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
-
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],

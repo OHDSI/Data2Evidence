@@ -1,7 +1,6 @@
 import express, { Request, Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { server } from "../services/server";
-import { WebAPIAPI } from "../api/WebAPIAPI";
 
 export class mcpServerRouter {
   public router = express.Router();
