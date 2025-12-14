@@ -15,6 +15,12 @@
     gap: 10px;
     height: calc(100vh - 240px);
   }
+
+  .chat-container {
+    .MuiCollapse-vertical {
+      height: 100%;
+    }
+  }
 }
 
 #starboard-root {
