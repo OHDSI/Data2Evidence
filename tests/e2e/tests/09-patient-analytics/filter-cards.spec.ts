@@ -143,7 +143,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await page.waitForSelector('.loading-animation-component', { state: 'hidden' })
   await page.getByText('Select an AttributeSelect').click()
-  await page.waitForSelector('text=2226 / 2694', { state: 'visible' })
+  await page.waitForSelector('text=2,226 / 2,694', { state: 'visible' })
 
   // Step 10 - Reset filters
   await page.getByRole('button', { name: '↺' }).click()

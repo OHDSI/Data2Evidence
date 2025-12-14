@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo datasetDemo datasetTotal').click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
-  await expect(page.getByText('2694 / 2694')).toBeVisible()
+  await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Add filter card
@@ -45,7 +45,7 @@ test(TEST_NAME, async ({ page }) => {
   // Wait for concept set to be succesfully created
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.getByText('1132 / 2694')).toBeVisible()
+  await expect(page.getByText('1,132 / 2,694')).toBeVisible()
 
   // Dismiss popover if present
   try {
@@ -71,7 +71,7 @@ test(TEST_NAME, async ({ page }) => {
     .getByPlaceholder('Enter search term')
     .fill('Chronic sinusitis')
   await page.getByText('Chronic sinusitis - Chronic sinusitis').click()
-  await expect(page.getByText('812 / 2694')).toBeVisible()
+  await expect(page.getByText('812 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Set X1-axis to gender
@@ -136,13 +136,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTitle('Basic Data - Month of Birth').first().click()
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('11')
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
-  await expect(page.getByText('115 / 2694')).toBeVisible()
+  await expect(page.getByText('115 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Remove condition occurrence filter card
   await page.locator('span[title="Select Filter Attributes"]').nth(1).click()
   await page.getByRole('menuitem').getByText('Remove Filter Card').click()
-  await expect(page.getByText('247 / 2694')).toBeVisible()
+  await expect(page.getByText('247 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Switch to list view
