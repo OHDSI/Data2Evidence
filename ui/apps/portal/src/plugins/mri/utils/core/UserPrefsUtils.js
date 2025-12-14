@@ -32,7 +32,7 @@ sap.ui.define(
     // For the moment use the HCP global settings for getting the system wide date/time format.
     // In the future this should be user specific, coming from the UM
     UserPrefsUtils.SystemSettingsUrl =
-      "/hc/hph/config/user/global_enduser.xsjs";
+      "/d2e/hc/hph/config/user/global_enduser.xsjs";
     UserPrefsUtils._loadPreferences = function () {
       return AjaxUtils.ajax({
         url: UserPrefsUtils.SystemSettingsUrl,

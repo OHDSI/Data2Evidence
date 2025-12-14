@@ -62,3 +62,73 @@ export const parseBarChartData = (
     labels: barChartLabels,
   };
 };
+
+export const getAxisNameGap = (series: any[], formatter?: string, baseGap: number = 16): number => {
+  const charWidth = 8; // approximate width per character
+
+  // Find max value or max string length
+  let maxLabelLength = 0;
+  let maxValue = 0;
+  let isStringData = false;
+
+  series.forEach((s) => {
+    if (Array.isArray(s.data)) {
+      s.data.forEach((val: any) => {
+        if (typeof val === "string") {
+          isStringData = true;
+          maxLabelLength = Math.max(maxLabelLength, val.length);
+        } else {
+          const numVal = typeof val === "number" ? val : val?.value ?? 0;
+          maxValue = Math.max(maxValue, Math.abs(numVal));
+        }
+      });
+    }
+  });
+
+  let formattedLabel: string;
+  if (isStringData) {
+    // For strings, use the max length directly
+    formattedLabel = "x".repeat(maxLabelLength);
+  } else {
+    // Add ~20% margin since ECharts rounds up to nice numbers
+    const estimatedMax = maxValue * 1.2;
+
+    // ECharts typically uses 5 splits, so calculate interval
+    const interval = estimatedMax / 5;
+
+    if (formatter) {
+      formattedLabel = formatter.replace("{value}", String(Math.ceil(estimatedMax)));
+    } else {
+      // Determine decimal places based on the interval (not the max)
+      // This ensures we account for labels like 1.25, 2.5, 3.75 when max is 5
+      let decimalPlaces = 0;
+      if (interval > 0 && interval < 1) {
+        decimalPlaces = Math.ceil(-Math.log10(interval));
+      }
+
+      formattedLabel = estimatedMax.toFixed(decimalPlaces);
+    }
+  }
+
+  const labelWidth = formattedLabel.length * charWidth;
+  return baseGap + labelWidth;
+};
+
+// Generate all months between min and max (inclusive)
+export const generateAllMonths = (start: string, end: string): string[] => {
+  const result: string[] = [];
+  let year = parseInt(start.slice(0, 4));
+  let month = parseInt(start.slice(4, 6));
+  const endYear = parseInt(end.slice(0, 4));
+  const endMonth = parseInt(end.slice(4, 6));
+
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    result.push(`${year}${month.toString().padStart(2, "0")}`);
+    month++;
+    if (month > 12) {
+      month = 1;
+      year++;
+    }
+  }
+  return result;
+};

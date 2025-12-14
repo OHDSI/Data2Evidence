@@ -1,7 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import "@testing-library/jest-dom/extend-expect";
 import { Header } from "../Header";
 import { Tenant, Study } from "../../../types";
 import { AppProvider } from "../../../contexts";

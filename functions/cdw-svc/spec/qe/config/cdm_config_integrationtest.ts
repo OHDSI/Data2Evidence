@@ -32,7 +32,7 @@ jasmine.DEFAULT_TIMEOUT_INTERVAL = 80000; // 10 second timeout
 describe("CDM Configuration tests,", () => {
   beforeAll((done) => {
     fakeSettings = new Settings();
-    createConfigConnection((err, configConnection) =>{
+    createConfigConnection((err, configConnection) => {
       ffhQeConfig = new FfhQeConfig(
         configConnection,
         new AssignmentProxy([]),
@@ -41,11 +41,16 @@ describe("CDM Configuration tests,", () => {
         true
       );
       ffhConfig = ffhQeConfig.getFfhConfigObj();
-      facade = new ConfigFacade(configConnection, ffhQeConfig, new User("TEST_USER"), true);
+      facade = new ConfigFacade(
+        configConnection,
+        ffhQeConfig,
+        new User("TEST_USER"),
+        true
+      );
       settingsFacade = new SettingsFacade(new User("TEST_USER"));
       settingsFacade.setFfhQeConfig(ffhQeConfig);
       done();
-    })
+    });
   });
 
   afterAll((done) => {
@@ -55,7 +60,9 @@ describe("CDM Configuration tests,", () => {
         if (err) {
           console.error("Failed to delete configs!");
         }
-        connection.close();
+        if (connection) {
+          connection.close();
+        }
         done();
       },
     });

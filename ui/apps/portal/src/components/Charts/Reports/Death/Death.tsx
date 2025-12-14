@@ -63,6 +63,7 @@ const Death: FC<DeathProps> = ({ flowRunId, datasetId }) => {
         <>
           <DrilldownTrellisChart data={deathData.prevalenceByGenderAgeYear} trellisXAxisKey="YPREVALENCE1000PP" />
           <DeathPrevalenceByMonthChart data={deathData.prevalenceByMonth} />
+
           <div className="chart__container">
             <PieChart
               data={parsePieChartData(deathData.deathByType)}
@@ -72,7 +73,7 @@ const Death: FC<DeathProps> = ({ flowRunId, datasetId }) => {
               data={deathData.ageAtDeath}
               title={getText(i18nKeys.DEATH__BOX_PLOT_CHART_TITLE)}
               xAxisName={getText(i18nKeys.DEATH__BOX_PLOT_CHART_X_AXIS_NAME)}
-              yAxisName={getText(i18nKeys.DEATH__ERROR_MESSAGE)}
+              yAxisName={getText(i18nKeys.DEATH__BOX_PLOT_CHART_Y_AXIS_NAME)}
             />
           </div>
         </>

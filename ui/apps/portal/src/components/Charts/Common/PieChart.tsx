@@ -4,6 +4,7 @@ import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import "./PieChart.scss";
 import { chartColors } from "./chartColors";
+import { useTranslation } from "../../../contexts";
 
 interface PieChartProps {
   data: any[];
@@ -13,9 +14,10 @@ interface PieChartProps {
 
 const PieChart: FC<PieChartProps> = ({ data, title, extraChartConfigs }) => {
   if (data.length === 0) {
+    const { getText, i18nKeys } = useTranslation();
     return (
       <ChartContainer title={title}>
-        <div className="no_data_text">No data</div>
+        <div className="no_data_text">{getText(i18nKeys.PIE_CHART__NO_DATA)}</div>
       </ChartContainer>
     );
   }

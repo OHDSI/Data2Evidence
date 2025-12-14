@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'Notebook'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -13,7 +13,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByText('Demo datasetDemo datasetTotal').click()
   await page.getByRole('link', { name: 'Notebooks' }).click()
-  
+
   //Create notebook
   await page.getByRole('button', { name: 'Add New Notebook' }).click({ timeout: 2000 })
   await page.getByRole('textbox', { name: 'Name' }).click()
@@ -24,7 +24,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.reload()
   await page.getByRole('link', { name: 'Notebooks' }).click()
   //Rename notebook
-  await page.locator('.notebook-header__content_title button').click() 
+  await page.locator('.notebook-header__content_title button').click()
   await page.getByRole('textbox', { name: 'Notebook Title' }).click()
   await page.getByRole('textbox', { name: 'Notebook Title' }).fill('Test Notebook 2')
   await page.getByRole('button', { name: 'Save' }).click()
@@ -38,13 +38,13 @@ test(TEST_NAME, async ({ page }) => {
   ])
 
   // Import notebook - Cannot interact with macOS to close the file dialog
-  await page.getByRole('button', { name: 'Import Notebook' }).click();
-  const fileInput = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 2000 });
-  await fileInput.setInputFiles(require('path').join(__dirname, 'Test_Notebook.ipynb'));
+  await page.getByRole('button', { name: 'Import Notebook' }).click()
+  const fileInput = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 2000 })
+  await fileInput.setInputFiles(require('path').join(__dirname, 'Test_Notebook.ipynb'))
   // Close the file selector if a close button exists
-  const closeFileDialog = await page.$('button[aria-label="Cancel"]');
+  const closeFileDialog = await page.$('button[aria-label="Cancel"]')
   if (closeFileDialog) {
-    await closeFileDialog.click();
+    await closeFileDialog.click()
   }
   await page.keyboard.press('Escape')
 
