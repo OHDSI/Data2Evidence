@@ -4,15 +4,12 @@ const TEST_NAME = 'filtering-barchart'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-// Helper to take screenshot and attach to test report
+// Helper to take screenshot and save to test-results folder
 let screenshotCounter = 0
 async function takeScreenshot(page: any, testInfo: any) {
   screenshotCounter++
-  const screenshot = await page.screenshot()
-  await testInfo.attach(`filtering-barchart-${screenshotCounter}-linux.png`, {
-    body: screenshot,
-    contentType: 'image/png'
-  })
+  const screenshotPath = testInfo.outputPath(`filtering-barchart-${screenshotCounter}-linux.png`)
+  await page.screenshot({ path: screenshotPath })
 }
 
 test(TEST_NAME, async ({ page }, testInfo) => {
