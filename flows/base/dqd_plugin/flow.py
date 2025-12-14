@@ -18,7 +18,6 @@ from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMo
 
 os.environ["plugin_name"] = "dqd_plugin"
 
-
 @flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()

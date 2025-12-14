@@ -69,9 +69,11 @@ class SqlAlchemyDao(DaoBase):
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(schema)
-        with self.engine.connect() as connection:
-            connection.execute(CreateSchema(schema))
-            connection.commit()
+        schema_exists = self.check_schema_exists(schema)
+        if not schema_exists:
+            with self.engine.connect() as connection:
+                connection.execute(CreateSchema(schema))
+                connection.commit()
 
     def create_table(self, schema: str, table: str, columns: dict):
         metadata_obj = sql.MetaData(schema=schema)
