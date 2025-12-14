@@ -1,5 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
+from typing import Optional, List
 
 
 class FlowActionType(str, Enum):
@@ -13,6 +14,7 @@ class DataloadOptions(BaseModel):
     schema_name: str
     vocab_schema: str
     results_schema: str
+    datasets: Optional[List] = None
     
     @property
     def use_cache_db(self) -> str:

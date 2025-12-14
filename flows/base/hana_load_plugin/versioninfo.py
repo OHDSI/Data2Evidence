@@ -12,119 +12,118 @@ from _shared_flow_utils.update_dataset_metadata import (
 )
 
 
-def get_version_info_tasks(options: DataloadOptions):
-    """
-    HANA load plugin has only ONE dataset (one schema),
-    Therefore this function updates metadata for the 
-    single schema in DataloadOptions.
-    """
-
+def update_dataset_metadata_flow(options: DataloadOptions):
     logger = get_run_logger()
-    dataset_id = options.schema_name
-    database_code = options.database_code
-    schema_name = options.schema_name
+    dataset_list = options.datasets
+    use_cache_db = options.use_cache_db
+    
+    if (dataset_list is None) or (len(dataset_list) == 0):
+        logger.info("No datasets fetched from portal")
+    else:
+        logger.info(f"Successfully fetched {len(dataset_list)} datasets from portal")
 
-    logger.info(f"Updating version info for HANA dataset '{schema_name}'")
+        for dataset in dataset_list:
+            get_and_update_attributes(dataset, use_cache_db)
 
-    # Create DB connection for this dataset
+def get_and_update_attributes(dataset: dict, use_cache_db: bool):
+    logger = get_run_logger()
     try:
-        dbdao = DBDao(
-            use_cache_db=options.use_cache_db,
-            database_code=database_code,
-        )
-    except Exception as e:
-        logger.error(f"Failed to connect to database '{database_code}': {e}")
-        return
-
-    portal_api = PortalServerAPI()
-
-    # Check schema existence
-    if not dbdao.check_schema_exists(schema_name):
-        error_msg = f"Schema '{schema_name}' does not exist in db {database_code}"
-        logger.error(error_msg)
-
-        portal_api.update_dataset_attributes_table(dataset_id, "schema_version", error_msg)
-        portal_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", error_msg)
-        return
-
-    # created_date: cdm_source.cdm_release_date
-    update_entity_value(
-        portal_server_api=portal_api,
-        dataset_id=dataset_id,
-        dbdao=dbdao,
-        schema_name=schema_name,
-        table_name="cdm_source",
-        column_name="cdm_release_date",
-        entity_name="created_date",
-        logger=logger,
-    )
-
-    # updated_date: fallback to cdm_release_date or DB implementation
-    try:
-        if hasattr(dbdao, "get_datamodel_updated_date"):
-            updated_date = str(dbdao.get_datamodel_updated_date(schema_name)).split(" ")[0]
-            portal_api.update_dataset_attributes_table(dataset_id, "updated_date", updated_date)
-        else:
-            # fallback
-            update_entity_value(
-                portal_server_api=portal_api,
-                dataset_id=dataset_id,
-                dbdao=dbdao,
-                schema_name=schema_name,
-                table_name="cdm_source",
-                column_name="cdm_release_date",
-                entity_name="updated_date",
-                logger=logger,
+        dataset_id = dataset.get("id")
+        database_code = dataset.get("databaseCode")
+        schema_name = dataset.get("schemaName")
+    except KeyError as ke:
+        missing_key = ke.args[0]
+        logger.error(f"'{missing_key} not found in dataset'")
+    else:
+        try:
+            dbdao = DBDao(
+                use_cache_db=use_cache_db,
+                database_code=database_code,
             )
-    except Exception as e:
-        logger.error(f"Failed to update updated_date: {e}")
+        except Exception as e:
+            logger.error(f"Failed to connect to database '{database_code}': {e}")
+            return
 
-    # metadata_last_fetched_date
-    update_metadata_last_fetched_date(
-        portal_server_api=portal_api,
-        dataset_id=dataset_id,
-        logger=logger,
-    )
+        portal_server_api = PortalServerAPI()
 
-    # patient_count: DISTINCT person_id
-    update_entity_count(
-        portal_server_api=portal_api,
-        dataset_id=dataset_id,
-        dbdao=dbdao,
-        schema_name=schema_name,
-        table_name="person",
-        column_name="person_id",
-        entity_name="patient_count",
-        logger=logger,
-        distinct_count=True,
-    )
+        # Check schema existence
+        if not dbdao.check_schema_exists(schema_name):
+            error_msg = f"Schema '{schema_name}' does not exist in db {database_code}"
+            logger.error(error_msg)
 
-    # entity_count_distribution
-    entity_dist = update_entity_count_distribution(
-        portal_server_api=portal_api,
-        dataset_id=dataset_id,
-        dbdao=dbdao,
-        schema_name=schema_name,
-        logger=logger,
-        distinct_count=True,
-    )
+            portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", error_msg)
+            portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", error_msg)
+            return
 
-    # total_entity_count
-    update_total_entity_count(
-        portal_server_api=portal_api,
-        dataset_id=dataset_id,
-        entity_count_distribution=entity_dist,
-        logger=logger,
-    )
+        # created_date: cdm_source.cdm_release_date
+        update_entity_value(
+            portal_server_api=portal_server_api,
+            dataset_id=dataset_id,
+            dbdao=dbdao,
+            schema_name=schema_name,
+            table_name="cdm_source",
+            column_name="cdm_release_date",
+            entity_name="created_date",
+            logger=logger,
+        )
 
-    # OMOP version (cdm_version)
-    update_entity_value(
-        portal_server_api=portal_api,
-        dataset_id=dataset_id,
-        dbdao=dbdao,
-        schema_name=schema_name,
-        table_name="cdm_source",
-        column_name="cdm_version",
-        entity_name="version",
-        logger=logger,
-    )
+        # metadata_last_fetched_date
+        update_metadata_last_fetched_date(
+            portal_server_api=portal_server_api,
+            dataset_id=dataset_id,
+            logger=logger,
+        )
+
+        # patient_count: DISTINCT person_id
+        update_entity_count(
+            portal_server_api=portal_server_api,
+            dataset_id=dataset_id,
+            dbdao=dbdao,
+            schema_name=schema_name,
+            table_name="person",
+            column_name="person_id",
+            entity_name="patient_count",
+            logger=logger,
+            distinct_count=True,
+        )
+
+        # entity_count_distribution
+        entity_dist = update_entity_count_distribution(
+            portal_server_api=portal_server_api,
+            dataset_id=dataset_id,
+            dbdao=dbdao,
+            schema_name=schema_name,
+            logger=logger,
+            distinct_count=True,
+        )
+
+        # total_entity_count
+        update_total_entity_count(
+            portal_server_api=portal_server_api,
+            dataset_id=dataset_id,
+            entity_count_distribution=entity_dist,
+            logger=logger,
+        )
+
+        # OMOP version (cdm_version)
+        cdm_version = update_entity_value(
+                            portal_server_api=portal_server_api,
+                            dataset_id=dataset_id,
+                            dbdao=dbdao,
+                            schema_name=schema_name,
+                            table_name="cdm_source",
+                            column_name="cdm_version",
+                            entity_name="version",
+                            logger=logger,
+                        )
+
+        try:
+            # update cdm version or error msg
+            latest_schema_version = cdm_version
+            portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", cdm_version)
+            portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", latest_schema_version)
+        except Exception as e:
+            logger.error(f"Failed to update attribute 'cdm_version' for dataset '{dataset_id}' with value '{cdm_version}': {e}")
+        else:
+            logger.info(f"Updated attribute 'cdm_version' for dataset '{dataset_id}' with value '{cdm_version}'")
+            

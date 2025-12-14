@@ -64,6 +64,19 @@
                   "results_schema": {
                     "title": "Results Schema",
                     "type": "string"
+                  },
+                  "datasets": {
+                    "anyOf": [
+                      {
+                        "items": {},
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Datasets"
                   }
                 },
                 "required": [

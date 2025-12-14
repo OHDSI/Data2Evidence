@@ -21,7 +21,7 @@ from .constants import (
     CREATE_SCRIPT_DIR,
     SQL_FILES_ORDER
 )
-from .versioninfo import get_version_info_tasks
+from .versioninfo import update_dataset_metadata_flow
 
 os.environ["plugin_name"] = "hana_load_plugin"
 
@@ -32,19 +32,12 @@ def hana_load_plugin(options: DataloadOptions):
         case FlowActionType.CREATE_DATA_MODEL:
             create_datamodel(options)
         case FlowActionType.GET_VERSION_INFO:
-            return get_version_info(options)
-
-
-def get_version_info(options: DataloadOptions):
-    logger = get_run_logger()
-    try:
-        logger.info("Starting GET_VERSION_INFO for HANA load plugin")
-        result = get_version_info_tasks(options)
-        return result
-    except Exception as e:
-        logger.error("GET_VERSION_INFO failed: %s", e)
-        raise
-
+            update_dataset_metadata_flow(options)
+        case _:
+            logger = get_run_logger()
+            error_msg = f"Flow action type '{options.flow_action_type}' not supported, only '{[action.value for action in FlowActionType]}'"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
 def create_datamodel(options: DataloadOptions):
     logger = get_run_logger()
