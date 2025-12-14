@@ -91,6 +91,7 @@ export interface NewStudyInput {
 export interface CopyStudyInput {
   newStudyName: string;
   sourceStudyId: string;
+  sourceType: SourceDatasetType
   snapshotLocation: string;
   dataModel: string;
   snapshotCopyConfig?: SnapshotCopyConfig;

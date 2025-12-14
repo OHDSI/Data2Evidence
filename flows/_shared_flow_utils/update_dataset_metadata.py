@@ -49,6 +49,7 @@ def get_entity_value_str(dbdao: DBDao, schema_name: str,
         entity_value = error_msg
     return str(entity_value)
 
+
 def update_entity_value(portal_server_api,
                         dataset_id: str,
                         dbdao: DBDao, 
@@ -69,7 +70,7 @@ def update_entity_value(portal_server_api,
     except Exception as e:
         logger.error(f"Failed to update attribute '{entity_name}' for dataset id '{dataset_id}' with value '{entity_value}' : {e}")
     else:
-        logger.info(f"Updated attribute '{entity_name} for dataset id '{dataset_id}' with value '{entity_value}'")
+        logger.info(f"Updated attribute '{entity_name}' for dataset id '{dataset_id}' with value '{entity_value}'")
     return entity_value
 
 
