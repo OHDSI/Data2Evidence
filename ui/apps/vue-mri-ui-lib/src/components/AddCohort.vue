@@ -27,7 +27,6 @@
                 :placeholder="getText('MRI_PA_COLL_ENTER_DESCRIPTION')"
                 v-model="cohortDescription"
                 tabindex="1"
-                @keydown.enter="onOkButtonPress"
               />
             </div>
           </div>

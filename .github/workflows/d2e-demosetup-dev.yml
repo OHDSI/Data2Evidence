@@ -214,6 +214,14 @@ jobs:
           docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
+      - name: Debug copied files
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          echo "=== Check if new error message exists in portal build ==="
+          docker exec d2e-trex sh -c "grep -r 'already exists. Please enter another name' /usr/src/data/plugins/node_modules/@data2evidence/d2e-ui/resources/portal/ 2>&1 | head -5" || echo "Text not found"
+          echo "=== Check translation files ==="
+          docker exec d2e-trex sh -c "grep -r 'TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR' /usr/src/data/plugins/node_modules/@data2evidence/d2e-ui/resources/portal/ 2>&1 | head -5" || echo "Key not found"
+
       - name: e2e tests setup
         run: |
           cd ./tests/e2e
