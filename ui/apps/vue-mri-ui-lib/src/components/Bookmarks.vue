@@ -19,7 +19,7 @@
                 required
                 maxlength="40"
                 v-model="renamedBookmark"
-                @keydown.enter="!hasExceededLength && confirmRenameBookmark"
+                @keydown.enter="confirmRenameBookmark"
               />
             </div>
             <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']">
@@ -392,6 +392,7 @@ export default {
       }
     },
     confirmRenameBookmark() {
+      if (this.hasExceededLength) return
       const bookmarkDisplay = this.selectedBookmark
 
       this.renamedBookmark = this.renamedBookmark.trim()
