@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from "react";
+import React, { FC, useEffect, useMemo, useState } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { Snackbar } from "@portal/components";
 import { PortalProps } from "./types/portal";
@@ -39,22 +39,45 @@ const AppContent: FC<PortalProps> = (props) => {
 };
 
 const App: FC<PortalProps> = (props) => {
+  const [customProps, setCustomProps] = useState<Partial<PortalProps>>({});
+
+  const mergedProps = useMemo(
+    () => ({ ...props, ...customProps }),
+    [props, customProps]
+  );
+  console.log("Merged Props:", mergedProps, props, customProps);
+
   // Initialize API and fetch token providers
   useEffect(() => {
-    if (props.getToken) {
-      setTokenProvider(props.getToken);
-      setFetchTokenProvider(props.getToken);
+    if (mergedProps.getToken) {
+      setTokenProvider(mergedProps.getToken);
+      setFetchTokenProvider(mergedProps.getToken);
     }
-  }, [props.getToken]);
+  }, [mergedProps.getToken]);
+
+  useEffect(() => {
+    const handlePropsChange = (event: Event) => {
+      const { appId, ...newProps } = (event as CustomEvent).detail || {};
+      setCustomProps(newProps);
+    };
+
+    window.addEventListener("custom-props-changed", handlePropsChange);
+    return () => {
+      window.removeEventListener("custom-props-changed", handlePropsChange);
+    };
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <TranslationProvider locale={props.locale || "en"}>
+      <TranslationProvider locale={mergedProps.locale || "en"}>
         <FeedbackProvider>
           <ConversationHistoryProvider>
-            <UserProvider username={props.username} idpUserId={props.idpUserId}>
-              <AppContent {...props} />
+            <UserProvider
+              username={mergedProps.username}
+              idpUserId={mergedProps.idpUserId}
+            >
+              <AppContent {...mergedProps} />
             </UserProvider>
           </ConversationHistoryProvider>
         </FeedbackProvider>
