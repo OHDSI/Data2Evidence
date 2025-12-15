@@ -296,13 +296,6 @@ export async function authz(c: Context, next: any) {
         }
       }
     }
-    if (!bearerToken && c.req.url) {
-      const requestUrl = new URL(c.req.url);
-      const urlToken = requestUrl.searchParams.get("token");
-      if (urlToken) {
-        bearerToken = `Bearer ${urlToken}`;
-      }
-    }
 
     if (PUBLIC_API_PATHS.some((path) => new RegExp(path).test(originalUrl))) {
       return next();

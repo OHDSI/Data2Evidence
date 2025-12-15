@@ -25,7 +25,7 @@ export async function authn(c: Context, next: Function) {
     }
     // Check for cookie if no token in authorization header
     // And for req with /fhir-server path, token is part of cookie
-    if (token === "" || (c.req.path.startsWith("/fhir-server/"))) {
+    if (token === "" || c.req.path.startsWith("/fhir-server/")) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
@@ -38,13 +38,6 @@ export async function authn(c: Context, next: Function) {
             break;
           }
         }
-      }
-    }
-
-    if (token === "" && c.req.query("token")) {
-      const urlToken = c.req.query("token");
-      if (urlToken) {
-        token = urlToken;
       }
     }
 
