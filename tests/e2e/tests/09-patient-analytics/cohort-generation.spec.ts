@@ -64,7 +64,7 @@ test('cohort-generation', async ({ page }) => {
   await page.getByRole('textbox').press('Enter')
 
   // Verify that age filter results in 2223 patients
-  await expect(page.locator('#pane-right')).toContainText('2223')
+  await expect(page.locator('#pane-right')).toContainText('2,223')
 
   // ========================
   // CONDITION OCCURRENCE FILTER

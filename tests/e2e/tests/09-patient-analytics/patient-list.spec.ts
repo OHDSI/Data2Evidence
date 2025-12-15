@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Age filter
@@ -25,7 +25,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Basic Data - Age').click()
     await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>55')
     await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
-    await expect(page.getByText('1971 / 2694')).toBeVisible()
+    await expect(page.getByText('1,971 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Condition Occurrence filter card
@@ -64,7 +64,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Chronic sinusitis').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('629 / 2694')).toBeVisible()
+    await expect(page.getByText('629 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Save the filter card
