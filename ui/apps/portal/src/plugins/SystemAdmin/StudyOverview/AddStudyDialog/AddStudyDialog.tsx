@@ -62,7 +62,6 @@ interface FormData {
   name: string;
   summary: string;
   showRequestAccess: boolean;
-  cleansedSchemaOption: boolean;
   description: string;
   dataModel: string;
   dataModelCustom: string;
@@ -147,7 +146,6 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   summary: "",
   showRequestAccess: false,
-  cleansedSchemaOption: false,
   description: "",
   dataModel: "", //Optional
   dataModelCustom: "", //Optional
@@ -473,7 +471,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       vocabSchemaValue,
       resultSchemaValue,
-      cleansedSchemaOption,
       name,
       summary,
       showRequestAccess,
@@ -511,7 +508,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       vocabSchemaValue,
       resultSchemaValue,
-      cleansedSchemaOption,
       dataModel: parsedDataModel,
       plugin: dataModelDetails.plugin,
       databaseCode,
