@@ -20,14 +20,16 @@ export const FlowApp: FC<FlowAppProps> = (props: FlowAppProps) => {
   useEffect(() => {
     const handlePropsChange = (event: Event) => {
       const { appId, ...newProps } = (event as CustomEvent).detail || {};
-      setCustomProps(newProps);
+      if (appId === props.appId) {
+        setCustomProps(newProps);
+      }
     };
 
     window.addEventListener("custom-props-changed", handlePropsChange);
     return () => {
       window.removeEventListener("custom-props-changed", handlePropsChange);
     };
-  }, []);
+  }, [props.appId]);
 
   const mergedProps = useMemo(
     () => ({ ...props, ...customProps }),

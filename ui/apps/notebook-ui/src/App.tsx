@@ -57,14 +57,16 @@ const App: FC<PortalProps> = (props) => {
   useEffect(() => {
     const handlePropsChange = (event: Event) => {
       const { appId, ...newProps } = (event as CustomEvent).detail || {};
-      setCustomProps(newProps);
+      if (appId === props.appId) {
+        setCustomProps(newProps);
+      }
     };
 
     window.addEventListener("custom-props-changed", handlePropsChange);
     return () => {
       window.removeEventListener("custom-props-changed", handlePropsChange);
     };
-  }, []);
+  }, [props.appId]);
 
   return (
     <ThemeProvider theme={theme}>
