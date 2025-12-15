@@ -10,7 +10,7 @@
 - [setupdemo.mjs](setupdemo.mjs) - setup demo database
 - [setupdemohana.mjs](setupdemohana.mjs) - setup demo database for hana
 
-# For dev mode
+# For dev setup
 - To compile cli.ts file 
 ```bash
 yarn prepare 
