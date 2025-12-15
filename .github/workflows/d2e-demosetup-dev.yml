@@ -78,7 +78,7 @@ jobs:
         id: build_flow_base_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
-        
+
       - name: Build i2b2 docker image
         if: steps.file_changes.outputs.flow_i2b2 == 'true'
         id: build_i2b2_image
@@ -195,6 +195,18 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
+
+      - name: Debug UI mount
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          echo "=== docker-compose-local.yml line 17 ==="
+          sed -n '17p' docker-compose-local.yml
+          echo "=== Checking volume mount in container ==="
+          docker exec d2e-trex sh -c "ls -la /usr/src/local-resources 2>&1" || echo "Directory not found"
+          echo "=== Contents of local-resources (if exists) ==="
+          docker exec d2e-trex sh -c "ls /usr/src/local-resources 2>&1 | head -10" || echo "Cannot list"
+          echo "=== Local ui/resources ==="
+          ls ./ui/resources | head -10
 
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
