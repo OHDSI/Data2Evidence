@@ -45,7 +45,6 @@ const App: FC<PortalProps> = (props) => {
     () => ({ ...props, ...customProps }),
     [props, customProps]
   );
-  console.log("Merged Props:", mergedProps, props, customProps);
 
   // Initialize API and fetch token providers
   useEffect(() => {
