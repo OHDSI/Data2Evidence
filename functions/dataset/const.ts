@@ -26,3 +26,16 @@ export enum DbDialect {
   Postgres = 'postgres',
   Hana = 'hana'
 }
+
+export enum SourceDatasetType {
+  SOURCE = 'source',
+  FHIR = 'fhir'
+}
+
+export enum CacheDatasetType {
+  OMOP = 'omop',
+  STUDY = 'study',
+  HANA__OMOP = 'hana__omop',
+  HANA__NON_OMOP = 'hana__non_omop',
+  NON_OMOP = 'non_omop'
+}

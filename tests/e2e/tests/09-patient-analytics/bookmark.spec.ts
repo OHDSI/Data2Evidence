@@ -17,7 +17,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Age filter
@@ -25,7 +25,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Basic Data - Age').click()
     await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>114')
     await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
-    await expect(page.getByText('27 / 2694')).toBeVisible()
+    await expect(page.getByText('27 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Gender filter
@@ -33,7 +33,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Male')
     await page.getByText('MALE - MALE').click()
-    await expect(page.getByText('5 / 2694')).toBeVisible()
+    await expect(page.getByText('5 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Inclusion filter card - Condition Occurrence
@@ -76,7 +76,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
     await expect(page.getByText('A filter card has been added: Death A')).toBeVisible()
-    await expect(page.getByText('4 / 2694')).toBeVisible()
+    await expect(page.getByText('4 / 2,694')).toBeVisible()
   })
   //Add x1 filter card - Condition Occurrence concept name
   await test.step('Update x1 filter to condition concept name', async () => {
@@ -131,7 +131,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Enter search term').click()
     await page.getByPlaceholder('Enter search term').fill('Female')
     await page.getByText('FEMALE - FEMALE').click({ timeout: 40000 })
-    await expect(page.getByText('8 / 2694')).toBeVisible()
+    await expect(page.getByText('8 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Save the filter card
@@ -177,7 +177,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('>114')).toBeVisible({ timeout: 20000 })
     await expect(page.getByText('FEMALE')).toBeVisible({ timeout: 20000 })
     // await expect(page.getByText('Viral sinusitis')).toBeVisible({timeout: 20000});
-    await expect(page.getByText('8 / 2694')).toBeVisible()
+    await expect(page.getByText('8 / 2,694')).toBeVisible()
   })
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {

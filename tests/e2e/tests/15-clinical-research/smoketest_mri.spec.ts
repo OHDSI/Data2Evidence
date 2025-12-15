@@ -57,7 +57,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Demo dataset').nth(1).click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
@@ -94,7 +94,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Sprain of wrist').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     }
-    await expect(page.getByText('677 / 2694')).toBeVisible()
+    await expect(page.getByText('677 / 2,694')).toBeVisible()
   })
 
   await test.step('Update x1 filter to condition concept name', async () => {
@@ -148,7 +148,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Otitis media').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     }
-    await expect(page.getByText('2193 / 2694')).toBeVisible()
+    await expect(page.getByText('2,193 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible()
   })
@@ -183,7 +183,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Viral sinusitis').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     }
-    await expect(page.getByText('2188 / 2694')).toBeVisible()
+    await expect(page.getByText('2,188 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).not.toBeVisible()
@@ -204,7 +204,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('div:nth-child(4) > .col > .app-single-select > .multiselect > .multiselect__select').click()
     await page.locator('span').filter({ hasText: 'Condition Occurrence B' }).nth(2).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page.getByText('2156 / 2694')).toBeVisible()
+    await expect(page.getByText('2,156 / 2,694')).toBeVisible()
   })
   await test.step('Save the filter card', async () => {
     await page.getByRole('button', { name: 'Save' }).click()
@@ -228,7 +228,7 @@ test(TEST_NAME, async ({ page }) => {
     // Click the 'Remove Filter Card' under this specific card
     await dropdownMenu.getByText('Remove Filter Card', { exact: true }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page.getByText('2193 / 2694')).toBeVisible()
+    await expect(page.getByText('2,193 / 2,694')).toBeVisible()
   })
 
   await test.step('Reset the Condition Occurrence A filter card', async () => {
@@ -246,7 +246,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     // Click elsewhere to remove focus from the dropdown and close it
     await page.click('body')
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).toBeVisible()
@@ -259,7 +259,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Basic Data').nth(3).click()
     await page.locator('#pane-right').getByText('Month of Birth').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).not.toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).not.toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).not.toBeVisible()
