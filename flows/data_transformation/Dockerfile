@@ -139,4 +139,21 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Installing R packages
+ENV RETICULATE_PYTHON="/app/.venv/bin/python"
+
+# Install R packages devtools + reticulate
+# Faster CRAN repo + split install
+RUN R -e "install.packages('reticulate', repos='https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
+RUN R -e "install.packages('devtools', repos='https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
+
+# Install setuptools, wheel, Cython in the R reticulate python environment
+RUN uv pip install setuptools wheel Cython
+
+# Install OHDSI packages from GitHub
+RUN R -e "devtools::install_github('OHDSI/CohortGenerator')" && \
+    R -e "devtools::install_github('OHDSI/CirceR')" && \
+    R -e "devtools::install_github('OHDSI/ARTEMIS')"
+
+
 USER docker
