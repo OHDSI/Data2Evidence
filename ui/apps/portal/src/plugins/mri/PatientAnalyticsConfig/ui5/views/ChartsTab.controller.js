@@ -71,6 +71,11 @@ sap.ui.define([
                 buttonId: "mnuButton4Id",
                 source: "/config/chartOptions/initialAttributes/measures/0",
                 filter: "measure"
+            }, {
+                id: "subMenu5",
+                buttonId: "mnuButton5Id",
+                source: "/config/chartOptions/initialAttributes/stackCategory/0",
+                filter: "category"
             }
         ].forEach(function (obj) {
             that.byId(obj.id).bindAggregation("items", {
@@ -109,6 +114,10 @@ sap.ui.define([
             }, {
                 id: "mnuButton4Id",
                 location: "measures",
+                index: 0
+            }, {
+                id: "mnuButton5Id",
+                location: "stackCategory",
                 index: 0
             }
         ].forEach(function (obj) {
@@ -298,6 +307,24 @@ sap.ui.define([
             }
             return false;
         }, this);
+    };
+
+    ChartsTabController.prototype.onClearInitialStackAttributeSelection = function () {
+        var model = this.getView().getModel("analyticsModel");
+        ["mnuButton5Id"].some(function (id) {
+            var menuButton = this.byId(id);
+            if (menuButton.getText() !== ConfigUtils.getText("MRI_PA_CFG_BUTTON_CHOOSE_ATTRIBUTE")) {
+                menuButton.setText(ConfigUtils.getText("MRI_PA_CFG_BUTTON_CHOOSE_ATTRIBUTE"));
+                var path = this.getView().getBindingContext("analyticsModel").getPath() + "/config/chartOptions/initialAttributes/stackCategory";
+
+                var data = model.getProperty(path);
+                data.splice(data.length - 1, 1);
+                model.setProperty(path, data);
+
+                return true;
+            }
+            return false;
+        }, this)
     };
 
     /**
