@@ -72,8 +72,8 @@
           "env": "white-rabbit"
         },
         {
-          "function": "/supabase-init",
-          "imports": "/supabase-init/deno.json",
+          "function": "/supabase-storage-init",
+          "imports": "/supabase-storage-init/deno.json",
           "env": "supabase-storage"
         }
       ],
