@@ -723,7 +723,6 @@
           "dbSvc.vocabSchemas.read",
           "dbSvc.schema.vocabSchema.read",
           "dbSvc.schema.snapshot.metadata.read",
-          "dbSvc.snapshot.parquet.create",
           "dbSvc.schema.delete",
           "gateway.dashboardGate.register",
           "gateway.dataset.dashboards.read",
@@ -2585,15 +2584,6 @@
           ],
           "httpMethods": [
             "PUT"
-          ]
-        },
-        {
-          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/schemasnapshotparquet/[a-zA-Z0-9_]+(.*)",
-          "scopes": [
-            "dbSvc.snapshot.parquet.create"
-          ],
-          "httpMethods": [
-            "POST"
           ]
         },
         {

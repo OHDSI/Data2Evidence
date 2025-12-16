@@ -35,14 +35,6 @@ export class DatasetRouter {
     }
   }
 
-  private flowSnapshotType(snapshotLocation: string) {
-    if (snapshotLocation === "DB") {
-      return "create_datamart_cache";
-    } else {
-      return "create_parquet_snapshot";
-    }
-  }
-
   private registerRoutes() {
     this.router.get(
       "/cdm-schema/snapshot/metadata",
