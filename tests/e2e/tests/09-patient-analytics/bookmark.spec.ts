@@ -416,5 +416,22 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
       await expect(page.getByText('Test Another Patient List')).not.toBeVisible({ timeout: 20000 })
     })
+    await expect(page.getByText('You have not yet saved any filters')).toBeVisible()
+  })
+
+  //Delete concept sets
+  await test.step('Delete Concept Sets', async () => {
+    await page.getByRole('link', { name: 'Concepts' }).click()
+    await page.getByRole('tab', { name: 'Concept Sets' }).click()
+
+    // Delete Chronic sinusitis
+    await page.getByRole('row', { name: 'Chronic sinusitis' }).getByRole('button').nth(1).click()
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
+    await expect(page.getByRole('cell', { name: 'Chronic sinusitis' })).not.toBeVisible()
+
+    // Delete Viral sinusitis
+    await page.getByRole('row', { name: 'Viral sinusitis' }).getByRole('button').nth(1).click()
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
+    await expect(page.getByRole('cell', { name: 'Viral sinusitis' })).not.toBeVisible()
   })
 })
