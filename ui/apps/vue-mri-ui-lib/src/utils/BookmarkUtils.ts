@@ -131,3 +131,41 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
 
   return formattedBookmarks
 }
+
+/**
+ * Information about bookmark ownership that can be used to determine modification rights.
+ * Supports both username and user_id fields to handle different bookmark types.
+ */
+type BookmarkOwnerInfo = {
+  username?: string | null
+  user_id?: string | null
+}
+
+/**
+ * Determines if the current user can modify (rename/delete) a bookmark.
+ * Only the bookmark owner can modify it.
+ *
+ * NOTE: Checks both 'username' and 'user_id' fields because:
+ * - Bookmark type uses 'username' (set by formatBookmark() from raw 'user_id')
+ * - AtlasCohortDefinition type uses 'username' directly
+ * - Raw bookmark data may still have 'user_id' in some contexts
+ *
+ * @param bookmark - The bookmark object containing username or user_id
+ * @param currentUsername - The current logged-in user's username
+ * @returns true if user can modify, false otherwise
+ */
+export function canModifyBookmark(bookmark: BookmarkOwnerInfo | null | undefined, currentUsername: string): boolean {
+  if (!bookmark || !currentUsername) {
+    return false
+  }
+
+  // Handle both direct username and nested bookmark.username patterns
+  // Check for empty strings as well
+  const bookmarkUsername = bookmark.username || bookmark.user_id
+
+  if (!bookmarkUsername || bookmarkUsername === '') {
+    return false
+  }
+
+  return bookmarkUsername === currentUsername
+}

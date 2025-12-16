@@ -221,6 +221,14 @@ jobs:
   success:
     needs: build
     runs-on: ubuntu-latest
+    if: always()
+    env:
+      BUILD_JOB_STATUS: ${{ needs.build.result }}
     steps:
       - name: Check
-        run: echo "Check"
+        run: |
+          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
+            exit 0
+          else
+            exit 1
+          fi

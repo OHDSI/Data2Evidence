@@ -327,8 +327,8 @@
           "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
-          "PG__DB_NAME": "alp",
-          "PG__FHIR_DB_NAME": "alp",
+          "PG__DB_NAME": "${PG_DB_NAME:-alp}",
+          "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
           "PG__DEBUG": "${PG_DEBUG:-1}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG__SSL": "${PG__SSL:-false}",
@@ -370,7 +370,8 @@
           "isTestEnv": "${isTestEnv}",
           "TESTSCHEMA": "${TESTSCHEMA}",
           "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
-          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}"
+          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}",
+          "OMOP_RELATIONSHIPS_FOR_DESCENDANTS": "${OMOP_RELATIONSHIPS_FOR_DESCENDANTS}"
         },
         "alp-usermgmt": {
           "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
@@ -378,11 +379,11 @@
           "IDP__ALP_ADMIN__CLIENT_ID": "${LOGTO_API_M2M_CLIENT_ID}",
           "IDP__ALP_ADMIN__CLIENT_SECRET": "${LOGTO_API_M2M_CLIENT_SECRET}",
           "IDP__ALP_ADMIN__RESOURCE": "https://default.logto.app/api",
-          "IDP__BASE_URL": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
+          "IDP__BASE_URL": "${IDP__BASE_URL:-http://${PROJECT_NAME:-d2e}-logto-1:3001}",
           "IDP__FETCH_USER_INFO_TYPE": "logto",
           "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
           "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
-          "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY}",
+          "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY:-logto}",
           "AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}",
           "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
           "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -436,7 +437,7 @@
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
         },
         "jobplugins": {
-          "PREFECT_API_URL": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
           "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
@@ -524,7 +525,8 @@
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
-          "PREFECT_API_URL": "http://alp-dataflow-gen-${BASE_PORT:-1}:41${BASE_PORT:-1}20/api",
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
+          "CUSTOM_WORK_POOL_CONFIGURATION" : "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
           "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
           "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",
@@ -538,8 +540,8 @@
           "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
           "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
           "LIQUIBASE_PATH": "",
-          "HANA__DRIVER_CLASS_PATH": "",
-          "POSTGRES__DRIVER_CLASS_PATH": "",
+          "HANA__DRIVER_CLASS_PATH": "${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}",
+          "POSTGRES__DRIVER_CLASS_PATH": "${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}",
           "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
           "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
           "DATABASE_CREDENTIALS": "{}",
@@ -548,11 +550,6 @@
           "WORKPOOL_NAME": "docker-pool",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-          "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
-          "PG__STUDY_RESULTS_ADMIN_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "PG__STUDY_RESULTS_ADMIN_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
           "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
           "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
           "DATA_TRANSFORMATION_BUCKET": "data-transformation",
@@ -572,7 +569,8 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
-          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}"
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}",
+          "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},
         "jupyter-gateway-viewer": {},
@@ -583,12 +581,14 @@
           "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG_PORT": "${PG_PORT:-5432}",
           "PG_DATABASE": "${PG_DB_NAME:-alp}",
-          "PG__STUDY_RESULTS_DB_NAME": "${PG__STUDY_RESULTS_DB_NAME:-study_results}",
-          "PG__STUDY_RESULTS_READ_USER": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-          "PG__STUDY_RESULTS_READ_PASSWORD": "${PG_STUDY_RESULTS_READ_PASSWORD}",
           "PG_SCHEMA": "strategus",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+          "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+          "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
+          "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }
@@ -758,7 +758,6 @@
           "whiteRabbit.post",
           "demo.setup",
           "gateway.external.dashboards.read",
-          "strategus.results.read",
           "strategus.results.write",
           "strategus.results.delete",
           "mlflow",
@@ -815,6 +814,10 @@
           "gateway.terminology.concept.filterOptions.read",
           "gateway.terminology.concept.recommended.read",
           "gateway.terminology.concept.hierarchy.read",
+          "gateway.terminology.concept.getStandardConcepts.read",
+          "gateway.terminology.concept.searchByName.read",
+          "gateway.terminology.concept.searchById.read",
+          "gateway.terminology.concept.searchByCode.read",
           "gateway.terminology.fhir.read",
           "codesuggestion.read",
           "mcpchat.read",
@@ -849,7 +852,8 @@
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
-          "whiteRabbit.post"
+          "whiteRabbit.post",
+          "portal.userArtifact.write"
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
@@ -861,6 +865,12 @@
           "jobplugins.cohortDqd.researcher.execute",
           "jobplugins.analysisUi.researcher.execute",
           "portal.dataset.read"
+        ],
+        "STUDY_RESULTS_READ_RESEARCHER": [
+          "strategus.analysis.read",
+          "strategus.results.read",
+          "strategus.results.write",
+          "strategus.results.delete"
         ]
       },
       "scopes": [
@@ -1764,6 +1774,15 @@
           ]
         },
         {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
+          ]
+        },
+        {
           "path": "^/system-portal/user-artifact/([^/]+)/concept_sets/shared/list$",
           "scopes": [
             "portal.userArtifact.conceptSets.read"
@@ -1807,6 +1826,15 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
           ]
         },
         {
@@ -2825,6 +2853,11 @@
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST",
+            "DELETE"
           ]
         },
         {

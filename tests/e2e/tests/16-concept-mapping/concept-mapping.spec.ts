@@ -3,7 +3,7 @@ import path from 'path'
 
 test('concept-mapping', async ({ page }) => {
   // Authentication
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()

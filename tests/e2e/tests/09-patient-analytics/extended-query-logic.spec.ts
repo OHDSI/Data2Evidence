@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -15,7 +15,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
-  await expect(page.getByText('2694 / 2694')).toBeVisible()
+  await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Add filtercards
@@ -26,7 +26,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page.getByText('2694 / 2694')).toBeVisible()
+  await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // Add basic data - month of birth
   await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByText('Month of Birth').click()
@@ -39,7 +39,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByPlaceholder('Enter search term').fill('MALE')
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
-  await expect(page.getByText('120 / 2694')).toBeVisible()
+  await expect(page.getByText('120 / 2,694')).toBeVisible()
 
   // Click AND to change into OR
   await page.waitForTimeout(5000)

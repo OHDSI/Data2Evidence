@@ -135,6 +135,29 @@ export class TerminologySvcAPI {
     }
   }
 
+  async deleteConceptSet(
+    datasetId: string,
+    conceptSetId: number
+  ): Promise<void> {
+    try {
+      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
+        conceptSetId
+      )}`;
+      console.log(`Calling ${url} to delete concept set`);
+      const options = this.getRequestConfig();
+
+      const params = new URLSearchParams();
+      params.append("datasetId", datasetId);
+
+      await axios.delete(url, { params, ...options });
+    } catch (error) {
+      console.error(
+        `Error while deleting concept set with conceptSetId ${conceptSetId}: ${error}`
+      );
+      throw error;
+    }
+  }
+
   async resolveConceptSetExpression(
     datasetId: string,
     concepts: IResolveConceptSetExpressionConcept[]

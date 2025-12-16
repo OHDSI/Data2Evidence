@@ -88,6 +88,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
       { name: getText(i18nKeys.ACTION_SELECTOR__RUN_DATA_CHARACTERIZATION), value: "data-characterization" },
       { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_CACHE), value: "create-cache" },
       { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__MANAGE_DASHBOARD), value: "manage-dashboard" },
     ],
     [getText, i18nKeys]
   );

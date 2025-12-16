@@ -12,9 +12,10 @@ interface BarChartProps {
   xAxisName: string;
   yAxisName: string;
   tooltipFormat: string;
+  axisBaseGap?: number;
 }
 
-const BarChart: FC<BarChartProps> = ({ barChartData, title, xAxisName, yAxisName, tooltipFormat }) => {
+const BarChart: FC<BarChartProps> = ({ barChartData, title, xAxisName, yAxisName, tooltipFormat, axisBaseGap }) => {
   const { getText, i18nKeys } = useTranslation();
   if (barChartData.data.length === 0) {
     return (
@@ -49,6 +50,7 @@ const BarChart: FC<BarChartProps> = ({ barChartData, title, xAxisName, yAxisName
         xAxisName={xAxisName}
         yAxisName={yAxisName}
         lineChartFormatConfig={{ tooltipFormat }}
+        axisBaseGap={axisBaseGap}
       />
     </div>
   );

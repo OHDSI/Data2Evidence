@@ -76,12 +76,14 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_Y_AXIS_NAME)}
               tooltipFormat={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_TOOLTIP_FORMAT)}
+              axisBaseGap={12}
             />
             <BoxPlotChart
               data={observationPeriodData.ageByGender}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_Y_AXIS_NAME)}
+              axisBaseGap={12}
             />
           </div>
           <div className="imbalanced__container">
@@ -95,21 +97,27 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_Y_AXIS_NAME)}
               tooltipFormat={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_TOOLTIP_FORMAT)}
+              axisBaseGap={12}
             />
             <BoxPlotChart
               data={parseDaysToYears(observationPeriodData.durationByGender)}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_Y_AXIS_NAME)}
+              axisBaseGap={10}
             />
           </div>
           <div className="chart__container">
-            <ObservationPeriodCumulativeDurationChart data={observationPeriodData.cumulativeObservation} />
+            <ObservationPeriodCumulativeDurationChart
+              data={observationPeriodData.cumulativeObservation}
+              axisBaseGap={36}
+            />
             <BoxPlotChart
               data={parseDaysToYears(observationPeriodData.durationByAgeDecile)}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_Y_AXIS_NAME)}
+              axisBaseGap={12}
             />
           </div>
           <div className="imbalanced__container">
