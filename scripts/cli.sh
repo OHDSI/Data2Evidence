@@ -169,7 +169,7 @@ case $cmd in
         hanapw=${HANAPW:-$(random-password 16)}
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
         cat >> $ENVFILE << 'EOF'
-INSTALL_SQLALCHEMY="bash -c 'if [[ \$INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"
+INSTALL_SQLALCHEMY="bash -c 'if [ "$INSTALL_SQLALCHEMY_HANA" = "true" ]; then echo "Installing sqlalchemy-hana..." && uv pip install sqlalchemy-hana==2.2.0 && echo "Running prefect flow-run execute..." && prefect flow-run execute; else echo "Running prefect flow-run execute..." && prefect flow-run execute; fi'"
 EOF
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
