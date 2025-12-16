@@ -11,9 +11,9 @@ class FlowActionType(str, Enum):
 class DataloadOptions(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
-    schema_name: str
-    vocab_schema: str
-    results_schema: str
+    schema_name: Optional[str] = None
+    vocab_schema: Optional[str] = None
+    results_schema: Optional[str] = None
     datasets: Optional[List] = None
     
     @property
