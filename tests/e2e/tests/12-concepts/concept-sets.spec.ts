@@ -85,6 +85,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
+  await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
   await page.getByText('✎').click()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
@@ -110,4 +111,6 @@ test(TEST_NAME, async ({ page }) => {
   } catch {
     // Modal not present, continue
   }
+
+  await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
 })
