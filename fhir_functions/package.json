@@ -79,7 +79,7 @@
           ]
         },
         {
-          "path": "^/system-portal/dataset/list$",
+          "path": "^/system-portal/dataset/list/systemadmin$",
           "scopes": [
             "portal.dataset.read"
           ],
