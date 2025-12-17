@@ -129,7 +129,9 @@ export class DBRouter {
         });
 
         await client.connect();
-        client.end().catch(() => {});
+        client.end().catch((endError: unknown) => {
+          this.logger.error("Error when closing test database connection:", endError);
+        });
 
         return res
           .status(200)
