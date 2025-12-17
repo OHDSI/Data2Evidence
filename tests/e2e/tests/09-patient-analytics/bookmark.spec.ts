@@ -22,9 +22,9 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
-    await page.getByTitle('Basic Data - Age').click()
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>114')
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
+    await page.locator('div[title="Basic Data - Age"]').click()
+    await page.locator('div[title="Basic Data - Age"]').getByRole('textbox').fill('>114')
+    await page.locator('div[title="Basic Data - Age"]').getByRole('textbox').press('Enter')
     await expect(page.getByText('27 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
