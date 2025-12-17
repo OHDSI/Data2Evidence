@@ -289,6 +289,11 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
           extra = JSON.parse(internalExtra.value);
         } catch (err) {
           console.error("Invalid extra JSON", err);
+          setFeedback({
+            type: "error",
+            message: "Invalid JSON in Extra (Internal). Please correct the JSON before testing the connection.",
+          });
+          return;
         }
       }
 
