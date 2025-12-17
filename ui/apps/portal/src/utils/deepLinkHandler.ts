@@ -1,6 +1,7 @@
 /**
  * Deep Link Handler - URL parameter detection and dataset sync for deep linking.
- * Portal handles `datasetId`; PA reads `linkType` and `query` directly from URL.
+ * Portal uses: datasetId, route (for navigation)
+ * PA uses: linkType, query (restored to URL for PA to consume)
  */
 
 import { loadDeepLinkParams, clearDeepLinkParams } from "./deepLinkStorage";
@@ -69,19 +70,8 @@ export interface SyncDatasetFromUrlResult {
 }
 
 /**
- * Synchronizes Portal's selected dataset based on URL parameter
- *
- * Workflow:
- * 1. Extract datasetId from URL (or sessionStorage if URL stripped by auth)
- * 2. If no datasetId parameter, return early (no change to normal behavior)
- * 3. Validate datasetId exists in available datasets
- * 4. If valid, set as active dataset and navigate to information page
- * 5. Restore all deep link params to URL (datasetId, linkType, query)
- * 6. Clear sessionStorage after successful use
- * 7. If invalid/inaccessible, show error notification and clear sessionStorage
- *
- * @param params - Configuration object
- * @returns Result object with sync status
+ * Synchronizes Portal's selected dataset based on URL parameter and routes to appropriate page.
+ * Uses 'route' param for navigation target, restores 'linkType' and 'query' to URL for PA.
  */
 export const syncDatasetFromUrl = ({
   url,
@@ -126,28 +116,26 @@ export const syncDatasetFromUrl = ({
   // Valid dataset - set as active
   setActiveDatasetId(datasetId);
 
-  // Restore all deep link params from sessionStorage to URL
-  // This ensures PA (Patient Analytics) can read linkType and query params
+  // Get stored params and current URL params
   const storedParams = loadDeepLinkParams();
   const urlObj = new URL(url);
 
-  // Preserve existing URL params and add/restore deep link params
-  if (storedParams) {
-    Object.entries(storedParams).forEach(([key, value]) => {
-      if (value) {
-        urlObj.searchParams.set(key, value);
-      }
-    });
-  } else {
-    // If no stored params, ensure datasetId is in URL
-    urlObj.searchParams.set("datasetId", datasetId);
-  }
+  // Determine target route from 'route' param (default: information)
+  const route = urlObj.searchParams.get("route") || storedParams?.route;
+  const targetRoute = route || "information";
 
-  // Build navigation path with restored query params
-  const queryString = urlObj.searchParams.toString();
-  const navigationPath = queryString ? `${basePath}/information?${queryString}` : `${basePath}/information`;
+  // Build query string with only PA params (linkType, query) - not Portal params (datasetId, route)
+  const paParams = new URLSearchParams();
+  const linkType = urlObj.searchParams.get("linkType") || storedParams?.linkType;
+  const query = urlObj.searchParams.get("query") || storedParams?.query;
+  if (linkType) paParams.set("linkType", linkType);
+  if (query) paParams.set("query", query);
 
-  // Navigate to information page (replicating manual dataset selection behavior)
+  // Build navigation path
+  const queryString = paParams.toString();
+  const navigationPath = queryString ? `${basePath}/${targetRoute}?${queryString}` : `${basePath}/${targetRoute}`;
+
+  // Navigate to target page
   navigate(navigationPath, {
     state: {
       tenantId: dataset.tenant?.id,

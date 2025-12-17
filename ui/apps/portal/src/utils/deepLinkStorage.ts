@@ -9,10 +9,12 @@
 const STORAGE_KEY = "deepLinkParams";
 
 export interface DeepLinkParams {
+  // Portal params (used for routing, not restored to URL)
   datasetId?: string;
+  route?: string;
+  // PA params (restored to URL for PA to consume)
   linkType?: string;
   query?: string;
-  [key: string]: string | undefined;
 }
 
 /**
@@ -67,12 +69,15 @@ export const extractDeepLinkParamsFromUrl = (url: string | URLSearchParams): Dee
     const searchParams = typeof url === "string" ? new URL(url).searchParams : url;
     const params: DeepLinkParams = {};
 
-    // Extract known deep link parameters
+    // Portal params (used for routing)
     const datasetId = searchParams.get("datasetId");
+    const route = searchParams.get("route");
+    // PA params (restored to URL for PA to consume)
     const linkType = searchParams.get("linkType");
     const query = searchParams.get("query");
 
     if (datasetId) params.datasetId = datasetId;
+    if (route) params.route = route;
     if (linkType) params.linkType = linkType;
     if (query) params.query = query;
 

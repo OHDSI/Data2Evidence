@@ -205,7 +205,8 @@ describe("deepLinkHandler", () => {
         datasetId: "test-dataset-123",
       });
       expect(mockSetActiveDatasetId).toHaveBeenCalledWith("test-dataset-123");
-      expect(mockNavigate).toHaveBeenCalledWith("/researcher/information?datasetId=test-dataset-123", {
+      // Only datasetId provided, no PA params - navigates to /information with no query string
+      expect(mockNavigate).toHaveBeenCalledWith("/researcher/information", {
         state: { tenantId: "tenant-test" },
       });
       expect(mockSetFeedback).not.toHaveBeenCalled();
@@ -290,9 +291,9 @@ describe("deepLinkHandler", () => {
       );
     });
 
-    it("should handle URL with multiple query params", () => {
+    it("should route to /cohort when route=cohort and pass PA params", () => {
       const result = syncDatasetFromUrl({
-        url: "http://localhost:3000/researcher/pa?linkType=cohort-definition&datasetId=dataset-2&query=abc123",
+        url: "http://localhost:3000/researcher/pa?datasetId=dataset-2&route=cohort&linkType=cohort-definition&query=abc123",
         availableDatasets,
         setActiveDatasetId: mockSetActiveDatasetId,
         setFeedback: mockSetFeedback,
@@ -306,19 +307,18 @@ describe("deepLinkHandler", () => {
         datasetId: "dataset-2",
       });
       expect(mockSetActiveDatasetId).toHaveBeenCalledWith("dataset-2");
-      expect(mockNavigate).toHaveBeenCalledWith(
-        "/researcher/information?linkType=cohort-definition&datasetId=dataset-2&query=abc123",
-        {
-          state: { tenantId: "tenant-2" },
-        }
-      );
+      // Only PA params (linkType, query) in URL - not Portal params (datasetId, route)
+      expect(mockNavigate).toHaveBeenCalledWith("/researcher/cohort?linkType=cohort-definition&query=abc123", {
+        state: { tenantId: "tenant-2" },
+      });
       expect(mockSetFeedback).not.toHaveBeenCalled();
     });
 
-    it("should restore params from sessionStorage when URL has none", () => {
-      // Simulate initial page load saved params
+    it("should restore params from sessionStorage and route to /cohort", () => {
+      // Simulate initial page load saved params (auth stripped URL params)
       deepLinkStorage.saveDeepLinkParams({
         datasetId: "test-dataset-123",
+        route: "cohort",
         linkType: "cohort-definition",
         query: "xyz789",
       });
@@ -338,20 +338,19 @@ describe("deepLinkHandler", () => {
         datasetId: "test-dataset-123",
       });
       expect(mockSetActiveDatasetId).toHaveBeenCalledWith("test-dataset-123");
-      expect(mockNavigate).toHaveBeenCalledWith(
-        "/researcher/information?datasetId=test-dataset-123&linkType=cohort-definition&query=xyz789",
-        {
-          state: { tenantId: "tenant-test" },
-        }
-      );
+      // Only PA params restored to URL
+      expect(mockNavigate).toHaveBeenCalledWith("/researcher/cohort?linkType=cohort-definition&query=xyz789", {
+        state: { tenantId: "tenant-test" },
+      });
       expect(mockSetFeedback).not.toHaveBeenCalled();
       // Verify sessionStorage cleared after successful use
       expect(deepLinkStorage.loadDeepLinkParams()).toBeNull();
     });
 
     it("should merge URL params with sessionStorage params", () => {
-      // Simulate saved params (might have been stripped by auth)
+      // Simulate saved params (route and PA params saved, datasetId in URL)
       deepLinkStorage.saveDeepLinkParams({
+        route: "cohort",
         linkType: "cohort-definition",
         query: "xyz789",
       });
@@ -371,15 +370,36 @@ describe("deepLinkHandler", () => {
         datasetId: "dataset-1",
       });
       expect(mockSetActiveDatasetId).toHaveBeenCalledWith("dataset-1");
-      expect(mockNavigate).toHaveBeenCalledWith(
-        "/researcher/information?datasetId=dataset-1&linkType=cohort-definition&query=xyz789",
-        {
-          state: { tenantId: "tenant-1" },
-        }
-      );
+      // Only PA params in URL
+      expect(mockNavigate).toHaveBeenCalledWith("/researcher/cohort?linkType=cohort-definition&query=xyz789", {
+        state: { tenantId: "tenant-1" },
+      });
       expect(mockSetFeedback).not.toHaveBeenCalled();
       // Verify sessionStorage cleared after successful use
       expect(deepLinkStorage.loadDeepLinkParams()).toBeNull();
+    });
+
+    it("should default to /information when no route param", () => {
+      // Only PA params, no route specified
+      deepLinkStorage.saveDeepLinkParams({
+        datasetId: "dataset-1",
+        linkType: "some-other-type",
+        query: "abc",
+      });
+
+      const result = syncDatasetFromUrl({
+        url: "http://localhost:3000/researcher/pa",
+        availableDatasets,
+        setActiveDatasetId: mockSetActiveDatasetId,
+        setFeedback: mockSetFeedback,
+        navigate: mockNavigate,
+        basePath: "/researcher",
+      });
+
+      expect(result.syncSuccess).toBe(true);
+      expect(mockNavigate).toHaveBeenCalledWith("/researcher/information?linkType=some-other-type&query=abc", {
+        state: { tenantId: "tenant-1" },
+      });
     });
   });
 });
