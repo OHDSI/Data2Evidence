@@ -140,7 +140,7 @@ class D2ECli {
       CADDY__ALP__PUBLIC_FQDN: `${this.CADDY__ALP__PUBLIC_FQDN}`,
       DOCKER_TAG_NAME: `${this.DOCKER_TAG_NAME}`,
       ENV_TYPE: `${this.ENV_TYPE}`,
-      FHIR__CLIENT_ID: `${this.generate_random_password(21)}`,
+      FHIR__CLIENT_ID: `${this.generate_uuid()}`,
       FHIR__CLIENT_SECRET: `${this.generate_random_password(64)}`,
       LOGTO__ALP_APP__CLIENT_ID: `${this.generate_random_password(21)}`,
       LOGTO__ALP_APP__CLIENT_SECRET: `${this.generate_random_password(30)}`,
@@ -361,6 +361,11 @@ class D2ECli {
     }
     return password;
   }
+
+  generate_uuid(): string {
+    return crypto.randomUUID();
+  }
+
   base64UrlEncode(str: string | Buffer): string {
     const base64 = Buffer.isBuffer(str)
       ? str.toString("base64")
