@@ -130,6 +130,11 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
           extra = JSON.parse(internalExtra.value);
         } catch (err) {
           console.error("Invalid extra JSON", err);
+          setFeedback({
+            type: "error",
+            message: "Invalid Extra (Internal) JSON configuration. Please correct the JSON and try again.",
+          });
+          return;
         }
       }
 
