@@ -139,21 +139,26 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Installing R packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libglpk-dev \
+    && apt-get clean --yes \
+    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
+
+# install renv package
+RUN install2.r --error --skipinstalled renv
+
+WORKDIR /app
+
 ENV RETICULATE_PYTHON="/app/.venv/bin/python"
 
-# Install R packages devtools + reticulate
-# Faster CRAN repo + split install
-RUN R -e "install.packages('reticulate', repos='https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
-RUN R -e "install.packages('devtools', repos='https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
+COPY ./data_transformation/renv.lock ./build/.Rprofile ./build/install_and_verify_r_packages.R /app/
 
-# Install setuptools, wheel, Cython in the R reticulate python environment
-RUN uv pip install setuptools wheel Cython
-
-# Install OHDSI packages from GitHub
-RUN R -e "devtools::install_github('OHDSI/CohortGenerator')" && \
-    R -e "devtools::install_github('OHDSI/CirceR')" && \
-    R -e "devtools::install_github('OHDSI/ARTEMIS')"
-
+# Install R depdendencies in global library
+ARG REQUIRED_R_PACKAGES="DatabaseConnector CirceR CohortGenerator SqlRender ARTEMIS"
+RUN chmod +x /app/install_and_verify_r_packages.R && \
+    /app/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" && \
+    R CMD javareconf && \
+    rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
 
 USER docker
