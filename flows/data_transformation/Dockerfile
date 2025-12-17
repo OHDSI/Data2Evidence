@@ -20,7 +20,6 @@ RUN apt-get update && \
     g++ \
     software-properties-common \
     # To build psycopg2-binary
-    libglpk40 \
     libpq-dev \
     # To build rpy2
     liblzma-dev \
@@ -74,6 +73,7 @@ RUN apt-get update && \
         nodejs \
         npm \
         libpq5 \
+        libglpk40 \
         python3-pip \
         openjdk-17-jdk \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
