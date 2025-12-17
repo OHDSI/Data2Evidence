@@ -73,9 +73,11 @@ RUN apt-get update && \
         nodejs \
         npm \
         libpq5 \
-        libglpk40 \
         python3-pip \
         openjdk-17-jdk \
+        # installing R dependencies
+        libglpk40 \
+        libwebpmux3 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Microsoft package and .NET SDK
