@@ -15,6 +15,8 @@ try {
   
   await runSeeders(migrationDataSource);
   logger.info('~~~ Seeders completed! ~~~');
+  await migrationDataSource.destroy();
+  logger.info('~~~ Datasource destroyed! ~~~');
 } catch (error) {
   logger.error(`Error while initialising datasource: ${error}`);
   console.log(`Error while initialising datasource: ${error}`);

@@ -1,6 +1,7 @@
 import { DataSource } from "npm:typeorm";
 import { Seeder } from "./seeder.ts";
 import { UserArtifact } from "../../entity/user-artifact/index.ts";
+import { ServiceName } from "../../entity/enums/index.ts";
 import { notebookContents } from "./notebooks/index.ts";
 
 export default class UserArtifactSeeder implements Seeder {
@@ -14,25 +15,23 @@ export default class UserArtifactSeeder implements Seeder {
       return;
     }
 
-    const notebookEntities = Object.keys(notebookContents).map((name) => ({
-      id: notebookContents[name].id,
-      name,
-      notebookContent: notebookContents[name].content,
-      userId: "system",
-      isShared: true,
-      createdBy: "system",
-      modifiedBy: "system",
-    }));
-
-    const entities = repository.create({
-      userId: "system",
-      artifacts: {
-        notebooks: notebookEntities,
-      },
-      createdBy: "system",
-      modifiedBy: "system",
+    const notebookEntities = Object.keys(notebookContents).map((name) => {
+      const notebook = notebookContents[name];
+      return repository.create({
+        id: notebook.id,
+        serviceName: ServiceName.NOTEBOOKS,
+        userId: "system",
+        artifact: {
+          name,
+          notebookContent: notebook.content,
+          userId: "system",
+          isShared: true,
+        },
+        createdBy: "system",
+        modifiedBy: "system",
+      });
     });
 
-    await repository.save(entities);
+    await repository.save(notebookEntities);
   }
 }
