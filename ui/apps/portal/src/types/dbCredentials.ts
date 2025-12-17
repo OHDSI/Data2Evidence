@@ -123,6 +123,8 @@ export interface ITestConnection {
   host: string;
   database: string;
   port: number;
+  sslmode?: string;
+  ca?: string;
 }
 
 export interface ITestConnectionResult {

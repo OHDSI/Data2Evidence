@@ -1,4 +1,5 @@
-import express, { Request } from "express";
+import express, { Request, Response } from "express";
+import { Buffer } from "node:buffer";
 import { JobpluginsAPI } from "./api/JobpluginsAPI.ts";
 import TrexDao from "./dao/trex.ts";
 import pg from "pg";
@@ -84,35 +85,68 @@ export class DBRouter {
       }
     );
 
-    this.router.get("/test", async (req: Request, res: Response) => {
+    this.router.post("/test", async (req: Request, res: Response) => {
       try {
-        const { user, password, host, database, port } = req.query;
+        const { user, password, host, database, port, extra } = req.body;
         if (!user || !password || !host || !database || !port) {
           return res
             .status(400)
             .send({ error: "Missing required database credentials" });
         }
 
+        // Extract sslmode and ca from extra object
+        const extraParams: Record<string, any> = extra || {};
+        const { sslmode, ca, ...otherExtra } = extraParams;
+
+        // Build SSL config based on sslmode
+        let sslConfig: boolean | object | undefined = undefined;
+        if (
+          sslmode === "require" ||
+          sslmode === "verify-ca" ||
+          sslmode === "verify-full"
+        ) {
+          if (ca) {
+            sslConfig = {
+              rejectUnauthorized: true,
+              ca: Buffer.from(ca as string, "base64").toString("utf-8"),
+            };
+          } else {
+            sslConfig = {
+              rejectUnauthorized: false,
+              checkServerIdentity: () => undefined,
+            };
+          }
+        }
         const client = new pg.Client({
           user,
           password,
           host,
           database,
           port,
-          connectionTimeoutMillis: 5000,
+          connectionTimeoutMillis: 30000,
+          ssl: sslConfig,
+          ...otherExtra,
         });
 
         await client.connect();
-        await client.end();
+        client.end().catch(() => {});
 
         return res
           .status(200)
           .send({ success: true, message: "Connection successful" });
-      } catch (error) {
-        this.logger.error(
-          `Error when testing connection: ${JSON.stringify(error)}`
-        );
-        return res.status(500).send({ success: false, error: error.message });
+      } catch (error: any) {
+        this.logger.error("Error when testing connection:", {
+          message: error.message,
+          code: error.code,
+          detail: error.detail,
+        });
+        return res.status(500).send({
+          success: false,
+          error: error.message,
+          code: error.code,
+          detail: error.detail,
+          hint: error.hint,
+        });
       }
     });
   }

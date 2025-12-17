@@ -122,6 +122,17 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
         return;
       }
 
+      // Parse extra JSON from Extra (Internal) if present
+      const internalExtra = db.extra?.find((ext) => ext.serviceScope === SERVICE_SCOPE_TYPES.INTERNAL);
+      let extra: Record<string, any> | undefined;
+      if (internalExtra?.value) {
+        try {
+          extra = JSON.parse(internalExtra.value);
+        } catch (err) {
+          console.error("Invalid extra JSON", err);
+        }
+      }
+
       const testResult: ITestingResult = {};
       for (const cred of credentials) {
         try {
@@ -131,6 +142,7 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
             database: db.name,
             user: cred.username,
             password: cred.password,
+            ...(extra && { extra }),
           };
           const result = await api.dbCredentialsMgr.testConnection(params);
 
