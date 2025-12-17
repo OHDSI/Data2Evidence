@@ -104,6 +104,10 @@ generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
 }
 
+generate_uuid() {
+  return uuidgen | tr "[:upper:]" "[:lower:]"
+}
+
 generate_jwt() {
   local secret="$1"
   local role="$2"
@@ -273,7 +277,7 @@ EOF
             echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
             echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
             echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
-            echo FHIR__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo FHIR__CLIENT_ID=$(generate_uuid) >> $DOTENV_FILE
             echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
             echo LOGTO__ALP_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
             echo LOGTO__ALP_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
