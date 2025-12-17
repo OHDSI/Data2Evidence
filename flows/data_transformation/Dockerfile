@@ -20,7 +20,7 @@ RUN apt-get update && \
     g++ \
     software-properties-common \
     # To build psycopg2-binary
-    libglpk-dev \
+    libglpk40 \
     libpq-dev \
     # To build rpy2
     liblzma-dev \
