@@ -20,6 +20,7 @@ RUN apt-get update && \
     g++ \
     software-properties-common \
     # To build psycopg2-binary
+    libglpk-dev \
     libpq-dev \
     # To build rpy2
     liblzma-dev \
@@ -138,12 +139,6 @@ COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract
 
 ENV INSTALL_SQLALCHEMY_HANA=false
 ENV PATH="/app/.venv/bin:$PATH"
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libglpk-dev \
-    && apt-get clean --yes \
-    && rm -rf /var/lib/apt/{apt,dpkg,cache,log}/
 
 # install renv package
 RUN install2.r --error --skipinstalled renv
