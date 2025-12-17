@@ -105,7 +105,7 @@ generate_random_secret() {
 }
 
 generate_uuid() {
-  uuidgen
+  return uuidgen | tr "[:upper:]" "[:lower:]"
 }
 
 generate_jwt() {
