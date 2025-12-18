@@ -755,6 +755,8 @@
         {
           "name": "create_cachedb_fhir_plugin",
           "entrypoint": "flows.create_cachedb_fhir_plugin.flow.create_cachedb_fhir_plugin",
+          "concurrencyLimit": 1,
+          "concurrencyLimitName": "create_cachedb_fhir_plugin-concurrency",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
