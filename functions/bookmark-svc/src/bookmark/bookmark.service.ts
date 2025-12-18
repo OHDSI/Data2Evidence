@@ -30,7 +30,7 @@ function createBookmarkId(bookmarkName: string) {
   return `${bookmarkName.replace(/[^a-zA-Z0-9]/g, '')}_${crypto.randomBytes(4).toString('hex')}`
 }
 /**
- * Ensure bookmark name is <=255 characters.
+ * Ensure bookmark name is not more than 255 characters.
  */
 function validateBookmarkName(bookmarkName: string): void {
   if (bookmarkName.length > 255) {
