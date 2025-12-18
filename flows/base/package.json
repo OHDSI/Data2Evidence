@@ -64,6 +64,14 @@
                   "results_schema": {
                     "title": "Results Schema",
                     "type": "string"
+                  },
+                  "load_csvs": {
+                    "anyOf": [
+                      { "type": "boolean" },
+                      { "type": "null" }
+                    ],
+                    "default": true,
+                    "title": "Load CSVs into CDM schema"
                   }
                 },
                 "required": [
