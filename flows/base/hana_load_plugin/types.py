@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class FlowActionType(str, Enum):
     CREATE_DATA_MODEL = "create_datamodel"
