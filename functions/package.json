@@ -2728,7 +2728,7 @@
             "gateway.db.database.test"
           ],
           "httpMethods": [
-            "GET"
+            "POST"
           ]
         },
         {
