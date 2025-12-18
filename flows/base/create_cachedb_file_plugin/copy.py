@@ -202,7 +202,7 @@ def copy_table(write_conn: Any, copy_params: CopyParameters, query_columns: Quer
 
     return rows_copied
 
-@task(log_prints=True, tags=["create_cachedb_fhir_plugin-concurrency"], task_run_name="copy_indexes_{query_columns.table}")
+@task(log_prints=True, tags=["create_cachedb_file_plugin_concurrency"], task_run_name="copy_indexes_{query_columns.table}")
 def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, logger):
     table = query_columns.table
     columns_to_copy = query_columns.columns_to_copy
