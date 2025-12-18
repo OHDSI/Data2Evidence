@@ -82,15 +82,6 @@ export default {
   beforeDestroy() {
     window.removeEventListener('click', this.closeSubMenu)
   },
-  watch: {
-    getAllAxes: {
-      handler(newValue) {
-        console.log('getAllAxes:', newValue)
-      },
-      immediate: true,
-      deep: true,
-    },
-  },
   computed: {
     ...mapGetters([
       'getActiveChart',
