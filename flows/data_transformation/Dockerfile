@@ -139,8 +139,17 @@ RUN chmod -R 755 /app
 # Copy NLP external files to the target directory
 COPY --from=nlp_external_files /external/CUItoOHDSIv1.csv /app/flows/ner_extract_plugin/CUItoOHDSIv1.csv
 
-ENV INSTALL_SQLALCHEMY_HANA=false
-ENV PATH="/app/.venv/bin:$PATH"
+
+ARG POSIT_DATE=2025-09-22
+ARG CODENAME=noble
+
+
+COPY <<-EOF /usr/local/lib/R/etc/Rprofile.site
+    options(repos=c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
+    options(renv.config.repos.override = c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
+    options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
+    options(download.file.extra = sprintf('--header "User-Agent: R (%s)"', paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
+EOF
 
 # install renv package
 RUN install2.r --error --skipinstalled renv
@@ -157,5 +166,10 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
     /app/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" && \
     R CMD javareconf && \
     rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
+
+WORKDIR /app
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV INSTALL_SQLALCHEMY_HANA=false
 
 USER docker
