@@ -547,7 +547,8 @@ export default class MriFrontendConfig {
           if (
             oneConfigAttribute.isInitialInFilterCard() ||
             measuresInitialIndex !== -1 ||
-            categoriesInitialIndex !== -1
+            categoriesInitialIndex !== -1 ||
+            stackCategoryInitialIndex !== -1
           ) {
             const instancePath = `${
               oneFilterCardConfig.getConfigPath() + (oneFilterCardConfig.isBasicData() ? '' : '.1')
@@ -562,7 +563,7 @@ export default class MriFrontendConfig {
             }
 
             if (stackCategoryInitialIndex >= 0) {
-              result[3] = instancePath
+              result[3 + stackCategoryInitialIndex] = instancePath
             }
           }
         }, this)
