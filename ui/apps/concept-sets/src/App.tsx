@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ThemeProvider } from "@mui/material";
 import {
   ConceptSetsProvider,
@@ -85,6 +85,27 @@ function AppContent(props: PortalProps) {
 }
 
 export default function App(props: PortalProps) {
+  const [customProps, setCustomProps] = useState<Partial<PortalProps>>({});
+
+  useEffect(() => {
+    const handlePropsChange = (event: Event) => {
+      const { appId, ...newProps } = (event as CustomEvent).detail || {};
+      if (appId === props.appId) {
+        setCustomProps(newProps);
+      }
+    };
+
+    window.addEventListener("custom-props-changed", handlePropsChange);
+    return () => {
+      window.removeEventListener("custom-props-changed", handlePropsChange);
+    };
+  }, [props.appId]);
+
+  const mergedProps = useMemo(
+    () => ({ ...props, ...customProps }),
+    [props, customProps]
+  );
+
   const mockGetToken = async () => {
     // Mock JWT token with sub: 'testuser'
     const mockPayload = { sub: "testuser" };
@@ -95,10 +116,10 @@ export default function App(props: PortalProps) {
   };
 
   const propsWithMock = {
-    ...props,
+    ...mergedProps,
     // Use mock getToken only when isAtlas is true (standalone mode)
     // Otherwise use the actual getToken from portal (no fallback)
-    getToken: props.isAtlas ? mockGetToken : props.getToken,
+    getToken: props.isAtlas ? mockGetToken : mergedProps.getToken,
   };
 
   const theme = props.isAtlas ? theme_atlas : theme_d2e;
