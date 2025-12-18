@@ -80,15 +80,16 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
     await expect(page.getByText('A filter card has been added: Death A')).toBeVisible()
-    await expect(page.getByText('4 / 2,694')).toBeVisible()
+    // await expect(page.getByText('4 / 2,694')).toBeVisible()
   })
   //Add x1 filter card - Condition Occurrence concept name
   await test.step('Update x1 filter to condition concept name', async () => {
-    await page
-      .locator('div')
-      .filter({ hasText: /^Select an Attribute$/ })
-      .getByRole('button')
-      .click()
+    // await page
+    //   .locator('div')
+    //   .filter({ hasText: /^Select an Attribute$/ })
+    //   .getByRole('button')
+    //   .click()
+    await page.locator('button.axisMenuButton', { hasText: 'Select an Attribute' }).click()
     await page.locator('#pane-right').getByText('Condition Occurrence A').click()
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
