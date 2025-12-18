@@ -16,7 +16,7 @@ const DrilldownPrevalenceByMonthChart: FC<DrilldownPrevalenceByMonthChartProps> 
   const xAxisName = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__Y_AXIS_NAME);
   const yAxisName = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__Y_AXIS_NAME);
   const tooltipFormat = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__TOOLTIP_FORMAT);
-  const yAxisFormat = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__Y_AXIS_NAME);
+  const yAxisFormat = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__Y_AXIS_FORMAT);
 
   if (data.length === 0) {
     return (
