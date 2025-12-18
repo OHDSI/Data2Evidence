@@ -355,7 +355,7 @@ onErrorCaptured((err, instance, info) => {
         >
           <div style="padding: 24px">
             <div style="display: flex; justify-content: space-between">
-              <div style="color: #ff5e59">
+              <div style="color: #ff5e59; overflow: hidden; text-overflow: ellipsis">
                 {{
                   getBookmarkType(bookmarkDisplay) === 'M'
                     ? bookmarkDisplay.cohortDefinition.cohortDefinitionName
@@ -521,7 +521,9 @@ onErrorCaptured((err, instance, info) => {
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Cohort Name:</div>
-                  <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.cohortDefinitionName }}</div>
+                  <div class="ui-light-text" style="overflow: hidden; text-overflow: ellipsis">
+                    {{ bookmarkDisplay.cohortDefinition.cohortDefinitionName }}
+                  </div>
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Patient Count:</div>
