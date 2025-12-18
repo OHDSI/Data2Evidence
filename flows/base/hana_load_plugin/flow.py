@@ -46,6 +46,7 @@ def create_datamodel(options: DataloadOptions):
     results_schema = options.results_schema
     load_csvs = options.load_csvs
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    folder = None
 
     if load_csvs: 
         # Extract dataset if folder missing or empty
@@ -88,8 +89,11 @@ def create_datamodel(options: DataloadOptions):
 @task(log_prints=True)
 def create_datamodel_parent(schema: str, dbdao: DBDao, folder: Path, load_csvs: bool):
     run_create_datamodel_scripts(schema, dbdao)
-    if load_csvs:
+    if load_csvs and folder is not None:
         load_csvs_to_hana(folder, schema, dbdao)
+    else:
+        logger = get_run_logger()
+        logger.info("Skipping CSV loading as per configuration.")
 
 @task(log_prints=True)
 def download_eunomia():
