@@ -94,7 +94,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page.locator('.ewdrag')).toBeVisible()
-    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' })).toBeVisible()
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' }).first()).toBeVisible()
   })
   //Save the filter card
   await test.step('Save the filter card', async () => {
