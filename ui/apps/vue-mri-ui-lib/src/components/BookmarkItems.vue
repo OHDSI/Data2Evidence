@@ -520,7 +520,7 @@ onErrorCaptured((err, instance, info) => {
                   <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.description }}</div>
                 </div>
                 <div style="display: flex">
-                  <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Cohort Name:</div>
+                  <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px; white-space: nowrap;">Cohort Name:</div>
                   <div class="ui-light-text" style="overflow: hidden; text-overflow: ellipsis">
                     {{ bookmarkDisplay.cohortDefinition.cohortDefinitionName }}
                   </div>
