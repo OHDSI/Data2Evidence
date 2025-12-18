@@ -53,8 +53,8 @@ def create_datamodel(options: DataloadOptions):
         if not (EXTRACT_DIR.exists() and any(EXTRACT_DIR.iterdir())):
             # Download dataset if zip is missing
             if not ZIP_PATH.exists():
-                zip_path = download_eunomia()
-                folder = unzip_dataset(zip_path)
+                ZIP_PATH = download_eunomia()
+                folder = unzip_dataset(ZIP_PATH)
             else:
                 logger.info("Zip already exists, skipping download.")
         else:
