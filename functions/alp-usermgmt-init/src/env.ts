@@ -17,4 +17,8 @@ export const env = {
   PG__IDLE_TIMEOUT_IN_MS: Number(Deno.env.get("PG__IDLE_TIMEOUT_IN_MS")) || 30000,
   NODE_ENV: _env.NODE_ENV,
   PG_SSL: _env.PG__SSL,
+  IDP__INITIAL_USER__UUID: _env.IDP__INITIAL_USER__UUID,
+  IDP__INITIAL_USER__NAME: _env.IDP__INITIAL_USER__NAME,
+  ALP_SYSTEM_NAME: Deno.env.get("ALP__SYSTEM_NAME"),
+  APP__TENANT_ID: _env.APP__TENANT_ID,
 }
