@@ -57,7 +57,6 @@ def create_datamodel(options: DataloadOptions):
                 folder = unzip_dataset(zip_path)
             else:
                 logger.info("Zip already exists, skipping download.")
-                zip_path = ZIP_PATH
         else:
             logger.info("Extracted folder already exists, skipping unzip.")
             folder = EXTRACT_DIR
