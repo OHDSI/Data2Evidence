@@ -186,7 +186,7 @@ def create_schema_tables(
                 f"[{table}] Successfully copied table and indexes from schema '{copy_params.source_database}'.'{copy_params.source_schema}' schema to '{copy_params.target_database}'.'{copy_params.target_schema}' schema."
             )
 
-@task(log_prints=True, tags=["create_cachedb_fhir_plugin-concurrency"], task_run_name="copy_table_{query_columns.table}")
+@task(log_prints=True, tags=["create_cachedb_file_plugin_concurrency"], task_run_name="copy_table_{query_columns.table}")
 def copy_table(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, logger) -> int:    
     select_source_statement = create_select_query(copy_params, query_columns, source_schema)
     
