@@ -65,7 +65,7 @@ export async function addPlugin(value: any) {
 						tags: f.tags,
 					};
 					if(f.parameter_openapi_schema) body["parameter_openapi_schema"] = f.parameter_openapi_schema
-					if (f.concurrencyLimitName) {
+					if (f.concurrencyLimitName && f.concurrencyLimit && f.concurrencyLimit > 0 && f.concurrencyLimitName !== "") {
 						body["concurrency_options"] = { 
 							concurrency_limit_name: f.concurrencyLimitName,
 							"collision_strategy": "ENQUEUE", 
@@ -110,51 +110,55 @@ async function hasWorkerPool() {
 }
 
 async function ensureConcurrencyLimit(name: string, limit: number) {
-	logger.log(`Ensuring concurrency limit ${name} with limit ${limit}`);
-	// Find existing concurrency limit by tag
-	let getRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/?tag=${name}`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json"
-		}
-	});
-	let existingId = null;
-	if (getRes.status === 200) {
-		let data = await getRes.json();
-		if (data.length > 0) {
-			existingId = data[0].id;
-			logger.log(`Found existing concurrency limit ${name} with id ${existingId}`);
-		}
-	}
-	if (existingId) {
-		// Update existing
-		let updateRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/${existingId}`, {
-			method: "PATCH",
+	try{
+		logger.log(`Ensuring concurrency limit ${name} with limit ${limit}`);
+		// Find existing concurrency limit by tag
+		let getRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/?tag=${name}`, {
+			method: "GET",
 			headers: {
 				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({ concurrency_limit: limit }),
+			}
 		});
-		if (updateRes.ok) {
-			logger.log(`Concurrency limit ${name} updated successfully.`);
-		} else {
-			logger.error(`Error updating concurrency limit ${name}: ${updateRes.status} ${updateRes.statusText}`);
+		let existingId = null;
+		if (getRes.status === 200) {
+			let data = await getRes.json();
+			if (data.length > 0) {
+				existingId = data[0].id;
+				logger.log(`Found existing concurrency limit ${name} with id ${existingId}`);
+			}
 		}
-	} else {
-		// Create new
-		let createRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/`, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({ tag: name, concurrency_limit: limit }),
-		});
-		if (createRes.status === 409) {
-			logger.log(`Concurrency limit ${name} already exists, skipping creation.`);
-		} else if (createRes.ok) {
-			logger.log(`Concurrency limit ${name} created successfully.`);
+		if (existingId) {
+			// Update existing
+			let updateRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/${existingId}`, {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ concurrency_limit: limit }),
+			});
+			if (updateRes.ok) {
+				logger.log(`Concurrency limit ${name} updated successfully.`);
+			} else {
+				logger.error(`Error updating concurrency limit ${name}: ${updateRes.status} ${updateRes.statusText}`);
+			}
 		} else {
-			logger.error(`Error creating concurrency limit ${name}: ${createRes.status} ${createRes.statusText}`);
+			// Create new
+			let createRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({ tag: name, concurrency_limit: limit }),
+			});
+			if (createRes.status === 409) {
+				logger.log(`Concurrency limit ${name} already exists, skipping creation.`);
+			} else if (createRes.ok) {
+				logger.log(`Concurrency limit ${name} created successfully.`);
+			} else {
+				logger.error(`Error creating concurrency limit ${name}: ${createRes.status} ${createRes.statusText}`);
+			}
 		}
+	}catch(e){
+		logger.error(`Exception in ensureConcurrencyLimit: ${e} for limit name: ${name}`);
 	}
 }
