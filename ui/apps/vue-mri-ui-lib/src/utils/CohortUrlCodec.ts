@@ -6,6 +6,16 @@ import pako from 'pako'
 export type DecompressResult<T> = { success: true; data: T } | { success: false; error: string }
 
 /**
+ * Minimal store interface for shareCohortDefinition
+ */
+interface CohortStore {
+  getters: {
+    getBookmarksData: Record<string, unknown> | null
+    getSelectedDataset?: { id: string } | null
+  }
+}
+
+/**
  * CohortUrlCodec - Utility for compressing/decompressing cohort definitions for URL encoding
  *
  * Uses pako deflate/inflate for compression and base64url encoding for URL safety.
@@ -147,6 +157,62 @@ class CohortUrlCodec {
     base64 += '='.repeat(padding)
 
     return base64
+  }
+
+  /**
+   * Generate a shareable deep link URL for a cohort definition
+   *
+   * This function is designed to be called from the browser console for manual testing.
+   * It gets the current bookmark from the Vuex store, compresses it, and builds a deep link URL.
+   *
+   * @param store - Vuex store instance
+   * @returns The deep link URL string, or null if no cohort is loaded
+   */
+  static shareCohortDefinition(store: CohortStore): string | null {
+    try {
+      // Get current bookmark data from store
+      const bookmarkData = store.getters.getBookmarksData
+
+      if (!bookmarkData || Object.keys(bookmarkData).length === 0) {
+        console.error('No cohort definition loaded. Please load a cohort definition first.')
+        return null
+      }
+
+      // Compress the bookmark data
+      const compressed = this.compress(bookmarkData)
+
+      // Get current URL origin and base path
+      const origin = window.location.origin
+      // Extract prefix before /portal from current pathname (e.g., /d2e)
+      // and append /portal/researcher
+      const pathname = window.location.pathname
+      const portalIndex = pathname.indexOf('/portal')
+      const prefix = pathname.substring(0, portalIndex)
+      const basePath = `${prefix}/portal/researcher`
+
+      // Build deep link URL - validate datasetId exists
+      const datasetId = bookmarkData.datasetId || store.getters.getSelectedDataset?.id
+      if (!datasetId) {
+        console.error('No dataset ID found. Cannot generate deep link without a dataset.')
+        return null
+      }
+
+      const url = `${origin}${basePath}?datasetId=${datasetId}&route=cohort&linkType=cohort-definition&query=${compressed}`
+
+      // Check URL length
+      const lengthWarning = this.checkUrlLength(url)
+      if (lengthWarning) {
+        console.warn(lengthWarning)
+      }
+
+      // Log the URL for manual copying
+      console.log('Deep link URL:', url)
+
+      return url
+    } catch (error) {
+      console.error('Failed to generate deep link:', error)
+      return null
+    }
   }
 }
 

@@ -229,4 +229,241 @@ describe('CohortUrlCodec', () => {
       expect(decompressed).toEqual(cohortWithSpecialChars)
     })
   })
+
+  describe('shareCohortDefinition()', () => {
+    let mockStore: any
+
+    beforeEach(() => {
+      // Reset window location and clipboard mock before each test
+      delete (window as any).location
+      ;(window as any).location = {
+        origin: 'http://localhost:3000',
+        pathname: '/portal/researcher/cohort',
+        search: '',
+        href: 'http://localhost:3000/portal/researcher/cohort',
+      }
+
+      // Mock clipboard API
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: jest.fn().mockResolvedValue(undefined),
+        },
+      })
+
+      // Mock console methods
+      jest.spyOn(console, 'log').mockImplementation(() => {})
+      jest.spyOn(console, 'warn').mockImplementation(() => {})
+      jest.spyOn(console, 'error').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    it('returns null when no bookmark data exists', () => {
+      mockStore = {
+        getters: {
+          getBookmarksData: null,
+          getSelectedDataset: { id: 'dataset1' },
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).toBeNull()
+      expect(console.error).toHaveBeenCalledWith('No cohort definition loaded. Please load a cohort definition first.')
+    })
+
+    it('returns null when bookmark data is empty object', () => {
+      mockStore = {
+        getters: {
+          getBookmarksData: {},
+          getSelectedDataset: { id: 'dataset1' },
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).toBeNull()
+      expect(console.error).toHaveBeenCalledWith('No cohort definition loaded. Please load a cohort definition first.')
+    })
+
+    it('builds correct URL with dataset from bookmark', () => {
+      const bookmarkData = {
+        datasetId: 'bookmark-dataset',
+        filter: {
+          name: 'Test Cohort',
+        },
+      }
+
+      mockStore = {
+        getters: {
+          getBookmarksData: bookmarkData,
+          getSelectedDataset: { id: 'store-dataset' },
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).not.toBeNull()
+      expect(result).toContain('http://localhost:3000/portal/researcher')
+      expect(result).toContain('datasetId=bookmark-dataset')
+      expect(result).toContain('route=cohort')
+      expect(result).toContain('linkType=cohort-definition')
+      expect(result).toContain('query=')
+    })
+
+    it('falls back to store dataset when bookmark has no datasetId', () => {
+      const bookmarkData = {
+        filter: {
+          name: 'Test Cohort',
+        },
+      }
+
+      mockStore = {
+        getters: {
+          getBookmarksData: bookmarkData,
+          getSelectedDataset: { id: 'store-dataset' },
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).not.toBeNull()
+      expect(result).toContain('datasetId=store-dataset')
+    })
+
+    it('returns null when no dataset available', () => {
+      const bookmarkData = {
+        filter: {
+          name: 'Test Cohort',
+        },
+      }
+
+      mockStore = {
+        getters: {
+          getBookmarksData: bookmarkData,
+          getSelectedDataset: null,
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).toBeNull()
+      expect(console.error).toHaveBeenCalledWith('No dataset ID found. Cannot generate deep link without a dataset.')
+    })
+
+    it('returns null when store dataset is undefined', () => {
+      const bookmarkData = {
+        filter: {
+          name: 'Test Cohort',
+        },
+      }
+
+      mockStore = {
+        getters: {
+          getBookmarksData: bookmarkData,
+          getSelectedDataset: undefined,
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).toBeNull()
+    })
+
+    it('generates valid compressed query parameter', () => {
+      const bookmarkData = {
+        datasetId: 'dataset1',
+        filter: {
+          name: 'Test Cohort',
+          expression: {
+            ConceptSets: [],
+          },
+        },
+      }
+
+      mockStore = {
+        getters: {
+          getBookmarksData: bookmarkData,
+          getSelectedDataset: { id: 'dataset1' },
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).not.toBeNull()
+
+      // Extract query parameter and verify it can be decompressed
+      const url = new URL(result!)
+      const queryParam = url.searchParams.get('query')
+
+      expect(queryParam).not.toBeNull()
+      expect(queryParam!.length).toBeGreaterThan(0)
+
+      // Verify query param can be decompressed back to original data
+      const decompressed = CohortUrlCodec.decompress(queryParam!)
+      expect(decompressed).toEqual(bookmarkData)
+    })
+
+    it('warns about long URLs', () => {
+      // Create a large bookmark to generate a long URL
+      const largeBookmark = {
+        datasetId: 'dataset1',
+        filter: {
+          name: 'Large Cohort',
+          expression: {
+            ConceptSets: Array(200).fill({
+              id: 1,
+              name: 'Very Long Concept Name That Will Make The URL Very Long',
+              expression: {
+                items: Array(50).fill({
+                  concept: {
+                    id: 123456,
+                    name: 'Long Concept Name',
+                  },
+                }),
+              },
+            }),
+          },
+        },
+      }
+
+      mockStore = {
+        getters: {
+          getBookmarksData: largeBookmark,
+          getSelectedDataset: { id: 'dataset1' },
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).not.toBeNull()
+      // Should warn if URL is long
+      if (result!.length > 2048) {
+        expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('2048'))
+      }
+    })
+
+    it('handles errors during compression gracefully', () => {
+      // Create a circular reference that will fail JSON.stringify
+      const circularBookmark: any = {
+        datasetId: 'dataset1',
+        filter: {},
+      }
+      circularBookmark.filter.self = circularBookmark
+
+      mockStore = {
+        getters: {
+          getBookmarksData: circularBookmark,
+          getSelectedDataset: { id: 'dataset1' },
+        },
+      }
+
+      const result = CohortUrlCodec.shareCohortDefinition(mockStore)
+
+      expect(result).toBeNull()
+      expect(console.error).toHaveBeenCalledWith('Failed to generate deep link:', expect.any(Error))
+    })
+  })
 })
