@@ -8,14 +8,6 @@ export const parsePieChartData = (data: any) => {
     });
 };
 
-export const parseDrilldownPieChartData = (data: any) => {
-  return data
-    .map((obj: any) => ({ value: obj["COUNTVALUE"], name: obj["CONCEPTNAME"] }))
-    .sort((a: any, b: any) => {
-      return b.value - a.value;
-    });
-};
-
 export const parseDaysToYears = (data: any) => {
   data.forEach((obj: any) => {
     Object.keys(obj).forEach(function (key) {
