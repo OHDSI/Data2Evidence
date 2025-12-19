@@ -65,6 +65,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
     await page.getByRole('button', { name: 'Close' }).click()
   }
 
