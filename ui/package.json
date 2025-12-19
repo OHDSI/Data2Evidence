@@ -149,6 +149,7 @@
           {
             "enabled": true,
             "type": "app",
+            "autoMount": true,
             "featureFlag": "conceptSets",
             "name": "Concepts",
             "nameI18nKey": "UI_PLUGIN_CONCEPTS",
