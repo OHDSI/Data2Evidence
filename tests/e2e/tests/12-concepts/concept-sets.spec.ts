@@ -4,7 +4,14 @@ const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+let screenshotCounter = 0
+async function takeScreenshot(page: any, testInfo: any) {
+  screenshotCounter++
+  const screenshotPath = testInfo.outputPath(`${TEST_NAME}-${screenshotCounter}-linux.png`)
+  await page.screenshot({ path: screenshotPath })
+}
+
+test(TEST_NAME, async ({ page }, testInfo) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
   }
@@ -62,6 +69,8 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   await test.step('Attempt to create another concept set with the same name', async () => {
+    await takeScreenshot(page, testInfo)
+    await page.waitForTimeout(1000)
     await page.getByTestId('button').click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
