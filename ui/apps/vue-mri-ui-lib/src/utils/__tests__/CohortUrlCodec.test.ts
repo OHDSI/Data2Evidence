@@ -80,12 +80,7 @@ describe('CohortUrlCodec', () => {
     })
 
     it('throws error for invalid JSON', () => {
-      // Create a compressed string that decompresses to invalid JSON
-      const invalidJsonCompressed = CohortUrlCodec.compress({ test: 'value' })
-      // Manually corrupt it to produce invalid JSON when decompressed
-      // This is tricky - let's use a manually created case
       const invalidBase64 = 'eJwLycgsVgIABEQBNQ' // compresses to "test" which is invalid JSON
-
       expect(() => {
         CohortUrlCodec.decompress(invalidBase64)
       }).toThrow()
