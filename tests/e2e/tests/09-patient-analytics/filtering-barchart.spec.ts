@@ -75,7 +75,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await takeScreenshot(page, testInfo)
 
   // Set X1-axis to condition concept name
-  await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
+  await page.locator('div.axis-menu-button-wrapper').first().getByRole('button', { name: 'Basic Data Age ◢' }).click()
   await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
