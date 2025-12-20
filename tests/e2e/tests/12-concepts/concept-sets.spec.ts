@@ -49,7 +49,6 @@ test(TEST_NAME, async ({ page }, testInfo) => {
       await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
     }
     await page.getByRole('button', { name: 'Close' }).click()
-    await takeScreenshot(page, testInfo)
   } else {
     // Create a new concept set
     await page.getByTestId('button').click() // click on the "Add concept set" button
@@ -68,17 +67,18 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
+    await takeScreenshot(page, testInfo)
     console.log('in else')
     await page.getByRole('button', { name: 'Close' }).click()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await takeScreenshot(page, testInfo)
   }
 
   await test.step('Attempt to create another concept set with the same name', async () => {
-    await takeScreenshot(page, testInfo)
     await page.waitForTimeout(1000)
     await page.getByTestId('button').click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis')
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByText(`Please enter another name.`)).toBeVisible()
     await page.getByRole('button', { name: 'Close' }).click()
