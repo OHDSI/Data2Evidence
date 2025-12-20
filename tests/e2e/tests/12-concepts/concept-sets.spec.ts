@@ -33,7 +33,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   const conceptSetName = `Concept Set Test 1`
   // If the concept set already exists (retry), remove the second conept set we added last time
   if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
-    await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').click()
+    await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').first().click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
     console.log(`assertCount ${await assertCount('2')}`)
     if (await assertCount('2')) {

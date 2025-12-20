@@ -89,7 +89,7 @@ test(TEST_NAME, async ({ page }) => {
     //   .filter({ hasText: /^Select an Attribute$/ })
     //   .getByRole('button')
     //   .click()
-    await page.locator('button.axisMenuButton', { hasText: 'Select an Attribute' }).click()
+    await page.locator('button.axisMenuButton', { hasText: 'Select an Attribute' }).first().click()
     await page.locator('#pane-right').getByText('Condition Occurrence A').click()
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
