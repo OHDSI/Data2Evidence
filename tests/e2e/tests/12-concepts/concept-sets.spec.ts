@@ -11,7 +11,7 @@ async function takeScreenshot(page: any, testInfo: any) {
   await page.screenshot({ path: screenshotPath })
 }
 
-test(TEST_NAME, async ({ page }) => {
+test(TEST_NAME, async ({ page }, testInfo) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
   }

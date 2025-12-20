@@ -126,9 +126,9 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Reset the x1 attributes', async () => {
     await page.getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' }).click()
     await page.getByText('Reset Selection').click()
-    await page.waitForTimeout(1000)
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
-    await page.getByText('Reset Selection').click()
+    await page.getByText('Reset Selection').last().click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Remove MALE and add FEMALE Gender filter

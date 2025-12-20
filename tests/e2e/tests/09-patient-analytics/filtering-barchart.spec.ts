@@ -27,6 +27,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'D2E' }).click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await takeScreenshot(page, testInfo)
 
   // Add filter card
@@ -94,6 +95,8 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await takeScreenshot(page, testInfo)
 
   // Set X1-axis to gender
+  await page.getByRole('button', { name: 'Basic Data Gender ◢' }).click()
+  await page.getByText('Reset Selection').click()
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()
