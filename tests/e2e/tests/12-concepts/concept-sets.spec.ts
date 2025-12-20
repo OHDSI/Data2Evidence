@@ -31,6 +31,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   // Concept set
   const conceptSetName = `Concept Set Test 1`
   // If the concept set already exists (retry), remove the second conept set we added last time
+  await takeScreenshot(page, testInfo)
   if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
     await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').first().click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
@@ -48,6 +49,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
       await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
     }
     await page.getByRole('button', { name: 'Close' }).click()
+    await takeScreenshot(page, testInfo)
   } else {
     // Create a new concept set
     await page.getByTestId('button').click() // click on the "Add concept set" button
@@ -66,7 +68,9 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
+    console.log('in else')
     await page.getByRole('button', { name: 'Close' }).click()
+    await takeScreenshot(page, testInfo)
   }
 
   await test.step('Attempt to create another concept set with the same name', async () => {
