@@ -438,13 +438,13 @@ class D2ECli {
       cmd = `${cmd} stop`;
       if (options.services) {
         let services = options.services;
-        cmd += ` --no-deps ${services}`;
+        cmd += ` ${services}`;
       }
     } else if (command === "build") {
       cmd = `${cmd} build`;
       if (options.services) {
         let services = options.services;
-        cmd += ` --no-deps ${services}`;
+        cmd += ` ${services}`;
       }
     } else if (command === "status") {
       cmd = `${cmd} ps`;
@@ -452,7 +452,7 @@ class D2ECli {
       cmd = `${cmd} logs -t`;
       if (options.services) {
         let services = options.services;
-        cmd += ` --no-deps ${services}`;
+        cmd += ` ${services}`;
       }
     } else if (command === "config") {
       cmd = `${cmd} config`;
