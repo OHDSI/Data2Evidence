@@ -2,7 +2,7 @@
   "version": "4",
   "specifiers": {
     "jsr:@std/encoding@*": "1.0.10",
-    "npm:@medplum/core@3.2.2": "3.2.2",
+    "npm:@medplum/core@4.3.6": "4.3.6",
     "npm:async@*": "3.2.6",
     "npm:axios@^1.7.3": "1.11.0",
     "npm:bcryptjs@*": "3.0.2",
@@ -33,8 +33,8 @@
         "kuler"
       ]
     },
-    "@medplum/core@3.2.2": {
-      "integrity": "sha512-JTcn7xITkBZMCX5tk8JE94RH8zzOIvky63DwgdMwf+kFNy2M1iZSLabYEHQISbEAOZzvNhwjRFULhuwx8gD+Tw=="
+    "@medplum/core@4.3.6": {
+      "integrity": "sha512-GHKRoxiJ36Hfn2mOVTicVsHcayG9kBoKAL8AJoJYARzeUQjNTmkO7WgGyxxb7GH6j4t1DQBVVi3MWKoSD/RNqg=="
     },
     "@types/triple-beam@1.3.5": {
       "integrity": "sha512-6WaYesThRMCl19iryMYP7/x2OVgCtbIVflDGFpWnb9irXI3UjYE4AzmYuiUKY1AJstGijoY+MgUszMgRxIYTYw=="
@@ -714,7 +714,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/encoding@*",
-      "npm:@medplum/core@3.2.2",
+      "npm:@medplum/core@4.3.6",
       "npm:async@*",
       "npm:axios@^1.7.3",
       "npm:bcryptjs@*",

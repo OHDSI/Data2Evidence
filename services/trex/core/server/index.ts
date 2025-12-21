@@ -40,6 +40,8 @@ export async function initTrex() {
     logger.log("Added plugins");
     logger.log('🦖 TREX started 🦖');
     Deno.serve(app.fetch);
+    // Keep the event loop alive - the Rust server handles HTTP directly
+    await new Promise(() => {});
 }
 
 logger.log('🦖 TREX DB initializing 🦖');

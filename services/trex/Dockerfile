@@ -45,6 +45,8 @@ EXPOSE 33001 5432 33000
 RUN mkdir -p ./core
 COPY ./core ./core
 
+COPY trexas.duckdb_extension ./node_modules/@trex/as/trexas.duckdb_extension
+
 CMD ["npm", "run", "start"]
 
 
