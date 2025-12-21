@@ -377,7 +377,7 @@ class D2ECli {
       .replace(/\n/g, ""); // Remove newlines
   }
 
-  generate_jwt(secret, role, issuer): string {
+  generate_jwt(secret: string, role: string, issuer: string): string {
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + 157788000; // 5 years expiration
     const header = this.base64UrlEncode(
@@ -461,21 +461,6 @@ class D2ECli {
     } else if (command === "inithana") {
       cmd = `${cmd} run --rm hana --master-password ${this.hanapw} --agree-to-sap-license`;
     } else if (command === "pull") {
-      if (options.jupyter) {
-        const cmd_pull_jupyter = `docker pull --platform linux/amd64 ${this.DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
-        const proc = spawn(cmd_pull_jupyter, {
-          stdio: ["inherit"],
-          shell: true,
-          env: envVars,
-        });
-        proc.on("close", (code) => {
-          if (code === 0) {
-            console.log("Process completed successfully.");
-          } else {
-            console.log(`Process exited with code ${code}`);
-          }
-        });
-      }
       cmd = `${cmd} pull`;
     }
     return { cmd, env: envVars };
@@ -912,7 +897,7 @@ class D2ECli {
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
-          stdio: ["inherit"],
+          stdio: "inherit",
           shell: true,
           env: env,
         });
@@ -941,6 +926,7 @@ class D2ECli {
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
+        const options = this.program.opts();
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
@@ -960,10 +946,25 @@ class D2ECli {
             resolve();
           });
         });
-        const { cmd, env } = this.build_docker_command(
-          this.program.opts(),
-          "pull"
-        );
+        if (options.jupyter) {
+          const cmd_pull_jupyter = `docker pull --platform linux/amd64 ${this.DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
+          await new Promise<void>((resolve) => {
+            const proc = spawn(cmd_pull_jupyter, {
+              stdio: "inherit",
+              shell: true,
+              env: process.env,
+            });
+            proc.on("close", (code) => {
+              if (code === 0) {
+                console.log("Process completed successfully.");
+              } else {
+                console.log(`Process exited with code ${code}`);
+              }
+              resolve();
+            });
+          });
+        }
+        const { cmd, env } = this.build_docker_command(options, "pull");
         console.log(`Executing command: ${cmd}`);
         const proc1 = spawn(cmd, {
           stdio: "inherit",
