@@ -36,19 +36,8 @@
               "options"
             ],
             "definitions": {
-              "FlowActionType": {
-                "enum": [
-                  "create_datamodel",
-                  "get_version_info"
-                ],
-                "title": "FlowActionType",
-                "type": "string"
-              },
               "DataloadOptions": {
                 "properties": {
-                  "flow_action_type": {
-                    "$ref": "#/definitions/FlowActionType"
-                  },
                   "database_code": {
                     "title": "Database Code",
                     "type": "string"
@@ -56,22 +45,11 @@
                   "schema_name": {
                     "title": "Schema Name",
                     "type": "string"
-                  },
-                  "vocab_schema": {
-                    "title": "Vocabulary Schema",
-                    "type": "string"
-                  },
-                  "results_schema": {
-                    "title": "Results Schema",
-                    "type": "string"
                   }
                 },
                 "required": [
-                  "flow_action_type",
                   "database_code",
-                  "schema_name",
-                  "vocab_schema",
-                  "results_schema"
+                  "schema_name"
                 ],
                 "title": "DataloadOptions",
                 "type": "object"
@@ -136,30 +114,6 @@
                     ],
                     "default": null,
                     "title": "Schemaname"
-                  },
-                  "vocabSchemaName": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Vocab Schema name"
-                  },
-                  "resultsSchemaName": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Ressultsschemaname"
                   },
                   "tablesToCreateDuckdbFtsIndex": {
                     "anyOf": [
@@ -397,11 +351,6 @@
                   "resultsSchema": {
                     "title": "Resultsschema",
                     "type": "string"
-                  },
-                  "executeConceptRecordCount": {
-                    "default": true,
-                    "title": "executeConceptRecordCount",
-                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -458,10 +407,6 @@
                   },
                   "vocabSchemaName": {
                     "title": "Vocabschemaname",
-                    "type": "string"
-                  },
-                  "resultsSchemaName": {
-                    "title": "Resultsschemaname",
                     "type": "string"
                   },
                   "releaseDate": {
@@ -526,7 +471,6 @@
                   "databaseCode",
                   "cdmVersionNumber",
                   "vocabSchemaName",
-                  "resultsSchemaName",
                   "releaseDate"
                 ],
                 "title": "DqdOptionsType",
@@ -599,18 +543,6 @@
                     "default": null,
                     "title": "Schema Name"
                   },
-                  "results_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Results Schema"
-                  },
                   "vocab_schema": {
                     "anyOf": [
                       {
@@ -622,30 +554,6 @@
                     ],
                     "default": null,
                     "title": "Vocab Schema"
-                  },
-                  "cache_schema_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Cache Schema Name"
-                  },
-                  "result_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Result Schema"
                   },
                   "datasets": {
                     "anyOf": [
@@ -778,16 +686,11 @@
                   "schemaName": {
                     "title": "Schemaname",
                     "type": "string"
-                  },
-                  "cacheSchemaName": {
-                    "title": "Cacheschemaname",
-                    "type": "string"
                   }
                 },
                 "required": [
                   "databaseCode",
-                  "schemaName",
-                  "cacheSchemaName"
+                  "schemaName"
                 ],
                 "title": "CreateDuckdbDatabaseFileType",
                 "type": "object"
@@ -795,68 +698,6 @@
             }
           },
           "type": "create_cachedb_fhir"
-        },
-        {
-          "name": "admin_share_plugin",
-          "entrypoint": "flows.admin_share_plugin.flow.admin_share_plugin",
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/AdminSharePluginType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "AdminSharePluginType": {
-                "properties": {
-                  "concept_set_ids": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "type": "string"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Concept Set Ids"
-                  },
-                  "cohort_definition_ids": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "type": "string"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Cohort Definition Ids"
-                  },
-                  "shared": {
-                    "default": true,
-                    "title": "Shared",
-                    "type": "boolean"
-                  }
-                },
-                "title": "AdminSharePluginType",
-                "type": "object"
-              }
-            }
-          },
-          "type": "adminshare"
         }
       ]
     }

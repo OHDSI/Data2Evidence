@@ -70,6 +70,8 @@ jobs:
               - "flows/i2b2/**"
             flow_data_management:
               - "flows/data_management/**"
+            flow_package_json:
+              - "flows/base/package.json"
             ui: 
               - "ui/**"
 
@@ -189,6 +191,10 @@ jobs:
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
           sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
+      - name: Flow base docker-compose-local
+        if: ${{ steps.file_changes.outputs.flow_package_json == 'true' }}
+        run: |
+          sed -i 's|# - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
 
       - name: Restart d2e services
         if: success() || failure()
