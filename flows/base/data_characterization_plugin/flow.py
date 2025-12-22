@@ -280,15 +280,15 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
 
         if failed_analysis_ids:
-            failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
-            logger.error(f"The following analysis IDs failed: {failed_analysis_ids_str}")
+            failed_analysis_ids_str = ",".join(map(str, failed_analysis_ids))
+            logger.error(f"The following analysis IDs failed: \"{failed_analysis_ids_str}\"")
 
         error_result = {
             "flow_run_id": flow_run_id,
             "result": {},
             "error": True,
             "error_message": error_message,
-            "failed_analysis_ids": failed_analysis_ids,
+            "failed_analysis_ids": failed_analysis_ids_str,
         }
 
         create_markdown_artifact(
