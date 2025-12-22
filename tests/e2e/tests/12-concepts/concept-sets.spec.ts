@@ -66,9 +66,11 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Attempt to create another concept set with the same name', async () => {
     await page.getByTestId('button').click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis')
     await page.getByRole('button', { name: 'Create' }).click()
-    await expect(page.getByText(`Please enter another name.`)).toBeVisible()
+    await expect(
+      page.getByText(`Concept set name "Chronic sinusitis" already exists. Please enter another name.`)
+    ).toBeVisible()
     await page.getByRole('button', { name: 'Close' }).click()
   })
 
