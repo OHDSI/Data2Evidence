@@ -8,7 +8,7 @@ from prefect.logging import get_run_logger
 from .fts import create_fts_index
 from .types import CopyParameters, QueryColumns
 
-from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
+from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES_SET
 from .filter import filter_tables, filter_columns, _CDM_COLUMN_FILTER_MAP
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
@@ -113,35 +113,48 @@ def create_schema_tables(
     # Filter out system tables that may appear in some databases
     tables_to_copy = sorted(filter_tables(source_tables))
 
-    # Handle vocabulary tables if vocab_schema is provided
-    if copy_params.vocab_schema:
-        # If vocab_schema is different from source_schema, copy vocab tables from vocab_schema
-        if copy_params.vocab_schema != copy_params.source_schema:
-            logger.info(f"Vocabulary schema '{copy_params.vocab_schema}' provided - will copy vocab tables from this schema instead of '{copy_params.source_schema}'")
-            # Remove vocab tables from current schema copy
-            tables_to_copy = [table for table in tables_to_copy if table not in VOCAB_TABLES]
-            # Add vocab tables to copy from vocab_schema
-            vocab_tables_in_schema = read_conn.get_table_names(copy_params.vocab_schema)
-            vocab_tables_to_copy = [table for table in VOCAB_TABLES if table in vocab_tables_in_schema]
-            tables_to_copy.extend(vocab_tables_to_copy)
-        else:
-            logger.info(f"Vocabulary schema '{copy_params.vocab_schema}' is the same as source schema - copying all tables including vocab tables")
-    else:
-        logger.info("No vocabulary schema provided - copying all tables from source schema")
+    has_separate_vocab_schema = False
 
-    logger.info(
-        f"Found {len(tables_to_copy)} tables/views to copy in schema '{copy_params.source_schema}': {tables_to_copy}"
-    )
+    # Handle vocabulary tables if vocab_schema is provided
+    if copy_params.vocab_schema and copy_params.vocab_schema != copy_params.source_schema:
+        has_separate_vocab_schema = True
+        logger.info(f"Vocabulary schema '{copy_params.vocab_schema}' provided - will copy vocab tables from this schema instead of '{copy_params.source_schema}'")
+        
+        # Remove vocab tables from current schema copy
+        tables_to_copy = list(set(tables_to_copy) - VOCAB_TABLES_SET)
+
+        logger.info(
+            f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
+        )
+        
+        # Add vocab tables to copy from vocab_schema
+        vocab_tables_in_schema = set(read_conn.get_table_names(copy_params.vocab_schema))
+        vocab_tables_to_copy = list(VOCAB_TABLES_SET & vocab_tables_in_schema)
+        
+        logger.info(
+            f"Found {len(vocab_tables_to_copy)} vocab tables/views to copy from schema '{copy_params.vocab_schema}': {vocab_tables_to_copy}"
+        )
+
+        tables_to_copy.extend(vocab_tables_to_copy)
+    else:
+        if copy_params.vocab_schema:
+            logger.info(f"Vocabulary schema '{copy_params.vocab_schema}' is the same as source schema - copying all tables including vocab tables")
+        else:
+            logger.info("No vocabulary schema provided - copying all tables from source schema")
+
+        logger.info(
+            f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
+        )
 
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
         logger.debug("Setting BigQuery-specific DuckDB connection settings.")
         execute_statement(write_conn, set_bigquery_global_settings())
 
-    logger.info(f"Beginning table copy for schema '{copy_params.source_schema}'.")
+    logger.info(f"Beginning table copy for cdm schema '{copy_params.source_schema}' and vocab schema '{copy_params.vocab_schema}'.")
 
     for idx, table in enumerate(tables_to_copy, start=1):
         # Determine which schema this table should be copied from
-        source_schema_for_table = copy_params.vocab_schema if (copy_params.vocab_schema and table in VOCAB_TABLES) else copy_params.source_schema
+        source_schema_for_table = copy_params.vocab_schema if (has_separate_vocab_schema and table in VOCAB_TABLES_SET) else copy_params.source_schema
 
         logger.info(
             f"[{idx}/{len(tables_to_copy)}] Copying table '{table}' from schema '{source_schema_for_table}'..."
