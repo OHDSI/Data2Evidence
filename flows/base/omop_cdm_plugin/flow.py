@@ -86,7 +86,6 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
             schemaName=options.schema_name,
             snapshotSchemaName=options.cache_schema_name
         )
-        logger.info(f"Creating cache CDM schema {options.cache_schema_name}")
         create_cache_flow(createCacheOptions)
         
         resultsCacheOptions = CreateCacheOptions(
