@@ -1217,6 +1217,13 @@ const actions = {
       dispatch('setBoolContainerState', boolContainerModel)
     }
   },
+  reorderFilterCards({ commit, getters }, { boolFilterContainerId, newOrder }) {
+    const boolFilterContainer = getters.getBoolFilterContainer(boolFilterContainerId)
+    // Preserve 'patient' card at the beginning and merge with new order
+    const patientCard = boolFilterContainer.props.filterCards.filter(f => f === 'patient')
+    boolFilterContainer.props.filterCards = [...patientCard, ...newOrder]
+    commit(types.BOOLFILTERCONTAINER_UPDATE, boolFilterContainer)
+  },
   updateCohortEntryExit({ commit }, { filterCardId, key, toggle }) {
     commit(types.FILTERCARD_TOGGLE_IS_ENTRY_EXIT, { filterCardId, key, toggle })
   },

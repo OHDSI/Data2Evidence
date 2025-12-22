@@ -7,14 +7,16 @@
       </button>
     </div>
     <div class="boolfiltercontainer-content" :class="{ tinted: showBackground }">
-      <template v-for="id in nonBasicCards" :key="id">
-        <filtercard
-          :id="id"
-          :parentId="boolFilterContainerModel.id"
-          :showBooleanCondition="!isFirstFilterCard(id)"
-          @renameModalShown="renameModalShown"
-        ></filtercard>
-      </template>
+      <VueDraggable v-model="draggableCards" v-bind="dragOptions">
+        <div v-for="(id, index) in draggableCards" :key="`${id}-${index}`" class="draggable-filtercard">
+          <filtercard
+            :id="id"
+            :parentId="boolFilterContainerModel.id"
+            :showBooleanCondition="index > 0"
+            @renameModalShown="renameModalShown"
+          />
+        </div>
+      </VueDraggable>
     </div>
   </div>
 </template>
@@ -23,6 +25,7 @@ import { mapActions, mapGetters } from 'vuex'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import FilterCard from './FilterCard.vue'
+import { VueDraggable } from 'vue-draggable-plus'
 
 export default {
   name: 'boolfiltercontainer',
@@ -55,6 +58,19 @@ export default {
         ? cards.filter(c => this.getFilterCard(c).props.excludeFilter)
         : cards.filter(c => !this.getFilterCard(c).props.excludeFilter)
     },
+    draggableCards: {
+      get() {
+        return this.nonBasicCards
+      },
+      set(newOrder) {
+        this.reorderFilterCards({
+          boolFilterContainerId: this.id,
+          newOrder,
+        })
+        this.resetAllFilterCardEntryExit({ key: null })
+        this.$forceUpdate()
+      },
+    },
     showBackground() {
       return this.nonBasicCards.length > 1
     },
@@ -77,6 +93,7 @@ export default {
     dragOptions() {
       return {
         group: 'boolfiltercontainer',
+        animation: 150,
         dragClass: 'ghost',
         disabled: !this.isDraggable,
       }
@@ -88,6 +105,7 @@ export default {
       'toggleFilterContainerBooleanCondition',
       'updateBoolFilterContainer',
       'resetAllFilterCardEntryExit',
+      'reorderFilterCards',
     ]),
     onAddFilterCardMenuItemSelected(configPath) {
       this.addFilterCard({
@@ -96,7 +114,7 @@ export default {
       })
     },
     isFirstFilterCard(id) {
-      return this.nonBasicCards.indexOf(id) === 0
+      return this.draggableCards.indexOf(id) === 0
     },
     toggleBooleanCondition() {
       this.toggleFilterContainerBooleanCondition({
@@ -129,6 +147,7 @@ export default {
     appLabel,
     appIcon,
     filtercard: FilterCard,
+    VueDraggable,
   },
 }
 </script>
@@ -143,4 +162,3 @@ export default {
   font-weight: bold !important;
 }
 </style>
-

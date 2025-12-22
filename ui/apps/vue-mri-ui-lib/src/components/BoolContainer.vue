@@ -37,7 +37,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['getFilterCardCount', 'getText', 'getBoolContainer', 'getBoolFilterContainer']),
+    ...mapGetters(['getFilterCardCount', 'getText', 'getBoolContainer', 'getBoolFilterContainer', 'getFilterCard']),
     boolfiltercontainers() {
       const boolContainer = this.getBoolContainer(this.id)
       const boolFilterContainers = boolContainer.props.boolfiltercontainers.reduce((filterContainers, c) => {
@@ -74,8 +74,16 @@ export default {
   },
   methods: {
     isFirstFilterContainer(boolFilterContainer) {
-      const boolFilterContainers = this.boolfiltercontainers
-      return boolFilterContainers.indexOf(boolFilterContainer) === 0
+      // Find the first container that has visible (non-empty) cards
+      const firstNonEmptyContainer = this.boolfiltercontainers.find(containerId => {
+        const container = this.getBoolFilterContainer(containerId)
+        const cards = container.props.filterCards.filter(f => f !== 'patient')
+        const visibleCards = this.showExclusion
+          ? cards.filter(c => this.getFilterCard(c)?.props?.excludeFilter)
+          : cards.filter(c => !this.getFilterCard(c)?.props?.excludeFilter)
+        return visibleCards.length > 0
+      })
+      return boolFilterContainer === firstNonEmptyContainer
     },
     toggleExclusion(isToggled) {
       this.showExclusion = isToggled
