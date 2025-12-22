@@ -23,7 +23,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .custom_types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
-from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json
+from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file
 
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -1246,28 +1246,6 @@ def execute(rSpec, rExecutionSettings, rConnectionDetails):
                         markdown=file_contents
                     )
             raise RuntimeError('Execution of strategus has failed')
-
-def is_strategus_execution_successful(logFilePath: str) -> bool:
-    print('Checking strategus execution log for errors...')
-    # read the strategus log file and check for errors
-    error_found = False
-    errorMsg = ""
-    if os.path.exists(logFilePath):
-        with open(logFilePath, "r") as f:
-            for line in f:
-                if "ERROR" in line or "Error" in line or "error" in line:
-                    error_found = True
-                    errorMsg += line + "\n"
-    return not error_found, errorMsg
-
-def save_strategus_log_file(log_file_path: str):
-    if os.path.exists(log_file_path):
-        with open(log_file_path, "r") as f:
-            file_contents = f.read()
-            create_markdown_artifact(
-                key="strategus-analysis-logs",
-                markdown=file_contents
-            )
 
 @flow(name="upload-strategus-results",
       log_prints=True)
