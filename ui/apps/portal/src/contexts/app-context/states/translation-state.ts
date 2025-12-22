@@ -99,6 +99,7 @@ export const i18nDefault = {
     ADD_STUDY_DIALOG__VISIBILITY_STATUS_GROUP: "visibilityStatusGroup",
     ADD_STUDY_DIALOG__VOCAB_SCHEMA_NAME: "Vocab Schema Name",
     ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME: "Result Schema Name",
+    ADD_STUDY_DIALOG__AUTO_GENERATE_RESULT_SCHEMA: "Auto-generate result schema name",
     ADD_TAG_DIALOG__ADD_TAG: "Add Tag",
     ADD_TAG_DIALOG__CANCEL: "Cancel",
     ADD_TAG_DIALOG__SAVE: "Save",
