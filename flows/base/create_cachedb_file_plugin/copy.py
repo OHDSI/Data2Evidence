@@ -150,7 +150,10 @@ def create_schema_tables(
         logger.debug("Setting BigQuery-specific DuckDB connection settings.")
         execute_statement(write_conn, set_bigquery_global_settings())
 
-    logger.info(f"Beginning table copy for cdm schema '{copy_params.source_schema}' and vocab schema '{copy_params.vocab_schema}'.")
+    msg = f"Beginning table copy for schema '{copy_params.source_schema}'"
+    if has_separate_vocab_schema:
+        msg += f" with separate vocab schema '{copy_params.vocab_schema}'"
+    logger.info(msg)
 
     for idx, table in enumerate(tables_to_copy, start=1):
         # Determine which schema this table should be copied from
