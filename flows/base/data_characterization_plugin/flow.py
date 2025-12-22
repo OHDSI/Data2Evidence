@@ -278,6 +278,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         logger.error(f"Error message from Achilles run: {error_message}")
 
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
+        failed_analysis_ids_str = ""
 
         if failed_analysis_ids:
             failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
