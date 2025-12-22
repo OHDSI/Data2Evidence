@@ -46,8 +46,10 @@ export async function addPlugin(value: any) {
 						logger.log(`Final Flow Image ${finalImage}`);
 						return finalImage;
 					}
-					if (f.concurrencyLimit) {
-						await ensureConcurrencyLimit(f.concurrencyLimitName, f.concurrencyLimit);
+					if (f.concurrencyLimitOptions) {
+						for (const option of f.concurrencyLimitOptions) {
+							await ensureConcurrencyLimit(option.tag, option.limit);
+						}
 					}
 					const body: any = {
 						name: f.name,
@@ -110,7 +112,7 @@ async function hasWorkerPool() {
 }
 
 async function ensureConcurrencyLimit(name: string, limit: number) {
-	try{
+	try {
 		logger.log(`Ensuring concurrency limit ${name} with limit ${limit}`);
 		// Find existing concurrency limit by tag
 		let getRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/?tag=${name}`, {
@@ -158,7 +160,7 @@ async function ensureConcurrencyLimit(name: string, limit: number) {
 				logger.error(`Error creating concurrency limit ${name}: ${createRes.status} ${createRes.statusText}`);
 			}
 		}
-	}catch(e){
+	} catch (e) {
 		logger.error(`Exception in ensureConcurrencyLimit: ${e} for limit name: ${name}`);
 	}
 }

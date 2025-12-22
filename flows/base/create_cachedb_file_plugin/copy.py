@@ -1,7 +1,6 @@
 import traceback
 from typing import Any
 
-from sqlglot import select, exp
 from prefect import task
 from prefect.logging import get_run_logger
 
@@ -26,7 +25,7 @@ def copy_all_schemas(write_conn: Any, read_conn: Any, copy_params: CopyParameter
         logger.info(f"[{idx}/{len(schemas_to_copy)}] Copying schema '{schema}'...")
         try:
             create_schema_if_not_exists(write_conn, copy_params)
-            create_schema_tables(write_conn, read_conn, copy_params, logger)
+            create_schema_tables(write_conn, read_conn, copy_params)
         except Exception as e:
             logger.error(f"Failed to copy schema '{schema}': {e}")
             logger.error(traceback.format_exc())
@@ -54,7 +53,6 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters):
     execute_statement(write_conn, sql)
     logger.info(f"Schema '{copy_params.target_schema}' ensured.")
 
-
 @task(log_prints=True, task_run_name="create_schema_tables_from_{copy_params.source_schema}")
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
@@ -76,6 +74,9 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
         execute_statement(write_conn, set_bigquery_global_settings())
 
+    # Prepare lists for mapping
+    source_schema_list = []
+    query_columns_list = []
     for table in tables_to_copy:
         source_schema_for_table = copy_params.vocab_schema if copy_params.vocab_schema and table in VOCAB_TABLES else source_schema
         source_columns = copy_params.table_filter.get(table) if copy_params.table_filter else None
@@ -90,19 +91,40 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             patient_filter_col=patient_col if patient_col in columns_to_copy else None,
             timestamp_filter_col=timestamp_col if timestamp_col in columns_to_copy else None
         )
+        source_schema_list.append(source_schema_for_table)
+        query_columns_list.append(query_columns)
 
-        try:
-            rows_copied = copy_table(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
-            copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
-            logger.info(f"Table '{table}' copied with {rows_copied} rows.")
-        except Exception:
-            logger.error(f"Failed to copy table '{table}'")
-            logger.error(traceback.format_exc())
-            raise
+    # Map copy_table over tables
+    table_tasks = copy_table.map(
+        write_conn=[write_conn] * len(tables_to_copy),
+        read_conn=[read_conn] * len(tables_to_copy),
+        copy_params=[copy_params] * len(tables_to_copy),
+        query_columns=query_columns_list,
+        source_schema=source_schema_list,
+        logger=[logger] * len(tables_to_copy)
+    )
+
+    # Wait for table copy tasks to complete
+    for task in table_tasks:
+        task.result()
+
+    # Map copy_indexes over tables
+    index_tasks = copy_indexes.map(
+        write_conn=[write_conn] * len(tables_to_copy),
+        read_conn=[read_conn] * len(tables_to_copy),
+        copy_params=[copy_params] * len(tables_to_copy),
+        query_columns=query_columns_list,
+        source_schema=source_schema_list,
+        logger=[logger] * len(tables_to_copy)
+    )
+
+    # Wait for index copy tasks to complete
+    for task in index_tasks:
+        task.result()
 
 
-def create_empty_target_table(write_conn, copy_params, query_columns, source_schema, logger):
-    select_sql = create_select_query(copy_params, query_columns, source_schema, None, logger)
+def create_empty_target_table(write_conn, copy_params, query_columns, source_schema):
+    select_sql = create_select_query(copy_params, query_columns, source_schema, None)
     execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_schema}"."{query_columns.table}";')
     sql = f"""
     CREATE TABLE "{copy_params.target_schema}"."{query_columns.table}" AS
@@ -119,10 +141,10 @@ def determine_chunk_size(dialect: str, estimated_rows: int | None):
     return 250_000
 
 
-def plan_chunks(write_conn, database, schema, table, chunk_col, chunk_size, estimated_rows, dialect, logger=None):
+def plan_chunks(write_conn, database, schema, table, chunk_col, chunk_size, estimated_rows, logger=None):
     if chunk_col:
-        min_val = execute_statement(write_conn, f'SELECT MIN({chunk_col}) FROM "{database}"."{schema}"."{table}"')[0][0]
-        max_val = execute_statement(write_conn, f'SELECT MAX({chunk_col}) FROM "{database}"."{schema}"."{table}"')[0][0]
+        min_val = execute_statement(write_conn, f'SELECT MIN("{chunk_col}") FROM "{database}"."{schema}"."{table}"')[0][0]
+        max_val = execute_statement(write_conn, f'SELECT MAX("{chunk_col}") FROM "{database}"."{schema}"."{table}"')[0][0]
         if min_val is None or max_val is None:
             return []
 
@@ -130,7 +152,7 @@ def plan_chunks(write_conn, database, schema, table, chunk_col, chunk_size, esti
         current = min_val
         while current <= max_val:
             end = min(current + chunk_size - 1, max_val)
-            chunks.append(f"{chunk_col} BETWEEN {current} AND {end}")
+            chunks.append(f'"{chunk_col}" BETWEEN {current} AND {end}')
             current = end + 1
         return chunks
 
@@ -138,13 +160,15 @@ def plan_chunks(write_conn, database, schema, table, chunk_col, chunk_size, esti
     if not estimated_rows:
         estimated_rows = execute_statement(write_conn, f'SELECT COUNT(*) FROM "{database}"."{schema}"."{table}"')[0][0]
     num_chunks = (estimated_rows + chunk_size - 1) // chunk_size
-    return [(i * chunk_size + 1, min((i + 1) * chunk_size, estimated_rows)) for i in range(num_chunks)]
+    chunks = [(i * chunk_size + 1, min((i + 1) * chunk_size, estimated_rows)) for i in range(num_chunks)]
+    logger.info(f"Planned {len(chunks)} chunks for table '{table}'.")
+    return chunks
 
 
-@task(log_prints=True, tags=["create_cachedb_file_plugin_concurrency"], task_run_name="copy_table_chunk_{query_columns.table}")
-def copy_table_chunk(write_conn, copy_params, query_columns, source_schema, where_sql: str | tuple, logger=None):
+@task(log_prints=True, tags=["chunk-level-concurrency"], task_run_name="copy_table_chunk_{query_columns.table}_{chunk_id}")
+def copy_table_chunk(write_conn, copy_params, query_columns, source_schema, where_sql: str | tuple, chunk_id: int, total_chunks: int, logger=None):
+    logger.info(f"Copying chunk {chunk_id + 1}/{total_chunks} for table '{query_columns.table}'")
     select_sql = create_select_query(copy_params, query_columns, source_schema, where_sql)
-    print(f"Executing chunk copy for table '{query_columns.table}' with condition: {where_sql} and select sql: {select_sql}")
     insert_sql = f"""
     INSERT INTO "{copy_params.target_schema}"."{query_columns.table}"
     {select_sql};
@@ -152,14 +176,17 @@ def copy_table_chunk(write_conn, copy_params, query_columns, source_schema, wher
     execute_statement(write_conn, insert_sql)
 
 
+@task(log_prints=True, tags=["table-level-concurrency"], task_run_name="copy_table_{query_columns.table}")
 def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger):
     table = query_columns.table
     dialect = read_conn.tenant_configs.dialect
 
-    create_empty_target_table(write_conn, copy_params, query_columns, source_schema, logger)
+    create_empty_target_table(write_conn, copy_params, query_columns, source_schema)
     estimated_rows = read_conn.get_table_row_count(source_schema, table)
-
-    if estimated_rows < 10000:
+    logger.info(f"Starting copy of table '{table}' with {estimated_rows} rows")
+    
+    if estimated_rows < 50000:
+        logger.info(f"Copying table '{table}' (small, {estimated_rows} rows)")
         select_sql = create_select_query(copy_params, query_columns, source_schema)
         execute_statement(write_conn, f'INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" {select_sql}')
         return estimated_rows
@@ -167,16 +194,21 @@ def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema,
     # If columns_to_copy is "*", replace with actual column names for proper chunking
     if query_columns.columns_to_copy == ["*"]:
         actual_columns = read_conn.get_columns(source_schema, table)
-        query_columns.columns_to_copy = actual_columns
+        query_columns = QueryColumns(
+            table=query_columns.table,
+            columns_to_copy=actual_columns,
+            patient_filter_col=query_columns.patient_filter_col,
+            timestamp_filter_col=query_columns.timestamp_filter_col
+        )
 
     chunk_col = query_columns.timestamp_filter_col or query_columns.patient_filter_col
-    if not chunk_col:
-        pk_index = read_conn.get_indexes_for_pk(source_schema, table)
-        if pk_index and pk_index.get("constrained_columns"):
-            chunk_col = pk_index["constrained_columns"][0]
+    # if not chunk_col:
+    #     pk_index = read_conn.get_indexes_for_pk(source_schema, table)
+    #     if pk_index and pk_index.get("constrained_columns"):
+    #         chunk_col = pk_index["constrained_columns"][0]
 
     chunk_size = determine_chunk_size(dialect, estimated_rows)
-    chunks = plan_chunks(write_conn, copy_params.source_database, source_schema, table, chunk_col, chunk_size, estimated_rows, dialect, logger)
+    chunks = plan_chunks(write_conn, copy_params.source_database, source_schema, table, chunk_col, chunk_size, estimated_rows, logger)
 
     mapped_tasks = copy_table_chunk.map(
         write_conn=[write_conn] * len(chunks),
@@ -184,6 +216,8 @@ def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema,
         query_columns=[query_columns] * len(chunks),
         source_schema=[source_schema] * len(chunks),
         where_sql=chunks,
+        chunk_id=list(range(len(chunks))),
+        total_chunks=[len(chunks)] * len(chunks),
         logger=[logger] * len(chunks)
     )
     # Wait for all chunks
@@ -193,7 +227,7 @@ def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema,
     return estimated_rows
 
 
-def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple = None, logger=None) -> str:
+def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple = None) -> str:
     columns_to_copy = query_columns.columns_to_copy
     table = query_columns.table
     database = copy_params.source_database
@@ -206,8 +240,11 @@ def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns
 
     base_query = f'SELECT {columns_sql} FROM "{database}"."{schema}"."{table}"'
 
+    has_where = False
+
     # Handle where_sql for chunking
     if where_sql:
+        has_where = True
         if isinstance(where_sql, str):
             # Column-based chunk: e.g., "person_id BETWEEN 1 AND 1000"
             base_query += f" WHERE {where_sql}"
@@ -225,19 +262,14 @@ def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns
     # Add patient and timestamp filters
     filters = []
     if query_columns.patient_filter_col and copy_params.patient_filter:
-        ids = ", ".join(str(pid) for pid in copy_params.patient_filter)
+        ids = ", ".join(str(int(pid)) for pid in copy_params.patient_filter)
         filters.append(f"{query_columns.patient_filter_col} IN ({ids})")
     if query_columns.timestamp_filter_col and copy_params.timestamp_filter:
-        filters.append(f"{query_columns.timestamp_filter_col} = '{copy_params.timestamp_filter}'")
+        ts_value = str(copy_params.timestamp_filter).replace("'", "''")
+        filters.append(f"{query_columns.timestamp_filter_col} = '{ts_value}'")
 
     if filters:
-        if "WHERE" in base_query:
-            base_query += " AND " + " AND ".join(filters)
-        else:
-            base_query += " WHERE " + " AND ".join(filters)
-
-    if logger:
-        logger.info(f"Generated SELECT SQL: {base_query}")
+        base_query += (" AND " if has_where else " WHERE ") + " AND ".join(filters)
     
     return base_query
 
@@ -253,11 +285,11 @@ def create_index_query(
     # by default indexes created on columns in asc order
     columns_str = ", ".join(column_names)
     return f'''
-        CREATE OR REPLACE {"UNIQUE" if unique else ""} INDEX {index_name} 
+        CREATE {"UNIQUE" if unique else ""} INDEX IF NOT EXISTS {index_name} 
         ON "{database_name}"."{schema_name}"."{table_name}" ({columns_str});
         '''
 
-@task(log_prints=True, tags=["create_cachedb_file_plugin_concurrency"], task_run_name="copy_indexes_{query_columns.table}")
+@task(log_prints=True, tags=["table-level-concurrency"], task_run_name="copy_indexes_{query_columns.table}")
 def copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema, logger):
     table = query_columns.table
     columns_to_copy = query_columns.columns_to_copy
