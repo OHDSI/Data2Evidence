@@ -96,7 +96,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set X1-axis to gender
   await page.getByRole('button', { name: 'Basic Data Gender ◢' }).click()
-  await page.getByText('Reset Selection').click()
+  await page.locator('#pane-right').getByRole('list').getByText('Reset Selection').click()
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
   await page.locator('div.dropdownmenu-container').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()

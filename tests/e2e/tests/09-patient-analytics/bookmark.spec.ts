@@ -128,7 +128,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
-    await page.getByText('Reset Selection').last().click()
+    await page.getByRole('listitem', { name: 'Reset Selection' }).waitFor({ state: 'visible' })
+    await page.getByRole('listitem', { name: 'Reset Selection' }).click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Remove MALE and add FEMALE Gender filter

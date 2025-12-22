@@ -122,7 +122,7 @@ test(TEST_NAME, async ({ browser }) => {
   // Step 8 - Entering month of birth with correct input
   await page.getByRole('button', { name: '' }).first().click()
   await page.getByText('Month of Birth').click()
-  await page.getByText('Select an Attribute ◢').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByTitle('Basic Data - Month of Birth').click()
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('[1-10]')
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
