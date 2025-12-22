@@ -45,6 +45,9 @@ EXPOSE 33001 5432 33000
 RUN mkdir -p ./core
 COPY ./core ./core
 
+RUN mkdir -p ./logto
+COPY ./logto ./logto
+
 CMD ["npm", "run", "start"]
 
 
