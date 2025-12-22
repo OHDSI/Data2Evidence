@@ -59,7 +59,6 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
-    console.log('in else')
     await page.getByRole('button', { name: 'Close' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   }
