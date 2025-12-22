@@ -20,7 +20,8 @@ def failed_analysis_ids_to_str(failed_ids: list[int]) -> str:
     Convert the list of failed analysis IDs to a comma separated string.
     """
     failed_ids_str = ",".join(map(str, failed_ids))
-    return f'"{failed_ids_str}"'
+    print(f"Failed analysis IDs string type: {type(failed_ids_str)}")
+    return failed_ids_str
 
 
 def is_safe_schema_name(schema: str) -> bool:
