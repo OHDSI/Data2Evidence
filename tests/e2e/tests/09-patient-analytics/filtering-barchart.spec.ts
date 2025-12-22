@@ -98,7 +98,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'Basic Data Gender ◢' }).click()
   await page.locator('#pane-right').getByRole('list').getByText('Reset Selection').click()
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').click()
+  await page.locator('#pane-right').getByRole('list').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
