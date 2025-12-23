@@ -66,9 +66,9 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
             name: path,
             basePath,
             url: path,
-            autoMount,
             customProps: {
               appId,
+              autoMount,
               getToken: getAuthToken,
               username,
               idpUserId,
