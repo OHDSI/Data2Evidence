@@ -266,7 +266,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displaySameCdmVocabSchemaCheckbox = useMemo(
-    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM].includes(formData.schemaOption),
+    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
     [formData.schemaOption]
   );
 
@@ -279,8 +279,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displayVocabSchemaInput = useMemo(
-    () => formData.schemaOption === SchemaTypes.ExistingCDM,
-    [formData.schemaOption]
+    () => formData.schemaOption === SchemaTypes.ExistingCDM && !formData.isSameCdmSchemaForVocab,
+    [formData.schemaOption, formData.isSameCdmSchemaForVocab]
   );
 
   const displaySchemaNameInput = useMemo(
@@ -417,14 +417,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     }
 
     if (
-      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM].includes(schemaOption) &&
+      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(schemaOption) &&
       !isSameCdmSchemaForVocab &&
       !vocabSchemaValue
     ) {
-      formError = { ...formError, vocabSchemaValue: { required: true } };
-    }
-
-    if (schemaOption === SchemaTypes.ExistingCDM && !vocabSchemaValue) {
       formError = { ...formError, vocabSchemaValue: { required: true } };
     }
 
@@ -756,7 +752,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 onChange={(event) => {
                   const cdmSchemaValue = event.target.value;
                   const changes: any = { cdmSchemaValue };
-                  // Auto-generate result schema if checkbox is checked
+                  // Use default result schema if checkbox is checked
                   if (formData.autoGenerateResultSchema) {
                     changes.resultSchemaValue = cdmSchemaValue ? `${cdmSchemaValue}_results` : "";
                   }
@@ -781,7 +777,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 value={formData?.cdmSchemaValue}
                 onChange={(_: SyntheticEvent<Element, Event>, cdmSchemaValue: string | string[] | null) => {
                   const changes: any = { cdmSchemaValue };
-                  // Auto-generate result schema if checkbox is checked
+                  // Use default result schema if checkbox is checked
                   if (formData.autoGenerateResultSchema && cdmSchemaValue) {
                     changes.resultSchemaValue = `${cdmSchemaValue}_results`;
                   }
@@ -918,7 +914,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 onChange={(event: ChangeEvent<HTMLInputElement>) => {
                   const autoGenerateResultSchema = event.target.checked;
                   const changes: any = { autoGenerateResultSchema };
-                  // If checked, auto-generate result schema name
+                  // If checked, use default result schema name
                   if (autoGenerateResultSchema && formData.cdmSchemaValue) {
                     changes.resultSchemaValue = `${formData.cdmSchemaValue}_results`;
                   }
