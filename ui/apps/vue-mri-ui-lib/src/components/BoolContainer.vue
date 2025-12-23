@@ -79,8 +79,8 @@ export default {
         const container = this.getBoolFilterContainer(containerId)
         const cards = container.props.filterCards.filter(f => f !== 'patient')
         const visibleCards = this.showExclusion
-          ? cards.filter(c => this.getFilterCard(c)?.props?.excludeFilter)
-          : cards.filter(c => !this.getFilterCard(c)?.props?.excludeFilter)
+          ? cards.filter(c => this.getFilterCard(c).props?.excludeFilter)
+          : cards.filter(c => !this.getFilterCard(c).props?.excludeFilter)
         return visibleCards.length > 0
       })
       return boolFilterContainer === firstNonEmptyContainer

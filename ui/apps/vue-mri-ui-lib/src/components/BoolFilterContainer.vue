@@ -7,8 +7,8 @@
       </button>
     </div>
     <div class="boolfiltercontainer-content" :class="{ tinted: showBackground }">
-      <VueDraggable v-model="draggableCards" v-bind="dragOptions">
-        <div v-for="(id, index) in draggableCards" :key="`${id}-${index}`" class="draggable-filtercard">
+      <VueDraggable v-model="draggableCards" v-bind="dragOptions" @change="rearrangeFilterCard">
+        <div v-for="(id, index) in draggableCards" :key="id" class="draggable-filtercard">
           <filtercard
             :id="id"
             :parentId="boolFilterContainerModel.id"
@@ -55,8 +55,8 @@ export default {
     nonBasicCards() {
       const cards = this.boolFilterContainerModel.props.filterCards.filter(f => f !== 'patient')
       return this.showExclusion
-        ? cards.filter(c => this.getFilterCard(c).props.excludeFilter)
-        : cards.filter(c => !this.getFilterCard(c).props.excludeFilter)
+        ? cards.filter(c => this.getFilterCard(c).props?.excludeFilter)
+        : cards.filter(c => !this.getFilterCard(c).props?.excludeFilter)
     },
     draggableCards: {
       get() {
@@ -68,7 +68,7 @@ export default {
           newOrder,
         })
         this.resetAllFilterCardEntryExit({ key: null })
-        this.$forceUpdate()
+        // this.$forceUpdate()
       },
     },
     showBackground() {
@@ -103,7 +103,7 @@ export default {
     ...mapActions([
       'addFilterCard',
       'toggleFilterContainerBooleanCondition',
-      'updateBoolFilterContainer',
+      'removeBoolFilterContainer',
       'resetAllFilterCardEntryExit',
       'reorderFilterCards',
     ]),
@@ -124,19 +124,13 @@ export default {
       this.resetAllFilterCardEntryExit({ key: null })
     },
     rearrangeFilterCard(e) {
-      if (e.added) {
-        this.updateBoolFilterContainer({
-          boolFilterContainerId: this.id,
-          filterCardId: e.added.element,
-          type: 'add',
-        })
-      }
       if (e.removed) {
-        this.updateBoolFilterContainer({
-          boolFilterContainerId: this.id,
-          filterCardId: e.removed.element,
-          type: 'remove',
-        })
+        // v-model setter (reorderFilterCards) already updated the store
+        // Just need to clean up if this container is now empty
+        const hasNonPatientCards = this.boolFilterContainerModel.props.filterCards.some(f => f !== 'patient')
+        if (!hasNonPatientCards) {
+          this.removeBoolFilterContainer({ boolFilterContainerId: this.id })
+        }
       }
     },
     renameModalShown(value) {
