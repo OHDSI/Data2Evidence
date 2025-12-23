@@ -8,7 +8,7 @@ import { useActiveDataset, useFeedback } from "../../contexts";
 import { IPluginItem, PluginDropdown } from "../../types";
 import { getPluginChildPathPattern, loadPlugins, sortPluginsByType } from "../../utils";
 import { ResearcherStudyPluginRenderer } from "../../plugins/core/ResearcherStudyPluginRenderer";
-import { useEnabledFeatures, useDataset } from "../../hooks";
+import { useEnabledFeatures, useDataset, useDeepLinkSync, useDatasets } from "../../hooks";
 import { initializeImportMap } from "../../singleSpa";
 import { Overview } from "./Overview/Overview";
 import { Information } from "./Information/Information";
@@ -35,6 +35,12 @@ interface StateProps {
 export const Researcher: FC = () => {
   const { clearFeedback, getFeedback } = useFeedback();
   const feedback = getFeedback();
+
+  // Load datasets for deep link sync
+  const [datasets, datasetsLoading] = useDatasets("researcher");
+
+  // Sync dataset from URL parameter if present
+  useDeepLinkSync(datasets, datasetsLoading);
 
   const location = useLocation();
   const state = location.state as StateProps;

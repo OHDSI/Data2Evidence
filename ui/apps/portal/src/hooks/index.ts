@@ -1,6 +1,7 @@
 export * from "./useAzureAdConfigs";
 export * from "./useDatasets";
 export * from "./useDataset";
+export * from "./useDeepLinkSync";
 export * from "./useDatasetFilterScopes";
 export * from "./useDatasetResources";
 export * from "./useDatasetTagConfigs";
