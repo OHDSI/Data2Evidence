@@ -56,8 +56,14 @@ export default {
       get() {
         const cards = this.boolFilterContainerModel.props.filterCards.filter(f => f !== 'patient')
         return this.showExclusion
-          ? cards.filter(c => this.getFilterCard(c).props?.excludeFilter)
-          : cards.filter(c => !this.getFilterCard(c).props?.excludeFilter)
+          ? cards.filter(c => {
+              const filterCard = this.getFilterCard(c)
+              return filterCard.props && filterCard.props.excludeFilter
+            })
+          : cards.filter(c => {
+              const filterCard = this.getFilterCard(c)
+              return filterCard.props && !filterCard.props.excludeFilter
+            })
       },
       set(newOrder) {
         this.reorderFilterCards({
@@ -91,7 +97,7 @@ export default {
         group: 'boolfiltercontainer',
         animation: 150,
         dragClass: 'ghost',
-        disabled: !this.isDraggable,
+        disabled: !this.isDraggable || this.showExclusion,
       }
     },
   },
