@@ -140,7 +140,12 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set X2-axis to year of birth with bin size of 50
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
+  await page
+    .locator('div.dropdownmenu-container')
+    .getByRole('listitem')
+    .filter({ hasText: 'Basic Data' })
+    .last()
+    .click()
   await page.locator('#pane-right').getByText('Year of Birth').first().click()
   await page.locator('button.binningButton').nth(1).click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
@@ -159,7 +164,12 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set attribute for stacked chart
   await page.locator('div.axis-menu-button-wrapper').nth(4).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(2).click()
+  await page
+    .locator('div.dropdownmenu-container')
+    .getByRole('listitem')
+    .filter({ hasText: 'Basic Data' })
+    .last()
+    .click()
   await page.locator('#pane-right').getByText('Month of Birth').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixels: 1200 })
