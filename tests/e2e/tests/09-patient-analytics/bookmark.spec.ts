@@ -54,7 +54,11 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click()
+      await page
+        .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
+        .locator('td')
+        .first()
+        .click()
       await page.getByRole('button', { name: 'Create' }).click()
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
       await page.getByRole('button', { name: 'Close' }).click()
@@ -229,7 +233,12 @@ test(TEST_NAME, async ({ page }) => {
         await page.getByRole('textbox', { name: 'search terms' }).click()
         await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis')
         await page.getByRole('button', { name: 'Search' }).click()
-        await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click()
+        await expect(page.getByRole('row', { name: /444814009.*Viral sinusitis/ })).toBeVisible({ timeout: 30000 })
+        await page
+          .getByRole('row', { name: /444814009.*Viral sinusitis/ })
+          .locator('td')
+          .first()
+          .click()
         await page.getByRole('button', { name: 'Create' }).click()
         await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
         await page.getByRole('button', { name: 'Close' }).click()
