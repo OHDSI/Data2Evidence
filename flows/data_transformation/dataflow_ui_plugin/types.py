@@ -169,12 +169,13 @@ class ConceptMappingType(BaseModel):
     conceptId: Optional[int] = None
     domainId: Optional[str] = None
     conceptName:  Optional[str] = None
+    conceptCode: Optional[str] = None
     frequency: Optional[str] = None
-    system: Optional[str] = None
+    vocabularyId: Optional[str] = None
     validity: Optional[Literal["D"]] = None
     validEndDate: Optional[str] = None
     validStartDate: Optional[str] = None
-    source_vocabulary_id: Optional[str] = None
+    # source_vocabulary_id: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_required_if_checked(self) -> 'ConceptMappingType':

@@ -42,7 +42,7 @@ const routeRecords: AppRouteRecord[] = [
 ]
 
 const router = createRouter({
-  history: createWebHistory('/portal/systemadmin/jobs'),
+  history: createWebHistory('/d2e/portal/systemadmin/jobs'),
   routes: routeRecords as RouteRecordRaw[]
 })
 

@@ -9,7 +9,7 @@ test(TEST_NAME, async ({ page }) => {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
   }
 
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -84,7 +84,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('Concept Set Test 1 -')).toBeVisible()
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
-  await expect(page.getByText('1677 / 2694')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
   await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
   await page.getByText('✎').click()
   await page.getByRole('textbox', { name: 'search terms' }).click()
@@ -102,7 +102,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  await expect(page.getByText('1836 / 2694')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('1,836 / 2,694')).toBeVisible({ timeout: 10000 })
 
   // Dismiss popover if present
   try {

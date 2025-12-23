@@ -1,7 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import "@testing-library/jest-dom/extend-expect";
 import MenuTab from "../MenuTab/MenuTab";
 import { NavLink } from "../../../types";
 

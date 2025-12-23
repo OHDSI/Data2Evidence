@@ -175,6 +175,19 @@ export class D2eWebapi {
       });
     }
   }
+
+  public deleteConceptSet(conceptSetId: number, datasetId: string) {
+    if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.deleteConceptSet(conceptSetId);
+    } else {
+      return request<number>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}`,
+        method: "DELETE",
+        headers: { datasetid: datasetId },
+      });
+    }
+  }
 }
 
 export const d2eWebapiApi = new D2eWebapi();

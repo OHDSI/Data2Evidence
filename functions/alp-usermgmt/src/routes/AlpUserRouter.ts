@@ -2,7 +2,7 @@ import express, { NextFunction, Response } from 'express'
 import { Service } from 'typedi'
 import { ROLES } from '../const'
 import { IAppRequest, IUserWithRoles } from '../types'
-import { UserAdminService, DashboardViewerService, JobRunnerService } from '../services'
+import { UserAdminService, DashboardViewerService, JobRunnerService, StudyResultService } from '../services'
 import { createLogger } from '../Logger'
 import { User } from '../entities'
 
@@ -14,7 +14,8 @@ export class AlpUserRouter {
   constructor(
     private readonly userAdminService: UserAdminService,
     private readonly dashboardViewerService: DashboardViewerService,
-    private readonly jobRunnerService: JobRunnerService
+    private readonly jobRunnerService: JobRunnerService,
+    private readonly studyResultService: StudyResultService
   ) {
     this.registerRoutes()
   }
@@ -53,6 +54,9 @@ export class AlpUserRouter {
         if (roles.includes(ROLES.ALP_DASHBOARD_VIEWER)) {
           await this.dashboardViewerService.registerUser(userId)
         }
+        if (roles.includes(ROLES.STUDY_RESULTS_READ_RESEARCHER)) {
+          await this.studyResultService.registerUser(userId)
+        }
 
         return res.status(200).json({ userId })
       } catch (err) {
@@ -78,6 +82,9 @@ export class AlpUserRouter {
         }
         if (roles.includes(ROLES.ALP_DASHBOARD_VIEWER)) {
           await this.dashboardViewerService.withdrawUser(userId)
+        }
+        if (roles.includes(ROLES.STUDY_RESULTS_READ_RESEARCHER)) {
+          await this.studyResultService.withdrawUser(userId)
         }
 
         return res.status(200).json({ userId })

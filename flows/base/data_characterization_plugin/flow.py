@@ -19,7 +19,6 @@ from .types import DCOptionsType, AchillesParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
 from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
 
@@ -75,6 +74,9 @@ def data_characterization_plugin(options: DCOptionsType):
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
     )
+    # For TREX connections, set vocabSchemaName to schemaName
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        achilles_params.vocabSchemaName = options.schemaName
 
     dc_schema = create_results_schema(
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger

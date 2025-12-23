@@ -32,6 +32,20 @@ export class StrategusAnalysis {
     });
   }
 
+  public createStrategusAnalysis(data: {
+    studyId: string;
+    analysisSpec: string;
+    mode?: string;
+    notebookName?: string;
+  }): Promise<{ message: string; analysisId: string }> {
+    return request({
+      baseURL: STRATEGUS_ANALYSIS_URL,
+      url: "/",
+      method: "POST",
+      data,
+    });
+  }
+
   public getStudyViewerTemplates(): Promise<StrategusResultViewerTemplateData[]> {
     return request({
       baseURL: STRATEGUS_TEMPLATE_URL,

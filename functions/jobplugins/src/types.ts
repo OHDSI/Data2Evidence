@@ -169,6 +169,12 @@ export interface ICreateDatamartFlowRunDto {
   options: object;
 }
 
+export interface ICreateFhirCacheFlowRunDto {
+  databaseCode: string;
+  schemaName: string;
+  cacheSchemaName: string;
+}
+
 export interface IGetVersionInfoFlowRunDto {
   flowRunName: string;
   options: IGetVersionInfoFlowRunOptions;
@@ -341,6 +347,7 @@ export interface ICreateCachedbFileFlowRunDto {
   snapshotSchemaName?: string;
   resultsSchemaName?: string;
   snapshotCopyConfig?: object;
+  vocabSchemaName: string;
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {

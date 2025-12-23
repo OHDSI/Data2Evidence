@@ -51,7 +51,7 @@ export function parseDbObjectName(dbObject: string): { schema?: string; tableNam
 }
 
 export function isValidHanaObjectName(dbObject: string): boolean {
-    return /^[A-Za-z_"][A-Za-z0-9_\."]+$/.test(dbObject) && Defaults.hanaSchemaTableRegex().test(dbObject);
+    return /^[A-Za-z_$"][A-Za-z0-9_$:\."]+$/.test(dbObject) && Defaults.hanaSchemaTableRegex().test(dbObject);
 }
 
 export function isSchemaAllowed(schema: string): boolean {

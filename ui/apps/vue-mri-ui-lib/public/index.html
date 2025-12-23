@@ -74,6 +74,8 @@
             return localStorage.getItem('msaltoken')
           },
           isLocal: isLocal,
+          features: <%= process.env.VUE_APP_FEATURES %>,
+          featuresLoading: false,
           username: '<%= process.env.VUE_APP_USERNAME || "admin" %>',
           locale: '<%= process.env.VUE_APP_LOCALE || "en" %>',
           debug: <%= process.env.VUE_APP_DEBUG === 'true' ? true : false %>,
@@ -118,7 +120,7 @@
       data-sap-ui-libs="sap.m"
       data-sap-ui-compatVersion="edge"
       data-sap-ui-preload="async"
-      data-sap-ui-resourceroots='{"sap.hc": "/sap/hc","hc.mri":"/hc/mri","hc.hph":"hc/hph"}'
+      data-sap-ui-resourceroots='{"sap.hc": "/d2e/sap/hc","hc.mri":"/d2e/hc/mri","hc.hph":"/d2e/hc/hph"}'
     ></script>
 
     <!-- Load preload script FIRST to ensure import-map-overrides is available -->
