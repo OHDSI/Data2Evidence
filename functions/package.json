@@ -21,8 +21,8 @@
     "functions": {
       "init": [
         {
-          "function": "/strategus-analysis/src/init",
-          "imports": "/strategus-analysis/deno.json",
+          "function": "/strategus-analysis-init",
+          "imports": "/strategus-analysis-init/deno.json",
           "env": "strategus-analysis"
         },
         {
@@ -42,13 +42,13 @@
           "waitforEnvVar": "PREFECT_HEALTH_CHECK"
         },
         {
-          "function": "/files-manager/src/init",
-          "imports": "/files-manager/deno.json",
+          "function": "/files-manager-init",
+          "imports": "/files-manager-init/deno.json",
           "env": "files-manager"
         },
         {
-          "function": "/perseus/src/init",
-          "imports": "/perseus/deno.json",
+          "function": "/perseus-init",
+          "imports": "/perseus-init/deno.json",
           "env": "perseus"
         },
         {
@@ -57,23 +57,23 @@
           "env": "jobplugins"
         },
         {
-          "function": "/alp-usermgmt/src/init",
-          "imports": "/alp-usermgmt/deno.json",
+          "function": "/alp-usermgmt-init",
+          "imports": "/alp-usermgmt-init/deno.json",
           "env": "alp-usermgmt"
         },
         {
-          "function": "/portal/src/init",
-          "imports": "/portal/deno.json",
+          "function": "/portal-init",
+          "imports": "/portal-init/deno.json",
           "env": "portal"
         },
         {
-          "function": "/white-rabbit/src/init",
-          "imports": "/white-rabbit/deno.json",
+          "function": "/white-rabbit-init",
+          "imports": "/white-rabbit-init/deno.json",
           "env": "white-rabbit"
         },
         {
-          "function": "/supabase/src/init",
-          "imports": "/supabase/deno.json",
+          "function": "/supabase-storage-init",
+          "imports": "/supabase-storage-init/deno.json",
           "env": "supabase-storage"
         }
       ],
@@ -2728,7 +2728,7 @@
             "gateway.db.database.test"
           ],
           "httpMethods": [
-            "GET"
+            "POST"
           ]
         },
         {
