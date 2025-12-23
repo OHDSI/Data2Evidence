@@ -93,14 +93,11 @@ export class JobPluginsAPI {
   async createCDMSchema(
     databaseCode: string,
     schemaName: string,
-    cleansedSchemaOption: boolean,
     dataModel: string,
     dialect: string,
     vocabSchema: string
   ): Promise<any> {
-    this.logger.info(
-      `Create CDM schema ${schemaName} in ${databaseCode} with cleansed schema option set to ${cleansedSchemaOption}`
-    );
+    this.logger.info(`Create CDM schema ${schemaName} in ${databaseCode}`);
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/db-svc/run`;
     const body = {
@@ -108,7 +105,6 @@ export class JobPluginsAPI {
       requestType: "post",
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}/schema/${schemaName}`,
       requestBody: {
-        cleansedSchemaOption: cleansedSchemaOption,
         vocabSchema: vocabSchema,
       },
     };

@@ -297,7 +297,6 @@ let encryptionKeysObjDataset = {
     cdmSchemaValue: "",
     vocabSchemaValue: "",
     resultSchemaValue: "cdmdemohana",
-    cleansedSchemaOption: false,
     dataModel: "omop5-3",
     plugin: "hana_load_plugin",
     databaseCode: "demo_database_hana",
