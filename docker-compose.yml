@@ -249,8 +249,8 @@ services:
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
-      CACHE_CHUNK_LEVEL_CONCURRENCY: ${CACHE_CHUNK_LEVEL_CONCURRENCY:-3}
-      CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-3}
+      CACHE_CHUNK_LEVEL_CONCURRENCY: ${CACHE_CHUNK_LEVEL_CONCURRENCY:-1}
+      CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -562,7 +562,7 @@ services:
     command:
       - sh
       - -c
-      - "pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
+      - "prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
@@ -583,7 +583,7 @@ services:
         ]
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: prefecthq/prefect:3.0.3-python3.11
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-dataflow-gen-worker:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c83

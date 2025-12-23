@@ -44,3 +44,4 @@
 /ui/apps/portal/src/plugins/Researcher/ConceptSets   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui/apps/concept-sets                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/services/alp-dataflow-gen-worker                    @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
