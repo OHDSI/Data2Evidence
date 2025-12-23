@@ -2697,7 +2697,8 @@
         "survival (>= 3.7.0)",
         "ggplot2",
         "visOmopResults (>= 1.0.0)",
-        "CDMConnector (>= 2.0.0)"
+        "CDMConnector (>= 2.0.0)",
+        "RPostgres (>= 1.4.8)"
       ],
       "License": "Apache License 2.0",
       "VignetteBuilder": "knitr",
