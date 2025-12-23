@@ -111,9 +111,17 @@ async function hasWorkerPool() {
 	return true
 }
 
-async function ensureConcurrencyLimit(name: string, limit: number) {
+async function ensureConcurrencyLimit(name: string, limitVar: string) {
 	try {
-		logger.log(`Ensuring concurrency limit ${name} with limit ${limit}`);
+		// limitVar is either a number (as string) or env var name
+		let limit: number;
+		if (process.env[limitVar]) {
+			limit = parseInt(process.env[limitVar], 10);
+			logger.log(`Using env var ${limitVar} for concurrency limit ${name}: ${limit}`);
+		} else {
+			limit = parseInt(limitVar, 1);
+			logger.log(`Using default value ${limit} for concurrency limit ${name} (env ${limitVar} not set)`);
+		}
 		// Find existing concurrency limit by tag
 		let getRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/?tag=${name}`, {
 			method: "GET",
@@ -139,7 +147,7 @@ async function ensureConcurrencyLimit(name: string, limit: number) {
 				body: JSON.stringify({ concurrency_limit: limit }),
 			});
 			if (updateRes.ok) {
-				logger.log(`Concurrency limit ${name} updated successfully.`);
+				logger.log(`Concurrency limit ${name} updated successfully to ${limit}.`);
 			} else {
 				logger.error(`Error updating concurrency limit ${name}: ${updateRes.status} ${updateRes.statusText}`);
 			}
@@ -155,7 +163,7 @@ async function ensureConcurrencyLimit(name: string, limit: number) {
 			if (createRes.status === 409) {
 				logger.log(`Concurrency limit ${name} already exists, skipping creation.`);
 			} else if (createRes.ok) {
-				logger.log(`Concurrency limit ${name} created successfully.`);
+				logger.log(`Concurrency limit ${name} created successfully with limit ${limit}.`);
 			} else {
 				logger.error(`Error creating concurrency limit ${name}: ${createRes.status} ${createRes.statusText}`);
 			}

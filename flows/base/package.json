@@ -88,11 +88,11 @@
           "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
           "concurrencyLimitOptions": [{
             "tag": "chunk-level-concurrency",
-            "limit": 3
+            "limit": "CACHE_CHUNK_LEVEL_CONCURRENCY"
           },
           {
             "tag": "table-level-concurrency",
-            "limit": 3
+            "limit": "CACHE_TABLE_LEVEL_CONCURRENCY"
           }],
           "parameter_openapi_schema": {
             "title": "Parameters",
