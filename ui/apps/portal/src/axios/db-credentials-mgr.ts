@@ -24,7 +24,7 @@ export class DbCredentialsMgr {
 
     return list.map((d) => ({
       ...omit(d, "db_extra", "authentication_mode", "vocab_schemas"),
-      extra: [{ value: d.db_extra, serviceScope: SERVICE_SCOPE_TYPES.INTERNAL }],
+      extra: [{ value: typeof d.db_extra === "string" ? d.db_extra : JSON.stringify(d.db_extra ?? {}), serviceScope: SERVICE_SCOPE_TYPES.INTERNAL }],
       authenticationMode: d.authentication_mode,
       vocabSchemas: d.vocab_schemas,
     }));
@@ -64,12 +64,12 @@ export class DbCredentialsMgr {
       method: "DELETE",
     });
   }
-  public async testConnection(params: ITestConnection): Promise<ITestConnectionResult> {
+  public async testConnection(data: ITestConnection): Promise<ITestConnectionResult> {
     return await request<ITestConnectionResult>({
       baseURL: DB_BASE_URL,
       url: "test",
-      method: "GET",
-      params,
+      method: "POST",
+      data,
     });
   }
 }

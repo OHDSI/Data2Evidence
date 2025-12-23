@@ -157,9 +157,15 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
   }, [study, getText]);
 
   useEffect(() => {
-    fetchCopyStudyMetadata();
-    fetchCohortDefinitionList();
-  }, [fetchCopyStudyMetadata, fetchCohortDefinitionList]);
+    // Only fetch metadata and cohort list for non-FHIR datasets
+    if (study?.type !== SourceDatasetType.FHIR) {
+      fetchCopyStudyMetadata();
+      fetchCohortDefinitionList();
+    } else {
+      setIsFetchingcopyStudyMetadata(false);
+      setIsFetchingCohortDefinition(false);
+    }
+  }, [fetchCopyStudyMetadata, fetchCohortDefinitionList, study]);
 
   const [feedback, setFeedback] = useState<Feedback>({});
 
@@ -195,26 +201,31 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       event.preventDefault();
       if (!study?.id) return;
 
-      // If cohort filter checkbox is selected but no cohort was selected
-      if (formData.cohortDefinitionId === "" && rootFilterCheckbox.isCohortFilterSelected) {
-        setFeedback({
-          type: "error",
-          message: "Cohort Filter is checked, but no cohort was chosen!",
-        });
-        return;
-      }
+      const isFhirDataset = study.type === SourceDatasetType.FHIR;
 
-      // If table filter checkbox is selected but no table was selected
-      if (
-        formData.copyStudySchemaMetadata.filter((tableMetadata: CopyStudyTableMetadata) => tableMetadata.isSelected)
-          .length === 0 &&
-        rootFilterCheckbox.isTableFilterSelected
-      ) {
-        setFeedback({
-          type: "error",
-          message: getText(i18nKeys.COPY_STUDY_DIALOG__NO_TABLE_CHOSEN),
-        });
-        return;
+      // Skip filter validations for FHIR datasets
+      if (!isFhirDataset) {
+        // If cohort filter checkbox is selected but no cohort was selected
+        if (formData.cohortDefinitionId === "" && rootFilterCheckbox.isCohortFilterSelected) {
+          setFeedback({
+            type: "error",
+            message: "Cohort Filter is checked, but no cohort was chosen!",
+          });
+          return;
+        }
+
+        // If table filter checkbox is selected but no table was selected
+        if (
+          formData.copyStudySchemaMetadata.filter((tableMetadata: CopyStudyTableMetadata) => tableMetadata.isSelected)
+            .length === 0 &&
+          rootFilterCheckbox.isTableFilterSelected
+        ) {
+          setFeedback({
+            type: "error",
+            message: getText(i18nKeys.COPY_STUDY_DIALOG__NO_TABLE_CHOSEN),
+          });
+          return;
+        }
       }
 
       if (!formData.paConfigId) {
@@ -228,28 +239,30 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       setFeedback({});
       const { name, date, copyStudySchemaMetadata, cohortDefinitionId } = formData;
 
-      // Create snapshot copy config object
+      // Create snapshot copy config object (skip for FHIR datasets)
       const snapshotCopyConfig: SnapshotCopyConfig = {};
-      // If date filter is selected, create timestamp for snapshot config
-      if (rootFilterCheckbox.isDateFilterSelected) {
-        snapshotCopyConfig.timestamp = `${date} 23:59:59`;
-      }
-      // If Table filter is selected, create tableConfig for snapshot config
-      if (rootFilterCheckbox.isTableFilterSelected) {
-        snapshotCopyConfig.tableConfig = copyStudySchemaMetadata
-          .filter((tableMetadata: CopyStudyTableMetadata) => tableMetadata.isSelected)
-          .map((tableMetadata: CopyStudyTableMetadata) => ({
-            tableName: tableMetadata.tableName,
-            columnsToBeCopied: tableMetadata.tableColumnsMetadata
-              .filter((columnMetaData: CopyStudyColumnMetadata) => columnMetaData.isSelected)
-              .map((columnMetaData: CopyStudyColumnMetadata) => columnMetaData.columnName),
-          }));
-      }
-      // If Cohort filter is selected, create patientsToBeCopied for snapshot config
-      if (rootFilterCheckbox.isCohortFilterSelected) {
-        snapshotCopyConfig.patientsToBeCopied = cohortDefinitionList.filter(
-          (cohort) => cohort.id == cohortDefinitionId
-        )[0].patientIds;
+      if (!isFhirDataset) {
+        // If date filter is selected, create timestamp for snapshot config
+        if (rootFilterCheckbox.isDateFilterSelected) {
+          snapshotCopyConfig.timestamp = `${date} 23:59:59`;
+        }
+        // If Table filter is selected, create tableConfig for snapshot config
+        if (rootFilterCheckbox.isTableFilterSelected) {
+          snapshotCopyConfig.tableConfig = copyStudySchemaMetadata
+            .filter((tableMetadata: CopyStudyTableMetadata) => tableMetadata.isSelected)
+            .map((tableMetadata: CopyStudyTableMetadata) => ({
+              tableName: tableMetadata.tableName,
+              columnsToBeCopied: tableMetadata.tableColumnsMetadata
+                .filter((columnMetaData: CopyStudyColumnMetadata) => columnMetaData.isSelected)
+                .map((columnMetaData: CopyStudyColumnMetadata) => columnMetaData.columnName),
+            }));
+        }
+        // If Cohort filter is selected, create patientsToBeCopied for snapshot config
+        if (rootFilterCheckbox.isCohortFilterSelected) {
+          snapshotCopyConfig.patientsToBeCopied = cohortDefinitionList.filter(
+            (cohort) => cohort.id == cohortDefinitionId
+          )[0].patientIds;
+        }
       }
 
       const input: CopyStudyInput = {
@@ -372,67 +385,72 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
               required
             />
           </div>
-          <div className="snapshotdate__filtergroup">
-            <Checkbox
-              checked={rootFilterCheckbox.isDateFilterSelected}
-              checkbox-id={"isDateFilterSelected"}
-              label={getText(i18nKeys.COPY_STUDY_DIALOG__DATE_FILTER)}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleRootFilterCheckboxChange(event);
-              }}
-            />
-            {rootFilterCheckbox.isDateFilterSelected && (
-              <TextField
-                variant="standard"
-                id="date"
-                type="date"
-                value={formData.date}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                onChange={handleTimestampChange}
-                disabled={!rootFilterCheckbox.isDateFilterSelected}
-              />
-            )}
-          </div>
-          <div className="u-padding-vertical--normal snapshotcohort__filtergroup">
-            <Checkbox
-              checked={rootFilterCheckbox.isCohortFilterSelected}
-              checkbox-id={"isCohortFilterSelected"}
-              label={getText(i18nKeys.COPY_STUDY_DIALOG__COHORT_FILTER)}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleRootFilterCheckboxChange(event);
-              }}
-            />
-            {rootFilterCheckbox.isCohortFilterSelected && (
-              <CohortFilter
-                cohortDefinitionId={formData.cohortDefinitionId}
-                cohortDefinitionList={cohortDefinitionList}
-                handleCohortDefinitionChange={handleCohortDefinitionChange}
-                loading={isFetchingCohortDefinition}
-                error={cohortDefinitionFetchError}
-              ></CohortFilter>
-            )}
-          </div>
-          <div className="snapshotmetadata__filtergroup">
-            <Checkbox
-              checked={rootFilterCheckbox.isTableFilterSelected}
-              checkbox-id={"isTableFilterSelected"}
-              label={getText(i18nKeys.COPY_STUDY_DIALOG__TABLE_FILTER)}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleRootFilterCheckboxChange(event);
-              }}
-            />
-            {rootFilterCheckbox.isTableFilterSelected && (
-              <SchemaFilter
-                copyStudySchemaMetadata={formData.copyStudySchemaMetadata}
-                handleCheckboxTableChange={handleCheckboxTableChange}
-                handleCheckboxColumnChange={handleCheckboxColumnChange}
-                loading={isFetchingcopyStudyMetadata}
-                error={copyStudyMetadataFetchError}
-              ></SchemaFilter>
-            )}
-          </div>
+          {/* Hide filters for FHIR datasets */}
+          {study?.type !== SourceDatasetType.FHIR && (
+            <>
+              <div className="snapshotdate__filtergroup">
+                <Checkbox
+                  checked={rootFilterCheckbox.isDateFilterSelected}
+                  checkbox-id={"isDateFilterSelected"}
+                  label={getText(i18nKeys.COPY_STUDY_DIALOG__DATE_FILTER)}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    handleRootFilterCheckboxChange(event);
+                  }}
+                />
+                {rootFilterCheckbox.isDateFilterSelected && (
+                  <TextField
+                    variant="standard"
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                    onChange={handleTimestampChange}
+                    disabled={!rootFilterCheckbox.isDateFilterSelected}
+                  />
+                )}
+              </div>
+              <div className="u-padding-vertical--normal snapshotcohort__filtergroup">
+                <Checkbox
+                  checked={rootFilterCheckbox.isCohortFilterSelected}
+                  checkbox-id={"isCohortFilterSelected"}
+                  label={getText(i18nKeys.COPY_STUDY_DIALOG__COHORT_FILTER)}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    handleRootFilterCheckboxChange(event);
+                  }}
+                />
+                {rootFilterCheckbox.isCohortFilterSelected && (
+                  <CohortFilter
+                    cohortDefinitionId={formData.cohortDefinitionId}
+                    cohortDefinitionList={cohortDefinitionList}
+                    handleCohortDefinitionChange={handleCohortDefinitionChange}
+                    loading={isFetchingCohortDefinition}
+                    error={cohortDefinitionFetchError}
+                  ></CohortFilter>
+                )}
+              </div>
+              <div className="snapshotmetadata__filtergroup">
+                <Checkbox
+                  checked={rootFilterCheckbox.isTableFilterSelected}
+                  checkbox-id={"isTableFilterSelected"}
+                  label={getText(i18nKeys.COPY_STUDY_DIALOG__TABLE_FILTER)}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                    handleRootFilterCheckboxChange(event);
+                  }}
+                />
+                {rootFilterCheckbox.isTableFilterSelected && (
+                  <SchemaFilter
+                    copyStudySchemaMetadata={formData.copyStudySchemaMetadata}
+                    handleCheckboxTableChange={handleCheckboxTableChange}
+                    handleCheckboxColumnChange={handleCheckboxColumnChange}
+                    loading={isFetchingcopyStudyMetadata}
+                    error={copyStudyMetadataFetchError}
+                  ></SchemaFilter>
+                )}
+              </div>
+            </>
+          )}
           <div className="snapshotmetadata__filtergroup">
             <FormControl sx={styles} className="select" variant="standard" fullWidth>
               <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
