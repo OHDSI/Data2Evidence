@@ -65,6 +65,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
             basePath,
             url: path,
             customProps: {
+              appId,
               getToken: getAuthToken,
               username,
               idpUserId,

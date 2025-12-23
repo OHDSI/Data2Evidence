@@ -107,21 +107,23 @@ export class PortalServerAPI {
         headers: {
           Authorization: this.token,
         },
+        body: formData,
       };
 
-      const result = await this.channel.post(
-        `${url}?nodeId=${nodeId}`,
-        formData,
-        options
-      );
-
-      if (result.status !== 200) {
-        const errorText = result.statusText;
+      // const result = await this.channel.post(
+      //   `${url}?nodeId=${nodeId}`,
+      //   formData,
+      //   options
+      // );
+      // TODO: Use trex channel after form data issue been resolved
+      const result = await fetch(`${url}?nodeId=${nodeId}`, options);
+      if (!result.ok) {
+        const errorText = await result.text();
         throw new Error(
           `Error while uploading file ${file.name} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
-      return result.data;
+      return await result.json();
     } catch (error) {
       console.error(
         `Error while uploading file ${file.name} for nodeId ${nodeId}: ${error}`

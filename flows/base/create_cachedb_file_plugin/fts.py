@@ -46,6 +46,7 @@ def create_fts_index(
             f"Existing columns in '{target_database}'.'{target_schema}'.'{vocab_table}': {existing_columns}"
         )
 
+
         if config_document_identifier not in existing_columns:
             logger.info(
                 f"Column '{config_document_identifier}' not found in '{target_database}.{target_schema}.{vocab_table}'. Adding auto-increment column."
@@ -110,7 +111,7 @@ def get_duckdb_fts_creation_sql(
             {", ".join(columns)},
             stemmer='english', 
             stopwords='english',
-            ignore='(\\.|[^a-z!@#$%^&*()\-`.+,\\\/"])+', 
+            ignore='(\\.|[^a-z0-9!@#$%^&*()`+,"\-\\\/])+',
             strip_accents=1, 
             lower=1, 
             overwrite=1)

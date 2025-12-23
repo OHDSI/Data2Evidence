@@ -21,8 +21,8 @@
     "functions": {
       "init": [
         {
-          "function": "/strategus-analysis/src/init",
-          "imports": "/strategus-analysis/deno.json",
+          "function": "/strategus-analysis-init",
+          "imports": "/strategus-analysis-init/deno.json",
           "env": "strategus-analysis"
         },
         {
@@ -42,13 +42,13 @@
           "waitforEnvVar": "PREFECT_HEALTH_CHECK"
         },
         {
-          "function": "/files-manager/src/init",
-          "imports": "/files-manager/deno.json",
+          "function": "/files-manager-init",
+          "imports": "/files-manager-init/deno.json",
           "env": "files-manager"
         },
         {
-          "function": "/perseus/src/init",
-          "imports": "/perseus/deno.json",
+          "function": "/perseus-init",
+          "imports": "/perseus-init/deno.json",
           "env": "perseus"
         },
         {
@@ -57,23 +57,23 @@
           "env": "jobplugins"
         },
         {
-          "function": "/alp-usermgmt/src/init",
-          "imports": "/alp-usermgmt/deno.json",
+          "function": "/alp-usermgmt-init",
+          "imports": "/alp-usermgmt-init/deno.json",
           "env": "alp-usermgmt"
         },
         {
-          "function": "/portal/src/init",
-          "imports": "/portal/deno.json",
+          "function": "/portal-init",
+          "imports": "/portal-init/deno.json",
           "env": "portal"
         },
         {
-          "function": "/white-rabbit/src/init",
-          "imports": "/white-rabbit/deno.json",
+          "function": "/white-rabbit-init",
+          "imports": "/white-rabbit-init/deno.json",
           "env": "white-rabbit"
         },
         {
-          "function": "/supabase/src/init",
-          "imports": "/supabase/deno.json",
+          "function": "/supabase-storage-init",
+          "imports": "/supabase-storage-init/deno.json",
           "env": "supabase-storage"
         }
       ],
@@ -370,7 +370,8 @@
           "isTestEnv": "${isTestEnv}",
           "TESTSCHEMA": "${TESTSCHEMA}",
           "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
-          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}"
+          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}",
+          "OMOP_RELATIONSHIPS_FOR_DESCENDANTS": "${OMOP_RELATIONSHIPS_FOR_DESCENDANTS}"
         },
         "alp-usermgmt": {
           "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
@@ -525,6 +526,7 @@
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
           "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
+          "CUSTOM_WORK_POOL_CONFIGURATION" : "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
           "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
           "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",
@@ -812,6 +814,10 @@
           "gateway.terminology.concept.filterOptions.read",
           "gateway.terminology.concept.recommended.read",
           "gateway.terminology.concept.hierarchy.read",
+          "gateway.terminology.concept.getStandardConcepts.read",
+          "gateway.terminology.concept.searchByName.read",
+          "gateway.terminology.concept.searchById.read",
+          "gateway.terminology.concept.searchByCode.read",
           "gateway.terminology.fhir.read",
           "codesuggestion.read",
           "mcpchat.read",
@@ -861,7 +867,10 @@
           "portal.dataset.read"
         ],
         "STUDY_RESULTS_READ_RESEARCHER": [
-          "strategus.results.read"
+          "strategus.analysis.read",
+          "strategus.results.read",
+          "strategus.results.write",
+          "strategus.results.delete"
         ]
       },
       "scopes": [
@@ -2719,7 +2728,7 @@
             "gateway.db.database.test"
           ],
           "httpMethods": [
-            "GET"
+            "POST"
           ]
         },
         {
@@ -2841,19 +2850,12 @@
         {
           "path": "^/strategus-results",
           "scopes": [
-            "strategus.results.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/strategus-results",
-          "scopes": [
+            "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
           ],
           "httpMethods": [
+            "GET",
             "POST",
             "DELETE"
           ]

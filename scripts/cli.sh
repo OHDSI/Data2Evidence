@@ -104,6 +104,10 @@ generate_random_secret() {
   LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 40
 }
 
+generate_uuid() {
+  return uuidgen | tr "[:upper:]" "[:lower:]"
+}
+
 generate_jwt() {
   local secret="$1"
   local role="$2"
@@ -168,6 +172,9 @@ case $cmd in
         source $node_modules_path/scripts/lib.sh # functions here
         hanapw=${HANAPW:-$(random-password 16)}
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
+        cat >> $ENVFILE << 'EOF'
+INSTALL_SQLALCHEMY="bash -c 'if [ "$INSTALL_SQLALCHEMY_HANA" = "true" ]; then echo "Installing sqlalchemy-hana..." && uv pip install sqlalchemy-hana==2.2.0 && echo "Running prefect flow-run execute..." && prefect flow-run execute; else echo "Running prefect flow-run execute..." && prefect flow-run execute; fi'"
+EOF
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
         ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
@@ -270,7 +277,7 @@ case $cmd in
             echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
             echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
             echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
-            echo FHIR__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo FHIR__CLIENT_ID=$(generate_uuid) >> $DOTENV_FILE
             echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
             echo LOGTO__ALP_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
             echo LOGTO__ALP_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
@@ -337,6 +344,12 @@ case $cmd in
         setup_zx_cmd
         PORT=$PORT $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE"
         PORT=$PORT $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
+        ;;
+    setupdemohana)
+        source "$ENVFILE"
+        setup_zx_cmd
+        $ZX_CMD "$node_modules_path/scripts/setupdemohana.mjs" -n "$ENVFILE" 
+        $ZX_CMD "$node_modules_path/scripts/check-setupdemohana-flow.mjs" -n "$ENVFILE"
         ;;
     checkflow) 
         setup_zx_cmd

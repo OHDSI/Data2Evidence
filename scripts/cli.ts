@@ -140,7 +140,7 @@ class D2ECli {
       CADDY__ALP__PUBLIC_FQDN: `${this.CADDY__ALP__PUBLIC_FQDN}`,
       DOCKER_TAG_NAME: `${this.DOCKER_TAG_NAME}`,
       ENV_TYPE: `${this.ENV_TYPE}`,
-      FHIR__CLIENT_ID: `${this.generate_random_password(21)}`,
+      FHIR__CLIENT_ID: `${this.generate_uuid()}`,
       FHIR__CLIENT_SECRET: `${this.generate_random_password(64)}`,
       LOGTO__ALP_APP__CLIENT_ID: `${this.generate_random_password(21)}`,
       LOGTO__ALP_APP__CLIENT_SECRET: `${this.generate_random_password(30)}`,
@@ -361,6 +361,11 @@ class D2ECli {
     }
     return password;
   }
+
+  generate_uuid(): string {
+    return crypto.randomUUID();
+  }
+
   base64UrlEncode(str: string | Buffer): string {
     const base64 = Buffer.isBuffer(str)
       ? str.toString("base64")
@@ -372,7 +377,7 @@ class D2ECli {
       .replace(/\n/g, ""); // Remove newlines
   }
 
-  generate_jwt(secret, role, issuer): string {
+  generate_jwt(secret: string, role: string, issuer: string): string {
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + 157788000; // 5 years expiration
     const header = this.base64UrlEncode(
@@ -433,13 +438,13 @@ class D2ECli {
       cmd = `${cmd} stop`;
       if (options.services) {
         let services = options.services;
-        cmd += ` --no-deps ${services}`;
+        cmd += ` ${services}`;
       }
     } else if (command === "build") {
       cmd = `${cmd} build`;
       if (options.services) {
         let services = options.services;
-        cmd += ` --no-deps ${services}`;
+        cmd += ` ${services}`;
       }
     } else if (command === "status") {
       cmd = `${cmd} ps`;
@@ -447,7 +452,7 @@ class D2ECli {
       cmd = `${cmd} logs -t`;
       if (options.services) {
         let services = options.services;
-        cmd += ` --no-deps ${services}`;
+        cmd += ` ${services}`;
       }
     } else if (command === "config") {
       cmd = `${cmd} config`;
@@ -456,21 +461,6 @@ class D2ECli {
     } else if (command === "inithana") {
       cmd = `${cmd} run --rm hana --master-password ${this.hanapw} --agree-to-sap-license`;
     } else if (command === "pull") {
-      if (options.jupyter) {
-        const cmd_pull_jupyter = `docker pull --platform linux/amd64 ${this.DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
-        const proc = spawn(cmd_pull_jupyter, {
-          stdio: ["inherit"],
-          shell: true,
-          env: envVars,
-        });
-        proc.on("close", (code) => {
-          if (code === 0) {
-            console.log("Process completed successfully.");
-          } else {
-            console.log(`Process exited with code ${code}`);
-          }
-        });
-      }
       cmd = `${cmd} pull`;
     }
     return { cmd, env: envVars };
@@ -557,6 +547,31 @@ class D2ECli {
     });
     if (check_setupdemo.error) {
       console.error("Failed to run script:", check_setupdemo.error);
+      process.exit(1);
+    }
+  }
+  setupdemohana() {
+    console.log("Setting up demo database for hana...");
+    const zx_cmd = this.setup_zx_cmd();
+    const setupdemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setupdemohana.mjs -n ${this.ENVFILE}`;
+    const setupdemohana = spawnSync(setupdemohanaCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (setupdemohana.error) {
+      console.error("Failed to run script:", setupdemohana.error);
+      process.exit(1);
+    }
+
+    const checkSetupDemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemohana-flow.mjs -n ${this.ENVFILE}`;
+    const check_setupdemohana = spawnSync(checkSetupDemohanaCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (check_setupdemohana.error) {
+      console.error("Failed to run script:", check_setupdemohana.error);
       process.exit(1);
     }
   }
@@ -683,7 +698,9 @@ class D2ECli {
           process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
         const envVariables = {
-          HANAPW: this.hanapw,
+          HANA_SYSTEM_PASSWORD: this.hanapw,
+          INSTALL_SQLALCHEMY:
+            "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
@@ -880,7 +897,7 @@ class D2ECli {
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
-          stdio: ["inherit"],
+          stdio: "inherit",
           shell: true,
           env: env,
         });
@@ -909,6 +926,7 @@ class D2ECli {
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
+        const options = this.program.opts();
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
@@ -928,10 +946,25 @@ class D2ECli {
             resolve();
           });
         });
-        const { cmd, env } = this.build_docker_command(
-          this.program.opts(),
-          "pull"
-        );
+        if (options.jupyter) {
+          const cmd_pull_jupyter = `docker pull --platform linux/amd64 ${this.DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
+          await new Promise<void>((resolve) => {
+            const proc = spawn(cmd_pull_jupyter, {
+              stdio: "inherit",
+              shell: true,
+              env: process.env,
+            });
+            proc.on("close", (code) => {
+              if (code === 0) {
+                console.log("Process completed successfully.");
+              } else {
+                console.log(`Process exited with code ${code}`);
+              }
+              resolve();
+            });
+          });
+        }
+        const { cmd, env } = this.build_docker_command(options, "pull");
         console.log(`Executing command: ${cmd}`);
         const proc1 = spawn(cmd, {
           stdio: "inherit",
@@ -956,6 +989,14 @@ class D2ECli {
         this.setupdemo();
       });
 
+    this.program
+      .command("setupdemohana")
+      .description(
+        "Load d2e services for hana. Requires d2e init and d2e setup to be run."
+      )
+      .action(async () => {
+        this.setupdemohana();
+      });
     const checkflow_cmd = this.program
       .command("checkflow")
       .description("Check setupdemo flow")
