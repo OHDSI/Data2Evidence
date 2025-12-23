@@ -1,6 +1,5 @@
 {
-  "workspace": [
-  ],
+  "workspace": [],
   "nodeModulesDir": "auto",
   "fmt": {
     "useTabs": false,
