@@ -181,6 +181,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = TreatmentPatterns(node)
         case "kaplan_meier_node":
             nodeobj = KaplanMeierCMAnalysis(node)
+        case "cohort_survival_module_node":
+            nodeobj = CohortSurvivalModuleNode(node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
@@ -1104,6 +1106,42 @@ class KaplanMeierCMAnalysis(Node):
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
 
+class CohortSurvivalModuleNode(Node):
+    def __init__(self, node):
+        super().__init__(node)
+        self.strata = node.get("strata", None) # must be a string with comma separated values
+        self.eventGap = int(node.get("eventGap", 7)) # parse to int
+        self.followupDays = int(node.get("followupDays", 365)) # parse to int
+        self.analysisType = node.get("analysisType", "single_event")
+        self.competingOutcomeCohortTable = node.get("competingOutcomeCohortTable", None)
+
+        self.targetCohortTable = node.get("targetCohortTable", "cohort")
+        self.outcomeCohortTable = node.get("outcomeCohortTable", "cohort")
+
+    def task(self, input: Dict[str, Result], task_run_context):
+        with ro.default_converter.context():
+            try:
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
+                rStrategus = ro.packages.importr('Strategus')
+                rCohortSurvivalModule = rStrategus.CohortSurvivalModule['new']()
+                rCreateCohortSurvivalModuleSpecifications = rCohortSurvivalModule['createModuleSpecifications']
+                cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
+                targetCohortIds = [node.cohortId for node in cohortDefNodes if node.cohortType == CohortNodeType.TARGET]
+                outcomeCohortIds = [node.cohortId for node in cohortDefNodes if node.cohortType == CohortNodeType.OUTCOME]
+                rCohortSurvivalModuleSpec = rCreateCohortSurvivalModuleSpecifications(
+                    targetCohortId = convert_py_to_R(targetCohortIds[0]),
+                    targetCohortTable = convert_py_to_R(self.targetCohortTable),
+                    outcomeCohortId = convert_py_to_R(outcomeCohortIds[0]),
+                    outcomeCohortTable = convert_py_to_R(self.outcomeCohortTable),
+                    strata = convert_py_to_R([s.strip() for s in self.strata.split(",")]) if self.strata else convert_py_to_R(None),
+                    eventGap = convert_py_to_R(self.eventGap),
+                    followUpDays = convert_py_to_R(self.followupDays),
+                    competingOutcomeCohortTable = convert_py_to_R(self.competingOutcomeCohortTable) if self.competingOutcomeCohortTable else convert_py_to_R(None),
+                    analysisType = convert_py_to_R(self.analysisType)
+                )
+                return Result(False,  rCohortSurvivalModuleSpec, self, task_run_context)
+            except Exception as e:
+                return Result(True, tb.format_exc(), self, task_run_context)
 
 class StrategusNode(Node):
     def __init__(self, node):
