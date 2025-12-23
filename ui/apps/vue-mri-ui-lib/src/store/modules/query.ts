@@ -1224,6 +1224,15 @@ const actions = {
     boolFilterContainer.props.filterCards = [...patientCard, ...newOrder]
     commit(types.BOOLFILTERCONTAINER_UPDATE, boolFilterContainer)
   },
+  removeBoolFilterContainer({ getters, dispatch }, { boolFilterContainerId }) {
+    const boolContainer = getters.getBoolContainer(getters.getBoolContainerRoot())
+    const boolContainerModel = denormalize(boolContainer, boolContainerSchema, getters.getEntities)
+    boolContainerModel.props.boolfiltercontainers.splice(
+      boolContainerModel.props.boolfiltercontainers.findIndex(m => m.id === boolFilterContainerId),
+      1
+    )
+    dispatch('setBoolContainerState', boolContainerModel)
+  },
   updateCohortEntryExit({ commit }, { filterCardId, key, toggle }) {
     commit(types.FILTERCARD_TOGGLE_IS_ENTRY_EXIT, { filterCardId, key, toggle })
   },
