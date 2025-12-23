@@ -106,15 +106,15 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set Y-axis to month of birth
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
-  await page.locator('div.dropdownmenu-container').getByText('Month of Birth').nth(1).click()
+  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
+  await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
   await takeScreenshot(page, testInfo)
 
   // Set Y-axis to patient count
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
+  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
   await page.locator('div.dropdownmenu-container').getByText('Patient Count').first().click()
 
   // Set X1-axis to condition concept name
@@ -127,7 +127,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set X2-axis to race concept id
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
+  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
   await page.locator('#pane-right').getByText('Race concept id').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.02 })
@@ -135,7 +135,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set X2-axis to year of birth with bin size of 50
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
+  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
   await page.locator('#pane-right').getByText('Year of Birth').first().click()
   await page.locator('button.binningButton').nth(1).click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
