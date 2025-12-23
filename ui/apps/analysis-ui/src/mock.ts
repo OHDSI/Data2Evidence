@@ -8,7 +8,6 @@ export function createMockPortalProps(): PortalProps {
     username: "dev-user",
     datasetId: "mock-dataset-id",
     locale: "en",
-    isActiveRoute: true,
     isAtlas: true,
   };
 }
