@@ -127,7 +127,12 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set X2-axis to race concept id
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
+  await page
+    .locator('div.dropdownmenu-container')
+    .getByRole('listitem')
+    .filter({ hasText: 'Basic Data' })
+    .last()
+    .click()
   await page.locator('#pane-right').getByText('Race concept id').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.02 })
