@@ -119,7 +119,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
 
   // Set X1-axis to condition concept name
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
+  await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
 
   // Remove condition concept name value in filter card
