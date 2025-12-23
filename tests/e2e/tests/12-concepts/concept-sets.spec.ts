@@ -4,6 +4,12 @@ const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
+let screenshotIndex = 0
+function takeScreenshot(page: any) {
+  screenshotIndex++
+  return page.screenshot({ path: `concept-sets-${screenshotIndex}.png` })
+}
+
 test(TEST_NAME, async ({ page }) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
@@ -64,12 +70,14 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   await test.step('Attempt to create another concept set with the same name', async () => {
+    await page.reload()
+    await takeScreenshot(page)
     await page.getByTestId('button').click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
-    await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis')
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(
-      page.getByText(`Concept set name "Chronic sinusitis" already exists. Please enter another name.`)
+      page.getByText(`Concept set name "${conceptSetName}" already exists. Please enter another name.`)
     ).toBeVisible()
     await page.getByRole('button', { name: 'Close' }).click()
   })
