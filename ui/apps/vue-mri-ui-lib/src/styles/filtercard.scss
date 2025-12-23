@@ -103,6 +103,9 @@
       margin-left: 8px;
       color: var(--color-ui-darkest-text);
     }
+    &:hover {
+      color: var(--color-ui-darkest-text);
+    } 
   }
 
   .dropdown-scroll {
