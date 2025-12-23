@@ -115,38 +115,6 @@ export class JobpluginsAPI {
     );
   }
 
-  async copyCDMSchemaParquet(
-    databaseCode: string,
-    sourceSchemaName: string,
-    targetSchemaName: string,
-    dialect: string,
-    snapshotCopyConfig: any
-  ): Promise<any> {
-    const data = {
-      database: databaseCode,
-      sourceSchema: sourceSchemaName,
-      targetSchemaName: targetSchemaName,
-    };
-    this.logger.info(
-      `Copy CDM schema (${JSON.stringify(data)}) into parquet file`
-    );
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "copyCDMSchemaParquet",
-      requestType: "post",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshotparquet/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
-      requestBody: { snapshotCopyConfig: snapshotCopyConfig },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
-      return result.data;
-    }
-    throw new Error(
-      `Failed to copy CDM schema ${sourceSchemaName} in ${databaseCode} as parquet`
-    );
-  }
-
   async updateSchema(
     schemaName: string,
     dataModel: string,
