@@ -1194,35 +1194,19 @@ const actions = {
     dispatch('setBoolContainerState', boolContainerModel)
     dispatch('resetAxes')
   },
-  updateBoolFilterContainer({ commit, getters, rootGetters, dispatch }, { boolFilterContainerId, filterCardId, type }) {
-    const boolFilterContainer = getters.getBoolFilterContainer(boolFilterContainerId)
-    if (type === 'add') {
-      // add filtercardid
-      boolFilterContainer.props.filterCards.push(filterCardId)
-    }
-    if (type === 'remove') {
-      // remove filtercardid
-      boolFilterContainer.props.filterCards.splice(boolFilterContainer.props.filterCards.indexOf(filterCardId), 1)
-    }
-    if (boolFilterContainer.props.filterCards.length) {
-      commit(types.BOOLFILTERCONTAINER_UPDATE, boolFilterContainer)
-    } else {
-      const boolContainer = getters.getBoolContainer(getters.getBoolContainerRoot())
-      const boolContainerModel = denormalize(boolContainer, boolContainerSchema, getters.getEntities)
-      boolContainerModel.props.boolfiltercontainers.splice(
-        boolContainerModel.props.boolfiltercontainers.findIndex(m => m.id === boolFilterContainerId),
-        1
-      )
-
-      dispatch('setBoolContainerState', boolContainerModel)
-    }
-  },
   reorderFilterCards({ commit, getters }, { boolFilterContainerId, newOrder }) {
     const boolFilterContainer = getters.getBoolFilterContainer(boolFilterContainerId)
-    // Preserve 'patient' card at the beginning and merge with new order
+    // newOrder comes from nonBasicCards computed property which already filters out 'patient' cards.
+    // Extract and preserve 'patient' card at the beginning, then merge with the reordered cards.
     const patientCard = boolFilterContainer.props.filterCards.filter(f => f === 'patient')
-    boolFilterContainer.props.filterCards = [...patientCard, ...newOrder]
-    commit(types.BOOLFILTERCONTAINER_UPDATE, boolFilterContainer)
+    const updatedBoolFilterContainer = {
+      ...boolFilterContainer,
+      props: {
+        ...boolFilterContainer.props,
+        filterCards: [...patientCard, ...newOrder],
+      },
+    }
+    commit(types.BOOLFILTERCONTAINER_UPDATE, updatedBoolFilterContainer)
   },
   removeBoolFilterContainer({ getters, dispatch }, { boolFilterContainerId }) {
     const boolContainer = getters.getBoolContainer(getters.getBoolContainerRoot())
