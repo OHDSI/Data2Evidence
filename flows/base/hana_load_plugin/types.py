@@ -13,7 +13,7 @@ class DataloadOptions(BaseModel):
     schema_name: str
     vocab_schema: str
     results_schema: str
-    load_csvs: Optional[bool] = True
+    load_csvs: Optional[bool] = False
     
     @property
     def use_cache_db(self) -> str:

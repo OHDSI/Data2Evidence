@@ -70,7 +70,7 @@
                       { "type": "boolean" },
                       { "type": "null" }
                     ],
-                    "default": true,
+                    "default": false,
                     "title": "Load CSVs into CDM schema"
                   }
                 },
