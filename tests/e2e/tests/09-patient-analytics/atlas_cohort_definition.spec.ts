@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test'
 
-test('atlas-lite cohort creation', async ({ page }) => {
+const TEST_NAME = 'atlas-lite cohort creation'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Retry up to 3 times for flaky tests
+
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')

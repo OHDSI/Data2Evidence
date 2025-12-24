@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test'
 const TEST_NAME = 'dataset-new-schema-omop-cdm-plugin-54'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Retry up to 3 times for flaky tests
 
 const randomString = 'omop54' + Math.random().toString(36).substring(2, 10)
 
@@ -49,7 +50,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   // Find and delete the child dataset first (Test Cache)
   const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
   await expect(testCacheRow).toBeVisible({ timeout: 30000 })

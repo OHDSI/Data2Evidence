@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test'
 const TEST_NAME = 'patient_analytics_bookmark'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Retry up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   test.slow()

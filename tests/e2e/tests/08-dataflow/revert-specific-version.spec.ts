@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test'
 
-test('test', async ({ page }) => {
+const TEST_NAME = 'dataflow-revert-specific-version'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Retry up to 3 times for flaky tests
+
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
