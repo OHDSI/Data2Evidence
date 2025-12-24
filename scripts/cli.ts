@@ -241,6 +241,7 @@ class D2ECli {
       .option("-j, --jupyter", "Include jupyter")
       .option("-m, --mlflow", "Include mlflow")
       .option("-h, --hana", "")
+      .option("--hades", "")
       .option(
         "-c, --compose-file",
         "[PATH] is path to an additional docker compose file"
@@ -950,6 +951,24 @@ class D2ECli {
           const cmd_pull_jupyter = `docker pull --platform linux/amd64 ${this.DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
           await new Promise<void>((resolve) => {
             const proc = spawn(cmd_pull_jupyter, {
+              stdio: "inherit",
+              shell: true,
+              env: process.env,
+            });
+            proc.on("close", (code) => {
+              if (code === 0) {
+                console.log("Process completed successfully.");
+              } else {
+                console.log(`Process exited with code ${code}`);
+              }
+              resolve();
+            });
+          });
+        }
+        if (options.hades) {
+          const cmd_pull_hades = `docker pull --platform linux/amd64 ${this.DOCKER_IMAGE_PREFIX}d2e/flow-hades:${this.DOCKER_TAG_NAME}`;
+          await new Promise<void>((resolve) => {
+            const proc = spawn(cmd_pull_hades, {
               stdio: "inherit",
               shell: true,
               env: process.env,
