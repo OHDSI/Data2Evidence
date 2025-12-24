@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
-
+from typing import Optional
 
 class FlowActionType(str, Enum):
     CREATE_DATA_MODEL = "create_datamodel"
@@ -13,6 +13,7 @@ class DataloadOptions(BaseModel):
     schema_name: str
     vocab_schema: str
     results_schema: str
+    load_csvs: Optional[bool] = False
     
     @property
     def use_cache_db(self) -> str:

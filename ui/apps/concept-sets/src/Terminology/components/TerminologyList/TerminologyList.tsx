@@ -804,6 +804,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
       sx: {
         whiteSpace: "normal",
         wordWrap: "break-word",
+        color: "#000080",
         border: "none",
       },
     },
@@ -812,6 +813,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     },
     muiTableHeadCellProps: {
       sx: {
+        backgroundColor: "#edf2f7",
         padding: "6px",
         "& .MuiSelect-select": {
           fontSize: 12,

@@ -3,8 +3,9 @@ import { Feedback } from "../types";
 import Divider from "@mui/material/Divider";
 import { Button, Dialog } from "@portal/components";
 import { api } from "../axios/api";
-import "./ConceptSetDeleteDialog.scss";
 import { useTranslation } from "../hooks";
+import { i18nKeys } from "../context/state";
+import "./ConceptSetDeleteDialog.scss";
 
 interface ConceptSetDeleteDialogProps {
   conceptSet?: { id: number; name: string };
@@ -23,7 +24,7 @@ const ConceptSetDeleteDialog: FC<ConceptSetDeleteDialogProps> = ({
   onClose,
   onDeleted,
 }) => {
-  const { getText, i18nKeys } = useTranslation();
+  const { getText } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>({});
   const [isLoading, setIsLoading] = useState(false);
 
