@@ -224,20 +224,6 @@ export default {
     }
   },
   created() {
-    // const userAgent = navigator.userAgent || navigator.vendor || myWindow.opera
-    // if (sap && sap.ui && sap.ui.Device && sap.ui.Device.system && sap.ui.Device.system.phone) {
-    //   this.supportedBrowser = false
-    // }
-    // if (/Webkit/i.test(userAgent) && /iPad|iPhone|iPod/i.test(userAgent)) {
-    //   this.supportedBrowser = false
-    // }
-    // if (
-    //   !(!!myWindow.MSInputMethodContext && !!(document as any).documentMode) && // IE11
-    //   !/Firefox|Chrome|Safari/i.test(userAgent)
-    // ) {
-    //   // Firefox, Chrome, Safari
-    //   this.supportedBrowser = false
-    // }
   },
   watch: {
     getActiveBookmark(newVal, oldVal) {
