@@ -62,7 +62,6 @@ interface FormData {
   name: string;
   summary: string;
   showRequestAccess: boolean;
-  cleansedSchemaOption: boolean;
   description: string;
   dataModel: string;
   dataModelCustom: string;
@@ -147,7 +146,6 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   summary: "",
   showRequestAccess: false,
-  cleansedSchemaOption: false,
   description: "",
   dataModel: "", //Optional
   dataModelCustom: "", //Optional
@@ -286,6 +284,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     [formData.schemaOption]
   );
 
+  const displayResultSchemaInput = useMemo(
+    () => formData.schemaOption !== SchemaTypes.FHIR,
+    [formData.schemaOption]
+  );
+
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       setFeedback({});
@@ -421,7 +424,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, vocabSchemaValue: { required: true } };
     }
 
-    if (!resultSchemaValue) {
+    if (!resultSchemaValue && schemaOption !== SchemaTypes.FHIR) {
       formError = { ...formError, resultSchemaValue: { required: true } };
     }
 
@@ -473,7 +476,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       vocabSchemaValue,
       resultSchemaValue,
-      cleansedSchemaOption,
       name,
       summary,
       showRequestAccess,
@@ -511,7 +513,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       vocabSchemaValue,
       resultSchemaValue,
-      cleansedSchemaOption,
       dataModel: parsedDataModel,
       plugin: dataModelDetails.plugin,
       databaseCode,
@@ -889,19 +890,21 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             </div>
           )
         )}
-        <div style={{ marginBottom: "32px" }}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME)}
-            value={formData.resultSchemaValue}
-            onChange={(event) => handleFormDataChange({ resultSchemaValue: event.target.value })}
-            error={formError.resultSchemaValue.required}
-          />
-          {formError.resultSchemaValue.required && (
-            <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-          )}
-        </div>
+        {displayResultSchemaInput && (
+          <div style={{ marginBottom: "32px" }}>
+            <TextField
+              fullWidth
+              variant="standard"
+              label={getText(i18nKeys.ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME)}
+              value={formData.resultSchemaValue}
+              onChange={(event) => handleFormDataChange({ resultSchemaValue: event.target.value })}
+              error={formError.resultSchemaValue.required}
+            />
+            {formError.resultSchemaValue.required && (
+              <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+            )}
+          </div>
+        )}
         {/* Data Model Options */}
         {displayDataModels && (
           <div style={{ marginBottom: "32px" }}>

@@ -60,6 +60,7 @@ export interface IPluginItem {
   enabled?: boolean;
   requiredRoles?: string[];
   type?: string;
+  autoMount?: boolean;
   proxySource?: string;
   proxyDestination?: string;
   proxyTarget?: string;

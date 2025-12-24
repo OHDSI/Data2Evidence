@@ -69,18 +69,6 @@
                                         "default": null,
                                         "title": "Schema Name"
                                     },
-                                    "cleansed_schema_option": {
-                                        "anyOf": [
-                                            {
-                                                "type": "boolean"
-                                            },
-                                            {
-                                                "type": "null"
-                                            }
-                                        ],
-                                        "default": false,
-                                        "title": "Cleansed Schema Option"
-                                    },
                                     "vocab_schema": {
                                         "anyOf": [
                                             {
