@@ -2,68 +2,94 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
-  SCOPE,
 } from "@danet/core";
 import { contentType } from "mime-types";
 import pg from "npm:pg";
 import { env, services } from "../env.ts";
-import { RequestContextService } from "../common/request-context.service.ts";
 
-@Injectable({ scope: SCOPE.REQUEST })
+interface UploadFile {
+  originalname: string;
+  buffer: ArrayBuffer | Uint8Array;
+  mimetype: string;
+}
+
+@Injectable()
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
   private readonly authToken: string;
-  private readonly requestContextService: RequestContextService;
-  private pgclient;
-  private pgOpt;
+  private static pgPool: pg.Pool;
+  private static isInitialized = false;
 
-  constructor(requestContextService: RequestContextService) {
-    this.requestContextService = requestContextService;
+  constructor() {
     this.baseUrl = services.supabaseStorage;
-    // this.authToken = this.requestContextService.getOriginalToken() || "";
     this.authToken = env.SUPABASE_STORAGE_JWT_TOKEN;
 
-    const envObj = Deno.env.toObject();
-    this.pgOpt = {
-      user: envObj.PG_USER,
-      password: envObj.PG_PASSWORD,
-      host: envObj.PG__HOST,
-      port: parseInt(envObj.PG__PORT),
-      database: envObj.PG__DB_NAME,
-      ssl: (() => {
-        let ssl = false;
-        try {
-          if (envObj.PG__SSL) {
-            ssl = JSON.parse(envObj.PG__SSL.toLowerCase());
-          }
-          if (envObj.PG__CA_ROOT_CERT) {
-            ssl = {
-              rejectUnauthorized: true,
-              ca: envObj.PG__CA_ROOT_CERT,
-            };
-          }
-        } catch (e) {
-          console.error(`Error parsing SSL config: ${e}`);
-        }
-        return ssl;
-      })(),
-    };
-    this.pgclient = new pg.Client(this.pgOpt);
-    this.initializeDb();
+    // Only initialize once for the singleton
+    if (!SupabaseStorageClient.isInitialized) {
+      SupabaseStorageClient.isInitialized = true;
 
-    this.createBucket(this.DEFAULT_BUCKET);
+      const envObj = Deno.env.toObject();
+      const pgOpt = {
+        user: envObj.PG_USER,
+        password: envObj.PG_PASSWORD,
+        host: envObj.PG__HOST,
+        port: parseInt(envObj.PG__PORT),
+        database: envObj.PG__DB_NAME,
+        max: 1,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        ssl: (() => {
+          let ssl: boolean | { rejectUnauthorized: boolean; ca: string } =
+            false;
+          try {
+            if (envObj.PG__SSL) {
+              ssl = JSON.parse(envObj.PG__SSL.toLowerCase());
+            }
+            if (envObj.PG__CA_ROOT_CERT) {
+              ssl = {
+                rejectUnauthorized: true,
+                ca: envObj.PG__CA_ROOT_CERT,
+              };
+            }
+          } catch (e) {
+            console.error(`Error parsing SSL config: ${e}`);
+          }
+          return ssl;
+        })(),
+      };
 
-    // Create the data transformation bucket to store uploaded files
-    this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
+      SupabaseStorageClient.pgPool = new pg.Pool(pgOpt);
+
+      SupabaseStorageClient.pgPool.on("error", (err) => {
+        console.error("Unexpected error on idle PostgreSQL client", err);
+      });
+
+      // Test connection and initialize buckets
+      this.initializeDb();
+      this.createBucket(this.DEFAULT_BUCKET);
+      this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
+    }
+  }
+
+  async closePool() {
+    if (SupabaseStorageClient.pgPool) {
+      await SupabaseStorageClient.pgPool.end();
+      console.log("PostgreSQL connection pool closed");
+    }
   }
 
   private async initializeDb() {
+    let client;
     try {
-      await this.pgclient.connect();
+      client = await SupabaseStorageClient.pgPool.connect();
       console.log("Successfully connected to PostgreSQL database");
     } catch (e) {
       console.error(`Error connecting to PostgreSQL: ${e}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -108,14 +134,10 @@ export class SupabaseStorageClient {
     pathType: "dataset" | "data-transformation" = "dataset"
   ) {
     const targetBucket = bucketName || this.DEFAULT_BUCKET;
+    let client;
 
     try {
-      if (
-        !this.pgclient ||
-        this.pgclient.connectionParameters.state === "closed"
-      ) {
-        await this.initializeDb();
-      }
+      client = await SupabaseStorageClient.pgPool.connect();
 
       let folderPath;
 
@@ -136,7 +158,7 @@ export class SupabaseStorageClient {
         AND name NOT LIKE $3
       `;
 
-      const result = await this.pgclient.query(query, [
+      const result = await client.query(query, [
         targetBucket,
         `${folderPath}/%`,
         `${folderPath}/%/%`, // Exclude nested folders
@@ -172,6 +194,11 @@ export class SupabaseStorageClient {
         `Error in list method: ${e instanceof Error ? e.message : String(e)}`
       );
       return [];
+    } finally {
+      // Always release the client back to the pool
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -245,7 +272,7 @@ export class SupabaseStorageClient {
 
   async upload(
     id: string,
-    file: Multer.File,
+    file: UploadFile,
     bucketName?: string,
     pathType: "dataset" | "data-transformation" = "dataset"
   ) {
