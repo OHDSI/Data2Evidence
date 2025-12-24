@@ -36,7 +36,7 @@ export class SupabaseStorageClient {
         host: envObj.PG__HOST,
         port: parseInt(envObj.PG__PORT),
         database: envObj.PG__DB_NAME,
-        max: 10,
+        max: 1,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 2000,
         ssl: (() => {
