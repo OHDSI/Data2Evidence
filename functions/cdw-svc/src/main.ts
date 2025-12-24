@@ -292,7 +292,7 @@ const initRoutes = (
         datasetId
       );
 
-      // Determine if user has end-user privilege (researcher access to this dataset)
+      // Determine if user has end-user privilege (system admin access)
       let hasEndUserPrivilege = false;
       try {
         const userMgmtUrl = env.SERVICE_ROUTES?.usermgmt;
@@ -300,11 +300,10 @@ const initRoutes = (
           const userMgmtApi = new UserMgmtAPI(userMgmtUrl);
           const userId = user.getUser();
           const userRoles = await userMgmtApi.getUserGroups(token, userId);
-          hasEndUserPrivilege = userRoles?.alp_role_study_researcher?.includes(datasetId) ?? false;
+          hasEndUserPrivilege = userRoles?.alp_role_system_admin === true;
         }
       } catch (err) {
         log.warn(`Failed to fetch user permissions: ${err.message}`);
-        // Default to false if permission check fails
         hasEndUserPrivilege = false;
       }
 
