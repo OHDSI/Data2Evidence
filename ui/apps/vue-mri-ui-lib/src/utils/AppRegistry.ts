@@ -54,7 +54,7 @@ function registerNavigationApps() {
         registerApplication({
           name: item.appName,
           app: () => window.System.import(item.appName).then((module: any) => module.default || module),
-          activeWhen: location => item.alwaysActive || location.pathname === item.route,
+          activeWhen: location => item.autoMount || location.pathname === item.route,
           customProps: () => {
             const portalAPI = getPortalAPI()
             return {
@@ -63,8 +63,8 @@ function registerNavigationApps() {
               username: portalAPI?.username,
               datasetId: portalAPI?.studyId,
               locale: portalAPI?.locale,
-              isActiveRoute: location.pathname === item.route,
               isAtlas: portalAPI?.isLocal || false,
+              autoMount: item.autoMount,
               ...(item.customProps || {}),
             }
           },

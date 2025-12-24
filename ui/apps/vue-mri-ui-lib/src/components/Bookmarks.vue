@@ -17,7 +17,7 @@
                 class="form-control"
                 v-focus
                 required
-                maxlength="40"
+                maxlength="255"
                 v-model="renamedBookmark"
                 @keydown.enter="confirmRenameBookmark"
               />
@@ -26,7 +26,7 @@
               {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
             </div>
             <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-              Filter name must not exceed 40 characters
+              Filter name must not exceed 255 characters
             </div>
             <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']">
               {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
@@ -225,7 +225,7 @@ export default {
   props: ['unloadBookmarkEv', 'initBookmarkId'],
   data() {
     return {
-      maxLength: 40,
+      maxLength: 255,
       selectedBookmark: {},
       renamedBookmark: '',
       schemaName: '',
