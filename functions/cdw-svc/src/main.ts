@@ -9,6 +9,7 @@ import {
   User,
   Connection,
   utils,
+  UserMgmtAPI,
 } from "@alp/alp-base-utils";
 import express from "express";
 import { SettingsFacade } from "./qe/settings/SettingsFacade";
@@ -290,6 +291,23 @@ const initRoutes = (
         token,
         datasetId
       );
+
+      // Determine if user has end-user privilege (researcher access to this dataset)
+      let hasEndUserPrivilege = false;
+      try {
+        const userMgmtUrl = env.SERVICE_ROUTES?.usermgmt;
+        if (userMgmtUrl && token && user) {
+          const userMgmtApi = new UserMgmtAPI(userMgmtUrl);
+          const userId = user.getUser();
+          const userRoles = await userMgmtApi.getUserGroups(token, userId);
+          hasEndUserPrivilege = userRoles?.alp_role_study_researcher?.includes(datasetId) ?? false;
+        }
+      } catch (err) {
+        log.warn(`Failed to fetch user permissions: ${err.message}`);
+        // Default to false if permission check fails
+        hasEndUserPrivilege = false;
+      }
+
       new CDWServicesFacade(
         analyticsConnection,
         new FfhQeConfig(
@@ -300,7 +318,7 @@ const initRoutes = (
           isTestEnvironment
         ),
         isTestEnvironment
-      ).invokeService(req.query.action, req.body, false, (err, result) => {
+      ).invokeService(req.query.action, req.body, hasEndUserPrivilege, (err, result) => {
         if (err) {
           log.error(err);
           return res.status(500).send({});
