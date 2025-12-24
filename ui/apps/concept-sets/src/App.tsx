@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ThemeProvider } from "@mui/material";
 import {
   ConceptSetsProvider,
@@ -16,9 +16,7 @@ import "./webcomponents/registerWebComponents";
 function AppContent(props: PortalProps) {
   const dispatch = useContext(ConceptSetsDispatchContext);
   const [userId, setUserId] = useState<string | undefined>();
-  const [isActiveRoute, setIsActiveRoute] = useState(
-    props.isActiveRoute || false
-  );
+  const [isActiveRoute, setIsActiveRoute] = useState(false);
 
   const initializeUserId = useCallback(async () => {
     if (!userId && props.getToken) {
@@ -65,10 +63,6 @@ function AppContent(props: PortalProps) {
   }, [dispatch, props.locale]);
 
   useEffect(() => {
-    setIsActiveRoute(props.isActiveRoute || false);
-  }, [props.isActiveRoute]);
-
-  useEffect(() => {
     const handleRouteChange: EventListener = (event: Event) => {
       const evt = event as CustomEvent<{ activeRoute: string }>;
       setIsActiveRoute(evt.detail.activeRoute === "/concepts");
@@ -82,13 +76,36 @@ function AppContent(props: PortalProps) {
 
   return (
     <>
-      {isActiveRoute && <ConceptSets isAtlas={!!props.isAtlas} />}
+      {((props.autoMount != null && !props.autoMount) || isActiveRoute) && (
+        <ConceptSets isAtlas={!!props.isAtlas} />
+      )}
       <TerminologyWithEventListener isAtlas={!!props.isAtlas} />
     </>
   );
 }
 
 export default function App(props: PortalProps) {
+  const [customProps, setCustomProps] = useState<Partial<PortalProps>>({});
+
+  useEffect(() => {
+    const handlePropsChange = (event: Event) => {
+      const { appId, ...newProps } = (event as CustomEvent).detail || {};
+      if (appId === props.appId) {
+        setCustomProps(newProps);
+      }
+    };
+
+    window.addEventListener("custom-props-changed", handlePropsChange);
+    return () => {
+      window.removeEventListener("custom-props-changed", handlePropsChange);
+    };
+  }, [props.appId]);
+
+  const mergedProps = useMemo(
+    () => ({ ...props, ...customProps }),
+    [props, customProps]
+  );
+
   const mockGetToken = async () => {
     // Mock JWT token with sub: 'testuser'
     const mockPayload = { sub: "testuser" };
@@ -99,10 +116,10 @@ export default function App(props: PortalProps) {
   };
 
   const propsWithMock = {
-    ...props,
+    ...mergedProps,
     // Use mock getToken only when isAtlas is true (standalone mode)
     // Otherwise use the actual getToken from portal (no fallback)
-    getToken: props.isAtlas ? mockGetToken : props.getToken,
+    getToken: props.isAtlas ? mockGetToken : mergedProps.getToken,
   };
 
   const theme = props.isAtlas ? theme_atlas : theme_d2e;

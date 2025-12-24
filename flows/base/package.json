@@ -84,6 +84,14 @@
                     ],
                     "default": null,
                     "title": "Datasets"
+                  },
+                  "load_csvs": {
+                    "anyOf": [
+                      { "type": "boolean" },
+                      { "type": "null" }
+                    ],
+                    "default": false,
+                    "title": "Load CSVs into CDM schema"
                   }
                 },
                 "required": [

@@ -6,6 +6,5 @@ export interface PortalProps extends Partial<ParcelProps> {
   username?: string;
   datasetId?: string;
   locale?: string;
-  isActiveRoute?: boolean;
   isAtlas?: boolean;
 }
