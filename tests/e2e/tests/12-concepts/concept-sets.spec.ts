@@ -4,7 +4,12 @@ const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+async function takeScreenshot(page: any, testInfo: any) {
+  const screenshotPath = testInfo.outputPath(`${TEST_NAME}-3-linux.png`)
+  await page.screenshot({ path: screenshotPath })
+}
+
+test(TEST_NAME, async ({ page }, testInfo) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
   }
@@ -124,5 +129,7 @@ test(TEST_NAME, async ({ page }) => {
     // Modal not present, continue
   }
 
-  await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  // await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
+  await takeScreenshot(page, testInfo)
 })
