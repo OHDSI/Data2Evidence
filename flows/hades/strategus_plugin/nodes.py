@@ -1,3 +1,4 @@
+import io
 import os
 import logging
 import json
@@ -9,6 +10,7 @@ from pandas.api.types import is_list_like, is_dict_like
 
 from rpy2 import robjects as ro
 from rpy2.robjects.packages import importr
+from rpy2.rinterface_lib import callbacks
 import traceback as tb
 from functools import partial
 from typing import List, Dict
@@ -23,7 +25,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .custom_types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
-from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file
+from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, is_strategus_upload_successful, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file
 
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -1328,12 +1330,24 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                     resultsConnectionDetails = rConnectionDetails
                 )
 
+            log_buffer = io.StringIO()
+            def add_to_buffer(x):
+                log_buffer.write(x)
+                print(x, end="") 
+            original_write_console_out = callbacks.consolewrite_print
+            callbacks.consolewrite_print = add_to_buffer
+
             # upload results to the database
             rStrategus.uploadResults(
                 resultsConnectionDetails = rConnectionDetails,
                 analysisSpecifications = rAnalysisSpec,
                 resultsDataModelSettings = resultsDataModelSettings
             )
+            captured_logs = log_buffer.getvalue()
+            success, errorMsg = is_strategus_upload_successful(captured_logs)
+            if not success:
+                raise RuntimeError(errorMsg)
+            print('Strategus results uploaded successfully.')
         except Exception as e:
             log_file_path = f"/app/errorReportSql.txt"
             # if file exists, create an artifact to store the error logs
@@ -1345,6 +1359,9 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                         markdown=file_contents
                     )
             raise RuntimeError('Uploading results of strategus has failed')
+        finally:
+            callbacks.consolewrite_print = original_write_console_out
+            log_buffer.close()
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]

@@ -155,6 +155,40 @@ def is_strategus_execution_successful(logFilePath: str) -> tuple[bool, str]:
             errorMsg += line.strip() + "\n"
     return (not error_found, msg if error_found else "")
 
+def is_strategus_upload_successful(logs: str) -> tuple[bool, str]:
+    logger = Logger()
+    logger.info('Checking strategus upload log for errors...')
+
+    # captured_logs = log_buffer.getvalue()
+    # for pattern in ERROR_PATTERNS:
+    #     if pattern in captured_logs:
+    #         # Find the specific line containing the error for the exception message
+    #         lines = captured_logs.splitlines()
+    #         relevant_line = next((l for l in lines if pattern in l), "Unknown error")
+            
+    #         logger.error(f"Detected failure pattern '{pattern}' in R console output.")
+    #         raise ValueError(f"Strategus upload failed midway: {relevant_line.strip()}")
+
+    lines = logs.splitlines()
+    summary_idx = None
+    for idx, line in enumerate(lines):
+        pattern = re.compile(r"─* upload summary ─*", re.IGNORECASE)
+        if pattern.search(line.lower()):
+            print("Found upload summary line:", line)
+            summary_idx = idx
+            break
+    msg = "Strategus upload failed, check log for details."
+    if summary_idx is None:
+        return False, msg
+    error_found = False
+    errorMsg = ""
+    pattern = re.compile(r"✖ .*Module", re.UNICODE)
+    for line in lines[summary_idx+1:]:
+        if pattern.search(line):
+            error_found = True
+            errorMsg += line.strip() + "\n"
+    return (not error_found, msg if error_found else "")
+
 def save_strategus_log_file(log_file_path: str):
     logger = Logger()
     if os.path.exists(log_file_path):
