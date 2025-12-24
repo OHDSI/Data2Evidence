@@ -31,7 +31,7 @@ sap.ui.define([
             .getModel("testModel");
 
         this.noErrorMsg = "HPH_CDM_CFG_TEST_NO_ERRORS";
-        this.noPermissionMsg = "HPH_CDM_CFG_TEST_NO_PERMISSION"; // HIPAA: Message when user lacks data access
+        this.noPermissionMsg = "HPH_CDM_CFG_TEST_NO_PERMISSION";
         this.testDialogContent.byId("samplesBox")
             .bindAggregation("items", {
                 path: "testModel>/testSampleValues",
