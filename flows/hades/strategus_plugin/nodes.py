@@ -1365,8 +1365,10 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                     )
             raise RuntimeError('Uploading results of strategus has failed')
         finally:
-            callbacks.consolewrite_print = original_write_console_out
-            log_buffer.close()
+            if(original_write_console_out):
+                callbacks.consolewrite_print = original_write_console_out
+            if log_buffer:
+                log_buffer.close()
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]
