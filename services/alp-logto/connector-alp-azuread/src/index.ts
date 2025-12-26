@@ -115,19 +115,34 @@ const assignLogtoRolesByAzureGroups = async (
   // check groups and compare with env
   const azureGroups = decodedIdToken["groups"];
   const rolesGroupMap = JSON.parse(process.env.LOGTO_ROLES_AZ_GROUPS_MAPPING!);
-  const eligibleLogtoRoles = Object.keys(rolesGroupMap).filter(
-    (role) => azureGroups.indexOf(rolesGroupMap[role]) > -1
+  const eligibleLogtoRoles = Object.keys(rolesGroupMap || {}).filter(
+    (role) => azureGroups?.indexOf(rolesGroupMap[role]) > -1
   );
 
   const oid = decodedIdToken["oid"];
   const name = decodedIdToken["name"];
   const email = decodedAccessToken["email"] || decodedAccessToken["upn"]; // For D4L & MS
   const logtoAPItoken: any = await getM2MLogtoAPIToken();
-  let logtoUserID: string = await getLogtoUserId(email, logtoAPItoken);
+  let logtoUserID: string = await getLogtoUserIdByEmail(email, logtoAPItoken);
 
   if (!logtoUserID) {
+    let username = (name || "").replace(/[^a-zA-Z0-9_]/g, "_");
+
+    // Verify if username is taken
+    const logtoUsersByName = await getLogtoUsersIdByName(
+      username,
+      logtoAPItoken
+    );
+    if (logtoUsersByName?.length > 0) {
+      const revisedUsername = `${username}_${logtoUsersByName?.length + 1}`;
+      console.warn(
+        `Username ${username} is already taken. Create Logto user with name: ${revisedUsername}`
+      );
+      username = revisedUsername;
+    }
+
     // Create user
-    const newUser = await addUser(decodedIdToken.name, email, logtoAPItoken);
+    const newUser = await addUser(name, username, email, logtoAPItoken);
     if (newUser?.id) {
       logtoUserID = newUser.id;
 
@@ -196,11 +211,11 @@ const getM2MLogtoAPIToken = async () => {
   }
 };
 
-const getLogtoUserId = async (email: string, apiToken: string) => {
+const getLogtoUserIdByEmail = async (email: string, apiToken: string) => {
   try {
     const httpResponse = await got.get(`${ENDPOINT}/api/users`, {
       searchParams: {
-        search: email,
+        ["search.primaryEmail"]: email,
       },
       headers: {
         authorization: `Bearer ${apiToken}`,
@@ -214,6 +229,32 @@ const getLogtoUserId = async (email: string, apiToken: string) => {
     // console.log(`Logto USER INFO ${JSON.stringify(httpResponse.body)}`);
 
     return JSON.parse(httpResponse.body)[0]?.id;
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const getLogtoUsersIdByName = async (username: string, apiToken: string) => {
+  try {
+    const httpResponse = await got.get(`${ENDPOINT}/api/users`, {
+      searchParams: {
+        ["search.username"]: username,
+        ["mode.name"]: "exact",
+      },
+      headers: {
+        authorization: `Bearer ${apiToken}`,
+      },
+      timeout: { request: defaultTimeout },
+      https: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    console.log(
+      `Logto USER INFO by username ${JSON.stringify(httpResponse.body)}`
+    );
+
+    return JSON.parse(httpResponse.body);
   } catch (e) {
     console.error(e);
   }
@@ -262,7 +303,12 @@ const getUserRoles = async (userId: string, apiToken: string) => {
   }
 };
 
-const addUser = async (name: string, email: string, apiToken: string) => {
+const addUser = async (
+  name: string,
+  username: string,
+  email: string,
+  apiToken: string
+) => {
   try {
     const httpResponse = await got.post(`${ENDPOINT}/api/users`, {
       headers: {
@@ -271,7 +317,7 @@ const addUser = async (name: string, email: string, apiToken: string) => {
       json: {
         name,
         primaryEmail: email,
-        username: (name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
+        username,
       },
       timeout: { request: defaultTimeout },
       https: {
