@@ -1330,6 +1330,8 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                     resultsConnectionDetails = rConnectionDetails
                 )
 
+            # uploadResults logs are not captured by default
+            # so we override the consolewrite_print callback to capture the logs
             log_buffer = io.StringIO()
             def add_to_buffer(x):
                 log_buffer.write(x)
@@ -1343,11 +1345,14 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 analysisSpecifications = rAnalysisSpec,
                 resultsDataModelSettings = resultsDataModelSettings
             )
+
+            # check the captured logs for success or failure
             captured_logs = log_buffer.getvalue()
             success, errorMsg = is_strategus_upload_successful(captured_logs)
             if not success:
                 raise RuntimeError(errorMsg)
             print('Strategus results uploaded successfully.')
+
         except Exception as e:
             log_file_path = f"/app/errorReportSql.txt"
             # if file exists, create an artifact to store the error logs
