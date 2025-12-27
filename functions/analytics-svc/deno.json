@@ -1,6 +1,7 @@
 {
     "workspace": [],
     "nodeModulesDir": "auto",
+    "allowScripts": [],
     "compilerOptions": {
         "lib": ["deno.window"],
         "strict": false,

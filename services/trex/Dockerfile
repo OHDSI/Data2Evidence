@@ -20,7 +20,7 @@ RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxr
 
 RUN bash ./scripts/install_libchdb.sh
 
-RUN mkdir -p /usr/src /usr/src/data/cache /usr/src/data/plugins
+RUN mkdir -p /usr/src /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in
 
 WORKDIR /usr/src
 
@@ -48,5 +48,7 @@ RUN npx trex bundle -e ./core/server/index.ts -o ./core/server/index.eszip && \
 
 RUN mkdir -p ./logto
 COPY ./logto ./logto
+
+COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 
 CMD ["npm", "run", "start"]

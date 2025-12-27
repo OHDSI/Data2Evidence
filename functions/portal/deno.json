@@ -45,6 +45,7 @@
     "stream": "node:stream",
     "buffer": "node:buffer",
     "process": "node:process",
-    "assert": "node:assert"
+    "assert": "node:assert",
+    "pg": "npm:pg@^8.16.3"
   }
 }

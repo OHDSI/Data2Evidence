@@ -11,6 +11,7 @@
     "emitDecoratorMetadata": true
   },
   "imports": {
+    "UserMgmtAPI": "../_shared/alp-base-utils/src/api/UserMgmtAPI.ts",
     "@alp/alp-base-utils": "../_shared/alp-base-utils/src/index.ts",
     "@alp/alp-config-utils": "../_shared/alp-config-utils/src/index.ts",
     "@sap/textbundle": "npm:@sap/textbundle@4.2.0",
