@@ -43,8 +43,10 @@ EXPOSE 33001 5432 33000
 
 COPY ./core ./core
 
-# Bundle TypeScript to eszip
 RUN npx trex bundle -e ./core/server/index.ts -o ./core/server/index.eszip && \
     npx trex bundle -e ./core/event/index.ts -o ./core/event/index.eszip
+
+RUN mkdir -p ./logto
+COPY ./logto ./logto
 
 CMD ["npm", "run", "start"]

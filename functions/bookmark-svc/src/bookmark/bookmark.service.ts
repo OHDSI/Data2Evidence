@@ -24,10 +24,18 @@ export function _createGuid() {
 }
 
 /**
- * Generate a bookmarkid based on bookmark name and some random numbers. Then just get last 40 characters as this is the db column limit
+ * Generate a bookmarkid based on bookmark name and some random numbers.
  */
-export function createBookmarkId(bookmarkName: string) {
-  return `${bookmarkName.replace(/[^a-zA-Z0-9]/g, '')}_${crypto.randomBytes(4).toString('hex')}`.substr(-40)
+function createBookmarkId(bookmarkName: string) {
+  return `${bookmarkName.replace(/[^a-zA-Z0-9]/g, '')}_${crypto.randomBytes(4).toString('hex')}`
+}
+/**
+ * Ensure bookmark name is not more than 255 characters.
+ */
+function validateBookmarkName(bookmarkName: string): void {
+  if (bookmarkName.length > 255) {
+    throw new Error('Filter name must not exceed 255 characters')
+  }
 }
 /**
  * Generate an DTO for creating a new bookmark entity
@@ -196,6 +204,8 @@ export async function _insertBookmark(
   callback: CallBackInterface
 ) {
   try {
+    validateBookmarkName(bookmarkName)
+
     const bookmarkDto = createBookmarkDto(
       bookmarkName,
       bookmark,
@@ -292,6 +302,8 @@ export async function _renameBookmark(
   callback: CallBackInterface
 ) {
   try {
+    validateBookmarkName(newBookmarkName)
+
     const updateBookmarkDto = {
       id: bookmarkId,
       serviceArtifact: {

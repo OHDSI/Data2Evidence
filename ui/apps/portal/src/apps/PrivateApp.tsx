@@ -34,7 +34,7 @@ export const PrivateApp: FC = () => {
 
   return (
     <div className="App">
-      <TerminologyWithEventListener />
+      {/* <TerminologyWithEventListener /> */}
       <ResultsDialogWithEventLister />
       <DisclaimerDialog />
       <LoginSilent />
