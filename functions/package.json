@@ -6,12 +6,12 @@
   "scripts": {
     "postinstall": "wget -O llm.gguf https://huggingface.co/QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF/resolve/main/Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tbuild node_modules/@data2evidence/trex"
+    "build": "tbuild ."
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@data2evidence/trex": "latest",
+    "@trex/cli": "latest",
     "deno": "latest"
   },
   "trex": {
