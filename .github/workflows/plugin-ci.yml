@@ -155,7 +155,7 @@ jobs:
       - name: Install dependencies
         if: ${{ matrix.DESTPATH }}
         run: |
-          npm install -g deno@2.1.13
+          npm install -g deno@2.5.6
           node ./install-deno-deps.js ${{ matrix.PKGPATH }}
       - name: Update version
         run: |
