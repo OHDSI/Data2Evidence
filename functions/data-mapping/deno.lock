@@ -4,6 +4,7 @@
     "npm:@langchain/core@*": "0.3.66_zod@3.25.76",
     "npm:@langchain/core@~0.3.40": "0.3.66_zod@3.25.76",
     "npm:@langchain/openai@~0.4.4": "0.4.9_@langchain+core@0.3.66__zod@3.25.76_zod@3.25.76_openai@4.104.0__zod@3.25.76",
+    "npm:@types/node@*": "24.2.0",
     "npm:async@*": "3.2.6",
     "npm:axios@^1.7.7": "1.13.2",
     "npm:bcryptjs@*": "3.0.3",

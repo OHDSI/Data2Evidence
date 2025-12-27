@@ -1,16 +1,15 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/encoding@*": "1.0.10",
     "npm:@godaddy/terminus@^4.4.1": "4.12.1",
     "npm:@sap/textbundle@4.2.0": "4.2.0",
     "npm:@sap/xsenv@^3.3.2": "3.4.0",
     "npm:@types/bcryptjs@^2.4.2": "2.4.6",
     "npm:@types/node@*": "24.2.0",
     "npm:async@3.2.4": "3.2.4",
-    "npm:axios@*": "0.21.4",
     "npm:axios@~0.21.2": "0.21.4",
     "npm:bcryptjs@^2.4.3": "2.4.3",
-    "npm:dotenv@*": "17.2.3",
     "npm:express@^4.19.2": "4.22.1",
     "npm:hdb@0.19.12": "0.19.12",
     "npm:jsonwebtoken@9": "9.0.3",
@@ -21,6 +20,11 @@
     "npm:underscore@^1.12.1": "1.13.7",
     "npm:winston@^3.7.2": "3.19.0",
     "npm:zod@3.20.6": "3.20.6"
+  },
+  "jsr": {
+    "@std/encoding@1.0.10": {
+      "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
+    }
   },
   "npm": {
     "@colors/colors@1.6.0": {
@@ -192,9 +196,6 @@
     },
     "destroy@1.2.0": {
       "integrity": "sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg=="
-    },
-    "dotenv@17.2.3": {
-      "integrity": "sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w=="
     },
     "dunder-proto@1.0.1": {
       "integrity": "sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==",
