@@ -104,8 +104,10 @@ jobs:
             NPM: bun
           - PKGPATH: ./functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
+            RUNNER: ubuntu-24.04
           - PKGPATH: ./fhir_functions/
             DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
+            RUNNER: ubuntu-24.04
 
     runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
 
@@ -186,7 +188,6 @@ jobs:
           sudo chown runner:docker ${{ matrix.DESTPATH }}
           cp -a . ${{ matrix.DESTPATH }}
           cd ${{ matrix.DESTPATH }}
-          rm -rf ~/.cache/deno
           npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
