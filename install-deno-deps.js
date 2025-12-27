@@ -7,7 +7,7 @@ const { execSync } = require('child_process');
 function printHelp() {
   console.log('Install Deno Dependencies\n');
   console.log('Usage: ./install-deno-deps.js <functions-dir>\n');
-  console.log('Scans for folders with deno.json and runs "deno install --allow-scripts".');
+  console.log('Scans for folders with deno.json and runs "deno install".');
 }
 
 if (process.argv.includes('--help') || process.argv.includes('-h') || process.argv.length === 2) {
@@ -90,7 +90,7 @@ function installDependencies(folderPath, errorSummary) {
   try {
     console.log(`🔧 Installing dependencies for ${folderName}...`);
 
-    const result = execSync('deno install --allow-scripts', {
+    const result = execSync('deno install', {
       cwd: folderPath,
       stdio: 'pipe',
       encoding: 'utf8'

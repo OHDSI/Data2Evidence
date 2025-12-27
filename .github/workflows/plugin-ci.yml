@@ -186,6 +186,7 @@ jobs:
           sudo chown runner:docker ${{ matrix.DESTPATH }}
           cp -a . ${{ matrix.DESTPATH }}
           cd ${{ matrix.DESTPATH }}
+          rm -rf ~/.cache/deno
           npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
