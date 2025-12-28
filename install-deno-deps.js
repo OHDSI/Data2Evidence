@@ -90,7 +90,13 @@ function installDependencies(folderPath, errorSummary) {
   try {
     console.log(`🔧 Installing dependencies for ${folderName}...`);
 
-    const result = execSync('deno install --node-modules-dir', {
+    // Use --entrypoint to ensure all imports are resolved and cached
+    const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
+    const cmd = entrypoint
+      ? `deno install --node-modules-dir --entrypoint ${entrypoint}`
+      : 'deno install --node-modules-dir';
+
+    const result = execSync(cmd, {
       cwd: folderPath,
       stdio: 'pipe',
       encoding: 'utf8'
