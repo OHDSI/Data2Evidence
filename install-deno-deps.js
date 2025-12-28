@@ -90,19 +90,17 @@ function installDependencies(folderPath, errorSummary) {
   try {
     console.log(`🔧 Installing dependencies for ${folderName}...`);
 
-    // Use --entrypoint to ensure all imports are resolved and cached
-    const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
-    const cmd = entrypoint
-      ? `deno install --node-modules-dir --entrypoint ${entrypoint}`
-      : 'deno install --node-modules-dir';
-
-    const result = execSync(cmd, {
+    // First install dependencies from deno.json import map
+    const result = execSync('deno install --node-modules-dir', {
       cwd: folderPath,
       stdio: 'pipe',
       encoding: 'utf8'
     });
 
     console.log(`✅ Dependencies installed for ${folderName}`);
+
+    // Check for entrypoint
+    const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
 
     if (result.trim()) {
       const lines = result.trim().split('\n');
