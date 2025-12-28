@@ -35,6 +35,15 @@ function installDependencies(folderPath, errorSummary) {
   try {
     console.log(`🔧 Installing dependencies for ${folderName}...`);
 
+    const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
+    if (entrypoint) {
+      execSync(`deno cache ${entrypoint}`, {
+        cwd: folderPath,
+        stdio: 'pipe',
+        encoding: 'utf8'
+      });
+    }
+
     const result = execSync('deno install --node-modules-dir', {
       cwd: folderPath,
       stdio: 'pipe',
@@ -42,8 +51,6 @@ function installDependencies(folderPath, errorSummary) {
     });
 
     console.log(`✅ Dependencies installed for ${folderName}`);
-
-    const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
 
     if (result.trim()) {
       const lines = result.trim().split('\n');
