@@ -36,12 +36,34 @@ function installDependencies(folderPath, errorSummary) {
     console.log(`🔧 Installing dependencies for ${folderName}...`);
 
     const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
+
+    // Deno has issues when cwd contains 'node_modules' - run from parent with --config
+    const absoluteFolderPath = path.resolve(folderPath);
+    const hasNodeModulesInPath = absoluteFolderPath.includes('node_modules');
+
     if (entrypoint) {
-      execSync(`deno cache ${entrypoint}`, {
-        cwd: folderPath,
-        stdio: 'pipe',
-        encoding: 'utf8'
-      });
+      if (hasNodeModulesInPath) {
+        // Find a parent directory without node_modules
+        let parentDir = absoluteFolderPath;
+        while (parentDir.includes('node_modules')) {
+          parentDir = path.dirname(parentDir);
+        }
+        const relativePath = path.relative(parentDir, absoluteFolderPath);
+        const configPath = path.join(relativePath, 'deno.json');
+        const entrypointPath = path.join(relativePath, entrypoint);
+
+        execSync(`deno cache --config "${configPath}" "${entrypointPath}"`, {
+          cwd: parentDir,
+          stdio: 'pipe',
+          encoding: 'utf8'
+        });
+      } else {
+        execSync(`deno cache ${entrypoint}`, {
+          cwd: folderPath,
+          stdio: 'pipe',
+          encoding: 'utf8'
+        });
+      }
     }
 
     const result = execSync('deno install --node-modules-dir', {
