@@ -11,8 +11,7 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@trex/cli": "latest",
-    "deno": "latest"
+    "@trex/cli": "latest"
   },
   "trex": {
     "model": {
@@ -526,7 +525,7 @@
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
           "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
-          "CUSTOM_WORK_POOL_CONFIGURATION" : "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
+          "CUSTOM_WORK_POOL_CONFIGURATION": "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
           "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
           "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",

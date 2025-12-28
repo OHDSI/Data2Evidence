@@ -10,8 +10,7 @@
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@trex/cli": "latest",
-    "deno": "latest"
+    "@trex/cli": "latest"
   },
   "trex": {
     "functions": {

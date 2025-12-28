@@ -188,8 +188,31 @@ jobs:
           sudo chown runner:docker ${{ matrix.DESTPATH }}
           cp -a . ${{ matrix.DESTPATH }}
           cd ${{ matrix.DESTPATH }}
+
+          # Ensure DENO_DIR is set explicitly for all processes
+          export DENO_DIR="$HOME/.cache/deno"
+
+          # Debug: Show environment
+          echo "=== Debug: Environment ==="
+          echo "HOME=$HOME"
+          echo "DENO_DIR=$DENO_DIR"
+          deno info 2>&1 | head -10
+
           # Re-run deno install to populate cache for JSR packages in the new location
           node ${{ github.workspace }}/install-deno-deps.js .
+
+          # Also run deno cache on each entrypoint to ensure full resolution
+          for dir in */; do
+            if [[ -f "${dir}deno.json" && -f "${dir}index.ts" ]]; then
+              echo "Caching: ${dir}index.ts"
+              deno cache "${dir}index.ts" || true
+            fi
+          done
+
+          # Debug: Verify cache after install
+          echo "=== Debug: Cache contents ==="
+          ls -la ~/.cache/deno/remote/https/ 2>/dev/null || echo "No remote cache"
+
           npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
