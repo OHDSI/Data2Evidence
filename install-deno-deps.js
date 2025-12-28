@@ -17,52 +17,6 @@ if (process.argv.includes('--help') || process.argv.includes('-h') || process.ar
 
 const FUNCTIONS_DIR = process.argv[2];
 
-function needsLockRegeneration(folderPath) {
-  const denoJsonPath = path.join(folderPath, 'deno.json');
-  const denoLockPath = path.join(folderPath, 'deno.lock');
-
-  if (!fs.existsSync(denoLockPath)) {
-    return { needsRegen: true, reason: 'no lock file' };
-  }
-
-  try {
-    const denoJson = JSON.parse(fs.readFileSync(denoJsonPath, 'utf8'));
-    const denoLock = JSON.parse(fs.readFileSync(denoLockPath, 'utf8'));
-
-    const imports = denoJson.imports || {};
-    const jsrImports = Object.entries(imports)
-      .filter(([_, value]) => typeof value === 'string' && value.startsWith('jsr:'))
-      .map(([key, value]) => ({ key, value }));
-
-    if (jsrImports.length === 0) {
-      return { needsRegen: false };
-    }
-
-    const specifiers = denoLock.specifiers || {};
-    const jsrSection = denoLock.jsr || {};
-
-    for (const { key, value } of jsrImports) {
-      const match = value.match(/^jsr:(@[^@/]+\/[^@/]+)/);
-      if (match) {
-        const pkgName = match[1];
-        const hasSpecifier = Object.keys(specifiers).some(s => s.includes(pkgName));
-        const hasJsrEntry = Object.keys(jsrSection).some(s => s.includes(pkgName));
-
-        if (!hasSpecifier || !hasJsrEntry) {
-          return {
-            needsRegen: true,
-            reason: `missing JSR specifier/integrity for ${pkgName}`
-          };
-        }
-      }
-    }
-
-    return { needsRegen: false };
-  } catch (error) {
-    return { needsRegen: true, reason: `error parsing files: ${error.message}` };
-  }
-}
-
 function installDependencies(folderPath, errorSummary) {
   const folderName = path.basename(folderPath);
   const denoJsonPath = path.join(folderPath, 'deno.json');
@@ -73,24 +27,14 @@ function installDependencies(folderPath, errorSummary) {
     return false;
   }
 
-  const { needsRegen, reason } = needsLockRegeneration(folderPath);
-  if (needsRegen) {
-    console.log(`🔄 Regenerating lock file for ${folderName} (${reason})`);
-    const nodeModulesPath = path.join(folderPath, 'node_modules');
-    const denoLockPath = path.join(folderPath, 'deno.lock');
-
-    if (fs.existsSync(nodeModulesPath)) {
-      fs.rmSync(nodeModulesPath, { recursive: true, force: true });
-    }
-    if (fs.existsSync(denoLockPath)) {
-      fs.unlinkSync(denoLockPath);
-    }
+  const nodeModulesPath = path.join(folderPath, 'node_modules');
+  if (fs.existsSync(nodeModulesPath)) {
+    fs.rmSync(nodeModulesPath, { recursive: true, force: true });
   }
 
   try {
     console.log(`🔧 Installing dependencies for ${folderName}...`);
 
-    // First install dependencies from deno.json import map
     const result = execSync('deno install --node-modules-dir', {
       cwd: folderPath,
       stdio: 'pipe',
@@ -99,7 +43,6 @@ function installDependencies(folderPath, errorSummary) {
 
     console.log(`✅ Dependencies installed for ${folderName}`);
 
-    // Check for entrypoint
     const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
 
     if (result.trim()) {
@@ -115,12 +58,10 @@ function installDependencies(folderPath, errorSummary) {
       }
     }
 
-    // Run deno cache to fully resolve all npm dependencies
     if (entrypoint) {
       try {
         console.log(`🔗 Caching dependencies for ${folderName}...`);
 
-        // Verify node_modules was created
         const nodeModulesPath = path.join(folderPath, 'node_modules');
         if (fs.existsSync(nodeModulesPath)) {
           const nmContents = fs.readdirSync(nodeModulesPath).slice(0, 10);
