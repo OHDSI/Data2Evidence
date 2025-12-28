@@ -188,6 +188,8 @@ jobs:
           sudo chown runner:docker ${{ matrix.DESTPATH }}
           cp -a . ${{ matrix.DESTPATH }}
           cd ${{ matrix.DESTPATH }}
+          # Re-run deno install to populate cache for JSR packages in the new location
+          node ${{ github.workspace }}/install-deno-deps.js .
           npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
