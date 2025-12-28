@@ -90,7 +90,7 @@ function installDependencies(folderPath, errorSummary) {
   try {
     console.log(`🔧 Installing dependencies for ${folderName}...`);
 
-    const result = execSync('deno install', {
+    const result = execSync('deno install --node-modules-dir', {
       cwd: folderPath,
       stdio: 'pipe',
       encoding: 'utf8'
