@@ -37,33 +37,12 @@ function installDependencies(folderPath, errorSummary) {
 
     const entrypoint = fs.existsSync(path.join(folderPath, 'index.ts')) ? 'index.ts' : null;
 
-    // Deno has issues when cwd contains 'node_modules' - run from parent with --config
-    const absoluteFolderPath = path.resolve(folderPath);
-    const hasNodeModulesInPath = absoluteFolderPath.includes('node_modules');
-
     if (entrypoint) {
-      if (hasNodeModulesInPath) {
-        // Find a parent directory without node_modules
-        let parentDir = absoluteFolderPath;
-        while (parentDir.includes('node_modules')) {
-          parentDir = path.dirname(parentDir);
-        }
-        const relativePath = path.relative(parentDir, absoluteFolderPath);
-        const configPath = path.join(relativePath, 'deno.json');
-        const entrypointPath = path.join(relativePath, entrypoint);
-
-        execSync(`deno cache --config "${configPath}" "${entrypointPath}"`, {
-          cwd: parentDir,
-          stdio: 'pipe',
-          encoding: 'utf8'
-        });
-      } else {
-        execSync(`deno cache ${entrypoint}`, {
-          cwd: folderPath,
-          stdio: 'pipe',
-          encoding: 'utf8'
-        });
-      }
+      execSync(`deno cache ${entrypoint}`, {
+        cwd: folderPath,
+        stdio: 'pipe',
+        encoding: 'utf8'
+      });
     }
 
     const result = execSync('deno install --node-modules-dir', {
@@ -87,31 +66,10 @@ function installDependencies(folderPath, errorSummary) {
       }
     }
 
-    if (entrypoint) {
-      try {
-        console.log(`🔗 Caching dependencies for ${folderName}...`);
-
-        const nodeModulesPath = path.join(folderPath, 'node_modules');
-        if (fs.existsSync(nodeModulesPath)) {
-          const nmContents = fs.readdirSync(nodeModulesPath).slice(0, 10);
-          console.log(`   📦 node_modules contents: ${nmContents.join(', ')}${nmContents.length >= 10 ? '...' : ''}`);
-        } else {
-          console.log(`   ⚠️  node_modules not found`);
-        }
-
-        execSync(`deno cache ${entrypoint}`, {
-          cwd: folderPath,
-          stdio: 'pipe',
-          encoding: 'utf8'
-        });
-        console.log(`✅ Cache complete for ${folderName}`);
-      } catch (cacheError) {
-        // Show stderr for debugging
-        const stderr = cacheError.stderr ? cacheError.stderr.toString().trim() : cacheError.message;
-        console.warn(`⚠️  Cache warning for ${folderName}:`);
-        stderr.split('\n').slice(0, 5).forEach(line => console.warn(`   ${line}`));
-        // Don't fail - install succeeded, cache is best-effort
-      }
+    const nmPath = path.join(folderPath, 'node_modules');
+    if (fs.existsSync(nmPath)) {
+      const nmContents = fs.readdirSync(nmPath).slice(0, 10);
+      console.log(`   📦 node_modules: ${nmContents.join(', ')}${nmContents.length >= 10 ? '...' : ''}`);
     }
 
     errorSummary.success.push(folderName);

@@ -103,10 +103,10 @@ jobs:
           - PKGPATH: ./ui
             NPM: bun
           - PKGPATH: ./functions/
-            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
+            DESTPATH: /usr/src/data/plugins/d2e-functions
             RUNNER: ubuntu-24.04
           - PKGPATH: ./fhir_functions/
-            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
+            DESTPATH: /usr/src/data/plugins/fhir
             RUNNER: ubuntu-24.04
 
     runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
