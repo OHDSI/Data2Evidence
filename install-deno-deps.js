@@ -117,6 +117,35 @@ function installDependencies(folderPath, errorSummary) {
       }
     }
 
+    // Run deno cache to fully resolve all npm dependencies
+    if (entrypoint) {
+      try {
+        console.log(`🔗 Caching dependencies for ${folderName}...`);
+
+        // Verify node_modules was created
+        const nodeModulesPath = path.join(folderPath, 'node_modules');
+        if (fs.existsSync(nodeModulesPath)) {
+          const nmContents = fs.readdirSync(nodeModulesPath).slice(0, 10);
+          console.log(`   📦 node_modules contents: ${nmContents.join(', ')}${nmContents.length >= 10 ? '...' : ''}`);
+        } else {
+          console.log(`   ⚠️  node_modules not found`);
+        }
+
+        execSync(`deno cache ${entrypoint}`, {
+          cwd: folderPath,
+          stdio: 'pipe',
+          encoding: 'utf8'
+        });
+        console.log(`✅ Cache complete for ${folderName}`);
+      } catch (cacheError) {
+        // Show stderr for debugging
+        const stderr = cacheError.stderr ? cacheError.stderr.toString().trim() : cacheError.message;
+        console.warn(`⚠️  Cache warning for ${folderName}:`);
+        stderr.split('\n').slice(0, 5).forEach(line => console.warn(`   ${line}`));
+        // Don't fail - install succeeded, cache is best-effort
+      }
+    }
+
     errorSummary.success.push(folderName);
     return true;
 

@@ -205,7 +205,7 @@ jobs:
           for dir in */; do
             if [[ -f "${dir}deno.json" && -f "${dir}index.ts" ]]; then
               echo "Caching: ${dir}index.ts"
-              deno cache "${dir}index.ts" || true
+              (cd "$dir" && deno cache index.ts) || true
             fi
           done
 
