@@ -104,14 +104,14 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     # Check for already completed tables
     completed_tables = set()
     try:
-        cursor = write_conn.cursor()
-        cursor.execute(f"""
+        write_conn.execute(f"""
             SELECT table_name
             FROM "{copy_params.target_database}"."{copy_params.target_schema}"."table_copy_status"
             WHERE status = 'COMPLETE'
         """)
-        result = cursor.fetchall()
+        result = write_conn.fetchall()
         completed_tables = {row[0] for row in result}
+        print(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
     except Exception:
         pass  # Table might not exist or query failed
 
