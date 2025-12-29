@@ -321,9 +321,11 @@ def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema,
             chunks = plan_chunks(read_conn, copy_params.source_database, source_schema, table, chunk_col, chunk_size, estimated_rows, logger)
 
             if chunks is None:
-                logger.info(f"Chunking failed or inefficient for '{table}'. Falling back to one-go copy.")
-                select_sql = create_select_query(copy_params, query_columns, source_schema)
-                execute_statement(write_conn, f'INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" {select_sql}')
+                # For very large tables without usable chunking, skip the copy entirely to avoid DuckDB memory issues
+                logger.error(f"Cannot chunk table '{table}' ({estimated_rows} rows) efficiently. Skipping this table. Consider adding a suitable chunking column or filtering.")
+                # mark_complete(write_conn, table, copy_params)
+                # return estimated_rows
+                raise Exception(f"Table '{table}' is too large and cannot be chunked efficiently. Manual intervention required.")
             else:
                 # Loop over chunks sequentially
                 for i, chunk_where in enumerate(chunks):
