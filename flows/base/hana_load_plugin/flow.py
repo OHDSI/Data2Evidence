@@ -12,7 +12,7 @@ from prefect import flow, task, get_run_logger
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 
-from .types import DataloadOptions, FlowActionType
+from .types import OmopCDMPluginOptions, FlowActionType
 from .constants import (
     BASE_URL,
     DATA_DIR,
@@ -27,7 +27,7 @@ os.environ["plugin_name"] = "hana_load_plugin"
 
 # flows
 @flow(log_prints=True)
-def hana_load_plugin(options: DataloadOptions):
+def hana_load_plugin(options: OmopCDMPluginOptions):
     match options.flow_action_type:
         case FlowActionType.CREATE_DATA_MODEL:
             create_datamodel(options)
@@ -39,7 +39,7 @@ def hana_load_plugin(options: DataloadOptions):
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-def create_datamodel(options: DataloadOptions):
+def create_datamodel(options: OmopCDMPluginOptions):
     logger = get_run_logger()
     database_code = options.database_code
     use_cache_db = options.use_cache_db

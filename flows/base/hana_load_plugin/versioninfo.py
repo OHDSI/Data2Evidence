@@ -1,6 +1,6 @@
 from prefect.logging import get_run_logger
 
-from .types import DataloadOptions
+from .types import OmopCDMPluginOptions
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from _shared_flow_utils.update_dataset_metadata import (
@@ -12,7 +12,7 @@ from _shared_flow_utils.update_dataset_metadata import (
 )
 
 
-def update_dataset_metadata_flow(options: DataloadOptions):
+def update_dataset_metadata_flow(options: OmopCDMPluginOptions):
     logger = get_run_logger()
     dataset_list = options.datasets
     use_cache_db = options.use_cache_db

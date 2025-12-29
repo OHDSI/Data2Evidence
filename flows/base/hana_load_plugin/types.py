@@ -8,7 +8,7 @@ class FlowActionType(str, Enum):
     GET_VERSION_INFO = "get_version_info"
 
 # Define the data load options for HANA
-class DataloadOptions(BaseModel):
+class OmopCDMPluginOptions(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
     schema_name: Optional[str] = None
@@ -16,6 +16,7 @@ class DataloadOptions(BaseModel):
     results_schema: Optional[str] = None
     datasets: Optional[List] = None
     load_csvs: Optional[bool] = False
+    data_model: Optional[str] = None  # omop5-3, omop5-4
     
     @property
     def use_cache_db(self) -> str:

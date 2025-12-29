@@ -27,7 +27,7 @@
             "type": "object",
             "properties": {
               "options": {
-                "$ref": "#/definitions/DataloadOptions",
+                "$ref": "#/definitions/OmopCDMPluginOptions",
                 "position": 0,
                 "title": "options"
               }
@@ -44,7 +44,7 @@
                 "title": "FlowActionType",
                 "type": "string"
               },
-              "DataloadOptions": {
+              "OmopCDMPluginOptions": {
                 "properties": {
                   "flow_action_type": {
                     "$ref": "#/definitions/FlowActionType"
@@ -52,6 +52,18 @@
                   "database_code": {
                     "title": "Database Code",
                     "type": "string"
+                  },
+                  "data_model": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Model"
                   },
                   "schema_name": {
                     "anyOf": [
@@ -98,7 +110,7 @@
                   "flow_action_type",
                   "database_code"
                 ],
-                "title": "DataloadOptions",
+                "title": "OmopCDMPluginOptions",
                 "type": "object"
               }
             }
