@@ -13,7 +13,7 @@ DATA_DIR = BASE_DIR / DATASET
 ZIP_PATH = DATA_DIR / f"{DATASET}_{CDM_VERSION}.zip"
 EXTRACT_DIR = DATA_DIR / f"{DATASET}_{CDM_VERSION}"
 
-CREATE_SCRIPT_DIR = BASE_DIR / "create_script"
+CREATE_SCRIPT_DIR = BASE_DIR / "db"
 
 # Hana does not support foreign keys, so we skip hana_constraints.sql
 SQL_FILES_ORDER = [
