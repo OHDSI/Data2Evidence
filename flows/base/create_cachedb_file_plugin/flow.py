@@ -66,7 +66,8 @@ def create_cache_flow(options: CreateCacheOptions):
         patient_filter=options.snapshot_copy_config.patients_to_be_copied if options.snapshot_copy_config else None,
         fts_tables=options.tables_to_create_duckdb_fts_index,
         limit_statement="",  # Limit 0 only applied to CDW config
-        vocab_schema=options.vocab_schema_name
+        vocab_schema=options.vocab_schema_name,
+        chunk_size=options.chunk_size
     )
 
 

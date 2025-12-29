@@ -166,6 +166,18 @@
                     "default": null,
                     "title": "Ressultsschemaname"
                   },
+                  "chunkSize": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Chunk size for copying tables"
+                  },
                   "tablesToCreateDuckdbFtsIndex": {
                     "anyOf": [
                       {
