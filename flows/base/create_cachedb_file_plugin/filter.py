@@ -60,7 +60,7 @@ _CDM_COLUMN_FILTER_MAP = {
     },
 }
 
-_CHUNK_COLUMN_MAP = {
+_CHUNK_COLUMN_INFO_MAP = {
     "care_site": {
         "column_name": "care_site_id"
     },
@@ -108,7 +108,7 @@ _CHUNK_COLUMN_MAP = {
 # Columns to use for chunking tables
 _CHUNK_COLUMN_MAP = {
     table: info.get("column_name")
-    for table, info in _CHUNK_COLUMN_MAP.items()
+    for table, info in _CHUNK_COLUMN_INFO_MAP.items()
         if info.get("column_name")
 }
 

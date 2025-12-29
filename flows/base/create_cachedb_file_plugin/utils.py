@@ -75,11 +75,7 @@ def time_execution(func):
 
 @time_execution
 def execute_statement(conn: any, statement: str):
-    if hasattr(conn, 'cursor'):  # it's a connection
-        with conn.cursor() as cursor:
-            cursor.execute(statement)
-    else:  # it's a cursor or DBDao
-        conn.execute(statement)
+    conn.execute(statement)
 
 
 def get_document_identifier(table_name: str) -> str:

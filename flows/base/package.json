@@ -86,10 +86,7 @@
         {
           "name": "create_cachedb_file_plugin",
           "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
-          "concurrencyLimitOptions": [{
-            "tag": "chunk-level-concurrency",
-            "limit": "CACHE_CHUNK_LEVEL_CONCURRENCY"
-          },
+          "concurrencyLimitOptions": [
           {
             "tag": "table-level-concurrency",
             "limit": "CACHE_TABLE_LEVEL_CONCURRENCY"

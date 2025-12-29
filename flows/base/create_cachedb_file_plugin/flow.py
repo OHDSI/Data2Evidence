@@ -83,19 +83,17 @@ def create_cache_flow(options: CreateCacheOptions):
 
         # Turn off transactions
         trex_conn.autocommit = True
-        pg_cursor = trex_conn.cursor()
+        pg_cursor = None
 
         try:
-            # Extensions should already be loaded in trex
-            # load_extensions(write_conn=trex_conn, dialect=dbdao.dialect, trex_sql=True)
-
+            pg_cursor = trex_conn.cursor()
             logger.info(
                 f"Creating cache for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
             )
 
-            create_schema_if_not_exists(trex_conn, copy_params)
+            create_schema_if_not_exists(pg_cursor, copy_params)
 
-            create_schema_tables(trex_conn, dbdao, copy_params)
+            create_schema_tables(pg_cursor, dbdao, copy_params)
 
             logger.info(
                 f"Creating FTS index for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
@@ -107,15 +105,15 @@ def create_cache_flow(options: CreateCacheOptions):
             logger.error(
                 f"Error while creating cache for schema '{options.schema_name}' for '{options.database_code}': {e}"
             )
-            # trex_conn.rollback()
             raise
         else:
-            trex_conn.commit()
+            pg_cursor.commit()
             logger.info(
                 f"Cached schema '{options.schema_name}' successfully created for '{options.database_code}'."
             )
         finally:
-            pg_cursor.close()
+            if pg_cursor:
+                pg_cursor.close()
             trex_conn.close()
 
     else:

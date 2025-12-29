@@ -7,7 +7,7 @@ from prefect.logging import get_run_logger
 from .fts import create_fts_index
 from .types import CopyParameters, QueryColumns
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
-from .filter import filter_tables, filter_columns, _CDM_COLUMN_FILTER_MAP, _CHUNK_COLUMN_MAP, _CHUNK_COLUMN_MAP
+from .filter import filter_tables, _CDM_COLUMN_FILTER_MAP, _CHUNK_COLUMN_MAP
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 def create_cache_status_table(con, copy_params):
@@ -94,6 +94,8 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters):
 @task(log_prints=True, task_run_name="create_schema_tables_from_{copy_params.source_schema}")
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
+    logger.info(f"Starting creation of schema '{copy_params.target_schema}' in database '{copy_params.target_database}' if it doesn't exist...")
+
     source_schema = copy_params.source_schema
 
     # Create status table
@@ -113,8 +115,6 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     except Exception:
         pass  # Table might not exist or query failed
 
-    logger.info(f"Completed tables: {completed_tables}")
-
     source_tables = copy_params.table_filter.keys() if copy_params.table_filter else read_conn.get_table_names(source_schema)
     tables_to_copy = sorted(filter_tables(source_tables))
 
@@ -132,12 +132,9 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     skipped_count = original_count - len(tables_to_copy)
     logger.info(f"Found {len(tables_to_copy)} tables to copy in schema '{source_schema}'.")
     logger.info(f"Total tables in source schema: {original_count}")
-    logger.info(f"Completed tables: {completed_tables}")
     logger.info(f"Tables to copy: {tables_to_copy}")
     if skipped_count > 0:
         logger.info(f"Skipping {skipped_count} already completed tables.")
-
-    logger.info(f"Tables to copy: {tables_to_copy}")
 
     # BigQuery-specific global settings
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
@@ -160,7 +157,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         )
 
         # Call copy_table directly
-        copy_table(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
+        copy_table_task(write_conn, read_conn, copy_params, query_columns, source_schema_for_table)
 
         # Call copy_indexes directly
         copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
@@ -208,7 +205,6 @@ def plan_chunks(read_conn, database, schema, table, chunk_col, chunk_size, estim
                 if result:
                     min_val, max_val = result
             
-            logger.info(f"Table '{table}': min('{chunk_col}')={min_val}, max('{chunk_col}')={max_val}")
         except Exception as e:
             logger.warning(f"Failed to get min/max for '{table}' from source: {e}")
             min_val = None
@@ -235,20 +231,16 @@ def plan_chunks(read_conn, database, schema, table, chunk_col, chunk_size, estim
             chunks.append(f'"{chunk_col}" BETWEEN {current} AND {end}')
             current = end + 1
         
-        # Check if the number of chunks is reasonable compared to estimated rows
-        # If we have very few chunks for a large table, it means the data is dense (many duplicates)
-        # and range-based chunking will result in huge chunks that might crash the system.
         if estimated_rows and len(chunks) > 0:
             avg_rows_per_chunk = estimated_rows / len(chunks)
-            # If average rows per chunk is > 2x chunk_size, fallback to ROW_NUMBER
             if avg_rows_per_chunk > (chunk_size * 2):
                 logger.info(f"Data is too dense for range chunking (avg {int(avg_rows_per_chunk)} rows/chunk vs target {chunk_size}). Cannot chunk efficiently.")
                 return None
             else:
-                logger.info(f"Planned {len(chunks)} chunks for table '{table}': min={min_val}, max={max_val}, chunk_size={chunk_size}")
+                logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
                 return chunks
         else:
-             logger.info(f"Planned {len(chunks)} chunks for table '{table}': min={min_val}, max={max_val}, chunk_size={chunk_size}")
+             logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
              return chunks
 
     return None
@@ -261,8 +253,16 @@ def copy_table_chunk(write_conn, copy_params, query_columns, source_schema, wher
     INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}"
     {select_sql};
     """
-    print(insert_sql)
-    execute_statement(write_conn, insert_sql)
+    try:
+        execute_statement(write_conn, insert_sql)
+    except Exception as e:
+        raise e
+
+
+@task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"])
+def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
+    logger = get_run_logger()
+    copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger)
 
 
 def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger):
@@ -284,7 +284,6 @@ def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema,
         # If columns_to_copy is "*", replace with actual column names for proper chunking
         if query_columns.columns_to_copy == ["*"]:
             actual_columns = read_conn.get_columns(source_schema, table)
-            logger.info(f"Actual columns for '{table}': {actual_columns}")
             # Update filter columns based on actual columns (case-insensitive match)
             patient_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
             timestamp_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
@@ -311,7 +310,6 @@ def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema,
         chunk_col_name = _CHUNK_COLUMN_MAP.get(table)
         if chunk_col_name:
             chunk_col = find_column_case_insensitive(query_columns.columns_to_copy, chunk_col_name)
-            logger.info(f"Table '{table}': chunk_col_name='{chunk_col_name}', chunk_col='{chunk_col}'")
         else:
             chunk_col = None
             logger.info(f"Table '{table}': no chunk_col_name in map")
@@ -321,11 +319,10 @@ def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema,
             chunks = plan_chunks(read_conn, copy_params.source_database, source_schema, table, chunk_col, chunk_size, estimated_rows, logger)
 
             if chunks is None:
-                # For very large tables without usable chunking, skip the copy entirely to avoid DuckDB memory issues
-                logger.error(f"Cannot chunk table '{table}' ({estimated_rows} rows) efficiently. Skipping this table. Consider adding a suitable chunking column or filtering.")
-                # mark_complete(write_conn, table, copy_params)
-                # return estimated_rows
-                raise Exception(f"Table '{table}' is too large and cannot be chunked efficiently. Manual intervention required.")
+                # Chunking failed or inefficient - fallback to one-go copy
+                logger.warning(f"Cannot chunk table '{table}' ({estimated_rows} rows) efficiently. Falling back to one-go copy.")
+                select_sql = create_select_query(copy_params, query_columns, source_schema)
+                execute_statement(write_conn, f'INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" {select_sql}')
             else:
                 # Loop over chunks sequentially
                 for i, chunk_where in enumerate(chunks):
