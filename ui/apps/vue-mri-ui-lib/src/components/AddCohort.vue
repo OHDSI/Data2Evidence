@@ -1,8 +1,10 @@
 <template>
   <messageBox v-if="showAddCohortDialog" dim="true" :busy="cohortBusy" messageType="custom" @close="closeWindow">
-    <template v-slot:header>{{
-      getText('MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION') + ` (${this.bookmarkName})`
-    }}</template>
+    <template v-slot:header>
+      <div style="maxWidth: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        {{ getText('MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION') + ` (${this.bookmarkName})` }}
+      </div>
+    </template>
     <template v-slot:body>
       <div class="cohort-dialog">
         <appMessageStrip

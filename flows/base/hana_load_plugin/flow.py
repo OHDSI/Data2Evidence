@@ -1,3 +1,4 @@
+import os
 import requests
 import pandas as pd
 from pathlib import Path
@@ -20,6 +21,7 @@ from .constants import (
     CREATE_SCRIPT_DIR,
     SQL_FILES_ORDER
 )
+from .versioninfo import update_dataset_metadata_flow
 
 os.environ["plugin_name"] = "hana_load_plugin"
 
@@ -29,14 +31,13 @@ def hana_load_plugin(options: DataloadOptions):
     match options.flow_action_type:
         case FlowActionType.CREATE_DATA_MODEL:
             create_datamodel(options)
-        # Todo: implement get get_version_info for hana
         case FlowActionType.GET_VERSION_INFO:
-            get_version_info(options)
-
-
-
-def get_version_info(options: DataloadOptions):
-    pass
+            update_dataset_metadata_flow(options)
+        case _:
+            logger = get_run_logger()
+            error_msg = f"Flow action type '{options.flow_action_type}' not supported, only '{[action.value for action in FlowActionType]}'"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
 def create_datamodel(options: DataloadOptions):
     logger = get_run_logger()
@@ -44,20 +45,22 @@ def create_datamodel(options: DataloadOptions):
     use_cache_db = options.use_cache_db
     schema = options.schema_name
     results_schema = options.results_schema
+    load_csvs = options.load_csvs
     dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    folder = None
 
-    # Extract dataset if folder missing or empty
-    if not (EXTRACT_DIR.exists() and any(EXTRACT_DIR.iterdir())):
-        # Download dataset if zip is missing
-        if not ZIP_PATH.exists():
-            zip_path = download_eunomia()
-            folder = unzip_dataset(zip_path)
+    if load_csvs: 
+        # Extract dataset if folder missing or empty
+        if not (EXTRACT_DIR.exists() and any(EXTRACT_DIR.iterdir())):
+            # Download dataset if zip is missing
+            if not ZIP_PATH.exists():
+                ZIP_PATH = download_eunomia()
+                folder = unzip_dataset(ZIP_PATH)
+            else:
+                logger.info("Zip already exists, skipping download.")
         else:
-            logger.info("Zip already exists, skipping download.")
-            zip_path = ZIP_PATH
-    else:
-        logger.info("Extracted folder already exists, skipping unzip.")
-        folder = EXTRACT_DIR
+            logger.info("Extracted folder already exists, skipping unzip.")
+            folder = EXTRACT_DIR
 
     create_schema_task(dbdao, schema)
 
@@ -68,7 +71,7 @@ def create_datamodel(options: DataloadOptions):
         )]
     )
 
-    create_datamodel_wo(schema, dbdao, folder)
+    create_datamodel_wo(schema, dbdao, folder, load_csvs)
 
     # Create results schema
     create_schema_task(dbdao, results_schema)
@@ -82,11 +85,14 @@ def create_datamodel(options: DataloadOptions):
 
     create_results_tables(dbdao, results_schema)
 
-#task
 @task(log_prints=True)
-def create_datamodel_parent(schema: str, dbdao: DBDao, folder: Path):
+def create_datamodel_parent(schema: str, dbdao: DBDao, folder: Path, load_csvs: bool):
     run_create_datamodel_scripts(schema, dbdao)
-    load_csvs_to_hana(folder, schema, dbdao)
+    if load_csvs and folder is not None:
+        load_csvs_to_hana(folder, schema, dbdao)
+    else:
+        logger = get_run_logger()
+        logger.info("Skipping CSV loading as per configuration.")
 
 @task(log_prints=True)
 def download_eunomia():
@@ -144,7 +150,7 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
         table_name = csv_file.stem.lower()
         logger.info(f"Loading {csv_file.name} -> {schema}.{table_name}")
         df = pd.read_csv(csv_file)
-        if (table_name == 'vocabulary' or table_name == 'concept'):
+        if table_name in ('vocabulary', 'concept'):
             df['VOCABULARY_ID'] = df['VOCABULARY_ID'].fillna('None')
         df.to_sql(
             table_name,

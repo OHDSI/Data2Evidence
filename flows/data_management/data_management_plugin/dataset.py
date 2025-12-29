@@ -23,12 +23,11 @@ def create_datamodel(
     plugin_classpath: str,
     dialect: str,
     count: int = 0,
-    cleansed_schema_option: bool = False,
 ):
     dbdao = DBDao(use_cache_db=False, database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
-    task_status = create_schema_tasks(
+    create_schema_tasks(
         dialect=dialect,
         database_code=database_code,
         data_model=data_model,
@@ -39,20 +38,6 @@ def create_datamodel(
         plugin_classpath=plugin_classpath,
         count=count,
     )
-
-    if task_status and cleansed_schema_option:
-        cleansed_schema_name = schema_name + "_cleansed"
-        cleansed_task_status = create_schema_tasks(
-            dialect=dialect,
-            database_code=database_code,
-            data_model=data_model,
-            changelog_file=changelog_file,
-            schema_name=cleansed_schema_name,
-            vocab_schema=vocab_schema,
-            tenant_configs=tenant_configs,
-            plugin_classpath=plugin_classpath,
-            count=count,
-        )
 
 
 def create_schema_tasks(

@@ -9,9 +9,9 @@ export function isSingleSpaApp(module: any): module is AppLifecycles {
   );
 }
 
-export function createActivityFunction(basePath: string, alwaysActive?: boolean): (location: Location) => boolean {
+export function createActivityFunction(basePath: string, autoMount?: boolean): (location: Location) => boolean {
   return (location: Location) => {
-    if (alwaysActive) {
+    if (autoMount) {
       return true;
     }
 
