@@ -123,14 +123,39 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     # Determine tables to copy
     source_tables = copy_params.table_filter.keys() if copy_params.table_filter else read_conn.get_table_names(source_schema)
     tables_to_copy = sorted(filter_tables(source_tables))
+    
+    has_separate_vocab_schema = False
 
-    # Handle vocabulary tables
-    if copy_params.vocab_schema:
-        if copy_params.vocab_schema != source_schema:
-            logger.info(f"Copy vocab tables from '{copy_params.vocab_schema}'")
-            tables_to_copy = [t for t in tables_to_copy if t not in VOCAB_TABLES]
-            vocab_tables = [t for t in VOCAB_TABLES if t in read_conn.get_table_names(copy_params.vocab_schema)]
-            tables_to_copy.extend(vocab_tables)
+    # Handle vocabulary tables if vocab_schema is provided
+    if copy_params.vocab_schema and copy_params.vocab_schema != copy_params.source_schema:
+        has_separate_vocab_schema = True
+        logger.info(f"Vocabulary schema '{copy_params.vocab_schema}' provided - will copy vocab tables from this schema instead of '{copy_params.source_schema}'")
+        
+        # Remove vocab tables from current schema copy
+        tables_to_copy = [table for table in tables_to_copy if table not in VOCAB_TABLES]
+
+        logger.info(
+            f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
+        )
+        
+        # Add vocab tables to copy from vocab_schema
+        vocab_tables_in_schema = read_conn.get_table_names(copy_params.vocab_schema)
+        vocab_tables_to_copy = [table for table in VOCAB_TABLES if table in vocab_tables_in_schema]
+        
+        logger.info(
+            f"Found {len(vocab_tables_to_copy)} vocab tables/views to copy from schema '{copy_params.vocab_schema}': {vocab_tables_to_copy}"
+        )
+
+        tables_to_copy.extend(vocab_tables_to_copy)
+    else:
+        if copy_params.vocab_schema:
+            logger.info(f"Vocabulary schema '{copy_params.vocab_schema}' is the same as source schema - copying all tables including vocab tables")
+        else:
+            logger.info("No vocabulary schema provided - copying all tables from source schema")
+
+        logger.info(
+            f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
+        )
 
     # Filter out already completed tables
     original_count = len(tables_to_copy)
@@ -146,9 +171,20 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
         execute_statement(write_conn, set_bigquery_global_settings())
 
-    # Loop over tables sequentially
-    for table in tables_to_copy:
-        source_schema_for_table = copy_params.vocab_schema if copy_params.vocab_schema and table in VOCAB_TABLES else source_schema
+    msg = f"Beginning table copy for schema '{copy_params.source_schema}'"
+    if has_separate_vocab_schema:
+        msg += f" with separate vocab schema '{copy_params.vocab_schema}'"
+    logger.info(msg)
+
+    for idx, table in enumerate(tables_to_copy, start=1):
+        # Determine which schema this table should be copied from
+        source_schema_for_table = copy_params.vocab_schema if (has_separate_vocab_schema and table in VOCAB_TABLES) else copy_params.source_schema
+
+        logger.info(
+            f"[{idx}/{len(tables_to_copy)}] Copying table '{table}' from schema '{source_schema_for_table}'..."
+        )
+
+        # Determine columns to copy for the current table
         source_columns = copy_params.table_filter.get(table) if copy_params.table_filter else None
         columns_to_copy = source_columns if source_columns else ["*"]
 

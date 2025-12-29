@@ -88,6 +88,13 @@ def create_cache_flow(options: CreateCacheOptions):
 
         try:
             pg_cursor = trex_conn.cursor()
+
+            # Extensions should already be loaded in trex
+            # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
+
+            # Update cache information
+            pg_cursor.execute("CALL pg_clear_cache();")
+
             logger.info(
                 f"Creating cache for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
             )

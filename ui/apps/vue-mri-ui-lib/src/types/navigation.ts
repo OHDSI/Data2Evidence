@@ -8,7 +8,7 @@ export interface NavigationItem {
   visible?: boolean
   active?: boolean
   type?: 'app' | 'component'
-  alwaysActive?: boolean
+  autoMount?: boolean
   customProps?: Record<string, unknown>
 }
 
@@ -21,3 +21,4 @@ export interface NavigationConfig {
   apps: NavigationItem[]
   components: NavigationItem[]
 }
+

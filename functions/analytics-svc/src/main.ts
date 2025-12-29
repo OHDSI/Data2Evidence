@@ -23,6 +23,7 @@ import * as xsenv from "@sap/xsenv";
 import { Settings } from "./qe/settings/Settings";
 //import * as swagger from "@alp/swagger-node-runner";
 import MRIEndpointErrorHandler from "./utils/MRIEndpointErrorHandler";
+import { controllers } from "./api/controllers/index.ts";
 import noCacheMiddleware from "./middleware/NoCache";
 import timerMiddleware from "./middleware/Timer";
 import studyDbCredentialMiddleware from "./middleware/StudyDbCredential";
@@ -560,23 +561,28 @@ const initRoutes = async (app: express.Application) => {
 };
 
 const initSwaggerRoutes = async (app: express.Application) => {
+    log.info("initSwaggerRoutes: Starting route registration...");
+    // Calculate base path for file resolution in Trex worker context
+    const trexFunctionPath = Deno.env.get("TREX_FUNCTION_PATH") || "";
+    log.info(`initSwaggerRoutes: TREX_FUNCTION_PATH = ${trexFunctionPath}`);
+
+    const srcBasePath = path
+        .dirname(pathx.fromFileUrl(import.meta.url))
+        .replace(
+            /\/var\/tmp\/sb-compile-trex/,
+            trexFunctionPath.replace(/\/[^\/]*\/?$/, "")
+        );
+    log.info(`initSwaggerRoutes: srcBasePath = ${srcBasePath}`);
+    const swaggerFilePath = srcBasePath.slice(0, -3) + "api/swagger/swagger.yaml";
+    log.info(`initSwaggerRoutes: Loading swagger from ${swaggerFilePath}`);
     const swaggerFile = yaml.parse(
-        await Deno.readTextFile(
-            path
-                .dirname(pathx.fromFileUrl(import.meta.url))
-                .replace(
-                    /\/var\/tmp\/sb-compile-trex/,
-                    Deno.env
-                        .get("TREX_FUNCTION_PATH")
-                        .replace(/\/[^\/]*\/?$/, "")
-                )
-                .slice(0, -3) + "api/swagger/swagger.yaml"
-        )
+        await Deno.readTextFile(swaggerFilePath)
     );
     const basePath = swaggerFile["basePath"];
-    for (const [path, value] of Object.entries(swaggerFile["paths"])) {
+    log.info(`initSwaggerRoutes: basePath = ${basePath}`);
+    for (const [swaggerPath, value] of Object.entries(swaggerFile["paths"])) {
         // Skip swagger route
-        if (path === "/swagger") {
+        if (swaggerPath === "/swagger") {
             log.info(
                 "Skipping '/swagger' route as it is not linked to a x-swagger-router-controller file"
             );
@@ -585,42 +591,40 @@ const initSwaggerRoutes = async (app: express.Application) => {
 
         const controllerFile = value["x-swagger-router-controller"];
         try {
-            const controller = await import(
-                `./api/controllers/${controllerFile}.ts`
-            );
-            const url = `${basePath}${path.slice(1)}`.replace(
-                /\{(.+?)\}/g,
-                ":$1"
-            );
+            const controller = controllers[controllerFile];
+            if (!controller) {
+                log.error(`Controller not found in registry: ${controllerFile}`);
+                continue;
+            }
+            log.info(`initSwaggerRoutes: Loaded ${controllerFile} from registry`);
+            const url = `${basePath}${swaggerPath.slice(1)}`
+                .replace(/\{(.+?)\}/g, ":$1")
+                .replace(/\/$/, ""); // Remove trailing slash for consistent matching
             for (const [k, v] of Object.entries(value)) {
                 switch (k) {
                     case "get":
                         app.get(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
+                        log.info(`Registered GET ${url} -> ${v["operationId"]}`);
                         break;
                     case "post":
                         app.post(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
-
+                        log.info(`Registered POST ${url} -> ${v["operationId"]}`);
                         break;
                     case "put":
                         app.put(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
-
+                        log.info(`Registered PUT ${url} -> ${v["operationId"]}`);
                         break;
                     case "delete":
                         app.delete(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
-
+                        log.info(`Registered DELETE ${url} -> ${v["operationId"]}`);
                         break;
                     default:
                         if (k != "x-swagger-router-controller")
-                            console.log("unknown method " + k);
+                            log.warn(`Unknown HTTP method: ${k}`);
                 }
             }
         } catch (e) {
-            console.log(controllerFile);
-            console.log(e);
+            log.error(`Failed to register controller ${controllerFile}: ${e}`);
         }
     }
 
@@ -857,15 +861,12 @@ const main = async () => {
     );*/
     app.listen(port);
     log.info(
-        `🚀 MRI Application started successfully!. Server listening on port ${port}`
+        `MRI Application started successfully. Server listening on port ${port}`
     );
 };
 
-try {
-    main();
-} catch (err) {
+main().catch((err) => {
     log.error(`
         MRI failed to start! Kindly fix the error and restart the application. ${err.message}
         ${err.stack}`);
-    //process.exit(1);
-}
+});

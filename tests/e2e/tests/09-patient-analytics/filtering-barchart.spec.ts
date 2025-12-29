@@ -32,8 +32,16 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: '+' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Search' }).click()
-  await page.getByRole('row', { name: '257012 40055000 Chronic' }).locator('path').click()
-  await page.getByRole('row', { name: '4294548 75498004 Acute' }).locator('path').click()
+  await page
+    .getByRole('row', { name: /40055000.*Chronic/ })
+    .locator('td')
+    .first()
+    .click()
+  await page
+    .getByRole('row', { name: /75498004.*Acute/ })
+    .locator('td')
+    .first()
+    .click()
   await expect(page.getByRole('tablist')).toContainText('2')
   await page.getByRole('tab', { name: 'Selected concepts' }).click()
   await expect(page.locator('tbody')).toContainText('257012')
