@@ -7,15 +7,53 @@ from prefect.logging import get_run_logger
 from .fts import create_fts_index
 from .types import CopyParameters, QueryColumns
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
-from .filter import filter_tables, filter_columns, _CDM_COLUMN_FILTER_MAP
+from .filter import filter_tables, filter_columns, _CDM_COLUMN_FILTER_MAP, _CHUNK_COLUMN_MAP, _CHUNK_COLUMN_MAP
 from _shared_flow_utils.types import SupportedDatabaseDialects
+
+def create_cache_status_table(con, copy_params):
+    # Create status table
+    execute_statement(con, f'''
+        CREATE TABLE IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."table_copy_status" (
+          table_name TEXT PRIMARY KEY,
+          status TEXT,
+          started_at TIMESTAMP,
+          completed_at TIMESTAMP
+        );
+    ''')
+
+def mark_in_progress(con, table: str, copy_params):
+    execute_statement(con, f"""
+        INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."table_copy_status"
+        (table_name, status, started_at)
+        VALUES ('{table}', 'IN_PROGRESS', CAST(NOW() AS TIMESTAMP))
+        ON CONFLICT(table_name) DO UPDATE
+        SET status = 'IN_PROGRESS',
+            started_at = CAST(NOW() AS TIMESTAMP),
+            completed_at = NULL
+        """
+    )
+
+def mark_complete(con, table: str, copy_params):
+    execute_statement(con, f""" UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."table_copy_status"
+        SET status = 'COMPLETE', completed_at = CAST(NOW() AS TIMESTAMP)
+        WHERE table_name = '{table}'
+        """
+    )
+
+def cleanup(con, table: str, copy_params):
+    execute_statement(con, f"DROP TABLE IF EXISTS \"{copy_params.target_database}\".\"{copy_params.target_schema}\".\"{table}\"")
+    execute_statement(con, f"""
+        UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."table_copy_status"
+        SET status = 'FAILED'
+        WHERE table_name = '{table}'
+        """
+    )
 
 
 @task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
 def copy_all_schemas(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
     logger.info(f"Starting schema copy for database '{read_conn.database_code}'...")
-
     schemas_to_copy = sorted(read_conn.get_schema_names())
     logger.info(f"Found {len(schemas_to_copy)} schemas: {schemas_to_copy}")
 
@@ -49,7 +87,7 @@ def copy_all_schemas(write_conn: Any, read_conn: Any, copy_params: CopyParameter
 @task(log_prints=True, task_run_name="create_schema_if_not_exists_{copy_params.target_schema}")
 def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
-    sql = f'CREATE SCHEMA IF NOT EXISTS "{copy_params.target_schema}";'
+    sql = f'CREATE SCHEMA IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}";'
     execute_statement(write_conn, sql)
     logger.info(f"Schema '{copy_params.target_schema}' ensured.")
 
@@ -57,6 +95,25 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters):
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
     source_schema = copy_params.source_schema
+
+    # Create status table
+    create_cache_status_table(write_conn, copy_params)
+
+    # Check for already completed tables
+    completed_tables = set()
+    try:
+        cursor = write_conn.cursor()
+        cursor.execute(f"""
+            SELECT table_name
+            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."table_copy_status"
+            WHERE status = 'COMPLETE'
+        """)
+        result = cursor.fetchall()
+        completed_tables = {row[0] for row in result}
+    except Exception:
+        pass  # Table might not exist or query failed
+
+    logger.info(f"Completed tables: {completed_tables}")
 
     source_tables = copy_params.table_filter.keys() if copy_params.table_filter else read_conn.get_table_names(source_schema)
     tables_to_copy = sorted(filter_tables(source_tables))
@@ -68,15 +125,25 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             tables_to_copy = [t for t in tables_to_copy if t not in VOCAB_TABLES]
             vocab_tables = [t for t in VOCAB_TABLES if t in read_conn.get_table_names(copy_params.vocab_schema)]
             tables_to_copy.extend(vocab_tables)
+
+    # Filter out already completed tables
+    original_count = len(tables_to_copy)
+    tables_to_copy = [t for t in tables_to_copy if t not in completed_tables]
+    skipped_count = original_count - len(tables_to_copy)
+    logger.info(f"Found {len(tables_to_copy)} tables to copy in schema '{source_schema}'.")
+    logger.info(f"Total tables in source schema: {original_count}")
+    logger.info(f"Completed tables: {completed_tables}")
+    logger.info(f"Tables to copy: {tables_to_copy}")
+    if skipped_count > 0:
+        logger.info(f"Skipping {skipped_count} already completed tables.")
+
     logger.info(f"Tables to copy: {tables_to_copy}")
 
     # BigQuery-specific global settings
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
         execute_statement(write_conn, set_bigquery_global_settings())
 
-    # Prepare lists for mapping
-    source_schema_list = []
-    query_columns_list = []
+    # Loop over tables sequentially
     for table in tables_to_copy:
         source_schema_for_table = copy_params.vocab_schema if copy_params.vocab_schema and table in VOCAB_TABLES else source_schema
         source_columns = copy_params.table_filter.get(table) if copy_params.table_filter else None
@@ -91,43 +158,21 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             patient_filter_col=patient_col if patient_col in columns_to_copy else None,
             timestamp_filter_col=timestamp_col if timestamp_col in columns_to_copy else None
         )
-        source_schema_list.append(source_schema_for_table)
-        query_columns_list.append(query_columns)
 
-    # Map copy_table over tables
-    table_tasks = copy_table.map(
-        write_conn=[write_conn] * len(tables_to_copy),
-        read_conn=[read_conn] * len(tables_to_copy),
-        copy_params=[copy_params] * len(tables_to_copy),
-        query_columns=query_columns_list,
-        source_schema=source_schema_list,
-        logger=[logger] * len(tables_to_copy)
-    )
+        # Call copy_table directly
+        copy_table(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
 
-    # Wait for table copy tasks to complete
-    for task in table_tasks:
-        task.result()
+        # Call copy_indexes directly
+        copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema_for_table, logger)
 
-    # Map copy_indexes over tables
-    index_tasks = copy_indexes.map(
-        write_conn=[write_conn] * len(tables_to_copy),
-        read_conn=[read_conn] * len(tables_to_copy),
-        copy_params=[copy_params] * len(tables_to_copy),
-        query_columns=query_columns_list,
-        source_schema=source_schema_list,
-        logger=[logger] * len(tables_to_copy)
-    )
-
-    # Wait for index copy tasks to complete
-    for task in index_tasks:
-        task.result()
-
+    # All tables copied successfully, drop the status tracking table
+    execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."table_copy_status";')
 
 def create_empty_target_table(write_conn, copy_params, query_columns, source_schema):
     select_sql = create_select_query(copy_params, query_columns, source_schema, None)
-    execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_schema}"."{query_columns.table}";')
+    execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}";')
     sql = f"""
-    CREATE TABLE "{copy_params.target_schema}"."{query_columns.table}" AS
+    CREATE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}" AS
     SELECT * FROM ({select_sql}) WHERE 1=0;
     """
     execute_statement(write_conn, sql)
@@ -138,94 +183,163 @@ def determine_chunk_size(dialect: str, estimated_rows: int | None):
         return 5_000_000
     if estimated_rows and estimated_rows > 100_000_000:
         return 1_000_000
-    return 250_000
+    return 1_000_000
 
 
-def plan_chunks(write_conn, database, schema, table, chunk_col, chunk_size, estimated_rows, logger=None):
+def plan_chunks(read_conn, database, schema, table, chunk_col, chunk_size, estimated_rows, logger=None):
+    import sqlalchemy as sql
+    min_val = None
+    max_val = None
+
     if chunk_col:
-        min_val = execute_statement(write_conn, f'SELECT MIN("{chunk_col}") FROM "{database}"."{schema}"."{table}"')[0][0]
-        max_val = execute_statement(write_conn, f'SELECT MAX("{chunk_col}") FROM "{database}"."{schema}"."{table}"')[0][0]
-        if min_val is None or max_val is None:
-            return []
+        try:
+            # Determine table path and column quoting based on dialect
+            dialect = read_conn.tenant_configs.dialect
+            if dialect == SupportedDatabaseDialects.BIGQUERY.value:
+                table_path = f'`{schema}.{table}`'
+                col_quote = ''
+            else:
+                table_path = f'"{database}"."{schema}"."{table}"'
+                col_quote = '"'
 
+            with read_conn.engine.connect() as connection:
+                query = sql.text(f'SELECT MIN({col_quote}{chunk_col}{col_quote}), MAX({col_quote}{chunk_col}{col_quote}) FROM {table_path}')
+                result = connection.execute(query).fetchone()
+                if result:
+                    min_val, max_val = result
+            
+            logger.info(f"Table '{table}': min('{chunk_col}')={min_val}, max('{chunk_col}')={max_val}")
+        except Exception as e:
+            logger.warning(f"Failed to get min/max for '{table}' from source: {e}")
+            min_val = None
+            max_val = None
+
+        if min_val is None or max_val is None:
+            logger.info(f"Chunk column '{chunk_col}' has no valid values. Cannot chunk.")
+            return None
+
+    if chunk_col:
+        # Try to convert to int; if fails (e.g., for dates), don't chunk
+        try:
+            min_val = int(min_val)
+            max_val = int(max_val)
+        except (ValueError, TypeError):
+            logger.info(f"Chunk column '{chunk_col}' is not numeric. Cannot chunk.")
+            return None
+
+    if chunk_col:
         chunks = []
         current = min_val
         while current <= max_val:
             end = min(current + chunk_size - 1, max_val)
             chunks.append(f'"{chunk_col}" BETWEEN {current} AND {end}')
             current = end + 1
-        return chunks
+        
+        # Check if the number of chunks is reasonable compared to estimated rows
+        # If we have very few chunks for a large table, it means the data is dense (many duplicates)
+        # and range-based chunking will result in huge chunks that might crash the system.
+        if estimated_rows and len(chunks) > 0:
+            avg_rows_per_chunk = estimated_rows / len(chunks)
+            # If average rows per chunk is > 2x chunk_size, fallback to ROW_NUMBER
+            if avg_rows_per_chunk > (chunk_size * 2):
+                logger.info(f"Data is too dense for range chunking (avg {int(avg_rows_per_chunk)} rows/chunk vs target {chunk_size}). Cannot chunk efficiently.")
+                return None
+            else:
+                logger.info(f"Planned {len(chunks)} chunks for table '{table}': min={min_val}, max={max_val}, chunk_size={chunk_size}")
+                return chunks
+        else:
+             logger.info(f"Planned {len(chunks)} chunks for table '{table}': min={min_val}, max={max_val}, chunk_size={chunk_size}")
+             return chunks
 
-    # No column → ROW_NUMBER() based chunks
-    if not estimated_rows:
-        estimated_rows = execute_statement(write_conn, f'SELECT COUNT(*) FROM "{database}"."{schema}"."{table}"')[0][0]
-    num_chunks = (estimated_rows + chunk_size - 1) // chunk_size
-    chunks = [(i * chunk_size + 1, min((i + 1) * chunk_size, estimated_rows)) for i in range(num_chunks)]
-    logger.info(f"Planned {len(chunks)} chunks for table '{table}'.")
-    return chunks
+    return None
 
 
-@task(log_prints=True, tags=["chunk-level-concurrency"], task_run_name="copy_table_chunk_{query_columns.table}_{chunk_id}")
 def copy_table_chunk(write_conn, copy_params, query_columns, source_schema, where_sql: str | tuple, chunk_id: int, total_chunks: int, logger=None):
     logger.info(f"Copying chunk {chunk_id + 1}/{total_chunks} for table '{query_columns.table}'")
     select_sql = create_select_query(copy_params, query_columns, source_schema, where_sql)
     insert_sql = f"""
-    INSERT INTO "{copy_params.target_schema}"."{query_columns.table}"
+    INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}"
     {select_sql};
     """
+    print(insert_sql)
     execute_statement(write_conn, insert_sql)
 
 
-@task(log_prints=True, tags=["table-level-concurrency"], task_run_name="copy_table_{query_columns.table}")
 def copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger):
     table = query_columns.table
     dialect = read_conn.tenant_configs.dialect
+    try:
+        mark_in_progress(write_conn, table, copy_params)
+        create_empty_target_table(write_conn, copy_params, query_columns, source_schema)
+        estimated_rows = read_conn.get_table_row_count(source_schema, table)
+        logger.info(f"Starting copy of table '{table}' with {estimated_rows} rows")
+        
+        if estimated_rows < 500000:
+            logger.info(f"Copying table '{table}' (small, {estimated_rows} rows)")
+            select_sql = create_select_query(copy_params, query_columns, source_schema)
+            execute_statement(write_conn, f'INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" {select_sql}')
+            mark_complete(write_conn, table, copy_params)
+            return estimated_rows
 
-    create_empty_target_table(write_conn, copy_params, query_columns, source_schema)
-    estimated_rows = read_conn.get_table_row_count(source_schema, table)
-    logger.info(f"Starting copy of table '{table}' with {estimated_rows} rows")
-    
-    if estimated_rows < 50000:
-        logger.info(f"Copying table '{table}' (small, {estimated_rows} rows)")
-        select_sql = create_select_query(copy_params, query_columns, source_schema)
-        execute_statement(write_conn, f'INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" {select_sql}')
+        # If columns_to_copy is "*", replace with actual column names for proper chunking
+        if query_columns.columns_to_copy == ["*"]:
+            actual_columns = read_conn.get_columns(source_schema, table)
+            logger.info(f"Actual columns for '{table}': {actual_columns}")
+            # Update filter columns based on actual columns (case-insensitive match)
+            patient_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
+            timestamp_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
+            
+            def find_column_case_insensitive(columns, target):
+                if not target:
+                    return None
+                for col in columns:
+                    if col.lower() == target.lower():
+                        return col
+                return None
+            
+            updated_patient_filter_col = find_column_case_insensitive(actual_columns, patient_col) or query_columns.patient_filter_col
+            updated_timestamp_filter_col = find_column_case_insensitive(actual_columns, timestamp_col) or query_columns.timestamp_filter_col
+            
+            query_columns = QueryColumns(
+                table=query_columns.table,
+                columns_to_copy=actual_columns,
+                patient_filter_col=updated_patient_filter_col,
+                timestamp_filter_col=updated_timestamp_filter_col
+            )
+
+        # Determine chunk column from _CHUNK_COLUMN_MAP
+        chunk_col_name = _CHUNK_COLUMN_MAP.get(table)
+        if chunk_col_name:
+            chunk_col = find_column_case_insensitive(query_columns.columns_to_copy, chunk_col_name)
+            logger.info(f"Table '{table}': chunk_col_name='{chunk_col_name}', chunk_col='{chunk_col}'")
+        else:
+            chunk_col = None
+            logger.info(f"Table '{table}': no chunk_col_name in map")
+
+        if chunk_col:
+            chunk_size = determine_chunk_size(dialect, estimated_rows)
+            chunks = plan_chunks(read_conn, copy_params.source_database, source_schema, table, chunk_col, chunk_size, estimated_rows, logger)
+
+            if chunks is None:
+                logger.info(f"Chunking failed or inefficient for '{table}'. Falling back to one-go copy.")
+                select_sql = create_select_query(copy_params, query_columns, source_schema)
+                execute_statement(write_conn, f'INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" {select_sql}')
+            else:
+                # Loop over chunks sequentially
+                for i, chunk_where in enumerate(chunks):
+                    copy_table_chunk(write_conn, copy_params, query_columns, source_schema, chunk_where, i, len(chunks), logger)
+        else:
+            # No suitable chunk column, copy the whole table in one go
+            logger.info(f"Copying table '{table}' in one go (no chunk column)")
+            select_sql = create_select_query(copy_params, query_columns, source_schema)
+            execute_statement(write_conn, f'INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" {select_sql}')
+
+        mark_complete(write_conn, table, copy_params)
         return estimated_rows
-
-    # If columns_to_copy is "*", replace with actual column names for proper chunking
-    if query_columns.columns_to_copy == ["*"]:
-        actual_columns = read_conn.get_columns(source_schema, table)
-        query_columns = QueryColumns(
-            table=query_columns.table,
-            columns_to_copy=actual_columns,
-            patient_filter_col=query_columns.patient_filter_col,
-            timestamp_filter_col=query_columns.timestamp_filter_col
-        )
-
-    chunk_col = query_columns.timestamp_filter_col or query_columns.patient_filter_col
-    # if not chunk_col:
-    #     pk_index = read_conn.get_indexes_for_pk(source_schema, table)
-    #     if pk_index and pk_index.get("constrained_columns"):
-    #         chunk_col = pk_index["constrained_columns"][0]
-
-    chunk_size = determine_chunk_size(dialect, estimated_rows)
-    chunks = plan_chunks(write_conn, copy_params.source_database, source_schema, table, chunk_col, chunk_size, estimated_rows, logger)
-
-    mapped_tasks = copy_table_chunk.map(
-        write_conn=[write_conn] * len(chunks),
-        copy_params=[copy_params] * len(chunks),
-        query_columns=[query_columns] * len(chunks),
-        source_schema=[source_schema] * len(chunks),
-        where_sql=chunks,
-        chunk_id=list(range(len(chunks))),
-        total_chunks=[len(chunks)] * len(chunks),
-        logger=[logger] * len(chunks)
-    )
-    # Wait for all chunks
-    for t in mapped_tasks:
-        t.result()
-
-    return estimated_rows
-
+    except Exception as e:
+        logger.error(f"Table copy for table '{table}' failed with error: {e}")
+        cleanup(write_conn, table, copy_params)
+        raise e
 
 def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple = None) -> str:
     columns_to_copy = query_columns.columns_to_copy
@@ -249,15 +363,17 @@ def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns
             # Column-based chunk: e.g., "person_id BETWEEN 1 AND 1000"
             base_query += f" WHERE {where_sql}"
         elif isinstance(where_sql, tuple) and len(where_sql) == 2:
-            # Offset-based chunk: ROW_NUMBER() BETWEEN start AND end
+            # Offset-based chunk: Use LIMIT/OFFSET for better pushdown
             start, end = where_sql
+            limit = end - start + 1
+            offset = start - 1
             base_query = f"""
             SELECT {columns_sql} FROM (
-                SELECT {columns_sql}, ROW_NUMBER() OVER () AS row_num
-                FROM "{database}"."{schema}"."{table}"
+                SELECT {columns_sql} FROM "{database}"."{schema}"."{table}"
+                LIMIT {limit} OFFSET {offset}
             ) t
-            WHERE row_num BETWEEN {start} AND {end}
             """
+            has_where = False
 
     # Add patient and timestamp filters
     filters = []
@@ -272,7 +388,6 @@ def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns
         base_query += (" AND " if has_where else " WHERE ") + " AND ".join(filters)
     
     return base_query
-
 
 def create_index_query(
     database_name: str,
@@ -289,7 +404,6 @@ def create_index_query(
         ON "{database_name}"."{schema_name}"."{table_name}" ({columns_str});
         '''
 
-@task(log_prints=True, tags=["table-level-concurrency"], task_run_name="copy_indexes_{query_columns.table}")
 def copy_indexes(write_conn, read_conn, copy_params, query_columns, source_schema, logger):
     table = query_columns.table
     columns_to_copy = query_columns.columns_to_copy

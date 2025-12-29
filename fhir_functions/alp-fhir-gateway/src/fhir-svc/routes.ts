@@ -19,6 +19,8 @@ export class FhirRouter {
   }
 
   private registerRoutes() {
+    // Use raw body parser for large/binary requests
+    this.router.use(express.raw({ type: '*/*', limit: '100mb' }));
     //Endpoint to create a new project for the incoming dataset id in FHIR server
     this.router.post(
       "/createProject",
