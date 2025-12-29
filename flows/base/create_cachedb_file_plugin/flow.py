@@ -107,7 +107,7 @@ def create_cache_flow(options: CreateCacheOptions):
             )
             raise
         else:
-            pg_cursor.commit()
+            trex_conn.commit()
             logger.info(
                 f"Cached schema '{options.schema_name}' successfully created for '{options.database_code}'."
             )
