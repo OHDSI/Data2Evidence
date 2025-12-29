@@ -1,8 +1,5 @@
-import { Constants, Logger, utils } from "@alp/alp-base-utils";
-import axios from "npm:axios";
+import { Logger } from "@alp/alp-base-utils";
 import * as http from "http";
-import * as qs from "querystring";
-import { URL } from "url";
 import { StudyMriConfigMetaDataType } from "../types";
 // import * as https from "https";
 const log = Logger.CreateLogger("config-util-log");
@@ -10,20 +7,18 @@ const log = Logger.CreateLogger("config-util-log");
 export default class MriConfigConnection {
     private serverUrl: string;
     private agent: any;
+    private paconfigapi: any;
 
     constructor(serverUrl: string) {
         this.serverUrl = serverUrl;
         this.agent = new http.Agent({ keepAlive: true })
+        this.paconfigapi = Trex.tokioChannel("d2e-functions/mri-pa-config");
     }
 
     public async getMriConfig(req, payload) {
-            const timestamp = (new Date()).valueOf();
+      console.log('findme, getMriConfig')
             let authorizationValue = req.headers.authorization;
             const { action, datasetId, configId } = payload;
-            // log.debug(`payload: ${qs.stringify(payload)}`);
-            const sourceOrigin = req.headers["x-source-origin"];
-
-            let urlPath: string;
             const options = {
               headers: {
                 authorization: authorizationValue, // Replace user JWT (req.headers.authorization)
@@ -36,7 +31,7 @@ export default class MriConfigConnection {
               configId,
             };
             const url = `${this.serverUrl}/enduser?datasetId=${datasetId}`;
-            const result = await axios.post(url, body, options);
+            const result = await this.paconfigapi.post(url, body, options);
 
           return result.data;
     }
