@@ -6,13 +6,12 @@
   "scripts": {
     "postinstall": "wget -O llm.gguf https://huggingface.co/QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF/resolve/main/Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tbuild node_modules/@data2evidence/trex"
+    "build": "tbuild ."
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@data2evidence/trex": "latest",
-    "deno": "latest"
+    "@trex/cli": "latest"
   },
   "trex": {
     "model": {
@@ -526,7 +525,7 @@
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
           "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
-          "CUSTOM_WORK_POOL_CONFIGURATION" : "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
+          "CUSTOM_WORK_POOL_CONFIGURATION": "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
           "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
           "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",
@@ -723,7 +722,6 @@
           "dbSvc.vocabSchemas.read",
           "dbSvc.schema.vocabSchema.read",
           "dbSvc.schema.snapshot.metadata.read",
-          "dbSvc.snapshot.parquet.create",
           "dbSvc.schema.delete",
           "gateway.dashboardGate.register",
           "gateway.dataset.dashboards.read",
@@ -2586,15 +2584,6 @@
           ],
           "httpMethods": [
             "PUT"
-          ]
-        },
-        {
-          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/schemasnapshotparquet/[a-zA-Z0-9_]+(.*)",
-          "scopes": [
-            "dbSvc.snapshot.parquet.create"
-          ],
-          "httpMethods": [
-            "POST"
           ]
         },
         {
