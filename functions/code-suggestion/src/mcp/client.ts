@@ -38,11 +38,14 @@ export class MCPClient {
 
   async connect(): Promise<void> {
     try {
-      this.transport = new StreamableHTTPClientTransport({
-        url: this.config.serverUrl,
-        headers: this.config.headers || {},
-      });
-
+      this.transport = new StreamableHTTPClientTransport(
+        new URL(this.config.serverUrl),
+        {
+          requestInit: {
+            headers: this.config.headers || {},
+          },
+        }
+      );
       await this.client.connect(this.transport);
       this.isConnected = true;
       this.reconnectAttempts = 0;
@@ -104,7 +107,10 @@ export class MCPClient {
     }
 
     try {
-      const result = await this.client.callTool({ name: toolName, arguments: args });
+      const result = await this.client.callTool({
+        name: toolName,
+        arguments: args,
+      });
       return result;
     } catch (error) {
       console.error(`Error calling tool ${toolName}:`, error);
@@ -128,15 +134,19 @@ export class MCPClient {
     }
   }
 
-  async getPrompt(promptName: string, args?: Record<string, any>): Promise<any> {
+  async getPrompt(
+    promptName: string,
+    args?: Record<string, any>
+  ): Promise<any> {
     if (!this.isConnected) {
       throw new Error("MCP client is not connected");
     }
 
     try {
-      const result = await this.client.getPrompt(
-        { name: promptName, arguments: args || {} }
-      );
+      const result = await this.client.getPrompt({
+        name: promptName,
+        arguments: args || {},
+      });
       return result;
     } catch (error) {
       console.error(`Error getting prompt ${promptName}:`, error);
@@ -176,7 +186,10 @@ export class MCPClient {
   }
 
   private async handleRequestError(error: any): Promise<void> {
-    if (error.message?.includes("connection") || error.message?.includes("ECONNREFUSED")) {
+    if (
+      error.message?.includes("connection") ||
+      error.message?.includes("ECONNREFUSED")
+    ) {
       console.log("Connection lost, attempting to reconnect...");
       this.isConnected = false;
       await this.connect();

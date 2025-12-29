@@ -5,6 +5,8 @@ export class MCPManager {
   private static instance: MCPManager;
   private client: MCPClient | null = null;
   private isInitialized: boolean = false;
+  private MCP_AUTH_TOKEN = "";
+  private MCP_DATASET_ID = "";
 
   private constructor() {}
 
@@ -25,22 +27,23 @@ export class MCPManager {
       Accept: "application/json, text/event-stream",
     };
 
-    if (env.MCP_AUTH_TOKEN) {
-      headers["Authorization"] = `Bearer ${env.MCP_AUTH_TOKEN}`;
+    if (this.MCP_AUTH_TOKEN) {
+      headers["Authorization"] = this.MCP_AUTH_TOKEN;
     }
 
-    if (env.MCP_DATASET_ID) {
-      headers["datasetId"] = env.MCP_DATASET_ID;
+    if (this.MCP_DATASET_ID) {
+      headers["datasetId"] = this.MCP_DATASET_ID;
     }
 
     const config: MCPClientConfig = {
       // serverUrl: ,
-      serverUrl: `${env.MCP_SERVER_URL}`,
+      serverUrl: `${env.SERVICE_ROUTES["mcp-server"]}`,
       headers,
       maxRetries: 3,
       retryDelay: 2000,
     };
 
+    console.log(`Connecting to MCP server at ${config.serverUrl}...`);
     this.client = new MCPClient(config);
     await this.client.connect();
     this.isInitialized = true;

@@ -13,7 +13,13 @@ export const getModels = async (llm) => {
     azure: () =>
       import("@langchain/openai").then(
         ({ AzureChatOpenAI }) =>
-          new AzureChatOpenAI({ model: llm.replace("azure:", "") })
+          new AzureChatOpenAI({ 
+            model: llm.replace("azure:", ""),
+            azureOpenAIApiKey: env.AZURE_OPENAI_API_KEY,
+            azureOpenAIApiVersion: env.AZURE_OPENAI_API_VERSION,
+            azureOpenAIApiDeploymentName: env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+            azureOpenAIApiInstanceName: env.AZURE_OPENAI_API_INSTANCE_NAME,
+          })
       ),
   };
   const key = Object.keys(pattern).find((k) => llm.startsWith(k));

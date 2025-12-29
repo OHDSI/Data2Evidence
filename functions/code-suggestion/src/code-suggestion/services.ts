@@ -62,11 +62,11 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
     try {
       const mcpManager = MCPManager.getInstance();
       if (!mcpManager.isReady()) {
+        console.log("Initializing MCP Manager...");
         await mcpManager.initialize();
       }
 
       const mcpClient = mcpManager.getClient();
-
       // Try to get cohort information using MCP if the query mentions cohorts
       if (uiChat.userInput.toLowerCase().includes("cohort")) {
         try {
@@ -74,7 +74,6 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
           const cohortTool = tools.find(
             (t: any) => t.name === "get_cohort_id_name_list"
           );
-          console.log("Cohort Tool:", cohortTool);
           if (cohortTool) {
             const toolResponse = await mcpClient.callTool(
               "get_cohort_id_name_list",
@@ -82,7 +81,6 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
                 cohortInfo: uiChat.userInput,
               }
             );
-
             if (toolResponse?.structuredContent?.cohortsId) {
               const cohorts = toolResponse.structuredContent.cohortsId;
               mcpContext = `\n\nAvailable cohorts from MCP:\n${JSON.stringify(
@@ -90,7 +88,6 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
                 null,
                 2
               )}`;
-              console.log("mcpContext", mcpContext);
             }
           }
         } catch (mcpError) {
