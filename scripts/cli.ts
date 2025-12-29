@@ -534,7 +534,7 @@ class D2ECli {
       stdio: "inherit",
       shell: true,
     });
-    if (setupdemo.error) {
+    if (setupdemo.error || setupdemo.status !== 0) {
       console.error("Failed to run script:", setupdemo.error);
       process.exit(1);
     }
@@ -545,11 +545,12 @@ class D2ECli {
       stdio: "inherit",
       shell: true,
     });
-    if (check_setupdemo.error) {
+    if (check_setupdemo.error || check_setupdemo.status !== 0) {
       console.error("Failed to run script:", check_setupdemo.error);
       process.exit(1);
     }
   }
+
   setupdemohana() {
     console.log("Setting up demo database for hana...");
     const zx_cmd = this.setup_zx_cmd();
@@ -559,7 +560,7 @@ class D2ECli {
       stdio: "inherit",
       shell: true,
     });
-    if (setupdemohana.error) {
+    if (setupdemohana.error || setupdemohana.status !== 0) {
       console.error("Failed to run script:", setupdemohana.error);
       process.exit(1);
     }
@@ -570,7 +571,7 @@ class D2ECli {
       stdio: "inherit",
       shell: true,
     });
-    if (check_setupdemohana.error) {
+    if (check_setupdemohana.error || check_setupdemohana.status !== 0) {
       console.error("Failed to run script:", check_setupdemohana.error);
       process.exit(1);
     }
