@@ -534,8 +534,12 @@ class D2ECli {
       stdio: "inherit",
       shell: true,
     });
-    if (setupdemo.error || setupdemo.status !== 0) {
+    if (setupdemo.error) {
       console.error("Failed to run script:", setupdemo.error);
+      process.exit(1);
+    }
+    if (setupdemo.status !== 0) {
+      console.error(`setupdemo exited with code ${setupdemo.status}`);
       process.exit(1);
     }
 
@@ -549,6 +553,10 @@ class D2ECli {
       console.error("Failed to run script:", check_setupdemo.error);
       process.exit(1);
     }
+    if (check_setupdemo.status !== 0) {
+      console.error(`check_setupdemo exited with code ${setupdemo.status}`);
+      process.exit(1);
+    }
   }
 
   setupdemohana() {
@@ -560,8 +568,12 @@ class D2ECli {
       stdio: "inherit",
       shell: true,
     });
-    if (setupdemohana.error || setupdemohana.status !== 0) {
+    if (setupdemohana.error) {
       console.error("Failed to run script:", setupdemohana.error);
+      process.exit(1);
+    }
+    if (setupdemohana.status !== 0) {
+      console.error(`setupdemohana exited with code ${setupdemohana.status}`);
       process.exit(1);
     }
 
@@ -573,6 +585,12 @@ class D2ECli {
     });
     if (check_setupdemohana.error || check_setupdemohana.status !== 0) {
       console.error("Failed to run script:", check_setupdemohana.error);
+      process.exit(1);
+    }
+    if (check_setupdemohana.status !== 0) {
+      console.error(
+        `check_setupdemohana exited with code ${check_setupdemohana.status}`
+      );
       process.exit(1);
     }
   }
