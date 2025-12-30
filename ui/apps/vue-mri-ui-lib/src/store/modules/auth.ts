@@ -64,7 +64,7 @@ const actions = {
     if (portalAPI.qeSvcUrl) {
       url = `${portalAPI.qeSvcUrl}${url}`
     } else {
-      url = `${process.env.VUE_APP_HOST}${url}`
+      url = `${import.meta.env.VITE_HOST}${url}`
     }
     return new Promise(async (resolve, reject) => {
       dispatch('clearNotifications')
@@ -105,7 +105,7 @@ const actions = {
     if (portalAPI.qeSvcUrl) {
       url = `${portalAPI.qeSvcUrl}${url}`
     } else {
-      url = `${process.env.VUE_APP_HOST}${url}`
+      url = `${import.meta.env.VITE_HOST}${url}`
     }
 
     return new Promise(async (resolve, reject) => {
@@ -152,4 +152,3 @@ export default {
   actions,
   mutations,
 }
-
