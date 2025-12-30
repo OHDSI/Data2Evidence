@@ -42,6 +42,10 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     try:
         logger.info(f"Copying source FHIR schema '{options.schemaName}' to cache as schema '{options.cacheSchemaName}'...")
         pg_cursor = trex_conn.cursor()
+
+        # Update cache information
+        pg_cursor.execute("CALL pg_clear_cache();")
+
         copy_schema_to_cache(pg_cursor, dbdao, options)
     except Exception as e:
         logger.error(
