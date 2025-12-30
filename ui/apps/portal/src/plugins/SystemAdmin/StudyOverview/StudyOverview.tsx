@@ -615,21 +615,26 @@ const StudyOverview: FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sourceOmopHanaDatasets.map((dataset: Study & { children?: Study[] }) => (
+                    {sourceOmopHanaDatasets.map((dataset: Study & { children?: Study[] }, index: number) => (
                       <React.Fragment key={dataset.id}>
                         {renderDatasetRow(dataset, false, (dataset.children?.length || 0) > 0)}
-                        {dataset.children && dataset.children.length > 0 && (
-                          <TableRow>
-                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
-                              <Collapse in={expandedRows[dataset.id]} timeout="auto" unmountOnExit>
-                                <Table size="small">
-                                  <TableBody>
-                                    {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
-                                  </TableBody>
-                                </Table>
-                              </Collapse>
-                            </TableCell>
-                          </TableRow>
+                        {dataset.children && dataset.children.length > 0 && expandedRows[dataset.id] && (
+                          <>
+                            <TableRow className="cache-datasets-header-row">
+                              <TableCell 
+                                colSpan={9}
+                                className="cache-datasets-header-cell"
+                              >
+                                Cache Datasets
+                              </TableCell>
+                            </TableRow>
+                            {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
+                            {index < sourceOmopHanaDatasets.length - 1 && (
+                              <TableRow className="dataset-separator-row">
+                                <TableCell colSpan={9} className="dataset-separator-cell" />
+                              </TableRow>
+                            )}
+                          </>
                         )}
                       </React.Fragment>
                     ))}
