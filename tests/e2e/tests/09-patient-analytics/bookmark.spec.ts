@@ -54,7 +54,11 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click()
+      await page
+        .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
+        .locator('td')
+        .first()
+        .click()
       await page.getByRole('button', { name: 'Create' }).click()
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
       await page.getByRole('button', { name: 'Close' }).click()
@@ -104,13 +108,11 @@ test(TEST_NAME, async ({ page }) => {
     //Previous filter name should be visible
     await expect(page.getByRole('textbox', { name: 'Enter name' })).toHaveValue('Test Cohort 2')
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
-    await page
-      .getByRole('textbox', { name: 'Enter name' })
-      .fill('This is for testing my saved filters which I will use')
+    await page.getByRole('textbox', { name: 'Enter name' }).fill('x'.repeat(256))
     await page.getByRole('textbox', { name: 'Enter name' }).click()
-    await expect(page.getByText('Filter name must not exceed 40 characters')).toBeVisible()
+    await expect(page.getByText('Filter name must not exceed 255 characters')).toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
-    await expect(page.getByText('Filter name must not exceed 40 characters')).not.toBeVisible()
+    await expect(page.getByText('Filter name must not exceed 255 characters')).not.toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('  ')
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
@@ -229,7 +231,12 @@ test(TEST_NAME, async ({ page }) => {
         await page.getByRole('textbox', { name: 'search terms' }).click()
         await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis')
         await page.getByRole('button', { name: 'Search' }).click()
-        await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click()
+        await expect(page.getByRole('row', { name: /444814009.*Viral sinusitis/ })).toBeVisible({ timeout: 30000 })
+        await page
+          .getByRole('row', { name: /444814009.*Viral sinusitis/ })
+          .locator('td')
+          .first()
+          .click()
         await page.getByRole('button', { name: 'Create' }).click()
         await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
         await page.getByRole('button', { name: 'Close' }).click()

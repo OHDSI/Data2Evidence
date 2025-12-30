@@ -322,7 +322,6 @@ interface ICreateDatamodelFlowRunOptions {
     database_code: string;
     data_model: string;
     schema_name: string;
-    cleansed_schema_option: string;
     results_schema: string;
     vocab_schema: string;
     plugin: string;
