@@ -3,6 +3,8 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModels } from "../utils/prepModels";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { MCPManager } from "../mcp/mcpManager";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { loadMcpTools } from "@langchain/mcp-adapters";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   const context = `
@@ -55,54 +57,59 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
   }
 
-  // Initialize MCP if requested and available
+  let agent;
   let mcpContext = "";
-  uiChat.useMcp = true;
-  if (uiChat.useMcp === true) {
-    try {
-      const mcpManager = MCPManager.getInstance();
-      if (!mcpManager.isReady()) {
-        console.log("Initializing MCP Manager...");
-        await mcpManager.initialize();
-      }
 
-      const mcpClient = mcpManager.getClient();
-      // Try to get cohort information using MCP if the query mentions cohorts
-      if (uiChat.userInput.toLowerCase().includes("cohort")) {
-        try {
-          const tools = await mcpClient.listTools();
-          const cohortTool = tools.find(
-            (t: any) => t.name === "get_cohort_id_name_list"
-          );
-          if (cohortTool) {
-            const toolResponse = await mcpClient.callTool(
-              "get_cohort_id_name_list",
-              {
-                cohortInfo: uiChat.userInput,
-              }
-            );
-            if (toolResponse?.structuredContent?.cohortsId) {
-              const cohorts = toolResponse.structuredContent.cohortsId;
-              mcpContext = `\n\nAvailable cohorts from MCP:\n${JSON.stringify(
-                cohorts,
-                null,
-                2
-              )}`;
-            }
-          }
-        } catch (mcpError) {
-          console.warn(
-            "MCP tool call failed, continuing without MCP data:",
-            mcpError
-          );
-        }
-      }
-    } catch (mcpError) {
-      console.warn(
-        "MCP initialization failed, continuing without MCP:",
-        mcpError
-      );
+  // Initialize MCP if requested and available
+  try {
+    const mcpManager = MCPManager.getInstance();
+    if (!mcpManager.isReady()) {
+      console.log("Initializing MCP Manager...");
+      await mcpManager.initialize();
     }
+    const mcpClient = mcpManager.getClient();
+    const tools = await loadMcpTools("d2e-mcp", mcpClient);
+    agent = createReactAgent({
+      llm: model,
+      tools,
+    });
+    // Try to get cohort information using MCP if the query mentions cohorts
+    if (uiChat.userInput.toLowerCase().includes("cohort")) {
+      try {
+        const availableTools = await mcpClient.listTools();
+
+        const cohortTool = availableTools.find(
+          (t: any) => t.name === "get_cohort_id_name_list"
+        );
+        if (cohortTool) {
+          const toolResponse = await mcpClient.callTool(
+            "get_cohort_id_name_list",
+            {
+              cohortInfo: uiChat.userInput,
+            }
+          );
+          if (toolResponse?.structuredContent?.cohortsId) {
+            const cohorts = toolResponse.structuredContent.cohortsId;
+            mcpContext = `\n\nAvailable cohorts from MCP:\n${JSON.stringify(
+              cohorts,
+              null,
+              2
+            )}`;
+          }
+          console.log("MCP tool response:", mcpContext);
+        }
+      } catch (mcpError) {
+        console.warn(
+          "MCP tool call failed, continuing without MCP data:",
+          mcpError
+        );
+      }
+    }
+  } catch (mcpError) {
+    console.warn(
+      "MCP initialization failed, continuing without MCP:",
+      mcpError
+    );
   }
 
   try {
@@ -265,10 +272,22 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
       new HumanMessage(uiChat.userInput),
     ];
     // streaming
-    const outputParser = new StringOutputParser();
-    const streamingChain = model.pipe(outputParser);
-    const stream = await streamingChain.stream(messages);
-    return stream;
+    // const outputParser = new StringOutputParser();
+    // const streamingChain = model.pipe(outputParser);
+    // const stream = await streamingChain.stream(messages);
+    // return stream;
+
+    // Use agent if available, otherwise use model directly
+    if (agent) {
+      const response = await agent.invoke({ messages });
+      return response;
+    } else {
+      // Fallback to direct model invocation if agent is not available
+      const outputParser = new StringOutputParser();
+      const streamingChain = model.pipe(outputParser);
+      const stream = await streamingChain.stream(messages);
+      return stream;
+    }
   } catch (error) {
     throw error;
   }
