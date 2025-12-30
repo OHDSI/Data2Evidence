@@ -89,8 +89,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('tr', { hasText: datasetNewCacheSchema }).first()).toBeVisible({ timeout: 120000 })
 
   // Copy the schema name for later use
-  const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).textContent()
-  const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
+  // const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).first().textContent()
+  // const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
   // Delete the newly created dataset
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
