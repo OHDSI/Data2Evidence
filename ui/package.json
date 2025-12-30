@@ -148,10 +148,12 @@
         "researcher": [
           {
             "enabled": true,
+            "type": "app",
+            "autoMount": true,
             "featureFlag": "conceptSets",
             "name": "Concepts",
             "nameI18nKey": "UI_PLUGIN_CONCEPTS",
-            "pluginPath": "plugins/Researcher/ConceptSets/module",
+            "pluginPath": "/resources/concept-sets/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],

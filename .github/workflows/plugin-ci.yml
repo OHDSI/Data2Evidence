@@ -103,9 +103,11 @@ jobs:
           - PKGPATH: ./ui
             NPM: bun
           - PKGPATH: ./functions/
-            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/d2e-functions
+            DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
+            RUNNER: ubuntu-24.04
           - PKGPATH: ./fhir_functions/
-            DESTPATH: /usr/src/data/plugins/node_modules/@data2evidence/fhir
+            DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
+            RUNNER: ubuntu-24.04
 
     runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
 
@@ -146,10 +148,16 @@ jobs:
       - name: Setup NPM
         if: ${{ matrix.NPM && matrix.NPM != 'bun' }}
         run: npm install -g ${{ matrix.NPM }}
+      - name: Setup Java
+        if: ${{ matrix.DESTPATH }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
       - name: Install dependencies
         if: ${{ matrix.DESTPATH }}
         run: |
-          npm install -g deno@2.1.13
+          npm install -g deno@2.5.6
           node ./install-deno-deps.js ${{ matrix.PKGPATH }}
       - name: Update version
         run: |
@@ -180,9 +188,9 @@ jobs:
           sudo chown runner:docker ${{ matrix.DESTPATH }}
           cp -a . ${{ matrix.DESTPATH }}
           cd ${{ matrix.DESTPATH }}
-          export TREX_DOCKER_TAG=sha256:468f1fa411b288f8ebac842dc0982bb7b8cb2d5eeb8dc25a494b734fcacfac42
-          #$(grep -m1 '^FROM ' $GITHUB_WORKSPACE/services/trex/Dockerfile | sed -E 's/.*@(sha256:[a-f0-9]+).*/\1/')
-          echo "Using TREX_DOCKER_TAG=$TREX_DOCKER_TAG"
+
+          export DENO_DIR="$HOME/.cache/deno"
+          node ${{ github.workspace }}/install-deno-deps.js .
           npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4

@@ -63,7 +63,6 @@ def create_datamodel_flow(options: CreateDataModelType, logger):
             changelog_file=options.changelog_filepath_list.get(
                 options.data_model),
             count=options.update_count,
-            cleansed_schema_option=options.cleansed_schema_option,
             plugin_classpath=get_plugin_classpath(options.flow_name),
             dialect=db_dialect
         )

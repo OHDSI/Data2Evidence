@@ -2,7 +2,7 @@ import { Container ,  Service } from 'typedi'
 import type { Knex } from '../types'
 import { createLogger } from '../Logger'
 import { ConfigRepository } from '../repositories'
-import { ConfigSetRequest, ITokenUser } from '../types.d.ts'
+import { ConfigSetRequest, ITokenUser } from '../types'
 import { CONFIG_KEY, CONTAINER_KEY } from '../const'
 
 @Service()

@@ -1,6 +1,7 @@
 {
   "workspace": [],
   "nodeModulesDir": "auto",
+  "unstable": ["sloppy-imports"],
   "compilerOptions": {
     "lib": [
       "deno.window"
@@ -29,6 +30,7 @@
     "../_shared/alp-base-utils/src/utils": "../_shared/alp-base-utils/src/utils.ts",
     "../_shared/alp-base-utils/src/types": "../_shared/alp-base-utils/src/types.ts",
     "../_shared/alp-base-utils/src/Logger": "../_shared/alp-base-utils/src/Logger.ts",
+    "../_shared/alp-base-utils/src/Connection": "../_shared/alp-base-utils/src/Connection.ts",
     "path": "node:path",
     "https": "node:https",
     "pako": "npm:pako@1.0.11",

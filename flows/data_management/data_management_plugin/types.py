@@ -25,7 +25,6 @@ class DataModelType(BaseModel):
     database_code: str
     data_model: Optional[str] = None
     schema_name: Optional[str] = None
-    cleansed_schema_option: Optional[bool] = False
     vocab_schema: Optional[str] = None
     rollback_count: Optional[int] = None
     rollback_tag: Optional[str] = None
@@ -69,7 +68,6 @@ class DataModelBase(BaseModel):
 
 
 class CreateDataModelType(DataModelBase):
-    cleansed_schema_option: Optional[bool]
     vocab_schema: str = Field(...)
     update_count: Optional[int]
 

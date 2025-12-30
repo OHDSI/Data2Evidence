@@ -219,16 +219,17 @@ const StudyOverview: FC = () => {
     fetchStrategusStudies();
   }, [refetch]);
 
-  // Organize datasets into parent-child structure for source/omop/hana and separate lists for studies and fhir
+  // Organize datasets into parent-child structure for source/omop/hana and fhir, and separate lists for studies
   const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets } = useMemo(() => {
     if (!datasets) return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [] };
 
     const sourceOmopHana: Study[] = [];
     const studies: Study[] = [];
     const fhir: Study[] = [];
-    const childrenMap = new Map<string, Study[]>();
+    const cdmChildrenMap = new Map<string, Study[]>();
+    const fhirChildrenMap = new Map<string, Study[]>();
 
-    // First pass: separate datasets by type and build children map
+    // First pass: separate datasets by type and build children maps
     datasets.forEach((dataset: Study) => {
       const type = dataset.type?.toLowerCase();
       
@@ -237,7 +238,22 @@ const StudyOverview: FC = () => {
         studies.push(dataset);
       } else if (type === "fhir" || type === "non_omop") {
         // FHIR and non_omop datasets go to FHIR table
-        fhir.push(dataset);
+        // Check if this is a child dataset (has source_dataset_id attribute)
+        const sourceIdAttribute = dataset.attributes?.find(
+          (attr) => attr.attributeId === "source_dataset_id"
+        );
+        
+        if (sourceIdAttribute && sourceIdAttribute.value) {
+          // This is a child dataset
+          const parentId = sourceIdAttribute.value;
+          if (!fhirChildrenMap.has(parentId)) {
+            fhirChildrenMap.set(parentId, []);
+          }
+          fhirChildrenMap.get(parentId)!.push(dataset);
+        } else {
+          // This is a parent or standalone FHIR dataset
+          fhir.push(dataset);
+        }
       } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop") {
         // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
         // Check if this is a child dataset (has source_dataset_id attribute)
@@ -248,10 +264,10 @@ const StudyOverview: FC = () => {
         if (sourceIdAttribute && sourceIdAttribute.value) {
           // This is a child dataset
           const parentId = sourceIdAttribute.value;
-          if (!childrenMap.has(parentId)) {
-            childrenMap.set(parentId, []);
+          if (!cdmChildrenMap.has(parentId)) {
+            cdmChildrenMap.set(parentId, []);
           }
-          childrenMap.get(parentId)!.push(dataset);
+          cdmChildrenMap.get(parentId)!.push(dataset);
         } else {
           // This is a parent or standalone dataset (hana datasets won't have children)
           sourceOmopHana.push(dataset);
@@ -259,27 +275,46 @@ const StudyOverview: FC = () => {
       }
     });
 
-    const datasetsWithChildren = sourceOmopHana.map((dataset) => ({
+    const cdmDatasetsWithChildren = sourceOmopHana.map((dataset) => ({
       ...dataset,
-      children: childrenMap.get(dataset.id) || [],
+      children: cdmChildrenMap.get(dataset.id) || [],
+    }));
+
+    const fhirDatasetsWithChildren = fhir.map((dataset) => ({
+      ...dataset,
+      children: fhirChildrenMap.get(dataset.id) || [],
     }));
 
     return {
-      sourceOmopHanaDatasets: datasetsWithChildren,
+      sourceOmopHanaDatasets: cdmDatasetsWithChildren,
       studyDatasets: studies,
-      fhirDatasets: fhir,
+      fhirDatasets: fhirDatasetsWithChildren,
     };
   }, [datasets]);
 
   // Initialize expandedRows to have all parent datasets expanded by default
   useEffect(() => {
+    const initialExpandedRows: Record<string, boolean> = {};
+    
+    // Add CDM datasets with children
     if (sourceOmopHanaDatasets.length > 0) {
-      const initialExpandedRows: Record<string, boolean> = {};
       sourceOmopHanaDatasets.forEach((dataset) => {
         if (dataset.children && dataset.children.length > 0) {
           initialExpandedRows[dataset.id] = true;
         }
       });
+    }
+    
+    // Add FHIR datasets with children
+    if (fhirDatasets.length > 0) {
+      fhirDatasets.forEach((dataset) => {
+        if (dataset.children && dataset.children.length > 0) {
+          initialExpandedRows[dataset.id] = true;
+        }
+      });
+    }
+    
+    if (Object.keys(initialExpandedRows).length > 0) {
       setExpandedRows((prev) => {
         // Only update if there are new parent datasets to expand
         // Preserve existing expanded state for datasets that are already in prev
@@ -292,7 +327,7 @@ const StudyOverview: FC = () => {
         return merged;
       });
     }
-  }, [sourceOmopHanaDatasets]);
+  }, [sourceOmopHanaDatasets, fhirDatasets]);
 
   const visibilityImgAlt = useCallback((value?: string) => {
     if (!value) return;
@@ -658,7 +693,24 @@ const StudyOverview: FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {fhirDatasets.map((dataset: Study) => renderDatasetRow(dataset, false, false))}
+                    {fhirDatasets.map((dataset: Study & { children?: Study[] }) => (
+                      <React.Fragment key={dataset.id}>
+                        {renderDatasetRow(dataset, false, (dataset.children?.length || 0) > 0)}
+                        {dataset.children && dataset.children.length > 0 && (
+                          <TableRow>
+                            <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
+                              <Collapse in={expandedRows[dataset.id]} timeout="auto" unmountOnExit>
+                                <Table size="small">
+                                  <TableBody>
+                                    {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
+                                  </TableBody>
+                                </Table>
+                              </Collapse>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    ))}
                   </TableBody>
                 </Table>
               </TableContainer>
