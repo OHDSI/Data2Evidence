@@ -516,7 +516,7 @@
         "demo": {
           "DEMO__DB_CODE": "demo_database",
           "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-          "DEMO__DB_RESULT_SCHEMA": "demo_cdm",
+          "DEMO__DB_RESULT_SCHEMA": "demo_cdm_results",
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
