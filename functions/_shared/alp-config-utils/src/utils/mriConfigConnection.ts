@@ -16,7 +16,6 @@ export default class MriConfigConnection {
     }
 
     public async getMriConfig(req, payload) {
-      console.log('findme, getMriConfig')
             let authorizationValue = req.headers.authorization;
             const { action, datasetId, configId } = payload;
             const options = {

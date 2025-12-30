@@ -63,7 +63,6 @@ export const terminologyRequest = async (
                 throw `HTTP method:${method} is not supported in terminologyRequest`;
         }
 
-        console.log("findme, response", response);
         if (response.status >= 200 && response.status <= 399) {
             return response.data;
         } else {
