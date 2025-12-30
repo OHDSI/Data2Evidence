@@ -27,6 +27,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
   await page.locator('#mui-component-select-vocabSchemaOption').click()
   await page.getByRole('option', { name: 'demo_cdm' }).click()
+  // Uncheck the "Use default result schema name" checkbox to enable custom input
+  await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
   await page.getByRole('textbox', { name: 'Result Schema Name' }).fill('test_result_schema')
   await page.locator('#mui-component-select-dataModelOption').click()
   await page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' }).click()
@@ -189,6 +191,8 @@ test(TEST_NAME, async ({ page }) => {
       .nth(2)
       .click({ timeout: 30000 })
     await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+    // Enter dataset name to confirm deletion
+    await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test_dataset_update')
     await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
     // Wait for the deletion to complete before proceeding
     await expect(page.getByRole('row', { name: /Test_dataset_update/ })).not.toBeVisible({ timeout: 20000 })

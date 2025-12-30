@@ -26,6 +26,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
+  // Uncheck the "Use default result schema name" checkbox to enable custom input
+  await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
   await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.locator('#mui-component-select-dataModelOption').click()
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
@@ -55,11 +57,15 @@ test(TEST_NAME, async ({ page }) => {
   await expect(testCacheRow).toBeVisible({ timeout: 30000 })
   await testCacheRow.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  // Enter dataset name to confirm deletion
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
   // Then delete the parent dataset (Test Study)
   const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
   await expect(testStudyDataset).toBeVisible({ timeout: 30000 })
   await testStudyDataset.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  // Enter dataset name to confirm deletion
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Study')
   await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
 })
