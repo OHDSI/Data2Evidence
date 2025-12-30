@@ -12,9 +12,6 @@ import {
   TableCell,
   TableRow,
   Text,
-  VisibilityPublicIcon,
-  VisibilityOnIcon,
-  VisibilityOffIcon,
   Button,
   Tooltip,
 } from "@portal/components";
@@ -329,26 +326,6 @@ const StudyOverview: FC = () => {
     }
   }, [sourceOmopHanaDatasets, fhirDatasets]);
 
-  const visibilityImgAlt = useCallback((value?: string) => {
-    if (!value) return;
-    return value === "DEFAULT" ? "Normal" : value.charAt(0).toUpperCase() + value.substring(1).toLowerCase();
-  }, []);
-
-  const visibilityIcon = useCallback(
-    (visibilityStatus: string) => {
-      const alt = visibilityImgAlt(visibilityStatus);
-      switch (visibilityStatus) {
-        case "HIDDEN":
-          return <VisibilityOffIcon title={alt} />;
-        case "PUBLIC":
-          return <VisibilityPublicIcon title={alt} />;
-        default:
-          return <VisibilityOnIcon title={alt} />;
-      }
-    },
-    [visibilityImgAlt]
-  );
-
   const handleCloseAddStudyDialog = useCallback(
     (type: CloseDialogType) => {
       closeAddStudyDialog();
@@ -526,7 +503,6 @@ const StudyOverview: FC = () => {
               {expandedRows[dataset.id] ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
             </IconButton>
           )}
-          {visibilityIcon(dataset.visibilityStatus)}
         </TableCell>
         <TableCell style={{ maxWidth: "120px" }}>
           <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
