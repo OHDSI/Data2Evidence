@@ -24,7 +24,6 @@ import {
   SourceDatasetType,
 } from "../../../../types";
 import { usePaConfigs, useDatasetTagConfigs, useDatasetAttributeConfigs } from "../../../../hooks";
-import MetadataForm from "./MetadataForm/MetadataForm";
 import "./UpdateStudyDialog.scss";
 import { useTranslation } from "../../../../contexts";
 
@@ -426,31 +425,6 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
                 <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
               )}
               <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
-            </div>
-
-            <div style={{ marginBottom: "32px" }}>
-              <div style={{ marginTop: "32px", fontWeight: "bold" }}>
-                {getText(i18nKeys.UPDATE_STUDY_DIALOG__METADATA)}
-              </div>
-              {attributeConfigs.length !== 0 &&
-                studyMetadata.map((data, index) => (
-                  <MetadataForm
-                    key={index}
-                    studyMetadata={data}
-                    index={index}
-                    attributeConfigs={attributeConfigs.filter(
-                      (a) => !studyMetadata.some((m) => m.attributeId === a.id) || data.attributeId === a.id
-                    )}
-                    handleRemoveMetadata={() => handleRemoveLine(index, studyMetadata, setStudyMetadata)}
-                    handleMetadataChange={handleMetadataChange}
-                    error={formMetadataErrorIndex.includes(index)}
-                  />
-                ))}
-              <IconButton
-                startIcon={<AddSquareIcon />}
-                title={getText(i18nKeys.UPDATE_STUDY_DIALOG__ADD_METADATA)}
-                onClick={handleAddMetadataForm}
-              />
             </div>
           </>
         )}
