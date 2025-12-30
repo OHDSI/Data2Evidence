@@ -1,31 +1,33 @@
-import { AxiosRequestConfig } from "axios";
 import { services } from "../env.ts";
-import { get, post } from "./request-util.ts";
-import type { IDbCreateDto, IDbDto } from "../type.d.ts";
+import { get, post } from "../utils/request-util";
+import type { IDbCreateDto, IDbDto } from "../utils/type";
+import { AxiosRequestConfig } from 'axios'
 
 export class DbCredentialsAPI {
+  protected readonly logger = console; //createLogger(this.constructor.name)
   private readonly baseURL: string;
-  private readonly httpsAgent: any;
-  private readonly logger = console; //createLogger(this.constructor.name)
-  private readonly token: string;
-
-  constructor(token: string) {
-    this.token = token;
-    if (!token) {
-      throw new Error("No token passed for DbCredentialsApi!");
-    }
-
+  private readonly accessToken: string;
+  constructor(accessToken: string ) {
+    this.accessToken = accessToken;
     if (services.trex) {
-      this.baseURL = services.trex;
-      // this.httpsAgent = new https.Agent({
-      //   rejectUnauthorized: true,
-      //   ca: env.GATEWAY_CA_CERT
-      // });
-    } else {
-      this.logger.error("No url is set for DbCredentialsApi");
-      throw new Error("No url is set for DbCredentialsApi");
+          this.baseURL = services.trex;
+        } else {
+          this.logger.error("No url is set for DbCredentialsApi");
+          throw new Error("No url is set for DbCredentialsApi");
+       }
     }
-  }
+
+  private async getRequestConfig() {
+      let options: AxiosRequestConfig = {}
+  
+      options = {
+        headers: {
+          Authorization: this.accessToken
+        }
+      }
+  
+      return options;
+    }
 
   async getDbList(): Promise<IDbDto[]> {
     try {
@@ -51,18 +53,5 @@ export class DbCredentialsAPI {
       console.error(`Error while creating database: ${error}`);
       throw error;
     }
-  }
-
-  private getRequestConfig() {
-    let options: AxiosRequestConfig = {};
-
-    options = {
-      headers: {
-        Authorization: this.token,
-      },
-      httpsAgent: this.httpsAgent,
-    };
-
-    return options;
   }
 }

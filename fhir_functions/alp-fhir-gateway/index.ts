@@ -1,6 +1,7 @@
 import express, { Application } from "express";
 import { FhirRouter } from "./src/fhir-svc/routes.ts";
 import { binaryUploadLimitSize } from "./src/env.ts";
+import { healthCheckMiddleware } from "../_shared/alp-base-utils/src/HealthCheckMiddleware.ts";
 
 export class App {
   private app: Application;
@@ -39,7 +40,8 @@ export class App {
       }
       next(err);
     });
-
+    // Healthcheck
+    this.app.use("/gateway/api/fhir/check-readiness", healthCheckMiddleware);
     this.app.use("/gateway/api/fhir", new FhirRouter().router);
     this.app.listen(8000);
     this.logger.info(`🚀 ALP FHIR Service started successfully!`);

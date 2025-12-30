@@ -1,5 +1,4 @@
-import randomBytes from "randombytes";
-import { env } from "./env";
+import { env } from "../env";
 import { IDbCredential, ServiceScopeType } from "./type";
 
 export class DbCredentialProcessor {
@@ -35,7 +34,9 @@ export class DbCredentialProcessor {
   }
 
   private createSalt() {
-    return randomBytes(16).toString("base64");
+    const randomBytes = new Uint8Array(16);
+    crypto.getRandomValues(randomBytes);
+    return btoa(String.fromCharCode(...randomBytes));
   }
 
   private async encrypt(data: string, keyType: ServiceScopeType, salt: string) {
