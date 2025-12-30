@@ -40,8 +40,8 @@ const SearchBar: FC<SearchBarProps> = ({
           p: "8px",
           ml: "8px",
           alignSelf: "center",
-          width: "22px",
-          height: "22px",
+          width: "38px",
+          height: "38px",
         }}
       />
       <InputBase

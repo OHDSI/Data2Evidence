@@ -14,14 +14,13 @@ apt-get update && apt-get install -y \
     && apt-get install -y -t testing libstdc++6 && \
     rm -rf /var/lib/apt/lists/*
 
-RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime
-RUN cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/
+RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime && \
+    cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
+    rm -rf /root/onnxruntime
 
 RUN bash ./scripts/install_libchdb.sh
 
-RUN mkdir -p /usr/src
-RUN mkdir -p /usr/src/data/cache
-RUN mkdir -p /usr/src/data/plugins
+RUN mkdir -p /usr/src /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in
 
 WORKDIR /usr/src
 
@@ -29,7 +28,7 @@ COPY deno.json package.json package-lock.json .npmrc ./
 
 RUN npm install
 
-RUN mkdir -p ./cert
+RUN mkdir -p ./cert ./core
 
 ENV TREXAS_HOST=0.0.0.0
 ENV TREXAS_PORT=9876
@@ -42,9 +41,14 @@ ENV MAIN_PATH=/usr/src/main
 
 EXPOSE 33001 5432 33000
 
-RUN mkdir -p ./core
 COPY ./core ./core
 
+RUN npx trex bundle -e ./core/server/index.ts -o ./core/server/index.eszip && \
+    npx trex bundle -e ./core/event/index.ts -o ./core/event/index.eszip
+
+RUN mkdir -p ./logto
+COPY ./logto ./logto
+
+COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
+
 CMD ["npm", "run", "start"]
-
-
