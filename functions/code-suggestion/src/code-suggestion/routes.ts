@@ -51,7 +51,10 @@ export class CodeSuggestionRouter {
         // Stream the response chunks to the client as they are received.
         let stream = await getChatResponse(req.body);
         for await (const chunk of stream) {
-          res.write(chunk);
+          const content = chunk?.content || chunk;
+          if (typeof content === "string") {
+            res.write(content);
+          }
         }
         res.status(200);
         res.end();

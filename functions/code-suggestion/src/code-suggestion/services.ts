@@ -96,7 +96,6 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
               2
             )}`;
           }
-          console.log("MCP tool response:", mcpContext);
         }
       } catch (mcpError) {
         console.warn(
@@ -279,9 +278,14 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
 
     // Use agent if available, otherwise use model directly
     if (agent) {
-      const response = await agent.invoke({ messages });
-      return response;
+      console.log("Streaming agent response for chat...");
+      const stream = await agent.stream({
+        messages: messages,
+        streamMode: "messages",
+      });
+      return stream;
     } else {
+      console.log("Agent not available, using direct model invocation.");
       // Fallback to direct model invocation if agent is not available
       const outputParser = new StringOutputParser();
       const streamingChain = model.pipe(outputParser);
