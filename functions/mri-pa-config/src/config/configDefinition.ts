@@ -579,6 +579,19 @@ function _getValidDefinition(cdwConfig) {
                             },
                         ],
                     },
+                    {
+                        name: "stackCategory",
+                        type: "array",
+                        strict: true,
+                        children: [
+                            {
+                                name: "source",
+                                mandatory: true,
+                                type: "string",
+                                regex: "^patient\\.(?:(?:conditions.[0-9a-zA-Z_]+\\.)?interactions\\.[0-9a-zA-Z_]+\\.)?attributes\\.[0-9a-zA-Z_]+$",
+                            },
+                        ],
+                    },
                 ],
             },
             {
