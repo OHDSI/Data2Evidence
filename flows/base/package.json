@@ -54,16 +54,36 @@
                     "type": "string"
                   },
                   "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Schema Name"
                   },
                   "vocab_schema": {
-                    "title": "Vocabulary Schema",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Vocabulary Schema"
                   },
                   "results_schema": {
-                    "title": "Results Schema",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Results Schema"
+                  },
+                  "datasets": {
+                    "anyOf": [
+                      { "items": {}, "type": "array" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Datasets"
                   },
                   "load_csvs": {
                     "anyOf": [
@@ -76,10 +96,7 @@
                 },
                 "required": [
                   "flow_action_type",
-                  "database_code",
-                  "schema_name",
-                  "vocab_schema",
-                  "results_schema"
+                  "database_code"
                 ],
                 "title": "DataloadOptions",
                 "type": "object"
