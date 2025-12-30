@@ -65,6 +65,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await test.step('Attempt to create another concept set with the same name', async () => {
     await page.reload()
+    await expect(page.getByText('1–25 of 444')).toBeVisible()
     await page.getByRole('tab', { name: 'Concept Sets' }).click()
     await page.getByTestId('button').click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
