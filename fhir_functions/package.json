@@ -15,6 +15,11 @@
   "trex": {
     "functions": {
       "init": [
+        {
+          "function": "/alp-fhir-gateway-init",
+          "imports": "/alp-fhir-gateway-init/deno.json",
+          "env": "alp-fhir-gateway-init"
+        }
       ],
       "api": [
         {
@@ -31,6 +36,17 @@
           "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
           "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
           "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
+        },
+        "alp-fhir-gateway-init":{
+          "FHIR_DATABASE_CODE":  "${FHIR__DATABASE__CODE:-d2e_fhir}",
+          "PG_DB_NAME": "${PG_DB_NAME:-alp}",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}",
+          "DB_CREDENTIALS__PUBLIC_KEYS": {
+            "DataPlatform": "",
+            "Internal": "${DB_CREDENTIALS__INTERNAL__PUBLIC_KEY}"
+          }
         }
       },
       "roles": {
