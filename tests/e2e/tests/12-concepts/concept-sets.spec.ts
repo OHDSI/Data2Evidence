@@ -64,7 +64,8 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   await test.step('Attempt to create another concept set with the same name', async () => {
-    await page.reload()
+    await page.goto('/d2e/portal')
+    await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Concepts' }).click()
     await expect(page.getByText('1–25 of 444')).toBeVisible()
     await page.getByRole('tab', { name: 'Concept Sets' }).click()
