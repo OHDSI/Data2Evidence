@@ -1,7 +1,6 @@
 import { env, services } from "../env.ts";
 import { get, post } from "../utils/request-util";
 import type { IDbCreateDto, IDbDto } from "../utils/type";
-import axios, { AxiosRequestConfig } from "axios";
 
 export class DbCredentialsAPI {
   protected readonly logger = console; //createLogger(this.constructor.name)
@@ -43,7 +42,7 @@ export class DbCredentialsAPI {
                         )}`
                 )
                 .join("&");
-            const result = await axios.post(this.oauthUrl, data, options);
+            const result = await post(this.oauthUrl, data, options);
             this.accessToken = `Bearer ${result.data.access_token}`;
             return this.accessToken;
         }catch(error: any){
@@ -53,8 +52,7 @@ export class DbCredentialsAPI {
     }
 
   private async getRequestConfig() {
-      let options: AxiosRequestConfig = {}
-  
+      let options = {}
       options = {
         headers: {
           Authorization: this.accessToken

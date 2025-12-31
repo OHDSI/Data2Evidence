@@ -28,7 +28,7 @@ export async function seed(): Promise<void> {
         userScope: "Admin"
     }
     encryptedPasswords.push(await dbCredentialProcessor.encryptDbCredential(credentials))
-    logger.info(`Encrypting credentials for userScope: ${encryptedPasswords[0].password}`);
+    
     credentials = {
         username: env.PG_ADMIN_USER,
         password: env.PG_ADMIN_PASSWORD,
@@ -37,7 +37,6 @@ export async function seed(): Promise<void> {
         userScope: "Read",
     }
     encryptedPasswords.push(await dbCredentialProcessor.encryptDbCredential(credentials))
-        logger.info(`Encrypting credentials for userScope: ${encryptedPasswords[1].password}`);
 
     const db: IDbCreateDto = {
       name: env.PG_DB_NAME,
