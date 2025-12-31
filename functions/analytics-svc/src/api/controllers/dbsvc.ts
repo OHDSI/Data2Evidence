@@ -67,7 +67,8 @@ export async function checkIfSchemaExists(req, res, next) {
         const dbDao = new DBDAO(analyticsConnection);
         const schemaExists = await dbDao.checkIfSchemaExists(
             databaseCode,
-            schemaName
+            schemaName,
+            dialect
         );
         res.status(200).send(schemaExists);
     } catch (err) {
