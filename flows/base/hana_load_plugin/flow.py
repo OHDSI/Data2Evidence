@@ -88,7 +88,6 @@ def create_datamodel(options: OmopCDMPluginOptions):
 
     create_results_tables(dbdao, results_schema)
 
-    folder = None
     if load_csvs and cdm_version == CDMVersion.OMOP53:
         logger.info(f"Loading CSVs into OMOP CDM schema '{schema}'..")
         # Extract dataset if folder missing or empty
