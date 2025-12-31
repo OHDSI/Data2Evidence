@@ -60,6 +60,23 @@
 					press="onClearInitialYAxisAttributeSelection" />
 			</content>
 		</Toolbar>
+		<Label text="Initial Attribute for Stacked Bar Chart" />
+		<Toolbar>
+			<content>
+				<core:Icon src="sap-icon://vertical-stacked-chart"></core:Icon>
+				<c:MenuButton id="mnuButton5Id">
+					<u:Menu id="menu5"
+						items="{analyticsModel>config/filtercards}">
+						<u:MenuItem text="{parts:['analyticsModel>modelName'], formatter: '.formatter.interactionDropdown'}">
+							<u:Menu id="subMenu5"></u:Menu>
+						</u:MenuItem>
+					</u:Menu>
+				</c:MenuButton>
+				<c:Button icon="sap-icon://eraser"
+					text="{i18n>MRI_PA_CFG_CLEAR_SELECTION}"
+					press="onClearInitialStackAttributeSelection" />
+			</content>
+		</Toolbar>
 		<Toolbar>
 			<Label text="{i18n>MRI_PA_CFG_TITLE_INITIAL_CHART}" 
 				width="20%" 

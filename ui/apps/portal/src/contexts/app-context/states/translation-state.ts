@@ -99,6 +99,7 @@ export const i18nDefault = {
     ADD_STUDY_DIALOG__VISIBILITY_STATUS_GROUP: "visibilityStatusGroup",
     ADD_STUDY_DIALOG__VOCAB_SCHEMA_NAME: "Vocab Schema Name",
     ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME: "Result Schema Name",
+    ADD_STUDY_DIALOG__AUTO_GENERATE_RESULT_SCHEMA: "Use default result schema name",
     ADD_TAG_DIALOG__ADD_TAG: "Add Tag",
     ADD_TAG_DIALOG__CANCEL: "Cancel",
     ADD_TAG_DIALOG__SAVE: "Save",
@@ -409,7 +410,13 @@ export const i18nDefault = {
     DELETE_STUDY_DIALOG__CANCEL: "Cancel",
     DELETE_STUDY_DIALOG__CONFIRM: "Are you sure you want to delete this dataset",
     DELETE_STUDY_DIALOG__DELETE_DATASET: "Delete dataset",
+    DELETE_STUDY_DIALOG__ENTER_DATASET_NAME: "Enter dataset name to confirm",
+    DELETE_STUDY_DIALOG__ENTER_EXACT_DATASET_NAME: "Please enter the exact dataset name",
     DELETE_STUDY_DIALOG__ERROR: "Study {0} failed to delete",
+    DELETE_STUDY_DIALOG__WARNING_CHILDREN:
+      "Warning: This dataset has {0} cache dataset{1}. Deleting this dataset will also delete all its cache datasets.",
+    DELETE_STUDY_DIALOG__CONFIRM_INSTRUCTION:
+      "This action cannot be undone. Please enter the dataset name to confirm deletion.",
     DELETE_STUDY_DIALOG__YES_DELETE: "Yes, delete",
     DELETE_TAG_DIALOG__CANCEL: "Cancel",
     DELETE_TAG_DIALOG__CONFIRM_1: "Are you sure you want to delete the following",

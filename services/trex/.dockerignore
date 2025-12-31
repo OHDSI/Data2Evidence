@@ -31,6 +31,7 @@ Trex/ext/xs
 **/build
 **/.git
 **/*.duckdb_extension
+!trexas.duckdb_extension
 
 Trex/ext/bao/node_modules
 Trex/ext/bao/target

@@ -13279,6 +13279,9 @@ const paConfig = {
                 "patient.attributes.pcount"
             ],
             "categories": [
+                "patient.attributes.Age"
+            ],
+            "stackCategory": [
                 "patient.attributes.Gender"
             ]
         },
@@ -26430,7 +26433,8 @@ const paConfigDuckdb = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": []
+            "categories": ["patient.attributes.Age"],
+            "stackCategory": ["patient.attributes.Gender_concept_name"]
         },
         "initialChart": "stacked",
         "stacked": {
@@ -28054,7 +28058,8 @@ const paI2b2ConfigDuckdb = {
   chartOptions: {
     initialAttributes: {
       measures: ["patient.attributes.pcount"],
-      categories: ["patient.attributes.Gender"],
+      categories: ["patient.attributes.Age"],
+      stackCategory: ["patient.attributes.Gender"],
     },
     initialChart: "stacked",
     stacked: {
@@ -33896,7 +33901,8 @@ const pajsonfhirConfigDuckdb = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": []
+            "categories": ["patient.attributes.Age"],
+            "stackCategory": ["patient.attributes.gender"]
         },
         "initialChart": "stacked",
         "stacked": {
@@ -37369,7 +37375,8 @@ const omopHanaLeanPAConfig = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": []
+            "categories": ["patient.attributes.Age"],
+            "stackCategory": ["patient.attributes.Gender"]
         },
         "initialChart": "stacked",
         "stacked": {
