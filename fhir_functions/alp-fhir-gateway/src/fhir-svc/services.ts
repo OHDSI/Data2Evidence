@@ -167,13 +167,7 @@ export const deleteProject = async(token, id: string) =>{
 export const fhirServerHealthCheck = async(token: string) => {
   console.info(`Performing health check on fhir server..`);
   let fhirApi = new FhirAPI(token);
-  const healthCheckResponse = await fhirApi.forwardRequest(
-    'healthcheck',
-    fhirApi.getAdminCredentials(),
-    HTTPMethod.GET,
-    '',
-    ''
-  );
+  const healthCheckResponse = await fhirApi.healthCheck();
   return healthCheckResponse;
 }
 

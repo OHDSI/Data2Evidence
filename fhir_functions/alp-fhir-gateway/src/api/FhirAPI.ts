@@ -11,10 +11,9 @@ export class FhirAPI {
   private readonly baseUrl: string;
   private readonly logger = console;
   private readonly tokenUrl: string;
-  private adminAccessToken: string;
   private browserToken: string
 
-  constructor(token) {
+  constructor(token: string) {
     if (env.FHIR__CLIENT_ID && env.FHIR__CLIENT_SECRET) {
       this.clientId = env.FHIR__CLIENT_ID;
       this.clientSecret = env.FHIR__CLIENT_SECRET;
@@ -71,6 +70,35 @@ export class FhirAPI {
         throw new Error(`[${response.response.status}] ${log_msg}: ${JSON.stringify(response.response.data)}`);
       }
     } catch (error) {
+      if (error.response) {
+        this.logger.error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
+        throw new Error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
+      } else {
+        this.logger.error(`[500] ${log_msg}: ${error.message}`);
+        throw new Error(`[500] ${log_msg}: ${error.message}`);
+      }
+    }
+  }
+
+  async healthCheck() {
+    const log_msg = `Performing health check on fhir server..`;
+    try {
+      let options = {
+      httpsAgent: new https.Agent({
+          rejectUnauthorized: true,
+        }),
+      };
+      const healthCheckUrl = this.baseUrl.replace('fhir/R4', 'healthcheck');
+      const response = await axios.get(healthCheckUrl, options);
+      if (response && response.status !== undefined) {
+        this.logger.info(`[${response.status}] ${log_msg}`);
+        return {
+          status: response.status,
+          headers: response.headers,
+          data: response.data,
+        };
+      }
+    } catch (error: any) {
       if (error.response) {
         this.logger.error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
         throw new Error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
