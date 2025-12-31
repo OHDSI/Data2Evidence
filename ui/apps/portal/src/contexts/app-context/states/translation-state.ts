@@ -8,6 +8,7 @@ export const i18nDefault = {
       "Please try again. To report the error, please send an email to help@data4life.care.",
     ACCESS_PANEL__ERROR: "An error has occurred.",
     ACCESS_PANEL__NO_DATA: "No data available",
+    ACCESS_PANEL__NO_USERS: "No available users to add",
     ACCESS_PANEL__REVOKE: "Revoke",
     ACCESS_PANEL__ROLE: "Role",
     ACCESS_PANEL__SUCCESS_REVOKE: "You've revoked access for user {0}",

@@ -112,6 +112,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
           type: "success",
           message: getText(i18nKeys.ACCESS_PANEL__SUCCESS, [user.username]),
         });
+        fetchUserOverview(tenantId);
         fetchStudyUsers();
       } catch (err: any) {
         setFeedback({ type: "error", message: err.message });
@@ -120,7 +121,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
         setLoading(false);
       }
     },
-    [allowedUsers, setLoading, tenantId, studyId, closeMenu, setFeedback, fetchStudyUsers, getText]
+    [allowedUsers, setLoading, tenantId, studyId, closeMenu, setFeedback, getText, fetchUserOverview, fetchStudyUsers]
   );
 
   // Revoke role
@@ -142,6 +143,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
           type: "success",
           message: getText(i18nKeys.ACCESS_PANEL__SUCCESS_REVOKE, [user.username]),
         });
+        fetchUserOverview(tenantId);
         fetchStudyUsers();
       } catch (err: any) {
         setFeedback({ type: "error", message: err.message });
@@ -171,6 +173,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
             }}
           >
             <div className="access-panel__menu-content">
+              {allowedUsers.length === 0 && <MenuItem disabled>{getText(i18nKeys.ACCESS_PANEL__NO_USERS)}</MenuItem>}
               {allowedUsers.map((u) => (
                 <MenuItem key={u.userId} onClick={() => handleAdd(u)}>
                   {u.username}
