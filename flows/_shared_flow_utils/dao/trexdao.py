@@ -121,9 +121,9 @@ class TrexDao(DaoBase):
 
     def check_schema_exists(self, schema: str) -> bool:
         try:
-            sql = '''
+            sql = f'''
                 SELECT schema_name FROM information_schema.schemata
-                WHERE catalog_name = current_database();
+                WHERE catalog_name = {self.database_code};
             '''
             result = self.execute_sql(sql, fetch=True)
             schemas = {row[0] for row in result}
