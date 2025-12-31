@@ -22,6 +22,12 @@ export enum USER_SCOPE_TYPES {
   READ = "Read",
 }
 
+export enum AUTHENTICATION_MODES {
+  PASSWORD = "Password",
+  JWT = "JWT",
+}
+export type AuthenticationMode = `${AUTHENTICATION_MODES}`;
+
 export type UserScopeType = `${USER_SCOPE_TYPES}`;
 
 export interface IDbCreateDto {
@@ -31,6 +37,7 @@ export interface IDbCreateDto {
   name: string;
   dialect: "postgres" | "hana";
   extra: { [key in ServiceScope]: object };
+  authenticationMode: AuthenticationMode;
   credentials: IDbCredential[];
   vocabSchemas: string[];
 }

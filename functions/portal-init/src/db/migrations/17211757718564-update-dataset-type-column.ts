@@ -13,7 +13,7 @@ export class UpdateDatasetTypeColumn17211757718564
       `UPDATE portal.dataset SET type = 'hana__omop' WHERE type = '' AND dialect = 'hana';`
     );
     await queryRunner.query(
-      `UPDATE portal.dataset SET type = 'fhir' WHERE type = '' AND (fhir_project_id IS NOT NULL OR database_code LIKE '%alp_fhir%');`
+      `UPDATE portal.dataset SET type = 'fhir' WHERE type = '' AND (fhir_project_id IS NOT NULL OR database_code LIKE '%d2e_fhir%');`
     );
   }
 
@@ -25,7 +25,7 @@ export class UpdateDatasetTypeColumn17211757718564
       `UPDATE portal.dataset SET type = '' WHERE type = 'hana__omop' AND dialect = 'hana';`
     );
     await queryRunner.query(
-      `UPDATE portal.dataset SET type = '' WHERE type = 'fhir' AND (fhir_project_id IS NOT NULL OR database_code LIKE '%alp_fhir%');`
+      `UPDATE portal.dataset SET type = '' WHERE type = 'fhir' AND (fhir_project_id IS NOT NULL OR database_code LIKE '%d2e_fhir%');`
     );
   }
 }

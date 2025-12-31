@@ -1,20 +1,17 @@
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI";
-import PortalServerAPI from "./api/PortalServerAPI";
 import { env } from "./env";
 import { DbCredentialProcessor } from "./utils/credentialProcessor";
-import { IDbCreateDto, IDbCredential } from "./utils/type"
+import { AUTHENTICATION_MODES, IDbCreateDto, IDbCredential } from "./utils/type"
 
 export async function seed(): Promise<void> {
   try{
     let logger = console;
-    logger.info("Adding database");
-    logger.info(`Credentials public key: ${env.DB_CREDENTIALS_PUBLIC_KEYS}`);
-    const portalServerAPI = new PortalServerAPI();
-    const accessToken = await portalServerAPI.getClientCredentialsToken();
+    logger.info("Adding FHIR database");
 
-    const dbCredentialsAPI = new DbCredentialsAPI(accessToken);
+    const dbCredentialsAPI = new DbCredentialsAPI();
+    await dbCredentialsAPI.getClientCredentialsToken()
+    
     const dbList = await dbCredentialsAPI.getDbList();
-
     const exist = dbList.find((db) => db.code === env.FHIR_DATABASE_CODE);
     if (exist) {
       logger.info(`Database exist: ${JSON.stringify(exist)}`);
@@ -28,7 +25,7 @@ export async function seed(): Promise<void> {
         password: env.PG_ADMIN_PASSWORD,
         serviceScope: "Internal",
         salt: "",
-        userScope: "Admin",
+        userScope: "Admin"
     }
     encryptedPasswords.push(await dbCredentialProcessor.encryptDbCredential(credentials))
     logger.info(`Encrypting credentials for userScope: ${encryptedPasswords[0].password}`);
@@ -43,16 +40,31 @@ export async function seed(): Promise<void> {
         logger.info(`Encrypting credentials for userScope: ${encryptedPasswords[1].password}`);
 
     const db: IDbCreateDto = {
-      ...env.PG_DB_NAME,
+      name: env.PG_DB_NAME,
       code: env.FHIR_DATABASE_CODE,
       vocabSchemas: [env.FHIR_CUSTOM_SCHEMA],
       credentials: encryptedPasswords,
+      host: env.PG__HOST,
+      port: env.PG__PORT,
+      dialect: "postgres",
+      authenticationMode: AUTHENTICATION_MODES.PASSWORD,
+      extra: {
+        Internal:{
+          "max": env.PG__MAX_POOL,
+          "schema": env.FHIR_CUSTOM_SCHEMA,
+          "queryTimeout": 60000,
+          "statementTimeout": 60000,
+          "idleTimeoutMillis": env.PG__IDLE_TIMEOUT_IN_MS,
+          "connectionTimeoutMillis": 60000,
+          "idleInTransactionSessionTimeout": 300000
+        }
+      }
     };
     const result = await dbCredentialsAPI.createDb(db);
     logger.info(`Database added: ${JSON.stringify(result)}`);
     return result;
-  }catch(error){
-    console.error("Error seeding database:", error);
+  }catch(error: any){
+    console.error("Error seeding database:", error.response?.data || error.message);
     throw error;
   }
 }
