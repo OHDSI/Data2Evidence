@@ -11,7 +11,8 @@ export class InitialAttributesRule extends RuleValidatorBase {
     public selectObjects(config) {
         const initialAttributes =
             config.chartOptions.initialAttributes.measures.concat(
-                config.chartOptions.initialAttributes.categories);
+                config.chartOptions.initialAttributes.categories).concat(
+                config.chartOptions.initialAttributes.stackCategory);
         const initialFiltercards = config.filtercards.filter( (e) => {
             return e.initial;
         }).map( (e) => {
@@ -66,7 +67,8 @@ export class InitialChartCategoriesVisibleRule extends RuleValidatorBase {
     }
 
     public selectObjects(config) {
-        const initialChartCategories = config.chartOptions.initialAttributes.categories;
+        const initialChartCategories = config.chartOptions.initialAttributes.categories.concat(
+            config.chartOptions.initialAttributes.stackCategory);
         const filtercards = config.filtercards;
 
         const res = initialChartCategories.every( (category) => {
