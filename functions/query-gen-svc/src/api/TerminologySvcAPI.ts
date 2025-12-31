@@ -1,23 +1,26 @@
-import axios, { AxiosRequestConfig } from "axios";
 import http from "node:http";
 
 import { env } from "../env";
 export default class TerminologySvcAPI {
     private readonly baseUrl: string;
     private readonly httpAgent: any;
+    private terminologysvcapi;
 
     constructor() {
         if (env.SERVICE_ROUTES.terminology) {
             this.baseUrl = env.SERVICE_ROUTES.terminology;
-            this.httpAgent = new http.Agent({ keepAlive: true })
+            this.httpAgent = new http.Agent({ keepAlive: true });
         }
         if (!this.baseUrl) {
             throw new Error("Terminology Svc URL is not configured!");
         }
+        this.terminologysvcapi = Trex.tokioChannel(
+            "d2e-functions/terminology-svc"
+        );
     }
 
     private async getRequestConfig(token: string) {
-        let options: AxiosRequestConfig = { 
+        let options: any = {
             httpAgent: this.httpAgent,
         };
         if (token) {
@@ -36,18 +39,18 @@ export default class TerminologySvcAPI {
         datasetId: string,
         token: string
     ): Promise<number[]> {
-        const timestamp = (new Date()).valueOf();
-        console.time(`time-terminology-svc-getConceptIds-${timestamp}`)
-    
+        const timestamp = new Date().valueOf();
+        console.time(`time-terminology-svc-getConceptIds-${timestamp}`);
+
         const options = await this.getRequestConfig(token);
 
         const data = { conceptSetIds, datasetId };
-        const result = await axios.post(
+        const result = await this.terminologysvcapi.post(
             `${this.baseUrl}/concept-set/included-concepts`,
             data,
             options
         );
-        console.timeEnd(`time-terminology-svc-getConceptIds-${timestamp}`)
+        console.timeEnd(`time-terminology-svc-getConceptIds-${timestamp}`);
         return result.data as number[];
     }
 }
