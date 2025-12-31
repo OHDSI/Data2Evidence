@@ -117,12 +117,12 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                             logger=logger,
                         )
 
+        schema_version = "Not Available"
         try:
             # Accept only OMOP 5.x or v5.x
             if cdm_version.lower().startswith("5.") or cdm_version.lower().startswith("v5."):
                 schema_version = cdm_version
-            else:
-                schema_version = "Not Available"
+
             portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", schema_version)
             portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", schema_version)
         except Exception as e:
