@@ -18,7 +18,7 @@ def create_cdm_tables(schema: str, data_model: CDMVersion, dbdao: DBDao):
         file_path = CREATE_SCRIPT_DIR / data_model / sql_file
         
         if not file_path.exists():
-            logger.info(f"Skipping {sql_file}, file not found at: {file_path}")
+            logger.error(f"Skipping {sql_file}, file not found at: {file_path}")
             raise FileNotFoundError(f"SQL file not found: {file_path}")
 
         logger.info(f"Executing {sql_file}...")
@@ -72,7 +72,7 @@ def create_concept_recommended_table(dbdao: DBDao, schema: str):
     }
     logger.info(f"Creating '{table_name}' table..")
     dbdao.create_table(schema, table_name, columns_to_create)
-    logger.info(f"Sucessfully created '{table_name}' table!")
+    logger.info(f"Successfully created '{table_name}' table!")
 
 
 @task(log_prints=True, task_run_name="insert_cdm_version-{cdm_schema}-{cdm_version}")
