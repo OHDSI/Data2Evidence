@@ -178,6 +178,8 @@
                                 id="includeDescendantsExpression" 
                                 enabled="{configEditorModel>includeDescendants/value}" 
                                 valueLiveUpdate="true"></Input>
+                            <CheckBox text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OPTIONAL_FILTERING_LEFT_JOIN}" 
+                            selected="{configEditorModel>optionalFiltering/value}"/>
                         </l:content>
                     </l:VerticalLayout>
 
