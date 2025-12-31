@@ -22,3 +22,12 @@ SQL_FILES_ORDER = [
     "hana_indices.sql"
     # "hana_constraints.sql",
 ]
+
+
+# Hardcoded from athena vocab
+CDM_VERSION_CONCEPT_CODE_MAPPING = {
+    "CDM v5.3.1": 1147638,
+    "CDM v5.3.2": 902376,
+    "CDM v5.4.0": 756265,
+    "CDM v5.4.1": 798878
+}
