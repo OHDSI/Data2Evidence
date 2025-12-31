@@ -19,7 +19,7 @@ concurrency:
 jobs:
   check_file_changes:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
@@ -43,7 +43,7 @@ jobs:
 
   test-mri:
     # needs: [check_file_changes]
-    # if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    # if: (github.ref_name == 'develop' ||  contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ubuntu-latest
     env:
       HANASERVER: ${{ secrets.HN_DE_FQDN }} # az-hn-db/DE_FQDN"
@@ -162,11 +162,11 @@ jobs:
         run: PORT=41008 yarn workspace query-gen run start &
 
       - name: Run query-gen tests
-        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.has_query_gen_svc_changed == 'True'
+        if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_file_changed.outputs.has_query_gen_svc_changed == 'True'
         run: yarn workspace query-gen run test
 
       - name: Run bookmark tests
-        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.has_bookmarks_svc_changed == 'True'
+        if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_file_changed.outputs.has_bookmarks_svc_changed == 'True'
         run: yarn workspace bookmark run test
       # Existing tests for assignment service uses opaTest and not compatible with current set up
       # We should uncomment this when we have tests available.
@@ -174,7 +174,7 @@ jobs:
       #   run: yarn workspace config-assignment run test
 
       - name: Run Analytics tests
-        if: github.ref_name == 'develop' || steps.check_file_changed.outputs.has_analytics_svc_changed == 'True' || steps.check_file_changed.outputs.has_query_gen_svc_changed == 'True'
+        if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_file_changed.outputs.has_analytics_svc_changed == 'True' || steps.check_file_changed.outputs.has_query_gen_svc_changed == 'True'
         run: yarn workspace analytics run testci
       # - name: Run cdw-config tests
       #   run: yarn workspace cdw-config run test:ci
