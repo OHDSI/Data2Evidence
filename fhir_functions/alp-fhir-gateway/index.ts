@@ -41,8 +41,8 @@ export class App {
       next(err);
     });
     // Healthcheck
-    this.app.use("/gateway/api/fhir/check-readiness", healthCheckMiddleware);
-    this.app.use("/gateway/api/fhir", new FhirRouter().router);
+    this.app.use("/fhir-gateway/healthcheck", healthCheckMiddleware);
+    this.app.use("/fhir-gateway/", new FhirRouter().router);
     this.app.listen(8000);
     this.logger.info(`🚀 ALP FHIR Service started successfully!`);
   }

@@ -18,7 +18,7 @@ export class FhirAPI {
     if (env.FHIR__CLIENT_ID && env.FHIR__CLIENT_SECRET) {
       this.clientId = env.FHIR__CLIENT_ID;
       this.clientSecret = env.FHIR__CLIENT_SECRET;
-      this.baseUrl = services.fhir;
+      this.baseUrl = services.fhirServer;
       this.tokenUrl = services.fhirTokenUrl;
       this.browserToken = token;
     } else {

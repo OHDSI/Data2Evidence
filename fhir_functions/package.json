@@ -23,7 +23,7 @@
       ],
       "api": [
         {
-          "source": "/gateway/api/fhir",
+          "source": "/fhir-gateway",
           "function": "/alp-fhir-gateway",
           "env": "alp-fhir-gateway",
           "imports": "/alp-fhir-gateway/deno.json"
@@ -70,7 +70,7 @@
       },
       "scopes": [
         {
-          "path": "^/gateway/api/fhir/check-readiness",
+          "path": "^/fhir-gateway/check-readiness",
           "scopes": [
             "gateway.fhir.get"
           ],
@@ -79,7 +79,16 @@
           ]
         },
         {
-          "path": "^/gateway/api/fhir/createProject",
+          "path": "^/fhir-gateway/fhir-server/healthcheck",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/fhir-gateway/createProject",
           "scopes": [
             "gateway.fhir.create"
           ],
@@ -88,7 +97,7 @@
           ]
         },
         {
-          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(?!Project|ProjectMembership|ClientApplication|User|Login|PasswordChangeRequest|JsonWebKey|Bot|AccessPolicy|UserConfiguration|BulkDataExport|SmartAppLaunch|DomainConfiguration|AsyncJob|Agent|IdentityProvider|UserSecurityRequest|ViewDefinition)(.*)",
+          "path": "^/fhir-gateway/project/[a-zA-Z0-9_]+/(?!Project|ProjectMembership|ClientApplication|User|Login|PasswordChangeRequest|JsonWebKey|Bot|AccessPolicy|UserConfiguration|BulkDataExport|SmartAppLaunch|DomainConfiguration|AsyncJob|Agent|IdentityProvider|UserSecurityRequest|ViewDefinition)(.*)",
           "scopes": [
             "gateway.fhir.forward"
           ],
@@ -101,7 +110,7 @@
           ]
         },
         {
-          "path": "^/gateway/api/fhir/deleteProject",
+          "path": "^/fhir-gateway/deleteProject",
           "scopes": [
             "gateway.fhir.delete"
           ],
