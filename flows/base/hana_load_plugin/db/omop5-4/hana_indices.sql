@@ -1,4 +1,4 @@
-/*hana OMOP CDM Indices
+/*HANA OMOP CDM Indices
   There are no unique indices created because it is assumed that the primary key constraints have been run prior to
   implementing indices.
 */
