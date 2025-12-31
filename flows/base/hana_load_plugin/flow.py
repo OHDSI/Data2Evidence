@@ -65,7 +65,7 @@ def create_datamodel(options: OmopCDMPluginOptions):
 
     create_concept_recommended_table_wo(dbdao, schema)
 
-    if not load_csvs or cdm_version != CDMVersion.OMOP53:
+    if cdm_version == CDMVersion.OMOP54 or (cdm_version == CDMVersion.OMOP53 and not load_csvs):
         logger.info(f"Insert CDM Version '{cdm_version}' record into 'cdm_source' table in schema '{schema}'..")
         insert_cdm_version_wo = insert_cdm_version.with_options(
             on_failure=[partial(
