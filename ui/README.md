@@ -79,9 +79,9 @@ yarn start
 Attach shell to trex container
 
 ```bash
-mv /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources-backup
-rm -rf /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources
-cp -r /usr/src/local-resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources
+mv /usr/src/data/plugins/\@data2evidence/d2e-ui/resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources-backup
+rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources
+cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources
 ```
 
 Access latest built files on localhost:41100

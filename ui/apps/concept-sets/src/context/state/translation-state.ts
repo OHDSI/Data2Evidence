@@ -18,7 +18,7 @@ export const i18nDefault = {
     CONCEPT_SET_DELETE_DIALOG__ARE_YOU_SURE:
       "Are you sure you want to delete this concept set",
     CONCEPT_SET_DELETE_DIALOG__CANCEL: "Cancel",
-    CONCEPT_SET_DELETE_DIALOG__CONFIRM: "Confirm",
+    CONCEPT_SET_DELETE_DIALOG__CONFIRM: "Yes, delete",
     CONCEPT_SET_DELETE_DIALOG__DELETE_SUCCESSFUL:
       "Concept set deleted successfully",
     CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED:

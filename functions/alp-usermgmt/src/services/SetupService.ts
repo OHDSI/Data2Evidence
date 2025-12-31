@@ -1,7 +1,7 @@
 import { Container ,  Service } from 'typedi'
 import type { Knex } from '../types'
 import { createLogger } from '../Logger'
-import { AzureADSetupRequest, ConfigItem } from '../types.d.ts'
+import { AzureADSetupRequest, ConfigItem } from '../types'
 import { CONFIG_KEY, CONTAINER_KEY } from '../const'
 import { ConfigService } from './ConfigService'
 

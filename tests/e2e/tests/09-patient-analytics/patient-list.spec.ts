@@ -23,9 +23,9 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
-    await page.getByTitle('Basic Data - Age').click()
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>55')
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
+    await page.locator('#pane-left').getByTitle('Basic Data - Age').click()
+    await page.locator('#pane-left').getByTitle('Basic Data - Age').getByRole('textbox').fill('>55')
+    await page.locator('#pane-left').getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
     await expect(page.getByText('1,971 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -47,7 +47,11 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click()
+      await page
+        .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
+        .locator('td')
+        .first()
+        .click()
       await page.getByRole('button', { name: 'Create' }).click()
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -66,6 +70,8 @@ test(TEST_NAME, async ({ page }) => {
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     await expect(page.getByText('629 / 2,694')).toBeVisible()
+    await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
+    await page.getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Save the filter card

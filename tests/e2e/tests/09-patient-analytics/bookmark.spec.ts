@@ -23,9 +23,9 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
-    await page.getByTitle('Basic Data - Age').click()
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>114')
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
+    await page.locator('div[title="Basic Data - Age"]').click()
+    await page.locator('div[title="Basic Data - Age"]').getByRole('textbox').fill('>114')
+    await page.locator('div[title="Basic Data - Age"]').getByRole('textbox').press('Enter')
     await expect(page.getByText('27 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -55,7 +55,11 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click()
+      await page
+        .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
+        .locator('td')
+        .first()
+        .click()
       await page.getByRole('button', { name: 'Create' }).click()
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
       await page.getByRole('button', { name: 'Close' }).click()
@@ -81,16 +85,17 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add x1 filter card - Condition Occurrence concept name
   await test.step('Update x1 filter to condition concept name', async () => {
-    await page
-      .locator('div')
-      .filter({ hasText: /^Select an Attribute$/ })
-      .getByRole('button')
-      .click()
+    // await page
+    //   .locator('div')
+    //   .filter({ hasText: /^Select an Attribute$/ })
+    //   .getByRole('button')
+    //   .click()
+    await page.locator('button.axisMenuButton', { hasText: 'Select an Attribute' }).first().click()
     await page.locator('#pane-right').getByText('Condition Occurrence A').click()
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page.locator('.ewdrag')).toBeVisible()
-    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' })).toBeVisible()
+    await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' }).first()).toBeVisible()
   })
   //Save the filter card
   await test.step('Save the filter card', async () => {
@@ -105,13 +110,11 @@ test(TEST_NAME, async ({ page }) => {
     //Previous filter name should be visible
     await expect(page.getByRole('textbox', { name: 'Enter name' })).toHaveValue('Test Cohort 2')
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
-    await page
-      .getByRole('textbox', { name: 'Enter name' })
-      .fill('This is for testing my saved filters which I will use')
+    await page.getByRole('textbox', { name: 'Enter name' }).fill('x'.repeat(256))
     await page.getByRole('textbox', { name: 'Enter name' }).click()
-    await expect(page.getByText('Filter name must not exceed 40 characters')).toBeVisible()
+    await expect(page.getByText('Filter name must not exceed 255 characters')).toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
-    await expect(page.getByText('Filter name must not exceed 40 characters')).not.toBeVisible()
+    await expect(page.getByText('Filter name must not exceed 255 characters')).not.toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('  ')
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
@@ -124,6 +127,10 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Reset the x1 attributes', async () => {
     await page.getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' }).click()
     await page.getByText('Reset Selection').click()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
+    await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
+    await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Remove MALE and add FEMALE Gender filter
@@ -176,7 +183,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Discard' }).click()
     //Verify filters are loaded
     await expect(page.getByText('>114')).toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('FEMALE')).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible({ timeout: 20000 })
     // await expect(page.getByText('Viral sinusitis')).toBeVisible({timeout: 20000});
     await expect(page.getByText('8 / 2,694')).toBeVisible()
   })
@@ -230,7 +237,12 @@ test(TEST_NAME, async ({ page }) => {
         await page.getByRole('textbox', { name: 'search terms' }).click()
         await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis')
         await page.getByRole('button', { name: 'Search' }).click()
-        await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click()
+        await expect(page.getByRole('row', { name: /444814009.*Viral sinusitis/ })).toBeVisible({ timeout: 30000 })
+        await page
+          .getByRole('row', { name: /444814009.*Viral sinusitis/ })
+          .locator('td')
+          .first()
+          .click()
         await page.getByRole('button', { name: 'Create' }).click()
         await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
         await page.getByRole('button', { name: 'Close' }).click()

@@ -1,4 +1,4 @@
-import type { Knex } from '../types'
+import type { Knex } from '../../types'
 import { ROLES } from '../../const'
 import { Inject,Service } from 'typedi'
 import { User } from '../../entities'

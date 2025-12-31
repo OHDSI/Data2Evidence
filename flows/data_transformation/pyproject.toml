@@ -28,6 +28,9 @@ dependencies = [
     "sqlalchemy==2.0.38",
     "xmltodict==0.14.2",
     "xvfbwrapper>=0.2.15",
+    "Cython==3.2.3",
+    "setuptools==80.9.0",
+    "wheel==0.45.1",
 ]
 
 [project.optional-dependencies]

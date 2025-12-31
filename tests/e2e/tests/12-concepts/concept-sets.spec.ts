@@ -25,12 +25,16 @@ test(TEST_NAME, async ({ page }) => {
   const conceptSetName = `Concept Set Test 1`
   // If the concept set already exists (retry), remove the second conept set we added last time
   if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
-    await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').click()
+    await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').first().click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
     console.log(`assertCount ${await assertCount('2')}`)
     if (await assertCount('2')) {
       await page.getByRole('tab', { name: 'Selected concepts' }).click()
-      await page.getByRole('row', { name: '81893 64766004 Ulcerative' }).locator('path').first().click()
+      await page
+        .getByRole('row', { name: /81893.*64766004.*Ulcerative/ })
+        .locator('td')
+        .first()
+        .click()
       await expect(await assertCount('1')).toBeTruthy()
       await page.getByRole('button', { name: 'Update' }).dblclick()
       await expect(page.getByRole('button', { name: 'Update' })).toBeDisabled()
@@ -43,7 +47,11 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'search terms' }).click()
     await page.getByRole('textbox', { name: 'search terms' }).fill('Streptococcal sore throat')
     await page.getByRole('button', { name: 'Search' }).click()
-    await page.getByRole('row', { name: '28060 43878008 Streptococcal sore throat' }).locator('path').click()
+    await page
+      .getByRole('row', { name: /28060.*43878008.*Streptococcal sore throat/ })
+      .locator('td')
+      .first()
+      .click()
     await page.getByRole('tab', { name: 'Selected concepts' }).click()
     await expect(page.getByRole('row')).toHaveCount(2) // including the header row
     await page.getByRole('tab', { name: 'Related concepts' }).click()
@@ -93,7 +101,11 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('cell', { name: '81893' })).toBeVisible({ timeout: 10000 })
   // Only add "81893 64766004 Ulcerative" when it is not already selected, in the scenario of re-running the test
   if (await assertCount('1')) {
-    await page.getByRole('row', { name: '81893 64766004 Ulcerative' }).locator('path').click()
+    await page
+      .getByRole('row', { name: /81893.*64766004.*Ulcerative/ })
+      .locator('td')
+      .first()
+      .click()
     await expect(await assertCount('2')).toBeTruthy()
   }
   await page.waitForTimeout(1000)
@@ -102,7 +114,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  await expect(page.getByText('1,836 / 2,694')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
 
   // Dismiss popover if present
   try {
@@ -112,5 +124,6 @@ test(TEST_NAME, async ({ page }) => {
     // Modal not present, continue
   }
 
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
 })

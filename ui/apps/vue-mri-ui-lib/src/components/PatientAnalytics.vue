@@ -5,7 +5,7 @@
         <pane :size="paneSize" :min-size="splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
-              <div v-if="!isLocal">
+              <div v-if="!isAtlasBookmark">
                 <button
                   type="button"
                   class="actionButton"
@@ -240,6 +240,13 @@ export default {
     // }
   },
   watch: {
+    getActiveBookmark(newVal, oldVal) {
+      // Auto-switch to cohort view when a bookmark is loaded (e.g., from deep link)
+      // Only trigger when going from no bookmark to having one
+      if (newVal && !oldVal && this.displayCohorts) {
+        this.toggleCohorts(false)
+      }
+    },
     getBookmarkFromIFR(bm) {
       // In patient list, changePage is watched and already calls setFireRequest once
       // It seems like if both are run, `setFireRequest` runs consecutively in the same tick,
