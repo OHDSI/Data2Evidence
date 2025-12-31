@@ -123,7 +123,7 @@ class TrexDao(DaoBase):
         try:
             sql = f'''
                 SELECT schema_name FROM information_schema.schemata
-                WHERE catalog_name = {self.database_code};
+                WHERE catalog_name = '{self.database_code}';
             '''
             result = self.execute_sql(sql, fetch=True)
             schemas = {row[0] for row in result}
