@@ -1210,6 +1210,8 @@ export const i18nDefault = {
     UPDATE_STUDY_DIALOG__TYPE: "Type",
     UPDATE_STUDY_DIALOG__UPDATE_DATASET: "Update dataset",
     UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE: "Please enter a valid Token dataset code",
+    UPDATE_STUDY_DIALOG__VOCAB_SCHEMA_NAME: "Vocab Schema Name",
+    UPDATE_STUDY_DIALOG__RESULT_SCHEMA_NAME: "Result Schema Name",
     USER_OVERVIEW__ADD_USER: "Add user",
     USER_OVERVIEW__DELETE: "Delete",
     USER_OVERVIEW__EDIT: "Edit",
