@@ -52,18 +52,18 @@ jobs:
 
     - name: Setup bun if vue files have changed
       uses: oven-sh/setup-bun@v2
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
       with:
         bun-version: 1.2.23
 
     - name: Get bun cache directory path
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
       id: bun-cache-dir-path
       run: echo "dir=$(bun pm cache)" >> $GITHUB_OUTPUT
 
     - uses: actions/cache@v4
       id: bun-cache # use this to check for `cache-hit` (`steps.bun-cache.outputs.cache-hit != 'true'`)
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
       with:
         path: ${{ steps.bun-cache-dir-path.outputs.dir }}
         key: ${{ runner.os }}-bun-${{ hashFiles('./bun.lock') }}
@@ -71,7 +71,7 @@ jobs:
           ${{ runner.os }}-bun-
 
     - name: Run unit tests with
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
       run: |
         bun install
         bunx nx run vue-mri:test:ci

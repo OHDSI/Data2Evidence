@@ -212,9 +212,7 @@ export class PortalServerAPI {
   }
 
   private getRequestConfig() {
-    let options = {};
-
-    options = {
+    const options = {
       headers: {
         Authorization: this.token,
       },
