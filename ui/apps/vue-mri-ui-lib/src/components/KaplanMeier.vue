@@ -892,7 +892,7 @@ export default {
                 const dDate = DateUtils.parseISODate(mData[mCategory.id])
                 if (dDate) {
                   if (oAttributeConfig.getType() === Constants.CDMAttrType.Date) {
-                    return DateUtils.displayDateFormat(dDate, true)
+                    return DateUtils.displayDateFormat(dDate)
                   }
                   return DateUtils.displayDateTimeFormat(dDate)
                 }

@@ -43,7 +43,6 @@ export default {
     eventbus.unsubscribe('GENOMICS_TAB_CHANGE', this.genomicsTabChanged)
     eventbus.unsubscribe('VUE_SET_IFR', this.debouncedSetIFR)
     eventbus.unsubscribe('VUE_SB_SELECTION', this.handleSBSelection)
-    eventbus.unsubscribe('SET_VARIANT_FILTER_CARD', this.handleSetVariantFilterCard)
     eventbus.unsubscribe('VUE_GENOMICS_COUNT', this.handleGenomicsCount)
     eventbus.unsubscribe('VUE_CLEAR_SELECTED_AXIS', this.handleClearSelectedAxis)
     eventbus.unsubscribe('VUE_ADD_COHORT_OLD_COLLECTION', this.handleAddCohortOldSelection)
@@ -150,7 +149,6 @@ export default {
     eventbus.subscribe('GENOMICS_TAB_CHANGE', this.genomicsTabChanged)
     eventbus.subscribe('VUE_SET_IFR', this.debouncedSetIFR)
     eventbus.subscribe('VUE_SB_SELECTION', this.handleSBSelection)
-    eventbus.subscribe('SET_VARIANT_FILTER_CARD', this.handleSetVariantFilterCard)
     eventbus.subscribe('VUE_GENOMICS_COUNT', this.handleGenomicsCount)
     eventbus.subscribe('VUE_CLEAR_SELECTED_AXIS', this.handleClearSelectedAxis)
     eventbus.subscribe('VUE_ADD_COHORT_OLD_COLLECTION', this.handleAddCohortOldSelection)
@@ -212,7 +210,6 @@ export default {
       types.I18N_ADD_LOCALE,
       types.I18N_SET_CURRENT_LOCALE,
       types.UI5_SET_LOADED,
-      types.SET_VARIANT_FILTER_CARD,
       types.COLLECTIONS_SET_OLDCOLLECTION,
       types.MESSAGE_SET,
       types.SET_CURRENT_PATIENT_COUNT,
@@ -226,10 +223,6 @@ export default {
     },
     handleAddGeneticFilterCard(channelId, eventId, eventData) {
       this.addGeneticFilterCard(eventData)
-    },
-    handleSetVariantFilterCard(channel, event, data) {
-      // Do nothing, this method is deprecated as the "query.ts" is managing to update variantFilterCards
-      // whenever there is a change
     },
     handleGenomicsCount(channel, event, data) {
       this[types.SET_CURRENT_PATIENT_COUNT](data)
