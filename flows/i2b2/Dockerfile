@@ -74,15 +74,10 @@ RUN arch="$(dpkg --print-architecture)" && \
     java --version
 
 # Add Apache Ant for i2b2 data model creation
-ARG ANT_VERSION=1.9.6
 ARG I2B2_TAG_NAME=1.8.1.0001
 
-RUN wget http://archive.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
-    && tar xvfvz apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt \
-    && ln -sfn /opt/apache-ant-${ANT_VERSION} /opt/ant \
-    && sh -c 'echo ANT_HOME=/opt/ant >> /etc/environment' \
-    && ln -sfn /opt/ant/bin/ant /usr/bin/ant \
-    && rm apache-ant-${ANT_VERSION}-bin.tar.gz
+RUN apt-get update && apt-get install -y --no-install-recommends ant \
+    && rm -rf /var/lib/apt/lists/*
 
 # Change ownership to overwrite db.properties in flow definition
 COPY --from=i2b2-source --chown=docker:docker /app/i2b2-data-$I2B2_TAG_NAME /app/i2b2-data-$I2B2_TAG_NAME

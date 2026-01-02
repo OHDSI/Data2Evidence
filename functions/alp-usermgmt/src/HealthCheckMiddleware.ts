@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import type { Knex } from '../types'
+import type { Knex } from './types'
 import { createLogger } from './Logger'
 import { Container } from 'typedi'
 

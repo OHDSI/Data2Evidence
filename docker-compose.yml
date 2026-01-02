@@ -119,6 +119,7 @@ services:
         - *x-pg
         - *x-trex-sql
       REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
+      TPM_USE_NODE_MODULES: "false"
       SERVICE_ROUTES: |-
         {
         "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
@@ -740,6 +741,8 @@ services:
       - "postgres"
       - "-c"
       - "wal_level=logical"
+      - "-c"
+      - "max_connections=1000"
     shm_size: 1gb
     volumes:
       - pg-minerva-data-1:/var/lib/postgresql/data
