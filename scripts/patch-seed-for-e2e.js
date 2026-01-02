@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Patches the seed config to use race instead of Age for e2e test stability.
+ * Patches the seed config to use raceName instead of Age for e2e test stability.
  * Age-based categories change with each new year, causing screenshot test failures.
  */
 const fs = require("fs");
@@ -21,25 +21,25 @@ let content = fs.readFileSync(SEED_FILE, "utf8");
 // Same-line format: 3 occurrences with JSON-style quoted keys
 content = content.replaceAll(
   '"categories": ["patient.attributes.Age"]',
-  '"categories": ["patient.attributes.race"]'
+  '"categories": ["patient.attributes.raceName"]'
 );
 
 // Same-line format: 1 occurrence with JS-style unquoted keys
 content = content.replaceAll(
   'categories: ["patient.attributes.Age"]',
-  'categories: ["patient.attributes.race"]'
+  'categories: ["patient.attributes.raceName"]'
 );
 
 // Multiline format: 1 occurrence where value is on separate line (line 13282)
 content = content.replaceAll(
   '"categories": [\n                "patient.attributes.Age"\n            ]',
-  '"categories": [\n                "patient.attributes.race"\n            ]'
+  '"categories": [\n                "patient.attributes.raceName"\n            ]'
 );
 
-// Set initial: true for race attribute in filtercard (line 9910)
-// This ensures race appears as the default chart category
+// Set initial: true for raceName attribute in filtercard (line 23035)
+// This ensures raceName appears as the default chart category
 content = content.replace(
-  `"source": "patient.attributes.race",
+  `"source": "patient.attributes.raceName",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -48,7 +48,7 @@ content = content.replace(
                     "measure": false,
                     "filtercard": {
                         "initial": false,`,
-  `"source": "patient.attributes.race",
+  `"source": "patient.attributes.raceName",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
@@ -60,4 +60,4 @@ content = content.replace(
 );
 
 fs.writeFileSync(SEED_FILE, content, "utf8");
-console.log("Patched seed file: replaced Age with race in categories arrays and set race initial to true");
+console.log("Patched seed file: replaced Age with raceName in categories arrays and set raceName initial to true");
