@@ -36,5 +36,28 @@ content = content.replaceAll(
   '"categories": [\n                "patient.attributes.race"\n            ]'
 );
 
+// Set initial: true for race attribute in filtercard (line 9910)
+// This ensures race appears as the default chart category
+content = content.replace(
+  `"source": "patient.attributes.race",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,`,
+  `"source": "patient.attributes.race",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": true,`
+);
+
 fs.writeFileSync(SEED_FILE, content, "utf8");
-console.log("Patched seed file: replaced Age with race in categories arrays");
+console.log("Patched seed file: replaced Age with race in categories arrays and set race initial to true");
