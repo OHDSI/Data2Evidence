@@ -13,7 +13,6 @@
       <div style="height: 14px"></div>
       <div class="patientlist-control-wrapper" style="height: 90%; overflow: auto">
         <patientListControl
-          @openPatientSummary="openPatientSummary"
           :columns="this.getSelectedAttributes"
           :rows="this.chartData.data"
           :rowCount="this.chartData.totalPatientCount"
@@ -181,37 +180,6 @@ export default {
       'populateColumnMenu',
       'addSelectedAttribute',
     ]),
-    openPatientSummary({ patientId }: { patientId: string }) {
-      const psControl = this.setupUI5Control()
-      this.$nextTick(() => {
-        psControl.setModel(
-          new sap.ui.model.json.JSONModel({
-            dataLoaded: false,
-            settings: {
-              patientId,
-            },
-          }),
-          'patientSummary'
-        )
-        psControl.getController().open()
-      })
-    },
-    // setupUI5Control() {
-    //   if (this.psui5element) {
-    //     try {
-    //       this.psui5element.destroy();
-    //     } catch (err) {
-    //       // do nothing
-    //     }
-    //   }
-    //   this.psui5element = new sap.ui.xmlview({
-    //     viewName: "hc.mri.pa.ui.views.PatientSummary",
-    //     width: "100%",
-    //     height: "100%"
-    //   });
-    //   this.psui5element.placeAt(this.$refs.contextPS, "only");
-    //   return this.psui5element;
-    // },
     removeColumn({ configPath }) {
       this.removeSelectedAttribute({ configPath })
       this.setFireRequest()
