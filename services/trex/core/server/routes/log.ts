@@ -21,7 +21,7 @@ export function addRoutes(app: Hono) {
     const bearerToken = c.req.raw.headers.get("authorization");
     const thirdPartyToken = jwt.decode(bearerToken.split(" ")[1])["thirdPartyToken"];
     const token = jwt.decode(thirdPartyToken);
-    const idpUserId = token["oid"];
+    const idpUserId = token["oid"] || token["sub"];
 
     logger.info(
       `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
