@@ -134,7 +134,7 @@ const assignLogtoRolesByAzureGroups = async (
       logtoAPItoken
     );
     if (logtoUsersByName?.length > 0) {
-      const revisedUsername = `${username}_${logtoUsersByName?.length + 1}`;
+      const revisedUsername = `${username}_${Date.now()}`;
       console.warn(
         `Username ${username} is already taken. Create Logto user with name: ${revisedUsername}`
       );
