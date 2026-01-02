@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { takeScreenshot } from '../screenshot-capture'
 
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+test(TEST_NAME, async ({ page }, testInfo) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
   }
@@ -18,7 +19,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Concepts' }).click()
   await expect(page.getByText('1–25 of 444')).toBeVisible()
-  await expect(page).toHaveScreenshot('concept-sets-1.png', { maxDiffPixels: 100 })
+  await takeScreenshot(page, testInfo, 'concept-sets-1.png')
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
   // Concept set
@@ -93,7 +94,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
-  await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
+  await takeScreenshot(page, testInfo, 'concept-sets-2.png')
   await page.getByText('✎').click()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
@@ -125,5 +126,5 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
+  await takeScreenshot(page, testInfo, 'concept-sets-3.png')
 })

@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { takeScreenshot } from '../screenshot-capture'
 
 const TEST_NAME = 'Change Password and Logout'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+test(TEST_NAME, async ({ page }, testInfo) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -41,5 +42,5 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('snackbar-message')).toContainText('Password updated')
   await page.getByTestId('dialog-close').click()
   await page.getByRole('button', { name: 'Logout' }).click()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await takeScreenshot(page, testInfo)
 })
