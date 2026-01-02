@@ -1,4 +1,3 @@
-import axios, { AxiosRequestConfig } from "axios";
 import { env } from "../env.ts";
 
 import {
@@ -14,6 +13,8 @@ import {
 export class TerminologySvcAPI {
   private readonly baseURL: string;
   private readonly token: string;
+  // deno-lint-ignore no-explicit-any
+  private terminologysvcapi: any;
 
   constructor(token: string) {
     this.token = token;
@@ -27,6 +28,8 @@ export class TerminologySvcAPI {
       console.error("No url is set for TerminologySvcAPI");
       throw new Error("No url is set for TerminologySvcAPI");
     }
+    // @ts-ignore To ignore Cannot find name 'Trex'
+    this.terminologysvcapi = Trex.tokioChannel("d2e-functions/terminology-svc");
   }
 
   async getConceptSet(
@@ -34,14 +37,13 @@ export class TerminologySvcAPI {
     datasetId: string
   ): Promise<ITerminologyConceptSet> {
     try {
-      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
-        conceptSetId
-      )}`;
+      const url = new URL(
+        `${this.baseURL}/concept-set/${encodeURIComponent(conceptSetId)}`
+      );
       console.log(`Calling ${url} to get concept sets`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      const result = await axios.get(url, { params, ...options });
+      url.searchParams.set("datasetId", datasetId);
+      const result = await this.terminologysvcapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
       console.error(
@@ -53,12 +55,11 @@ export class TerminologySvcAPI {
 
   async getConceptSets(datasetId: string): Promise<ITerminologyConceptSet[]> {
     try {
-      const url = `${this.baseURL}/concept-set`;
+      const url = new URL(`${this.baseURL}/concept-set`);
       console.log(`Calling ${url} to get concept sets`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      const result = await axios.get(url, { params, ...options });
+      url.searchParams.set("datasetId", datasetId);
+      const result = await this.terminologysvcapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
       console.error(`Error while getting concept sets: ${error}`);
@@ -71,14 +72,13 @@ export class TerminologySvcAPI {
     conceptSetId: number
   ): Promise<ITerminologyConceptSetWithConceptData> {
     try {
-      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
-        conceptSetId
-      )}`;
+      const url = new URL(
+        `${this.baseURL}/concept-set/${encodeURIComponent(conceptSetId)}`
+      );
       console.log(`Calling ${url} to get concept set by id`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      const result = await axios.get(url, { params, ...options });
+      url.searchParams.set("datasetId", datasetId);
+      const result = await this.terminologysvcapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
       console.error(`Error while getting concept set by id: ${error}`);
@@ -91,17 +91,17 @@ export class TerminologySvcAPI {
     conceptSetDto: ITerminologyCreateConceptSet
   ): Promise<number> {
     try {
-      const url = `${this.baseURL}/concept-set`;
+      const url = new URL(`${this.baseURL}/concept-set`);
       console.log(`Calling ${url} to create concept sets`);
       const options = this.getRequestConfig();
 
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
+      url.searchParams.set("datasetId", datasetId);
 
-      const result = await axios.post(url, conceptSetDto, {
-        params,
-        ...options,
-      });
+      const result = await this.terminologysvcapi.post(
+        url.toString(),
+        conceptSetDto,
+        options
+      );
       return result.data;
     } catch (error) {
       console.error(`Error while creating concept sets: ${error}`);
@@ -115,19 +115,19 @@ export class TerminologySvcAPI {
     conceptSetDto: ITerminologyCreateConceptSet
   ): Promise<number> {
     try {
-      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
-        conceptSetId
-      )}`;
+      const url = new URL(
+        `${this.baseURL}/concept-set/${encodeURIComponent(conceptSetId)}`
+      );
       console.log(`Calling ${url} to update concept sets`);
       const options = this.getRequestConfig();
 
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
+      url.searchParams.set("datasetId", datasetId);
 
-      const result = await axios.put(url, conceptSetDto, {
-        params,
-        ...options,
-      });
+      const result = await this.terminologysvcapi.put(
+        url.toString(),
+        conceptSetDto,
+        options
+      );
       return result.data;
     } catch (error) {
       console.error(`Error while updating concept sets: ${error}`);
@@ -140,16 +140,15 @@ export class TerminologySvcAPI {
     conceptSetId: number
   ): Promise<void> {
     try {
-      const url = `${this.baseURL}/concept-set/${encodeURIComponent(
-        conceptSetId
-      )}`;
+      const url = new URL(
+        `${this.baseURL}/concept-set/${encodeURIComponent(conceptSetId)}`
+      );
       console.log(`Calling ${url} to delete concept set`);
       const options = this.getRequestConfig();
 
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
+      url.searchParams.set("datasetId", datasetId);
 
-      await axios.delete(url, { params, ...options });
+      await this.terminologysvcapi.delete(url.toString(), options);
     } catch (error) {
       console.error(
         `Error while deleting concept set with conceptSetId ${conceptSetId}: ${error}`
@@ -170,7 +169,7 @@ export class TerminologySvcAPI {
         datasetId,
         concepts,
       };
-      const result = await axios.post(url, body, options);
+      const result = await this.terminologysvcapi.post(url, body, options);
       return result.data;
     } catch (error) {
       console.error(`Error while resolving concept set expression: ${error}`);
@@ -186,18 +185,17 @@ export class TerminologySvcAPI {
     filters?: ITerminologyFiltersSchema
   ): Promise<ITerminologyFhirResource> {
     try {
-      const url = `${this.baseURL}/fhir/4_0_0/valueset/$expand`;
+      const url = new URL(`${this.baseURL}/fhir/4_0_0/valueset/$expand`);
       console.log(`Calling ${url} to search concept`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      params.append("offset", offset.toString());
-      params.append("count", count.toString());
-      params.append("code", query);
+      url.searchParams.set("datasetId", datasetId);
+      url.searchParams.set("offset", offset.toString());
+      url.searchParams.set("count", count.toString());
+      url.searchParams.set("code", query);
       if (filters) {
-        params.append("filter", JSON.stringify(filters));
+        url.searchParams.set("filter", JSON.stringify(filters));
       }
-      const result = await axios.get(url, { params, ...options });
+      const result = await this.terminologysvcapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
       console.error(`Error while searching concept: ${error}`);
@@ -217,7 +215,7 @@ export class TerminologySvcAPI {
         datasetId,
         conceptId,
       };
-      const result = await axios.post(url, body, options);
+      const result = await this.terminologysvcapi.post(url, body, options);
       if (result.data.length > 0) {
         return result.data[0];
       } else {
@@ -241,7 +239,7 @@ export class TerminologySvcAPI {
         datasetId,
         conceptIds,
       };
-      const result = await axios.post(url, body, options);
+      const result = await this.terminologysvcapi.post(url, body, options);
       if (result.data.length > 0) {
         return result.data;
       } else {
@@ -256,9 +254,7 @@ export class TerminologySvcAPI {
   }
 
   private getRequestConfig() {
-    let options: AxiosRequestConfig = {};
-
-    options = {
+    const options = {
       headers: {
         Authorization: this.token,
       },

@@ -31,6 +31,7 @@ sap.ui.define([
             .getModel("testModel");
 
         this.noErrorMsg = "HPH_CDM_CFG_TEST_NO_ERRORS";
+        this.noPermissionMsg = "HPH_CDM_CFG_TEST_NO_PERMISSION";
         this.testDialogContent.byId("samplesBox")
             .bindAggregation("items", {
                 path: "testModel>/testSampleValues",
@@ -219,11 +220,42 @@ sap.ui.define([
                                         .setData(testModelData);
 
                                 } else {
-                                    testModelData.testMinValue = data.data[0].min;
-                                    testModelData.testMaxValue = data.data[0].max;
-                                    testModelData.testCountValue = data.data[0].count;
-                                    testModelData.testSqlCheck = that.noErrorMsg;
-                                    testModelData.testErrorDetails = "";
+                                    // Test succeeded - check permission level
+                                    if (!data.data || data.data.length === 0) {
+                                        // Empty result - no data returned
+                                        testModelData.testSqlCheck = that.noErrorMsg;
+                                        testModelData.testErrorDetails = "";
+                                        that._testDialogShow(false);
+                                        that.oTestModel.setData(testModelData);
+                                    } else if (data.data[0].permission) {
+                                        // Full permission - show data
+                                        testModelData.testMinValue = data.data[0].min;
+                                        testModelData.testMaxValue = data.data[0].max;
+                                        testModelData.testCountValue = data.data[0].count;
+                                        testModelData.testSqlCheck = that.noErrorMsg;
+                                        testModelData.testErrorDetails = "";
+                                    } else {
+                                        // Resolve dataset key to display name for user-friendly message
+                                        var datasetKey = that.getView().getModel(ConfigUtils.models.CONFIG_EDITOR)
+                                            .getProperty("/settings/datasetId/value");
+                                        var datasetName = datasetKey || "unknown dataset";
+
+                                        var datasetModel = that.getView().getModel("allDatasets");
+                                        if (datasetModel) {
+                                            var datasetList = datasetModel.getProperty("/list");
+                                            if (datasetList && Array.isArray(datasetList)) {
+                                                var dataset = datasetList.find(function(ds) {
+                                                    return ds.key === datasetKey;
+                                                });
+                                                if (dataset && dataset.text) {
+                                                    datasetName = dataset.text;
+                                                }
+                                            }
+                                        }
+
+                                        testModelData.testSqlCheck = that.noPermissionMsg;
+                                        testModelData.testErrorDetails = datasetName;
+                                    }
                                     that._testDialogShow(data.data[0].permission);
                                     that.oTestModel
                                         .setData(testModelData);
