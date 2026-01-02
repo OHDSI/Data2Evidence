@@ -81,6 +81,10 @@ const main = () => {
   });
   app.register(fastifySwaggerUI, {
     routePrefix: `/${routePrefix}/documentation`,
+    logo: {
+      type: "text/plain",
+      content: "",
+    },
   });
 
   app.after(() => app.register(routes, { prefix: routePrefix }));

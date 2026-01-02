@@ -26,6 +26,7 @@ interface CliOptions {
   hana?: boolean;
   pull?: boolean;
   ENVFILE?: string;
+  hades?: string;
 }
 
 class D2ECli {
@@ -241,6 +242,7 @@ class D2ECli {
       .option("-j, --jupyter", "Include jupyter")
       .option("-m, --mlflow", "Include mlflow")
       .option("-h, --hana", "")
+      .option("--hades", "")
       .option(
         "-c, --compose-file",
         "[PATH] is path to an additional docker compose file"
@@ -538,6 +540,10 @@ class D2ECli {
       console.error("Failed to run script:", setupdemo.error);
       process.exit(1);
     }
+    if (setupdemo.status !== 0) {
+      console.error(`setupdemo exited with code ${setupdemo.status}`);
+      process.exit(1);
+    }
 
     const checkSetupDemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE}`;
     const check_setupdemo = spawnSync(checkSetupDemoCmd, [], {
@@ -549,7 +555,14 @@ class D2ECli {
       console.error("Failed to run script:", check_setupdemo.error);
       process.exit(1);
     }
+    if (check_setupdemo.status !== 0) {
+      console.error(
+        `check_setupdemo exited with code ${check_setupdemo.status}`
+      );
+      process.exit(1);
+    }
   }
+
   setupdemohana() {
     console.log("Setting up demo database for hana...");
     const zx_cmd = this.setup_zx_cmd();
@@ -563,6 +576,10 @@ class D2ECli {
       console.error("Failed to run script:", setupdemohana.error);
       process.exit(1);
     }
+    if (setupdemohana.status !== 0) {
+      console.error(`setupdemohana exited with code ${setupdemohana.status}`);
+      process.exit(1);
+    }
 
     const checkSetupDemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemohana-flow.mjs -n ${this.ENVFILE}`;
     const check_setupdemohana = spawnSync(checkSetupDemohanaCmd, [], {
@@ -572,6 +589,12 @@ class D2ECli {
     });
     if (check_setupdemohana.error) {
       console.error("Failed to run script:", check_setupdemohana.error);
+      process.exit(1);
+    }
+    if (check_setupdemohana.status !== 0) {
+      console.error(
+        `check_setupdemohana exited with code ${check_setupdemohana.status}`
+      );
       process.exit(1);
     }
   }
@@ -603,6 +626,26 @@ class D2ECli {
       console.error("Failed to run script:", getnoproxy.error);
       process.exit(1);
     }
+  }
+  async pull_image(imageName: string, tagName: string): Promise<void> {
+    const fullImageName = `${this.DOCKER_IMAGE_PREFIX}${imageName}:${tagName}`;
+    const cmd_pull = `docker pull --platform linux/amd64 ${fullImageName}`;
+    console.log(`Pulling image: ${cmd_pull}`);
+    await new Promise<void>((resolve) => {
+      const proc = spawn(cmd_pull, {
+        stdio: "inherit",
+        shell: true,
+        env: process.env,
+      });
+      proc.on("close", (code) => {
+        if (code === 0) {
+          console.log("Process completed successfully.");
+        } else {
+          console.log(`Process exited with code ${code}`);
+        }
+        resolve();
+      });
+    });
   }
 
   // Commands
@@ -930,39 +973,12 @@ class D2ECli {
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
-        const cmd_pull_flow_base = `docker pull --platform linux/amd64 ${DOCKER_IMAGE_PREFIX}d2e/flow-base:${this.PLUGINS_IMAGE_TAG}`;
-        await new Promise<void>((resolve) => {
-          const proc = spawn(cmd_pull_flow_base, {
-            stdio: "inherit",
-            shell: true,
-            env: process.env,
-          });
-          proc.on("close", (code) => {
-            if (code === 0) {
-              console.log("Process completed successfully.");
-            } else {
-              console.log(`Process exited with code ${code}`);
-            }
-            resolve();
-          });
-        });
+        await this.pull_image("d2e/flow-base", this.DOCKER_TAG_NAME);
         if (options.jupyter) {
-          const cmd_pull_jupyter = `docker pull --platform linux/amd64 ${this.DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
-          await new Promise<void>((resolve) => {
-            const proc = spawn(cmd_pull_jupyter, {
-              stdio: "inherit",
-              shell: true,
-              env: process.env,
-            });
-            proc.on("close", (code) => {
-              if (code === 0) {
-                console.log("Process completed successfully.");
-              } else {
-                console.log(`Process exited with code ${code}`);
-              }
-              resolve();
-            });
-          });
+          await this.pull_image("d2e-r-ohdsi-kernel", this.DOCKER_TAG_NAME);
+        }
+        if (options.hades) {
+          await this.pull_image("d2e/flow-hades", this.DOCKER_TAG_NAME);
         }
         const { cmd, env } = this.build_docker_command(options, "pull");
         console.log(`Executing command: ${cmd}`);
