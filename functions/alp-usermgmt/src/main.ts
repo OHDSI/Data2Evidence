@@ -58,7 +58,7 @@ export class Server {
   public start() {
     const server = https.createServer({ key: env.SSL_PRIVATE_KEY, cert: env.SSL_PUBLIC_CERT }, this.app)
     server.listen(PORT, () => {
-      logger.info(`🚀 ALP User Management started successfully!. Server listening on port ${PORT}`)
+      logger.info(`ALP User Management started successfully. Server listening on port ${PORT}`)
     })
   }
 }

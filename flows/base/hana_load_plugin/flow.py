@@ -1,3 +1,4 @@
+import os
 import requests
 import pandas as pd
 from pathlib import Path
@@ -20,6 +21,7 @@ from .constants import (
     CREATE_SCRIPT_DIR,
     SQL_FILES_ORDER
 )
+from .versioninfo import update_dataset_metadata_flow
 
 os.environ["plugin_name"] = "hana_load_plugin"
 
@@ -29,14 +31,13 @@ def hana_load_plugin(options: DataloadOptions):
     match options.flow_action_type:
         case FlowActionType.CREATE_DATA_MODEL:
             create_datamodel(options)
-        # Todo: implement get get_version_info for hana
         case FlowActionType.GET_VERSION_INFO:
-            get_version_info(options)
-
-
-
-def get_version_info(options: DataloadOptions):
-    pass
+            update_dataset_metadata_flow(options)
+        case _:
+            logger = get_run_logger()
+            error_msg = f"Flow action type '{options.flow_action_type}' not supported, only '{[action.value for action in FlowActionType]}'"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
 def create_datamodel(options: DataloadOptions):
     logger = get_run_logger()
@@ -84,7 +85,6 @@ def create_datamodel(options: DataloadOptions):
 
     create_results_tables(dbdao, results_schema)
 
-#task
 @task(log_prints=True)
 def create_datamodel_parent(schema: str, dbdao: DBDao, folder: Path, load_csvs: bool):
     run_create_datamodel_scripts(schema, dbdao)
@@ -150,7 +150,7 @@ def load_csvs_to_hana(folder: Path, schema: str, dbdao: DBDao):
         table_name = csv_file.stem.lower()
         logger.info(f"Loading {csv_file.name} -> {schema}.{table_name}")
         df = pd.read_csv(csv_file)
-        if (table_name == 'vocabulary' or table_name == 'concept'):
+        if table_name in ('vocabulary', 'concept'):
             df['VOCABULARY_ID'] = df['VOCABULARY_ID'].fillna('None')
         df.to_sql(
             table_name,
