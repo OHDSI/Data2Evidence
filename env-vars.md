@@ -14,12 +14,12 @@
 | `GH_TOKEN`                                      | string         | GitHub Token Passed To Trex                                                         |
 | `LOGTO_API_M2M_CLIENT_ID`                       | password       | Logto Api M2m Client Id                                                             |
 | `LOGTO_API_M2M_CLIENT_SECRET`                   | password       | Logto Api M2m Client Secret                                                         |
-| `LOGTO__ALP_APP__CLIENT_ID`                     | string         | Logto Alp App Client Id                                                             |
-| `LOGTO__ALP_APP__CLIENT_SECRET`                 | password       | Logto Alp App Client Secret                                                         |
-| `LOGTO__ALP_DATA__CLIENT_ID`                    | string         | Logto Alp Data Client Id                                                            |
-| `LOGTO__ALP_DATA__CLIENT_SECRET`                | password       | Logto Alp Data Client Secret                                                        |
-| `LOGTO__ALP_SVC__CLIENT_ID`                     | string         | Logto Alp Svc Client Id                                                             |
-| `LOGTO__ALP_SVC__CLIENT_SECRET`                 | password       | Logto Alp Svc Client Secret                                                         |
+| `LOGTO__D2E_APP__CLIENT_ID`                     | string         | Logto Alp App Client Id                                                             |
+| `LOGTO__D2E_APP__CLIENT_SECRET`                 | password       | Logto Alp App Client Secret                                                         |
+| `LOGTO__D2E_DATA__CLIENT_ID`                    | string         | Logto Alp Data Client Id                                                            |
+| `LOGTO__D2E_DATA__CLIENT_SECRET`                | password       | Logto Alp Data Client Secret                                                        |
+| `LOGTO__D2E_SVC__CLIENT_ID`                     | string         | Logto Alp Svc Client Id                                                             |
+| `LOGTO__D2E_SVC__CLIENT_SECRET`                 | password       | Logto Alp Svc Client Secret                                                         |
 | `LOGTO__CLIENTID_PASSWORD__BASIC_AUTH`          | base64 encoded | From `LOGTO_API_M2M_CLIENT_ID` & `LOGTO_API_M2M_CLIENT_SECRET`                      |
 | `MINIO__SECRET_KEY`                             | password       | Meilisearch Secret_Key                                                              |
 | `PG_ADMIN_PASSWORD`                             | password       | Admin Permissions                                                                   |

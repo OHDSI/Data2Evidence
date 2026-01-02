@@ -91,27 +91,27 @@ LOGTO_API_M2M_CLIENT_SECRET:
   comment: Logto Api M2m Client Secret
   publish: true
   type: password
-LOGTO__ALP_APP__CLIENT_ID:
+LOGTO__D2E_APP__CLIENT_ID:
   comment: Logto Alp App Client Id
   publish: true
   type: string
-LOGTO__ALP_APP__CLIENT_SECRET:
+LOGTO__D2E_APP__CLIENT_SECRET:
   comment: Logto Alp App Client Secret
   publish: true
   type: password
-LOGTO__ALP_DATA__CLIENT_ID:
+LOGTO__D2E_DATA__CLIENT_ID:
   comment: Logto Alp Data Client Id
   publish: true
   type: string
-LOGTO__ALP_DATA__CLIENT_SECRET:
+LOGTO__D2E_DATA__CLIENT_SECRET:
   comment: Logto Alp Data Client Secret
   publish: true
   type: password
-LOGTO__ALP_SVC__CLIENT_ID:
+LOGTO__D2E_SVC__CLIENT_ID:
   comment: Logto Alp Svc Client Id
   publish: true
   type: string
-LOGTO__ALP_SVC__CLIENT_SECRET:
+LOGTO__D2E_SVC__CLIENT_SECRET:
   comment: Logto Alp Svc Client Secret
   publish: true
   type: password
