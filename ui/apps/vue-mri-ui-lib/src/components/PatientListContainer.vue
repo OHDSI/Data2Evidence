@@ -43,15 +43,11 @@
 <script lang="ts">
 declare var sap
 import { mapActions, mapGetters } from 'vuex'
-import processCSV from '../utils/ProcessCSV'
-import processZIP from '../utils/ProcessZIP'
 import menuButton from './MenuButton.vue'
 import Pager from './Pager.vue'
 import patientListControl from './PatientListControl.vue'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import { postProcessPatientListData } from './helpers/postProcessPatientListData'
-import { postProcessConvertPatientListToCsv } from './helpers/postProcessConvertPatientListToCsv'
-import { AxiosResponse } from 'axios'
 import { createZip } from './helpers/createZip'
 
 export default {
@@ -186,19 +182,19 @@ export default {
       'addSelectedAttribute',
     ]),
     openPatientSummary({ patientId }: { patientId: string }) {
-      const psControl = this.setupUI5Control();
+      const psControl = this.setupUI5Control()
       this.$nextTick(() => {
         psControl.setModel(
           new sap.ui.model.json.JSONModel({
             dataLoaded: false,
             settings: {
-              patientId
-            }
+              patientId,
+            },
           }),
-          "patientSummary"
-        );
-        psControl.getController().open();
-      });
+          'patientSummary'
+        )
+        psControl.getController().open()
+      })
     },
     // setupUI5Control() {
     //   if (this.psui5element) {
