@@ -54,6 +54,9 @@ jobs:
         run: |
           npm install
 
+      - name: Patch seed config for e2e tests
+        run: node ./scripts/patch-seed-for-e2e.js
+
       - name: Initialise d2e
         if: success() || failure()
         id: init
