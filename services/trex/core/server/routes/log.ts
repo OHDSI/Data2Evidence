@@ -19,9 +19,9 @@ export function addRoutes(app: Hono) {
     }
 
     const bearerToken = c.req.raw.headers.get("authorization");
-    const token = jwt.decode(bearerToken.split(" ")[1]);
-    const sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
-    const idpUserId = token["oid"] || sub;
+    const thirdPartyToken = jwt.decode(bearerToken.split(" ")[1])["thirdPartyToken"];
+    const token = jwt.decode(thirdPartyToken);
+    const idpUserId = token["oid"];
 
     logger.info(
       `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
