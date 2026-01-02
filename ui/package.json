@@ -40,10 +40,6 @@
           "target": "/resources/flow"
         },
         {
-          "source": "/analysis",
-          "target": "/resources/analysis"
-        },
-        {
           "source": "/mapping",
           "target": "/resources/mapping"
         },
