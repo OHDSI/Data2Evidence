@@ -239,7 +239,7 @@ const getLogtoUsersIdByName = async (username: string, apiToken: string) => {
     const httpResponse = await got.get(`${ENDPOINT}/api/users`, {
       searchParams: {
         ["search.username"]: username,
-        ["mode.name"]: "exact",
+        ["mode.username"]: "exact",
       },
       headers: {
         authorization: `Bearer ${apiToken}`,
