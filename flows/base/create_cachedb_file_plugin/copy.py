@@ -427,6 +427,9 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
     table = query_columns.table
     columns_to_copy = query_columns.columns_to_copy
 
+    if columns_to_copy == ["*"]:
+        columns_to_copy = read_conn.get_columns(source_schema, table)
+
     target_database = copy_params.target_database
     target_schema = copy_params.target_schema   
 
