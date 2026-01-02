@@ -31,7 +31,7 @@ jobs:
 
       - name: Determine condition to run
         env:
-          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || steps.check_file_changed.outputs.has_strategus_changes == 'True' }}
+          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || github.event_name == 'merge_group' || steps.check_file_changed.outputs.has_strategus_changes == 'True' }}
         run: |
           echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
 

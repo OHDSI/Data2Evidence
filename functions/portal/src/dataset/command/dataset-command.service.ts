@@ -157,6 +157,8 @@ export class DatasetCommandService {
       const newTokenDatasetCode = `${tokenDatasetCode}_dm_${sanitizedName}`.substring(0, 80);
       
       // Copy dataset with new schema name
+
+      // Cache dataset inherits the result schema name from source dataset
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
         type: newType,
@@ -165,7 +167,7 @@ export class DatasetCommandService {
         dialect,
         schemaName,
         vocabSchemaName: schemaName,
-        resultSchemaName: schemaName || resultSchemaName,
+        resultSchemaName: resultSchemaName,
         tokenDatasetCode: newTokenDatasetCode,
         paConfigId,
         dataModel,

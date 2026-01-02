@@ -104,6 +104,12 @@ jobs:
         run: |
           docker buildx prune -af
 
+      - name: Set system date to 2025-12-31
+        if: success() || failure()
+        run: |
+          sudo date -s "2025-12-31 12:00:00"
+          echo "Current date: $(date)"
+
       - name: Start services
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -202,14 +208,25 @@ jobs:
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
-          docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
-          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
+          docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+
+      - name: Reset system date for apt
+        run: |
+          sudo timedatectl set-ntp off || true
+          sudo hwclock --hctosys || sudo date -s "$(curl -sI google.com | grep -i date | cut -d' ' -f2-)" || true
+          echo "Current date: $(date)"
 
       - name: e2e tests setup
         run: |
           cd ./tests/e2e
           npm install
           npm run init
+
+      - name: Set system date to 2025-12-31 for tests
+        run: |
+          sudo date -s "2025-12-31 12:00:00"
+          echo "Current date: $(date)"
 
       - name: e2e tests
         # continue-on-error: true

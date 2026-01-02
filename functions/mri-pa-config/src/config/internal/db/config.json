@@ -2483,7 +2483,8 @@
       "measures": ["patient.attributes.pcount"],
       "categories": [
         "patient.conditions.acme.interactions.priDiag.attributes.icd_10"
-      ]
+      ],
+      "stackCategory": ["patient.attributes.gender"]
     },
     "initialChart": "stacked",
     "stacked": {
