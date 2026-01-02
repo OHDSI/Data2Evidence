@@ -23,9 +23,8 @@ test(TEST_NAME, async ({ page }) => {
   const demoRow = datasetTable.locator('tr', { hasText: /Demo dataset/i }).first();
   await expect(demoRow).toBeVisible({ timeout: 30000 });
   
-  // Child rows are now expanded by default, so we can directly access the nested table
-  await expect(page.locator('table table')).toBeVisible({ timeout: 10000 });
-  const childRow = page.locator('table table tbody tr').first();
+  // Child rows are now expanded by default, so we can directly access them in the main table
+  const childRow = datasetTable.locator('tbody tr').filter({ has: page.locator('.icon-cell--child') }).first();
   await expect(childRow).toBeVisible({ timeout: 10000 });
   
   // Get the cache dataset name from the Name column (index 2: icon, dataset_id, name)
@@ -98,7 +97,7 @@ test(TEST_NAME, async ({ page }) => {
   const demoRowAgain = datasetTableAgain.locator('tr', { hasText: /Demo dataset/i }).first();
   await expect(demoRowAgain).toBeVisible({ timeout: 30000 });
   // Child rows are expanded by default, find child row directly
-  const childRowAgain = page.locator('table table tbody tr').first();
+  const childRowAgain = datasetTableAgain.locator('tbody tr').filter({ has: page.locator('.icon-cell--child') }).first();
   await expect(childRowAgain).toBeVisible({ timeout: 10000 });
   await childRowAgain.getByText('Select action').click();
   await page.getByRole('option', { name: 'Permissions' }).click();
