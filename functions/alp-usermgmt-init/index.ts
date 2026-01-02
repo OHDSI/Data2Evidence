@@ -3,6 +3,7 @@ import config from "./src/db/knexfile-admin.ts";
 import { MigrationSource } from "./src/db/MigrationSource.ts";
 import { SeedSource } from "./src/db/SeedSource.ts";
 import * as pg from 'pg'
+import "uuid"
 
 const k = knex(config);
 

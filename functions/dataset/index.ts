@@ -35,14 +35,6 @@ export class DatasetRouter {
     }
   }
 
-  private flowSnapshotType(snapshotLocation: string) {
-    if (snapshotLocation === "DB") {
-      return "create_datamart_cache";
-    } else {
-      return "create_parquet_snapshot";
-    }
-  }
-
   private registerRoutes() {
     this.router.get(
       "/cdm-schema/snapshot/metadata",
@@ -113,7 +105,6 @@ export class DatasetRouter {
           schemaOption,
           vocabSchemaValue,
           resultSchemaValue,
-          cleansedSchemaOption,
           dialect,
           databaseCode,
           schemaName,
@@ -153,8 +144,9 @@ export class DatasetRouter {
         try {
           this.logger.info(`Create dataset ${id}`);
           const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
+          const resultSchema = resultSchemaValue ? resultSchemaValue : `${schemaName}_results`;
 
-          // Create CDM & Custom schemas with Optional Cleansed Schema
+          // Create CDM & Custom schemas
           if (schemaOption != CDMSchemaTypes.NoCDM && schemaName) {
             if (
               schemaOption == CDMSchemaTypes.CreateCDM ||
@@ -162,7 +154,7 @@ export class DatasetRouter {
             ) {
               try {
                 this.logger.info(
-                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode} with cleansed schema option set to ${cleansedSchemaOption}`
+                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`
                 );
 
                 const options = {
@@ -172,9 +164,8 @@ export class DatasetRouter {
                     data_model: dataModel,
                     schema_name: schemaName,
                     cache_schema_name: parsedNewCacheSchemaName,
-                    cleansed_schema_option: cleansedSchemaOption,
                     vocab_schema: vocabSchema,
-                    results_schema: resultSchemaValue,
+                    results_schema: resultSchema,
                     plugin: plugin,
                   },
                 };
@@ -226,7 +217,7 @@ export class DatasetRouter {
             databaseCode: databaseCode,
             schemaName,
             vocabSchemaName: vocabSchema,
-            resultSchemaName: resultSchemaValue,
+            resultSchemaName: resultSchema,
             dataModel,
             plugin,
             tenantId,
@@ -279,7 +270,7 @@ export class DatasetRouter {
               id: uuidv4(),
               sourceDatasetId: id,
               newDatasetName: cacheDatasetName,
-              schemaName: parsedNewCacheSchemaName,
+              schemaName: schemaName,
               timestamp: new Date(),
               type: cacheDatasetType,
             };

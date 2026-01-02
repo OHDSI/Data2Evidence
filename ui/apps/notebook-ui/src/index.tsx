@@ -12,7 +12,6 @@ const mockProps: PortalProps = {
   username: "developer",
   datasetId: "test-dataset-id",
   locale: "en",
-  isActiveRoute: true,
   isAtlas: true, // Run in standalone mode
 };
 
