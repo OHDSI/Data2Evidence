@@ -694,6 +694,14 @@ class D2ECli {
         console.log(
           "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
         );
+        console.log("\nNote that SAP HANA JDBC driver is required. Please:");
+        console.log(
+          "  1. Download ngdbc-latest.jar from https://tools.hana.ondemand.com/additional/ngdbc-latest.jar"
+        );
+        console.log(
+          "  2. Create a tmp/drivers/ directory in your current working directory"
+        );
+        console.log("  3. Place the downloaded .jar file in tmp/drivers/");
         let license_agreement: string;
         if (process.env.ACCEPT_SAP_LICENSE) {
           console.log(
@@ -716,6 +724,7 @@ class D2ECli {
           console.log("License not accepted. Aborting HANA initialization.");
           return;
         }
+        const cwd = process.cwd();
         const hanapw =
           process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
@@ -723,6 +732,7 @@ class D2ECli {
           HANA_SYSTEM_PASSWORD: this.hanapw,
           INSTALL_SQLALCHEMY:
             "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["alp_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
