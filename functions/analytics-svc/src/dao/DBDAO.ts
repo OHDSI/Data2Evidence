@@ -60,16 +60,13 @@ export class DBDAO {
                             logger.info(err);
                             return reject(err);
                         } else {
-                            if (result.length > 0) {
-                                resolve(true);
-                            } else {
-                                resolve(true);
-                            }
+                            resolve(true);
                         }
                     }
                 );
             } else {
                 // do nothing
+                resolve(true);
             }
         });
     };
