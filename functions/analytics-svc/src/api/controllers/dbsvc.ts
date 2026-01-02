@@ -14,12 +14,6 @@ export async function getCDMVersion(req, res, next) {
         datasetId
     );
 
-    // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
-    // Always send hardcoded value from env if dialect is bigquery
-    if (dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
-        return res.status(200).send(env.BIGQUERY_CDM_VERSION);
-    }
-
     try {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
