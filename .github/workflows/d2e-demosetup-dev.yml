@@ -81,7 +81,7 @@ jobs:
         id: build_flow_base_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
-        
+
       - name: Build i2b2 docker image
         if: steps.file_changes.outputs.flow_i2b2 == 'true'
         id: build_i2b2_image
@@ -106,12 +106,6 @@ jobs:
         id: prune
         run: |
           docker buildx prune -af
-
-      - name: Set system date to 2025-12-31
-        if: success() || failure()
-        run: |
-          sudo date -s "2025-12-31 12:00:00"
-          echo "Current date: $(date)"
 
       - name: Start services
         if: success() || failure()
@@ -211,22 +205,11 @@ jobs:
           docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
-      - name: Reset system date for apt
-        run: |
-          sudo timedatectl set-ntp off || true
-          sudo hwclock --hctosys || sudo date -s "$(curl -sI google.com | grep -i date | cut -d' ' -f2-)" || true
-          echo "Current date: $(date)"
-
       - name: e2e tests setup
         run: |
           cd ./tests/e2e
           npm install
           npm run init
-
-      - name: Set system date to 2025-12-31 for tests
-        run: |
-          sudo date -s "2025-12-31 12:00:00"
-          echo "Current date: $(date)"
 
       - name: e2e tests
         # continue-on-error: true
