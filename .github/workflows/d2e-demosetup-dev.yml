@@ -49,11 +49,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set system date to 2025-12-31
-        run: |
-          sudo date -s "2025-12-31 12:00:00"
-          echo "Current date: $(date)"
-
       - name: npm install
         if: success() || failure()
         run: |
@@ -108,6 +103,12 @@ jobs:
         id: prune
         run: |
           docker buildx prune -af
+
+      - name: Set system date to 2025-12-31
+        if: success() || failure()
+        run: |
+          sudo date -s "2025-12-31 12:00:00"
+          echo "Current date: $(date)"
 
       - name: Start services
         if: success() || failure()
