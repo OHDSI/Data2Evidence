@@ -39,13 +39,13 @@ try {
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
 const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
-let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
+let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || "localhost";
 let port = process.env.PORT ? `:${process.env.PORT}` : ":443";
-let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
+let CADDY__D2E__PUBLIC_FQDN = `${public_fqdn}${port}`;
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 const HANA_SYSTEM_PASSWORD = process.env.HANA_SYSTEM_PASSWORD;
 
-var url= `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
+var url= `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
 var response = await fetch(url, {
   method: "GET",
   agent: insecureAgent,   
@@ -61,7 +61,7 @@ var logtoObj = JSON.parse(logto_cookie);
 var appId = logtoObj.appId;
 
 // Sign in
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/api/interaction`;
 const body = {
   event: "SignIn",
   identifier: {
@@ -74,7 +74,7 @@ var response = await fetch(url, {
   method: "PUT",
   headers: {
     "content-type": "application/json",
-    "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+    "Referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
     "Cookie": `_interaction=${interaction_cookie}; ` +
               `_interaction.sig=${interaction_sig_cookie}; ` +
                `_logto={\"appId\":\"${app_client_id}\"}; `
@@ -85,12 +85,12 @@ var response = await fetch(url, {
 });
 
 // Submit sign in page
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction/submit`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/api/interaction/submit`;
 var response = await fetch(url, {
   method: "POST",
   headers: {
     "content-type": "application/json",
-    "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+    "Referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
     "Cookie": `_interaction=${interaction_cookie}; ` +
               `_interaction.sig=${interaction_sig_cookie}; ` +
                `_logto=$ `
@@ -101,11 +101,11 @@ var response = await fetch(url, {
 var text = await response.text();
 
 // Get session
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
 var response = await fetch(url, {
     method: "GET",
     headers: {
-        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
     redirect: 'manual',
@@ -122,12 +122,12 @@ var session_cookie = getCookie(setCookieHeaders, '_session');
 var session_sig_cookie = getCookie(setCookieHeaders, '_session.sig');
 
 //Submit consent page
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/consent`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/consent`;
 var response = await fetch(url, {
     method: "GET",
     headers: {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
     redirect: 'manual',
@@ -135,12 +135,12 @@ var response = await fetch(url, {
 });
 
 //Get authorization code
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
 var response = await fetch(url, {
     method: "GET",
     headers: {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
     agent: insecureAgent,   
@@ -152,11 +152,11 @@ const authorization_code = extractAuthCode(authCodeLocation || '');
     
 
 // Complete Login
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc`;
 var response = await fetch(url, {
     method: "GET",
     headers: {
-        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
     redirect: 'manual',
@@ -164,11 +164,11 @@ var response = await fetch(url, {
 });
 
 // Get Bearer token
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/oauth/token`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/oauth/token`;
 var params = new URLSearchParams();
 params.append('grant_type', 'authorization_code');
 params.append('client_id', app_client_id);
-params.append('redirect_uri', `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback`);
+params.append('redirect_uri', `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback`);
 params.append('code', authorization_code);
 params.append('code_verifier', 'kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I');
 var response = await fetch(url, {
@@ -177,8 +177,8 @@ var response = await fetch(url, {
         "accept": "application/json, text/javascript, */*; q=0.01",
         "content-type": "application/x-www-form-urlencoded",
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`,
-        "origin": `https://${CADDY__ALP__PUBLIC_FQDN}`,
-        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A%2F41100%2Foidc`
+        "origin": `https://${CADDY__D2E__PUBLIC_FQDN}`,
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A%2F41100%2Foidc`
     },
     body: params,
     agent: insecureAgent   
@@ -257,7 +257,7 @@ const encryptionKeysObjDb = {
 };
 
 console.log(`Initiating setup of HANA demo dataset...`);
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/trex/db/`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/trex/db/`;
 var response = await fetch(url, {
     method: "POST",
     headers: {
@@ -311,7 +311,7 @@ let encryptionKeysObjDataset = {
 };
 
 
-var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/gateway/api/dataset`;
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/gateway/api/dataset`;
 var response = await fetch(url, {
     method: "POST",
     headers: {
@@ -325,7 +325,7 @@ var response = await fetch(url, {
 var resp = await response.json();
 if (resp.id !== undefined) {
     console.log(`HANA demo dataset added successfully.`);
-    var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/system-portal/dataset/list/systemadmin`;
+    var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/system-portal/dataset/list/systemadmin`;
     var response = await fetch(url, {
         method: "GET",
         headers: {
@@ -344,7 +344,7 @@ if (resp.id !== undefined) {
             var tenantId = data['tenant']['id'];
         }
     }
-    var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/usermgmt/api/user-group/register-study-roles`;
+    var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/usermgmt/api/user-group/register-study-roles`;
     var bodyObj = {
         userIds: ["a6660e40-261e-4782-873e-f76b4328aecf"],
         tenantId: tenantId,
@@ -354,7 +354,7 @@ if (resp.id !== undefined) {
     var response = await fetch(url, {
         method: "POST",
         headers: {
-            "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+            "Referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
             "client_id": app_client_id,
             "Content-Type": "application/json",
             "Authorization": `Bearer ${BEARER_TOKEN}`

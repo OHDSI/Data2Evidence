@@ -18,7 +18,7 @@ CADDY__ALP__ALIAS_PUBLIC_FQDN:
   comment: Public FQDN Alias
   publish: false
   type: string
-CADDY__ALP__PUBLIC_FQDN:
+CADDY__D2E__PUBLIC_FQDN:
   comment: Public FQDN
   publish: true
   type: string

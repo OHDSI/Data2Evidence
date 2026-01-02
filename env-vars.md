@@ -2,7 +2,7 @@
 
 | key                                             | type           | comment                                                                             |
 | ----------------------------------------------- | -------------- | ----------------------------------------------------------------------------------- |
-| `CADDY__ALP__PUBLIC_FQDN`                       | string         | Public FQDN                                                                         |
+| `CADDY__D2E__PUBLIC_FQDN`                       | string         | Public FQDN                                                                         |
 | `D2E_CPU_LIMIT`                                 | string         | Dynamically Calculated Limit                                                        |
 | `D2E_MEMORY_LIMIT`                              | string         | Dynamically Calculated Limit                                                        |
 | `DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY` | rsaPrivateKey  | To Encrypt Dbcredentials Entered In Admin>Setup>Databases>Configure (No Passphrase) |

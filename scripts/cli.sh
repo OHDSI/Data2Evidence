@@ -246,7 +246,7 @@ EOF
 
         case "$init_choice" in
           y|Y)
-            CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
+            CADDY__D2E__PUBLIC_FQDN=${CADDY__D2E__PUBLIC_FQDN:-localhost}
             ENV_TYPE=${ENV_TYPE:-local}
             TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
             PROJECT_NAME=${PROJECT_NAME:-d2e}
@@ -274,7 +274,7 @@ EOF
 
             # action
             echo -n '' > $DOTENV_FILE
-            echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
+            echo CADDY__D2E__PUBLIC_FQDN=$CADDY__D2E__PUBLIC_FQDN >> $DOTENV_FILE
             echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
             echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
             echo FHIR__CLIENT_ID=$(generate_uuid) >> $DOTENV_FILE
