@@ -106,6 +106,7 @@ export async function initTrex() {
 
     logger.log('🦖 TREX started 🦖');
     Deno.serve(app.fetch);
+    await new Promise(() => {});
 }
 
 logger.log('🦖 TREX DB initializing 🦖');

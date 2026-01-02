@@ -209,6 +209,9 @@ async function _callInit(
     cpuTimeHardLimitMs: 200000,
     decoratorType: "typescript_with_metadata",
     allowHostFsAccess: true,
+    context: {
+      sourceMap: true,
+    },
   };
   if (eszip) {
     logger.log(`ESZIP ${dir}${eszip} %%% ${options["importMapPath"]}`);
@@ -270,6 +273,7 @@ async function _callWorker(
     unstableSloppyImports: true,
     context: {
       unstableSloppyImports: true,
+      sourceMap: true,
     },
   };
   if (fncfg.eszip) {
