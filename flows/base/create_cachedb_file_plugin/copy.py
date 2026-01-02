@@ -236,9 +236,8 @@ def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_co
             table_path = f'`{schema}.{table}`'
             col_quote = ''
         else:
-            table_path = f'"{database}"."{schema}"."{table}"'
+            table_path = f'"{schema}"."{table}"'
             col_quote = '"'
-
         with read_conn.engine.connect() as connection:
             query = sql.text(f'SELECT MIN({col_quote}{chunk_col}{col_quote}), MAX({col_quote}{chunk_col}{col_quote}) FROM {table_path}')
             result = connection.execute(query).fetchone()
