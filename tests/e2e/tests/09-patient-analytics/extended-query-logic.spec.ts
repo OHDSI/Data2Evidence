@@ -29,9 +29,6 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // Add basic data - month of birth
-  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.bs-dropdown').click()
-  await page.getByText('Month of Birth').click()
-  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByTitle('Basic Data - Month of Birth').click()
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('6')
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
