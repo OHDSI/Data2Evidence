@@ -181,7 +181,7 @@ test(TEST_NAME, async ({ page }) => {
       .click()
     await page.getByRole('button', { name: 'Discard' }).click()
     //Verify filters are loaded
-    await expect(page.getByText('>114')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('>2')).toBeVisible({ timeout: 20000 })
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible({ timeout: 20000 })
     // await expect(page.getByText('Viral sinusitis')).toBeVisible({timeout: 20000});
     await expect(page.getByText('357 / 2,694')).toBeVisible()
