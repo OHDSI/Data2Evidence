@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { takeScreenshot } from '../screenshot-capture'
 
 const TEST_NAME = 'dataset-overview-chart'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   test.setTimeout(5 * 60 * 1000)
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
@@ -60,7 +59,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await expect(page.locator('div:has-text("Entity distribution")').last()).toBeVisible({ timeout: 3000 })
     await page.getByText('Data2Evidence').click()
     await expect(page.getByText('Entity distribution')).not.toBeVisible()
-    await takeScreenshot(page, testInfo, 'dataset-overview-chart.png')
+    await expect(page).toHaveScreenshot('dataset-overview-chart.png')
   })
 
   await test.step('Update Entity Count DistributionValue', async () => {

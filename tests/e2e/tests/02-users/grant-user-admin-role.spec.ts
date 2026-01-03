@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { takeScreenshot } from '../screenshot-capture'
 
 const TEST_NAME = 'grant-user-admin-role'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -44,7 +43,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Edit' }).first()).toBeVisible()
-  await takeScreenshot(page, testInfo)
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Delete the user
   await page.getByRole('button', { name: 'Delete' }).nth(1).click()
