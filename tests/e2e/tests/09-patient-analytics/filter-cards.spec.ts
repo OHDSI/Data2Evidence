@@ -61,7 +61,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByPlaceholder('Enter search term').press('Escape')
 
   // Step 7 - Validate supported syntax help appears
-  await page.getByText('Supported SyntaxEnter a').click()
+  await page.getByText('Supported SyntaxEnter a').first().click()
   await expect(page.getByRole('application')).toContainText('Supported Syntax')
 
   // Step 8 - Create concept set
