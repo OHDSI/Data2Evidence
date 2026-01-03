@@ -138,7 +138,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Enter search term').click()
     await page.getByPlaceholder('Enter search term').fill('Female')
     await page.getByText('FEMALE - FEMALE').click({ timeout: 40000 })
-    await expect(page.getByText('8 / 2,694')).toBeVisible()
+    await expect(page.getByText('357 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Save the filter card
@@ -184,7 +184,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('>114')).toBeVisible({ timeout: 20000 })
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible({ timeout: 20000 })
     // await expect(page.getByText('Viral sinusitis')).toBeVisible({timeout: 20000});
-    await expect(page.getByText('8 / 2,694')).toBeVisible()
+    await expect(page.getByText('357 / 2,694')).toBeVisible()
   })
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
