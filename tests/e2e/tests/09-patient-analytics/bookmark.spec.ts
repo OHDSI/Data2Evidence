@@ -127,7 +127,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' }).click()
     await page.getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Basic Data Age ◢' }).click()
+    await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
