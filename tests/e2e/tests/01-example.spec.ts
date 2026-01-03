@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { takeScreenshot } from './screenshot-capture'
 
 const TEST_NAME = 'example'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -16,9 +15,9 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
-  await page.getByTitle('Basic Data - Gender', { exact: true }).getByPlaceholder('Enter search term').fill('MALE')
+  await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
   await expect(page.getByText('1,321 / 2,694')).toBeVisible()
-  await takeScreenshot(page, testInfo)
+  await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
 })

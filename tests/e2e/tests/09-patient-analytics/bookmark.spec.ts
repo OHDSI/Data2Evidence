@@ -22,10 +22,10 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
-    await page.locator('div[title="Basic Data - Age"]').click()
-    await page.locator('div[title="Basic Data - Age"]').getByRole('textbox').fill('>114')
-    await page.locator('div[title="Basic Data - Age"]').getByRole('textbox').press('Enter')
-    await expect(page.getByText('27 / 2,694')).toBeVisible()
+    await page.locator('div[title="Basic Data - Month of Birth"]').click()
+    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('>2')
+    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+    await expect(page.getByText('2,255 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Gender filter
@@ -33,7 +33,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Male')
     await page.getByText('MALE - MALE').click()
-    await expect(page.getByText('5 / 2,694')).toBeVisible()
+    await expect(page.getByText('1,096 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Inclusion filter card - Condition Occurrence
