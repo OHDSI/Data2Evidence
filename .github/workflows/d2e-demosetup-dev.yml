@@ -199,6 +199,10 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
 
+      - name: Wait for services to be ready to avoid mounting race condition
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: sleep 10
+
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
