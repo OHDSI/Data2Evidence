@@ -46,15 +46,13 @@ export class CodeSuggestionRouter {
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
         req.body.model = AI_MODEL;
-
-        // Call the getChatResponse service to fetch a stream of chat responses.
         // Stream the response chunks to the client as they are received.
         let stream = await getChatResponse(req.body);
-        for await (const chunk of stream) {
-          const content = chunk?.content || chunk;
-          if (typeof content === "string") {
-            res.write(content);
-          }
+        console.log(`Streaming chat response... ${stream}`);
+        for await (const [token, metadata] of stream) {
+          console.log(`content: ${JSON.stringify(token.contentBlocks)}`);
+          const content = token.contentBlocks[0].text;
+          res.write(content);
         }
         res.status(200);
         res.end();
