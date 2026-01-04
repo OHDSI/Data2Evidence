@@ -40,17 +40,17 @@ test(TEST_NAME, async ({ page }) => {
 
   // Click AND to change into OR
   await page.waitForTimeout(5000)
-  await page.getByRole('button', { name: 'AND ' }).first().click()
+  await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Click OR to change into AND
-  await page.getByRole('button', { name: 'OR ' }).first().click()
+  await page.getByRole('button', { name: 'OR ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Click AND to change into OR
-  await page.getByRole('button', { name: 'AND ' }).first().click()
+  await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Click x1 and ensure only the filtercards that do not associate with any OR condition should be available to select

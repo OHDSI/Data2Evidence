@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { takeScreenshot } from '../screenshot-capture'
 
 const TEST_NAME = 'setup-page'
 const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -16,5 +15,5 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
   await expect(page.locator('div').filter({ hasText: 'SetupDatabasesDatabase' }).nth(3)).toBeVisible()
-  await takeScreenshot(page, testInfo)
+  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 })
