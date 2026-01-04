@@ -125,9 +125,9 @@ test(TEST_NAME, async ({ browser }) => {
   await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
 
   // Step 8 - Entering month of birth with incorrect input
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('5.x')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('5.x')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
   await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card
