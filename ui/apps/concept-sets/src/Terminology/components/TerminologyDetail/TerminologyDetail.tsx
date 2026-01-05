@@ -307,7 +307,13 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
         }}
       >
         {data && data.details && (
-          <Typography>
+          <Typography
+            sx={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             Currently viewing: {data?.details.conceptId} |{" "}
             {data?.details.display}
           </Typography>
