@@ -10,7 +10,7 @@
     "emitDecoratorMetadata": true
   },
   "imports": {
-    "axios": "npm:axios@^0.21.2",
+    "axios": "npm:axios@1.7.7",
     "dotenv": "npm:dotenv@^16.3.1",
     "express": "npm:express@4.17.3",
     "typedi": "npm:typedi@^0.10.0",
