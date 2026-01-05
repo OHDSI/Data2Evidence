@@ -481,6 +481,17 @@ services:
 
         $INSTANCE_SPECIFIC_CONFIG
 
+        # Enable if need to access admin console
+        # http://localhost:3002 {
+        #   uri strip_prefix /d2e/logto
+        #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002 {
+        #     import ${PROXY_HEADERS_MODE:-proxy_headers_default}
+        #     transport http {
+        #       read_buffer 8192
+        #     }
+        #   }
+        # }
+
         https://$CADDY__D2E__PUBLIC_FQDN${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
           $TLS__CADDY_DIRECTIVE
 
@@ -495,6 +506,7 @@ services:
       "
     ports:
       - ${CADDY_PORT:-${PORT:-443}}:443
+      # - 3002:3002 # Enable if need to access admin console
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - caddy:/data
@@ -676,10 +688,6 @@ services:
         priority: 20
       data:
         priority: 10
-    # Enable if need to access admin console
-    # ports:
-    #  - 3002:3002
-    #  - 3001:3001
     entrypoint:
       - sh
       - -c

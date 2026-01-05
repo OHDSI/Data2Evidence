@@ -540,6 +540,10 @@ class D2ECli {
       console.error("Failed to run script:", setupdemo.error);
       process.exit(1);
     }
+    if (setupdemo.status !== 0) {
+      console.error(`setupdemo exited with code ${setupdemo.status}`);
+      process.exit(1);
+    }
 
     const checkSetupDemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE}`;
     const check_setupdemo = spawnSync(checkSetupDemoCmd, [], {
@@ -551,7 +555,14 @@ class D2ECli {
       console.error("Failed to run script:", check_setupdemo.error);
       process.exit(1);
     }
+    if (check_setupdemo.status !== 0) {
+      console.error(
+        `check_setupdemo exited with code ${check_setupdemo.status}`
+      );
+      process.exit(1);
+    }
   }
+
   setupdemohana() {
     console.log("Setting up demo database for hana...");
     const zx_cmd = this.setup_zx_cmd();
@@ -565,6 +576,10 @@ class D2ECli {
       console.error("Failed to run script:", setupdemohana.error);
       process.exit(1);
     }
+    if (setupdemohana.status !== 0) {
+      console.error(`setupdemohana exited with code ${setupdemohana.status}`);
+      process.exit(1);
+    }
 
     const checkSetupDemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemohana-flow.mjs -n ${this.ENVFILE}`;
     const check_setupdemohana = spawnSync(checkSetupDemohanaCmd, [], {
@@ -574,6 +589,12 @@ class D2ECli {
     });
     if (check_setupdemohana.error) {
       console.error("Failed to run script:", check_setupdemohana.error);
+      process.exit(1);
+    }
+    if (check_setupdemohana.status !== 0) {
+      console.error(
+        `check_setupdemohana exited with code ${check_setupdemohana.status}`
+      );
       process.exit(1);
     }
   }
