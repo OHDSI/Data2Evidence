@@ -37,7 +37,7 @@
           "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
           "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
         },
-         "alp-fhir-gateway-init":{
+        "alp-fhir-gateway-init": {
           "FHIR_DATABASE_CODE": "${FHIR__DATABASE__CODE:-d2e_fhir}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG__MAX_POOL": "${PG__MAX_POOL:-10}",
