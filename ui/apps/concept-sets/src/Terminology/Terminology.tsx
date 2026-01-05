@@ -439,7 +439,8 @@ export const Terminology: FC<TerminologyProps> = ({
   ): Promise<number> => {
     const conceptSetId = await api.d2eWebapi.createConceptSet(
       conceptSet.name,
-      datasetId
+      datasetId,
+      conceptSet.shared
     );
 
     if (conceptSet.concepts.length !== 0) {
