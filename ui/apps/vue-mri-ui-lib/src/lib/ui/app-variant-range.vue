@@ -106,7 +106,7 @@ export default {
     this.target = this.$refs.container
     this.popperRef = this.$refs.popperRef
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeInput)
     window.addEventListener('click', this.closeSuggestion)
   },
