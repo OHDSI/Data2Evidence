@@ -25,7 +25,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('div[title="Basic Data - Month of Birth"]').click()
     await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('>2')
     await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
-    await expect(page.getByText('2,045 / 2,694')).toBeVisible()
+    await expect(page.getByText('2,255 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Condition Occurrence filter card
