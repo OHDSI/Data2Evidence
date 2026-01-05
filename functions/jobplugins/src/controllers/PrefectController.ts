@@ -59,20 +59,6 @@ export class PrefectController {
     }
   }
 
-  private async createTestRun(req: Request, res: Response) {}
-
-  private async getFlowrunLogs(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const token = this.getToken(req);
-      const logs = await this.prefectService.getFlowRunLogs(id, token);
-      return res.status(200).send(logs);
-    } catch (error) {
-      console.log(`getFlowrunLogs: ${error}`);
-      return res.status(500).send({ message: "Internal error occurred" });
-    }
-  }
-
   private async getFlowrunState(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -147,7 +133,6 @@ export class PrefectController {
       "/flow-run/:id/cancellation",
       this.cancelFlowrun.bind(this)
     );
-    this.router.post("/test-run", this.createTestRun.bind(this));
     this.router.post(
       "/jupyter-kernel/flow-run/strategus",
       this.createAnalaysisRunByJupyterKernel.bind(this)
@@ -156,8 +141,6 @@ export class PrefectController {
       "/flow-run/strategus/remove-results-schema/:id/:datasetid",
       this.removeAnalysisResultsSchema.bind(this)
     );
-
-    this.router.get("/flow-run/:id/logs", this.getFlowrunLogs.bind(this));
     this.router.get("/flow-run/:id/state", this.getFlowrunState.bind(this));
   }
 
