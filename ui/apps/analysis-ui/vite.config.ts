@@ -91,6 +91,7 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       port: 8083,
+      cors: true,
       proxy: {
         "/d2e-webapi": {
           target: "https://localhost:41100",
