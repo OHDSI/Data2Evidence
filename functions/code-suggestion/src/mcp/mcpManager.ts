@@ -40,8 +40,6 @@ export class MCPManager {
       maxRetries: 3,
       retryDelay: 2000,
     };
-
-    console.log(`Connecting to MCP server at ${config.serverUrl}...`);
     this.client = new MCPClient(config);
     await this.client.connect();
     this.isInitialized = true;

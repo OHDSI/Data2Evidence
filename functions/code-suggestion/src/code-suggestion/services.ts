@@ -61,7 +61,6 @@ export const getChatResponse = async (req: any) => {
   // Initialize MCP if requested and available
   try {
     const mcpInstance = await initMcpManager(token, datasetId);
-    console.log("MCP Client connected:", mcpInstance.getConnectionStatus());
     const client = mcpInstance.getUnderlyingClient();
     const tools = await client.getTools();
     const agent = createAgent({
@@ -91,6 +90,7 @@ export const getChatResponse = async (req: any) => {
       return stream;
     }
   } catch (error) {
+    console.error("Error in getChatResponse:", error);
     throw error;
   }
 };
