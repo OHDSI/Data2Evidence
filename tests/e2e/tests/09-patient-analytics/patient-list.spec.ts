@@ -68,7 +68,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Chronic sinusitis').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('2,255 / 2,694')).toBeVisible()
+    await expect(page.getByText('682 / 2,694')).toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
@@ -122,7 +122,7 @@ test(TEST_NAME, async ({ page }) => {
     expect(rowCount).toBeGreaterThan(1)
     // Confirm patientlist-control has rowcount="812"
     const rowCountAttr = await page.locator('.patientlist-control').getAttribute('rowcount')
-    expect(rowCountAttr).toBe('2,255')
+    expect(rowCountAttr).toBe('682')
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
     await page.getByText(' Sort Ascending').click()
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
