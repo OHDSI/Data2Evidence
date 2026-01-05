@@ -1216,10 +1216,20 @@ class StrategusNode(Node):
                 save_strategus_log_file(execution_log_file_path)
                 success, errorMsg = is_strategus_execution_successful(execution_log_file_path)
                 if not success:
-                    return Result(True, errorMsg, self, task_run_context)
+                    raise RuntimeError(errorMsg)
+
                 return Result(False, analysisSpecJson, self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
+                log_file_path = f"/app/errorReportSql.txt"
+                # if file exists, create an artifact to store the error logs
+                if os.path.exists(log_file_path):
+                    with open(log_file_path, "r") as f:
+                        file_contents = f.read()
+                        create_markdown_artifact(
+                            key="strategus-analysis-error-logs",
+                            markdown=file_contents
+                        )
                 return Result(True, tb.format_exc(), self, task_run_context)
 
 def get_strategus_node(options):
@@ -1266,16 +1276,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
                 raise RuntimeError(errorMsg)
 
         except Exception as e:
-            print('Error: ', tb.format_exc())
-            raise RuntimeError('Execution of strategus has failed')
-
-def execute(rSpec, rExecutionSettings, rConnectionDetails):
-    with ro.default_converter.context():
-        ro.r(set_trex_env_var(USE_TREX_CONNECTION))
-        rStrategus = importr('Strategus')
-        try:
-            rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
-        except Exception as e:
             log_file_path = f"/app/errorReportSql.txt"
             # if file exists, create an artifact to store the error logs
             if os.path.exists(log_file_path):
@@ -1285,7 +1285,13 @@ def execute(rSpec, rExecutionSettings, rConnectionDetails):
                         key="strategus-analysis-error-logs",
                         markdown=file_contents
                     )
-            raise RuntimeError('Execution of strategus has failed')
+            raise RuntimeError(e)
+
+def execute(rSpec, rExecutionSettings, rConnectionDetails):
+    with ro.default_converter.context():
+        ro.r(set_trex_env_var(USE_TREX_CONNECTION))
+        rStrategus = importr('Strategus')
+        rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
 
 @flow(name="upload-strategus-results",
       log_prints=True)
