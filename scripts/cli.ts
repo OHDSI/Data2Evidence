@@ -90,6 +90,7 @@ class D2ECli {
     process.env.PLUGINS_IMAGE_TAG = this.PLUGINS_IMAGE_TAG;
     process.env.DOCKER_TAG_NAME = this.DOCKER_TAG_NAME;
     process.env.PLUGINS_API_VERSION = this.PLUGINS_API_VERSION;
+    this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
   }
 
   async write_env_file_variable(options: CliOptions): Promise<void> {
@@ -753,7 +754,9 @@ class D2ECli {
           HANA_SYSTEM_PASSWORD: this.hanapw,
           INSTALL_SQLALCHEMY:
             "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
-          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["alp_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${
+            this.PROJECT_NAME || "d2e"
+          }_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
@@ -1047,7 +1050,6 @@ class D2ECli {
     const options = this.program.opts();
     this.ENVFILE = options.envFile ?? ".env";
     this.DEFAULT_PASSWORD_LENGTH = 30;
-    this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
     this.CADDY__ALP__PUBLIC_FQDN =
       process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
