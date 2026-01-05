@@ -460,7 +460,7 @@ export const Terminology: FC<TerminologyProps> = ({
     // Update concept set
     await api.d2eWebapi.updateConceptSet(
       conceptSetId,
-      { id: conceptSetId, ...conceptSet },
+      { id: Number(conceptSetId), ...conceptSet },
       datasetId
     );
     // Update concept set items
@@ -470,7 +470,7 @@ export const Terminology: FC<TerminologyProps> = ({
       conceptSetItems,
       datasetId
     );
-    return conceptSetId;
+    return Number(conceptSetId);
   };
 
   const saveConceptSet = useCallback(async () => {
@@ -508,7 +508,7 @@ export const Terminology: FC<TerminologyProps> = ({
       const updatedConceptSetId = conceptSetId
         ? await updateConceptSet(
             conceptSetId,
-            { id: conceptSetId, ...conceptSet },
+            { id: Number(conceptSetId), ...conceptSet },
             activeDatasetId
           )
         : await createConceptSet(conceptSet, activeDatasetId);
