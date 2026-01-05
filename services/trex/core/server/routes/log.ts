@@ -19,13 +19,19 @@ export function addRoutes(app: Hono) {
     }
 
     const bearerToken = c.req.raw.headers.get("authorization");
-    const thirdPartyToken = jwt.decode(bearerToken.split(" ")[1])["thirdPartyToken"];
-    const token = jwt.decode(thirdPartyToken);
-    const idpUserId = token["oid"] || token["sub"];
+    const logtoToken = jwt.decode(bearerToken.split(" ")[1]);
+    try { 
+      const thirdPartyToken = logtoToken["thirdPartyToken"];
+      const token = jwt.decode(thirdPartyToken);
+      const idpUserId = token["sub"] || token["oid"];
 
-    logger.info(
-      `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
-    );
-    return c.json({ message: "success" });
+      logger.info(
+        `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
+      );
+      return c.json({ message: "success" });
+    } catch (error) {
+      logger.info(`${error.message}`)
+      return c.json({ message: "Failed to log the usage agreement consent" });
+    }
   });
 }
