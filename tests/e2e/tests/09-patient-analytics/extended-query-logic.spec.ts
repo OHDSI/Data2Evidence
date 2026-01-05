@@ -28,12 +28,9 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // Add basic data - month of birth
-  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.bs-dropdown').click()
-  await page.getByText('Month of Birth').click()
-  await page.locator('#pane-left').getByText('Basic Data').locator('..').locator('..').locator('.bs-dropdown').click()
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('6')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('6')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
   // Add basic data - gender === MALE
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
   await page.getByPlaceholder('Enter search term').fill('MALE')
@@ -92,7 +89,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Condition Occurrence B').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  //await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Reload saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
@@ -102,7 +99,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Extended Logic Filter').click()
   await page.getByRole('button', { name: 'Discard' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  //await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Delete saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()

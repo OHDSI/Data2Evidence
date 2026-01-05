@@ -31,7 +31,7 @@ test('pa-compare-cohorts', async ({ page }) => {
 
   await page.waitForTimeout(10000)
   await createCohortWithOneConditionOccurrenceFilercard(page, cohortA)
-  await addAgeFilter(page, '[35-80]')
+  await addMonthOfBirthFilter(page, '[1-2]')
   await page.waitForTimeout(3000)
   // do not add the concept set for "Acute allergic reaction"
   // await createConceptSet(page, 'Acute allergic reaction', 'Acute allergic reaction', '4084167 241929008 Acute')
@@ -40,7 +40,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // COHORT RESULTS VERIFICATION
   // ========================
   // Verify that the combined filters (age 35-80 + acute allergic reaction) result in 104 patients
-  await expect(page.locator('#pane-right')).toContainText('2,223')
+  await expect(page.locator('#pane-right')).toContainText('439')
 
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
@@ -55,9 +55,9 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Cohort B creation: with Condition Occurrence A filtercard
   await page.waitForTimeout(10000)
   await createCohortWithOneConditionOccurrenceFilercard(page, cohortB)
-  await addAgeFilter(page, '[10-50]')
+  await addMonthOfBirthFilter(page, '[2-4]')
   await page.waitForTimeout(3000)
-  await expect(page.locator('#pane-right')).toContainText('358')
+  await expect(page.locator('#pane-right')).toContainText('642')
 
   // Add Condition Occurrence B filter card
   // await page.getByTitle('Add Filter Card').getByRole('button').click();
@@ -157,14 +157,14 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   )
 }
 
-async function addAgeFilter(page, ageRange) {
+async function addMonthOfBirthFilter(page, ageRange) {
   // ========================
   // AGE FILTER CONFIGURATION
   // ========================
   // Add age restriction filter: patients between 35-80 years old
-  await page.getByTitle('Basic Data - Age').click()
-  await page.getByTitle('Basic Data - Age').getByRole('textbox').fill(ageRange)
-  await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill(ageRange)
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
 
   await page.waitForTimeout(3000)
 }

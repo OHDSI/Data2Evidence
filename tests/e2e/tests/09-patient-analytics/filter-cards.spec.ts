@@ -61,7 +61,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByPlaceholder('Enter search term').press('Escape')
 
   // Step 7 - Validate supported syntax help appears
-  await page.getByText('Supported SyntaxEnter a').click()
+  await page.getByText('Supported SyntaxEnter a').first().click()
   await expect(page.getByRole('application')).toContainText('Supported Syntax')
 
   // Step 8 - Create concept set
@@ -120,17 +120,14 @@ test(TEST_NAME, async ({ browser }) => {
   expect(conditionOccuErrorBgcolor).toBe('rgb(226, 49, 1)')
 
   // Step 8 - Entering month of birth with correct input
-  await page.getByRole('button', { name: '' }).first().click()
-  await page.getByText('Month of Birth').click()
-  await page.getByText('Select an AttributeSelect').click()
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('[1-10]')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('[1-10]')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
 
   // Step 8 - Entering month of birth with incorrect input
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('5.x')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('5.x')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
   await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card
@@ -142,7 +139,7 @@ test(TEST_NAME, async ({ browser }) => {
   }
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await page.waitForSelector('.loading-animation-component', { state: 'hidden' })
-  await page.getByText('Select an AttributeSelect').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.waitForSelector('text=2,226 / 2,694', { state: 'visible' })
 
   // Step 10 - Reset filters
@@ -160,7 +157,7 @@ test(TEST_NAME, async ({ browser }) => {
   // Step 12 - Basic data filter for gender concept id
   await page.locator('.dropdown-scroll >> text=Gender concept id').scrollIntoViewIfNeeded()
   await page.getByText('Gender concept id').click()
-  await page.getByText('Select an AttributeSelect').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByTitle('Basic Data - Gender concept id').locator('div').nth(1).click()
   await page.getByTitle('Basic Data - Gender concept id').getByPlaceholder('Enter search term').fill('')
   await page.getByTitle('Basic Data - Gender concept id').getByPlaceholder('Enter search term').fill('8532')
@@ -171,7 +168,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('menuitem', { name: 'Measurement' }).click()
   await page.getByText('filter card has been added', { exact: false }).waitFor({ state: 'hidden' })
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await page.getByText('Select an AttributeSelect').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByRole('button', { name: '' }).nth(1).click()
   await page.locator('.dropdown-scroll >> text=Measurement concept Name').scrollIntoViewIfNeeded()
   await page.getByText('Measurement concept name').click()
@@ -193,7 +190,7 @@ test(TEST_NAME, async ({ browser }) => {
   // Step 16 - Add filter card dfor Observation concept name
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Observation', exact: true }).click()
-  await page.getByText('Select an AttributeSelect').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByRole('button', { name: '' }).nth(2).click()
   await page.locator('.dropdown-scroll >> text=Observation concept name').scrollIntoViewIfNeeded()
   await page.getByText('Observation concept name').click()
