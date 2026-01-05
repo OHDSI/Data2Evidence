@@ -129,10 +129,7 @@ const assignLogtoRolesByAzureGroups = async (
     let username = (name || "").replace(/[^a-zA-Z0-9_]/g, "_");
 
     // Verify if username is taken
-    const logtoUsersByName = await getLogtoUsersIdByName(
-      username,
-      logtoAPItoken
-    );
+    const logtoUsersByName = await getLogtoUsersByName(username, logtoAPItoken);
     if (logtoUsersByName?.length > 0) {
       const revisedUsername = `${username}_${Date.now()}`;
       console.warn(
@@ -234,7 +231,7 @@ const getLogtoUserIdByEmail = async (email: string, apiToken: string) => {
   }
 };
 
-const getLogtoUsersIdByName = async (username: string, apiToken: string) => {
+const getLogtoUsersByName = async (username: string, apiToken: string) => {
   try {
     const httpResponse = await got.get(`${ENDPOINT}/api/users`, {
       searchParams: {
