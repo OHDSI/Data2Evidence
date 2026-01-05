@@ -49,7 +49,7 @@ export const i18n = {
     MRI_PA_CFG_ERROR_NO_MEASURE: 'Please choose at least one initial measure for the y-axis.',
     MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION: 'Add Configuration',
     MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION_TOOLTIP: 'Add New Configuration',
-    MRI_PA_CFG_TITLE_PATIENT_ANALYTICS_CONFIG: 'Patient Analytics Configuration',
+    MRI_PA_CFG_TITLE_PATIENT_ANALYTICS_CONFIG: 'Cohort Builder Configuration',
     MRI_PA_CFG_DATA_MODEL_CONFIG_TEXT: 'Data Model Configuration:',
     MRI_PA_CFG_NO_CONFIGS_FOUND_TEXT: 'No Defined Configurations',
     MRI_PA_CFG_TITLE_ENTER_CONFIG_NAME: 'Enter Configuration Name',
