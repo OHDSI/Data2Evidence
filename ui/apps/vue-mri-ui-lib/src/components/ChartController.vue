@@ -79,7 +79,7 @@ export default {
       window.addEventListener('click', this.closeSubMenu)
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
   },
   computed: {

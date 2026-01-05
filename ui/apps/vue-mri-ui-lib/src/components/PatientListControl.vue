@@ -73,14 +73,10 @@
                 :key="attribute.path"
                 :class="interactionCellBorderClass(index, item.children.length)"
               >
-              <div v-for="detail in row[attribute.parentPath]" :key="detail" class="cellContainer">
+                <div v-for="detail in row[attribute.parentPath]" :key="detail" class="cellContainer">
                   <div class="textContent row-item">
                     <div class="textContent row-item">
-                    <patientListData
-                      :item="detail"
-                      :meta="attribute"
-                      v-on:openps="openPatientSummary"
-                    />
+                      <patientListData :item="detail" :meta="attribute" v-on:openps="openPatientSummary" />
                     </div>
                   </div>
                 </div>
@@ -131,7 +127,7 @@ export default {
     this.renderWidths()
     window.addEventListener('click', this.contextMenuCloseHandler)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.contextMenuCloseHandler)
   },
   data() {
@@ -237,7 +233,7 @@ export default {
       }`
     },
     openPatientSummary({ patientId }) {
-      this.$emit("openPatientSummary", { patientId });
+      this.$emit('openPatientSummary', { patientId })
     },
     colAttributeStyle(path) {
       return `width: ${this.getColumnWidths[path]}px;`

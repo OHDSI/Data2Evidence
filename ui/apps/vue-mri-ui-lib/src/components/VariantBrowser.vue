@@ -66,7 +66,7 @@ export default {
       }, []),
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     vb.destroy()
     window.removeEventListener('resize', this.reRenderChart)
   },

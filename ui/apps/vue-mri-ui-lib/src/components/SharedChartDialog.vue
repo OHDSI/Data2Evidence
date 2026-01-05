@@ -82,7 +82,7 @@ export default {
       window.addEventListener('resize', this.resize)
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (sharedChart) {
       sharedChart.destroy()
     }

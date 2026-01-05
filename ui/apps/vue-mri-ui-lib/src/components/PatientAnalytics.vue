@@ -272,7 +272,7 @@ export default {
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.updateMinSplitterWidth)
   },
   computed: {
