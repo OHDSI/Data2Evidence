@@ -1,21 +1,24 @@
-import { Buffer } from "buffer";
 import { Logger, EnvVarUtils } from "@alp/alp-base-utils";
-import * as https from "https";
-import * as http from "http";
-import * as dotenv from "dotenv";
 import { URL } from "url";
 import { IMRIRequest, QuerySvcResultType } from "../types";
-dotenv.config();
 const log = Logger.CreateLogger("analytics-log");
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 import { env } from "../env";
 
-export const terminologyRequest = (
+enum SUPPORTED_HTTP_METHODS {
+    GET = "GET",
+    POST = "POST",
+}
+
+export const terminologyRequest = async (
     req: IMRIRequest,
-    method: "GET" | "POST",
+    method: SUPPORTED_HTTP_METHODS,
     path: string = "",
     payload: null | any
 ): Promise<any> => {
+    const terminologySvcApi = Trex.tokioChannel(
+        "d2e-functions/terminology-svc"
+    );
     log.addRequestCorrelationID(req);
     const reqCorrelationId: string = envVarUtils.isTestEnv()
         ? "DUMMY_REQ_CORRELATION_ID"
@@ -24,77 +27,51 @@ export const terminologyRequest = (
         ? "Bearer DUMMY_TOKEN"
         : req.headers.authorization;
 
-    const { hostname, port, protocol } = new URL(
-        env.SERVICE_ROUTES.terminology
-    );
-
-    const protocolLib = http;
-    const data = JSON.stringify(payload);
-
-    const defaultPath = `/terminology/${path}`;
+    const defaultPath = `terminology/${path}`;
 
     const sourceOrigin = req.headers["x-source-origin"];
 
-    const options: http.RequestOptions = {
-        hostname,
-        port,
-        protocol,
-        path: defaultPath,
+    const options = {
         headers: {
+            "Content-Type": "application/json",
             "authorization": accessToken,
             "user-agent": "ALP Service",
             "x-source-origin": sourceOrigin,
             "x-req-correlation-id": reqCorrelationId,
         },
-        method,
-        // rejectUnauthorized: true,
-        // ca: env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),
     };
-    if (payload) {
-        options.headers["Content-Type"] = "application/json";
-        options.headers["Content-Length"] = Buffer.byteLength(data);
-    }
 
-    return new Promise<QuerySvcResultType>((resolve, reject) => {
-        const post_req = protocolLib
-            .request(options, (response) => {
-                let body = "";
+    const urlParams = new URL(defaultPath, env.SERVICE_ROUTES.terminology);
 
-                response.on("data", (d) => {
-                    body += d;
-                });
-
-                response.on("end", () => {
-                    try {
-                        if (
-                            response.statusCode >= 200 &&
-                            response.statusCode <= 399
-                        ) {
-                            resolve(JSON.parse(body));
-                        } else {
-                            reject(body);
-                        }
-                    } catch (err) {
-                        log.error(`query generator error: ${body}`);
-                        reject(err);
-                    }
-                });
-
-                response.on("error", (err) => {
-                    log.enrichErrorWithRequestCorrelationID(err, req);
-                    log.error(JSON.stringify(err));
-                    reject(err);
-                });
-            })
-            .on("error", (err) => {
-                log.enrichErrorWithRequestCorrelationID(err, req);
-                log.error(JSON.stringify(err));
-                reject(err);
-            });
-        // For GET requests, .write will error as a body is not expected to be sent
-        if (payload) {
-            post_req.write(data);
+    try {
+        let response;
+        switch (method) {
+            case SUPPORTED_HTTP_METHODS.GET:
+                response = await terminologySvcApi.get(
+                    urlParams.toString(),
+                    options
+                );
+                break;
+            case SUPPORTED_HTTP_METHODS.POST:
+                response = await terminologySvcApi.post(
+                    urlParams.toString(),
+                    payload,
+                    options
+                );
+                break;
+            default:
+                throw `HTTP method:${method} is not supported in terminologyRequest`;
         }
-        post_req.end();
-    });
+
+        if (response.status >= 200 && response.status <= 399) {
+            return response.data;
+        } else {
+            log.error(JSON.stringify(response.data));
+            throw response.data;
+        }
+    } catch (err) {
+        log.enrichErrorWithRequestCorrelationID(err, req);
+        log.error(`terminology svc proxy error: ${err}`);
+        throw err;
+    }
 };
