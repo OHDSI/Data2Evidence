@@ -97,7 +97,11 @@ export class FhirAPI {
           headers: response.headers,
           data: response.data,
         };
-      }
+      } else {
+        return {
+          status: "500",
+          message: "Failed to get a valid response from the fhir server"
+        };
     } catch (error: any) {
       if (error.response) {
         this.logger.error(`[${error.response.status}] ${logMsg}: ${JSON.stringify(error.response.data)}`);
