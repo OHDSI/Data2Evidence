@@ -23,7 +23,7 @@ export function addRoutes(app: Hono) {
     try { 
       const thirdPartyToken = logtoToken["thirdPartyToken"];
       const token = jwt.decode(thirdPartyToken);
-      const idpUserId = token["sub"] || token["oid"];
+      const idpUserId = token["oid"];
 
       logger.info(
         `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
