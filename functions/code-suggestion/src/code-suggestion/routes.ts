@@ -1,6 +1,7 @@
 import { getCodeSuggestion, getChatResponse } from "./services";
 import express, { Request, Response } from "express";
 import { env } from "../env";
+import { PortalServerAPI } from "../api/PortalServerAPI";
 
 const AI_MODEL = env.AI_MODEL;
 export class CodeSuggestionRouter {
@@ -41,18 +42,26 @@ export class CodeSuggestionRouter {
     });
     this.router.post("/chat", async (req: Request, res: Response) => {
       try {
+        // Use first available dataset from portal for calling MCP
+        const portalAPI = new PortalServerAPI();
+        const datasets = await portalAPI.getDataset(req.headers.authorization);
+        req.headers.datasetId = datasets[0].id;
+
         // Set headers for Server-Sent Events (SSE) to enable streaming responses.
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
         req.body.model = AI_MODEL;
+
         // Stream the response chunks to the client as they are received.
-        let stream = await getChatResponse(req.body);
-        console.log(`Streaming chat response... ${stream}`);
+        let stream = await getChatResponse(req);
         for await (const [token, metadata] of stream) {
-          console.log(`content: ${JSON.stringify(token.contentBlocks)}`);
-          const content = token.contentBlocks[0].text;
-          res.write(content);
+          if (
+            metadata.langgraph_node === "model_request" &&
+            token.contentBlocks?.[0]?.text
+          ) {
+            res.write(token.contentBlocks[0].text);
+          }
         }
         res.status(200);
         res.end();

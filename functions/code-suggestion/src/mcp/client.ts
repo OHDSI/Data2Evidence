@@ -199,4 +199,9 @@ export class MCPClient {
   getConnectionStatus(): boolean {
     return this.isConnected;
   }
+
+  // Expose the underlying MCP client for use with langchain adapters
+  getUnderlyingClient(): Client {
+    return this.client;
+  }
 }

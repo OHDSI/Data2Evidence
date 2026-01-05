@@ -5,8 +5,6 @@ export class MCPManager {
   private static instance: MCPManager;
   private client: MCPClient | null = null;
   private isInitialized: boolean = false;
-  private MCP_AUTH_TOKEN = "";
-  private MCP_DATASET_ID = "";
 
   private constructor() {}
 
@@ -17,7 +15,7 @@ export class MCPManager {
     return MCPManager.instance;
   }
 
-  async initialize(): Promise<void> {
+  async initialize(token?: string, datasetId?: string): Promise<void> {
     if (this.isInitialized) {
       return;
     }
@@ -27,12 +25,12 @@ export class MCPManager {
       Accept: "application/json, text/event-stream",
     };
 
-    if (this.MCP_AUTH_TOKEN) {
-      headers["Authorization"] = this.MCP_AUTH_TOKEN;
+    if (token) {
+      headers["Authorization"] = token;
     }
 
-    if (this.MCP_DATASET_ID) {
-      headers["datasetId"] = this.MCP_DATASET_ID;
+    if (datasetId) {
+      headers["datasetId"] = datasetId;
     }
 
     const config: MCPClientConfig = {

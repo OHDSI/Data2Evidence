@@ -50,7 +50,10 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   }
 };
 
-export const getChatResponse = async (uiChat: IChatSnippet) => {
+export const getChatResponse = async (req: any) => {
+  const uiChat: IChatSnippet = req.body;
+  const token = req.headers.authorization;
+  const datasetId = req.headers.datasetId;
   const model = await getModels(uiChat.model);
   if (model === null) {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
@@ -58,8 +61,20 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
 
   // Initialize MCP if requested and available
   try {
-    const mcpClient = await getMCPClient();
-    const tools = await loadMcpTools("d2e-mcp", mcpClient);
+    const mcpClient = await getMCPClient(token, datasetId);
+    console.log("MCP Client connected:", mcpClient.getConnectionStatus());
+    const tools = await loadMcpTools(
+      "d2e-mcp",
+      mcpClient.getUnderlyingClient()
+    );
+    console.log(
+      "Loaded tools:",
+      tools.map((t) => ({
+        name: t.name,
+        description: t.description?.substring(0, 100) + "...",
+        schema: t.schema,
+      }))
+    );
     const agent = createAgent({
       model: model,
       tools: tools,
@@ -71,8 +86,8 @@ export const getChatResponse = async (uiChat: IChatSnippet) => {
       new HumanMessage(uiChat.userInput),
     ];
 
+    // Use agent to handle the conversation with tools
     if (agent) {
-      console.log("Streaming agent response for chat...");
       const stream = await agent.stream(
         { messages: messages },
         { streamMode: "messages" }

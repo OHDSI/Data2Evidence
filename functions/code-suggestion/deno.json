@@ -24,6 +24,7 @@
     "./src/mcp/mcpManager": "./src/mcp/mcpManager.ts",
     "./src/code-suggestion/prompts": "./src/code-suggestion/prompts.ts",
     "./src/utils/utils": "./src/utils/utils.ts",
+    "./src/api/PortalServerAPI": "./src/api/PortalServerAPI.ts",
     "langchain": "npm:langchain@^1.2.3",
     "@langchain/core": "npm:@langchain/core@^1.1.8",
     "@langchain/openai": "npm:@langchain/openai@^1.2.0",
