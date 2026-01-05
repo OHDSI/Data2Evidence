@@ -45,7 +45,7 @@ export class CodeSuggestionRouter {
         // Use first available dataset from portal for calling MCP
         const portalAPI = new PortalServerAPI();
         const datasets = await portalAPI.getDataset(req.headers.authorization);
-        req.headers.datasetId = datasets[0].id;
+        req.headers.datasetId = datasets[0].id || "";
 
         // Set headers for Server-Sent Events (SSE) to enable streaming responses.
         res.setHeader("Content-Type", "text/event-stream");

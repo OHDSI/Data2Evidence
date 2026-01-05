@@ -1,9 +1,8 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getModels, getMCPClient } from "../utils/utils";
+import { getModels, initMcpManager } from "../utils/utils";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
-import { loadMcpTools } from "@langchain/mcp-adapters";
 import { getRolePrompting } from "./prompts";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
@@ -61,20 +60,10 @@ export const getChatResponse = async (req: any) => {
 
   // Initialize MCP if requested and available
   try {
-    const mcpClient = await getMCPClient(token, datasetId);
-    console.log("MCP Client connected:", mcpClient.getConnectionStatus());
-    const tools = await loadMcpTools(
-      "d2e-mcp",
-      mcpClient.getUnderlyingClient()
-    );
-    console.log(
-      "Loaded tools:",
-      tools.map((t) => ({
-        name: t.name,
-        description: t.description?.substring(0, 100) + "...",
-        schema: t.schema,
-      }))
-    );
+    const mcpInstance = await initMcpManager(token, datasetId);
+    console.log("MCP Client connected:", mcpInstance.getConnectionStatus());
+    const client = mcpInstance.getUnderlyingClient();
+    const tools = await client.getTools();
     const agent = createAgent({
       model: model,
       tools: tools,

@@ -27,7 +27,7 @@ export const getModels = async (llm) => {
   return key ? await pattern[key]() : null; // `Selected LLM model name '${llm}' is not supported`
 };
 
-export const getMCPClient = async (token?: string, datasetId?: string) => {
+export const initMcpManager = async (token?: string, datasetId?: string) => {
   const mcpManager = MCPManager.getInstance();
   if (!mcpManager.isReady()) {
     console.log("Initializing MCP Manager...");
