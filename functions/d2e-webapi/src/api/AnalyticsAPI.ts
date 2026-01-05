@@ -1,4 +1,3 @@
-import axios, { AxiosRequestConfig } from "axios";
 import { env } from "../env.ts";
 import {
   ICohortDefinition,
@@ -11,6 +10,8 @@ export class AnalyticsSvcAPI {
   private readonly baseURL: string;
   private readonly token: string;
   private readonly endpoint: string = "/analytics-svc/api/services";
+  // deno-lint-ignore no-explicit-any
+  private analyticsapi: any;
 
   constructor(token: string) {
     this.token = token;
@@ -24,6 +25,9 @@ export class AnalyticsSvcAPI {
       console.error("No url is set for AnalyticsSvcAPI");
       throw new Error("No url is set for AnalyticsAPI");
     }
+
+    // @ts-ignore To ignore Cannot find name 'Trex'
+    this.analyticsapi = Trex.tokioChannel("d2e-functions/analytics-svc");
   }
 
   async getCohortDefinition(
@@ -31,13 +35,12 @@ export class AnalyticsSvcAPI {
     cohortDefinitionId: number
   ): Promise<IAnalyticsCohortDefinition> {
     try {
-      const url = `${this.baseURL}/cohort-definition`;
+      const url = new URL(`${this.baseURL}/cohort-definition`);
       console.log(`Calling ${url} to create cohort definition`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      params.append("cohortDefinitionId", cohortDefinitionId.toString());
-      const result = await axios.get(url, { ...options, params });
+      url.searchParams.set("datasetId", datasetId);
+      url.searchParams.set("cohortDefinitionId", cohortDefinitionId.toString());
+      const result = await this.analyticsapi.get(url.toString(), options);
 
       if (!result.data.data) {
         throw "Missing data from result";
@@ -64,7 +67,7 @@ export class AnalyticsSvcAPI {
         ...cohortDefinition,
         syntax: JSON.stringify(cohortDefinition.syntax),
       };
-      const result = await axios.post(url, data, options);
+      const result = await this.analyticsapi.post(url, data, options);
 
       if (!result.data.data) {
         throw "Missing data from result";
@@ -93,7 +96,7 @@ export class AnalyticsSvcAPI {
         description: cohortDefinition.description,
         syntax: cohortDefinition.syntax,
       };
-      await axios.put(url, data, options);
+      await this.analyticsapi.put(url, data, options);
     } catch (error) {
       console.error(`Error while updating cohort definition: ${error}`);
       throw error;
@@ -102,13 +105,12 @@ export class AnalyticsSvcAPI {
 
   async deleteCohort(datasetId: string, cohortDefinitionId: number) {
     try {
-      const url = `${this.baseURL}/cohort`;
+      const url = new URL(`${this.baseURL}/cohort`);
       console.log(`Calling ${url} to delete cohort`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      params.append("cohortId", cohortDefinitionId.toString());
-      await axios.delete(url, { ...options, params });
+      url.searchParams.set("datasetId", datasetId);
+      url.searchParams.set("cohortId", cohortDefinitionId.toString());
+      await this.analyticsapi.delete(url.toString(), options);
     } catch (error) {
       console.error(`Error while deleting cohort: ${error}`);
       throw error;
@@ -117,12 +119,11 @@ export class AnalyticsSvcAPI {
 
   async getCdmVersion(datasetId: string): Promise<string> {
     try {
-      const url = `${this.baseURL}/alpdb/cdmversion`;
+      const url = new URL(`${this.baseURL}/alpdb/cdmversion`);
       console.log(`Calling ${url} to get cdm version`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      const result = await axios.get(url, { ...options, params });
+      url.searchParams.set("datasetId", datasetId);
+      const result = await this.analyticsapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
       console.error(`Error while getting cdm version: ${error}`);
@@ -135,15 +136,16 @@ export class AnalyticsSvcAPI {
     filterValue: IFilterValue
   ): Promise<IBaseMaterializedCohort[]> {
     try {
-      const url = `${this.baseURL}/cohort/SYNTAX/${encodeURIComponent(
-        JSON.stringify(filterValue)
-      )}`;
+      const url = new URL(
+        `${this.baseURL}/cohort/SYNTAX/${encodeURIComponent(
+          JSON.stringify(filterValue)
+        )}`
+      );
       console.log(`Calling ${url} to get filtered cohorts`);
       const options = this.getRequestConfig();
-      const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
-      params.append("excludePatientIds", "true");
-      const result = await axios.get(url, { ...options, params });
+      url.searchParams.set("datasetId", datasetId);
+      url.searchParams.set("excludePatientIds", "true");
+      const result = await this.analyticsapi.get(url.toString(), options);
       if (result.data) {
         return result.data.data;
       } else {
@@ -156,9 +158,7 @@ export class AnalyticsSvcAPI {
   }
 
   private getRequestConfig() {
-    let options: AxiosRequestConfig = {};
-
-    options = {
+    const options = {
       headers: {
         Authorization: this.token,
       },
