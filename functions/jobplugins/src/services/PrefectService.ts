@@ -140,11 +140,6 @@ export class PrefectService {
     return flowRunId;
   }
 
-  public async getFlowRunLogs(id: string, token) {
-    this.prefectApi = new PrefectAPI(token);
-    return await this.prefectApi.getFlowRunLogs(id);
-  }
-
   public async getFlowRunState(id: string, token) {
     this.prefectApi = new PrefectAPI(token);
     const flowRunState = await this.prefectApi.getFlowRunState(id);
