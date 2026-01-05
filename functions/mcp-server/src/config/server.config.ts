@@ -10,9 +10,8 @@ export const MCP_SERVER_CONFIG = {
 /**
  * External API URLs
  */
-export const EXTERNAL_APIS = {
-  PHENOTYPE_LIBRARY_COHORTS:
-    "https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/Cohorts.csv",
-  PHENOTYPE_LIBRARY_COHORT_TEMPLATE: (phenotypeId: number) =>
-    `https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/cohorts/${phenotypeId}.json`,
-} as const;
+export const PHENOTYPE_LIBRARY_COHORT_TEMPLATE = (phenotypeId: number) =>
+  `https://raw.githubusercontent.com/OHDSI/PhenotypeLibrary/main/inst/cohorts/${phenotypeId}.json`;
+
+// Use environment variable or default to Docker container path
+export const PHENOTYPE_LIBRARY_COHORTS = "/usr/src/plugins/d2ef/mcp-server/data/phenotypes/Cohorts.csv";
