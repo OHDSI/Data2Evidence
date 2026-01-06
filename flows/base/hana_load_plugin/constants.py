@@ -13,7 +13,7 @@ DATA_DIR = BASE_DIR / DATASET
 ZIP_PATH = DATA_DIR / f"{DATASET}_{CDM_VERSION}.zip"
 EXTRACT_DIR = DATA_DIR / f"{DATASET}_{CDM_VERSION}"
 
-CREATE_SCRIPT_DIR = BASE_DIR / "create_script"
+CREATE_SCRIPT_DIR = BASE_DIR / "db"
 
 # Hana does not support foreign keys, so we skip hana_constraints.sql
 SQL_FILES_ORDER = [
@@ -22,3 +22,12 @@ SQL_FILES_ORDER = [
     "hana_indices.sql"
     # "hana_constraints.sql",
 ]
+
+
+# Hardcoded from athena vocab
+CDM_VERSION_CONCEPT_CODE_MAPPING = {
+    "CDM v5.3.1": 1147638,
+    "CDM v5.3.2": 902376,
+    "CDM v5.4.0": 756265,
+    "CDM v5.4.1": 798878
+}
