@@ -30,8 +30,15 @@ export function addRoutes(app: Hono) {
       );
       return c.json({ message: "success" });
     } catch (error) {
-      logger.info(`${error.message}`)
-      return c.json({ message: "Failed to log the usage agreement consent" });
+      logger.info(`Third party token is not found, logging the logto user ID instead`);
+
+      const sub = logtoToken[env.GATEWAY_IDP_SUBJECT_PROP];
+      const idpUserId = logtoToken["oid"] || sub;
+      logger.info(
+        `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
+      );
+
+      return c.json({ message: "success" });
     }
   });
 }
