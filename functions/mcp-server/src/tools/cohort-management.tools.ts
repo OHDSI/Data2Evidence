@@ -20,7 +20,7 @@ const d2eWebapi = new WebAPIAPI();
 
 /**
  * Register all cohort management tools (CRUD operations + list)
- * - get_cohort_id_name_list (no auth)
+ * - get_cohort_id_name_list (full list includes bookmarks, requires auth + datasetId)
  * - get_atlas_cohort_definition (no auth)
  * - create_atlas_cohort_definition (requires auth)
  * - update_atlas_cohort_definition (no auth)
@@ -39,12 +39,17 @@ export function registerCohortManagementTools(server: McpServer) {
         cohortsId: CohortIdNameOutput.array(),
       },
     },
-    async ({}) => {
+    async ({}, { requestInfo }) => {
+      // Extract authorization and datasetId (both required for delete)
+      const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       // Fetch d2e cohort list
-      const data = await d2eWebapi.getAtlasCohortDefinitionList();
+      const data = await d2eWebapi.getAtlasCohortDefinitionList(
+        authorization,
+        datasetId
+      );
       const cohortData = (data as any[]).map((cohort) => ({
-        cohortId: String(cohort.id),
-        cohortName: cohort.name,
+        cohortId: String(cohort.id ?? cohort.bmkId ?? ""),
+        cohortName: String(cohort.name ?? cohort.bookmarkname ?? ""),
         cohortDescription: cohort.description || "",
       }));
       return createStructuredResponse(

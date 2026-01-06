@@ -28,10 +28,15 @@ export class WebAPIAPI {
     return options;
   }
 
-  async getAtlasCohortDefinitionList(): Promise<any> {
+  async getAtlasCohortDefinitionList(
+    authorization: string,
+    datasetId: string
+  ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/cohortdefinition`;
+      const url = `${this.baseURL}/cohortdefinition?source=pa`;
+      options.headers["Authorization"] = authorization;
+      options.headers["datasetId"] = datasetId;
       const response = await this.channel.get(url, options);
       return response.data;
     } catch (error) {
