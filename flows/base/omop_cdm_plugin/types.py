@@ -5,7 +5,6 @@ from typing_extensions import Self
 
 from pydantic import BaseModel, model_validator
 
-# Todo: call github api to get latest release
 RELEASE_VERSION_MAPPING = {
     "5.3": "v5.3.2",
     "5.4": "v5.4.1"
