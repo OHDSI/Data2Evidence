@@ -26,7 +26,6 @@ import {
 import { tabNames } from "./utils/constants";
 import { TabName, ConceptSet } from "./utils/types";
 import { usePortal, useTranslation } from "../hooks";
-import { getPortalAPI } from "../utils/PortalUtils";
 import { api } from "../axios/api";
 import {
   mapd2eWebapiConcept,
@@ -359,17 +358,14 @@ export const Terminology: FC<TerminologyProps> = ({
   const [conceptsResult, setConceptsResult] =
     useState<TerminologyResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const { datasetId, userName } = usePortal();
+  const { datasetId, userName, features, featuresLoading } = usePortal();
   const activeDatasetId = selectedDatasetId || datasetId;
   const isConceptSet = mode === "CONCEPT_SET";
 
   // Check if user can share based on adminOnlySharing feature flag
-  const portalAPI = getPortalAPI();
-  const features = portalAPI?.features ?? [];
-  const featuresLoading = portalAPI?.featuresLoading ?? true;
   const adminOnlySharingEnabled =
-    features.find((f) => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ??
-    false;
+    features?.find((f) => f.feature === FEATURE_ADMIN_ONLY_SHARING)
+      ?.isEnabled ?? false;
   const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
   const isConceptMultiSelect = mode === "CONCEPT_MULTI_SELECT";
 

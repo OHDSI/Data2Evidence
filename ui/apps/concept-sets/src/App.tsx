@@ -49,9 +49,19 @@ function AppContent(props: PortalProps) {
         userId,
         getToken: props.getToken,
         datasetId: props.datasetId,
+        features: props.features,
+        featuresLoading: props.featuresLoading,
       },
     });
-  }, [dispatch, props.username, userId, props.getToken, props.datasetId]);
+  }, [
+    dispatch,
+    props.username,
+    userId,
+    props.getToken,
+    props.datasetId,
+    props.features,
+    props.featuresLoading,
+  ]);
 
   useEffect(() => {
     if (props.locale) {
