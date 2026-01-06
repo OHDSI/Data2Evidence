@@ -76,7 +76,7 @@
                 <div v-for="detail in row[attribute.parentPath]" :key="detail" class="cellContainer">
                   <div class="textContent row-item">
                     <div class="textContent row-item">
-                      <patientListData :item="detail" :meta="attribute" v-on:openps="openPatientSummary" />
+                      <patientListData :item="detail" :meta="attribute" />
                     </div>
                   </div>
                 </div>
@@ -166,7 +166,6 @@ export default {
           path,
           parentPath: this.getMriFrontendConfig.getInteractionInstancePath(path),
           text: this.getMriFrontendConfig.getAttributeByPath(path).getName(),
-          // isLink: this.getMriFrontendConfig.getAttributeByPath(path).isLinkColumn(),
         }))
         .reduce((dict, col) => {
           if (dict[col.parentPath]) {
@@ -194,7 +193,6 @@ export default {
           path,
           parentPath: this.getMriFrontendConfig.getInteractionInstancePath(path),
           text: this.getMriFrontendConfig.getAttributeByPath(path).getName(),
-          // isLink: this.getMriFrontendConfig.getAttributeByPath(path).isLinkColumn(),
         }))
     },
     tableRows() {
@@ -231,9 +229,6 @@ export default {
       return `${attributeIndex === 0 ? 'leftborder' : ''} ${
         attributeIndex === attributeLength - 1 ? 'rightborder' : ''
       }`
-    },
-    openPatientSummary({ patientId }) {
-      this.$emit('openPatientSummary', { patientId })
     },
     colAttributeStyle(path) {
       return `width: ${this.getColumnWidths[path]}px;`

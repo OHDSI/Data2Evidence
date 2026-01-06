@@ -58,9 +58,6 @@
       <div class="vertical-spacer"></div>
       <patientCount :popOverPosition="patientCountPopoverPosition" />
       <span class="separator" />
-      <button id="vb-searchPopover" class="actionButton" v-if="getActiveChart === 'vb'" @click="searchClicked">
-        <span class="icon" style="font-family: app-icons"></span>
-      </button>
       <!-- <span class="separator" />
       <button
         id="idConfigSettings"
@@ -75,7 +72,6 @@
 </template>
 
 <script lang="ts">
-declare var sap
 import { mapActions, mapGetters } from 'vuex'
 import ChartButton from './ChartButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
@@ -169,7 +165,6 @@ export default {
       'refreshPatientCount',
     ]),
     openSettingsConfig() {
-      const eventBus = sap.ui.getCore().getEventBus()
       this.toggleConfigSelectionDialog()
     },
     closeSubMenu(event) {
@@ -257,10 +252,6 @@ export default {
         this.hideIconToolTip = this.getText('MRI_PA_TOOLTIP_COLLAPSE_FILTER_BAR')
       }
       return this.hideIconToolTip
-    },
-    searchClicked() {
-      const eventBus = sap.ui.getCore().getEventBus()
-      eventBus.publish('EVENT_VB_SEARCH_CLICK', {})
     },
     toggleLeftPanel() {
       this.$emit('unhideEv')
