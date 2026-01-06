@@ -540,10 +540,15 @@ export default class MriFrontendConfig {
           const categoriesInitialIndex = this._internalConfig.chartOptions.initialAttributes.categories.indexOf(
             oneConfigAttribute.getConfigPath()
           )
+          const stackCategoryInitialIndex = this._internalConfig.chartOptions.initialAttributes.stackCategory?.indexOf(
+            oneConfigAttribute.getConfigPath()
+          )
+
           if (
             oneConfigAttribute.isInitialInFilterCard() ||
             measuresInitialIndex !== -1 ||
-            categoriesInitialIndex !== -1
+            categoriesInitialIndex !== -1 ||
+            stackCategoryInitialIndex !== -1
           ) {
             const instancePath = `${
               oneFilterCardConfig.getConfigPath() + (oneFilterCardConfig.isBasicData() ? '' : '.1')
@@ -555,6 +560,10 @@ export default class MriFrontendConfig {
 
             if (categoriesInitialIndex >= 0) {
               result[categoriesInitialIndex] = instancePath
+            }
+
+            if (stackCategoryInitialIndex >= 0) {
+              result[3 + stackCategoryInitialIndex] = instancePath
             }
           }
         }, this)

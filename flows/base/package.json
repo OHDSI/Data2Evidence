@@ -27,7 +27,7 @@
             "type": "object",
             "properties": {
               "options": {
-                "$ref": "#/definitions/DataloadOptions",
+                "$ref": "#/definitions/OmopCDMPluginOptions",
                 "position": 0,
                 "title": "options"
               }
@@ -44,7 +44,7 @@
                 "title": "FlowActionType",
                 "type": "string"
               },
-              "DataloadOptions": {
+              "OmopCDMPluginOptions": {
                 "properties": {
                   "flow_action_type": {
                     "$ref": "#/definitions/FlowActionType"
@@ -53,17 +53,49 @@
                     "title": "Database Code",
                     "type": "string"
                   },
+                  "data_model": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Model"
+                  },
                   "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Schema Name"
                   },
                   "vocab_schema": {
-                    "title": "Vocabulary Schema",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Vocabulary Schema"
                   },
                   "results_schema": {
-                    "title": "Results Schema",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Results Schema"
+                  },
+                  "datasets": {
+                    "anyOf": [
+                      { "items": {}, "type": "array" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Datasets"
                   },
                   "load_csvs": {
                     "anyOf": [
@@ -76,19 +108,17 @@
                 },
                 "required": [
                   "flow_action_type",
-                  "database_code",
-                  "schema_name",
-                  "vocab_schema",
-                  "results_schema"
+                  "database_code"
                 ],
-                "title": "DataloadOptions",
+                "title": "OmopCDMPluginOptions",
                 "type": "object"
               }
             }
           },
           "type": "datamodel",
           "datamodels": [
-            "omop5-3"
+            "omop5-3",
+            "omop5-4"
           ]
         },
         {

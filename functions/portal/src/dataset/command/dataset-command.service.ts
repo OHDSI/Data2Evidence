@@ -157,6 +157,8 @@ export class DatasetCommandService {
       const newTokenDatasetCode = `${tokenDatasetCode}_dm_${sanitizedName}`.substring(0, 80);
       
       // Copy dataset with new schema name
+
+      // Cache dataset inherits the result schema name from source dataset
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
         type: newType,
@@ -165,7 +167,7 @@ export class DatasetCommandService {
         dialect,
         schemaName,
         vocabSchemaName: schemaName,
-        resultSchemaName: schemaName || resultSchemaName,
+        resultSchemaName: resultSchemaName,
         tokenDatasetCode: newTokenDatasetCode,
         paConfigId,
         dataModel,
@@ -260,7 +262,7 @@ export class DatasetCommandService {
   }
 
   private async updateDataset(entityMgr: EntityManager, datasetUpdateDto: IDatasetDetailMetadataUpdateDto) {
-    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus, fhir_project_id } = datasetUpdateDto
+    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus, fhir_project_id, vocabSchemaName, resultSchemaName } = datasetUpdateDto
 
     const currDataset = await this.datasetRepo.getDataset(datasetId)
 
@@ -275,6 +277,15 @@ export class DatasetCommandService {
       paConfigId,
       fhir_project_id
     }
+    
+    if (vocabSchemaName !== undefined) {
+      dataset.vocabSchemaName = vocabSchemaName
+    }
+    
+    if (resultSchemaName !== undefined) {
+      dataset.resultSchemaName = resultSchemaName
+    }
+    
     await this.datasetRepo.updateDataset(entityMgr, datasetId, this.addOwner(dataset))
   }
 

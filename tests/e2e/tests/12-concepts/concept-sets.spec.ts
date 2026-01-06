@@ -25,7 +25,7 @@ test(TEST_NAME, async ({ page }) => {
   const conceptSetName = `Concept Set Test 1`
   // If the concept set already exists (retry), remove the second conept set we added last time
   if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
-    await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').click()
+    await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').first().click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
     console.log(`assertCount ${await assertCount('2')}`)
     if (await assertCount('2')) {
@@ -58,19 +58,26 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
     await page.getByRole('button', { name: 'Close' }).click()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   }
 
-  // await test.step('Attempt to create another concept set with the same name', async () => {
-  //   await page.getByTestId('button').click()
-  //   await page.getByRole('textbox', { name: 'Concept set name' }).click()
-  //   await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
-  //   await page.getByRole('button', { name: 'Create' }).click()
-  //   await expect(
-  //     page.getByText(`Concept set name "${conceptSetName}" already exists. Please enter another name.`)
-  //   ).toBeVisible()
-  //   await page.getByRole('button', { name: 'Close' }).click()
-  // })
+  await test.step('Attempt to create another concept set with the same name', async () => {
+    await page.goto('/d2e/portal')
+    await page.getByText('Demo dataset').first().click()
+    await page.getByRole('link', { name: 'Concepts' }).click()
+    await expect(page.getByText('1–25 of 444')).toBeVisible()
+    await page.getByRole('tab', { name: 'Concept Sets' }).click()
+    await page.getByTestId('button').click()
+    await page.getByRole('textbox', { name: 'Concept set name' }).click()
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
+    await page.getByRole('button', { name: 'Create' }).click()
+    await expect(
+      page.getByText(`Concept set name "${conceptSetName}" already exists. Please enter another name.`)
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Close' }).click()
+  })
 
   // Cohort builder
   await page.getByRole('link', { name: 'Cohorts' }).click()
@@ -124,5 +131,6 @@ test(TEST_NAME, async ({ page }) => {
     // Modal not present, continue
   }
 
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
 })

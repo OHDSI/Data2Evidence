@@ -14,7 +14,7 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import { SxProps } from "@mui/system";
 import SimpleMdeReact from "react-simplemde-editor";
-import { AddSquareIcon, Button, Checkbox, Dialog, Feedback, IconButton } from "@portal/components";
+import { Button, Checkbox, Dialog, Feedback } from "@portal/components";
 import { api } from "../../../../axios/api";
 import {
   NewStudyMetadataInput,
@@ -24,7 +24,6 @@ import {
   SourceDatasetType,
 } from "../../../../types";
 import { usePaConfigs, useDatasetTagConfigs, useDatasetAttributeConfigs } from "../../../../hooks";
-import MetadataForm from "./MetadataForm/MetadataForm";
 import "./UpdateStudyDialog.scss";
 import { useTranslation } from "../../../../contexts";
 
@@ -51,6 +50,8 @@ interface FormData {
   description: string;
   paConfigId: string;
   visibilityStatus: string;
+  vocabSchemaName: string;
+  resultSchemaName: string;
 }
 
 interface FormError {
@@ -64,12 +65,20 @@ interface FormError {
   name: {
     required: boolean;
   };
+  vocabSchemaName: {
+    required: boolean;
+  };
+  resultSchemaName: {
+    required: boolean;
+  };
 }
 
 const EMPTY_FORM_ERROR: FormError = {
   tokenStudyCode: { required: false, valid: false },
   paConfigId: { required: false },
   name: { required: false },
+  vocabSchemaName: { required: false },
+  resultSchemaName: { required: false },
 };
 
 const EMPTY_FORM_DATA: FormData = {
@@ -82,6 +91,8 @@ const EMPTY_FORM_DATA: FormData = {
   description: "",
   paConfigId: "",
   visibilityStatus: "DEFAULT",
+  vocabSchemaName: "",
+  resultSchemaName: "",
 };
 
 const styles: SxProps = {
@@ -134,6 +145,8 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
         showRequestAccess: dataset.studyDetail?.showRequestAccess || false,
         description: dataset.studyDetail?.description || "",
         visibilityStatus: dataset.visibilityStatus,
+        vocabSchemaName: dataset.vocabSchemaName || "",
+        resultSchemaName: dataset.resultSchemaName || "",
       });
     } else {
       setFormData(EMPTY_FORM_DATA);
@@ -175,7 +188,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
   }, []);
 
   const isFormError = useCallback(() => {
-    const { tokenStudyCode, paConfigId, name } = formData;
+    const { tokenStudyCode, paConfigId, name, vocabSchemaName, resultSchemaName } = formData;
 
     let formError: FormError | {} = {};
     if (!tokenStudyCode) {
@@ -194,12 +207,21 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
       formError = { ...formError, name: { required: true } };
     }
 
+    if (!DATASET_SOURCE_TYPES.has(dataset.type)) {
+        if (!vocabSchemaName) {
+          formError = { ...formError, vocabSchemaName: { required: true } };
+        }
+        if (!resultSchemaName) {
+          formError = { ...formError, resultSchemaName: { required: true } };
+        }
+    }
+
     if (Object.keys(formError).length > 0) {
       setFormError({ ...EMPTY_FORM_ERROR, ...(formError as FormError) });
       return true;
     }
     return false;
-  }, [formData, tokenIsValid]);
+  }, [formData, tokenIsValid, dataset]);
 
   const isFormMetadataError = useCallback(() => {
     const indexError: Number[] = [];
@@ -221,7 +243,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
     setFeedback({});
     setFormError(EMPTY_FORM_ERROR);
 
-    const { type, tokenStudyCode, name, summary, showRequestAccess, description, paConfigId, visibilityStatus } =
+    const { type, tokenStudyCode, name, summary, showRequestAccess, description, paConfigId, visibilityStatus, vocabSchemaName, resultSchemaName } =
       formData;
 
     try {
@@ -235,6 +257,8 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
         },
         type,
         tokenDatasetCode: tokenStudyCode,
+        vocabSchemaName,
+        resultSchemaName,
         paConfigId,
         visibilityStatus,
         attributes: studyMetadata.filter((info) => info.attributeId !== ""),
@@ -254,29 +278,6 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
       setUpdating(false);
     }
   }, [formData, datasetId, studyTagsData, studyMetadata, isFormMetadataError, isFormError, handleClose]);
-
-  const handleRemoveLine = useCallback(
-    <T extends {}>(index: number, state: Array<T>, setState: (value: SetStateAction<T[]>) => void) => {
-      const copyLine = [...state];
-      copyLine.splice(index, 1);
-      setState(copyLine);
-    },
-    []
-  );
-
-  const handleAddMetadataForm = useCallback(() => {
-    setStudyMetadata([...studyMetadata, EMPTY_STUDY_METADATA]);
-  }, [studyMetadata]);
-
-  const handleMetadataChange = useCallback(
-    (attributeId: string, valueNew: string, index: number) => {
-      const newMetadata = { attributeId: attributeId, value: valueNew };
-      const currentMetadata = [...studyMetadata];
-      currentMetadata[index] = newMetadata;
-      setStudyMetadata(currentMetadata);
-    },
-    [studyMetadata]
-  );
 
   const handleTagChange = useCallback((event: any, value: string[]) => {
     setStudyTagsData(value);
@@ -371,6 +372,34 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
             </div>
 
             <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__VOCAB_SCHEMA_NAME)}
+                value={formData.vocabSchemaName}
+                onChange={(event) => handleFormDataChange({ vocabSchemaName: event.target.value })}
+                error={formError.vocabSchemaName.required}
+              />
+              {formError.vocabSchemaName.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+            </div>
+
+            <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__RESULT_SCHEMA_NAME)}
+                value={formData.resultSchemaName}
+                onChange={(event) => handleFormDataChange({ resultSchemaName: event.target.value })}
+                error={formError.resultSchemaName.required}
+              />
+              {formError.resultSchemaName.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+            </div>
+
+            <div style={{ marginBottom: "32px" }}>
               <FormControl
                 sx={styles}
                 className="select"
@@ -426,31 +455,6 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
                 <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
               )}
               <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
-            </div>
-
-            <div style={{ marginBottom: "32px" }}>
-              <div style={{ marginTop: "32px", fontWeight: "bold" }}>
-                {getText(i18nKeys.UPDATE_STUDY_DIALOG__METADATA)}
-              </div>
-              {attributeConfigs.length !== 0 &&
-                studyMetadata.map((data, index) => (
-                  <MetadataForm
-                    key={index}
-                    studyMetadata={data}
-                    index={index}
-                    attributeConfigs={attributeConfigs.filter(
-                      (a) => !studyMetadata.some((m) => m.attributeId === a.id) || data.attributeId === a.id
-                    )}
-                    handleRemoveMetadata={() => handleRemoveLine(index, studyMetadata, setStudyMetadata)}
-                    handleMetadataChange={handleMetadataChange}
-                    error={formMetadataErrorIndex.includes(index)}
-                  />
-                ))}
-              <IconButton
-                startIcon={<AddSquareIcon />}
-                title={getText(i18nKeys.UPDATE_STUDY_DIALOG__ADD_METADATA)}
-                onClick={handleAddMetadataForm}
-              />
             </div>
           </>
         )}
