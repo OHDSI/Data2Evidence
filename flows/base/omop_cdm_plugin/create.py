@@ -34,35 +34,30 @@ def create_datamodel_parent_task(cdm_version: str,
     '''
     logger = get_run_logger()
     tables_created = create_cdm_tables(schema_dao, cdm_schema, cdm_version, logger)
+    
     if tables_created:
-        create_concept_recommended_table(schema_dao, cdm_schema, logger)
-    create_and_assign_roles_task(schema_dao, cdm_schema)
-    if cdm_version == CDMVersion.OMOP54:
-        # v5.3 does not have cohort table
-        # Grant write cohort and cohort_definition table privileges to read role
-        grant_cohort_write_privileges(schema_dao, cdm_schema, logger)
+       
+        create_and_assign_roles_task(schema_dao, cdm_schema)
 
-    if cdm_schema != vocab_schema:
-        
-        # Insert CDM Version        
-        insert_cdm_version(
-            cdm_version=cdm_version,
-            dbdao=schema_dao,
-            cdm_schema=cdm_schema,
-            vocab_schema=vocab_schema
-        )
-        
-    else:
-        # If creating schemas without vocab data
-        # Todo: Add insertion of cdm version to update flow
-        logger.info(f"Inserting dummy CDM Version '{cdm_version}'. Please update after loading vocabulary data.")
-        insert_cdm_version(
-            cdm_version=cdm_version,
-            dbdao=schema_dao,
-            cdm_schema=cdm_schema,
-            vocab_schema=vocab_schema,
-            use_placeholder_values=True
-        )
+        if cdm_version == CDMVersion.OMOP54:
+            # v5.3 does not have cohort table
+            # Grant write cohort and cohort_definition table privileges to read role
+            grant_cohort_write_privileges(schema_dao, cdm_schema, logger)
+
+
+        if cdm_schema != vocab_schema:
+
+            create_concept_recommended_table(schema_dao, cdm_schema, logger)
+
+            # Todo: Add insertion of cdm version to update flow
+            logger.info(f"Inserting dummy CDM Version '{cdm_version}'. Please update after loading vocabulary data.")
+            insert_cdm_version(
+                cdm_version=cdm_version,
+                dbdao=schema_dao,
+                cdm_schema=cdm_schema,
+                vocab_schema=vocab_schema,
+                use_placeholder_values=True
+            )
 
      
 @task(log_prints=True,
