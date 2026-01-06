@@ -130,6 +130,8 @@ export interface IDatasetDetailMetadataUpdateDto {
   visibilityStatus: string;
   paConfigId: string;
   fhir_project_id?: string;
+  vocabSchemaName?: string;
+  resultSchemaName?: string;
 }
 
 export interface IDatasetMetadataUpdateDto {

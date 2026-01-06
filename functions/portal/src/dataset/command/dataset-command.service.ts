@@ -262,7 +262,7 @@ export class DatasetCommandService {
   }
 
   private async updateDataset(entityMgr: EntityManager, datasetUpdateDto: IDatasetDetailMetadataUpdateDto) {
-    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus, fhir_project_id } = datasetUpdateDto
+    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus, fhir_project_id, vocabSchemaName, resultSchemaName } = datasetUpdateDto
 
     const currDataset = await this.datasetRepo.getDataset(datasetId)
 
@@ -277,6 +277,15 @@ export class DatasetCommandService {
       paConfigId,
       fhir_project_id
     }
+    
+    if (vocabSchemaName !== undefined) {
+      dataset.vocabSchemaName = vocabSchemaName
+    }
+    
+    if (resultSchemaName !== undefined) {
+      dataset.resultSchemaName = resultSchemaName
+    }
+    
     await this.datasetRepo.updateDataset(entityMgr, datasetId, this.addOwner(dataset))
   }
 
