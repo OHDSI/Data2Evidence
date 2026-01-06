@@ -108,7 +108,7 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('click', this.closeInput)
-    window.addEventListener('click', this.closeSuggestion)
+    window.removeEventListener('click', this.closeSuggestion)
   },
   watch: {
     // tslint:disable-next-line
