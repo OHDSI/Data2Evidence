@@ -1,9 +1,4 @@
-/* global sap */
-declare var sap: any
-
 import moment from 'moment'
-
-const ui5Utils = sap.ui.require('/hc/mri/pa/ui/Utils')
 
 const isISOFormat = dString => {
   if (typeof dString === 'string') {
@@ -99,7 +94,6 @@ const toEndOfDay = dDate => {
 }
 
 export default {
-  ...ui5Utils,
   /**
    * Creates a new date object based on an input date object. The new date object has the following property:
    * calling toUTCString on the new date would give the same value as calling toString on the initial date (except the time zone)
