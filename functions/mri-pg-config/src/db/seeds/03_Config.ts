@@ -9325,12 +9325,13 @@ export const cdwConfig = {
                     }
                 ],
                 "type": "num",
-                "expression": "YEAR(CURRENT_DATE) - @PATIENT.\"YEAR_OF_BIRTH\"",
+                "expression": "(YEAR(COALESCE(@DEADPERSON.DEATH_DATE, CURRENT_DATE)) - @PATIENT.YEAR_OF_BIRTH)",
                 "order": 14,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Age",
-                "conceptIdentifierType": ""
+                "conceptIdentifierType": "",
+                "optionalFiltering": true
             }
         }
     },
@@ -9339,7 +9340,10 @@ export const cdwConfig = {
         "tableTypePlaceholderMap": {
             "factTable": {
                 "placeholder": "@PATIENT",
-                "attributeTables": []
+                "attributeTables": [{
+                        "placeholder": "@DEADPERSON",
+                        "oneToN": true
+                    }]
             },
             "dimTables": [
                 {
@@ -9589,6 +9593,11 @@ export const cdwConfig = {
             "@PATIENT.PATIENT_ID": "\"PERSON_ID\"",
             "@PATIENT.DOD": "\"BIRTH_DATETIME\"",
             "@PATIENT.DOB": "\"BIRTH_DATETIME\"",
+            "@DEADPERSON": "$$SCHEMA$$.\"DEATH\"",
+            "@DEADPERSON.PATIENT_ID": "\"PERSON_ID\"",
+            "@DEADPERSON.OBSERVATION_ID": "\"PERSON_ID\"",
+            "@DEADPERSON.OBS_TYPE": "\"DEATH_TYPE_CONCEPT_ID\"",
+            "@DEADPERSON.OBS_CHAR_VAL": "\"CAUSE_CONCEPT_ID\"",
             "@REF": "$$VOCAB_SCHEMA$$.CONCEPT",
             "@REF.VOCABULARY_ID": "\"VOCABULARY_ID\"",
             "@REF.CODE": "\"CONCEPT_ID\"",
@@ -22275,12 +22284,13 @@ export const cdwConfigDuckdb = {
                     }
                 ],
                 "type": "num",
-                "expression": "YEAR(CURRENT_DATE) - @PATIENT.\"YEAR_OF_BIRTH\"",
+                "expression": "(YEAR(COALESCE(@DEADPERSON.DEATH_DATE, CURRENT_DATE)) - @PATIENT.YEAR_OF_BIRTH)",
                 "order": 24,
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Age",
-                "conceptIdentifierType": ""
+                "conceptIdentifierType": "",
+                "optionalFiltering": true
             },
             "raceName": {
                 "name": [
@@ -22395,7 +22405,12 @@ export const cdwConfigDuckdb = {
         "tableTypePlaceholderMap": {
             "factTable": {
                 "placeholder": "@PATIENT",
-                "attributeTables": []
+                "attributeTables": [
+                    {
+                        "placeholder": "@DEADPERSON",
+                        "oneToN": true
+                    }
+                ]
             },
             "dimTables": [
                 {
@@ -22734,6 +22749,11 @@ export const cdwConfigDuckdb = {
             "@PATIENT.PATIENT_ID": "\"person_id\"",
             "@PATIENT.DOD": "\"birth_datetime\"",
             "@PATIENT.DOB": "\"birth_datetime\"",
+            "@DEADPERSON": "$$SCHEMA$$.death",
+            "@DEADPERSON.PATIENT_ID": "\"person_id\"",
+            "@DEADPERSON.OBSERVATION_ID": "\"person_id\"",
+            "@DEADPERSON.OBS_TYPE": "\"death_type_concept_id\"",
+            "@DEADPERSON.OBS_CHAR_VAL": "\"cause_concept_id\"",
             "@REF": "$$VOCAB_SCHEMA$$.\"concept\"",
             "@REF.VOCABULARY_ID": "\"vocabulary_id\"",
             "@REF.CODE": "\"concept_id\"",
@@ -36177,14 +36197,15 @@ const omopHanaLeanCdwConfig = {
 					}
 				],
 				"type": "num",
-				"expression": "YEAR(CURRENT_DATE) - @PATIENT.\"YEAR_OF_BIRTH\"",
+				"expression": "YEAR(COALESCE(@DEADPERSON.DEATH_DATE, CURRENT_DATE)) - @PATIENT.\"YEAR_OF_BIRTH\"",
 				"order": 5,
 				"domainFilter": "",
 				"includeDescendants": false,
 				"includeDescendantsExpression": "",
 				"standardConceptCodeFilter": "",
 				"cohortDefinitionKey": "Age",
-				"conceptIdentifierType": ""
+				"conceptIdentifierType": "",
+                "optionalFiltering": true
 			},
 			"pid": {
 				"name": [
@@ -36245,7 +36266,10 @@ const omopHanaLeanCdwConfig = {
 		"tableTypePlaceholderMap": {
 			"factTable": {
 				"placeholder": "@PATIENT",
-				"attributeTables": []
+				"attributeTables": [{
+                        "placeholder": "@DEADPERSON",
+                        "oneToN": true
+                    }]
 			},
 			"dimTables": [
 				{
@@ -36495,6 +36519,11 @@ const omopHanaLeanCdwConfig = {
 			"@PATIENT.PATIENT_ID": "\"PERSON_ID\"",
 			"@PATIENT.DOD": "\"BIRTH_DATETIME\"",
 			"@PATIENT.DOB": "\"BIRTH_DATETIME\"",
+            "@DEADPERSON": "$$SCHEMA$$.\"DEATH\"",
+            "@DEADPERSON.PATIENT_ID": "\"PERSON_ID\"",
+            "@DEADPERSON.OBSERVATION_ID": "\"PERSON_ID\"",
+            "@DEADPERSON.OBS_TYPE": "\"DEATH_TYPE_CONCEPT_ID\"",
+            "@DEADPERSON.OBS_CHAR_VAL": "\"CAUSE_CONCEPT_ID\"",
 			"@REF": "$$VOCAB_SCHEMA$$.CONCEPT",
 			"@REF.VOCABULARY_ID": "\"VOCABULARY_ID\"",
 			"@REF.CODE": "\"CONCEPT_ID\"",
