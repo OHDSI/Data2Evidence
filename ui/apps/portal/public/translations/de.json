@@ -6,6 +6,7 @@
   "ACCESS_PANEL__ERROR_DESCRIPTION": "Bitte versuchen Sie es erneut. Um den Fehler zu melden, senden Sie eine E-Mail an help@data4life.care.",
   "ACCESS_PANEL__ERROR": "Ein Fehler ist aufgetreten.",
   "ACCESS_PANEL__NO_DATA": "Keine Daten verfügbar",
+  "ACCESS_PANEL__NO_USERS": "Keine verfügbaren Benutzer zum Hinzufügen",
   "ACCESS_PANEL__REVOKE": "Widerrufen",
   "ACCESS_PANEL__ROLE": "Rolle",
   "ACCESS_PANEL__SUCCESS_REVOKE": "Sie haben den Zugriff für Benutzer {0} widerrufen",

@@ -6,6 +6,7 @@
   "ACCESS_PANEL__ERROR_DESCRIPTION": "请再试一次。如果需要报告错误，请发送电子邮件至help@data4life.care。",
   "ACCESS_PANEL__ERROR": "发生了错误。",
   "ACCESS_PANEL__NO_DATA": "无可用数据",
+  "ACCESS_PANEL__NO_USERS": "无可添加的可用用户",
   "ACCESS_PANEL__REVOKE": "撤销",
   "ACCESS_PANEL__ROLE": "角色",
   "ACCESS_PANEL__SUCCESS_REVOKE": "您已撤销用户 {0} 的访问权限",
