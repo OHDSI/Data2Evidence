@@ -66,8 +66,7 @@ Interactive chat with AI assistant, with optional MCP integration.
 {
   "userInput": "How do I create a cohort in Strategus?",
   "context": "// Current code context",
-  "model": "// LLM Model",
-  "useMcp": true
+  "model": "// LLM Model"
 }
 ```
 
@@ -75,7 +74,6 @@ Interactive chat with AI assistant, with optional MCP integration.
 - `userInput` (required): The user's question or request
 - `context` (optional): Current code context
 - `model` (required): AI model to use
-- `useMcp` (optional, default: `true`): Whether to use MCP for enhanced responses
 
 ## Development
 
