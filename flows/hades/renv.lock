@@ -1605,8 +1605,8 @@
     },
     "OhdsiReportGenerator": {
       "Package": "OhdsiReportGenerator",
-      "Version": "1.1.1",
-      "Source": "Repository",
+      "Version": "2.0.2",
+      "Source": "GitHub",
       "Type": "Package",
       "Title": "Observational Health Data Sciences and Informatics Report Generator",
       "Date": "2025-5-08",
@@ -1649,7 +1649,12 @@
       "Encoding": "UTF-8",
       "NeedsCompilation": "no",
       "Author": "Jenna Reps [aut, cre], Anthony Sena [aut]",
-      "Repository": "CRAN"
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ohdsi",
+      "RemoteRepo": "OhdsiReportGenerator",
+      "RemoteRef": "0d8107d5e156a92ee700b62b511fef649042151c",
+      "RemoteSha": "0d8107d5e156a92ee700b62b511fef649042151c"
     },
     "OhdsiSharing": {
       "Package": "OhdsiSharing",
@@ -1724,7 +1729,7 @@
     },
     "OhdsiShinyModules": {
       "Package": "OhdsiShinyModules",
-      "Version": "3.3.0",
+      "Version": "3.4.0",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "Repository of Shiny Modules for OHDSI Result Viewers",
@@ -1788,8 +1793,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "OhdsiShinyModules",
-      "RemoteRef": "main",
-      "RemoteSha": "046a8a27d1156246590c179e1240ab6dacbee374"
+      "RemoteRef": "db03f2a2216e564abda5ff3713477999e8d8e941",
+      "RemoteSha": "db03f2a2216e564abda5ff3713477999e8d8e941"
     },
     "PRROC": {
       "Package": "PRROC",
