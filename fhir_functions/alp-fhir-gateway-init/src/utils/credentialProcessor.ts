@@ -7,7 +7,6 @@ export class DbCredentialProcessor {
   constructor() {
     try {
       this.credentialsPublicKeys = JSON.parse(env.DB_CREDENTIALS_PUBLIC_KEYS);
-      console.debug(`Loaded credentials public keys: ${JSON.stringify(this.credentialsPublicKeys)}`);
     } catch (err) {
       console.error("Error while loading credentials public keys", err);
       throw new Error("Error while configuring for credential encryption");
