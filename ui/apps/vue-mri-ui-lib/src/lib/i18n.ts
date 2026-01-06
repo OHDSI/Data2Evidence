@@ -297,7 +297,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP:
       'Activate the option to generate a calculation view as external access point',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5 Component',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: 'Visualization Type',
     MRI_PA_TITLE: 'Patient Analytics',
     MRI_PA_INPUT_PLACEHOLDER_ALL: 'All',
@@ -1197,7 +1196,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP:
       'Aktivieren Sie die Option zum Generieren einer Berechnungssicht als externem Zugriffspunkt',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5-Komponente',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: 'Visualisierungstyp',
     MRI_PA_TITLE: 'Patientenanalyse',
     MRI_PA_INPUT_PLACEHOLDER_ALL: 'Alle',
@@ -2080,7 +2078,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_LABEL: '启用计算视图作为外部访问点',
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP: '激活此选项以生成作为外部访问点的计算视图',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5 组件',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: '可视化类型',
     MRI_PA_TITLE: '病患分析',
     MRI_PA_INPUT_PLACEHOLDER_ALL: '全部',
