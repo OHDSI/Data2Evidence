@@ -95,8 +95,8 @@ export default {
       const { domainFilter, standardConceptCodeFilter, selectedDatasetId } = config
       const conceptSetId = values?.value
       const defaultFilters = [
-        { id: 'domainId', value: domainFilter && domainFilter.trim() ? [domainFilter] : [] },
-        { id: 'concept', value: standardConceptCodeFilter && standardConceptCodeFilter.trim() ? [standardConceptCodeFilter] : [] },
+        { id: 'domainId', value: domainFilter ? [domainFilter.trim()] : [] },
+        { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter.trim()] : [] },
       ]
       const event = new CustomEvent('alp-terminology-open', {
         detail: {
