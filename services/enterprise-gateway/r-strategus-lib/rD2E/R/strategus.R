@@ -92,12 +92,13 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
 #'   (default is FALSE)
 #' @return Response object with options for the flow run
 #' @export
-create_options <- function(study_id = '', upload_results = FALSE) {
+create_options <- function(study_id = '', upload_results = FALSE, update_results_schema = TRUE) {
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
   return(list(
       mode = 'kernel',
       datasetId = dataset_id,
       uploadResults = upload_results,
+      updateResultsSchema = update_results_schema,
       studyId = study_id
   ))
 }

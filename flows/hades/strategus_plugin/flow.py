@@ -42,6 +42,7 @@ def strategus_plugin(json_graph, options):
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
     upload_results = _options.get('uploadResults', False)
+    update_results_schema = _options.get('updateResultsSchema', True)
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
     studyName = options.get("studyName", "")
@@ -79,6 +80,10 @@ def strategus_plugin(json_graph, options):
             key="strategus-analysis-specification",
             markdown=study_analysis_result.data
         )
+        # updateResultsSchema option will drop the existing schema before uploading new results
+        if(update_results_schema):
+            drop_strategus_results(options)
+
         if(upload_results):
             result_db_settings = {
                 'database_code': databaseCode,
@@ -201,6 +206,7 @@ def runStrategus(json_graph, options):
     database_code = options.get('databaseCode', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
+    update_results_schema = options.get('updateResultsSchema', True)
 
     if(not study_id):
        raise Exception('StudyId is missing')
@@ -245,6 +251,10 @@ def runStrategus(json_graph, options):
     executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
+    # updateResultsSchema option will drop the existing schema before uploading new results
+    if(update_results_schema):
+        drop_strategus_results(options)
+
     if(upload_results):
         result_db_settings = {
             'database_code': database_code,
