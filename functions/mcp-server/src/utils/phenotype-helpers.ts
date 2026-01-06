@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import {
   PHENOTYPE_LIBRARY_COHORT_TEMPLATE,
   PHENOTYPE_LIBRARY_COHORTS,
-} from "../config/server.config";
+} from "../env";
 import type { PhenotypeData } from "../types/tool-schemas";
 
 /**
@@ -24,9 +24,9 @@ export async function fetchPhenotypeData(): Promise<PhenotypeData[]> {
   return (parsed.data as any[]).map((row) => ({
     cohortId: String(row.cohortId || ""),
     cohortName: String(row.cohortName || ""),
-    cohortNameFormatted: String(row.cohortNameFormatted || ""),
-    cohortNameLong: String(row.cohortNameLong || ""),
-    logicDescription: String(row.logicDescription || ""),
+    // cohortNameFormatted: String(row.cohortNameFormatted || ""),
+    // cohortNameLong: String(row.cohortNameLong || ""),
+    // logicDescription: String(row.logicDescription || ""),
   }));
 }
 
@@ -36,7 +36,7 @@ export async function fetchPhenotypeData(): Promise<PhenotypeData[]> {
 export async function fetchCohortDefinitionTemplate(
   phenotypeId: number
 ): Promise<any> {
-  const url = PHENOTYPE_LIBRARY_COHORT_TEMPLATE(phenotypeId);
+  const url = `${PHENOTYPE_LIBRARY_COHORT_TEMPLATE}/${phenotypeId}.json`;
   const response = await fetch(url);
 
   try {

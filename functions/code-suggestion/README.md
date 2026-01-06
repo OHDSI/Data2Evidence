@@ -25,37 +25,11 @@ The name of specific model is provided as well:
 - For calling model from Azure OpenAI, set the `AI_MODEL='azure:gpt-4o'`
 - For calling model from local, set the `AI_MODEL='local'`
 
-### MCP (Model Context Protocol) Configuration
-
-The service can optionally connect to an MCP server to access additional tools and context.
-
-#### Required Environment Variables for MCP
-- `MCP_SERVER_URL` (optional): URL of the MCP server
-  - Default: `${baseURL}/mcp/chat`
-
-#### Optional Environment Variables for MCP
-- `MCP_AUTH_TOKEN` (optional): JWT token for MCP server authentication
-- `MCP_DATASET_ID` (optional): Dataset ID to use with MCP server
-
 #### Example .env file with MCP
 ```env
 # AI Model Configuration
 AI_MODEL=gpt-4o
 OPENAI_API_KEY=sk-...
-
-# MCP Configuration (optional)
-MCP_SERVER_URL=http://localhost:10000/mcp/chat
-MCP_AUTH_TOKEN=your_jwt_token_here
-MCP_DATASET_ID=your_dataset_id
-```
-
-## API Endpoints
-**Request Body:**
-```json
-{
-  "code": "function example() {",
-  "model": "// LLM Model"
-}
 ```
 
 ### POST /code-suggestion/chat
@@ -65,14 +39,14 @@ Interactive chat with AI assistant, with optional MCP integration.
 ```json
 {
   "userInput": "How do I create a cohort in Strategus?",
-  "context": "// Current code context",
+  "context": "// Notebook code and chat history",
   "model": "// LLM Model"
 }
 ```
 
 **Parameters:**
 - `userInput` (required): The user's question or request
-- `context` (optional): Current code context
+- `context` (optional): Notebook code and chat history
 - `model` (required): AI model to use
 
 ## Development
@@ -87,8 +61,7 @@ functions/code-suggestion/
 │   │   └── services.ts      # Business logic
 │   ├── mcp/
 │   │   ├── client.ts        # MCP client implementation
-│   │   ├── mcpManager.ts    # MCP lifecycle manager
-│   │   └── test-client.ts   # Test utilities
+│   │   └── mcpManager.ts    # MCP lifecycle manager
 │   ├── env.ts               # Environment configuration
 │   └── type.ts              # TypeScript types
 ├── index.ts                 # Application entry point
@@ -99,20 +72,26 @@ functions/code-suggestion/
 ## Troubleshooting
 
 ### MCP Connection Issues
-
-1. **Connection Refused**
-   - Verify MCP server is running
-   - Check `MCP_SERVER_URL` is correct
-   - Ensure firewall allows connection
-
-2. **Authentication Errors**
-   - Verify `MCP_AUTH_TOKEN` is valid and not expired
-   - Check token has correct permissions
-
-3. **MCP Not Working**
-   - MCP failures don't break the service - it falls back gracefully
-   - Check logs for MCP-related warnings
-   - Test MCP connectivity using `test-client.ts`
+1. Verify MCP server is running
+   ```
+   curl --cacert path/of/cert/file \  -H "Authorization: Bear xxx" \
+   -H "datasetId: yyy" -H "Content-Type: application/json" \
+   -H "Accept: application/json, text/event-stream" \
+   -X POST https://localhost:41100/mcp/chat \
+   -d '{
+      "jsonrpc": "2.0",
+      "id": 1,
+      "method": "tools/call",
+      "params": {
+         "name": "get_cohorts_id_name_list",
+         "arguments": {
+         "cohortInfo": "test"
+         }
+      }
+   }
+   ```
+   - `path/of/cert/file`: Please refer to README.md in mcp-server function
+2. Check logs for MCP-related warnings in trex container
 
 ### AI Model Issues
 

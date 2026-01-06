@@ -36,9 +36,9 @@ export interface D2ECohortDefinition {
 export interface PhenotypeData {
   cohortId: string;
   cohortName: string;
-  cohortNameFormatted: string;
-  cohortNameLong: string;
-  logicDescription: string;
+  // cohortNameFormatted: string;  // Removed but can be added back if needed
+  // cohortNameLong: string;
+  // logicDescription: string;
 }
 
 /**

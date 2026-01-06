@@ -25,8 +25,6 @@ const Env = z.object({
   AZURE_OPENAI_API_VERSION: z.string().optional(),
   AZURE_OPENAI_API_INSTANCE_NAME: z.string().optional(),
   AZURE_OPENAI_API_DEPLOYMENT_NAME: z.string().optional(),
-  MCP_AUTH_TOKEN: z.string().optional(),
-  MCP_DATASET_ID: z.string().optional(),
 });
 
 export const env = Env.parse(_env);
