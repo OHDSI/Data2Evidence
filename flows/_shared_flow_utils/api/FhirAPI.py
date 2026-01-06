@@ -6,7 +6,7 @@ from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 class FhirAPI(BaseAPI):
     def __init__(self):
         super().__init__()
-        self.url = self.get_service_route("fhirSvc")
+        self.url = self.get_service_route("fhirGateway")
         self.logger = get_run_logger()
         self.auth = OpenIdAPI()
     
