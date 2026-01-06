@@ -10,6 +10,7 @@ import { AccountTab } from "./AccountTab/AccountTab";
 import { SelectDataset, SelectPublicDataset } from "./SelectDataset/SelectDataset";
 import { SelectRelease } from "./SelectRelease/SelectRelease";
 import { config } from "../../config";
+import { useActiveDataset } from "../../contexts";
 import env from "../../env";
 import "./Header.scss";
 
@@ -24,6 +25,7 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
   const navigate = useNavigate();
   const location = useLocation();
   const isAuth = isAuthenticated();
+  const { activeDataset } = useActiveDataset();
 
   const subPath = useMemo(
     () =>
@@ -83,7 +85,7 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
                 <SelectDataset />
                 <SelectRelease />
               </li>
-              <MenuNav type={MenuType.Dataset} />
+              {activeDataset?.id && <MenuNav type={MenuType.Dataset} />}
               {plugins?.researcher.map((plugin) => (
                 <MenuNav type={MenuType.Plugin} plugin={plugin} key={plugin.name} />
               ))}
