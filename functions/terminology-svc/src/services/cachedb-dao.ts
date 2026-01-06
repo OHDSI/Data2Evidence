@@ -12,6 +12,7 @@ import {
 } from "../types.ts";
 import { env } from "../env.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
+import { individualFilterWhereOR } from "./cachedb.ts";
 
 export class CachedbDAO {
   private readonly jwt: string;
@@ -515,14 +516,6 @@ export class CachedbDAO {
         return `c.valid_end_date < current_date`;
       }
     });
-
-    const individualFilterWhereOR = (comparators: string[]): string => {
-      if (comparators.length === 0) {
-        return "";
-      } else {
-        return `(${comparators.join(" OR ")})`;
-      }
-    };
 
     const filterList = [
       individualFilterWhereOR(conceptClassIdFilter),

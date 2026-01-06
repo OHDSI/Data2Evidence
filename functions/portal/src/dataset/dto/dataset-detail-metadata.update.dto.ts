@@ -40,4 +40,8 @@ export class DatasetDetailMetadataUpdateDto implements IDatasetDetailMetadataUpd
 
   @IsUUID()
   fhir_project_id?: string
+
+  vocabSchemaName?: string
+
+  resultSchemaName?: string
 }

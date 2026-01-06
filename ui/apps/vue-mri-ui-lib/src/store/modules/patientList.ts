@@ -267,15 +267,6 @@ const actions = {
             },
           })
         }
-        // Also note when the "patientlist_linkcolumn" scope is set to true as we
-        // will use that column's values to be rendered as a clickable link that
-        // triggers the Patient Summary.
-        // if (attribute.isLinkColumn()) {
-        //   if (typeof that._linkAttrIds === 'undefined') {
-        //     that._linkAttrIds = [];
-        //   }
-        //   that._linkAttrIds.push(attributeKey);
-        // }
       })
     }
 

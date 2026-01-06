@@ -97,7 +97,6 @@ app.use('/js', express.static(path.join(__dirname, 'static', 'mri', 'js')))
 app.use('/css', express.static(path.join(__dirname, 'static', 'mri', 'css')))
 app.use('/img', express.static(path.join(__dirname, 'static', 'mri', 'img')))
 app.use('/fonts', express.static(path.join(__dirname, 'static', 'mri', 'fonts')))
-app.use('/ui', express.static(path.join(__dirname, 'static', 'ui5', 'resources')))
 
 app.get('/favicon-atlas.ico', (req, res) => {
   const faviconPath = path.join(__dirname, 'static', 'mri', 'favicon-atlas.ico')
@@ -197,4 +196,3 @@ app.listen(PORT, () => {
   console.log(`Mock server running on port ${PORT}`)
   console.log(`Server URL: ${SERVER_URL}\n`)
 })
-
