@@ -145,7 +145,7 @@ interface HistoryTableProps {
 }
 
 const HistoryTable: FC<HistoryTableProps> = ({ data, handleStudySelect, handleCancelJobClick }) => {
-  const studies = useDatasets("systemAdmin")[0];
+  const datasets = useDatasets("systemAdmin")[0];
   // Dialog show hooks
   const [showResultsDialog, openResultsDialog, closeResultsDialog] = useDialogHelper(false);
   const [selectedJob, setSelectedJob] = useState<HistoryJob | null>(null);
@@ -207,7 +207,7 @@ const HistoryTable: FC<HistoryTableProps> = ({ data, handleStudySelect, handleCa
               <ExpandingRow
                 key={row.flowRunId}
                 row={row}
-                studies={studies}
+                studies={datasets}
                 handleStudySelect={handleStudySelect}
                 handleViewDetailClick={handleViewDetailClick}
                 handleCancelJobClick={handleCancelJobClick}
