@@ -1,10 +1,6 @@
-import { Constants, Logger, EnvVarUtils } from "@alp/alp-base-utils";
-import * as https from "https";
-import * as http from "http";
-import * as dotenv from "dotenv";
+import { Logger, EnvVarUtils } from "@alp/alp-base-utils";
 import { URL } from "url";
 import { IMRIRequest, QuerySvcResultType } from "../types";
-dotenv.config();
 const log = Logger.CreateLogger("analytics-log");
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 import { env } from "../env";
@@ -14,24 +10,9 @@ export async function generateQuery(
     payload,
     path: string = ""
 ): Promise<QuerySvcResultType> {
+    const queryGenSvcApi = Trex.tokioChannel("d2e-functions/query-gen-svc");
     log.addRequestCorrelationID(req);
     let reqCorrelationId: string = "DUMMY_REQ_CORRELATION_ID";
-    let hostname;
-    let port;
-    let protocol;
-    let protocolLib;
-    let urlParams;
-    if (envVarUtils.isTestEnv() && !envVarUtils.isHttpTestRun()) {
-        // this flow is only for integation test
-        urlParams = new URL(`http://localhost:41008`);
-        protocolLib = http;
-    } else {
-        urlParams = new URL(env.SERVICE_ROUTES.queryGen);
-        protocolLib = http;
-    }
-    hostname = urlParams.hostname;
-    port = urlParams.port;
-    protocol = urlParams.protocol;
 
     // Add datasetId to body as toplevel key for trex authz
     if (payload.queryParams?.datasetId) {
@@ -46,68 +27,45 @@ export async function generateQuery(
         reqCorrelationId = log.getRequestCorrelationID(req);
     }
 
-    const defaultPath = `/analytics-svc/api/services/query`;
+    const defaultPath = `analytics-svc/api/services/query`;
 
     const pathName = path ? defaultPath + "/" + path : defaultPath;
 
     const sourceOrigin = req.headers["x-source-origin"];
 
+    let urlParams;
+    if (envVarUtils.isTestEnv() && !envVarUtils.isHttpTestRun()) {
+        // this flow is only for integation test
+        urlParams = new URL(pathName, `http://localhost:41008`);
+    } else {
+        urlParams = new URL(pathName, env.SERVICE_ROUTES.queryGen);
+    }
+
     const options = {
-        hostname,
-        port,
-        protocol,
-        path: pathName,
         headers: {
             "Content-Type": "application/json",
-            //"Content-Length": Buffer.byteLength(data),
             "auth-type": "azure-ad",
             "authorization": accessToken,
             "user-agent": "ALP Service",
             "x-source-origin": sourceOrigin,
             "x-req-correlation-id": reqCorrelationId,
         },
-        method: "POST",
-        //rejectUnauthorized: true,
-        //ca: env.TLS__INTERNAL__CA_CRT?.replace(/\\n/g, "\n"),
     };
-
-    return new Promise<QuerySvcResultType>((resolve, reject) => {
-        const post_req = protocolLib
-            .request(options, (response) => {
-                let body = "";
-
-                response.on("data", (d) => {
-                    body += d;
-                });
-
-                response.on("end", () => {
-                    try {
-                        if (
-                            response.statusCode >= 200 &&
-                            response.statusCode <= 399
-                        ) {
-                            resolve(JSON.parse(body));
-                        } else {
-                            reject(body);
-                        }
-                    } catch (err) {
-                        log.error(`query generator error: ${body}`);
-                        reject(err);
-                    }
-                });
-
-                response.on("error", (err) => {
-                    log.enrichErrorWithRequestCorrelationID(err, req);
-                    log.error(JSON.stringify(err));
-                    reject(err);
-                });
-            })
-            .on("error", (err) => {
-                log.enrichErrorWithRequestCorrelationID(err, req);
-                log.error(JSON.stringify(err));
-                reject(err);
-            });
-        post_req.write(data);
-        post_req.end();
-    });
+    try {
+        const response = await queryGenSvcApi.post(
+            urlParams.toString(),
+            data,
+            options
+        );
+        if (response.status >= 200 && response.status <= 399) {
+            return response.data as QuerySvcResultType;
+        } else {
+            log.error(JSON.stringify(response.data));
+            throw response.data;
+        }
+    } catch (err) {
+        log.enrichErrorWithRequestCorrelationID(err, req);
+        log.error(`query generator error: ${err}`);
+        throw err;
+    }
 }
