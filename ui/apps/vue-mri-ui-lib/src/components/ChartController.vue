@@ -42,7 +42,6 @@ import SacChart from './SACChart.vue'
 import SortMenuButton from './SortMenuButton.vue'
 import CohortEntryExit from './CohortEntryExit.vue'
 import StackBarChart from './StackBarChart.vue'
-import VariantBrowser from './VariantBrowser.vue'
 import CohortsAppMenu from './CohortsAppMenu.vue'
 import patientCount from './PatientCount.vue'
 
@@ -162,9 +161,7 @@ export default {
     SortMenuButton,
     CohortEntryExit,
     StackBarChart,
-    VariantBrowser,
     PatientListContainer,
-    // CustomChart,
     SacChart,
     appLabel,
     appCheckbox,

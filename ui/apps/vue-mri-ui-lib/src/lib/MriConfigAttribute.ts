@@ -78,10 +78,6 @@ MriConfigAttribute.prototype.isVisibleInPatientList = function () {
   )
 }
 
-// MriConfigAttribute.prototype.isLinkColumn = function () {
-//   return this.oInternalConfigAttribute.hasOwnProperty('patientlist')
-// }
-
 MriConfigAttribute.prototype.getOrderInPatientList = function () {
   let order = null
 

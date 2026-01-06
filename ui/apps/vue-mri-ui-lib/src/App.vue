@@ -1,7 +1,6 @@
 <template>
   <div id="app" class="mri-app-vue-container">
     <NotificationStack />
-    <!-- <ui5adaptor /> -->
     <splashScreen v-if="getInitialLoad" />
     <patientanalytics v-show="!getInitialLoad" />
   </div>
@@ -11,7 +10,6 @@
 import { mapActions, mapGetters } from 'vuex'
 import configSelection from './components/ConfigSelection.vue'
 import patientanalytics from './components/PatientAnalytics.vue'
-import ui5adaptor from './components/UI5Adaptor.vue'
 import SplashScreen from './components/SplashScreen.vue'
 import store from './store'
 import NotificationStack from './components/NotificationStack.vue'
@@ -99,7 +97,6 @@ export default {
   },
   components: {
     patientanalytics,
-    ui5adaptor,
     configSelection,
     SplashScreen,
     NotificationStack,
