@@ -77,6 +77,7 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       port: 8082,
+      cors: true,
     },
     preview: {
       port: 8082,

@@ -40,10 +40,6 @@
           "target": "/resources/flow"
         },
         {
-          "source": "/analysis",
-          "target": "/resources/analysis"
-        },
-        {
           "source": "/mapping",
           "target": "/resources/mapping"
         },
@@ -157,7 +153,11 @@
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "route": "concepts"
+            "route": "concepts",
+            "datasetTypes": [
+              "omop",
+              "hana__omop"
+            ]
           },
           {
             "enabled": true,
