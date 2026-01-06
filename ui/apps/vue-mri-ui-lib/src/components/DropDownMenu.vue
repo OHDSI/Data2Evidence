@@ -129,7 +129,7 @@ export default {
       this.popper.scheduleUpdate()
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('keydown', this.keyboardNavigation)
     PopperUtils.destroy(this.popper)
   },
