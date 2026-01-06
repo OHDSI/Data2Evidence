@@ -2389,8 +2389,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "ResultModelManager",
-      "RemoteRef": "SantanM/fix-abort",
-      "RemoteSha": "90df896329fc9db65f2a0bcc6d06040bc29b69d7"
+      "RemoteRef": "79ec3d22b71387eb99bba9cf8ba2ecd63c060c7f",
+      "RemoteSha": "79ec3d22b71387eb99bba9cf8ba2ecd63c060c7f"
     },
     "S7": {
       "Package": "S7",
@@ -2719,8 +2719,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "Strategus_d2e",
-      "RemoteRef": "SantanM/fix-cohortmethod-migrations",
-      "RemoteSha": "bf6744fb6ba08b3f1f73a150cbaf424d2148fd26",
+      "RemoteRef": "0bfd8e6537040493c084dc0b735ef3f6823573a9",
+      "RemoteSha": "0bfd8e6537040493c084dc0b735ef3f6823573a9",
       "Remotes": "darwin-eu/CohortSurvival, darwin-eu/PatientProfiles, darwin-eu/omopgenerics, darwin-eu/visOmopResults, darwin-eu/CDMConnector, ohdsi/Characterization, ohdsi/CohortDiagnostics, ohdsi/CohortGenerator, ohdsi/CohortIncidence, ohdsi/CohortMethod, ohdsi/PatientLevelPrediction, ohdsi/ResultModelManager, ohdsi/SelfControlledCaseSeries"
     },
     "TTR": {
