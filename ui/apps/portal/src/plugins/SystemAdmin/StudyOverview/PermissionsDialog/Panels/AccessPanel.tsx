@@ -212,7 +212,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
                       ))}
                   </TableCell>
                   <TableCell className="col-action">
-                    <RolesSelect
+                    {/* <RolesSelect
                       user={user}
                       tenantId={tenantId}
                       studyId={studyId}
@@ -220,7 +220,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
                       withdrawRolesList={withdrawRolesList}
                       setGrantRolesList={setGrantRolesList}
                       setWithdrawRolesList={setWithdrawRolesList}
-                    />
+                    /> */}
                     <div className="button-group">
                       <IconButton
                         startIcon={<RejectIcon />}
