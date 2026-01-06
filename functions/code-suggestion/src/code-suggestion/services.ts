@@ -45,14 +45,19 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
     const codeSuggest = response.content;
     return codeSuggest;
   } catch (error) {
-    throw error;
+    console.error("Error generating code suggestion:", error);
+    throw new Error(
+      `Failed to generate code suggestion with model ${uiCode.model}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 };
 
 export const getChatResponse = async (req: any) => {
   const uiChat: IChatSnippet = req.body;
   const token = req.headers.authorization;
-  const datasetId = req.headers.datasetId;
+  const datasetId = req.query.datasetId;
   const model = await getModels(uiChat.model);
   if (model === null) {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
@@ -91,6 +96,10 @@ export const getChatResponse = async (req: any) => {
     }
   } catch (error) {
     console.error("Error in getChatResponse:", error);
-    throw error;
+    throw new Error(
+      `Failed to get chat response with model ${uiChat.model}${datasetId}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
   }
 };

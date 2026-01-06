@@ -41,8 +41,6 @@ export class CodeSuggestionRouter {
     });
     this.router.post("/chat", async (req: Request, res: Response) => {
       try {
-        req.headers.datasetId = req.query.datasetId;
-
         // Set headers for Server-Sent Events (SSE) to enable streaming responses.
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
@@ -50,6 +48,7 @@ export class CodeSuggestionRouter {
         req.body.model = AI_MODEL;
 
         // Stream the response chunks to the client as they are received.
+        // NOTE: This logic depends on the Langchain Agent streaming format
         let stream = await getChatResponse(req);
         for await (const [token, metadata] of stream) {
           if (

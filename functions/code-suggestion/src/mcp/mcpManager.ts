@@ -34,7 +34,6 @@ export class MCPManager {
     }
 
     const config: MCPClientConfig = {
-      // serverUrl: ,
       serverUrl: `${env.SERVICE_ROUTES["mcp-server"]}`,
       headers,
       maxRetries: 3,
@@ -50,14 +49,6 @@ export class MCPManager {
       throw new Error("MCP Manager not initialized. Call initialize() first.");
     }
     return this.client;
-  }
-
-  async shutdown(): Promise<void> {
-    if (this.client) {
-      await this.client.disconnect();
-      this.client = null;
-      this.isInitialized = false;
-    }
   }
 
   isReady(): boolean {

@@ -1,4 +1,3 @@
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { MultiServerMCPClient } from "@langchain/mcp-adapters";
 
 export interface MCPClientConfig {
@@ -9,8 +8,7 @@ export interface MCPClientConfig {
 }
 
 export class MCPClient {
-  private client: MultiServerMCPClient | null = null;
-  private transport: StreamableHTTPClientTransport | null = null;
+  private client?: MultiServerMCPClient;
   private config: MCPClientConfig;
   private isConnected: boolean = false;
   private reconnectAttempts: number = 0;
@@ -61,25 +59,15 @@ export class MCPClient {
     }
   }
 
-  async disconnect(): Promise<void> {
-    try {
-      if (this.transport) {
-        await this.transport.close();
-        this.transport = null;
-      }
-      this.isConnected = false;
-      console.log("MCP Client disconnected");
-    } catch (error) {
-      console.error("Error disconnecting MCP client:", error);
-    }
-  }
-
   getConnectionStatus(): boolean {
     return this.isConnected;
   }
 
   // Expose the underlying MCP client for use with langchain adapters
   getUnderlyingClient(): MultiServerMCPClient {
+    if (!this.client) {
+      throw new Error("MCP client is not connected. Call connect() first.");
+    }
     return this.client;
   }
 }

@@ -123,7 +123,7 @@ export const strategusIntro = `** Introduction to Strategus **
     Provide complete, working code examples using the exact Strategus syntax shown above.`;
 
 export const getRolePrompting = (userInput: string, context: string) => {
-  const getRolePrompting = `
+  const rolePrompting = `
     You are a specialized AI assistant for Strategus (OHDSI network study) analysis, combining deep expertise in:
 
     1. OHDSI Common Data Model (CDM), OMOP vocabulary and cohort definitions
@@ -165,5 +165,5 @@ export const getRolePrompting = (userInput: string, context: string) => {
         - If minimal connection, omit this section entirely
     3. Key considerations: a) maximum 3 bullet points; b) brief technical notes; c) performance/best practice tips; d) essential technical requirements only.
   `;
-  return getRolePrompting;
+  return rolePrompting;
 };
