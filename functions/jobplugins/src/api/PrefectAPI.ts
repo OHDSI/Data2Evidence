@@ -402,33 +402,6 @@ export class PrefectAPI {
     }
   }
 
-  async getFlowRunLogs(id: string) {
-    const errorMessage = "Error while getting prefect flow run logs by id";
-    try {
-      const url = `${this.baseURL}/logs/filter`;
-
-      const data = {
-        offset: 0,
-        logs: {
-          flow_run_id: {
-            any_: [id],
-          },
-        },
-        sort: "TIMESTAMP_ASC",
-      };
-      const options = this.createOptions("POST", data);
-      const r = await fetch(url, options);
-      if (!r.ok) {
-        throw new Error(`${r.statusText}`);
-      }
-      console.log(`fetched prefect logs for flowrun: ${id}`);
-      return await r.json();
-    } catch (error) {
-      console.info(`${errorMessage}: ${error}`);
-      throw new Error(errorMessage);
-    }
-  }
-
   async cancelFlowRun(id: string) {
     const errorMessage = `Error while cancelling flow run with id: ${id}`;
     try {
