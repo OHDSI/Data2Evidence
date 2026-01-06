@@ -28,7 +28,7 @@ const JobDialog: FC<JobDialogProps> = ({
   onClose,
 }) => {
   const { getText, i18nKeys } = useTranslation();
-  const studies = useDatasets("systemAdmin")[0];
+  const datasets = useDatasets("systemAdmin")[0];
   // Set title based on jobRunType
   const title =
     jobRunType === JobRunTypes.DQD
@@ -39,11 +39,11 @@ const JobDialog: FC<JobDialogProps> = ({
   const [comment, setComment] = useState("");
   const { setFeedback } = useFeedback();
 
-  const datasetDialect = studies.find((s) => s.id === datasetId)?.dialect;
+  const datasetDialect = datasets.find((s) => s.id === datasetId)?.dialect;
 
   const runJob = async () => {
     setIsLoading(true);
-    const vocabSchemaName = studies.find((s) => s.id === datasetId)?.vocabSchemaName || "";
+    const vocabSchemaName = datasets.find((s) => s.id === datasetId)?.vocabSchemaName || "";
 
     const data = { comment, datasetId, vocabSchemaName, releaseId, cohortDefinitionId };
 

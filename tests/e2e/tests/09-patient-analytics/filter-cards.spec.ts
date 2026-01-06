@@ -61,7 +61,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByPlaceholder('Enter search term').press('Escape')
 
   // Step 7 - Validate supported syntax help appears
-  await page.getByText('Supported SyntaxEnter a').click()
+  await page.getByText('Supported SyntaxEnter a').first().click()
   await expect(page.getByRole('application')).toContainText('Supported Syntax')
 
   // Step 8 - Create concept set
@@ -120,17 +120,14 @@ test(TEST_NAME, async ({ browser }) => {
   expect(conditionOccuErrorBgcolor).toBe('rgb(226, 49, 1)')
 
   // Step 8 - Entering month of birth with correct input
-  await page.getByRole('button', { name: '' }).first().click()
-  await page.getByText('Month of Birth').click()
-  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('[1-10]')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('[1-10]')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
 
   // Step 8 - Entering month of birth with incorrect input
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('5.x')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('5.x')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
   await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card
