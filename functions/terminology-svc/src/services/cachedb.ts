@@ -73,8 +73,13 @@ export class CachedbService {
   private async getCachedbDaoFromDatasetId(
     datasetId: string
   ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
-    const { dialect, vocabSchemaName, databaseCode, schemaName, resultSchemaName } =
-      this.datasetDB;
+    const {
+      dialect,
+      vocabSchemaName,
+      databaseCode,
+      schemaName,
+      resultSchemaName,
+    } = this.datasetDB;
     if (dialect === DatasetDialects.HANA) {
       return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
     }
@@ -464,3 +469,11 @@ export class CachedbService {
     return result;
   }
 }
+
+export const individualFilterWhereOR = (comparators: string[]): string => {
+  if (comparators.length === 0) {
+    return "";
+  } else {
+    return `(${comparators.join(" OR ")})`;
+  }
+};
