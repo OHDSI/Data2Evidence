@@ -95,12 +95,13 @@ const initRoutes = async (app: express.Application) => {
         //     )}`
         // );
         const hasExpiredStudiesDbMetadataCache = (studiesDb): boolean => {
-            if (!studiesDb?.studies) {
-                return true;
-            }
-            const timeToLiveInMilliseconds: number =
-                alpPortalStudiesDbMetadataCacheTTLSeconds * 1000;
-            return studiesDb.cachedAt + timeToLiveInMilliseconds < Date.now();
+            return true;
+            // if (!studiesDb?.studies) {
+            //     return true;
+            // }
+            // const timeToLiveInMilliseconds: number =
+            //     alpPortalStudiesDbMetadataCacheTTLSeconds * 1000;
+            // return studiesDb.cachedAt + timeToLiveInMilliseconds < Date.now();
         };
 
         try {
