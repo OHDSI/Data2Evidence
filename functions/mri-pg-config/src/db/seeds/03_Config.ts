@@ -9330,7 +9330,8 @@ export const cdwConfig = {
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Age",
-                "conceptIdentifierType": ""
+                "conceptIdentifierType": "",
+                "optionalFiltering": true
             }
         }
     },
@@ -22288,7 +22289,8 @@ export const cdwConfigDuckdb = {
                 "domainFilter": "",
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Age",
-                "conceptIdentifierType": ""
+                "conceptIdentifierType": "",
+                "optionalFiltering": true
             },
             "raceName": {
                 "name": [
@@ -36195,14 +36197,15 @@ const omopHanaLeanCdwConfig = {
 					}
 				],
 				"type": "num",
-				"expression": "YEAR(CURRENT_DATE) - @PATIENT.\"YEAR_OF_BIRTH\"",
+				"expression": "YEAR(COALESCE(@DEADPERSON.DEATH_DATE, CURRENT_DATE)) - @PATIENT.\"YEAR_OF_BIRTH\"",
 				"order": 5,
 				"domainFilter": "",
 				"includeDescendants": false,
 				"includeDescendantsExpression": "",
 				"standardConceptCodeFilter": "",
 				"cohortDefinitionKey": "Age",
-				"conceptIdentifierType": ""
+				"conceptIdentifierType": "",
+                "optionalFiltering": true
 			},
 			"pid": {
 				"name": [
