@@ -16,7 +16,12 @@ export const useDatasets = (
   const fetchDatasets = useCallback(async () => {
     try {
       setLoading(refetch ? false : true);
-      const datasets = await api.systemPortal.getDatasets(role, searchText, new URLSearchParams(filterQs));
+      let datasets = await api.systemPortal.getDatasets(role, searchText, new URLSearchParams(filterQs));
+
+      if (role === "researcher") {
+        datasets = datasets.filter((dataset) => dataset.type !== "source");
+      }
+
       setDatasets(datasets);
     } catch (error: any) {
       if ("message" in error) {
