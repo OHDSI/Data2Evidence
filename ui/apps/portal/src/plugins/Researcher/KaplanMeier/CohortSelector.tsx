@@ -1,11 +1,10 @@
-import React, { FC, useState } from "react";
+import React, { FC } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import { SelectChangeEvent } from "@mui/material/Select";
 import { FormControl, InputLabel } from "@mui/material";
-import { useDatasets } from "../../../hooks";
 import { SxProps } from "@mui/system";
-import { CohortMapping, Study } from "../../../types";
+import { CohortMapping } from "../../../types";
 import { useTranslation } from "../../../contexts";
 interface CohortSelectorProps {
   cohortTableName: string;
