@@ -18,6 +18,22 @@ export interface Concept {
   conceptCode: string;
 }
 
+export interface ConceptRecordCount {
+  conceptId: number;
+  recordCount: number;
+  descendantRecordCount: number;
+  personCount: number;
+  descendantPersonCount: number;
+}
+
+export interface TerminologyTableConcept extends Concept {
+  // Concept record counts
+  recordCount?: string;
+  descendantRecordCount?: string;
+  personCount?: string;
+  descendantPersonCount?: string;
+}
+
 export interface TerminologyDetailsList {
   details: FhirValueSetExpansionContainsWithExt;
   connections: FhirConceptMapElementTarget[];
@@ -166,7 +182,7 @@ export interface FhirValueSetExpansion {
   contains: FhirValueSetExpansionContainsWithExt[];
 }
 
-export interface FhirValueSetExpansionContainsWithExt extends Concept {
+export interface FhirValueSetExpansionContainsWithExt extends TerminologyTableConcept {
   id?: string;
   extension?: string;
   abstract?: string;
@@ -243,3 +259,5 @@ export interface IWebapiConceptSetExpression {
     includeMapped: boolean;
   }[];
 }
+
+export type IWebapiConceptRecordCount = Record<string, number[]>;
