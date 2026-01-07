@@ -1,17 +1,17 @@
 import express, { Request, Response } from "npm:express";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
+import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
 import { JobPluginsAPI } from "./api/JobpluginsAPI.ts";
 import { PortalAPI } from "./api/PortalAPI.ts";
 import {
+  CacheDatasetType,
   CDMSchemaTypes,
   DbDialect,
   SourceDatasetType,
-  CacheDatasetType,
 } from "./const.ts";
 import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
-import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
 
 const GATEWAY_WO_PROTOCOL_FQDN = env.GATEWAY_WO_PROTOCOL_FQDN!;
 const app = express();
@@ -144,7 +144,9 @@ export class DatasetRouter {
         try {
           this.logger.info(`Create dataset ${id}`);
           const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
-          const resultSchema = resultSchemaValue ? resultSchemaValue : `${schemaName}_results`;
+          const resultSchema = resultSchemaValue
+            ? resultSchemaValue
+            : `${schemaName}_results`;
 
           // Create CDM & Custom schemas
           if (schemaOption != CDMSchemaTypes.NoCDM && schemaName) {
@@ -334,14 +336,27 @@ export class DatasetRouter {
         snapshotCopyConfig,
         dataModel,
         type,
+        cdmSchemaValue,
+        vocabSchemaValue,
+        resultSchemaValue,
       } = req.body;
-      const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
-        sourceStudyId
-      );
+      const {
+        dialect,
+        databaseCode,
+        schemaName,
+        vocabSchemaName,
+        resultSchemaName,
+      } = await portalAPI.getDataset(sourceStudyId);
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
-      const newSchemaName = sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "";
+
+      // Use parent schema names if provided, otherwise generate new ones
+      const newSchemaName =
+        cdmSchemaValue || (sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "");
+      const newVocabSchemaName = vocabSchemaValue || vocabSchemaName;
+      const newResultSchemaName = resultSchemaValue || resultSchemaName;
+
       const parsedNewSchemaName = this.schemaCase(
         newSchemaName,
         dialect as DbDialect
@@ -353,6 +368,8 @@ export class DatasetRouter {
           sourceDatasetId: sourceStudyId,
           newDatasetName: newStudyName,
           schemaName: parsedNewSchemaName,
+          vocabSchemaName: newVocabSchemaName,
+          resultSchemaName: newResultSchemaName,
           timestamp: new Date(),
           type,
           flowParameters: snapshotCopyConfig
