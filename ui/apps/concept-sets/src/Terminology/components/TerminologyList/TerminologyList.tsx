@@ -361,6 +361,8 @@ const TerminologyList: FC<TerminologyListProps> = ({
 
   useEffect(() => {
     if (useDefaultFilters && defaultFilters && filterOptions) {
+      // Trust defaultFilters from parent component (PA-Atlas)
+      // Apply them immediately without waiting for filterOptions to load
       // Validate default filters against loaded filter options to prevent empty pills
       const filters = JSON.parse(
         JSON.stringify(defaultFilters)
