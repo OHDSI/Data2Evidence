@@ -19,13 +19,26 @@ export function addRoutes(app: Hono) {
     }
 
     const bearerToken = c.req.raw.headers.get("authorization");
-    const token = jwt.decode(bearerToken.split(" ")[1]);
-    const sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
-    const idpUserId = token["oid"] || sub;
+    const logtoToken = jwt.decode(bearerToken.split(" ")[1]);
+    try { 
+      const thirdPartyToken = logtoToken["thirdPartyToken"];
+      const token = jwt.decode(thirdPartyToken);
+      const idpUserId = token["oid"];
 
-    logger.info(
-      `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
-    );
-    return c.json({ message: "success" });
+      logger.info(
+        `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
+      );
+      return c.json({ message: "success" });
+    } catch (error) {
+      logger.info(`Third party token is not found, logging the logto user ID instead`);
+
+      const sub = logtoToken[env.GATEWAY_IDP_SUBJECT_PROP];
+      const idpUserId = logtoToken["oid"] || sub;
+      logger.info(
+        `[Data2Evidence][AUDITLOG][${Date.now()}] Usage agreement ${response} by user: ${idpUserId}`
+      );
+
+      return c.json({ message: "success" });
+    }
   });
 }

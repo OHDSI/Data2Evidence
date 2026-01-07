@@ -3,6 +3,7 @@ import { validationResult } from "express-validator";
 import {
   createProject,
   deleteProject,
+  fhirServerHealthCheck,
   forwardRequest
 } from "./services";
 
@@ -131,5 +132,11 @@ export class FhirRouter {
         }
       }
     );
+
+    this.router.get("/fhir-server/healthcheck", async (req: any, res: any) => {
+      const token = req.headers.authorization;
+      const fhirResponse: any = await fhirServerHealthCheck(token);
+      return res.status(fhirResponse.status).send(fhirResponse.data);
+    });
   }
 }

@@ -63,7 +63,7 @@ export default {
       window.addEventListener('click', this.closeInput)
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeInput)
   },
   data() {
