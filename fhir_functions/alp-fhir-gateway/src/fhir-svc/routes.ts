@@ -104,10 +104,10 @@ export class FhirRouter {
               .set(fhirResponse.headers)
               .send(fhirResponse.data);
           }
-        } catch (error) {
-          let log_msg = `Failed to forward ${req.method} request - ${error.message}!`;
+        } catch (error: any) {
+          const log_msg = `Failed to forward request - ${error?.message || "Unknown error"}!`;
           this.logger.error(log_msg);
-          res.status(500).send(log_msg);
+          res.status(500).send("Failed to forward request.");
         }
       }
     );
@@ -169,9 +169,9 @@ export class FhirRouter {
               .send(fhirResponse.data);
           }
         } catch (error) {
-          let log_msg = `Failed to forward ${req.method} request - ${error.message}!`;
+          const log_msg = `Failed to forward request - ${error?.message || "Unknown error"}!`;
           this.logger.error(log_msg);
-          res.status(500).send(log_msg);
+          res.status(500).send("Failed to forward request.");
         }
       }
     );
