@@ -380,7 +380,7 @@ services:
         }
 
         (publicurlredirect) {
-          $CADDY__ALP__ALIAS_PUBLIC_FQDN {
+          ${CADDY__D2E__ALIAS_PUBLIC_FQDN:-${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}} {
             $TLS__CADDY_DIRECTIVE
             redir https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}{uri} permanent
           }
@@ -514,7 +514,7 @@ services:
       CADDY__D2E__PUBLIC_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}
       TLS__CADDY_DIRECTIVE: ${TLS__CADDY_DIRECTIVE:-tls internal}
       INSTANCE_SPECIFIC_CONFIG: ${INSTANCE_SPECIFIC_CONFIG:-}
-      CADDY__ALP__ALIAS_PUBLIC_FQDN: ${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}
+      CADDY__D2E__ALIAS_PUBLIC_FQDN: ${CADDY__D2E__ALIAS_PUBLIC_FQDN:-${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
 
   alp-dataflow-gen:
