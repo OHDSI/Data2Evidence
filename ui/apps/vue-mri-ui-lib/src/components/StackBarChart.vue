@@ -186,7 +186,7 @@ export default {
       'getChartProperty',
     ]),
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (stackBarChart) {
       Plotly.purge(stackBarChart)
     }

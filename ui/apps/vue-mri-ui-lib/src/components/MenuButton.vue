@@ -60,7 +60,7 @@ export default {
     this.menuButton = this.$refs.menuButton
     // this.menuData = this.generateSampleMenu();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
   },
   computed: {

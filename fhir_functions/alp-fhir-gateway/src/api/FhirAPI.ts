@@ -11,14 +11,13 @@ export class FhirAPI {
   private readonly baseUrl: string;
   private readonly logger = console;
   private readonly tokenUrl: string;
-  private adminAccessToken: string;
   private browserToken: string
 
-  constructor(token) {
+  constructor(token: string) {
     if (env.FHIR__CLIENT_ID && env.FHIR__CLIENT_SECRET) {
       this.clientId = env.FHIR__CLIENT_ID;
       this.clientSecret = env.FHIR__CLIENT_SECRET;
-      this.baseUrl = services.fhir;
+      this.baseUrl = services.fhirServer;
       this.tokenUrl = services.fhirTokenUrl;
       this.browserToken = token;
     } else {
@@ -36,7 +35,7 @@ export class FhirAPI {
     fhirHeaders?: Headers,
   ) {
     const resourceUrl = `${this.baseUrl}${resourcePath ? '/' + resourcePath : ''}`;
-    const log_msg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
+    const logMsg = `Received response after forwarding ${httpMethod} request to ${resourceUrl}`;
     try {
       let options = await this.getRequestConfig(clientCredentials);
       if (!options || typeof options !== 'object') {
@@ -59,7 +58,7 @@ export class FhirAPI {
         response = await axios.delete(resourceUrl, options);
       }
       if (response && response.status !== undefined) {
-        this.logger.info(`[${response.status}] ${log_msg}`);
+        this.logger.info(`[${response.status}] ${logMsg}`);
         return {
           status: response.status,
           headers: response.headers,
@@ -67,16 +66,50 @@ export class FhirAPI {
         };
       } else if (response && response.response) {
         // errors occur in response.response when posting a resource
-        this.logger.error(`[${response.response.status}] ${log_msg}`);
-        throw new Error(`[${response.response.status}] ${log_msg}: ${JSON.stringify(response.response.data)}`);
+        this.logger.error(`[${response.response.status}] ${logMsg}`);
+        throw new Error(`[${response.response.status}] ${logMsg}: ${JSON.stringify(response.response.data)}`);
       }
     } catch (error) {
       if (error.response) {
-        this.logger.error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
-        throw new Error(`[${error.response.status}] ${log_msg}: ${JSON.stringify(error.response.data)}`);
+        this.logger.error(`[${error.response.status}] ${logMsg}: ${JSON.stringify(error.response.data)}`);
+        throw new Error(`[${error.response.status}] ${logMsg}: ${JSON.stringify(error.response.data)}`);
       } else {
-        this.logger.error(`[500] ${log_msg}: ${error.message}`);
-        throw new Error(`[500] ${log_msg}: ${error.message}`);
+        this.logger.error(`[500] ${logMsg}: ${error.message}`);
+        throw new Error(`[500] ${logMsg}: ${error.message}`);
+      }
+    }
+  }
+
+  async healthCheck() {
+    const logMsg = `Performing health check on fhir server..`;
+    try {
+      let options = {
+      httpsAgent: new https.Agent({
+          rejectUnauthorized: true,
+        }),
+      };
+      const healthCheckUrl = this.baseUrl.replace('fhir/R4', 'healthcheck');
+      const response = await axios.get(healthCheckUrl, options);
+      if (response && response.status !== undefined) {
+        this.logger.info(`[${response.status}] ${logMsg}`);
+        return {
+          status: response.status,
+          headers: response.headers,
+          data: response.data,
+        };
+      } else {
+        return {
+          status: "500",
+          message: "Failed to get a valid response from the fhir server"
+        };
+      }
+    } catch (error: any) {
+      if (error.response) {
+        this.logger.error(`[${error.response.status}] ${logMsg}: ${JSON.stringify(error.response.data)}`);
+        throw new Error(`[${error.response.status}] ${logMsg}: ${JSON.stringify(error.response.data)}`);
+      } else {
+        this.logger.error(`[500] ${logMsg}: ${error.message}`);
+        throw new Error(`[500] ${logMsg}: ${error.message}`);
       }
     }
   }

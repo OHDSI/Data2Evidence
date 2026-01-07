@@ -48,7 +48,7 @@ export default {
       this.$el.appendChild(this.detector)
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.removeResizeHandlers()
   },
   methods: {

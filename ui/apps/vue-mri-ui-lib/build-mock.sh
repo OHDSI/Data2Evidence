@@ -5,19 +5,13 @@ set -e  # Exit on any error
 # Clean old build artifacts to ensure fresh build
 echo "Cleaning old build artifacts..."
 rm -rf ../../resources/mri
-rm -rf ../../resources/ui5
 rm -rf ../../resources/concept-sets
 
 # Build the project
 echo "Building vue-mri-ui-lib..."
 npm run build
 
-cd ..
-
-echo "Building ui5..."
-npm run build-ui5
-
-cd ../libs/portal-components
+cd ../../libs/portal-components
 
 echo "Building portal-components..."
 npm run build
@@ -38,10 +32,6 @@ if [ ! -d "../../resources/mri" ]; then
   echo "ERROR: ../../resources/mri was not created!"
   exit 1
 fi
-if [ ! -d "../../resources/ui5" ]; then
-  echo "ERROR: ../../resources/ui5 was not created!"
-  exit 1
-fi
 if [ ! -d "../../resources/concept-sets" ]; then
   echo "ERROR: ../../resources/concept-sets was not created!"
   exit 1
@@ -50,7 +40,6 @@ fi
 # Copy resources to mock server
 echo "Copying resources to mock server..."
 cp -r ../../resources/mri src/query-filter/mock-server/static/
-cp -r ../../resources/ui5 src/query-filter/mock-server/static/
 cp -r ../../resources/concept-sets src/query-filter/mock-server/static/
 cp public/authenticate.js src/query-filter/mock-server/static/mri/
 cp public/system.min.js src/query-filter/mock-server/static/mri/
