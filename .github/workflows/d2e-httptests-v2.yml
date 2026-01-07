@@ -258,14 +258,28 @@ jobs:
           yarn --prefer-offline
           yarn inittestdb
 
-      # - name: Install dependencies in backend integration tests
-      #   run: |
-      #     cd ./tests/backend_integration_tests
-      #     yarn
+      - name: Install dependencies in backend integration tests
+        run: |
+          cd ./tests/backend_integration_tests
+          yarn
 
-      # - name: Run HTTP tests
-      #   working-directory: ./tests/backend_integration_tests
-      #   run: yarn test-specs --test_schema_name=$TESTSCHEMA
+      - name: Run HTTP tests
+        working-directory: ./tests/backend_integration_tests
+        run: |
+            HANASERVER=${PGHOST}
+            HDIPORT=${PGPORT}
+            HDIUSER=${PGUSER}
+            HDIPW=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+            echo "HDIPORT: ${HDIPORT}"
+            echo "HDIPW: ${HDIPW}"
+            echo "HDIUSER: ${HDIUSER}"
+            echo "HANASERVER: ${HANASERVER}"
+            echo "PGDATABASE: ${PGDATABASE}"
+            echo "isHttpTestRun: ${isHttpTestRun}"
+            echo "isTestEnv: ${isTestEnv:-false}"
+            echo "TESTSCHEMA: ${TESTSCHEMA}"
+            echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
+            yarn test-specs --test_schema_name=$TESTSCHEMA
         
       ###########
       # - name: UI Mounting build
