@@ -19,7 +19,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
   const [feedback, setFeedback] = useState<Feedback>({});
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
-  const [datasets, loadingDatasets, error] = useDatasets("systemAdmin");
+  const [datasets, loadingDatasets] = useDatasets("systemAdmin");
 
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);

@@ -19,7 +19,7 @@ const RunStrategusStudyDialog: FC<RunStrategusStudyDialogProps> = ({ study, open
   const [feedback, setFeedback] = useState<Feedback>({});
   const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [datasets, loadingDatasets, error] = useDatasets("systemAdmin");
+  const [datasets, loadingDatasets] = useDatasets("systemAdmin");
 
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);
@@ -34,7 +34,7 @@ const RunStrategusStudyDialog: FC<RunStrategusStudyDialogProps> = ({ study, open
   );
 
   const handleRunStudy = useCallback(async () => {
-    if (isRunning || !selectedDatasetId || !study?.id) {
+    if (isRunning || !selectedDatasetId || !study?.studyId) {
       return;
     }
 
