@@ -145,6 +145,8 @@
             <!-- ADVANCE -->
             <l:VerticalLayout id="AttributeAdvanceFilter">
                 <l:content>
+                    <CheckBox text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OPTIONAL_FILTERING_LEFT_JOIN}" 
+                    selected="{configEditorModel>optionalFiltering/value}"/>
                     <Label class="sapMxConfigPropLabel" 
                         tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_TYPE}" 
                         text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_TYPE}"></Label>
@@ -338,7 +340,6 @@
             </l:VerticalLayout>
 
             <html:hr class="sapMXVerticalSeparator"></html:hr>
-
             <Label class="sapMxConfigPropLabel" 
                 tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_DATA_TYPE}" 
                 text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_ATTRIBUTE_DATA_TYPE}"></Label>

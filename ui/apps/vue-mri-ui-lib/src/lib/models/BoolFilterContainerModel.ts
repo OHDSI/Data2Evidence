@@ -95,7 +95,10 @@ export default class BoolFilterContainer extends EntityBase {
 
   public parent: any
   public props: any
-  constructor(public mriFrontendConfig, newProps) {
+  constructor(
+    public mriFrontendConfig,
+    newProps
+  ) {
     super()
     this.mriFrontendConfig = mriFrontendConfig
     const defaultProps = {
@@ -157,7 +160,6 @@ export default class BoolFilterContainer extends EntityBase {
     if (parrId) {
       if (this.checkParentNextCycle(this.getFilterCardByCardId(parrId), filterCard.props.cardId)) {
         cons = filterCard.getConstraintForAttribute('_parentInteraction')
-        // cons.setValueState(sap.ui.core.ValueState.Error);
         cons.setValueState('ERROR')
         cons.setSelectedKey('')
         return
@@ -168,7 +170,6 @@ export default class BoolFilterContainer extends EntityBase {
     if (currId) {
       if (this.checkParentNextCycle(this.getFilterCardByCardId(currId), filterCard.props.cardId)) {
         cons = filterCard.getConstraintForAttribute('_succ')
-        // cons.setValueState(sap.ui.core.ValueState.Error);
         cons.setValueState('ERROR')
         cons.setSelectedKey('')
         return
@@ -229,7 +230,6 @@ export default class BoolFilterContainer extends EntityBase {
         if (FilterCardModel.getSuccessor(fCard.props) === FilterCardModel.getSuccessor(filterCard.props)) {
           const succConst = fCard.getConstraintForAttribute('_succ')
           if (succConst) {
-            // succConst.setValueState(sap.ui.core.ValueState.Error);
             succConst.setValueState('ERROR')
             succConst.setSelectedKey('')
           }

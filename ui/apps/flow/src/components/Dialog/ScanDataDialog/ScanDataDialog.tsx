@@ -97,7 +97,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   const [connectionErrorMessage, setConnectionErrorMesssage] =
     useState<string>("");
   const hiddenFileInput = useRef<HTMLInputElement>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   const [testDBConnection] = useTestDBConnectionMutation();
   const [uploadNodeCsvFile] = useUploadNodeCsvFileMutation();

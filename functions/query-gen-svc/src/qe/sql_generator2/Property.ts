@@ -84,7 +84,8 @@ export class Property extends AstElement {
                 }
 
                 let joinType = "LEFT JOIN";
-                if (this.parent.getType() === "IsNull") {
+                //optionalFiltering Is a new configuration property to indicate if the join should be left join in a filter context.
+                if (this.parent.getType() === "IsNull" || attrConfig.__config.optionalFiltering) {
                     joinType = "left join";
                 } else if (
                     this.parent instanceof Operator ||
