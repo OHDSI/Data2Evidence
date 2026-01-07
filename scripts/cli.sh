@@ -246,7 +246,7 @@ EOF
 
         case "$init_choice" in
           y|Y)
-            CADDY__D2E__PUBLIC_FQDN=${CADDY__D2E__PUBLIC_FQDN:-localhost}
+            CADDY__D2E__PUBLIC_FQDN=${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}
             ENV_TYPE=${ENV_TYPE:-local}
             TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
             PROJECT_NAME=${PROJECT_NAME:-d2e}

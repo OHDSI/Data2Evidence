@@ -1040,7 +1040,7 @@ class D2ECli {
     this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
     this.CADDY__D2E__PUBLIC_FQDN =
-      process.env.CADDY__D2E__PUBLIC_FQDN || "localhost";
+      process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
     this.TLS__CADDY_DIRECTIVE =
       process.env.TLS__CADDY_DIRECTIVE || "tls internal";
     this.version = options?.version ?? this.default_version;
