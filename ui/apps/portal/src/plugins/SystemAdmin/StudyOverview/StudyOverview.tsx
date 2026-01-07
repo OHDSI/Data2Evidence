@@ -781,7 +781,6 @@ const StudyOverview: FC = () => {
                         <TableCell>{study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}</TableCell>
                         <TableCell>study</TableCell>
                         <TableCell className="col-action">
-                          -
                           <StudyActionSelector
                             study={study}
                             handleRunStrategusStudy={handleRunStrategusStudy}
