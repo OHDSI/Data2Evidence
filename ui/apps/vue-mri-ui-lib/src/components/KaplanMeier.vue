@@ -292,7 +292,7 @@ export default {
     this.setupAxes()
     this.setFireRequest()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.renderChart)
   },
   computed: {

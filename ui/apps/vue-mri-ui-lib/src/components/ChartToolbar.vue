@@ -122,7 +122,7 @@ export default {
       console.error(e)
     }
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
   },
   computed: {
