@@ -251,7 +251,16 @@ jobs:
         run: |
           yarn --prefer-offline
           yarn inittestdb
-          
+
+      # - name: Install dependencies in backend integration tests
+      #   run: |
+      #     cd ./tests/backend_integration_tests
+      #     yarn
+
+      # - name: Run HTTP tests
+      #   working-directory: ./tests/backend_integration_tests
+      #   run: yarn test-specs --test_schema_name=$TESTSCHEMA
+        
       ###########
       # - name: UI Mounting build
       #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
