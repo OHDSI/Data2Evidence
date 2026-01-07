@@ -15,6 +15,15 @@ on:
 env:
   VERSION: develop
   PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+  PGUSER: postgres
+  PGPASSWORD: mypass
+  PGHOST: localhost
+  PGPORT: 5432
+  PGDATABASE: postgres
+  TESTSCHEMA: HTTP_${{github.run_id}}
+  isTestEnv: "true"
+  isHttpTestRun: "true"
+  USE_TREX_DB_CONN: "true"
 
 jobs:
   demosetup:
@@ -210,8 +219,31 @@ jobs:
       - name: Check status of docker containers
         run: |
           docker ps -a
-          docker exec d2e-trex printenv DEMO__DB_PASSWORD
-          
+          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
+          echo "PGPORT: ${PGPORT}"
+          echo "PGPASSWORD: ${PGPASSWORD}"
+          echo "PGUSER: ${PGUSER}"
+          echo "PGHOST: ${PGHOST}"
+          echo "PGDATABASE: ${PGDATABASE}"
+          echo "isHttpTestRun: ${isHttpTestRun}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+          echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
+
+      - name: Check PG DB connection
+        run: |
+          echo "PGPORT: ${PGPORT}"
+          echo "PGPASSWORD: ${PGPASSWORD}"
+          echo "PGUSER: ${PGUSER}"
+          echo "PGHOST: ${PGHOST}"
+          echo "PGDATABASE: ${PGDATABASE}"
+          echo "isHttpTestRun: ${isHttpTestRun}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+          echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
+          sudo apt install -y postgresql-client
+          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
+          psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
       ###########
       # - name: UI Mounting build
       #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
