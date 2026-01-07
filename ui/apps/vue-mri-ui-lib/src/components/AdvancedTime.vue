@@ -281,7 +281,9 @@ export default {
       })
     },
     updateDays(e, index) {
-      this.advancedTimeLayout.props.timeFilterModel.timeFilters[index].days = e.target.value
+      const days = String(parseFloat(e.target.value) || 0)
+      this.advancedTimeLayout.props.timeFilterModel.timeFilters[index].days = days
+      this.model.props.timeFilterModel.timeFilters[index].days = days
       this.updateFilterCardTimeFilter({
         filterCardId: this.filterCardId,
         timeFilters: this.advancedTimeLayout.props.timeFilterModel.timeFilters,
