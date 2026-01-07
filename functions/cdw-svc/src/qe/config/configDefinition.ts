@@ -474,6 +474,11 @@ export function getDefinition(tableMapping: any) {
             mandatory: false,
             type: "string",
           },
+          {
+            name: "optionalFiltering",
+            mandatory: false,
+            type: "boolean",
+          },
         ],
       },
     ],

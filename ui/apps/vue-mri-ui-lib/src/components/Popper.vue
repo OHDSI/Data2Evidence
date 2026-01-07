@@ -1,6 +1,6 @@
 <template>
   <div ref="content" style="display: none">
-    <slot :hide="hide"/>
+    <slot :hide="hide" />
   </div>
 </template>
 
@@ -96,7 +96,7 @@ export default {
       this.create()
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.setListeners(false)
     this.hide()
 
@@ -408,8 +408,8 @@ export default {
       if (!(element && element.nodeType)) {
         element = document
       }
-      console.log(`Selecting element with selector: ${selector} in`, element);
-      
+      console.log(`Selecting element with selector: ${selector} in`, element)
+
       return element.querySelector(selector) || null
     },
   },

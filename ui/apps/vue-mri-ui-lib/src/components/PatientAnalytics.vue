@@ -17,7 +17,7 @@
               </div>
               <div class="flex-grow-1 nav-container">
                 <ul class="nav nav-justified">
-                  <li class="nav-item" @click="toggleCohorts(true)" v-show="!displaySharedBookmarks">
+                  <li class="nav-item" @click="toggleCohorts(true)">
                     <a class="nav-link" :class="{ active: displayCohorts }" href="javascript:void(0)">{{
                       getText('MRI_PA_VIEW_COHORT_TITLE')
                     }}</a>
@@ -30,10 +30,6 @@
                 </ul>
               </div>
             </div>
-            <sharedBookmarks
-              @unloadBookmarkEv="toggleSharedBookmark(false)"
-              v-if="displaySharedBookmarks"
-            ></sharedBookmarks>
             <bookmarks
               @unloadBookmarkEv="toggleCohorts"
               @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
@@ -43,8 +39,8 @@
 
             <filters
               ref="filtersRef"
-              v-if="!showQueryFilter && !displayCohorts && !displaySharedBookmarks"
-              v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"
+              v-if="!showQueryFilter && !displayCohorts"
+              v-bind:class="{ hidden: displayCohorts }"
             ></filters>
 
             <QueryFilter
@@ -156,7 +152,6 @@
         <appButton :click="dismissBrowserMessage" :text="getText('MRI_PA_BUTTON_OK')" v-focus></appButton>
       </template>
     </messageBox> -->
-    <sharedChartDialog v-if="displaySharedBookmarks" />
     <messageToast />
   </div>
 </template>
@@ -177,8 +172,6 @@ import FilterCardSummary from './FilterCardSummary.vue'
 import filters from './Filters.vue'
 import MessageBox from './MessageBox.vue'
 import MessageToast from './MessageToast.vue'
-import SharedBookmarks from './SharedBookmarks.vue'
-import SharedChartDialog from './SharedChartDialog.vue'
 import SplashScreen from './SplashScreen.vue'
 import ResizeObserver from './ResizeObserver.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
@@ -201,7 +194,6 @@ export default {
   data() {
     return {
       displayCohorts: true,
-      displaySharedBookmarks: false,
       displayFilterCardSummary: false,
       supportedBrowser: true,
       clearBrowserMessage: false,
@@ -223,22 +215,7 @@ export default {
       atlasDataForQueryFilter: null,
     }
   },
-  created() {
-    // const userAgent = navigator.userAgent || navigator.vendor || myWindow.opera
-    // if (sap && sap.ui && sap.ui.Device && sap.ui.Device.system && sap.ui.Device.system.phone) {
-    //   this.supportedBrowser = false
-    // }
-    // if (/Webkit/i.test(userAgent) && /iPad|iPhone|iPod/i.test(userAgent)) {
-    //   this.supportedBrowser = false
-    // }
-    // if (
-    //   !(!!myWindow.MSInputMethodContext && !!(document as any).documentMode) && // IE11
-    //   !/Firefox|Chrome|Safari/i.test(userAgent)
-    // ) {
-    //   // Firefox, Chrome, Safari
-    //   this.supportedBrowser = false
-    // }
-  },
+  created() {},
   watch: {
     getActiveBookmark(newVal, oldVal) {
       // Auto-switch to cohort view when a bookmark is loaded (e.g., from deep link)
@@ -272,7 +249,7 @@ export default {
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.updateMinSplitterWidth)
   },
   computed: {
@@ -358,7 +335,6 @@ export default {
     toggleQueryFilter(show) {
       this.showQueryFilter = show
       this.displayCohorts = !show
-      this.displaySharedBookmarks = false
     },
     toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
@@ -374,12 +350,6 @@ export default {
         }
       }
       this.displayCohorts = isDisplayCohort
-    },
-    toggleSharedBookmark(sharedBookmarkDisplay) {
-      if (sharedBookmarkDisplay) {
-        this.loadAllSharedBookmark()
-      }
-      this.displaySharedBookmarks = sharedBookmarkDisplay
     },
     toggleFilterCardSummary(displayFilterCardSummary) {
       this.displayFilterCardSummary = displayFilterCardSummary
@@ -507,8 +477,6 @@ export default {
     FilterCardSummary,
     MessageBox,
     MessageToast,
-    SharedBookmarks,
-    SharedChartDialog,
     SplashScreen,
     ResizeObserver,
     appIcon,
