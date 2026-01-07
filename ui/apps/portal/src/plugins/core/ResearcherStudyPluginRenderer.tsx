@@ -5,6 +5,7 @@ import { getAuthToken } from "../../containers/auth";
 import { useUser } from "../../contexts";
 import { useToken } from "../../contexts/app-context/hooks/use-token";
 import { useTranslation } from "../../contexts/app-context/hooks/use-translation";
+import { useFeatures } from "../../hooks";
 import { PluginDropdownItem, SubFeatureFlags } from "@portal/plugin";
 import { PluginType } from "../../types";
 import env from "../../env";
@@ -46,6 +47,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
   } = useUser();
   const { idTokenClaims } = useToken();
   const { locale } = useTranslation();
+  const [features, featuresLoading] = useFeatures();
   const username = idTokenClaims?.[nameProp] as string | undefined;
 
   const [component, setComponent] = useState<any>();
@@ -74,6 +76,8 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
               idpUserId,
               datasetId: studyId,
               locale,
+              features,
+              featuresLoading,
               ...data,
             },
           });
@@ -105,10 +109,12 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
         username,
         datasetId: studyId,
         locale,
+        features,
+        featuresLoading,
         ...data,
       });
     }
-  }, [studyId, locale, idpUserId, username, data, path, configType, isRegistered]);
+  }, [studyId, locale, idpUserId, username, data, path, configType, isRegistered, features, featuresLoading]);
 
   // Load legacy plugins when path changes
   useEffect(() => {
