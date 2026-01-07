@@ -14,7 +14,7 @@ test('atlas-lite cohort creation', async ({ page }) => {
 
   await page
     .locator('div')
-    .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
+    .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
     .getByTestId('button')
     .click()
   await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()
@@ -95,7 +95,7 @@ test('atlas-lite cohort creation', async ({ page }) => {
 
   await page
     .locator('div')
-    .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
+    .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
     .getByTestId('button')
     .click()
   await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()
