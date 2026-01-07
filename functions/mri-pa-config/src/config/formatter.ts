@@ -60,6 +60,9 @@ export class Formatter {
                 if (cdwConfigObj.parentInteractionLabel) {
                     filtercardObj.parentInteraction.parentLabel = cdwConfigObj.parentInteractionLabel;
                 }
+                if (cdwConfigObj.parentInteractionsMapping) {
+                    filtercardObj.parentInteraction.parentInteractionsMapping = cdwConfigObj.parentInteractionsMapping;
+                }
                 filtercardObj.attributes = this._getAttributes(dmConfig, filtercard.attributes);
                 utils.createPathInObject2(config, path, filtercardObj);
             } else {
@@ -154,6 +157,9 @@ export class Formatter {
           cohortEntryExit: mriConfig.panelOptions.cohortEntryExit,
           atlasCohortDefinition: mriConfig.panelOptions.atlasCohortDefinition,
           usePaAtlas: mriConfig.panelOptions.usePaAtlas,
+        };
+        config.settings = {
+          dateFormat: dmConfig.advancedSettings?.settings?.dateFormat || "YYYY-MM-dd"
         };
 
         return config;

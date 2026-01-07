@@ -3,7 +3,12 @@ import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { JobPluginsAPI } from "./api/JobpluginsAPI.ts";
 import { PortalAPI } from "./api/PortalAPI.ts";
-import { CDMSchemaTypes, DbDialect } from "./const.ts";
+import {
+  CDMSchemaTypes,
+  DbDialect,
+  SourceDatasetType,
+  CacheDatasetType,
+} from "./const.ts";
 import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
@@ -26,15 +31,7 @@ export class DatasetRouter {
       case DbDialect.Postgres:
         return schemaName.toLowerCase();
       default:
-        return schemaName;
-    }
-  }
-
-  private flowSnapshotType(snapshotLocation: string) {
-    if (snapshotLocation === "DB") {
-      return "create_snapshot";
-    } else {
-      return "create_parquet_snapshot";
+        return schemaName.toLowerCase();
     }
   }
 
@@ -107,7 +104,7 @@ export class DatasetRouter {
           tenantId,
           schemaOption,
           vocabSchemaValue,
-          cleansedSchemaOption,
+          resultSchemaValue,
           dialect,
           databaseCode,
           schemaName,
@@ -120,7 +117,15 @@ export class DatasetRouter {
           attributes,
           tags,
           fhirProjectId,
+          cacheDatasetName,
+          cacheDatasetType,
         } = req.body;
+
+        const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
+        const parsedNewCacheSchemaName = this.schemaCase(
+          newCacheSchemaName,
+          dialect as DbDialect
+        );
 
         // Token study code validation
         const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
@@ -139,8 +144,9 @@ export class DatasetRouter {
         try {
           this.logger.info(`Create dataset ${id}`);
           const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
+          const resultSchema = resultSchemaValue ? resultSchemaValue : `${schemaName}_results`;
 
-          // Create CDM & Custom schemas with Optional Cleansed Schema
+          // Create CDM & Custom schemas
           if (schemaOption != CDMSchemaTypes.NoCDM && schemaName) {
             if (
               schemaOption == CDMSchemaTypes.CreateCDM ||
@@ -148,7 +154,7 @@ export class DatasetRouter {
             ) {
               try {
                 this.logger.info(
-                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode} with cleansed schema option set to ${cleansedSchemaOption}`
+                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`
                 );
 
                 const options = {
@@ -157,8 +163,9 @@ export class DatasetRouter {
                     database_code: databaseCode,
                     data_model: dataModel,
                     schema_name: schemaName,
-                    cleansed_schema_option: cleansedSchemaOption,
+                    cache_schema_name: parsedNewCacheSchemaName,
                     vocab_schema: vocabSchema,
+                    results_schema: resultSchema,
                     plugin: plugin,
                   },
                 };
@@ -203,13 +210,14 @@ export class DatasetRouter {
           this.logger.info("Creating new dataset in Portal");
           const newDatasetInput = {
             id,
-            type,
+            type, // TODO: validate type
             tokenDatasetCode: tokenStudyCode,
             schemaOption,
             dialect,
             databaseCode: databaseCode,
             schemaName,
             vocabSchemaName: vocabSchema,
+            resultSchemaName: resultSchema,
             dataModel,
             plugin,
             tenantId,
@@ -221,11 +229,89 @@ export class DatasetRouter {
             tags,
             fhir_project_id: fhirProjectId,
           };
+
           const newDataset = await portalAPI.createDataset(newDatasetInput);
+
           if (newDataset.error) {
             return res.status(400).json(newDataset);
           }
-          return res.status(200).json(newDataset);
+
+          this.logger.info("Creating cache dataset in Portal");
+
+          let newCacheDataset: any = {};
+
+          if (
+            type === SourceDatasetType.FHIR &&
+            cacheDatasetType === CacheDatasetType.NON_OMOP
+          ) {
+            try {
+              this.logger.info(
+                `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`
+              );
+
+              const fhirCacheFlowRunDto = {
+                databaseCode: databaseCode,
+                schemaName: schemaName,
+                cacheSchemaName: parsedNewCacheSchemaName,
+              };
+              await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+            } catch (error) {
+              this.logger.error(
+                `Error while creating FHIR cache schema! ${error}`
+              );
+              return res
+                .status(500)
+                .send("Error while creating FHIR cache schema");
+            }
+          }
+
+          if (cacheDatasetName && cacheDatasetType) {
+            const snapshotRequest = {
+              id: uuidv4(),
+              sourceDatasetId: id,
+              newDatasetName: cacheDatasetName,
+              schemaName: schemaName,
+              timestamp: new Date(),
+              type: cacheDatasetType,
+            };
+            newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
+
+            // Trigger cache creation for existing schema with OMOP cache type
+            if (
+              schemaOption === CDMSchemaTypes.ExistingCDM &&
+              cacheDatasetType === CacheDatasetType.OMOP
+            ) {
+              try {
+                this.logger.info(
+                  `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`
+                );
+
+                const dataModels = await jobpluginsAPI.getDatamodels();
+                const dataModelInfo = dataModels.find(
+                  (model) => model.datamodel === dataModel
+                );
+
+                await jobpluginsAPI.createDatamartCacheFlowRun(
+                  id,
+                  newCacheDataset.id,
+                  {},
+                  dataModelInfo?.flowId,
+                  `datamart-cache-${schemaName}`
+                );
+              } catch (error) {
+                this.logger.error(
+                  `Error while creating cache for existing schema! ${error}`
+                );
+                return res
+                  .status(500)
+                  .send("Error while creating cache for existing schema");
+              }
+            }
+          }
+
+          return res
+            .status(200)
+            .json({ id: newDataset.id, cacheId: newCacheDataset.id });
         } catch (error) {
           this.logger.error(
             `Error while creating dataset: ${JSON.stringify(error)}`
@@ -242,10 +328,12 @@ export class DatasetRouter {
 
       const {
         sourceStudyId,
+        sourceType,
         newStudyName,
         snapshotLocation,
         snapshotCopyConfig,
         dataModel,
+        type,
       } = req.body;
       const { dialect, databaseCode, schemaName } = await portalAPI.getDataset(
         sourceStudyId
@@ -254,10 +342,9 @@ export class DatasetRouter {
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
       const newSchemaName = sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "";
-
-      const dataModels = await jobpluginsAPI.getDatamodels();
-      const dataModelInfo = dataModels.find(
-        (model) => model.datamodel === dataModel
+      const parsedNewSchemaName = this.schemaCase(
+        newSchemaName,
+        dialect as DbDialect
       );
 
       try {
@@ -265,52 +352,70 @@ export class DatasetRouter {
           id,
           sourceDatasetId: sourceStudyId,
           newDatasetName: newStudyName,
-          schemaName: newSchemaName,
+          schemaName: parsedNewSchemaName,
           timestamp: new Date(),
+          type,
+          flowParameters: snapshotCopyConfig
+            ? { snapshotCopyConfig }
+            : undefined,
         };
-
-        // Copy schema if it exist
-        if (sourceHasSchema) {
-          this.logger.info(
-            `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
-              snapshotCopyConfig
-            )})`
-          );
-
-          try {
-            const options = {
-              options: {
-                flow_action_type: this.flowSnapshotType(snapshotLocation),
-                database_code: databaseCode,
-                schema_name: this.schemaCase(
-                  newSchemaName,
-                  dialect as DbDialect
-                ),
-                source_schema: schemaName,
-                dialect: dialect,
-                snapshot_copy_config: snapshotCopyConfig,
-              },
-            };
-
-            await jobpluginsAPI.createDatamartFlowRun(
-              options,
-              dataModelInfo.flowId,
-              `datamart-snapshot-${schemaName}`
-            );
-          } catch (error) {
-            this.logger.error(`Error copying CDM schema! ${error}`);
-            throw new Error(`Error copying CDM schema! ${error}`);
-          }
-        }
 
         this.logger.info("Copying dataset in Portal");
         const newDataset = await portalAPI.copyDataset(snapshotRequest);
+
+        // Copy schema if it exist
+        if (sourceHasSchema) {
+          if (
+            type === CacheDatasetType.NON_OMOP &&
+            sourceType === SourceDatasetType.FHIR
+          ) {
+            this.logger.info(
+              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`
+            );
+            try {
+              const fhirCacheFlowRunDto = {
+                databaseCode: databaseCode,
+                schemaName: schemaName,
+                cacheSchemaName: parsedNewSchemaName,
+              };
+              await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+            } catch (error) {
+              this.logger.error(`Error copying source FHIR schema! ${error}`);
+              throw new Error(`Error copying source FHIR schema! ${error}`);
+            }
+          } else {
+            this.logger.info(
+              `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
+                snapshotCopyConfig
+              )})`
+            );
+
+            try {
+              const dataModels = await jobpluginsAPI.getDatamodels();
+              const dataModelInfo = dataModels.find(
+                (model) => model.datamodel === dataModel
+              );
+
+              await jobpluginsAPI.createDatamartCacheFlowRun(
+                sourceStudyId,
+                newDataset.id,
+                snapshotCopyConfig,
+                dataModelInfo.flowId,
+                `datamart-snapshot-${schemaName}`
+              );
+            } catch (error) {
+              this.logger.error(`Error copying CDM schema! ${error}`);
+              throw new Error(`Error copying CDM schema! ${error}`);
+            }
+          }
+        }
+
         return res.status(200).json(newDataset);
       } catch (error) {
         this.logger.error(
           `Error when copying dataset: ${JSON.stringify(error)}`
         );
-        res.status(500).send("Error when copying dataset");
+        res.status(500).send(`Error when copying dataset: ${error}`);
       }
     });
 

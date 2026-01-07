@@ -1,7 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import "@testing-library/jest-dom/extend-expect";
 import { Header } from "../Header";
 import { Tenant, Study } from "../../../types";
 import { AppProvider } from "../../../contexts";
@@ -19,6 +18,12 @@ const study: Partial<Study> = {
 
 jest.mock("../../../containers/auth", () => ({
   isAuthenticated: () => false,
+}));
+
+// Mock the environment
+jest.mock("../../../env", () => ({
+  REACT_APP_IDP_NAME_PROP: "name",
+  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: "http://localhost:3001",
 }));
 
 it("render correctly", () => {

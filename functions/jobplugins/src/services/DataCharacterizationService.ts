@@ -14,6 +14,8 @@ import {
 import { parseCdmVersionForOhdsi } from "../utils/OhdsiParser.ts";
 
 export class DataCharacterizationService {
+  private flowRunNamePrefix: string = "DC";
+
   public async getDataCharacterizationResults(
     flowRunId: string,
     sourceKey: string,
@@ -73,7 +75,8 @@ export class DataCharacterizationService {
     const flowRuns = await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
-      PrefectTagNames.DATA_CHARACTERIZATION
+      PrefectTagNames.DATA_CHARACTERIZATION,
+      this.flowRunNamePrefix
     );
 
     if (flowRuns.length === 0) {
@@ -96,7 +99,8 @@ export class DataCharacterizationService {
     const flowRuns = await prefectApi.getFlowRunsByDataset(
       databaseCode,
       schemaName,
-      PrefectTagNames.DATA_CHARACTERIZATION
+      PrefectTagNames.DATA_CHARACTERIZATION,
+      this.flowRunNamePrefix
     );
     return flowRuns.find(
       (run) => run.parameters.options.releaseId === releaseId.toString()
@@ -112,6 +116,7 @@ export class DataCharacterizationService {
     const portalServerApi = new PortalServerAPI(token);
     const datasetId = dataCharacterizationFlowRunDto.datasetId;
     const comment = dataCharacterizationFlowRunDto.comment;
+    const overrideResultsSchema = dataCharacterizationFlowRunDto.resultsSchema;
     const releaseId = dataCharacterizationFlowRunDto.releaseId;
     const excludeAnalysisIds =
       dataCharacterizationFlowRunDto.excludeAnalysisIds ?? "";
@@ -119,14 +124,19 @@ export class DataCharacterizationService {
     const { dialect, databaseCode, schemaName, vocabSchemaName } =
       await portalServerApi.getDataset(datasetId);
 
-    let dataCharacterizationResultsSchema = `${schemaName}_DC_${Date.now()}`;
+    let resultsSchema =
+      overrideResultsSchema || `${schemaName}_DC_${Date.now()}`;
 
     if (dialect === "hana") {
-      dataCharacterizationResultsSchema =
-        dataCharacterizationResultsSchema.toUpperCase();
+      resultsSchema = resultsSchema.toUpperCase();
     } else if (dialect === "postgres") {
-      dataCharacterizationResultsSchema =
-        dataCharacterizationResultsSchema.toLowerCase();
+      resultsSchema = resultsSchema.toLowerCase();
+
+      if (resultsSchema.length > 63) {
+        throw new Error(
+          `Results schema name cannot exceed 63 characters for PostgreSQL dialect. Current length: ${resultsSchema.length}`
+        );
+      }
     }
 
     const releaseDate = (await this.getReleaseDate(releaseId, token)).split(
@@ -135,7 +145,7 @@ export class DataCharacterizationService {
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
 
-    const name = `${databaseCode}.${schemaName}`;
+    const name = `${this.flowRunNamePrefix}_${databaseCode}.${schemaName}`;
     const parameters = {
       options: {
         schemaName,
@@ -144,7 +154,7 @@ export class DataCharacterizationService {
         cdmVersionNumber: parseCdmVersionForOhdsi(cdmVersionNumber),
         vocabSchemaName,
         comment,
-        resultsSchema: dataCharacterizationResultsSchema,
+        resultsSchema,
         excludeAnalysisIds,
         releaseId,
         releaseDate,

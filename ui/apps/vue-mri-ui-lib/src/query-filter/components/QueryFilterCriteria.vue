@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'QueryFilterCriteria',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -26,7 +23,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  criteriaData: () => ({ criteriaType: 'ALL', criteria: [] }),
+  criteriaData: () => ({ qualifyingEventsLimit: 'ALL', criteria: [] }),
   conceptSets: () => [],
   readonly: false,
 })
@@ -39,6 +36,7 @@ const emit = defineEmits<{
   'update-criteria-group': [index: number, groupData: any]
   'remove-criteria-group': [index: number]
   'concept-set-action': [action: any]
+  'search-change': [searchQuery: string]
 }>()
 
 const currentCriteriaData = computed(() => props.criteriaData)
@@ -56,9 +54,8 @@ const qualifyingEventsOptions = [
 ]
 
 const currentQualifyingLimit = computed(() => {
-  return currentCriteriaData.value.criteriaType || 'ALL'
+  return currentCriteriaData.value.qualifyingEventsLimit || 'ALL'
 })
-
 
 const addNewGroup = () => {
   const staticCount = currentCriteriaData.value.criteria.length + 1
@@ -106,14 +103,14 @@ const handleGroupRemove = (groupIndex: number) => {
     <div class="criteria-groups-layout">
       <!-- Criteria Groups Sidebar -->
       <div class="criteria-groups-sidebar">
-        <span class="criteria-sidebar-label">ALL</span>
+        <div class="criteria-sidebar-top"></div>
+        <div><span class="criteria-sidebar-label">ALL</span></div>
       </div>
 
       <!-- Criteria Groups Only -->
       <div class="criteria-groups-content">
         <!-- Add Group Button (Outside the sidebar layout) -->
         <div v-if="!readonly" class="add-group-container">
-
           <ButtonMaterial variant="text" color="primary" @button-click="addNewGroup">
             <template #startIcon>
               <AddIcon />
@@ -135,6 +132,7 @@ const handleGroupRemove = (groupIndex: number) => {
           :readonly="readonly"
           @update-group="handleGroupUpdate(index, $event)"
           @remove-group="handleGroupRemove(index)"
+          @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
           @concept-set-action="action => $emit('concept-set-action', action)"
         />
       </div>
@@ -178,19 +176,13 @@ const handleGroupRemove = (groupIndex: number) => {
     width: 30px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 12px 6px;
-    background: #000080;
-    position: relative;
     border-radius: 0 0 0 8px;
-    &::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--color-primary);
+    .criteria-sidebar-top {
+      background-color: var(--color-primary);
+      width: 30%;
+      height: 100%;
+      border-radius: 0 0 0 6px;
     }
   }
 
@@ -199,7 +191,7 @@ const handleGroupRemove = (groupIndex: number) => {
     text-orientation: sideways;
     font-size: 13px;
     font-weight: 700;
-    color: white;
+    color: var(--color-primary);
     text-transform: uppercase;
     letter-spacing: 1.5px;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);

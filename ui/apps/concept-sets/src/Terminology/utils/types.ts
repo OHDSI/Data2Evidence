@@ -1,0 +1,263 @@
+import { tabNames } from "./constants";
+
+export interface Concept {
+  conceptId: number;
+  display: string;
+  domainId: string;
+  system: string;
+  conceptClassId: string;
+  standardConcept: string;
+  concept: string;
+  code: string;
+  validStartDate: string;
+  validEndDate: string;
+  validity: string;
+  score?: number;
+  vocabularyId: string;
+  conceptName: string;
+  conceptCode: string;
+}
+
+export interface ConceptRecordCount {
+  conceptId: number;
+  recordCount: number;
+  descendantRecordCount: number;
+  personCount: number;
+  descendantPersonCount: number;
+}
+
+export interface TerminologyTableConcept extends Concept {
+  // Concept record counts
+  recordCount?: string;
+  descendantRecordCount?: string;
+  personCount?: string;
+  descendantPersonCount?: string;
+}
+
+export interface TerminologyDetailsList {
+  details: FhirValueSetExpansionContainsWithExt;
+  connections: FhirConceptMapElementTarget[];
+}
+
+export interface TerminologyResult {
+  data: FhirValueSetExpansionContainsWithExt[];
+  count: number;
+}
+export type TabName = keyof typeof tabNames;
+
+export type ConceptSetConcept = {
+  id: number;
+  useDescendants: boolean;
+  useMapped: boolean;
+  isExcluded: boolean;
+};
+export type ConceptSet = {
+  concepts: ConceptSetConcept[];
+  name: string;
+  id: number;
+  shared: boolean;
+  createdBy?: string;
+  createdDate?: string;
+  modifiedBy?: string;
+  modifiedDate?: string;
+  userName?: string;
+};
+
+export type ConceptSetWithConceptDetails = ConceptSet & {
+  concepts: (ConceptSetConcept & FhirValueSetExpansionContainsWithExt)[];
+};
+
+// Vue requires id as a string instead of number because addThis.value in ui/apps/vue-mri-ui-lib/src/lib/ui/app-tag-input.vue
+export type OnCloseReturnValues = {
+  currentConceptSet: (Omit<ConceptSet, "id"> & { id: string }) | null;
+  selectedConcepts?: FhirValueSetExpansionContainsWithExt[];
+};
+
+export type FilterOptions = {
+  conceptClassId: {
+    [key: string]: number;
+  };
+  domainId: {
+    [key: string]: number;
+  };
+  standardConcept: {
+    [key: string]: number;
+  };
+  vocabularyId: {
+    [key: string]: number;
+  };
+  concept: {
+    [key: string]: number;
+  };
+  validity: {
+    [key: string]: number;
+  };
+};
+
+export type ConceptHierarchyLink = {
+  source: number;
+  target: number;
+};
+
+export type ConceptHierarchyNode = {
+  conceptId: number;
+  display: string;
+  level: number;
+};
+
+export type ConceptHierarchyNodeCounts = {
+  [level: number]: {
+    count: number;
+    nodes: ConceptHierarchyNode[];
+  };
+};
+
+export type ConceptHierarchyResponse = {
+  edges: ConceptHierarchyLink[];
+  nodes: ConceptHierarchyNode[];
+};
+
+export interface FhirConceptMap {
+  resourceType: string;
+  group: FhirConceptMapGroup[];
+}
+
+export interface FhirConceptMapGroup {
+  source: string;
+  target: string;
+  element: FhirConceptMapElementWithExt[];
+}
+export interface FhirConceptMapElementWithExt {
+  code: string;
+  display: string;
+  valueSet: FhirValueSet;
+  target: FhirConceptMapElementTarget[];
+}
+export interface FhirConceptMapElementTarget {
+  code: number;
+  display: string;
+  equivalence: string;
+  vocabularyId: string;
+}
+
+export interface FhirValueSet {
+  resourceType: string;
+  url?: string;
+  version?: string;
+  name?: string;
+  title?: string;
+  status?: string;
+  experimental?: string;
+  date?: string;
+  publisher?: string;
+  contact?: string;
+  description?: string;
+  useContext?: string;
+  jurisdiction?: string;
+  immutable?: string;
+  purpose?: string;
+  copyright?: string;
+  copyrightLabel?: string;
+  approvalDate?: string;
+  lastReviewDate?: string;
+  effectivePeriod?: string;
+  topic?: string;
+  author?: string;
+  editor?: string;
+  reviewer?: string;
+  endorser?: string;
+  relatedArtifact?: string;
+  compose?: string;
+  expansion: FhirValueSetExpansion;
+  scope?: string;
+}
+export interface FhirValueSetExpansion {
+  id?: string;
+  extension?: string;
+  timestamp: Date;
+  total: number;
+  offset: number;
+  parameter?: string;
+  property?: string;
+  contains: FhirValueSetExpansionContainsWithExt[];
+}
+
+export interface FhirValueSetExpansionContainsWithExt extends TerminologyTableConcept {
+  id?: string;
+  extension?: string;
+  abstract?: string;
+  inactive?: string;
+  version?: string;
+  designation?: string;
+  contains?: FhirValueSetExpansionContainsWithExt[];
+  useDescendants?: boolean;
+  useMapped?: boolean;
+  isExcluded?: boolean;
+  score?: number;
+}
+
+export interface StandardConcepts {
+  index: number;
+  conceptId: number;
+  conceptName: string;
+  conceptCode: string;
+  domainId: string;
+  vocabularyId: string;
+}
+
+export interface IWebapiConcept {
+  CONCEPT_CLASS_ID: string;
+  CONCEPT_CODE: string;
+  CONCEPT_ID: number;
+  CONCEPT_NAME: string;
+  DOMAIN_ID: string;
+  INVALID_REASON: string | null;
+  INVALID_REASON_CAPTION: string;
+  STANDARD_CONCEPT: string | null;
+  STANDARD_CONCEPT_CAPTION: string;
+  VOCABULARY_ID: string;
+  VALID_START_DATE: string | number;
+  VALID_END_DATE: string | number;
+  SCORE?: number;
+}
+
+export interface IWebapiConceptRelated extends IWebapiConcept {
+  RELATIONSHIPS: {
+    RELATIONSHIP_NAME: string;
+    RELATIONSHIP_DISTANCE: number;
+  }[];
+  RELATIONSHIP_CAPTION: string;
+}
+
+export interface IWebapiConceptSet {
+  createdDate: number;
+  name: string;
+  id: number;
+  modifiedDate: number;
+  hasWriteAccess: boolean;
+  hasReadAccess: boolean;
+  shared: boolean;
+  createdBy: {
+    name: string;
+    id?: number | undefined;
+    login?: string | undefined;
+  };
+  modifiedBy: {
+    name: string;
+    id?: number | undefined;
+    login?: string | undefined;
+  };
+  description?: string | undefined;
+  tags?: unknown;
+}
+
+export interface IWebapiConceptSetExpression {
+  items: {
+    concept: IWebapiConcept;
+    isExcluded: boolean;
+    includeDescendants: boolean;
+    includeMapped: boolean;
+  }[];
+}
+
+export type IWebapiConceptRecordCount = Record<string, number[]>;

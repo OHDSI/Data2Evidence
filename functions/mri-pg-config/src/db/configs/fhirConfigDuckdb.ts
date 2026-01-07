@@ -792,7 +792,7 @@ export const cdwFHIRConfigDuckdb = {
     },
     tableMapping: {
       "@QUESTIONNAIRERESPONSE": "$$SCHEMA$$.QuestionnaireResponse",
-      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "source[-36:]", // Take last 36 characters which is an UUID
+      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
       "@PATIENT": "$$SCHEMA$$.\"Patient\"",
       "@PATIENT.PATIENT_ID": "id",
       "@PATIENT.DOD": "deathDate",
@@ -1188,7 +1188,8 @@ export const paFHIRConfigDuckdb = {
   chartOptions: {
     initialAttributes: {
       measures: ["patient.attributes.pcount"],
-      categories: [],
+      categories: ["patient.attributes.Age"],
+      stackCategory: ["patient.attributes.gendersourcevalue"],
     },
     initialChart: "stacked",
     stacked: {

@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 export default defineConfig({
   testDir: 'tests',
@@ -7,12 +10,13 @@ export default defineConfig({
     timeout: 120000 // 20 seconds for expect conditions
   },
   use: {
-    baseURL: 'https://localhost:443',
+    baseURL: process.env.D2E_BASE_URL ?? 'https://localhost:443',
     actionTimeout: 30000, // 30 seconds for each action
     navigationTimeout: 60000, // 1 minute for navigation
     browserName: 'chromium',
     headless: true,
-    ignoreHTTPSErrors: true
+    ignoreHTTPSErrors: true,
+    screenshot: 'only-on-failure' // Take screenshot of page if test fails
   },
   retries: process.env.CI ? 3 : 0, // retry failed tests once
   reporter: [

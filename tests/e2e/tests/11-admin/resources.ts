@@ -1,0 +1,43 @@
+import { test, expect } from '@playwright/test'
+
+const TEST_NAME = 'Resources'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+test(TEST_NAME, async ({ page }) => {
+  await page.goto('/d2e/portal')
+  await page.locator('input[name="identifier"]').click()
+  await page.locator('input[name="identifier"]').fill('admin')
+  await page.locator('input[name="password"]').click()
+  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.getByTestId('button').nth(1).click()
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  await page.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Resources' }).click()
+  await expect(page.getByRole('dialog')).toMatchAriaSnapshot(`- button "Add file"`)
+  await expect(page.getByTestId('dialog').locator('thead')).toMatchAriaSnapshot(`- columnheader "Filename"`)
+  await expect(page.getByTestId('dialog').locator('thead')).toMatchAriaSnapshot(`- columnheader "Size"`)
+  await expect(page.getByTestId('dialog').locator('thead')).toMatchAriaSnapshot(`- columnheader "File"`)
+  await expect(page.getByTestId('dialog').locator('thead')).toMatchAriaSnapshot(`- columnheader "Action"`)
+  await page.getByRole('button', { name: 'Add file' }).click()
+  await page.getByRole('button', { name: 'Add file' }).setInputFiles('VOCABULARY.csv')
+  await expect(page.getByRole('dialog')).toContainText('Add file')
+  await page.getByRole('button', { name: 'Add' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Resources' }).click()
+  await page.getByRole('button', { name: 'Add file' }).click()
+  await page.getByRole('button', { name: 'Add file' }).setInputFiles('METADATA.csv')
+  await page.getByRole('button', { name: 'Add' }).click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download' }).first().click()
+  const download = await downloadPromise
+  await page.getByRole('button', { name: 'Delete' }).first().click()
+  await expect(page.getByRole('dialog')).toMatchAriaSnapshot(`- text: Delete file`)
+  await expect(page.getByRole('dialog')).toContainText('Are you sure you want to delete the following file:')
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await expect(page.getByTestId('snackbar')).toMatchAriaSnapshot(`- text: File deleted successfully.`)
+  await page.getByRole('button', { name: 'Done' }).click()
+})

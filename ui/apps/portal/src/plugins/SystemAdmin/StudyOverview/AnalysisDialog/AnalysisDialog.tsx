@@ -1,5 +1,5 @@
 import { Divider, TextField } from "@mui/material";
-import { Box, Button, Dialog } from "@portal/components";
+import { Button, Dialog } from "@portal/components";
 import React, { FC, useCallback, useState } from "react";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
@@ -16,6 +16,7 @@ interface AnalysisDialogProps {
 }
 
 interface FormData {
+  resultsSchema?: string;
   comment: string;
 }
 
@@ -55,6 +56,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
         const dcRunData: CreateDcFlowRun = {
           datasetId: study?.id,
           releaseId: "",
+          resultsSchema: formData.resultsSchema,
           comment: formData.comment,
           excludeAnalysisIds: "",
         };
@@ -62,7 +64,10 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
       }
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.ANALYSIS_DIALOG__RUN_SUCCESS, [String(runType), String(study?.id)]),
+        message: getText(i18nKeys.ANALYSIS_DIALOG__RUN_SUCCESS, [
+          String(runType),
+          study?.studyDetail?.name || "Untitled dataset",
+        ]),
       });
       setTimeout(() => handleClose("success"), 6000);
     } catch (err: any) {
@@ -74,7 +79,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
     } finally {
       setUpdating(false);
     }
-  }, [formData, handleClose, study?.id, study?.vocabSchemaName, getText, runType]);
+  }, [formData, handleClose, study?.id, study?.studyDetail?.name, study?.vocabSchemaName, getText, runType]);
 
   const handleFormDataChange = useCallback((updates: { [field: string]: any }) => {
     setFormData((formData) => {
@@ -98,7 +103,10 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
   return (
     <Dialog
       className="analysis-dialog"
-      title={getText(i18nKeys.ANALYSIS_DIALOG__TITLE, [getRunName(runType), String(study?.id)])}
+      title={getText(i18nKeys.ANALYSIS_DIALOG__TITLE, [
+        getRunName(runType),
+        study?.studyDetail?.name || "Untitled dataset",
+      ])}
       open={open}
       onClose={() => handleClose("cancelled")}
       feedback={feedback}
@@ -109,19 +117,31 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
       <Divider />
 
       <div className="analysis-dialog__content">
-        <Box mt={4} mb={4} fontWeight="bold">
+        <div style={{ marginTop: "32px", marginBottom: "32px", fontWeight: "bold" }}>
           {getText(i18nKeys.ANALYSIS_DIALOG__FORM_TITLE)}
-        </Box>
+        </div>
 
-        <Box mb={4}>
+        {runType === JobRunTypes.DataCharacterization && (
+          <div style={{ marginBottom: "32px" }}>
+            <TextField
+              fullWidth
+              variant="standard"
+              label="Results schema name (optional)"
+              value={formData.resultsSchema}
+              onChange={(event) => handleFormDataChange({ resultsSchema: event.target.value })}
+            />
+          </div>
+        )}
+
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
-            label="comment"
+            label="Comment"
             value={formData.comment}
             onChange={(event) => handleFormDataChange({ comment: event.target.value })}
           />
-        </Box>
+        </div>
       </div>
 
       <Divider />

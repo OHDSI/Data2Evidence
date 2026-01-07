@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
-import { Box, Button, Dialog } from "@portal/components";
+import { Button, Dialog } from "@portal/components";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { CloseDialogType } from "../../../../../types";
@@ -70,14 +70,14 @@ export const DeleteAttributeDialog: FC<DeleteAttributeDialogProps> = ({ open, on
         </div>
       </div>
       <div className="delete-attribute-dialog__footer">
-        <Box display="flex" gap={1} className="delete-attribute-dialog__footer-actions">
+        <div style={{ display: "flex", gap: "8px" }} className="delete-attribute-dialog__footer-actions">
           <Button
             text={getText(i18nKeys.DELETE_ATTRIBUTE_DIALOG__CANCEL)}
             variant="outlined"
             onClick={() => handleClose("cancelled")}
           />
           <Button text={getText(i18nKeys.DELETE_ATTRIBUTE_DIALOG__DELETE)} onClick={handleDelete} loading={deleting} />
-        </Box>
+        </div>
       </div>
     </Dialog>
   );

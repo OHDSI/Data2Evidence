@@ -56,10 +56,17 @@ export interface IDataset {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
+  sourceStudyId: string;
+  plugin: string;
 }
 
 export interface ICacheCreateFlowRun {
   datasetId: string;
+  cacheDatasetId: string;
+}
+
+export interface ICacheStatusFlowRun {
+  flowRunId: string;
 }
 
 export interface IDqdCreateFlowRun {
@@ -68,6 +75,11 @@ export interface IDqdCreateFlowRun {
   vocabSchemaName?: string;
   cohortDefinitionId?: string;
   releaseId?: string;
+}
+
+export interface IDQDResultFlowRun {
+  datasetId: string;
+  flowRunId: string;
 }
 
 export interface IDcCreateFlowRun {

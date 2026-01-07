@@ -63,7 +63,6 @@ def create_datamodel_flow(options: CreateDataModelType, logger):
             changelog_file=options.changelog_filepath_list.get(
                 options.data_model),
             count=options.update_count,
-            cleansed_schema_option=options.cleansed_schema_option,
             plugin_classpath=get_plugin_classpath(options.flow_name),
             dialect=db_dialect
         )
@@ -110,6 +109,7 @@ def rollback_count_flow(options: RollbackCountType, logger):
         db_dialect = get_db_dialect(options)
 
         rollback_count_task(
+            use_cache_db=options.use_cache_db,
             database_code=options.database_code,
             data_model=options.data_model,
             schema_name=options.schema_name,
@@ -130,6 +130,7 @@ def rollback_tag_flow(options: RollbackTagType, logger):
         db_dialect = get_db_dialect(options)
 
         rollback_tag_task(
+            use_cache_db=options.use_cache_db,
             database_code=options.database_code,
             data_model=options.data_model,
             schema_name=options.schema_name,

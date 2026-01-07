@@ -24,17 +24,17 @@ interface DataCharacterizationReportsProps {
 enum READABLE_MENU_ITEMS {
   SHOW_ALL = "Show All Reports",
   DASHBOARD = "Dashboard",
-  DATA_DENSITY = "Data Density",
+  DATADENSITY = "Data Density",
   PERSON = "Person",
   VISIT = "Visit",
   CONDITION = "Condition Occurence",
-  CONDITION_ERA = "Condition Era",
+  CONDITIONERA = "Condition Era",
   PROCEDURE = "Procedure",
   DRUG = "Drug Exposure",
-  DRUG_ERA = "Drug Era",
+  DRUGERA = "Drug Era",
   MEASUREMENT = "Measurement",
   OBSERVATION = "Observation",
-  OBSERVATION_PERIOD = "Observation Period",
+  OBSERVATIONPERIOD = "Observation Period",
   DEATH = "Death",
 }
 
@@ -50,11 +50,11 @@ const DataCharacterizationReports: FC<DataCharacterizationReportsProps> = ({ flo
     switch (sourceKey) {
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.DASHBOARD:
         return <Dashboard flowRunId={flowRunId} datasetId={datasetId} />;
-      case WEBAPI_CDMRESULTS_SOURCE_KEYS.DATA_DENSITY:
+      case WEBAPI_CDMRESULTS_SOURCE_KEYS.DATADENSITY:
         return <DataDensity flowRunId={flowRunId} datasetId={datasetId} />;
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.PERSON:
         return <Person flowRunId={flowRunId} datasetId={datasetId} />;
-      case WEBAPI_CDMRESULTS_SOURCE_KEYS.OBSERVATION_PERIOD:
+      case WEBAPI_CDMRESULTS_SOURCE_KEYS.OBSERVATIONPERIOD:
         return <ObservationPeriod flowRunId={flowRunId} datasetId={datasetId} />;
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.DEATH:
         return <Death flowRunId={flowRunId} datasetId={datasetId} />;
@@ -62,13 +62,21 @@ const DataCharacterizationReports: FC<DataCharacterizationReportsProps> = ({ flo
       // These sourceKeys share reuseable drilldown chart logic
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.VISIT:
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITION:
-      case WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITION_ERA:
+      case WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITIONERA:
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.PROCEDURE:
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUG:
-      case WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUG_ERA:
+      case WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUGERA:
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.MEASUREMENT:
       case WEBAPI_CDMRESULTS_SOURCE_KEYS.OBSERVATION:
-        return <SharedDrilldown flowRunId={flowRunId} sourceKey={sourceKey} key={sourceKey} datasetId={datasetId} />;
+        return (
+          <SharedDrilldown
+            flowRunId={flowRunId}
+            sourceKey={sourceKey}
+            key={sourceKey}
+            datasetId={datasetId}
+            title={`${mapToReadable(sourceKey.toUpperCase()) ?? sourceKey} Prevalence`}
+          />
+        );
 
       case READABLE_MENU_ITEMS.SHOW_ALL:
         return (
@@ -83,48 +91,56 @@ const DataCharacterizationReports: FC<DataCharacterizationReportsProps> = ({ flo
               sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.VISIT}
               key={WEBAPI_CDMRESULTS_SOURCE_KEYS.VISIT}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.VISIT} Prevalence`}
             />
             <SharedDrilldown
               flowRunId={flowRunId}
               sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITION}
               key={WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITION}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.CONDITION} Prevalence`}
             />
             <SharedDrilldown
               flowRunId={flowRunId}
-              sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITION_ERA}
-              key={WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITION_ERA}
+              sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITIONERA}
+              key={WEBAPI_CDMRESULTS_SOURCE_KEYS.CONDITIONERA}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.CONDITIONERA} Prevalence`}
             />
             <SharedDrilldown
               flowRunId={flowRunId}
               sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.PROCEDURE}
               key={WEBAPI_CDMRESULTS_SOURCE_KEYS.PROCEDURE}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.PROCEDURE} Prevalence`}
             />
             <SharedDrilldown
               flowRunId={flowRunId}
               sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUG}
               key={WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUG}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.DRUG} Prevalence`}
             />
             <SharedDrilldown
               flowRunId={flowRunId}
-              sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUG_ERA}
-              key={WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUG_ERA}
+              sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUGERA}
+              key={WEBAPI_CDMRESULTS_SOURCE_KEYS.DRUGERA}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.DRUGERA} Prevalence`}
             />
             <SharedDrilldown
               flowRunId={flowRunId}
               sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.MEASUREMENT}
               key={WEBAPI_CDMRESULTS_SOURCE_KEYS.MEASUREMENT}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.MEASUREMENT} Prevalence`}
             />
             <SharedDrilldown
               flowRunId={flowRunId}
               sourceKey={WEBAPI_CDMRESULTS_SOURCE_KEYS.OBSERVATION}
               key={WEBAPI_CDMRESULTS_SOURCE_KEYS.OBSERVATION}
               datasetId={datasetId}
+              title={`${READABLE_MENU_ITEMS.OBSERVATION} Prevalence`}
             />
           </>
         );

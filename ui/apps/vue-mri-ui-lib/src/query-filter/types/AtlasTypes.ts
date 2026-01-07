@@ -193,18 +193,32 @@ export interface CriteriaListItem {
   Measurement?: Measurement
   Death?: Death
   ObservationPeriod?: ObservationPeriod
+  ConditionEra?: AtlasEvent
+  DemographicCriteria?: AtlasEvent
+  DoseEra?: AtlasEvent
+  LocationRegion?: AtlasEvent
+  PayerPlanPeriod?: AtlasEvent
+  Specimen?: AtlasEvent
+  VisitDetail?: AtlasEvent
 }
 
 export interface DateRange {
   Value: string // ISO date string
   Extent: string // ISO date string
-  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | 'nbt'
+  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | '!bt'
 }
 
 export interface NumericRange {
   Value: number
   Extent?: number
-  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | 'nbt'
+  Op: 'lt' | 'lte' | 'eq' | 'gte' | 'gt' | 'bt' | '!bt'
+}
+
+export interface DateAdjustment {
+  StartWith: 'START_DATE' | 'END_DATE'
+  StartOffset: number
+  EndWith: 'START_DATE' | 'END_DATE'
+  EndOffset: number
 }
 
 export interface ObservationWindow {
@@ -239,6 +253,7 @@ export interface CustomEra {
   DrugCodesetId: number
   GapDays: number
   Offset: number
+  DaysSupplyOverride?: number
 }
 
 export interface EndStrategy {
@@ -282,6 +297,7 @@ export interface CriteriaGroup {
   EndWindow?: Window
   Occurrence?: OccurrenceSettings
   RestrictVisit?: boolean
+  IgnoreObservationPeriod?: boolean
 }
 
 export interface Window {
@@ -301,13 +317,14 @@ export interface OccurrenceSettings {
   Type: number
   Count: number
   IsDistinct?: boolean
+  CountColumn?: string
 }
 
 export interface DemographicCriteria {
   Age?: NumericRange
-  Gender?: ConceptSet[]
-  Race?: ConceptSet[]
-  Ethnicity?: ConceptSet[]
+  Gender?: Concept[]
+  Race?: Concept[]
+  Ethnicity?: Concept[]
   OccurrenceStartDate?: DateRange
   OccurrenceEndDate?: DateRange
 }
@@ -330,7 +347,7 @@ export interface AtlasCohortDefinition {
   cdmVersionRange: string
   PrimaryCriteria: PrimaryCriteria
   ConceptSets: ConceptSet[]
-  QualifiedLimit: QualifiedLimit
+  QualifiedLimit: QualifiedLimit // Hardcoded to Type: 'First' to match Atlas default
   ExpressionLimit: ExpressionLimit
   InclusionRules: InclusionRule[]
   EndStrategy?: EndStrategy

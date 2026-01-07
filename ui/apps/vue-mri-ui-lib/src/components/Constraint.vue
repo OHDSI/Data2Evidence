@@ -49,6 +49,7 @@ import { mapActions, mapGetters } from 'vuex'
 import helpPopover from './HelpPopover.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import appIcon from '../lib/ui/app-icon.vue'
+import moment from 'moment'
 
 export default {
   name: 'constraint',

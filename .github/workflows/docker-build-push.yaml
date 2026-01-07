@@ -7,6 +7,7 @@ on:
       - ready_for_review
       - reopened
       - synchronize
+  merge_group:
   push:
     branches:
       - develop
@@ -18,8 +19,7 @@ on:
         required: false
         type: choice
         options:
-          - ohdsi/d2e
-          - data2evidence/d2e
+          - OHDSI/Data2Evidence
       GIT_BRANCH_NAME:
         default: develop
         description: Enter BranchName / ReleaseTagName
@@ -39,10 +39,18 @@ env:
   GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
 
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
   check_file_changes:
     environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
       rkernel: ${{ steps.file_changes.outputs.rkernel }}
@@ -61,14 +69,17 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
             rkernel:
+              - "./services/enterprise-gateway/CustomKernelManager/**"
+              - "./services/enterprise-gateway/kernels/**"
               - "./services/enterprise-gateway/r-strategus-lib/**"
+              - "./flows/hades/renv.lock"
               - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
               - ".github/workflows/docker-build-push.yaml"
 
   bld:
-    needs: [check_file_changes]
-    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ubuntu-latest
+    needs: [pick_runner, check_file_changes]
+    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
       DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}
@@ -84,9 +95,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e/flow-base
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-i2b2
             DOCKER_BUILD_CONTEXT_PATH: ./flows
             DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
@@ -114,15 +122,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-fhir-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
-          - AZ_REG_REPOSITORY: d2e-fhir-fe-server
-            DOCKER_BUILD_FILE_PATH: ./services/alp-fhir/Dockerfile.frontend
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-fhir
-          - AZ_REG_REPOSITORY: d2e-cachedb
-            DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: .
           - AZ_REG_REPOSITORY: d2e-enterprise-gateway
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/enterprise-gateway
@@ -132,7 +131,7 @@ jobs:
             build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: .
+            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -140,14 +139,14 @@ jobs:
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
 
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
           android: true
           dotnet: true
           haskell: true
-          large-packages: false
+          large-packages: true
           docker-images: true
           swap-storage: true
 
@@ -209,7 +208,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: ${{matrix.build_disable != 'true' }}
+        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'merge_group'}}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
@@ -234,10 +233,23 @@ jobs:
           package-type: "container"
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
+      - name: Prune system
+        if: always()
+        id: prune
+        run: |
+          docker system prune -af
 
   docker-success:
     needs: bld
     runs-on: ubuntu-latest
+    if: always()
+    env:
+      BUILD_JOB_STATUS: ${{ needs.bld.result }}
     steps:
       - name: Check
-        run: echo "Check"
+        run: |
+          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
+            exit 0
+          else
+            exit 1
+          fi

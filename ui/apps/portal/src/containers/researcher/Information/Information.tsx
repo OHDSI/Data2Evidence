@@ -23,26 +23,18 @@ import { api } from "../../../axios/api";
 import { Roles } from "../../../config";
 import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";
-import { useDataset, useDatasetReleases, useDatasetResources } from "../../../hooks";
+import { useDataset, useDatasetResources } from "../../../hooks";
 import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQDJobResults";
 import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
-import { DatasetResource, StudyAttribute, StudyTag } from "../../../types";
+import { DatasetResource, StudyAttribute, StudyTag, DatasetInfoTab } from "../../../types";
 import { downloadFromJsonResponse } from "../../../utils/downloadResource";
-import DataQualityHistory from "./DataQualityHistory/DataQualityHistory";
+import { InformationPageMap } from "../../../constant";
 import "./Information.scss";
 
 enum Access {
   None,
   Pending,
   Approved,
-}
-
-enum DatasetInfoTab {
-  DatasetInfo = "info",
-  DataQuality = "quality",
-  DataCharacterization = "characterization",
-  History = "history",
-  Dashboard = "dashboard",
 }
 
 interface StudyAccessRequest {
@@ -69,10 +61,36 @@ export const Information: FC = () => {
 
   const [dataset, loading, error] = useDataset(activeDatasetId);
   const [resources, resourcesLoading, resourcesError] = useDatasetResources(activeDatasetId);
-  const [releases] = useDatasetReleases(activeDatasetId);
 
   const attributes = useMemo(() => dataset?.attributes || [], [dataset]);
   const tags = useMemo(() => dataset?.tags || [], [dataset]);
+
+  const canAccessResearcherInfo = useMemo(() => user.canAccessResearcherPortal, [user.canAccessResearcherPortal]);
+
+  const isUserResearcher = useMemo(
+    () => !!user.isDatasetResearcher?.[activeDatasetId],
+    [user.isDatasetResearcher, activeDatasetId]
+  );
+
+  const availableTabs = useMemo(() => {
+    if (!dataset?.type) return [];
+    return InformationPageMap[dataset.type] || [];
+  }, [dataset?.type]);
+
+  const showDatasetInfo = useMemo(
+    () => (canAccessResearcherInfo || isUserResearcher) && availableTabs.includes(DatasetInfoTab.DatasetInfo),
+    [canAccessResearcherInfo, isUserResearcher, availableTabs]
+  );
+
+  const showDataQuality = useMemo(
+    () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DataQuality),
+    [isUserResearcher, availableTabs]
+  );
+
+  const showDataCharacterization = useMemo(
+    () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DataCharacterization),
+    [isUserResearcher, availableTabs]
+  );
 
   const loadAccessRequests = useCallback(async (): Promise<void> => {
     const accessRequests = await api.userMgmt.getMyStudyAccessRequests();
@@ -148,19 +166,21 @@ export const Information: FC = () => {
       className="information__container"
       title={
         <Tabs value={tabValue} onChange={handleTabSelectionChange}>
-          <Tab
-            disableRipple
-            sx={{
-              "&.MuiTab-root": {
-                width: "200px",
-              },
-              marginRight: "8px",
-            }}
-            label={getText(i18nKeys.INFORMATION__TAB_DATASET_INFO)}
-            id="tab-0"
-            value="info"
-          />
-          {user.isDatasetResearcher[activeDatasetId] && (
+          {showDatasetInfo && (
+            <Tab
+              disableRipple
+              sx={{
+                "&.MuiTab-root": {
+                  width: "200px",
+                },
+                marginRight: "8px",
+              }}
+              label={getText(i18nKeys.INFORMATION__TAB_DATASET_INFO)}
+              id="tab-0"
+              value="info"
+            />
+          )}
+          {showDataQuality && (
             <Tab
               disableRipple
               sx={{
@@ -173,7 +193,7 @@ export const Information: FC = () => {
               value="quality"
             />
           )}
-          {user.isDatasetResearcher[activeDatasetId] && (
+          {showDataCharacterization && (
             <Tab
               disableRipple
               sx={{
@@ -184,19 +204,6 @@ export const Information: FC = () => {
               label={getText(i18nKeys.INFORMATION__TAB_DATA_CHARACTERIZATION)}
               id="tab-2"
               value="characterization"
-            />
-          )}
-          {releases.length !== 0 && (
-            <Tab
-              disableRipple
-              sx={{
-                "&.MuiTab-root": {
-                  width: "200px",
-                },
-              }}
-              label={getText(i18nKeys.INFORMATION__TAB_HISTORY)}
-              id="tab-4"
-              value="history"
             />
           )}
         </Tabs>
@@ -227,35 +234,35 @@ export const Information: FC = () => {
                         </div>
                       </>
                     )}
-                    {attributes.length > 0 && (
-                      <>
-                        <div className="metadata__content">
-                          <SubTitle>{getText(i18nKeys.INFORMATION__METADATA)}</SubTitle>
-                          <TableContainer className="study-metadata">
-                            <Table>
-                              <colgroup>
-                                <col style={{ width: "40%" }} />
-                                <col style={{ width: "60%" }} />
-                              </colgroup>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell>{getText(i18nKeys.INFORMATION__RESOURCE_TYPE)}</TableCell>
-                                  <TableCell>{getText(i18nKeys.INFORMATION__DATASET)}</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {attributes.map((studyAttribute: StudyAttribute) => (
-                                  <TableRow key={studyAttribute.attributeId}>
-                                    <TableCell>{studyAttribute.attributeConfig.name}</TableCell>
-                                    <TableCell>{studyAttribute.value}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        </div>
-                      </>
-                    )}
+                    <div className="metadata__content">
+                      <SubTitle>{getText(i18nKeys.INFORMATION__METADATA)}</SubTitle>
+                      <TableContainer className="study-metadata">
+                        <Table>
+                          <colgroup>
+                            <col style={{ width: "40%" }} />
+                            <col style={{ width: "60%" }} />
+                          </colgroup>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>{getText(i18nKeys.INFORMATION__RESOURCE_TYPE)}</TableCell>
+                              <TableCell>{getText(i18nKeys.INFORMATION__DATASET)}</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell>Dataset ID</TableCell>
+                              <TableCell>{activeDatasetId}</TableCell>
+                            </TableRow>
+                            {attributes.map((studyAttribute: StudyAttribute) => (
+                              <TableRow key={studyAttribute.attributeId}>
+                                <TableCell>{studyAttribute.attributeConfig.name}</TableCell>
+                                <TableCell>{studyAttribute.value}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </div>
                   </div>
                 )}
 
@@ -368,7 +375,6 @@ export const Information: FC = () => {
               )}
             </>
           )}
-          {tabValue === DatasetInfoTab.History && <DataQualityHistory activeDatasetId={activeDatasetId} />}
         </div>
       </div>
     </Card>

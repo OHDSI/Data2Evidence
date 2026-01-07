@@ -33,10 +33,6 @@ export const getProperties = (): any => {
       app_client_id: fetchSecretsAsPerEnvironment("CLIENT_ID"),
       app_client_secret: fetchSecretsAsPerEnvironment("CLIENT_SECRET"),
       tenant_id: fetchSecretsAsPerEnvironment("TENANT_ID"),
-      postgres_publication_config: fetchSecretsAsPerEnvironment(
-        "POSTGRES_PUBLICATION_CONFIG",
-        true
-      ),
       postgres_alter_extension_config: fetchSecretsAsPerEnvironment(
         "POSTGRES_ALTER_EXTENSION_CONFIG",
         true

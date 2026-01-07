@@ -47,7 +47,7 @@ export const encrypt = async (plaintext: ArrayBuffer, publicKey: CryptoKey): Pro
   // Write buffer
   const bufferLength = 1 + 2 + encryptedKey.byteLength + 8 + 16 + ciphertext.byteLength;
   const buffer = new ArrayBuffer(bufferLength);
-  let dataView = new DataView(buffer);
+  let dataView: DataView = new DataView(buffer);
   let offset = 0;
 
   // Write version (length 1)
@@ -146,7 +146,7 @@ export const decrypt = async (buffer: ArrayBuffer, privateKey: CryptoKey): Promi
  * Encrypt a message with a given algorithm and key
  */
 const encryptWithAlg = (
-  message: Uint8Array | ArrayBuffer,
+  message: BufferSource,
   key: CryptoKey,
   algorithm: { name: string; iv?: Uint8Array; length?: number }
 ): PromiseLike<ArrayBuffer> => crypto.subtle.encrypt(algorithm, key, message);
@@ -155,7 +155,7 @@ const encryptWithAlg = (
  * Decrypt a ciphertext with a given algorithm and key
  */
 const decryptWithAlg = (
-  ciphertext: Uint8Array,
+  ciphertext: BufferSource,
   key: CryptoKey,
   algorithm: { name: string; iv?: Uint8Array; length?: number }
 ): PromiseLike<ArrayBuffer> => crypto.subtle.decrypt(algorithm, key, ciphertext);
@@ -166,10 +166,10 @@ const decryptWithAlg = (
  * @param offset The offset where the values should be added
  * @param values The values that should be added
  */
-const setUint8Array = (dataView: DataView, offset: number, values: Uint8Array): [DataView, number] => {
+const setUint8Array = (dataView: DataView, offset: number, values: Uint8Array): readonly [DataView, number] => {
   for (const value of values) {
     dataView.setUint8(offset, value);
     offset++;
   }
-  return [dataView, offset];
+  return [dataView, offset] as const;
 };

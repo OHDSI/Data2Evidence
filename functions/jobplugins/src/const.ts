@@ -31,6 +31,7 @@ export enum PrefectDeploymentName {
   ANALYSIS_DATA_FLOW = "strategus_plugin",
   UI_DATA_FLOW = "dataflow_ui_plugin",
   CACHEDB_CREATE_FILE = "create_cachedb_file_plugin",
+  CREATE_FHIR_CACHE_FILE = "create_cachedb_fhir_plugin",
   WHITE_RABBIT = "white_rabbit_plugin",
   SEARCH_EMBEDDING = "search_embedding_plugin",
   PHENOTYPE = "phenotype_plugin",
@@ -48,6 +49,7 @@ export enum PrefectFlowName {
   ANALYSIS_DATA_FLOW = "strategus_plugin",
   UI_DATA_FLOW = "dataflow_ui_plugin",
   CACHEDB_CREATE_FILE = "create_cachedb_file_plugin",
+  CREATE_FHIR_CACHE_FILE = "create_cachedb_fhir_plugin",
   DATAMART = "datamart_plugin",
   WHITE_RABBIT = "white_rabbit_plugin",
   SEARCH_EMBEDDING = "search_embedding_plugin",
@@ -64,6 +66,11 @@ export enum FLOW_RUN_STATE_TYPES {
   "CANCELLED" = "CANCELLED",
   "FAILED" = "FAILED",
   "CRASHED" = "CRASHED",
+  "LATE" = "LATE",
+  "AWAITING_RETRY" = "AWAITINGRETRY",
+  "RETRYING" = "RETRYING",
+  "SUSPENDED" = "SUSPENDED",
+  "TIMED_OUT" = "TIMEDOUT",
 }
 
 export enum FlowRunState {
@@ -85,4 +92,5 @@ export enum FlowRunState {
 
 export const GIT_REPO_CONSTANTS = {
   FLOWS_SUBDIR: "flows",
+  FHIR_SUBDIR: "fhir",
 };

@@ -7,11 +7,11 @@ export default {
       PostDays: 0,
     },
     PrimaryCriteriaLimit: {
-      Type: 'All',
+      Type: 'First',
     },
   },
   QualifiedLimit: {
-    Type: 'All',
+    Type: 'First',
   },
   ExpressionLimit: {
     Type: 'All',
@@ -67,12 +67,10 @@ export default {
       },
     },
   ],
-  EndStrategy: {},
   CensoringCriteria: [],
   CollapseSettings: {
     CollapseType: 'ERA',
     EraPad: 0,
   },
   CensorWindow: {},
-  cdmVersionRange: '>=5.0.0',
 }

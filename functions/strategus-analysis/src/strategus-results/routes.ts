@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import { Readable } from "stream";
+import { Server } from "http";
 import {
   startStrategusResultsViewer,
   stopStrategusResultsViewer,
@@ -9,7 +10,7 @@ import { validateStudyIdMiddleware } from "../middlewares/study-validation.middl
 export class StrategusResultsRouter {
   public router = express.Router();
 
-  constructor() {
+  constructor(private server: Server) {
     this.registerRoutes();
   }
 
@@ -17,9 +18,33 @@ export class StrategusResultsRouter {
     this.router.post("/", async (req: Request, res: Response) => {
       try {
         const token = req.headers["authorization"];
-        const studyId = req.body.studyId;
-        const datasetId = req.body.datasetId;
-        await startStrategusResultsViewer(token, studyId, datasetId);
+        const { studyId, datasetId, viewerCode } = req.body;
+
+        if (!studyId) {
+          return res.status(400).json({
+            message: "Missing required field: studyId",
+          });
+        }
+
+        if (!datasetId) {
+          return res.status(400).json({
+            message: "Missing required field: datasetId",
+          });
+        }
+
+        if (!viewerCode) {
+          return res.status(400).json({
+            message: "Missing required field: viewerCode",
+          });
+        }
+
+        await startStrategusResultsViewer(
+          token,
+          studyId,
+          datasetId,
+          viewerCode
+        );
+
         res.status(200).json({
           message: `Strategus Results Viewer created successfully for study: ${studyId}`,
         });
@@ -63,11 +88,6 @@ export class StrategusResultsRouter {
             res.status(200).send({
               running: true,
               message: `Strategus Viewer for study ${studyId} is up.`,
-            });
-          } else {
-            res.status(403).end({
-              running: false,
-              message: `Strategus Viewer for study ${studyId} is down.`,
             });
           }
         } catch (error) {
@@ -114,7 +134,7 @@ export class StrategusResultsRouter {
           res.status(response.status);
 
           if (response.body) {
-            Readable.fromWeb(response.body).pipe(res);
+            Readable.fromWeb(response.body as any).pipe(res);
           } else {
             res.end();
           }

@@ -1,126 +1,229 @@
-#!/usr/bin/env zx
+#!/usr/bin/env node
 import dotenv from 'dotenv';
+import fs from "node:fs/promises";
+import https from "node:https";
+import fetch from "node-fetch";
 
-const args = process.argv.slice(2); 
+// Helper functions
+function getCookie(setCookieHeaders, name) {
+  for (const cookie of setCookieHeaders) {
+    const match = cookie.match(new RegExp(`${name}=([^;]+)`));
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function extractAuthCode(url) {
+    if (!url) return '';
+    const regex = /code=([^&]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : '';
+}
+
+const args = process.argv.slice(2);
 const vIndex_envfile = args.indexOf("-n");
 let envfile;
-if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith('-')) {
-    envfile = (args[vIndex_envfile + 1]);
+if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith("-")) {
+  envfile = args[vIndex_envfile + 1];
 } else {
-    envfile = ".env";
+  envfile = ".env";
 }
 try {
-    await $`test -f ${envfile}`;
-    dotenv.config({ path: `${envfile}` });
-} catch (error) {
-    console.log(chalk.red(`FATAL ${envfile} not found`));
-    process.exit(1)
+  await fs.access(envfile);
+  dotenv.config({ path: envfile, debug: false });
+} catch {
+  console.log(`FATAL ${envfile} not found`);
+  process.exit(1);
 }
 
 const app_client_id = process.env.LOGTO__ALP_APP__CLIENT_ID;
+const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__ALP__PUBLIC_FQDN || 'localhost';
 let port = process.env.PORT ? `:${process.env.PORT}` : ':443';
 let CADDY__ALP__PUBLIC_FQDN = `${public_fqdn}${port}`;
+const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
-var response= await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256"`
+var url= `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
+var response = await fetch(url, {
+  method: "GET",
+  agent: insecureAgent,   
+  redirect: 'manual', 
+});
+var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
+var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
+var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
+var interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
+var logto_cookie = getCookie(setCookieHeaders, '_logto');
+var logtoObj = JSON.parse(logto_cookie);
+var appId = logtoObj.appId;
 
-// Extract cookies
-var interaction_cookie=await $`echo ${response} | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_sig_cookie=await $`echo ${response} | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_cookie=await $`echo ${response} | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_sig_cookie=await $` echo ${response} | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var logto_cookie=await $` echo ${response} | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
 
 // Sign in
-var response=await $`(curl -iks --request PUT 'https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction' \
-    --header 'content-type: application/json' \
-    --header 'Referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}" \
-    --data '{
-    "event": "SignIn",
-    "identifier": {
-        "username": "admin",
-        "password": "Updatepassword12345"
-    }
-}')`
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction`;
+const body = {
+  event: "SignIn",
+  identifier: {
+    username: "admin",
+    password: "Updatepassword12345"
+  }
+};
+
+var response = await fetch(url, {
+  method: "PUT",
+  headers: {
+    "content-type": "application/json",
+    "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+    "Cookie": `_interaction=${interaction_cookie}; ` +
+              `_interaction.sig=${interaction_sig_cookie}; ` +
+               `_logto={\"appId\":\"${app_client_id}\"}; `
+  },
+  body: JSON.stringify(body),
+  redirect: 'manual',
+  agent: insecureAgent   
+});
+
 
 // Submit sign in page
-var response=await $`curl -iks --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction/submit' \
---header 'accept: application/json' \
---header 'origin: https://${CADDY__ALP__PUBLIC_FQDN}' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/api/interaction/submit`;
+var response = await fetch(url, {
+  method: "POST",
+  headers: {
+    "content-type": "application/json",
+    "Referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+    "Cookie": `_interaction=${interaction_cookie}; ` +
+              `_interaction.sig=${interaction_sig_cookie}; ` +
+               `_logto=$ `
+  },
+  body: JSON.stringify(body),
+  agent: insecureAgent   
+});
+var text = await response.text();
 
 // Get session
-var response=await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}" \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent  
+});
 
-var interaction_cookie=await $`echo ${response} | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_sig_cookie=await $`echo ${response} | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_cookie=await $`echo ${response} | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var interaction_resume_sig_cookie=await $` echo ${response} | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var logto_cookie=await $` echo ${response} | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var session_cookie=await $` echo ${response} | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
-var session_sig_cookie=await $` echo ${response} | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}'`;
+var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
+var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
+var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
+var interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
+var logto_cookie = getCookie(setCookieHeaders, '_logto');
+var session_cookie = getCookie(setCookieHeaders, '_session');
+var session_sig_cookie = getCookie(setCookieHeaders, '_session.sig');
 
-// Submit consent page
-var response=await $`curl -iks 'https://${CADDY__ALP__PUBLIC_FQDN}/consent' \
-    --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
-    
-// Get authorization code
-var response=await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}" \
-    --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
+//Submit consent page
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/consent`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent
+});
 
-var authorization_code=await $`echo ${response} | sed -n 's/.*code=\\([^&]*\\).*/\\1/p' | head -n 1`;
+//Get authorization code
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    agent: insecureAgent,   
+    redirect: 'manual',
+});
 
-// Complete login
-var response=await $`curl -iks "https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
-    --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/sign-in' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}"`
+const authCodeLocation = await response.text();
+const authorization_code = extractAuthCode(authCodeLocation || '');
+
+// Complete Login
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent   
+});
 
 // Get Bearer token
-var response=await $`curl -iks 'https://${CADDY__ALP__PUBLIC_FQDN}/oauth/token' \
-    --header 'accept: application/json, text/javascript, */*; q=0.01' \
-    --header 'content-type: application/x-www-form-urlencoded' \
-    --header "Cookie: _interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}" \
-    --header 'origin: https://${CADDY__ALP__PUBLIC_FQDN}' \
-    --header 'referer: https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
-    --data-urlencode 'grant_type=authorization_code' \
-    --data-urlencode "client_id=${app_client_id}" \
-    --data-urlencode 'redirect_uri=https://${CADDY__ALP__PUBLIC_FQDN}/portal/login-callback' \
-    --data-urlencode "code=${authorization_code}" \
-    --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I'`
-
-var BEARER_TOKEN=await $`echo ${response} | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\\([^"]*\\)"/\\1/'`
-
-
+var url = `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/oauth/token`;
+var params = new URLSearchParams();
+params.append('grant_type', 'authorization_code');
+params.append('client_id', app_client_id);
+params.append('redirect_uri', `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback`);
+params.append('code', authorization_code);
+params.append('code_verifier', 'kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I');
+var response = await fetch(url, {
+    method: "POST",
+    headers: {
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "content-type": "application/x-www-form-urlencoded",
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`,
+        "origin": `https://${CADDY__ALP__PUBLIC_FQDN}`,
+        "referer": `https://${CADDY__ALP__PUBLIC_FQDN}/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A%2F41100%2Foidc`
+    },
+    body: params,
+    agent: insecureAgent   
+});
+const tokenResponse = await response.json();
+const BEARER_TOKEN = tokenResponse.access_token;
+// Monitor Flow Runs
 const start = Date.now();
-const duration = 900000; // 15mins
+const duration = 600000; // 10mins
 let job_runs = '';
-let num_of_jobs = 0; 
+let num_of_jobs = 0;
 try {
-    var running_count=1;
-    while (running_count>0 && Date.now() < duration + start) { 
-        var resp = await $`curl -ks --location --request POST 'https://${CADDY__ALP__PUBLIC_FQDN}/prefect/api/flow_runs/filter' \
-            --header 'Content-Type: application/x-www-form-urlencoded' \
-            --header 'Authorization: Bearer ${BEARER_TOKEN}'`
-        const jobs = JSON.parse(resp.stdout);
+    var inprogress_count=1;
+    while (inprogress_count>0 && Date.now() < duration + start) { 
+        var progressRespObj = await fetch(`https://${CADDY__ALP__PUBLIC_FQDN}/d2e/prefect/api/flow_runs/filter`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Bearer ${BEARER_TOKEN}`
+            },
+            agent: insecureAgent  
+            
+        });
+        var progressResp = await progressRespObj.text();
+
+        // Check if response is valid JSON before parsing
+        let jobs;
+        try {
+            jobs = JSON.parse(progressResp);
+        } catch (parseError) {
+            console.error('Failed to parse flow runs response as JSON:', progressResp);
+            console.error('Bearer token might be invalid or expired');
+            process.exit(1);
+        }
         num_of_jobs = jobs.length;
         job_runs = jobs.map(job => `${job.name.replace(/ /g, "_")}\t${job.state_type}`).join('\n');
         const flow_status = jobs.map(job => job.state_type);
         let lines = flow_status;
-        var failed_count = lines.filter(line => line === 'FAILED' || line === 'CRASHED').length;
-        var success_count = lines.filter(line => line === 'COMPLETED'|| line === 'SCHEDULED' || line === 'PAUSED').length;
+        var failed_count = lines.filter(line => line === 'FAILED' || line === 'CRASHED' || line === 'PAUSED' ).length;
+        var success_count = lines.filter(line => line === 'COMPLETED' ).length;
         var cancelled_count = lines.filter(line => line === 'CANCELLED' || line === 'CANCELLING').length;
-        var running_count = num_of_jobs-failed_count-success_count-cancelled_count;
-        console.log(`Running jobs... Jobs status: Failed:${failed_count}, Success:${success_count}, Running:${running_count}, Cancelled:${cancelled_count}.`);
-        await $`sleep 15` 
+        var running_count = lines.filter(line => line === 'RUNNING').length;
+        var scheduled_count = lines.filter(line => line === 'SCHEDULED' || line === 'PENDING').length;
+        var inprogress_count = num_of_jobs - failed_count - success_count - cancelled_count;
+        console.log(`Running jobs... Jobs status: Failed:${failed_count}, Success:${success_count}, Scheduled:${scheduled_count}, Cancelled:${cancelled_count}, Running:${running_count}`);
+        await new Promise(resolve => setTimeout(resolve, 15000));
     }
 } catch (error) { 
     console.error(error);
@@ -132,12 +235,11 @@ const durationMs = end - start;
 const durationSec = (durationMs / 1000).toFixed(2);
 console.log(`=== Summary of Job Runs ===\n${job_runs}\nTime taken: ${durationSec} seconds`);
 if (success_count == num_of_jobs) { 
-    console.log(chalk.green(`Job runs completed.`));
+    console.log(`Job runs completed.`);
 } else if (failed_count>0) {
-    console.log(chalk.red(`Some job runs have failed. Please refer to the Job Runs in the Admin Portal for more info.`));
+    console.log(`Some job runs have failed. Please refer to the Job Runs in the Admin Portal for more info.`);
     process.exit(1)
 } else {
     console.log(`Please refer to the Job Runs in the Admin Portal for more info.`)
     process.exit(1)
 }
-

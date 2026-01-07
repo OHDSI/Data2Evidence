@@ -24,10 +24,10 @@ interface DashboardProps {
 const Dashboard: FC<DashboardProps> = ({ flowRunId, datasetId }) => {
   const { getText, i18nKeys } = useTranslation();
   const [dashboardData, setDashboardData] = useState<DASHBOARD_REPORT_TYPE>({
-    population: [],
+    summary: [],
     gender: [],
-    ageAtFirst: [],
-    cumulativeDuration: [],
+    ageAtFirstObservation: [],
+    cumulativeObservation: [],
     observedByMonth: [],
   });
   const [isloadingDashboardData, setIsLoadingDashboardData] = useState(true);
@@ -65,21 +65,21 @@ const Dashboard: FC<DashboardProps> = ({ flowRunId, datasetId }) => {
       ) : (
         <>
           <div className="summary__container">
-            <CDMSummary data={dashboardData.population}></CDMSummary>
+            <CDMSummary data={dashboardData.summary}></CDMSummary>
             <PieChart
               data={parsePieChartData(dashboardData.gender)}
               title={getText(i18nKeys.DASHBOARD__PIE_CHART_TITLE)}
             />
           </div>
           <BarChart
-            barChartData={parseBarChartData(dashboardData.ageAtFirst)}
+            barChartData={parseBarChartData(dashboardData.ageAtFirstObservation)}
             title={getText(i18nKeys.DASHBOARD__BAR_CHART_TITLE)}
             xAxisName={getText(i18nKeys.DASHBOARD__BAR_CHART_X_AXIS_NAME)}
             yAxisName={getText(i18nKeys.DASHBOARD__BAR_CHART_Y_AXIS_NAME)}
             tooltipFormat={getText(i18nKeys.DASHBOARD__BAR_CHART_TOOLTIP_FORMAT)}
           />
-          <ObservationPeriodCumulativeDurationChart data={dashboardData.cumulativeDuration} />
-          <ObservationPeriodObservedByMonthChart data={dashboardData.observedByMonth} />
+          <ObservationPeriodCumulativeDurationChart data={dashboardData.cumulativeObservation} axisBaseGap={36} />
+          <ObservationPeriodObservedByMonthChart data={dashboardData.observedByMonth} axisBaseGap={18} />
         </>
       )}
     </>

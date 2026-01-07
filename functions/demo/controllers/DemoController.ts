@@ -32,6 +32,11 @@ export class DemoController {
         task: this.service.addDataset.bind(this.service),
       },
       {
+        code: "cache",
+        message: "Creating cache for demo dataset...",
+        task: this.service.createCache.bind(this.service),
+      },
+      {
         code: "dqd",
         message: "Running DQD on demo dataset...",
         task: this.service.runDQD.bind(this.service),
@@ -42,14 +47,14 @@ export class DemoController {
         task: this.service.runDC.bind(this.service),
       },
       {
-        code: "cache",
-        message: "Creating cache for demo dataset...",
-        task: this.service.createCache.bind(this.service),
-      },
-      {
         code: "metadata",
         message: "Updating metadata for dataset...",
         task: this.service.updateDatasetMetadata.bind(this.service),
+      },
+      {
+        code: "addResearcherRole",
+        message: "Add user as researcher role...",
+        task: this.service.addResearcherRoleToDataset.bind(this.service),
       },
     ];
 

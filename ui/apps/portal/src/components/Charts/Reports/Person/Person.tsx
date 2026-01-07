@@ -11,6 +11,7 @@ import { parsePieChartData, parseBarChartData } from "../../util";
 import { PERSON_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
 import "./Person.scss";
 import { useTranslation } from "../../../../contexts";
+import TreeMapChartTable from "../../Common/TreeMap/TreeMapChartTable";
 
 interface PersonProps {
   flowRunId: string;
@@ -20,11 +21,11 @@ interface PersonProps {
 const Person: FC<PersonProps> = ({ flowRunId, datasetId }) => {
   const { getText, i18nKeys } = useTranslation();
   const [personData, setPersonData] = useState<PERSON_REPORT_TYPE>({
-    population: [],
+    summary: [],
     gender: [],
     race: [],
     ethnicity: [],
-    yearOfBirthData: [],
+    yearOfBirth: [],
     yearOfBirthStats: [],
   });
   const [isloadingPersonData, setIsLoadingPersonData] = useState(true);
@@ -62,7 +63,7 @@ const Person: FC<PersonProps> = ({ flowRunId, datasetId }) => {
       ) : (
         <>
           <BarChart
-            barChartData={parseBarChartData(personData.yearOfBirthData, personData.yearOfBirthStats[0].MINVALUE)}
+            barChartData={parseBarChartData(personData.yearOfBirth, personData.yearOfBirthStats[0].MINVALUE)}
             title={getText(i18nKeys.PERSON__BAR_CHART_TITLE)}
             xAxisName={getText(i18nKeys.PERSON__BAR_CHART_X_AXIS_NAME)}
             yAxisName={getText(i18nKeys.PERSON__BAR_CHART_Y_AXIS_NAME)}
@@ -70,12 +71,16 @@ const Person: FC<PersonProps> = ({ flowRunId, datasetId }) => {
           />
           <div className="chart__container">
             <PieChart data={parsePieChartData(personData.gender)} title={getText(i18nKeys.PERSON__PIE_CHART_1_TITLE)} />
-            <PieChart data={parsePieChartData(personData.race)} title={getText(i18nKeys.PERSON__PIE_CHART_2_TITLE)} />
             <PieChart
               data={parsePieChartData(personData.ethnicity)}
               title={getText(i18nKeys.PERSON__PIE_CHART_3_TITLE)}
             />
           </div>
+          <TreeMapChartTable
+            data={personData.race}
+            title={getText(i18nKeys.PERSON__PIE_CHART_2_TITLE)}
+            setSelectedConceptId={() => {}} //drilldown disabled for race
+          />
         </>
       )}
     </>

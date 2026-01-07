@@ -52,13 +52,10 @@
 </template>
 
 <script lang="ts">
-declare var sap
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import * as types from '../store/mutation-types'
 import messageBox from './MessageBox.vue'
-
-const eventbus = sap.ui.getCore().getEventBus()
 
 export default {
   name: 'configSelection',
@@ -130,9 +127,6 @@ export default {
       this.busy = true
     },
     cancelClick() {
-      if (!this.getHasAssignedConfig) {
-        eventbus.publish('VUE_NAVIGATE_FLP')
-      }
       this.toggleConfigSelectionDialog()
     },
     selectItem(item) {

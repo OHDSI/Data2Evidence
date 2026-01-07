@@ -10,7 +10,11 @@ import {
   StandardConcepts,
 } from "../plugins/Researcher/Terminology/utils/types";
 
-import { RowObject } from "../plugins/SystemAdmin/ConceptMapping/types";
+type RowObject = {
+  index: number;
+  searchText: string;
+  domainId?: string;
+};
 
 const TERMINOLOGY_BASE_URL = "terminology";
 
@@ -38,6 +42,27 @@ export class Terminology {
     return request({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/fhir/4_0_0/valueset/$expand?${params}`,
+      method: "GET",
+    });
+  }
+
+  public getConceptsCount(
+    datasetId: string,
+    searchText: string,
+    conceptClassId: string[],
+    domainId: string[],
+    vocabularyId: string[],
+    standardConcept: string[],
+    validity: string[]
+  ): Promise<number> {
+    const params = new URLSearchParams();
+    params.append("datasetId", String(datasetId));
+    params.append("code", String(searchText));
+    params.append("filter", JSON.stringify({ conceptClassId, domainId, vocabularyId, standardConcept, validity }));
+
+    return request({
+      baseURL: TERMINOLOGY_BASE_URL,
+      url: `/concept/count?${params}`,
       method: "GET",
     });
   }

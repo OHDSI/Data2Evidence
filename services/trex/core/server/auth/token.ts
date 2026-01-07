@@ -21,7 +21,7 @@ export const getClientCredentialsToken = async () => {
     return
   }
 
-  const client = new OpenIDAPI({ issuerUrl: `https://${env.GATEWAY_WO_PROTOCOL_FQDN}/oauth/` })
+  const client = new OpenIDAPI({ issuerUrl: `https://${env.GATEWAY_WO_PROTOCOL_FQDN}/d2e/oauth/` })
   return await client.getClientCredentialsToken({ clientId, clientSecret, scope })
 }
 
@@ -47,8 +47,7 @@ export const exchangeToken = async (params: URLSearchParams) => {
   }
 
   const response = await post(tokenUrl, params, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    httpsAgent: new https.Agent({ rejectUnauthorized: false })
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   })
 
   if (response.data?.error) {

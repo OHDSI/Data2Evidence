@@ -1,14 +1,6 @@
 import { z } from "zod";
 import { CohortExpression } from "../../d2e-webapi/src/types.ts";
 
-export const MaterializedBookmarkCohortDefinition = z.object({
-  datasetId: z.string(),
-  cohortDefinitionId: z.number(),
-});
-export type IMaterializedBookmarkCohortDefinition = z.infer<
-  typeof MaterializedBookmarkCohortDefinition
->;
-
 export const BookmarkArtifact = z.object({
   id: z.string(),
   type: z.string().nullable(),
@@ -22,9 +14,6 @@ export const BookmarkArtifact = z.object({
   bookmark_name: z.string(),
   cdm_config_id: z.string(),
   cdm_config_version: z.string(),
-  materializedCohortDefinitions: z
-    .array(MaterializedBookmarkCohortDefinition)
-    .optional(),
 });
 export type IBookmarkArtifact = z.infer<typeof BookmarkArtifact>;
 
@@ -39,7 +28,6 @@ export const AtlasCohortDefinitionArtifact = z.object({
   modifiedBy: z.string().nullable(), // Atlas usernames are numbers, but string for d2e
   modifiedDate: z.number().nullable(),
   tags: z.array(z.string()),
-  materializedCohortDefinitions: z.array(MaterializedBookmarkCohortDefinition),
 });
 export type IAtlasCohortDefinitionArtifact = z.infer<
   typeof AtlasCohortDefinitionArtifact
@@ -64,6 +52,7 @@ export const ConceptSetArtifact = z.object({
   createdDate: z.string(),
   modifiedDate: z.string(),
 });
+export type IConceptSetArtifact = z.infer<typeof ConceptSetArtifact>;
 
 export const NotebookArtifact = z.object({
   id: z.string(),

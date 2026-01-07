@@ -5,7 +5,7 @@ const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('https://localhost:443/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="identifier"]').press('Tab')
@@ -20,14 +20,14 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'D2E' }).click()
   await expect(page.locator('.loading-animation-component')).toBeVisible()
   await expect(page.locator('.loading-animation-component')).toBeHidden()
-  await expect(page.getByText('2694 / 2694')).toBeVisible()
+  await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Visit' }).click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-  await page.getByRole('tab', { name: ' Condition Occurrence A ' }).locator('button').last().click()
+  await page.getByRole('tab', { name: ' Condition Occurrence A ' }).locator('button').last().click()
   await page.getByRole('menuitem', { name: 'Visit Occurrence Parent' }).click()
-  await expect(page.getByText('890 / 2694')).toBeVisible()
+  await expect(page.getByText('890 / 2,694')).toBeVisible()
 
   //UI issues with CDW Config, will skip for now
 

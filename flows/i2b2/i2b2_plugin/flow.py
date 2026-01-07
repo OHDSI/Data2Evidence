@@ -204,7 +204,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 dataset_id, "latest_schema_version", error_msg)
         else:
             # update patient count or error msg
-            update_entity_distinct_count(
+            update_entity_count(
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,

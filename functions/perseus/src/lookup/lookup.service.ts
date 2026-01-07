@@ -59,13 +59,24 @@ export class LookupService {
     relativePath: string,
     basePath: string = "model/lookups"
   ) {
-    return `${path
-      .dirname(path.fromFileUrl(import.meta.url).replace(/\/lookup/, ""))
-      .replace(/\/usr\/src/, ".")
-      .replace(
-        /\/var\/tmp\/sb-compile-trex\/d2ef/,
-        Deno.env.get("TREX_FUNCTION_PATH")
-      )}/${basePath}/${relativePath}`;
+    const functionRoot = Deno.env.get("TREX_FUNCTION_PATH") ?? "";
+    const currentDir = path.dirname(path.fromFileUrl(import.meta.url));
+    const schemaBaseDir = path.dirname(currentDir);
+
+    const TREX_PREFIX = "/var/tmp/sb-compile-trex";
+    let baseDir = schemaBaseDir;
+
+    if (functionRoot && baseDir.startsWith(TREX_PREFIX)) {
+      const functionName = path.basename(functionRoot);
+      const afterPrefix = baseDir.slice(TREX_PREFIX.length);
+      const prefix = `/${functionName}`;
+      const rest = afterPrefix.startsWith(prefix)
+        ? afterPrefix.slice(prefix.length)
+        : afterPrefix;
+      baseDir = path.join(functionRoot, rest);
+    }
+
+    return `${baseDir}/${basePath}/${relativePath}`;
   }
 
   private async getLookupsFromDirectory(

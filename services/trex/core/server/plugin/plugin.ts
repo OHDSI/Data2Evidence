@@ -1,5 +1,6 @@
 
 import {addPlugin as addFlowPlugin} from "./flow.ts"
+import {addPlugin as addCorePlugin} from "./core.ts"
 import {env, logger} from "../env.ts"
 import {addPlugin as addFunctionPlugin} from "./function.ts"
 import {addPlugin as addUIPlugin} from "./ui.ts"
@@ -53,7 +54,7 @@ export class Plugins {
 				try {
 					const pkg = JSON.parse(await Deno.readTextFile(`${env.PLUGINS_DEV_PATH}/${plugin.name}/package.json`));
 					pkg.version = pkg.version+"-dev"
-					await (await Plugins.get()).addPlugin(app, `${env.PLUGINS_DEV_PATH}/${plugin.name}`, pkg, 'dev');
+					await (await Plugins.get()).addPlugin(app, `${env.PLUGINS_DEV_PATH}/${plugin.name}`, pkg, pkg.name.split("/")[1]);
 				} catch(e) {
 					logger.error(`${plugin.name} does not have a package.json`)
 				}
@@ -112,9 +113,9 @@ export class Plugins {
 		} else {
 			const pm = new Trex.PluginManager(`${env.PLUGINS_PATH}`);
 			await pm.install(pkgurl);
-			pkg = JSON.parse(await Deno.readTextFile(`${env.PLUGINS_PATH}/node_modules/@${env.GH_ORG}/${name}/package.json`));
+			pkg = JSON.parse(await Deno.readTextFile(`${env.PLUGINS_PATH}/@${env.GH_ORG}/${name}/package.json`));
 		}
-		await this.addPlugin(app, `${env.PLUGINS_PATH}/node_modules/@${env.GH_ORG}/${name}/`, pkg, name);
+		await this.addPlugin(app, `${env.PLUGINS_PATH}/@${env.GH_ORG}/${name}/`, pkg, name);
 	}
 	
 	async addPlugin(app: Hono, dir: string, pkg:any, url:string) {
@@ -125,14 +126,17 @@ export class Plugins {
 						addDBPlugin(app, value, dir);
 						break;
 					case "functions":
-						addFunctionPlugin(app, value, dir);
+						addFunctionPlugin(app, value, dir, url);
 						break;
 					case "ui":
 						addUIPlugin(app, value, dir);
 						break;
 					case "flow":
 						addFlowPlugin(value);
-						break;		  
+						break;
+					case "core":
+						addCorePlugin(value, dir);
+						break;
 					default:
 						logger.log(`Unknown type: ${key}`);
 				}

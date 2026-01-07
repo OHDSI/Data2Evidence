@@ -16,6 +16,7 @@ export * from "./config";
 export * from "./trex";
 export * from "./demo";
 export * from "./strategusStudy";
+export * from "./code";
 
 export interface NavLink {
   id: string;
@@ -42,6 +43,7 @@ export interface Plugins {
   requiredRoles?: string[];
   featureFlag?: string;
   menus?: string[];
+  datasetTypes?: string[];
 }
 
 export interface PluginDropdown {
@@ -59,6 +61,7 @@ export interface IPluginItem {
   enabled?: boolean;
   requiredRoles?: string[];
   type?: string;
+  autoMount?: boolean;
   proxySource?: string;
   proxyDestination?: string;
   proxyTarget?: string;
@@ -73,6 +76,7 @@ export interface IPluginItem {
   notes?: string;
   notesI18nKey?: keyof LanguageMappings;
   children?: IPluginItem[];
+  datasetTypes?: string[];
 }
 
 export interface IPlugin {
@@ -153,3 +157,5 @@ export enum PORTAL_TYPE {
 }
 
 export type PortalType = `${PORTAL_TYPE}`;
+
+export type PluginType = "legacy" | "app";

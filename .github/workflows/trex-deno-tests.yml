@@ -4,6 +4,7 @@ on:
   workflow_dispatch: # Allow manual triggering
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
   push:
     branches:
       - develop
@@ -29,7 +30,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v2.1.13
+          deno-version: v2.5.6
 
       - name: Run Authorization Tests
         working-directory: services/trex
@@ -55,7 +56,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
-          deno-version: v2.1.13
+          deno-version: v2.5.6
 
       - name: Run Load UI Plugin Tests
         working-directory: services/trex

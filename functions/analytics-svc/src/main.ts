@@ -3,7 +3,6 @@ import * as dotenv from "dotenv";
 import {
     DBConnectionUtil as dbConnectionUtil,
     getUser,
-    Logger,
     QueryObject,
     EnvVarUtils,
     healthCheckMiddleware,
@@ -15,28 +14,32 @@ import {
 import * as pathx from "https://deno.land/std@0.188.0/path/mod.ts";
 
 import express from "express";
-import https from "https";
 import helmet from "helmet";
 import path from "path";
 import yaml from "npm:yaml";
 import { access, constants } from "node:fs/promises";
 import * as mri2 from "./mri/endpoint/analytics";
 import * as xsenv from "@sap/xsenv";
-import { AuditLogger } from "./utils/AuditLogger";
 import { Settings } from "./qe/settings/Settings";
 //import * as swagger from "@alp/swagger-node-runner";
 import MRIEndpointErrorHandler from "./utils/MRIEndpointErrorHandler";
+import { controllers } from "./api/controllers/index.ts";
 import noCacheMiddleware from "./middleware/NoCache";
 import timerMiddleware from "./middleware/Timer";
 import studyDbCredentialMiddleware from "./middleware/StudyDbCredential";
 import { MriConfigConnection } from "@alp/alp-config-utils";
-import { StudiesDbMetadata, StudyDbMetadata, IMRIRequest } from "./types";
+import {
+    StudiesDbMetadata,
+    StudyDbMetadata,
+    IMRIRequest,
+    ANALYTICS_DB_DIALECTS,
+} from "./types";
 import PortalServerAPI from "./api/PortalServerAPI";
 import { getDuckdbDBConnection } from "./utils/DuckdbConnection";
 import { getCachedbDbConnections } from "./utils/cachedb/cachedb.ts";
-import { DB } from "./utils/DBSvcConfig";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
+import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
 dotenv.config();
 const log = console; //Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
@@ -175,24 +178,39 @@ const initRoutes = async (app: express.Application) => {
                     log.debug(`No user found in request:${err.stack}`);
                 }
 
-                // Skip getting db connections if request starts with "/analytics-svc/api/services/alpdb/", as these requests are all in dbsvc.ts and uses a separate implementation for database connection
+                let credentials;
+                // If request starts with "/analytics-svc/api/services/alpdb/schema/exists", as this request is seeking information where a dataset might not exist yet, get database credentials directly from incoming databaseCode
                 if (
                     req.originalUrl.startsWith(
-                        "/analytics-svc/api/services/alpdb/"
+                        "/analytics-svc/api/services/alpdb/schema/exists"
                     )
                 ) {
                     log.info(
-                        "Skipping middleware to get req.dbConnections for /alpdb/* requests"
+                        "Getting credentials from analyticsCredentials for /alpdb/schema/exists requests"
                     );
-                    return next();
+                    const databaseCode =
+                        parseValueForPrototypePollutingAssignment(
+                            req.query.databaseCode as string
+                        );
+                    if (req.query.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
+                        // Skip as bigquery currently always returns hardcoded value from env
+                        next();
+                    }
+                    credentials =
+                        req.dbCredentials.analyticsCredentials[databaseCode];
+                    if (!credentials) {
+                        throw new Error(
+                            `Database code:${databaseCode} not found in analyticsCredentials`
+                        );
+                    }
+                } else {
+                    credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
-
-                const credentials = req.dbCredentials.studyAnalyticsCredential;
 
                 // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
                     env.USE_TREX_DB_CONN === "true" &&
-                    credentials.dialect != DB.HANA
+                    credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
                 ) {
                     req.dbConnections = getTrexDbConnection({
                         analyticsCredentials: credentials,
@@ -201,7 +219,7 @@ const initRoutes = async (app: express.Application) => {
                 // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
                 else if (
                     env.USE_CACHEDB === "true" &&
-                    credentials.dialect != DB.HANA
+                    credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
                 ) {
                     req.dbConnections = await getCachedbDbConnections({
                         analyticsCredentials: credentials,
@@ -543,16 +561,28 @@ const initRoutes = async (app: express.Application) => {
 };
 
 const initSwaggerRoutes = async (app: express.Application) => {
+    log.info("initSwaggerRoutes: Starting route registration...");
+    // Calculate base path for file resolution in Trex worker context
+    const trexFunctionPath = Deno.env.get("TREX_FUNCTION_PATH") || "";
+    log.info(`initSwaggerRoutes: TREX_FUNCTION_PATH = ${trexFunctionPath}`);
+
+    const srcBasePath = path
+        .dirname(pathx.fromFileUrl(import.meta.url))
+        .replace(
+            /\/var\/tmp\/sb-compile-trex/,
+            trexFunctionPath.replace(/\/[^\/]*\/?$/, "")
+        );
+    log.info(`initSwaggerRoutes: srcBasePath = ${srcBasePath}`);
+    const swaggerFilePath = srcBasePath.slice(0, -3) + "api/swagger/swagger.yaml";
+    log.info(`initSwaggerRoutes: Loading swagger from ${swaggerFilePath}`);
     const swaggerFile = yaml.parse(
-        await Deno.readTextFile(
-            path.dirname(pathx.fromFileUrl(import.meta.url)).replace(/\/var\/tmp\/sb-compile-trex/, Deno.env.get("TREX_FUNCTION_PATH").replace(/\/[^\/]*\/?$/, '')).slice(0, -3) +
-                "api/swagger/swagger.yaml"
-        )
+        await Deno.readTextFile(swaggerFilePath)
     );
     const basePath = swaggerFile["basePath"];
-    for (const [path, value] of Object.entries(swaggerFile["paths"])) {
+    log.info(`initSwaggerRoutes: basePath = ${basePath}`);
+    for (const [swaggerPath, value] of Object.entries(swaggerFile["paths"])) {
         // Skip swagger route
-        if (path === "/swagger") {
+        if (swaggerPath === "/swagger") {
             log.info(
                 "Skipping '/swagger' route as it is not linked to a x-swagger-router-controller file"
             );
@@ -561,42 +591,40 @@ const initSwaggerRoutes = async (app: express.Application) => {
 
         const controllerFile = value["x-swagger-router-controller"];
         try {
-            const controller = await import(
-                `./api/controllers/${controllerFile}.ts`
-            );
-            const url = `${basePath}${path.slice(1)}`.replace(
-                /\{(.+?)\}/g,
-                ":$1"
-            );
+            const controller = controllers[controllerFile];
+            if (!controller) {
+                log.error(`Controller not found in registry: ${controllerFile}`);
+                continue;
+            }
+            log.info(`initSwaggerRoutes: Loaded ${controllerFile} from registry`);
+            const url = `${basePath}${swaggerPath.slice(1)}`
+                .replace(/\{(.+?)\}/g, ":$1")
+                .replace(/\/$/, ""); // Remove trailing slash for consistent matching
             for (const [k, v] of Object.entries(value)) {
                 switch (k) {
                     case "get":
                         app.get(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
+                        log.info(`Registered GET ${url} -> ${v["operationId"]}`);
                         break;
                     case "post":
                         app.post(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
-
+                        log.info(`Registered POST ${url} -> ${v["operationId"]}`);
                         break;
                     case "put":
                         app.put(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
-
+                        log.info(`Registered PUT ${url} -> ${v["operationId"]}`);
                         break;
                     case "delete":
                         app.delete(url, controller[v["operationId"]]);
-                        //console.log("add" + url)
-
+                        log.info(`Registered DELETE ${url} -> ${v["operationId"]}`);
                         break;
                     default:
                         if (k != "x-swagger-router-controller")
-                            console.log("unknown method " + k);
+                            log.warn(`Unknown HTTP method: ${k}`);
                 }
             }
         } catch (e) {
-            console.log(controllerFile);
-            console.log(e);
+            log.error(`Failed to register controller ${controllerFile}: ${e}`);
         }
     }
 
@@ -628,24 +656,41 @@ const getTrexDbConnection = ({
         const trex_publication = dbm.getFirstPublication(
             analyticsCredentials.code
         );
-        const trex_pg_direct_connection_alias = `${trex_publication}_trexpg`;
+        let direct_connection_suffix;
+        switch (analyticsCredentials.dialect) {
+            case ANALYTICS_DB_DIALECTS.POSTGRES:
+                direct_connection_suffix = "__srcdb";
+                break;
+            case ANALYTICS_DB_DIALECTS.BIGQUERY:
+                // For bigquery, do not execute any queries on sourcedb
+                direct_connection_suffix = "";
+                break;
+
+            default:
+                throw new Error(
+                    `Dialect:${analyticsCredentials.dialect} is not supported for Trex Sql Connection`
+                );
+        }
+        const trex_direct_connection_alias = `${trex_publication}${direct_connection_suffix}`;
 
         const parseSql = (
             temp: string,
-            schemaNames: string,
-            vocabSchemaNames: string,
+            schemaName: string,
+            vocabSchemaName: string,
+            resultSchemaName: string,
             parameters: any
         ): string => {
-            // Specifically for trex db connection, direct pg connection alias is different from cachedb.
+            // Specifically for trex db connection, direct connection alias is different from cachedb.
             // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
             temp = temp.replace(
                 /\$\$SCHEMA_DIRECT_CONN\$\$./g,
-                `${trex_pg_direct_connection_alias}.$$$$SCHEMA$$$$.`
+                `${trex_direct_connection_alias}.$$$$SCHEMA$$$$.`
             );
             return translateHanaToDuckdb(
                 temp,
-                schemaNames,
-                vocabSchemaNames,
+                schemaName,
+                vocabSchemaName,
+                resultSchemaName,
                 parameters
             );
         };
@@ -653,6 +698,7 @@ const getTrexDbConnection = ({
             analyticsCredentials.code,
             analyticsCredentials.schema,
             analyticsCredentials.vocabSchema,
+            analyticsCredentials.resultSchema,
             { duckdb: parseSql }
         );
 
@@ -671,7 +717,10 @@ const getDBConnections = async ({
 }> => {
     // Define defaults for both analytics & Vocab connections
     let analyticsConnectionPromise;
-    if (env.USE_DUCKDB === "true" && analyticsCredentials.dialect !== DB.HANA) {
+    if (
+        env.USE_DUCKDB === "true" &&
+        analyticsCredentials.dialect !== ANALYTICS_DB_DIALECTS.HANA
+    ) {
         // Use duckdb as analyticsConnection if USE_DUCKDB flag is set to true
         const duckdbSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.schema}`;
         const duckdbVocabSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.vocabSchema}`;
@@ -735,24 +784,24 @@ const getDBConnections = async ({
             delete analyticsCredentials.pfx;
         }
 
-        if (
-            analyticsCredentials.dialect === DB.HANA &&
-            analyticsCredentials.authentication_mode === "JWT"
-        ) {
-            delete analyticsCredentials.user;
-            delete analyticsCredentials.password;
-            if (userObj.thirdPartyToken) {
-                analyticsCredentials["token"] = userObj.thirdPartyToken;
-            } else {
-                throw new Error(
-                    "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
-                );
-            }
+        if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
             analyticsCredentials[
                 "SESSIONVARIABLE:APPLICATION"
             ] = `${env.PROJECT_NAME}-cohorts`;
             analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
                 userObj.getUser();
+
+            if (analyticsCredentials.authentication_mode === "JWT") {
+                delete analyticsCredentials.user;
+                delete analyticsCredentials.password;
+                if (userObj.thirdPartyToken) {
+                    analyticsCredentials["token"] = userObj.thirdPartyToken;
+                } else {
+                    throw new Error(
+                        "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+                    );
+                }
+            }
         }
 
         analyticsConnectionPromise =
@@ -760,6 +809,7 @@ const getDBConnections = async ({
                 credentials: analyticsCredentials,
                 schemaName: analyticsCredentials.schema,
                 vocabSchemaName: analyticsCredentials.vocabSchema,
+                resultSchemaName: analyticsCredentials.resultSchema,
                 userObj,
             });
     }
@@ -811,15 +861,12 @@ const main = async () => {
     );*/
     app.listen(port);
     log.info(
-        `🚀 MRI Application started successfully!. Server listening on port ${port}`
+        `MRI Application started successfully. Server listening on port ${port}`
     );
 };
 
-try {
-    main();
-} catch (err) {
+main().catch((err) => {
     log.error(`
         MRI failed to start! Kindly fix the error and restart the application. ${err.message}
         ${err.stack}`);
-    //process.exit(1);
-}
+});

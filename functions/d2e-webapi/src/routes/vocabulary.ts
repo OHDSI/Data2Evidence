@@ -11,6 +11,7 @@ import {
   VocabulariesResponseDto,
   VocabularySourceInfo,
   ConceptRelatedResponseDto,
+  ConceptListDto,
 } from "../dto/vocabulary.ts";
 import {
   getIncludedConceptsCount,
@@ -339,8 +340,12 @@ export const vocabulary: FastifyPluginAsyncZod = async function (app) {
       },
     },
     async (req, res) => {
-      const { query } = req.query;
-      const result = await searchConcept(req.token, req.datasetId, query);
+      const conceptListDto = { QUERY: req.query.query };
+      const result = await searchConcept(
+        req.token,
+        req.datasetId,
+        conceptListDto
+      );
 
       res.send(result);
     }
@@ -353,8 +358,12 @@ export const vocabulary: FastifyPluginAsyncZod = async function (app) {
         description:
           "Search for a concept based on a query using the default vocabulary source.",
         tags: ["vocabulary"],
+        querystring: z.object({
+          page: z.coerce.number(),
+          rowsPerPage: z.coerce.number(),
+        }),
         params: z.object({ sourceKey: z.string() }),
-        body: z.object({ QUERY: z.string(), DOMAIN_ID: z.array(z.string()) }),
+        body: ConceptListDto,
         response: { 200: ConceptListResponseDto },
         security: [
           {
@@ -365,10 +374,14 @@ export const vocabulary: FastifyPluginAsyncZod = async function (app) {
       },
     },
     async (req, res) => {
-      const { QUERY: query, DOMAIN_ID: domainId } = req.body;
-      const result = await searchConcept(req.token, req.datasetId, query, {
-        domainId,
-      });
+      const { page, rowsPerPage } = req.query;
+      const result = await searchConcept(
+        req.token,
+        req.datasetId,
+        req.body,
+        page,
+        rowsPerPage
+      );
 
       res.send(result);
     }

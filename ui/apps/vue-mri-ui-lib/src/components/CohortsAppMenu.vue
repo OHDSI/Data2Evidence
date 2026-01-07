@@ -19,25 +19,19 @@
       </template>
     </bs-dropdown>
     <addCohort></addCohort>
-    <cohortsApp :load="loadViewCohorts"></cohortsApp>
   </div>
 </template>
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
-import cohortsApp from './CohortsApp.vue'
 import addCohort from './AddCohort.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'cohortsAppMenu',
   data() {
     return {
       menuList: [],
-      loadViewCohorts: false,
     }
   },
   mounted() {
@@ -47,10 +41,6 @@ export default {
         value: 'add',
       },
       // Maybe remove in future if all cohort operations will be in different UI.
-      // {
-      //   text: this.getText('MRI_PA_BUTTON_VIEW_COHORT'),
-      //   value: 'view'
-      // },
       // {
       //   text: this.getText('MRI_PA_BUTTON_IMPORT_COHORT'),
       //   value: 'import'
@@ -72,16 +62,12 @@ export default {
             break
           case 'import':
             break
-          case 'view':
-            this.loadViewCohorts = !this.loadViewCohorts
-            break
         }
       }
     },
   },
   components: {
     addCohort,
-    cohortsApp,
     bsDropdown,
     bsDropdownItem,
   },

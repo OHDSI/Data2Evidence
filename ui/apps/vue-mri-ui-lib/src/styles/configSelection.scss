@@ -1,4 +1,3 @@
-@import './mri-variables';
 ul.config-selection-list {
   display: block;
   font-size: 16px;
@@ -15,8 +14,8 @@ ul.config-selection-list {
     align-items: center;
     background-attachment: scroll;
     background-clip: border-box;
-    background-color: $UiLightestBG;
-    border-bottom-color: $UiLightBorder;
+    background-color: var(--color-ui-lightest-bg);
+    border-bottom-color: var(--color-ui-light-border);
     border-bottom-style: solid;
     border-bottom-width: 1px;
     box-sizing: border-box;

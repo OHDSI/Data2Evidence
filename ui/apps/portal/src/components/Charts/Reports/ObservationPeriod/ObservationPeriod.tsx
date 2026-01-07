@@ -11,7 +11,7 @@ import ObservationPeriodObservedByMonthChart from "../../SourceKeys/ObservationP
 
 import { parsePieChartData, parseDaysToYears, parseBarChartData } from "../../util";
 
-import { OBSERVATION_PERIOD_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
+import { OBSERVATIONPERIOD_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
 import "./ObservationPeriod.scss";
 import { useTranslation } from "../../../../contexts";
 
@@ -22,18 +22,18 @@ interface ObservationPeriodProps {
 
 const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId }) => {
   const { getText, i18nKeys } = useTranslation();
-  const [observationPeriodData, setObservationPeriodData] = useState<OBSERVATION_PERIOD_REPORT_TYPE>({
+  const [observationPeriodData, setObservationPeriodData] = useState<OBSERVATIONPERIOD_REPORT_TYPE>({
     ageAtFirst: [],
     ageByGender: [],
-    cumulativeDuration: [],
-    observationLengthData: [],
+    cumulativeObservation: [],
+    observationLength: [],
     observationLengthStats: [],
-    observationLengthByAge: [],
-    observationLengthByGender: [],
+    durationByAgeDecile: [],
+    durationByGender: [],
     observedByMonth: [],
-    observedByYearData: [],
-    observedByYearStats: [],
-    periodsPerPerson: [],
+    personsWithContinuousObservationsByYear: [],
+    personsWithContinuousObservationsByYearStats: [],
+    observationPeriodsPerPerson: [],
   });
   const [isloadingObservationPeriodData, setIsLoadingObservationPeriodData] = useState(true);
   const [errObservationPeriod, setErrObservationPeriod] = useState("");
@@ -43,10 +43,10 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
     try {
       const result = await api.dataflow.getDataCharacterizationResults(
         flowRunId,
-        WEBAPI_CDMRESULTS_SOURCE_KEYS.OBSERVATION_PERIOD,
+        WEBAPI_CDMRESULTS_SOURCE_KEYS.OBSERVATIONPERIOD,
         datasetId
       );
-      setObservationPeriodData(result as OBSERVATION_PERIOD_REPORT_TYPE);
+      setObservationPeriodData(result as OBSERVATIONPERIOD_REPORT_TYPE);
       setIsLoadingObservationPeriodData(false);
       setErrObservationPeriod("");
     } catch (error) {
@@ -76,18 +76,20 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_Y_AXIS_NAME)}
               tooltipFormat={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_TOOLTIP_FORMAT)}
+              axisBaseGap={12}
             />
             <BoxPlotChart
               data={observationPeriodData.ageByGender}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_Y_AXIS_NAME)}
+              axisBaseGap={12}
             />
           </div>
           <div className="imbalanced__container">
             <BarChart
               barChartData={parseBarChartData(
-                observationPeriodData.observationLengthData,
+                observationPeriodData.observationLength,
                 observationPeriodData.observationLengthStats[0].MINVALUE,
                 true
               )}
@@ -95,28 +97,34 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_Y_AXIS_NAME)}
               tooltipFormat={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_TOOLTIP_FORMAT)}
+              axisBaseGap={12}
             />
             <BoxPlotChart
-              data={parseDaysToYears(observationPeriodData.observationLengthByGender)}
+              data={parseDaysToYears(observationPeriodData.durationByGender)}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_2_Y_AXIS_NAME)}
+              axisBaseGap={10}
             />
           </div>
           <div className="chart__container">
-            <ObservationPeriodCumulativeDurationChart data={observationPeriodData.cumulativeDuration} />
+            <ObservationPeriodCumulativeDurationChart
+              data={observationPeriodData.cumulativeObservation}
+              axisBaseGap={36}
+            />
             <BoxPlotChart
-              data={parseDaysToYears(observationPeriodData.observationLengthByAge)}
+              data={parseDaysToYears(observationPeriodData.durationByAgeDecile)}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_3_Y_AXIS_NAME)}
+              axisBaseGap={12}
             />
           </div>
           <div className="imbalanced__container">
             <BarChart
               barChartData={parseBarChartData(
-                observationPeriodData.observedByYearData,
-                observationPeriodData.observedByYearStats[0].MINVALUE
+                observationPeriodData.personsWithContinuousObservationsByYear,
+                observationPeriodData.personsWithContinuousObservationsByYearStats[0].MINVALUE
               )}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_3_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_3_X_AXIS_NAME)}
@@ -124,7 +132,7 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               tooltipFormat={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_3_TOOLTIP_FORMAT)}
             />
             <PieChart
-              data={parsePieChartData(observationPeriodData.periodsPerPerson)}
+              data={parsePieChartData(observationPeriodData.observationPeriodsPerPerson)}
               title={getText(i18nKeys.OBSERVATION_PERIOD__PIE_CHART_TITLE)}
             />
           </div>

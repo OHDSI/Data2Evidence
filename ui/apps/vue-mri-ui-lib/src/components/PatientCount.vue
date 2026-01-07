@@ -38,6 +38,7 @@
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
 import dialogBox from './DialogBox.vue'
+import { formatNumber } from '../utils/NumberUtils'
 
 export default {
   name: 'PatientCount',
@@ -69,10 +70,11 @@ export default {
       'getMriFrontendConfig',
     ]),
     patientCount() {
-      return this.getCurrentPatientCount
+      return formatNumber(this.getCurrentPatientCount)
     },
     totalPatientCount() {
-      return this.getDisplayTotalGuardedPatientCount ? this.getTotalPatientListCount : this.getTotalPatientCount
+      const count = this.getDisplayTotalGuardedPatientCount ? this.getTotalPatientListCount : this.getTotalPatientCount
+      return formatNumber(count)
     },
     getPatientCountText() {
       return `${this.getText('MRI_PA_PATIENT_COUNT_TOOLTIP_MATCH')}: ${this.patientCount}`

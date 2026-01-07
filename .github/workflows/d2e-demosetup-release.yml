@@ -2,11 +2,11 @@ name: d2e/demosetup-release
 
 on:
   schedule:
-    - cron: "0 22 * * *" # UTC timing
+    - cron: "0 22 * * 0" # UTC timing
   workflow_dispatch:
     inputs:
       version:
-        default: 0.8.1
+        default: 0.10.0
         description: Enter version to use
         required: true
         type: string
@@ -15,7 +15,24 @@ jobs:
   demosetup:
     runs-on: ubuntu-24.04
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Install latest cli
         if: success() || failure() 
@@ -47,14 +64,21 @@ jobs:
           retry_on: any
           command: |
             d2e -e start
+            sleep 300
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-      
+      - name: Wait for services to be ready
+        if: success() || failure()
+        run: |
+          echo "Waiting for services to be ready..."  | tee -a $GITHUB_STEP_SUMMARY
+          sleep 300
+          docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee -a $GITHUB_STEP_SUMMARY
       - name: Log status
         if: success() || failure()
         run: |
+          echo "Logging status..."  | tee -a $GITHUB_STEP_SUMMARY
           echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY

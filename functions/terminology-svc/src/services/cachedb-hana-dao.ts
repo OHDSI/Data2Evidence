@@ -15,6 +15,7 @@ import {
   IConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
+import { individualFilterWhereOR } from "./cachedb.ts";
 
 export class CachedbHanaDAO {
   private readonly jwt: string;
@@ -66,6 +67,27 @@ export class CachedbHanaDAO {
         totalHits: results[1] ? parseInt(results[1].rows[0].COUNT) : 0,
       };
       return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
+    const client = this.getCachedbConnection(this.jwt, this.datasetId);
+    try {
+      const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
+        this.getHanaFtsBaseQuery(searchText, filters);
+
+      const countSql = `${hanaFtsBaseQuery} select count(concept_id) as count from fts`;
+      const countSqlParams = hanaFtsBaseQueryParams;
+      const results = await client.query<{ COUNT: string }>(
+        countSql,
+        countSqlParams
+      );
+      return results ? parseInt(results.rows[0].COUNT) : 0;
     } catch (error) {
       console.error(error);
       throw error;
@@ -310,12 +332,12 @@ export class CachedbHanaDAO {
     });
 
     const filterList = [
-      ...conceptClassIdFilter,
-      ...domainIdFilter,
-      ...standardConceptFilter,
-      ...vocabularyIdFilter,
-      ...validityFilter,
-    ];
+      individualFilterWhereOR(conceptClassIdFilter),
+      individualFilterWhereOR(domainIdFilter),
+      individualFilterWhereOR(standardConceptFilter),
+      individualFilterWhereOR(vocabularyIdFilter),
+      individualFilterWhereOR(validityFilter),
+    ].filter(Boolean); // Remove empty strings from array
 
     if (filterList.length === 0) {
       return "";

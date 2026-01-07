@@ -24,7 +24,8 @@ export const configDefaultValues = {
     "chartOptions": {
         "initialAttributes": {
             "measures": [],
-            "categories": []
+            "categories": [],
+            "stackCategory": []
         },
         "initialChart": "stacked",
         "stacked": {

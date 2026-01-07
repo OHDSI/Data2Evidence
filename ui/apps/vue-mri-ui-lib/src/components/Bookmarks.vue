@@ -13,11 +13,23 @@
           <div class="div-bookmark-dialog">
             <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span>
             <div class="input-container">
-              <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
+              <input
+                class="form-control"
+                v-focus
+                required
+                maxlength="255"
+                v-model="renamedBookmark"
+                @keydown.enter="confirmRenameBookmark"
+              />
             </div>
-
+            <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']">
+              {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
+            </div>
             <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-              Filter name must not exceed 40 characters
+              Filter name must not exceed 255 characters
+            </div>
+            <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']">
+              {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
             </div>
           </div>
         </div>
@@ -86,12 +98,12 @@
 
     <div class="bookmark-content">
       <div class="bookmark-content__header">
-        <div class="bookmark-content__header-title">Create Cohort:</div>
+        <div class="bookmark-content__header-title" v-if="!isLocal">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
-          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort"> </Button>
+          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort" v-if="!isLocal"></Button>
           <Button
             v-if="useAtlasLite || usePaAtlas"
-            :text="getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
+            :text="isLocal ? 'Create Cohort' : getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
             :onClick="openAtlasLink"
           >
           </Button>
@@ -101,7 +113,7 @@
 
           <Button
             v-if="enableAtlasCohortDefinition"
-            :text="getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
+            :text="isLocal ? 'Import Cohort' : getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
             :onClick="openImportAtlasCohortDefinition"
           >
           </Button>
@@ -109,9 +121,10 @@
             :text="getText('MRI_PA_COMPARE_D2E_COHORT_TEXT')"
             :onClick="openCompareDialog"
             :disabled="!showCohortCompareBtn"
+            v-if="!isLocal"
           >
           </Button>
-          <div class="shared-toggle-container">
+          <div class="shared-toggle-container" v-if="!isLocal">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
             <SlideToggle v-model="showSharedBookmarks" />
           </div>
@@ -207,16 +220,12 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
-
 export default {
-  compatConfig: {
-    MODE: 3,
-  },
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
   data() {
     return {
-      maxLength: 40,
+      maxLength: 255,
       selectedBookmark: {},
       renamedBookmark: '',
       schemaName: '',
@@ -232,7 +241,7 @@ export default {
       showAddCohortDialog: false,
       showIncompatibleMessage: false,
       cohortName: 'New cohort',
-      isInvalidName: false,
+      cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
       showSaveOrDiscardDialog: false,
       isAddNewCohort: false,
       selectedBmkId: '',
@@ -276,6 +285,9 @@ export default {
     },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
+    },
+    isLocal() {
+      return getPortalAPI().isLocal
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
@@ -368,17 +380,41 @@ export default {
       }
     },
     closeRenameBookmark() {
+      this.cohortNameValidationState = 'valid'
       this.showRenameDialog = false
     },
     renameBookmark(bookmarkDisplay) {
       if (bookmarkDisplay) {
         this.selectedBookmark = bookmarkDisplay
         this.renamedBookmark = bookmarkDisplay.displayName
+        this.cohortNameValidationState = 'valid'
         this.showRenameDialog = true
       }
     },
     confirmRenameBookmark() {
+      if (this.hasExceededLength) return
       const bookmarkDisplay = this.selectedBookmark
+
+      this.renamedBookmark = this.renamedBookmark.trim()
+
+      // Check if the new name is empty
+      if (!this.renamedBookmark.length) {
+        this.cohortNameValidationState = 'empty'
+        return
+      }
+
+      // Check if the new name is already taken
+      const username = getPortalAPI().username
+      for (const bookmark of this.getBookmarks) {
+        if (
+          username === bookmark.user_id &&
+          bookmark.bookmarkname.trim() === this.renamedBookmark &&
+          bookmark.bmkId !== this.selectedBookmark.bookmark.id // Exclude the current bookmark
+        ) {
+          this.cohortNameValidationState = 'invalid'
+          return
+        }
+      }
 
       if (this.isMScohort(bookmarkDisplay)) {
         this.fireRenameMaterializedCohortQuery({

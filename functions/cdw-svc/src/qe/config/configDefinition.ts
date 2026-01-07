@@ -4,6 +4,9 @@ export const allowedPlaceholderRegex =
   /^((((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))(\w+)|(_SYS_BIC))|("((?!(_SYS|SYS|SYSTEM|HANA_XS_BASE))([^\]]+)|(_SYS_BIC))"))\."([^"]*)")|^("([^"]*)")$/i;
 
 export function getDefinition(tableMapping: any) {
+  // Ensure cohort definition placeholders are always defined
+  tableMapping["@CDM_COHORT_DEF"] = "$$SCHEMA$$.cohort_definition";
+  tableMapping["@RESULT_COHORT_DEF"] = "$$RESULT_SCHEMA$$.cohort_definition";
   const sPlaceholders = Object.keys(tableMapping)
     .map((key) => {
       const found = getTablePlaceholdersFromExpression(key);
@@ -187,6 +190,34 @@ export function getDefinition(tableMapping: any) {
             type: "string",
             regex: "^.*\\S.*$", // containes non whitespace characters
             minLength: 1,
+          },
+        ],
+      },
+    ],
+  };
+
+  const parentInteractionsMappingObject = {
+    name: "parentInteractionsMapping",
+    mandatory: false,
+    type: "array",
+    strict: true,
+    children: [
+      {
+        type: "object",
+        children: [
+          {
+            name: "currentMappingInteractionId",
+            mandatory: false,
+            type: "string",
+            isExpression: true,
+            regex: "@(" + sPlaceholders + ')\\.("(?:(?:"")|[^"])+"|[a-zA-Z0-9_]+)',
+          },
+          {
+            name: "parentMappingInteraction",
+            mandatory: false,
+            type: "string",
+            isExpression: false,
+            regex: "^@(" + sPlaceholders + ")$",
           },
         ],
       },
@@ -428,11 +459,25 @@ export function getDefinition(tableMapping: any) {
             mandatory: false,
             type: "boolean",
           },
-          ,
           {
             name: "conceptIdentifierType",
             mandatory: false,
             type: "string",
+          },
+          {
+            name: "includeDescendants",
+            mandatory: false,
+            type: "boolean",
+          },
+          {
+            name: "includeDescendantsExpression",
+            mandatory: false,
+            type: "string",
+          },
+          {
+            name: "optionalFiltering",
+            mandatory: false,
+            type: "boolean",
           },
         ],
       },
@@ -487,6 +532,7 @@ export function getDefinition(tableMapping: any) {
             mandatory: false,
             type: "string",
           },
+          parentInteractionsMappingObject,
         ],
       },
     ],

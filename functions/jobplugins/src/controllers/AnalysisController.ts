@@ -1,5 +1,5 @@
-import { JwtPayload, decode } from "jsonwebtoken";
 import { Request, Response, Router } from "express";
+import { JwtPayload, decode } from "jsonwebtoken";
 import { AnalysisService } from "../services/AnalysisService.ts";
 
 export class AnalysisController {
@@ -77,6 +77,12 @@ export class AnalysisController {
         req.headers["authorization"].replace(/bearer /i, "")
       ) as JwtPayload;
       console.log(`data transoformation controller, token: ${token}`);
+
+      if (!/^[A-Za-z0-9_]+$/.test(dataflowDto.name)) {
+        console.error("Analysis flow name can only contain letters, numbers, and underscores");
+        return res.status(400).send({ message: "Invalid name; only letters, numbers, and underscores are allowed." });
+      }
+
       const canvas = await this.analysisService.createAnalysisflow(
         dataflowDto,
         token
@@ -128,7 +134,7 @@ export class AnalysisController {
     this.router.get("/:id/latest", this.getGraph.bind(this));
     this.router.delete("/:id", this.deleteCanvas.bind(this));
     this.router.post(
-      "duplicate/:id/:revisionId",
+      "/duplicate/:id/:revisionId",
       this.duplicateCanvas.bind(this)
     );
     this.router.delete("/:id/:revisionId", this.deleteGraphById.bind(this));

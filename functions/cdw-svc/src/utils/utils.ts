@@ -275,7 +275,7 @@ export function getJsonWalkFunction(obj) {
         case "*":
           return "[^\\.]+";
         default:
-          return subPath;
+          return escapeRegExp(subPath);
       }
     });
     let regexp = new RegExp("^" + regexpSplit.join("\\.") + "$");
@@ -483,6 +483,7 @@ export async function getAnalyticsConnection(
   let databaseCode;
   let schemaName;
   let vocabSchemaName;
+  let resultSchemaName;
   let dialect;
 
   // Use built in duckdb file
@@ -490,6 +491,7 @@ export async function getAnalyticsConnection(
     databaseCode = DUCKDB_FILE_DATABASE_CODE;
     schemaName = DUCKDB_FILE_SCHEMA_NAME;
     vocabSchemaName = DUCKDB_FILE_SCHEMA_NAME;
+    resultSchemaName = DUCKDB_FILE_SCHEMA_NAME;
   } else {
     try {
       // Resolve datasetId into database code, schema name and vocab schema name
@@ -497,6 +499,7 @@ export async function getAnalyticsConnection(
       databaseCode = dataset.databaseCode;
       schemaName = dataset.schemaName;
       vocabSchemaName = dataset.vocabSchemaName;
+      resultSchemaName = dataset.resultSchemaName;
       dialect = dataset.dialect;
     } catch (err) {
       logger.error(err);
@@ -541,19 +544,22 @@ export async function getAnalyticsConnection(
     analyticsCredentials.cdwSchema = schemaName;
     analyticsCredentials.schema = schemaName;
     analyticsCredentials.vocabSchema = vocabSchemaName;
+    analyticsCredentials.resultSchema = resultSchemaName;
 
     analyticsConnection =
       await dbConnectionUtil.DBConnectionUtil.getDBConnection({
         credentials: analyticsCredentials,
         schemaName,
         vocabSchemaName,
+        resultSchemaName,
         userObj,
       });
   } else {
     analyticsConnection = await getTrexConnection(
       databaseCode,
       schemaName,
-      vocabSchemaName
+      vocabSchemaName,
+      resultSchemaName
     );
   }
 

@@ -1,6 +1,5 @@
 // @ts-types="npm:@types/express"
 import { Request } from "express";
-import axios, { AxiosRequestConfig } from "axios";
 import { Agent } from "http";
 import { env } from "../env.ts";
 import { ConceptSet } from "../types.ts";
@@ -17,6 +16,7 @@ export class SystemPortalAPI {
   private readonly token: string;
   private readonly url: string;
   private readonly agent: Agent;
+  private portalapi: any;
 
   constructor(request: Request) {
     this.token = request.headers["authorization"]!;
@@ -30,6 +30,7 @@ export class SystemPortalAPI {
     } else {
       throw new Error("No url is set for PortalAPI");
     }
+    this.portalapi = Trex.tokioChannel("d2e-functions/portal");
   }
 
   private async getDataset(datasetId: string): Promise<{
@@ -42,9 +43,10 @@ export class SystemPortalAPI {
     const errorMessage = `Error while getting dataset info for id : ${datasetId}`;
     try {
       const options = await this.createOptions();
-      const url = `${this.url}/dataset`;
-      options.params = { datasetId: datasetId };
-      const result = await axios.get(url, options);
+      const url = `${this.url}/dataset?datasetId=${encodeURIComponent(
+        datasetId
+      )}`;
+      const result = await this.portalapi.get(url, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
@@ -87,9 +89,12 @@ export class SystemPortalAPI {
     const errorMessage = "Error while getting concept sets";
     try {
       const options = await this.createOptions();
-      options.params = { datasetId: datasetId };
-      const url = `${this.url}/user-artifact/${userId}/concept_sets/shared/list`;
-      const result = await axios.get(url, options);
+      const url = `${
+        this.url
+      }/user-artifact/${userId}/concept_sets/shared/list?datasetId=${encodeURIComponent(
+        datasetId
+      )}`;
+      const result = await this.portalapi.get(url, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
@@ -102,10 +107,13 @@ export class SystemPortalAPI {
     const errorMessage = `Error while getting concept set for id ${id}`;
     try {
       const options = await this.createOptions();
-      options.params = { datasetId: datasetId };
-      const url = `${this.url}/user-artifact/concept_sets/${id}`;
-      const result = await axios.get<ConceptSet[]>(url, options);
-      return result.data[0];
+      const url = `${
+        this.url
+      }/user-artifact/concept_sets/${id}?datasetId=${encodeURIComponent(
+        datasetId
+      )}`;
+      const result = await this.portalapi.get(url, options);
+      return result.data as ConceptSet;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
       throw new Error(errorMessage);
@@ -120,9 +128,10 @@ export class SystemPortalAPI {
     const errorMessage = "Error while creating concept set";
     try {
       const options = await this.createOptions();
-      options.params = { datasetId: datasetId };
-      const url = `${this.url}/user-artifact/concept_sets`;
-      const result = await axios.post(url, input, options);
+      const url = `${
+        this.url
+      }/user-artifact/concept_sets?datasetId=${encodeURIComponent(datasetId)}`;
+      const result = await this.portalapi.post(url, input, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
@@ -138,9 +147,10 @@ export class SystemPortalAPI {
     const errorMessage = `Error while updating concept set for id: ${input.id}`;
     try {
       const options = await this.createOptions();
-      options.params = { datasetId: datasetId };
-      const url = `${this.url}/user-artifact/concept_sets`;
-      const result = await axios.put(url, input, options);
+      const url = `${
+        this.url
+      }/user-artifact/concept_sets?datasetId=${encodeURIComponent(datasetId)}`;
+      const result = await this.portalapi.put(url, input, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
@@ -148,14 +158,21 @@ export class SystemPortalAPI {
     }
   }
 
-  async deleteConceptSet(id: number, datasetId: string): Promise<any> {
+  async deleteConceptSet(
+    userId: string,
+    id: number,
+    datasetId: string
+  ): Promise<any> {
     console.info(`Portal request to delete concept set for id: ${id}`);
     const errorMessage = `Error while deleting concept set for id: ${id}`;
     try {
       const options = await this.createOptions();
-      options.params = { datasetId: datasetId };
-      const url = `${this.url}/user-artifact/concept_sets/${id}`;
-      const result = await axios.delete(url, options);
+      const url = `${
+        this.url
+      }/user-artifact/${userId}/concept_sets/${id}?datasetId=${encodeURIComponent(
+        datasetId
+      )}`;
+      const result = await this.portalapi.delete(url, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
@@ -173,7 +190,7 @@ export class SystemPortalAPI {
       const params = new URLSearchParams();
       params.append("datasetId", datasetId);
 
-      const result = await axios.get(url, {
+      const result = await this.portalapi.get(url, {
         params,
         ...options,
       });
@@ -185,7 +202,7 @@ export class SystemPortalAPI {
   }
 
   private async createOptions() {
-    let options: AxiosRequestConfig = {};
+    let options = {};
 
     options = {
       headers: {
@@ -202,7 +219,7 @@ export class SystemPortalAPI {
     try {
       const options = await this.createOptions();
       const url = `${this.url}/config/hybrid-search`;
-      const result = await axios.get(url, options);
+      const result = await this.portalapi.get(url, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);

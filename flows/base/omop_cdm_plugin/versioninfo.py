@@ -1,5 +1,6 @@
 from prefect import task
 from prefect.logging import get_run_logger
+from _shared_flow_utils.types import SupportedDatabaseDialects
 
 from _shared_flow_utils.update_dataset_metadata import *
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
@@ -33,8 +34,21 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         missing_key = ke.args[0]
         logger.error(f"'{missing_key} not found in dataset'")
     else:
-        dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code)
+        if dataset.get("dialect") == SupportedDatabaseDialects.BIGQUERY:
+            error_msg = f"Database dialect 'bigquery' not supported for updating dataset metadata"
+            logger.error(error_msg)
+            portal_server_api = PortalServerAPI()
+            portal_server_api.update_dataset_attributes_table(dataset_id, "schema_version", error_msg)
+            portal_server_api.update_dataset_attributes_table(dataset_id, "latest_schema_version", error_msg)
+            return
+
+        try:
+            dbdao = DBDao(use_cache_db=use_cache_db,
+                        database_code=database_code)
+        except Exception as e:
+            logger.error(e)
+            return
+
         portal_server_api = PortalServerAPI()
         
         # check if schema exists
@@ -72,7 +86,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
                 )
             
             # update patient count or error msg
-            update_entity_distinct_count(
+            update_entity_count(
                 portal_server_api=portal_server_api,
                 dataset_id=dataset_id,
                 dbdao=dbdao,

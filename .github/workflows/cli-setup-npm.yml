@@ -8,7 +8,7 @@ on:
         required: false
         type: choice
         options:
-          - ohdsi/d2e
+          - OHDSI/Data2Evidence
       GIT_BRANCH_NAME:
         default: develop
         description: Enter BranchName / ReleaseTagName
@@ -32,6 +32,7 @@ on:
         required: true
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
   push:
     branches:
       - develop
@@ -95,7 +96,7 @@ jobs:
           delete-only-pre-release-versions: "true"
       - name: Pack
         run: |
-          NPM_FILENAME=$(npm pack)
+          NPM_FILENAME=$(npm pack | tail -n 1)
           echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
       - name: Prepare
         run: |

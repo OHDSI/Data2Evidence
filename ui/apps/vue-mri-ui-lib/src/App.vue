@@ -1,36 +1,19 @@
 <template>
-  <div id="app" class="UiTheme_d4l mri-app-vue-container">
-    <fatal
-      v-if="getFatalNotification.show"
-      :message="getFatalNotification.message"
-      :header="getText('MRI_PA_CONFIG_ADMIN_ERROR')"
-      @ok="okFatal"
-    />
-    <alert
-      v-if="getAlertNotification.show"
-      :message="getAlertNotification.message"
-      :header="getAlertNotification.title"
-      :messageType="getAlertNotification.messageType"
-      @ok="okAlert"
-    />
-    <!-- <ui5adaptor /> -->
+  <div id="app" class="mri-app-vue-container">
+    <NotificationStack />
     <splashScreen v-if="getInitialLoad" />
     <patientanalytics v-show="!getInitialLoad" />
   </div>
 </template>
 
 <script lang="ts">
-declare var sap
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import configSelection from './components/ConfigSelection.vue'
-import notification from './components/Notification.vue'
 import patientanalytics from './components/PatientAnalytics.vue'
-import ui5adaptor from './components/UI5Adaptor.vue'
 import SplashScreen from './components/SplashScreen.vue'
 import store from './store'
-import { MESSAGE_ALERT_SHOW_TOGGLE, MESSAGE_FATAL_SHOW_TOGGLE } from './store/mutation-types'
-
-const eventbus = sap.ui.getCore().getEventBus()
+import NotificationStack from './components/NotificationStack.vue'
+import { useDeepLink } from './composables/useDeepLink'
 
 export default {
   store,
@@ -69,15 +52,15 @@ export default {
       window.d2eListeners['alp-dataset-change'].push(listenerInfo)
     }
     window.addEventListener('alp-dataset-change', datasetChangeHandler)
+
+    // Bind shareCohortDefinition to window for manual testing
+    this.bindShareCohortDefinition()
+
+    // Process deep link if present in URL
+    this.processDeepLinkIfPresent()
   },
   computed: {
-    ...mapGetters([
-      'getConfigSelectionDialogState',
-      'getFatalNotification',
-      'getAlertNotification',
-      'getText',
-      'getInitialLoad',
-    ]),
+    ...mapGetters(['getConfigSelectionDialogState', 'getInitialLoad']),
   },
   methods: {
     ...mapActions([
@@ -89,22 +72,34 @@ export default {
       'refreshPatientCount',
       'setLocale',
     ]),
-    ...mapMutations([MESSAGE_FATAL_SHOW_TOGGLE, MESSAGE_ALERT_SHOW_TOGGLE]),
-    okFatal() {
-      this[MESSAGE_FATAL_SHOW_TOGGLE]()
-      eventbus.publish('VUE_NAVIGATE_FLP')
+    bindShareCohortDefinition() {
+      // Import CohortUrlCodec dynamically to avoid circular dependencies
+      import('./utils/CohortUrlCodec').then(({ default: CohortUrlCodec }) => {
+        // Bind to window for manual testing
+        ;(window as any).shareCohortDefinition = () => {
+          return CohortUrlCodec.shareCohortDefinition(this.$store)
+        }
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            'Deep link utility loaded. Use window.shareCohortDefinition() to generate a shareable URL for the current cohort definition.'
+          )
+        }
+      })
     },
-    okAlert() {
-      this[MESSAGE_ALERT_SHOW_TOGGLE]()
+    async processDeepLinkIfPresent() {
+      // Wait for config to be loaded
+      await this.requestMriConfig()
+
+      // Process deep link (useDeepLink handles all checks internally)
+      const { processDeepLink } = useDeepLink(this.$store.dispatch)
+      await processDeepLink()
     },
   },
   components: {
     patientanalytics,
-    ui5adaptor,
     configSelection,
-    fatal: notification,
-    alert: notification,
     SplashScreen,
+    NotificationStack,
   },
 }
 </script>

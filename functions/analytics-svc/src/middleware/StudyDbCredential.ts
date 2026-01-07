@@ -1,10 +1,10 @@
 import { Logger, utils } from "@alp/alp-base-utils";
 import {
+    ANALYTICS_DB_DIALECTS,
     IMRIRequest,
     StudyAnalyticsCredential,
     StudyDbMetadata,
 } from "../types";
-import { DB } from "../utils/DBSvcConfig";
 import { convertZlibBase64ToJson } from "@alp/alp-base-utils";
 import PortalServerAPI from "../api/PortalServerAPI";
 import { env } from "../env";
@@ -38,19 +38,19 @@ export default async (req: IMRIRequest, res, next) => {
     const addPAConfigIdToReq = (studyMetadata): void => {
         //This is for scenarios where dataset is yet to be created
         if (studyMetadata == null) {
-            log.info(`Skip injection of PA config ID for path ${req.url}`)
+            log.info(`Skip injection of PA config ID for path ${req.url}`);
             return;
         }
         req.paConfigId = studyMetadata.paConfigId;
         req.paConfigVersion = "A";
-    }
+    };
 
     const getDefaultDbConnection = (): any => {
         const studyAnalyticsCredential: StudyAnalyticsCredential = {
             ...analyticsCredentials[Object.keys(analyticsCredentials)[0]],
         };
 
-        if (studyAnalyticsCredential.dialect === DB.HANA) {
+        if (studyAnalyticsCredential.dialect === ANALYTICS_DB_DIALECTS.HANA) {
             studyAnalyticsCredential.schema =
                 studyAnalyticsCredential.schema.toUpperCase();
         }
@@ -78,6 +78,7 @@ export default async (req: IMRIRequest, res, next) => {
         const studyDatabaseName: string = studyMetadata.databaseName;
         const studySchemaName: string = studyMetadata.schemaName;
         const studyVocabSchemaName: string = studyMetadata.vocabSchemaName;
+        const studyResultSchemaName: string = studyMetadata.resultSchemaName;
 
         log.info(`studyDatabaseName ${studyDatabaseName}`);
 
@@ -91,12 +92,21 @@ export default async (req: IMRIRequest, res, next) => {
         studyAnalyticsCredential.vocabSchema = studyVocabSchemaName
             ? studyVocabSchemaName
             : null;
+        studyAnalyticsCredential.resultSchema = studyResultSchemaName
+            ? studyResultSchemaName
+            : studyAnalyticsCredential.schema;
 
-        if (studyAnalyticsCredential.dialect === DB.HANA) {
+        if (studyAnalyticsCredential.dialect === ANALYTICS_DB_DIALECTS.HANA) {
             studyAnalyticsCredential.schema =
                 studyAnalyticsCredential.schema.toUpperCase();
             studyAnalyticsCredential.vocabSchema =
                 studyAnalyticsCredential.vocabSchema.toUpperCase();
+        }
+
+        // Add dialect and databaseCode to credentials for BIGQUERY datasets as BIGQUERY credentials are not generated in envConverter
+        if (studyMetadata.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
+            studyAnalyticsCredential.dialect = studyMetadata.dialect;
+            studyAnalyticsCredential.code = studyMetadata.databaseCode;
         }
 
         // Add database pool related configs to studyAnalyticsCredential

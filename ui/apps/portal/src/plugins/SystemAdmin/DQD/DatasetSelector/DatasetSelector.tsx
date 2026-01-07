@@ -37,11 +37,11 @@ const styles: SxProps = {
 const DatasetSelector: FC<DatasetSelectorProps> = ({ handleStudySelect }) => {
   const { getText, i18nKeys } = useTranslation();
   const [studyId, setStudyId] = useState("");
-  const studies = useDatasets("systemAdmin")[0];
+  const datasets = useDatasets("systemAdmin")[0];
 
   const handleDatasetSelection = (event: SelectChangeEvent) => {
     const studyId = event.target.value;
-    const schemaName = studies.find((s) => s.id === studyId)?.schemaName;
+    const schemaName = datasets.find((s) => s.id === studyId)?.schemaName;
     if (schemaName) {
       handleStudySelect(schemaName, studyId);
       setStudyId(studyId);
@@ -58,7 +58,7 @@ const DatasetSelector: FC<DatasetSelectorProps> = ({ handleStudySelect }) => {
         onChange={handleDatasetSelection}
         label={getText(i18nKeys.DATASET_SELECTOR__SELECT_STUDY)}
       >
-        {studies?.map((dataset: Study) => (
+        {datasets?.map((dataset: Study) => (
           <MenuItem value={dataset.id} key={dataset.id} sx={styles} disableRipple>
             {dataset.studyDetail?.name}
           </MenuItem>

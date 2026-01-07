@@ -1,63 +1,54 @@
-FROM ghcr.io/data2evidence/d2e-trex-base@sha256:b2bfefc3bfd693c54dacda16dc358e2bb5dbdbc8aea155a981b94d4e6a0c02c3 AS base
+# syntax=docker/dockerfile:1.4
 
-RUN useradd docker -u 1001 \
-    && groupadd alp \
-    && adduser docker staff \
-    && adduser docker alp
+FROM debian:bookworm-slim AS base
 
-# Create folder to store duckdb extensions for offline plugins
-ENV duckdb_version=1.2.1
-RUN mkdir -p /root/.duckdb/extensions/v${duckdb_version}/linux_amd64
-WORKDIR /root/.duckdb/extensions/v${duckdb_version}/linux_amd64
-RUN apt-get update && apt-get install -y wget 
-RUN for lib in \
-    autocomplete avro aws azure delta excel fts httpfs iceberg icu inet json \
-    mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner tpcds tpch ui vss; do \
-    wget http://extensions.duckdb.org/v${duckdb_version}/linux_amd64/${lib}.duckdb_extension.gz && \
-    gzip -d ${lib}.duckdb_extension.gz; \
-    done
-RUN for lib in \
-    bigquery; do \ 
-    wget http://community-extensions.duckdb.org/v${duckdb_version}/linux_amd64/${lib}.duckdb_extension.gz && \
-    gzip -d ${lib}.duckdb_extension.gz; \
-    done
+ENV ONNXRUNTIME_VERSION=1.20.1
 
-WORKDIR /usr/src/cdw_data
-# Copy cdw-svc built in duckdb file into trex
-COPY --chown=root:root ./functions/cdw-svc/src/duckdb/cdw_config_svc_validation_schema ./built_in/cdw_config_svc_validation_schema
+RUN mkdir -p ./scripts
+COPY install_onnx.sh ./scripts
+COPY install_libchdb.sh ./scripts
+
+RUN echo "deb http://deb.debian.org/debian testing main" >> /etc/apt/sources.list && \
+apt-get update && apt-get install -y \
+    curl clang libgomp1 unzip wget libssl-dev default-jre-headless mesa-vulkan-drivers libopenblas-dev npm \
+    && apt-get install -y -t testing libstdc++6 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime && \
+    cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
+    rm -rf /root/onnxruntime
+
+RUN bash ./scripts/install_libchdb.sh
+
+RUN mkdir -p /usr/src /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in
 
 WORKDIR /usr/src
 
-# Allows usage of npx
-RUN if [ "$(uname -m)" = "aarch64" ]; then \
-    npm install @oven/bun-linux-aarch64; \
-    ln -sf /usr/src/node_modules/bun-linux-aarch64/bin/bun /usr/src/node_modules/.bin/bun; \
-    else \
-    npm install @oven/bun-linux-x64-baseline; \
-    ln -sf /usr/src/node_modules/bun-linux-x64-baseline/bin/bun /usr/src/node_modules/.bin/bun; \
-    fi
-
-# Build main function
-COPY ./services/trex/core /usr/src/core
-RUN mkdir -p /usr/src/data/cache
-RUN chown -R docker:alp /usr/src/data/cache
-RUN mkdir -p /usr/src/data/plugins
-COPY ./services/trex/_npmrc /usr/src/data/plugins/.npmrc
-COPY ./services/trex/package.json.plugin /usr/src/data/plugins/package.json
-COPY ./services/trex/bunfig.toml /usr/src/data/plugins/bunfig.toml
-
-COPY ./services/trex/package.json /usr/src
-COPY ./services/trex/deno.json /usr/src
+COPY deno.json package.json package-lock.json .npmrc ./
 
 RUN npm install
-RUN npm install -g deno@2.1
 
-WORKDIR /usr/src/core
-RUN deno install --allow-scripts
+RUN mkdir -p ./cert ./core
 
-WORKDIR /usr/src
-RUN /usr/src/trex bundle --entrypoint /usr/src/core/server/index.ts --output /usr/src/core/server/index.eszip
-RUN /usr/src/trex bundle --entrypoint /usr/src/core/event/index.ts --output /usr/src/core/event/index.eszip
+ENV TREXAS_HOST=0.0.0.0
+ENV TREXAS_PORT=9876
+ENV PGWIRE_HOST=0.0.0.0
+ENV PGWIRE_PORT=5433
+ENV TLS_CERT_PATH=""
+ENV TLS_KEY_PATH=""
+ENV TLS_PORT=9443
+ENV MAIN_PATH=/usr/src/main
+
+EXPOSE 33001 5432 33000
+
+COPY ./core ./core
+
+RUN npx trex bundle -e ./core/server/index.ts -o ./core/server/index.eszip && \
+    npx trex bundle -e ./core/event/index.ts -o ./core/event/index.eszip
+
+RUN mkdir -p ./logto
+COPY ./logto ./logto
+
+COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 
 CMD ["npm", "run", "start"]
-EXPOSE 33000

@@ -15,15 +15,20 @@ import {
   VisibilityOnIcon,
 } from "@portal/components";
 import { Tabs, Tab } from "@mui/material";
+// DeleteIcon is not available in @portal/components (only trash/trashcan icons exist in assets)
+// so we import it directly from @mui/icons-material
+import DeleteIcon from "@mui/icons-material/Delete";
 import { api } from "../../../axios/api";
 import Terminology from "../../Researcher/Terminology/Terminology";
-import { ConceptSetWithConceptDetails } from "../../Researcher/Terminology/utils/types";
+import { ConceptSet } from "../../Researcher/Terminology/utils/types";
 import { TerminologyProps } from "../../Researcher/Terminology/Terminology";
 import SearchBar from "../../../components/SearchBar/SearchBar";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
-import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
+import { useActiveDataset, useFeedback, useToken, useTranslation, useUser } from "../../../contexts";
 import "./ConceptSets.scss";
-
+import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
+import env from "../../../env";
+import ConceptSetDeleteDialog from "./ConceptSetDeleteDialog";
 enum ConceptSetTab {
   ConceptSearch = "ConceptSearch",
   ConceptSets = "ConceptSets",
@@ -41,8 +46,15 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const { setFeedback } = useFeedback();
-  const [data, setData] = useState<ConceptSetWithConceptDetails[]>([]);
+  const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conceptSetToDelete, setConceptSetToDelete] = useState<{ id: number; name: string } | undefined>(undefined);
+
+  // Get current user's username
+  const nameProp = env.REACT_APP_IDP_NAME_PROP;
+  const { idTokenClaims } = useToken();
+  const userName = idTokenClaims[nameProp];
 
   const handleTabSelectionChange = async (event: React.SyntheticEvent, value: ConceptSetTab) => {
     setTabValue(value);
@@ -63,25 +75,20 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
     try {
       setIsLoading(true);
 
-      const response = await api.terminology.getConceptSets(activeDatasetId);
-      const sortFn = (a: ConceptSetWithConceptDetails, b: ConceptSetWithConceptDetails) => {
-        if (a.name < b.name) {
-          return -1;
-        }
+      const response = (await api.d2eWebapi.getConceptSets(activeDatasetId)).map(mapd2eWebapiConceptSet);
+      // Sort by name, with user's own concept sets first
+      const sortFn = (a: ConceptSet, b: ConceptSet) => {
+        // User's own concept sets come first
+        const aIsOwn = a.createdBy === userName;
+        const bIsOwn = b.createdBy === userName;
+        if (aIsOwn && !bIsOwn) return -1;
+        if (!aIsOwn && bIsOwn) return 1;
+        // Then sort by name
+        if (a.name < b.name) return -1;
+        if (a.name > b.name) return 1;
         return 0;
       };
-      const userConceptSets = response
-        .filter((conceptSet) => {
-          return conceptSet.createdBy === user.idpUserId;
-        })
-        .sort(sortFn);
-      const sharedConceptSets = response
-        .filter((conceptSet) => {
-          return conceptSet.createdBy !== user.idpUserId && conceptSet.shared;
-        })
-        .sort(sortFn);
-      const list = [...userConceptSets, ...sharedConceptSets];
-      setData(list);
+      setData(response.sort(sortFn));
     } catch (e) {
       console.error(e);
       setFeedback({
@@ -92,7 +99,14 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [getText, setFeedback, i18nKeys.CONCEPT_SETS__ERROR, i18nKeys.CONCEPT_SETS__ERROR_DESCRIPTION, activeDatasetId]);
+  }, [
+    getText,
+    setFeedback,
+    i18nKeys.CONCEPT_SETS__ERROR,
+    i18nKeys.CONCEPT_SETS__ERROR_DESCRIPTION,
+    activeDatasetId,
+    userName,
+  ]);
 
   useEffect(() => {
     fetchData();
@@ -129,7 +143,21 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
     setPage(page);
   }, []);
 
-  const filteredData = data.filter((row) => row.name.toLowerCase().includes(searchText.toLowerCase()));
+  const handleDeleteClick = useCallback((conceptSet: ConceptSet) => {
+    setConceptSetToDelete({ id: conceptSet.id, name: conceptSet.name });
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteDialogClose = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setConceptSetToDelete(undefined);
+  }, []);
+
+  const handleConceptSetDeleted = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filteredData = data.filter((row: ConceptSet) => row.name.toLowerCase().includes(searchText.toLowerCase()));
   const pageData = filteredData.slice(rowsPerPage * page, rowsPerPage * (page + 1));
 
   if (isLoading || !activeDatasetId) return <Loader />;
@@ -198,9 +226,12 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
                           <TableCell>{row.userName}</TableCell>
                           <TableCell>
                             <IconButton
-                              startIcon={row.createdBy === user.idpUserId ? <EditIcon /> : <VisibilityOnIcon />}
+                              startIcon={row.createdBy === userName ? <EditIcon /> : <VisibilityOnIcon />}
                               onClick={() => handleAddAndEditConceptSet(row.id)}
                             />
+                            {row.createdBy === userName && (
+                              <IconButton startIcon={<DeleteIcon />} onClick={() => handleDeleteClick(row)} />
+                            )}
                           </TableCell>
                         </TableRow>
                       );
@@ -229,6 +260,14 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ metadata }) => {
           )}
         </div>
       </div>
+      <ConceptSetDeleteDialog
+        conceptSet={conceptSetToDelete}
+        open={deleteDialogOpen}
+        datasetId={activeDatasetId}
+        setMainFeedback={setFeedback}
+        onClose={handleDeleteDialogClose}
+        onDeleted={handleConceptSetDeleted}
+      />
     </>
   );
 };

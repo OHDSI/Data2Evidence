@@ -5,7 +5,7 @@
         <pane :size="paneSize" :min-size="splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
-              <div>
+              <div v-if="!isAtlasBookmark">
                 <button
                   type="button"
                   class="actionButton"
@@ -17,7 +17,7 @@
               </div>
               <div class="flex-grow-1 nav-container">
                 <ul class="nav nav-justified">
-                  <li class="nav-item" @click="toggleCohorts(true)" v-show="!displaySharedBookmarks">
+                  <li class="nav-item" @click="toggleCohorts(true)">
                     <a class="nav-link" :class="{ active: displayCohorts }" href="javascript:void(0)">{{
                       getText('MRI_PA_VIEW_COHORT_TITLE')
                     }}</a>
@@ -30,10 +30,6 @@
                 </ul>
               </div>
             </div>
-            <sharedBookmarks
-              @unloadBookmarkEv="toggleSharedBookmark(false)"
-              v-if="displaySharedBookmarks"
-            ></sharedBookmarks>
             <bookmarks
               @unloadBookmarkEv="toggleCohorts"
               @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
@@ -43,11 +39,16 @@
 
             <filters
               ref="filtersRef"
-              v-if="!showQueryFilter && !displayCohorts && !displaySharedBookmarks"
-              v-bind:class="{ hidden: displayCohorts || displaySharedBookmarks }"
+              v-if="!showQueryFilter && !displayCohorts"
+              v-bind:class="{ hidden: displayCohorts }"
             ></filters>
 
-            <QueryFilter v-else-if="showQueryFilter" ref="queryFilterRef" :atlas-data="atlasDataForQueryFilter" />
+            <QueryFilter
+              v-else-if="showQueryFilter"
+              ref="queryFilterRef"
+              :atlas-data="atlasDataForQueryFilter"
+              :key="atlasDataForQueryFilter?.id || 'new-cohort'"
+            />
           </div>
         </pane>
 
@@ -151,7 +152,6 @@
         <appButton :click="dismissBrowserMessage" :text="getText('MRI_PA_BUTTON_OK')" v-focus></appButton>
       </template>
     </messageBox> -->
-    <sharedChartDialog v-if="displaySharedBookmarks" />
     <messageToast />
   </div>
 </template>
@@ -172,8 +172,6 @@ import FilterCardSummary from './FilterCardSummary.vue'
 import filters from './Filters.vue'
 import MessageBox from './MessageBox.vue'
 import MessageToast from './MessageToast.vue'
-import SharedBookmarks from './SharedBookmarks.vue'
-import SharedChartDialog from './SharedChartDialog.vue'
 import SplashScreen from './SplashScreen.vue'
 import ResizeObserver from './ResizeObserver.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
@@ -196,7 +194,6 @@ export default {
   data() {
     return {
       displayCohorts: true,
-      displaySharedBookmarks: false,
       displayFilterCardSummary: false,
       supportedBrowser: true,
       clearBrowserMessage: false,
@@ -218,23 +215,15 @@ export default {
       atlasDataForQueryFilter: null,
     }
   },
-  created() {
-    // const userAgent = navigator.userAgent || navigator.vendor || myWindow.opera
-    // if (sap && sap.ui && sap.ui.Device && sap.ui.Device.system && sap.ui.Device.system.phone) {
-    //   this.supportedBrowser = false
-    // }
-    // if (/Webkit/i.test(userAgent) && /iPad|iPhone|iPod/i.test(userAgent)) {
-    //   this.supportedBrowser = false
-    // }
-    // if (
-    //   !(!!myWindow.MSInputMethodContext && !!(document as any).documentMode) && // IE11
-    //   !/Firefox|Chrome|Safari/i.test(userAgent)
-    // ) {
-    //   // Firefox, Chrome, Safari
-    //   this.supportedBrowser = false
-    // }
-  },
+  created() {},
   watch: {
+    getActiveBookmark(newVal, oldVal) {
+      // Auto-switch to cohort view when a bookmark is loaded (e.g., from deep link)
+      // Only trigger when going from no bookmark to having one
+      if (newVal && !oldVal && this.displayCohorts) {
+        this.toggleCohorts(false)
+      }
+    },
     getBookmarkFromIFR(bm) {
       // In patient list, changePage is watched and already calls setFireRequest once
       // It seems like if both are run, `setFireRequest` runs consecutively in the same tick,
@@ -260,7 +249,7 @@ export default {
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('resize', this.updateMinSplitterWidth)
   },
   computed: {
@@ -346,7 +335,6 @@ export default {
     toggleQueryFilter(show) {
       this.showQueryFilter = show
       this.displayCohorts = !show
-      this.displaySharedBookmarks = false
     },
     toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
@@ -362,12 +350,6 @@ export default {
         }
       }
       this.displayCohorts = isDisplayCohort
-    },
-    toggleSharedBookmark(sharedBookmarkDisplay) {
-      if (sharedBookmarkDisplay) {
-        this.loadAllSharedBookmark()
-      }
-      this.displaySharedBookmarks = sharedBookmarkDisplay
     },
     toggleFilterCardSummary(displayFilterCardSummary) {
       this.displayFilterCardSummary = displayFilterCardSummary
@@ -463,20 +445,22 @@ export default {
     },
     async handleLoadAtlasCohortDefinition(atlasJson) {
       try {
-        // Ensure QueryFilter is shown
-        if (!this.showQueryFilter) {
-          this.toggleQueryFilter(true)
-        }
-        // Wait for component to be mounted
-        await this.$nextTick()
-        
+        // IMPORTANT: Set the data BEFORE showing QueryFilter to avoid race condition
         if (atlasJson === null) {
           // Clear any existing data and set null for empty initialization
           this.atlasDataForQueryFilter = null
         } else {
-          // Existing logic for loading Atlas JSON
+          // Set the Atlas JSON data
           this.atlasDataForQueryFilter = atlasJson
         }
+
+        // Ensure QueryFilter is shown AFTER setting the data
+        if (!this.showQueryFilter) {
+          this.toggleQueryFilter(true)
+        }
+
+        // Wait for component to be mounted and reactive updates to propagate
+        await this.$nextTick()
       } catch (error) {
         console.error('Error setting Atlas data:', error)
       }
@@ -493,8 +477,6 @@ export default {
     FilterCardSummary,
     MessageBox,
     MessageToast,
-    SharedBookmarks,
-    SharedChartDialog,
     SplashScreen,
     ResizeObserver,
     appIcon,

@@ -200,6 +200,8 @@ class Query(_AuthApi):
             print('Currently no study config is selected!')
 
     async def _build_entities(self):
+        if self._study_config_id is None or self._selectedStudyId is None:
+            raise ValueError("Study config ID and selected study ID must be set before building entities.")
         frontend_config = await PAConfig()._get_frontend_config(
            self._study_config_id, self._selectedStudyId)
         Person.generate_patient_class(frontend_config)
@@ -208,6 +210,8 @@ class Query(_AuthApi):
     async def _configure_columns(self, selected_entity_names: List[str] = []):
         if self._study_config_id == None or self._study_config_assigned_name == None or self._study_config_version == None:
             await self.set_study_config()
+        if self._study_config_id is None or self._selectedStudyId is None:
+            raise ValueError("Study config ID and selected study ID must be set before configuring columns.")
         fe_config = await PAConfig()._get_frontend_config(
             self._study_config_id, self._selectedStudyId)
         if len(fe_config) > 0:

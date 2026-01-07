@@ -3,7 +3,7 @@
     "version": "0.0.99",
     "description": "",
     "scripts": {
-        "build": "docker build ../ -f ./Dockerfile -t d2e/flow-data-management:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+        "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-data-management:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
     },
     "repository": {
         "type": "git",
@@ -68,18 +68,6 @@
                                         ],
                                         "default": null,
                                         "title": "Schema Name"
-                                    },
-                                    "cleansed_schema_option": {
-                                        "anyOf": [
-                                            {
-                                                "type": "boolean"
-                                            },
-                                            {
-                                                "type": "null"
-                                            }
-                                        ],
-                                        "default": false,
-                                        "title": "Cleansed Schema Option"
                                     },
                                     "vocab_schema": {
                                         "anyOf": [

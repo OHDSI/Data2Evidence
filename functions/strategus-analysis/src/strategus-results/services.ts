@@ -5,9 +5,7 @@ import {
   IKernelConnection,
 } from "@jupyterlab/services";
 import { services } from "../env.ts";
-import { USER_SCOPE, IDatabaseCredential, IReadCredential } from "../type.ts";
-import { RESULT_VIEWER_TEMPLATE } from "./template/result_viewer_template.ts";
-import { PortalServerAPI } from "./api/PortalServerAPI.ts";
+import { env } from "../env.ts";
 
 interface IKernelModel extends Kernel.IModel {
   id: string;
@@ -17,7 +15,8 @@ interface IKernelModel extends Kernel.IModel {
 export const startStrategusResultsViewer = async (
   token: string,
   studyId: string,
-  datasetId: string
+  datasetId: string,
+  viewerCode: string
 ): Promise<void> => {
   console.log("Creating Strategus Results Viewer for study:", studyId);
 
@@ -25,33 +24,26 @@ export const startStrategusResultsViewer = async (
     const manager = new KernelManager({
       standby: "when-hidden",
       serverSettings: ServerConnection.makeSettings({
-        baseUrl: services["jupyter-gateway"],
+        baseUrl: services["jupyter-gateway-viewer"],
         token: token,
         appendToken: true,
       }),
     });
 
-    const portalServerApi = new PortalServerAPI(token);
-    const { databaseCode } = await portalServerApi.getDataset(datasetId);
-
     const kernelConnection: IKernelConnection = await getKernelConnection(
       studyId,
       manager
     );
-    const readCredentials = await getReadCredentials(databaseCode);
 
-    const { name, host, port, readUser, readPassword } = readCredentials;
-    const r_code = RESULT_VIEWER_TEMPLATE.replace(
-      "$DATABASE_SCHEMA",
-      "results_" + studyId
-    )
+    const r_code = viewerCode
+      .replace("$DATABASE_SCHEMA", "results_" + studyId)
       .replace(
         "$DATABASE_CONNECTION_STRING",
-        `jdbc:postgresql://${host}:${port}/${name}`
+        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${env.TREX__SQL__DBNAME}?preferQueryMode=simple&autocommit=true`
       )
-      .replace("$DATABASE_USER", readUser)
-      .replace("$DATABASE_PASSWORD", readPassword)
-      .replace("$STUDY_ID", studyId);
+      .replace("$DATABASE_USER", env.TREX__SQL__USER)
+      .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
+      .replace("$STUDY_ID", encodeURIComponent(studyId));
 
     const future = await kernelConnection.requestExecute({
       code: r_code,
@@ -105,7 +97,7 @@ export const stopStrategusResultsViewer = async (
     const manager = new KernelManager({
       standby: "when-hidden",
       serverSettings: ServerConnection.makeSettings({
-        baseUrl: services["jupyter-gateway"],
+        baseUrl: services["jupyter-gateway-viewer"],
         token: token,
         appendToken: true,
       }),
@@ -153,12 +145,12 @@ const getKernelConnection = async (
     const runningKernel = await getKernel(studyId, manager);
 
     if (runningKernel) {
-      console.log(`Kernel found for study ${studyId}:`, runningKernel.id);
+      console.log("Kernel found for study %s:", studyId, runningKernel.id);
       return manager.connectTo({
         model: { name: "r_ohdsi_docker", id: runningKernel.id },
       });
     } else {
-      console.log(`No kernel found for study ${studyId}, creating new kernel`);
+      console.log("No kernel found for study %s, creating new kernel", studyId);
       return await manager.startNew({
         name: "r_ohdsi_docker",
         env: {
@@ -169,67 +161,4 @@ const getKernelConnection = async (
   } catch (error) {
     throw Error(`Failed to create or connect to kernel for study ${studyId}`);
   }
-};
-
-const getReadCredentials = async (
-  databaseCode: string
-): Promise<IReadCredential> => {
-  const dbm = Trex.databaseManager();
-
-  const databaseCredentials =
-    dbm.getDatabaseCredentials() as IDatabaseCredential[];
-
-  const parsedDatabaseCredentials = databaseCredentials.map((db) => {
-    const { credentials, dialect, name, port, ...rest } = db;
-
-    const decryptedCreds = credentials.reduce<{ [key: string]: string }>(
-      (acc, c) => {
-        const { username, password, userScope } = c;
-        switch (userScope) {
-          case USER_SCOPE.ADMIN:
-          case USER_SCOPE.READ:
-            acc[userScope.toLowerCase() + "User"] = username;
-            acc[userScope.toLowerCase() + "Password"] = password;
-            break;
-          default:
-            acc["user"] = username;
-            acc["password"] = password;
-            break;
-        }
-        return acc;
-      },
-      {}
-    );
-
-    return {
-      name: name,
-      code: rest.code,
-      host: rest.host.toString(),
-      port: port.toString(),
-      credentials: decryptedCreds,
-    };
-  });
-
-  const readCredentials = parsedDatabaseCredentials.find(
-    (parsedDatabaseCredential) => parsedDatabaseCredential.code === databaseCode
-  );
-
-  if (!readCredentials) {
-    throw Error("No database credentials");
-  }
-
-  if (
-    !readCredentials.credentials.readUser ||
-    !readCredentials.credentials.readPassword
-  ) {
-    throw Error("Missing read credentials");
-  }
-
-  return {
-    name: readCredentials.name,
-    host: readCredentials.host,
-    port: readCredentials.port,
-    readUser: readCredentials.credentials.readUser,
-    readPassword: readCredentials.credentials.readPassword,
-  };
 };

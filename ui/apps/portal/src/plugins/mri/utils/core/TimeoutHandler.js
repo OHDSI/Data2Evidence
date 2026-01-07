@@ -102,7 +102,7 @@ sap.ui.define(
       var that = this;
       this.timeoutDeferred = new jQuery.Deferred();
       jQuery.ajax({
-        url: "/hc/hph/core/services/EnableTimeout.xsjs",
+        url: "/d2e/hc/hph/core/services/EnableTimeout.xsjs",
         type: "GET",
         dataType: "json",
         contentType: "application/json",
@@ -128,7 +128,7 @@ sap.ui.define(
         TimeoutHandler._$serverTimeoutPromise = new jQuery.Deferred(function (
           $deferred
         ) {
-          XsrfHandler.ajaxWithXsrf({ url: "/hc/hph/core/ui/timeout.json" })
+          XsrfHandler.ajaxWithXsrf({ url: "/d2e/hc/hph/core/ui/timeout.json" })
             .done(function (mData) {
               var timeout = parseInt(mData.sessionTimeout);
               if (isNaN(timeout)) {
@@ -270,7 +270,7 @@ sap.ui.define(
      * @private
      */
     TimeoutHandler._pingKeepalive = function () {
-      this._ajax("/hc/hph/core/services/ping.xsjs");
+      this._ajax("/d2e/hc/hph/core/services/ping.xsjs");
     };
     /**
      * Sends an ajax request and resets the timers on response or shows the session expired message if the session

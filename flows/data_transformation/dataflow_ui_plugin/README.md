@@ -15,8 +15,16 @@
       test_value = myinput.get("sql_node_1").result
       return test_value + 1
   ```
-    - `myinput` is a dictionary mapping input node names to a `Result` object.
-    - Use `myinput.get(input_node_name).result` to access the data of a `Result` object.
+  or
+
+  ```
+  async def exec(myinput)
+    test_value = myinput.get("sql_node_1").result
+    result = await test_function(test_value)
+    return result
+  ```
+- `myinput` is a dictionary mapping input node names to a `Result` object.
+- Use `myinput.get(input_node_name).result` to access the data of a `Result` object.
 
 
 
@@ -76,7 +84,13 @@
     - Does the CSV have header: Tick if the CSV file already has headers.
     - Columns: For CSVs without headers. The previous field should be unticked. Enter name for each column.
 
+## File Node (Experimental)
 
+- **Description:** Upload a file of any datatype to Supabase Storage and return the node_id and the filename.
+- **Input Nodes:** This node does not accept any input nodes.
+- **Output Data:** Returns an python dictionary object containing the nodeid and filename.
+- **How To Use:** 
+    - The sample output will look like {"node_id" : "node_id"; "filename" : "filename.filetype"}
 
 ## Data Mapping Node (Experimental)
 

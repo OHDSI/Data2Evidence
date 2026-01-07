@@ -33,7 +33,7 @@ const JobsViewer: FC<{
   }, [isLocalDev, setJobsViewerScriptsLoaded]);
   const browserBaseUrl = `${window.location.protocol}//${window.location.hostname}${
     window.location.port ? ":" + window.location.port : ""
-  }/portal/systemadmin/jobs`;
+  }/d2e/portal/systemadmin/jobs`;
   return (
     <div
       className="jobs"

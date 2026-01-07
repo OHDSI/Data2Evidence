@@ -355,19 +355,23 @@ async function main() {
     tenantId: "default",
     id: "default",
     branding: {
-      favicon: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/favicon.ico`,
-      logoUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/d2e.svg`,
+      favicon: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/d2e/portal/assets/favicon.ico`,
+      logoUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/d2e/portal/assets/d2e.svg`,
     },
     color: {
       primaryColor: "#000080",
       isDarkModeEnabled: false,
       darkPrimaryColor: "#0000B3",
     },
-    customCss: `a[aria-label="Powered By Logto"] { display: none; }
+    customCss: process.env.LOGTO__CUSTOM_CSS || `a[aria-label="Powered By Logto"] { display: none; }
 img[alt="app logo"] { height: 80px; }
 button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
+    unknownSessionRedirectUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/d2e/portal`,
+    termsOfUseUrl: process.env.LOGTO__TERM_OF_USE_URL || "",
+    privacyPolicyUrl: process.env.LOGTO__PRIVACY_POLICY_URL || "",
   };
+
   await update("sign-in-exp", headers, signinExperience);
   console.log(
     "*********************************************************************************\n"

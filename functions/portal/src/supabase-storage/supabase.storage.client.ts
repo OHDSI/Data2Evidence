@@ -7,58 +7,89 @@ import { contentType } from "mime-types";
 import pg from "npm:pg";
 import { env, services } from "../env.ts";
 
+interface UploadFile {
+  originalname: string;
+  buffer: ArrayBuffer | Uint8Array;
+  mimetype: string;
+}
+
 @Injectable()
 export class SupabaseStorageClient {
   private readonly DEFAULT_BUCKET = "portal-datasets-resources";
   private readonly baseUrl: string;
   private readonly authToken: string;
-  private pgclient;
-  private pgOpt;
+  private static pgPool: pg.Pool;
+  private static isInitialized = false;
 
   constructor() {
     this.baseUrl = services.supabaseStorage;
     this.authToken = env.SUPABASE_STORAGE_JWT_TOKEN;
 
-    const envObj = Deno.env.toObject();
-    this.pgOpt = {
-      user: envObj.PG_USER,
-      password: envObj.PG_PASSWORD,
-      host: envObj.PG__HOST,
-      port: parseInt(envObj.PG__PORT),
-      database: envObj.PG__DB_NAME,
-      ssl: (() => {
-        let ssl = false;
-        try {
-          if (envObj.PG__SSL) {
-            ssl = JSON.parse(envObj.PG__SSL.toLowerCase());
-          }
-          if (envObj.PG__CA_ROOT_CERT) {
-            ssl = {
-              rejectUnauthorized: true,
-              ca: envObj.PG__CA_ROOT_CERT,
-            };
-          }
-        } catch (e) {
-          console.error(`Error parsing SSL config: ${e}`);
-        }
-        return ssl;
-      })(),
-    };
-    this.pgclient = new pg.Client(this.pgOpt);
-    this.initializeDb();
+    // Only initialize once for the singleton
+    if (!SupabaseStorageClient.isInitialized) {
+      SupabaseStorageClient.isInitialized = true;
 
-    this.createBucket(this.DEFAULT_BUCKET);
+      const envObj = Deno.env.toObject();
+      const pgOpt = {
+        user: envObj.PG_USER,
+        password: envObj.PG_PASSWORD,
+        host: envObj.PG__HOST,
+        port: parseInt(envObj.PG__PORT),
+        database: envObj.PG__DB_NAME,
+        max: 1,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        ssl: (() => {
+          let ssl: boolean | { rejectUnauthorized: boolean; ca: string } =
+            false;
+          try {
+            if (envObj.PG__SSL) {
+              ssl = JSON.parse(envObj.PG__SSL.toLowerCase());
+            }
+            if (envObj.PG__CA_ROOT_CERT) {
+              ssl = {
+                rejectUnauthorized: true,
+                ca: envObj.PG__CA_ROOT_CERT,
+              };
+            }
+          } catch (e) {
+            console.error(`Error parsing SSL config: ${e}`);
+          }
+          return ssl;
+        })(),
+      };
 
-    // Create the data transformation bucket to store uploaded files
-    this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
+      SupabaseStorageClient.pgPool = new pg.Pool(pgOpt);
+
+      SupabaseStorageClient.pgPool.on("error", (err) => {
+        console.error("Unexpected error on idle PostgreSQL client", err);
+      });
+
+      // Test connection and initialize buckets
+      this.initializeDb();
+      this.createBucket(this.DEFAULT_BUCKET);
+      this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
+    }
+  }
+
+  async closePool() {
+    if (SupabaseStorageClient.pgPool) {
+      await SupabaseStorageClient.pgPool.end();
+      console.log("PostgreSQL connection pool closed");
+    }
   }
 
   private async initializeDb() {
+    let client;
     try {
-      await this.pgclient.connect();
+      client = await SupabaseStorageClient.pgPool.connect();
       console.log("Successfully connected to PostgreSQL database");
     } catch (e) {
       console.error(`Error connecting to PostgreSQL: ${e}`);
+    } finally {
+      if (client) {
+        client.release();
+      }
     }
   }
 
@@ -97,16 +128,25 @@ export class SupabaseStorageClient {
 
   // Supabase storage API does not work for listing files, need further investigation.
   // Directly query the database to get the files.
-  async list(datasetId: string) {
+  async list(
+    id: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
+    const targetBucket = bucketName || this.DEFAULT_BUCKET;
+    let client;
+
     try {
-      if (
-        !this.pgclient ||
-        this.pgclient.connectionParameters.state === "closed"
-      ) {
-        await this.initializeDb();
+      client = await SupabaseStorageClient.pgPool.connect();
+
+      let folderPath;
+
+      if (pathType === "data-transformation") {
+        folderPath = this.getDataTransformationFolderPath(id);
+      } else {
+        folderPath = this.getDatasetFolderPath(id);
       }
 
-      const folderPath = this.getDatasetFolderPath(datasetId);
       console.log(`Querying database for files in folder: ${folderPath}`);
 
       // Query the storage.objects table directly
@@ -118,15 +158,21 @@ export class SupabaseStorageClient {
         AND name NOT LIKE $3
       `;
 
-      const result = await this.pgclient.query(query, [
-        this.DEFAULT_BUCKET,
+      const result = await client.query(query, [
+        targetBucket,
         `${folderPath}/%`,
         `${folderPath}/%/%`, // Exclude nested folders
       ]);
 
-      console.log(
-        `Found ${result.rows.length} files in database for dataset ${datasetId}`
-      );
+      if (pathType === "data-transformation") {
+        console.log(
+          `Found ${result.rows.length} files in database for data-transformation node ${id}`
+        );
+      } else {
+        console.log(
+          `Found ${result.rows.length} files in database for dataset ${id}`
+        );
+      }
 
       return result.rows.map((file) => {
         const fullPath = file.name;
@@ -148,16 +194,28 @@ export class SupabaseStorageClient {
         `Error in list method: ${e instanceof Error ? e.message : String(e)}`
       );
       return [];
+    } finally {
+      // Always release the client back to the pool
+      if (client) {
+        client.release();
+      }
     }
   }
 
-  async download(datasetId: string, fileName: string) {
+  async download(
+    datasetId: string,
+    fileName: string,
+    bucketName?: string,
+    pathType: "dataset" | "data-transformation" = "dataset"
+  ) {
     try {
-      const filePath = this.getFilePath(datasetId, fileName);
-      console.log(`Downloading file: ${filePath}`);
+      const targetBucket = bucketName || this.DEFAULT_BUCKET;
+
+      const filePath = this.getFilePath(datasetId, fileName, pathType);
+      console.log(`Downloading file: ${filePath} from bucket: ${targetBucket}`);
 
       // Direct request to download file
-      const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
+      const url = `${this.baseUrl}/object/${targetBucket}/${filePath}`;
       console.log(`Making request to: ${url}`);
 
       const response = await fetch(url, {
@@ -214,7 +272,7 @@ export class SupabaseStorageClient {
 
   async upload(
     id: string,
-    file: Multer.File,
+    file: UploadFile,
     bucketName?: string,
     pathType: "dataset" | "data-transformation" = "dataset"
   ) {

@@ -1,0 +1,242 @@
+name: d2e build plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      GIT_REPO_FULL_NAME:
+        description: Select RepoName
+        required: false
+        type: choice
+        options:
+          - OHDSI/Data2Evidence
+      GIT_BRANCH_NAME:
+        default: develop
+        description: Enter BranchName / ReleaseTagName
+        required: true
+        type: string
+      tag:
+        description: Enter tag for release
+        required: true
+        type: string
+      release:
+        description: Enter name for github release
+        required: true
+        type: string
+      prerelease:
+        type: boolean
+        default: true
+        required: true
+      overwrite:
+        type: boolean
+        default: true
+        required: true
+      artifacttype:
+        type: choice
+        required: true
+        default: "OSS-develop"
+        options:
+          - "OSS-develop"
+          - "OSS-release"
+          - "Project"
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
+  push:
+    branches:
+      - develop
+
+env:
+  GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
+  GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
+  NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS-develop'}}
+
+jobs:
+  check_file_changes:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      changes: ${{ steps.file_changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: dorny/paths-filter@v3
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "flows/**"
+              - "package.json"
+              - "docker-compose.yml"
+              - "ui/**"
+              - "functions/**"
+              - "fhir_functions/**"
+              - "services/trex/ext/**"
+              - ".github/workflows/plugin-ci.yml"
+              - ".github/workflows/flows-plugin-ci.yml"
+  pick_runner:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [pick_runner, check_file_changes]
+    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - PKGPATH: ./flows/base/
+          - PKGPATH: ./flows/i2b2/
+          - PKGPATH: ./flows/search_embedding/
+          - PKGPATH: ./flows/data_management/
+          - PKGPATH: ./flows/hades/
+          - PKGPATH: ./flows/loyalty_score/
+          - PKGPATH: ./flows/data_transformation/
+          - PKGPATH: ./ui
+            NPM: bun
+          - PKGPATH: ./functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
+            RUNNER: ubuntu-24.04
+          - PKGPATH: ./fhir_functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
+            RUNNER: ubuntu-24.04
+
+    runs-on: ${{ matrix.RUNNER || needs.pick_runner.outputs.random_runner }}
+
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GIT_BRANCH_NAME }}
+          repository: ${{ env.GIT_REPO_FULL_NAME }}
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@data2evidence"
+      - name: Setup bun
+        if: ${{ matrix.NPM == 'bun' }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+      - name: Setup NPM
+        if: ${{ matrix.NPM && matrix.NPM != 'bun' }}
+        run: npm install -g ${{ matrix.NPM }}
+      - name: Setup Java
+        if: ${{ matrix.DESTPATH }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Install dependencies
+        if: ${{ matrix.DESTPATH }}
+        run: |
+          npm install -g deno@2.5.6
+          node ./install-deno-deps.js ${{ matrix.PKGPATH }}
+      - name: Update version
+        run: |
+          cd ${{ matrix.PKGPATH }}
+          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
+            RELEASE_VERSION=${{ github.event.inputs.tag }}
+            jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg; mv tmppkg package.json
+          else
+            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+          fi
+      - name: Build
+        run: |
+          cd ${{ matrix.PKGPATH }}
+          ${{ matrix.NPM == 'bun' && 'bun install' ||'npm install --ignore-scripts' }}
+        env:
+          CI: ${{ matrix.NPM != 'bun' }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch Package
+        if: ${{ matrix.NPM }}
+        working-directory: ${{ matrix.PKGPATH }}
+        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
+      - name: DEST
+        working-directory: ${{ matrix.PKGPATH }}
+        if: ${{ matrix.DESTPATH }}
+        run: |
+          cp package.json package.org.json
+          sudo mkdir -p ${{ matrix.DESTPATH }}
+          sudo chown runner:docker ${{ matrix.DESTPATH }}
+          cp -a . ${{ matrix.DESTPATH }}
+          cd ${{ matrix.DESTPATH }}
+
+          export DENO_DIR="$HOME/.cache/deno"
+          node ${{ github.workspace }}/install-deno-deps.js .
+          npm run build
+      - name: Use Node.js - OSS Develop
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'
+        with:
+          node-version: "18.x"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
+          scope: "@data2evidence"
+      - name: Use Node.js - OSS Release
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-release'
+        with:
+          node-version: "18.x"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/"
+          scope: "@data2evidence"
+      - name: Use Node.js - Project
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'Project'
+        with:
+          node-version: "18.x"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/ms/npm/registry/"
+          scope: "@data2evidence"
+      - name: Publish
+        env:
+          CI: ${{ matrix.NPM != 'bun' }}
+          SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
+        run: |
+          cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
+          if [[ $SHOULD_PUBLISH == true ]]; then
+            npm publish
+          else
+            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+          fi
+
+  success:
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    env:
+      BUILD_JOB_STATUS: ${{ needs.build.result }}
+    steps:
+      - name: Check
+        run: |
+          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
+            exit 0
+          else
+            exit 1
+          fi

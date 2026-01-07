@@ -3,7 +3,7 @@ import FormControl from "@mui/material/FormControl";
 import Divider from "@mui/material/Divider";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningIcon from "@mui/icons-material/Warning";
-import { Box, Button, Dialog, InputLabel, MenuItem, Select, TextField, Tooltip } from "@portal/components";
+import { Button, Dialog, InputLabel, MenuItem, Select, TextField, Tooltip } from "@portal/components";
 import {
   AUTHENTICATION_MODES,
   AuthenticationMode,
@@ -122,6 +122,22 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
         return;
       }
 
+      // Parse extra JSON from Extra (Internal) if present
+      const internalExtra = db.extra?.find((ext) => ext.serviceScope === SERVICE_SCOPE_TYPES.INTERNAL);
+      let extra: Record<string, any> | undefined;
+      if (internalExtra?.value) {
+        try {
+          extra = JSON.parse(internalExtra.value);
+        } catch (err) {
+          console.error("Invalid extra JSON", err);
+          setFeedback({
+            type: "error",
+            message: "Invalid Extra (Internal) JSON configuration. Please correct the JSON and try again.",
+          });
+          return;
+        }
+      }
+
       const testResult: ITestingResult = {};
       for (const cred of credentials) {
         try {
@@ -131,6 +147,7 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
             database: db.name,
             user: cred.username,
             password: cred.password,
+            ...(extra && { extra }),
           };
           const result = await api.dbCredentialsMgr.testConnection(params);
 
@@ -218,11 +235,11 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
     >
       <Divider />
       <div className="edit-db-dialog__content">
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <label className="database-code__label">{getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__DATABASE_CODE)}</label>
           <label className="database-code-value__label">{db.code}</label>
-        </Box>
-        <Box mb={4} sx={{ width: "250px" }} hidden={db.dialect !== DB_DIALECTS.HANA}>
+        </div>
+        <div style={{ marginBottom: "32px", width: "250px" }} hidden={db.dialect !== DB_DIALECTS.HANA}>
           <FormControl fullWidth variant="standard">
             <InputLabel id="authentication-mode-select-label">
               {getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__AUTHENTICATION_MODE)}
@@ -240,14 +257,14 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
               ))}
             </Select>
           </FormControl>
-        </Box>
-        <Box mb={4} hidden={formData.authenticationMode !== AUTHENTICATION_MODES.PASSWORD}>
-          <Box mb={2}>
+        </div>
+        <div style={{ marginBottom: "32px" }} hidden={formData.authenticationMode !== AUTHENTICATION_MODES.PASSWORD}>
+          <div style={{ marginBottom: "16px" }}>
             <b>{getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CREDENTIALS)}</b>
-          </Box>
+          </div>
           {formData?.credentials?.map((cred, index) => (
-            <Box key={index} display="flex" gap={3} mb={1}>
-              <Box sx={{ width: "100px" }}>
+            <div key={index} style={{ display: "flex", gap: "24px", marginBottom: "8px" }}>
+              <div style={{ width: "100px" }}>
                 <FormControl fullWidth variant="standard">
                   <InputLabel id="user-scope-label">
                     {getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__PRIVILEGE)}
@@ -288,8 +305,8 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
                     ))}
                   </Select>
                 </FormControl>
-              </Box>
-              <Box sx={{ width: "100px" }} flex="1">
+              </div>
+              <div style={{ width: "100px", flex: 1 }}>
                 <TextField
                   label={getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__USERNAME)}
                   variant="standard"
@@ -308,8 +325,8 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
                     })
                   }
                 />
-              </Box>
-              <Box sx={{ width: "200px" }}>
+              </div>
+              <div style={{ width: "200px" }}>
                 <TextField
                   label={getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__PASSWORD)}
                   variant="standard"
@@ -329,8 +346,8 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
                     })
                   }
                 />
-              </Box>
-              <Box sx={{ width: "130px" }}>
+              </div>
+              <div style={{ width: "130px" }}>
                 <FormControl fullWidth variant="standard">
                   <InputLabel id="service-scope-label">
                     {getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__SERVICE)}
@@ -371,8 +388,8 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
                     ))}
                   </Select>
                 </FormControl>
-              </Box>
-              <Box sx={{ width: "50px", alignSelf: "flex-end" }}>
+              </div>
+              <div style={{ width: "50px", alignSelf: "flex-end" }}>
                 {Object.keys(testingResult).includes(cred.username) && (
                   <Tooltip
                     title={
@@ -389,15 +406,15 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
                     )}
                   </Tooltip>
                 )}
-              </Box>
-            </Box>
+              </div>
+            </div>
           ))}
-        </Box>
+        </div>
       </div>
       <Divider />
 
       <div className="edit-db-dialog__footer">
-        <Box display="flex" gap={1} className="edit-db-dialog__footer-actions">
+        <div style={{ display: "flex", gap: "8px" }} className="edit-db-dialog__footer-actions">
           <Button
             text={getText(i18nKeys.SAVE_DB_DIALOG__TEST_CONNECTION)}
             variant="outlined"
@@ -414,7 +431,7 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
             disabled={loading}
           />
           <Button text={getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__UPDATE)} onClick={handleUpdate} loading={loading} />
-        </Box>
+        </div>
       </div>
     </Dialog>
   );

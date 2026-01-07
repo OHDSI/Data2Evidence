@@ -1,5 +1,13 @@
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
-import { QueryFilterEvent, InclusionCriteria, QueryFilterAttribute, CriteriaType } from '../types/QueryFilterTypes'
+import {
+  QueryFilterEvent,
+  InclusionCriteria,
+  QueryFilterAttribute,
+  CriteriaType,
+  QueryFilterAttributeDateRange,
+  QueryFilterAttributeNumericRange,
+  QueryFilterAttributeConcept,
+} from '../types/QueryFilterTypes'
 import {
   AtlasCohortDefinition,
   CriteriaListItem,
@@ -14,15 +22,19 @@ import {
   ObservationPeriod,
   InclusionRule,
   CriteriaGroup,
+  GroupCriteria,
   ConceptSet,
   NumericRange,
-  DemographicCriteria,
   CorrelatedCriteria,
   Concept,
+  ConceptSetItem,
 } from '../types/AtlasTypes'
 
 import type { ConceptSetItemDisplay, SelectedConceptSet, StoredConceptItem } from '../types/ConceptSetTypes'
-import type CriteriaConfigLoader from './CriteriaConfigLoader'
+import configLoaderSingleton from './ConfigLoader'
+import type ConfigLoader from './ConfigLoader'
+import { mapAtlasToCardinality } from './AtlasUtils'
+import { attributeMap } from './AtlasAttributeLookup'
 
 export interface ConceptSetMapping {
   name: string
@@ -42,34 +54,38 @@ type CriteriaObject =
   | ObservationPeriod
   | Record<string, never>
 
+const CRITERIA_KEYS = [
+  'ConditionOccurrence',
+  'DrugExposure',
+  'DrugEra',
+  'ProcedureOccurrence',
+  'Observation',
+  'VisitOccurrence',
+  'DeviceExposure',
+  'Measurement',
+  'Death',
+  'ObservationPeriod',
+  'ConditionEra',
+  'DemographicCriteria',
+  'DoseEra',
+  'LocationRegion',
+  'PayerPlanPeriod',
+  'Specimen',
+  'VisitDetail',
+]
+
 const isCriteriaGroup = (item: CriteriaListItem | CriteriaGroup): item is CriteriaGroup => {
   return 'Criteria' in item
 }
 
 const isCriteriaListItem = (item: CriteriaListItem | CriteriaGroup): item is CriteriaListItem => {
-  return (
-    'ConditionOccurrence' in item ||
-    'DrugExposure' in item ||
-    'ProcedureOccurrence' in item ||
-    'Observation' in item ||
-    'Measurement' in item ||
-    'VisitOccurrence' in item ||
-    'DeviceExposure' in item ||
-    'Death' in item ||
-    'ObservationPeriod' in item
-  )
+  return CRITERIA_KEYS.some(key => key in item)
 }
 
 export const hasCodesetId = (
   criteriaObj: CriteriaObject
 ): criteriaObj is Extract<CriteriaObject, { CodesetId: number }> => {
   return 'CodesetId' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object'
-}
-
-const hasAge = (criteriaObj: CriteriaObject): criteriaObj is CriteriaObject & { Age: NumericRange } => {
-  return (
-    'Age' in criteriaObj && criteriaObj !== null && typeof criteriaObj === 'object' && criteriaObj.Age !== undefined
-  )
 }
 
 const hasCorrelatedCriteria = (
@@ -83,12 +99,6 @@ const hasCorrelatedCriteria = (
   )
 }
 
-const hasDemographicAge = (
-  demoCriteria: DemographicCriteria
-): demoCriteria is DemographicCriteria & { Age: NumericRange } => {
-  return demoCriteria.Age !== undefined
-}
-
 const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConceptItem[] => {
   return atlasConcepts.map(concept => ({
     value: concept.CONCEPT_ID?.toString() || '',
@@ -100,6 +110,9 @@ const convertAtlasConceptsToInternal = (atlasConcepts: Concept[]): StoredConcept
     system: concept.VOCABULARY_ID || '',
     code: concept.CONCEPT_CODE || '',
     standardConcept: concept.STANDARD_CONCEPT || '',
+    standardConceptCaption: concept.STANDARD_CONCEPT_CAPTION, // Preserve for round-trip (undefined if not present)
+    invalidReason: concept.INVALID_REASON || '',
+    invalidReasonCaption: concept.INVALID_REASON_CAPTION, // Preserve for round-trip (undefined if not present)
     conceptClassId: concept.CONCEPT_CLASS_ID || '', // Add conceptClassId if available
     validity: concept.VALID_START_DATE && concept.VALID_END_DATE ? 'Valid' : undefined, // Basic validity info
     validStartDate: concept.VALID_START_DATE,
@@ -111,7 +124,7 @@ const convertConceptSetArrayToAttribute = (
   attributeId: string,
   conceptArray: Concept[],
   eventType: string,
-  configLoader?: typeof CriteriaConfigLoader
+  configLoader = configLoaderSingleton
 ): QueryFilterAttribute => {
   const conceptItems = convertAtlasConceptsToInternal(conceptArray)
 
@@ -154,11 +167,14 @@ const convertConceptSetArrayToAttribute = (
       title: displayName,
     }
   } else {
+    // For conceptSet type, we store the concepts as conceptItems array
+    // The actual ConceptSetItemDisplay will be resolved from the concept set ID later
     return {
       id: `attribute_${Math.random().toString(36).substring(2)}`,
       attributeId: attributeId,
-      attributeType: 'conceptSet' as const,
-      conceptSet: conceptItems[0],
+      attributeType: 'standard' as const,
+      configType: 'conceptSet',
+      conceptItems: conceptItems,
       name: displayName,
       title: displayName,
     }
@@ -189,7 +205,7 @@ const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedC
 export const convertAtlasToFilters = (
   atlasJson: AtlasCohortDefinition,
   availableConceptSets: ConceptSetItemDisplay[] = [],
-  configLoader?: typeof CriteriaConfigLoader
+  configLoader = configLoaderSingleton
 ): QueryFilterCriteriaManager => {
   try {
     if (!atlasJson) {
@@ -249,31 +265,19 @@ export const convertAtlasToFilters = (
       }
     }
 
-    // TODO: these mappings could just be Pascal to camel case instead of being hardcoded
-    const getCriteriaType = (criteria: CriteriaListItem) => {
-      if (criteria.ConditionOccurrence) return 'conditionOccurrence'
-      if (criteria.DrugExposure) return 'drugExposure'
-      if (criteria.ProcedureOccurrence) return 'procedureOccurrence'
-      if (criteria.Observation) return 'observation'
-      if (criteria.Measurement) return 'measurement'
-      if (criteria.VisitOccurrence) return 'visitOccurrence'
-      if (criteria.DeviceExposure) return 'deviceExposure'
-      if (criteria.Death) return 'death'
-      if (criteria.ObservationPeriod) return 'observationPeriod'
-      return
+    const getCriteriaType = (criteria: CriteriaListItem): string | undefined => {
+      for (const key of CRITERIA_KEYS) {
+        if (criteria[key]) {
+          return key.charAt(0).toLowerCase() + key.slice(1)
+        }
+      }
+      return undefined
     }
 
-    // TODO: these mappings could come from the config instead of being hardcoded
     const getCriteriaObject = (criteria: CriteriaListItem): CriteriaObject => {
-      if (criteria.ConditionOccurrence) return criteria.ConditionOccurrence
-      if (criteria.DrugExposure) return criteria.DrugExposure
-      if (criteria.ProcedureOccurrence) return criteria.ProcedureOccurrence
-      if (criteria.Observation) return criteria.Observation
-      if (criteria.Measurement) return criteria.Measurement
-      if (criteria.VisitOccurrence) return criteria.VisitOccurrence
-      if (criteria.DeviceExposure) return criteria.DeviceExposure
-      if (criteria.Death) return criteria.Death
-      if (criteria.ObservationPeriod) return criteria.ObservationPeriod
+      for (const key of CRITERIA_KEYS) {
+        if (criteria[key]) return criteria[key]
+      }
       return {}
     }
 
@@ -333,12 +337,24 @@ export const convertAtlasToFilters = (
           id: `event_${Math.random().toString(36).substring(2)}`,
           conceptSet: eventDisplayName,
           eventType: eventType, // This is the medical event type (conditionOccurrence, drugExposure, etc.)
-          criteriaType, // For nested events, this should be the medical event type initially
+          criteriaType, // For nested events, this should be the medical event type initially. TODO: check if removable
           isExpanded: true,
           cardinality: {
-            type: 'AT_LEAST',
-            count: occurrence?.Count || 1,
-            using: 'ALL',
+            type: occurrence?.Type !== undefined ? mapAtlasToCardinality(occurrence.Type) : 'AT_LEAST',
+            count: occurrence?.Count ?? 1,
+            // Only set 'using' if CountColumn/IsDistinct are present in the original
+            ...(occurrence?.CountColumn && {
+              using:
+                occurrence.CountColumn === 'DOMAIN_CONCEPT' && occurrence.IsDistinct
+                  ? 'DISTINCT_CONCEPT'
+                  : occurrence.CountColumn === 'START_DATE' && occurrence.IsDistinct
+                  ? 'DISTINCT_START_DATE'
+                  : occurrence.CountColumn === 'VISIT_ID' && occurrence.IsDistinct
+                  ? 'DISTINCT_VISIT'
+                  : occurrence.CountColumn === 'START_DATE'
+                  ? 'ALL'
+                  : undefined,
+            }),
           },
           attributes: [],
         }
@@ -364,32 +380,181 @@ export const convertAtlasToFilters = (
           }
         }
 
-        // Handle direct Age attributes on the event
-        if (hasAge(criteriaObj)) {
-          if (!event.attributes) {
-            event.attributes = []
+        // Extract temporal relationship data if this is a CriteriaGroup
+        // Also check the criteriaItem itself which may have temporal data in nested scenarios
+        const hasStartWindow = isCriteriaGroup(_criteriaItem) && _criteriaItem.StartWindow
+        const hasEndWindow = isCriteriaGroup(_criteriaItem) && _criteriaItem.EndWindow
+        const hasRestrictVisit = isCriteriaGroup(_criteriaItem) && _criteriaItem.RestrictVisit !== undefined
+        const hasIgnoreObservationPeriod =
+          isCriteriaGroup(_criteriaItem) && _criteriaItem.IgnoreObservationPeriod !== undefined
+
+        if (hasStartWindow) {
+          const startWindowData = _criteriaItem.StartWindow!
+          event.startWindow = {
+            start: {
+              days: startWindowData.Start.Days ?? null,
+              coeff: (startWindowData.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            end: {
+              days: startWindowData.End.Days ?? null,
+              coeff: (startWindowData.End.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            // Default to false if undefined to prevent blank display in UI
+            useIndexEnd: startWindowData.UseIndexEnd ?? false,
+            useEventEnd: startWindowData.UseEventEnd ?? false,
           }
-          event.attributes.push({
-            id: `attribute_${Math.random().toString(36).substring(2)}`,
-            attributeId: 'age',
-            attributeType: 'numericRange',
-            operator: mapAtlasOperatorToInternal(criteriaObj.Age.Op || 'gt'),
-            value: criteriaObj.Age.Value.toString(),
-          })
         }
 
-        // Handle concept attributes on the event dynamically using configuration
+        if (hasEndWindow) {
+          const endWindowData = _criteriaItem.EndWindow!
+          event.endWindow = {
+            start: {
+              days: endWindowData.Start.Days ?? null,
+              coeff: (endWindowData.Start.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            end: {
+              days: endWindowData.End.Days ?? null,
+              coeff: (endWindowData.End.Coeff === 1 ? 1 : -1) as -1 | 1,
+            },
+            // Default to false if undefined to prevent blank display in UI
+            useIndexEnd: endWindowData.UseIndexEnd ?? false,
+            useEventEnd: endWindowData.UseEventEnd ?? false,
+          }
+        }
+
+        // Only set these fields if they exist in the Atlas JSON (preserve round-trip)
+        if (hasRestrictVisit) {
+          event.restrictVisit = _criteriaItem.RestrictVisit
+        }
+        if (hasIgnoreObservationPeriod) {
+          event.ignoreObservationPeriod = _criteriaItem.IgnoreObservationPeriod
+        }
+
+        // Handle all attributes on the event dynamically using configuration
+        // This includes: concept arrays, NumericRange, DateRange, DateAdjustment, Boolean, Text, and other types
         if (configLoader) {
           const atlasKeyToAttributeIdMap = configLoader.getAtlasJsonToAttributeMapping(eventType)
 
           Object.keys(criteriaObj).forEach(atlasKey => {
             const value = criteriaObj[atlasKey]
+            // Check if it is concept type attribute
             if (Array.isArray(value) && value.length > 0 && atlasKeyToAttributeIdMap[atlasKey]) {
               const attributeId = atlasKeyToAttributeIdMap[atlasKey]
+
               if (!event.attributes) {
                 event.attributes = []
               }
               event.attributes.push(convertConceptSetArrayToAttribute(attributeId, value, eventType, configLoader))
+            } else if (atlasKeyToAttributeIdMap[atlasKey]) {
+              const attributeId = atlasKeyToAttributeIdMap[atlasKey]
+              const attributeConfig = configLoader.getAttributeConfig(eventType, attributeId)
+
+              if (attributeConfig) {
+                if (!event.attributes) {
+                  event.attributes = []
+                }
+
+                // Check if value is a DateAdjustment object {StartWith, StartOffset, EndWith, EndOffset}
+                if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'StartWith' in value &&
+                  'StartOffset' in value &&
+                  'EndWith' in value &&
+                  'EndOffset' in value
+                ) {
+                  const dateAdjustment = value as any
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'dateAdjustment',
+                    startWith: dateAdjustment.StartWith,
+                    startOffset: dateAdjustment.StartOffset,
+                    endWith: dateAdjustment.EndWith,
+                    endOffset: dateAdjustment.EndOffset,
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Check if value is a DateRange object {Op, Value: string, Extent?}
+                else if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'string'
+                ) {
+                  const dateRange = value as any
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'dateRange',
+                    operator: mapAtlasOperatorToInternal(dateRange.Op || 'gt'),
+                    value: dateRange.Value,
+                    ...(dateRange.Extent !== undefined && { extent: dateRange.Extent }),
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Check if value is a NumericRange object {Op, Value: number, Extent?}
+                else if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'number'
+                ) {
+                  const numericRange = value as NumericRange
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'numericRange',
+                    operator: mapAtlasOperatorToInternal(numericRange.Op || 'gt'),
+                    value: numericRange.Value.toString(),
+                    ...(numericRange.Extent !== undefined && { extent: numericRange.Extent.toString() }),
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Check if value is a boolean
+                else if (typeof value === 'boolean') {
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'boolean',
+                    value: value,
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Check if value is a string (text attribute)
+                else if (typeof value === 'string') {
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: 'text',
+                    value: value,
+                    name: attributeConfig.name || attributeId,
+                    description: attributeConfig.description || '',
+                  })
+                }
+                // Handle other attribute types generically
+                else {
+                  event.attributes.push({
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId: attributeId,
+                    attributeType: 'standard' as const,
+                    configType: attributeConfig.type,
+                    description: attributeConfig.description || '',
+                    value: value,
+                  })
+                }
+              }
             }
           })
         }
@@ -402,12 +567,199 @@ export const convertAtlasToFilters = (
             criteriaObj.CorrelatedCriteria.Type
           )
 
+          // Handle DemographicCriteriaList within CorrelatedCriteria
+          if (criteriaObj.CorrelatedCriteria.DemographicCriteriaList?.length > 0) {
+            criteriaObj.CorrelatedCriteria.DemographicCriteriaList.forEach(demoCriteria => {
+              const demographicEvent: QueryFilterEvent = {
+                id: `event_${Math.random().toString(36).substring(2)}`,
+                conceptSet: 'Demographic Criteria',
+                eventType: 'demographic',
+                isExpanded: true,
+                attributes: [],
+              }
+
+              // Handle all demographic attributes generically using config
+              if (configLoader) {
+                const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
+
+                Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+                  const value = demoCriteria[atlasKey]
+                  const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
+
+                  if (!attributeId) {
+                    return
+                  }
+
+                  // Get attribute config using the ConfigLoader method
+                  const attrConfig = configLoader.getAttributeConfig('demographic', attributeId)
+                  if (!attrConfig) {
+                    return
+                  }
+
+                  if (!demographicEvent.attributes) {
+                    demographicEvent.attributes = []
+                  }
+
+                  // Handle based on attribute type from config
+                  if (
+                    attrConfig.type === 'numericRange' &&
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Op' in value &&
+                    'Value' in value
+                  ) {
+                    const mappedOperator = mapAtlasOperatorToInternal(value.Op)
+                    const mappedValue = value.Value.toString()
+
+                    // NumericRange type (e.g., Age) - Convert from Atlas format to internal format
+                    const numericAttribute: QueryFilterAttributeNumericRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'numericRange',
+                      name: attrConfig.name,
+                      description: attrConfig.description,
+                      operator: mappedOperator,
+                      value: mappedValue,
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(numericAttribute)
+                  } else if (attrConfig.type === 'concept' && Array.isArray(value) && value.length > 0) {
+                    // Concept type (e.g., Gender, Race, Ethnicity)
+                    const conceptAttr = convertConceptSetArrayToAttribute(
+                      attributeId,
+                      value,
+                      'demographic',
+                      configLoader
+                    )
+                    demographicEvent.attributes.push(conceptAttr)
+                  } else if (
+                    attrConfig.type === 'dateRange' &&
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Value' in value
+                  ) {
+                    // DateRange type (e.g., StartDate, EndDate) - Convert from Atlas format to internal format
+                    const dateAttribute: QueryFilterAttributeDateRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'dateRange',
+                      name: attrConfig.name,
+                      description: attrConfig.description,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(dateAttribute)
+                  }
+                })
+              } else {
+                // Fallback: Handle demographics without configLoader (for round-trip testing)
+                // Use attribute map to detect types from data structure
+                const demographicMapping = attributeMap['DemographicCriteria'] || {}
+                const atlasToInternalMap: Record<string, string> = {}
+                Object.entries(demographicMapping).forEach(([internalKey, atlasKey]) => {
+                  atlasToInternalMap[String(atlasKey)] = internalKey
+                })
+
+                if (!demographicEvent.attributes) {
+                  demographicEvent.attributes = []
+                }
+
+                Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+                  const value = demoCriteria[atlasKey]
+                  const attributeId = atlasToInternalMap[atlasKey]
+
+                  if (!attributeId) {
+                    return
+                  }
+
+                  // NumericRange: typeof value.Value === 'number'
+                  if (
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Op' in value &&
+                    'Value' in value &&
+                    typeof value.Value === 'number'
+                  ) {
+                    const numericAttribute: QueryFilterAttributeNumericRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'numericRange',
+                      name: atlasKey,
+                      description: atlasKey,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(numericAttribute)
+                  }
+                  // Concept array: Array.isArray && value[0].CONCEPT_ID
+                  else if (Array.isArray(value) && value.length > 0 && value[0].CONCEPT_ID !== undefined) {
+                    const conceptAttribute: QueryFilterAttributeConcept = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'concept',
+                      name: atlasKey,
+                      description: atlasKey,
+                      conceptItems: convertAtlasConceptsToInternal(value),
+                    }
+                    demographicEvent.attributes.push(conceptAttribute)
+                  }
+                  // DateRange: typeof value.Value === 'string'
+                  else if (
+                    typeof value === 'object' &&
+                    value !== null &&
+                    'Op' in value &&
+                    'Value' in value &&
+                    typeof value.Value === 'string'
+                  ) {
+                    const dateAttribute: QueryFilterAttributeDateRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'dateRange',
+                      name: atlasKey,
+                      description: atlasKey,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes.push(dateAttribute)
+                  }
+                })
+              }
+
+              // Need to populate selectedAttributes for UI to show the attributes
+              if (demographicEvent.attributes && demographicEvent.attributes.length > 0) {
+                demographicEvent.selectedAttributes = demographicEvent.attributes.map(
+                  attr => attr.attributeId || attr.id
+                )
+              }
+
+              nestedCriteriaEvents.push(demographicEvent)
+            })
+          }
+
+          // Handle Groups within CorrelatedCriteria - convert them back to group events (with recursive support)
+          if (criteriaObj.CorrelatedCriteria.Groups && criteriaObj.CorrelatedCriteria.Groups.length > 0) {
+            criteriaObj.CorrelatedCriteria.Groups.forEach(groupCriteria => {
+              const groupEvent = convertGroupCriteriaToGroupEvents(groupCriteria)
+              nestedCriteriaEvents.push(groupEvent)
+            })
+          }
+
           const nestedAttribute = {
             id: `attribute_${Math.random().toString(36).substring(2)}`,
+            attributeId: 'nested', // Config ID for nested attributes
             attributeType: 'nested' as const,
             nestedCriteria: {
               id: `criteria_${Math.random().toString(36).substring(2)}`,
               criteriaType: criteriaObj.CorrelatedCriteria.Type || 'ALL',
+              criteriaCount: criteriaObj.CorrelatedCriteria.Count,
               events: nestedCriteriaEvents,
             },
           }
@@ -440,16 +792,146 @@ export const convertAtlasToFilters = (
         case 'bt':
           return 'BETWEEN'
         case 'nbt':
+        case '!bt':
           return 'NOT_BETWEEN'
         default:
           return 'GREATER_THAN'
       }
     }
 
+    // Recursive helper function to convert GroupCriteria to group events
+    function convertGroupCriteriaToGroupEvents(groupCriteria: GroupCriteria): QueryFilterEvent {
+      const groupEvent: QueryFilterEvent = {
+        id: `event_${Math.random().toString(36).substring(2)}`,
+        conceptSet: 'Group',
+        eventType: 'group',
+        isExpanded: true,
+        nestedCriteria: {
+          id: `nested_${Math.random().toString(36).substring(2)}`,
+          criteriaType: groupCriteria.Type || 'ALL',
+          criteriaCount: groupCriteria.Count,
+          events: [] as QueryFilterEvent[],
+        },
+      }
+
+      // Convert CriteriaList within the group
+      if (groupCriteria.CriteriaList && groupCriteria.CriteriaList.length > 0) {
+        const convertedEvents = convertCriteriaListToEvents(groupCriteria.CriteriaList, groupCriteria.Type || 'ALL')
+        groupEvent.nestedCriteria!.events.push(...convertedEvents)
+      }
+
+      // Handle DemographicCriteriaList within groups
+      if (groupCriteria.DemographicCriteriaList && groupCriteria.DemographicCriteriaList.length > 0) {
+        groupCriteria.DemographicCriteriaList.forEach(demoCriteria => {
+          const demographicEvent: QueryFilterEvent = {
+            id: `event_${Math.random().toString(36).substring(2)}`,
+            conceptSet: 'Demographic Criteria',
+            eventType: 'demographic',
+            isExpanded: true,
+            attributes: [],
+          }
+
+          // Handle all demographic attributes generically using config
+          if (configLoader) {
+            const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
+
+            Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+              const value = demoCriteria[atlasKey]
+              const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
+
+              if (attributeId && value !== undefined && value !== null) {
+                const attributeConfig = configLoader.getAttributeConfig('demographic', attributeId)
+                if (attributeConfig) {
+                  if (
+                    attributeConfig.type === 'numericRange' &&
+                    typeof value === 'object' &&
+                    'Op' in value &&
+                    'Value' in value
+                  ) {
+                    const mappedOperator = mapAtlasOperatorToInternal(value.Op)
+                    const mappedValue = value.Value.toString()
+                    const extent = 'Extent' in value ? value.Extent?.toString() : undefined
+
+                    demographicEvent.attributes!.push({
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId: attributeId,
+                      attributeType: 'standard' as const,
+                      configType: 'numericRange',
+                      operator: mappedOperator,
+                      value: mappedValue,
+                      extent: extent,
+                      name: attributeConfig.name || attributeId,
+                      description: attributeConfig.description || '',
+                    })
+                  } else if (attributeConfig.type === 'concept' && Array.isArray(value)) {
+                    const conceptItems = convertAtlasConceptsToInternal(value)
+                    demographicEvent.attributes!.push({
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId: attributeId,
+                      attributeType: 'standard' as const,
+                      configType: 'concept',
+                      conceptItems: conceptItems,
+                      name: attributeConfig.name || attributeId,
+                      description: attributeConfig.description || '',
+                      domainFilter: attributeConfig.domainFilter,
+                    })
+                  } else if (
+                    attributeConfig.type === 'dateRange' &&
+                    typeof value === 'object' &&
+                    'Op' in value &&
+                    'Value' in value
+                  ) {
+                    const dateAttribute: QueryFilterAttributeDateRange = {
+                      id: `attribute_${Math.random().toString(36).substring(2)}`,
+                      attributeId,
+                      attributeType: 'standard',
+                      configType: 'dateRange',
+                      name: attributeConfig.name,
+                      description: attributeConfig.description,
+                      operator: mapAtlasOperatorToInternal(value.Op),
+                      value: value.Value.toString(),
+                      ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                    }
+                    demographicEvent.attributes!.push(dateAttribute)
+                  }
+                }
+              }
+            })
+
+            demographicEvent.selectedAttributes = demographicEvent.attributes.map(attr => attr.attributeId || attr.id)
+          }
+
+          groupEvent.nestedCriteria!.events.push(demographicEvent)
+        })
+      }
+
+      // RECURSIVE: Handle nested Groups within this group
+      if (groupCriteria.Groups && groupCriteria.Groups.length > 0) {
+        groupCriteria.Groups.forEach(nestedGroupCriteria => {
+          const nestedGroupEvent = convertGroupCriteriaToGroupEvents(nestedGroupCriteria)
+          groupEvent.nestedCriteria!.events.push(nestedGroupEvent)
+        })
+      }
+
+      return groupEvent
+    }
+
     // Create the main inclusionCriteria structure
     const inclusionCriteria: InclusionCriteria = {
-      qualifyingEventsLimit: 'ALL' as const,
+      qualifyingEventsLimit: 'ALL' as 'ALL' | 'EARLIEST' | 'LATEST',
       criteria: [],
+    }
+
+    // Read ExpressionLimit from Atlas JSON (for Inclusion Criteria)
+    const expressionLimitType = cohortDefinition.ExpressionLimit?.Type
+    if (expressionLimitType) {
+      if (expressionLimitType === 'First') {
+        inclusionCriteria.qualifyingEventsLimit = 'EARLIEST'
+      } else if (expressionLimitType === 'Last') {
+        inclusionCriteria.qualifyingEventsLimit = 'LATEST'
+      } else if (expressionLimitType === 'All') {
+        inclusionCriteria.qualifyingEventsLimit = 'ALL'
+      }
     }
 
     if (cohortDefinition.InclusionRules && Array.isArray(cohortDefinition.InclusionRules)) {
@@ -459,6 +941,7 @@ export const convertAtlasToFilters = (
           title: rule.name || 'Inclusion Rule',
           description: rule.description || '',
           criteriaType: rule.expression?.Type || 'ALL',
+          criteriaCount: rule.expression?.Count,
           events: [] as QueryFilterEvent[],
         }
 
@@ -477,39 +960,174 @@ export const convertAtlasToFilters = (
               attributes: [],
             }
 
-            if (hasDemographicAge(demoCriteria)) {
+            // Handle all demographic attributes generically using config (same as nested)
+            if (configLoader) {
+              const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
+
+              Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
+                const value = demoCriteria[atlasKey]
+                const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
+
+                if (!attributeId) {
+                  return
+                }
+
+                // Get attribute config using the ConfigLoader method
+                const attrConfig = configLoader.getAttributeConfig('demographic', attributeId)
+                if (!attrConfig) {
+                  return
+                }
+
+                if (!demographicEvent.attributes) {
+                  demographicEvent.attributes = []
+                }
+
+                // Handle based on attribute type from config
+                if (
+                  attrConfig.type === 'numericRange' &&
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value
+                ) {
+                  const mappedOperator = mapAtlasOperatorToInternal(value.Op)
+                  const mappedValue = value.Value.toString()
+                  // NumericRange type (e.g., Age) - Convert from Atlas format to internal format
+                  const numericAttribute: QueryFilterAttributeNumericRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'numericRange',
+                    name: attrConfig.name,
+                    description: attrConfig.description,
+                    operator: mappedOperator,
+                    value: mappedValue,
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                  }
+
+                  demographicEvent.attributes.push(numericAttribute)
+                } else if (attrConfig.type === 'concept' && Array.isArray(value) && value.length > 0) {
+                  // Concept type (e.g., Gender, Race, Ethnicity)
+                  const conceptAttr = convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
+                  demographicEvent.attributes.push(conceptAttr)
+                } else if (
+                  attrConfig.type === 'dateRange' &&
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Value' in value
+                ) {
+                  // DateRange type (e.g., StartDate, EndDate) - Convert from Atlas format to internal format
+                  const dateAttribute: QueryFilterAttributeDateRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'dateRange',
+                    name: attrConfig.name,
+                    description: attrConfig.description,
+                    operator: mapAtlasOperatorToInternal(value.Op),
+                    value: value.Value.toString(),
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                  }
+                  demographicEvent.attributes.push(dateAttribute)
+                }
+              })
+            } else {
+              // Fallback: Handle standard demographic fields directly without configLoader
+              // This enables round-trip testing without full config infrastructure
+              // Use the attribute map to avoid hardcoding Atlas keys
               if (!demographicEvent.attributes) {
                 demographicEvent.attributes = []
               }
-              demographicEvent.attributes.push({
-                id: `attribute_${Math.random().toString(36).substring(2)}`,
-                attributeId: 'age',
-                attributeType: 'numericRange',
-                operator: mapAtlasOperatorToInternal(demoCriteria.Age.Op || 'gt'),
-                value: demoCriteria.Age.Value.toString(),
+
+              // Create reverse lookup: Atlas key -> internal attributeId
+              const demographicMapping = attributeMap['DemographicCriteria'] || {}
+              const atlasToInternalMap: Record<string, string> = {}
+              Object.entries(demographicMapping).forEach(([internalKey, atlasKey]) => {
+                atlasToInternalMap[String(atlasKey)] = internalKey
               })
-            }
 
-            // Handle demographic concept attributes dynamically using configuration
-            if (configLoader) {
-              // Use a general mapping approach since demographic attributes might not have their own criteria type
-              const demographicAtlasKeyToAttributeIdMap = configLoader.getAllAtlasJsonToAttributeMappings()
-
-              Object.keys(demoCriteria).forEach(atlasKey => {
+              Object.keys(demoCriteria).forEach((atlasKey: keyof typeof demoCriteria) => {
                 const value = demoCriteria[atlasKey]
-                if (Array.isArray(value) && value.length > 0 && demographicAtlasKeyToAttributeIdMap[atlasKey]) {
-                  const attributeId = demographicAtlasKeyToAttributeIdMap[atlasKey]
-                  if (!demographicEvent.attributes) {
-                    demographicEvent.attributes = []
+                const attributeId = atlasToInternalMap[atlasKey]
+
+                if (!attributeId) {
+                  // Skip unknown fields
+                  return
+                }
+
+                // Determine attribute type by inspecting the value structure (not by field name)
+                // NumericRange: has Op, Value (number), and optional Extent
+                if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'number'
+                ) {
+                  const numericAttribute: QueryFilterAttributeNumericRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'numericRange',
+                    name: atlasKey, // Use the Atlas key as the display name
+                    description: atlasKey,
+                    operator: mapAtlasOperatorToInternal(value.Op),
+                    value: value.Value.toString(),
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
                   }
-                  demographicEvent.attributes.push(
-                    convertConceptSetArrayToAttribute(attributeId, value, 'demographic', configLoader)
-                  )
+                  demographicEvent.attributes.push(numericAttribute)
+                }
+                // Concept array: is an array of Concept objects with CONCEPT_ID, CONCEPT_NAME, etc.
+                else if (Array.isArray(value) && value.length > 0 && value[0].CONCEPT_ID !== undefined) {
+                  const conceptAttribute: QueryFilterAttributeConcept = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'concept',
+                    name: atlasKey, // Use the Atlas key as the display name
+                    description: atlasKey,
+                    conceptItems: convertAtlasConceptsToInternal(value), // Convert Concept[] to StoredConceptItem[]
+                  }
+                  demographicEvent.attributes.push(conceptAttribute)
+                }
+                // DateRange: has Op, Value (string), and optional Extent (string)
+                else if (
+                  typeof value === 'object' &&
+                  value !== null &&
+                  'Op' in value &&
+                  'Value' in value &&
+                  typeof value.Value === 'string'
+                ) {
+                  const dateAttribute: QueryFilterAttributeDateRange = {
+                    id: `attribute_${Math.random().toString(36).substring(2)}`,
+                    attributeId,
+                    attributeType: 'standard',
+                    configType: 'dateRange',
+                    name: atlasKey, // Use the Atlas key as the display name
+                    description: atlasKey,
+                    operator: mapAtlasOperatorToInternal(value.Op),
+                    value: value.Value.toString(),
+                    ...(value.Extent !== undefined ? { extent: value.Extent.toString() } : {}),
+                  }
+                  demographicEvent.attributes.push(dateAttribute)
                 }
               })
             }
 
+            // Need to populate selectedAttributes for UI to show the attributes
+            if (demographicEvent.attributes && demographicEvent.attributes.length > 0) {
+              demographicEvent.selectedAttributes = demographicEvent.attributes.map(attr => attr.attributeId || attr.id)
+            }
+
             criteriaItem.events.push(demographicEvent)
+          })
+        }
+
+        // Handle Groups - convert them back to group events (with recursive support)
+        if (rule.expression?.Groups && rule.expression.Groups.length > 0) {
+          rule.expression.Groups.forEach(groupCriteria => {
+            const groupEvent = convertGroupCriteriaToGroupEvents(groupCriteria)
+            criteriaItem.events.push(groupEvent)
           })
         }
 
@@ -518,9 +1136,67 @@ export const convertAtlasToFilters = (
     }
 
     // Process CensoringCriteria for exitEvents
-    const exitEvents = {
-      endStrategy: 'CONT_OBS' as const,
-      censoringCriteria: [] as QueryFilterEvent[],
+    const exitEvents: {
+      endStrategy: 'CONT_OBS' | 'FIXED' | 'CONT_DRUG'
+      censoringCriteria: QueryFilterEvent[]
+      fixedDuration?: {
+        dateField: 'StartDate' | 'EndDate'
+        offset: number
+      }
+      contDrugSettings?: {
+        conceptSetId: string
+        gapDays: number
+        offset: number
+        daysSupplyOverride: number
+        conceptSetName?: string
+        conceptSetDetails?: ConceptSetItem[]
+      }
+    } = {
+      endStrategy: 'CONT_OBS',
+      censoringCriteria: [],
+    }
+
+    // Read EndStrategy from Atlas JSON
+    if (cohortDefinition.EndStrategy) {
+      if ('DateOffset' in cohortDefinition.EndStrategy) {
+        // Fixed duration strategy
+        exitEvents.endStrategy = 'FIXED'
+        exitEvents.fixedDuration = {
+          dateField: cohortDefinition.EndStrategy.DateOffset.DateField as 'StartDate' | 'EndDate',
+          offset: cohortDefinition.EndStrategy.DateOffset.Offset,
+        }
+      } else if ('CustomEra' in cohortDefinition.EndStrategy) {
+        // Continuous drug strategy
+        exitEvents.endStrategy = 'CONT_DRUG'
+
+        // Find the concept set using the Atlas DrugCodesetId
+        const drugCodesetId = cohortDefinition.EndStrategy.CustomEra.DrugCodesetId
+
+        const conceptSetMapping = drugCodesetId !== undefined ? findConceptSetByCodesetId(drugCodesetId) : null
+
+        if (conceptSetMapping) {
+          // Found the concept set - use system ID, name, and get details
+          const atlasConceptSet = cohortDefinition.ConceptSets?.find(cs => cs.id === drugCodesetId)
+
+          exitEvents.contDrugSettings = {
+            conceptSetId: conceptSetMapping.id, // System ID
+            conceptSetName: conceptSetMapping.name, // Display name
+            conceptSetDetails: atlasConceptSet?.expression?.items, // Details for saving
+            gapDays: cohortDefinition.EndStrategy.CustomEra.GapDays,
+            offset: cohortDefinition.EndStrategy.CustomEra.Offset,
+            daysSupplyOverride: cohortDefinition.EndStrategy.CustomEra.DaysSupplyOverride,
+          }
+        } else {
+          // Fallback - store with Atlas ID (will need to be resolved later)
+          exitEvents.contDrugSettings = {
+            conceptSetId: drugCodesetId?.toString() || '',
+            gapDays: cohortDefinition.EndStrategy.CustomEra.GapDays,
+            offset: cohortDefinition.EndStrategy.CustomEra.Offset,
+            daysSupplyOverride: cohortDefinition.EndStrategy.CustomEra.DaysSupplyOverride,
+          }
+        }
+      }
+      // If neither, it stays as 'CONT_OBS' (default)
     }
 
     if (cohortDefinition.CensoringCriteria && Array.isArray(cohortDefinition.CensoringCriteria)) {
@@ -528,9 +1204,15 @@ export const convertAtlasToFilters = (
     }
 
     // Process PrimaryCriteria for entryEvents
-    const entryEvents = {
-      primaryCriteriaLimit: 'ALL' as const,
-      events: [] as QueryFilterEvent[],
+    const entryEvents: {
+      primaryCriteriaLimit: 'ALL' | 'EARLIEST' | 'LATEST'
+      qualifiedLimit?: 'ALL' | 'EARLIEST' | 'LATEST'
+      events: QueryFilterEvent[]
+      priorDays: number
+      postDays: number
+    } = {
+      primaryCriteriaLimit: 'ALL',
+      events: [],
       priorDays: 0,
       postDays: 0,
     }
@@ -543,10 +1225,42 @@ export const convertAtlasToFilters = (
         entryEvents.priorDays = cohortDefinition.PrimaryCriteria.ObservationWindow.PriorDays || 0
         entryEvents.postDays = cohortDefinition.PrimaryCriteria.ObservationWindow.PostDays || 0
       }
+
+      // Read PrimaryCriteriaLimit and QualifiedLimit from Atlas JSON (both for Entry Events)
+      // Prefer PrimaryCriteriaLimit, fallback to QualifiedLimit
+      const primaryLimitType = cohortDefinition.PrimaryCriteria.PrimaryCriteriaLimit?.Type
+      const qualifiedLimitType = cohortDefinition.QualifiedLimit?.Type
+
+      const limitType = primaryLimitType || qualifiedLimitType
+      if (limitType) {
+        if (limitType === 'First') {
+          entryEvents.primaryCriteriaLimit = 'EARLIEST'
+        } else if (limitType === 'Last') {
+          entryEvents.primaryCriteriaLimit = 'LATEST'
+        } else if (limitType === 'All') {
+          entryEvents.primaryCriteriaLimit = 'ALL'
+        }
+      }
+
+      // Store QualifiedLimit separately for round-trip preservation
+      if (qualifiedLimitType) {
+        if (qualifiedLimitType === 'First') {
+          entryEvents.qualifiedLimit = 'EARLIEST'
+        } else if (qualifiedLimitType === 'Last') {
+          entryEvents.qualifiedLimit = 'LATEST'
+        } else if (qualifiedLimitType === 'All') {
+          entryEvents.qualifiedLimit = 'ALL'
+        }
+      }
     }
 
-    // Add all three structures to the data
-    const data = { inclusionCriteria, entryEvents, exitEvents }
+    // Add all three structures to the data, including cdmVersionRange if present
+    const data = {
+      cdmVersionRange: atlasJson.cdmVersionRange,
+      inclusionCriteria,
+      entryEvents,
+      exitEvents,
+    }
     // Create and return QueryFilterCriteriaManager
     return new QueryFilterCriteriaManager(data)
   } catch (error) {

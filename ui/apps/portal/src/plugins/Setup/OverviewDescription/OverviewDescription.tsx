@@ -10,7 +10,7 @@ import { ConfigTypes } from "../../../constant";
 import "./OverviewDescription.scss";
 
 const mdeOptions = {
-  hideIcons: ["side-by-side", "fullscreen"],
+  hideIcons: ["side-by-side", "fullscreen"] as readonly ("side-by-side" | "fullscreen")[],
   maxHeight: "150px",
 };
 
@@ -22,6 +22,7 @@ interface FormData {
   [ConfigTypes.PRIVACY_POLICY_DISPLAY]: string;
   [ConfigTypes.IMPRINT]: string;
   [ConfigTypes.IMPRINT_DISPLAY]: string;
+  [ConfigTypes.DISCLAIMER]: string;
   [ConfigTypes.DISCLAIMER_DISPLAY]: string;
 }
 
@@ -33,6 +34,7 @@ const EMPTY_FORM_DATA: FormData = {
   [ConfigTypes.PRIVACY_POLICY_DISPLAY]: "0",
   [ConfigTypes.IMPRINT]: "",
   [ConfigTypes.IMPRINT_DISPLAY]: "0",
+  [ConfigTypes.DISCLAIMER]: "",
   [ConfigTypes.DISCLAIMER_DISPLAY]: "0",
 };
 
@@ -47,6 +49,7 @@ export const OverviewDescription: FC = () => {
       ConfigTypes.PRIVACY_POLICY_DISPLAY,
       ConfigTypes.TERMS_OF_USE,
       ConfigTypes.TERMS_OF_USE_DISPLAY,
+      ConfigTypes.DISCLAIMER,
       ConfigTypes.DISCLAIMER_DISPLAY,
     ],
     refetch
@@ -199,6 +202,13 @@ export const OverviewDescription: FC = () => {
       </div>
 
       <div className="overview_description__content">
+        <SimpleMdeReact
+          value={formData[ConfigTypes.DISCLAIMER]}
+          onChange={(value) => handleFormDataChange({ [ConfigTypes.DISCLAIMER]: value })}
+          options={mdeOptions}
+          style={{ marginTop: "11px" }}
+        />
+
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.DISCLAIMER_DISPLAY])}
           label="Display Disclaimer When Logged In"

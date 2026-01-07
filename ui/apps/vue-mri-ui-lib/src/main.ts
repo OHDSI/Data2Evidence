@@ -3,6 +3,7 @@ import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
 
 import App from './App.vue'
+import RootLayout from './RootLayout.vue'
 import clickFocus from './directives/clickFocus'
 import focus from './directives/focus'
 import mouseScroll from './directives/mouseScroll'
@@ -17,8 +18,30 @@ import appVariantRangeVue from './lib/ui/app-variant-range.vue'
 import appSingleSelect from './lib/ui/app-single-select.vue'
 import appTagInputVue from './lib/ui/app-tag-input.vue'
 import store from './store'
+import { getPortalAPI } from './utils/PortalUtils'
+import { initializeApps } from './utils/AppRegistry'
+import { initializeComponents } from './utils/ComponentRegistry'
+import { applyTheme } from './utils/ThemeManager'
 
-const app = createApp(App as unknown as Component)
+let app: Component
+const portalAPI = getPortalAPI()
+const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
+import './styles/themes/_main.scss'
+
+if (isLocal) {
+  app = createApp(RootLayout as unknown as Component)
+  applyTheme('atlas')
+
+  // For local development, uncomment to use D2E theme
+  // applyTheme('d2e')
+
+  // Initialize registries
+  initializeApps()
+  initializeComponents()
+} else {
+  app = createApp(App as unknown as Component)
+  applyTheme('d2e')
+}
 
 app.use(store)
 app.component('app-label', appLabelVue)
@@ -36,9 +59,13 @@ app.directive('position-center', positionCenter)
 app.directive('mouse-scroll', mouseScroll)
 app.directive('resize-table', resizeTable)
 
-app.config.errorHandler = () => null
-app.config.warnHandler = () => null
-app.config.compilerOptions.isCustomElement = tag => tag.startsWith('d4l-')
+// Suppress errors and warnings in production unless VUE_APP_DEBUG is enabled
+// @ts-ignore - process.env is provided by webpack DefinePlugin
+// eslint-disable-next-line no-undef
+if (process.env.VUE_APP_DEBUG !== 'true') {
+  app.config.errorHandler = () => null
+  app.config.warnHandler = () => null
+}
 
 // Bind the custom elements to the window object
 applyPolyfills().then(() => {

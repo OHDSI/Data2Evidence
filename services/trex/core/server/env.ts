@@ -10,9 +10,15 @@ export let global = {
       "scopes": [
         "trex"
       ]
+    },{
+      "path": "^/trex/log",
+      "scopes": [
+        "trex.log.write"
+      ]
     }],
     ROLE_SCOPES: {
-      "ALP_SYSTEM_ADMIN": ['trex']
+      "ALP_SYSTEM_ADMIN": ['trex'],
+      "TENANT_VIEWER": ['trex.log.write']
     },
     PLUGINS_JSON: "{}"
 }
@@ -39,7 +45,8 @@ export const publicURLs = [
     '^/consent$',
     '^/callback$',
     '^/prefect/docs$',
-    '^/openapi.json$'
+    '^/openapi.json$',
+    '^/fhir-server/healthcheck$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([
@@ -68,10 +75,14 @@ export const env = {
     WATCH: _env.WATCH ? JSON.parse(_env.WATCH) : {},
     LOGTO_CLIENT_SECRET: _env.LOGTO__CLIENT_SECRET,
     LOGTO_TOKEN_URL: _env.LOGTO__TOKEN_URL,
+    LOGTO__ADMIN_SERVER__FQDN_URL: _env.LOGTO__ADMIN_SERVER__FQDN_URL,
+    LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: _env.LOGTO__CLIENTID_PASSWORD__BASIC_AUTH,
+    LOGTO__DEFAULT_TENANT__FQDN_URL : _env.LOGTO__DEFAULT_TENANT__FQDN_URL || "https://default.logto.app/api",
     LOGTO_RESOURCE_API: _env.LOGTO__RESOURCE_API,
     GATEWAY_IDP_SUBJECT_PROP: _env.GATEWAY__IDP_SUBJECT_PROP,
     PLUGINS_DEV_PATH: _env.PLUGINS_DEV_PATH || "./plugins",
     REP_PG: _env.REP_PG,
+    PORTAL__LOG_DISCLAIMER: _env.PORTAL__LOG_DISCLAIMER,
     PREFECT_DOCKER_NETWORK: _env.PREFECT_DOCKER_NETWORK || `${_env.PROJECT_NAME}_data`,
     PREFECT_POOL: "docker-pool",
     PROJECT_NAME: _env.PROJECT_NAME,
@@ -100,4 +111,15 @@ export const env = {
     PLUGINS_PULL_POLICY: _env.PLUGINS_PULL_POLICY || 'IfNotPresent',
     PLUGINS_IMAGE_TAG: _env.PLUGINS_IMAGE_TAG || 'develop',
     PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: _env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG ? JSON.parse(_env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG) : {},
+    PLUGINS_INFORMATION_URL: _env.PLUGINS_INFORMATION_URL || 'https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true',
+
+    USE_PUBLIC_WEBAPI_PROXY: _env.USE_PUBLIC_WEBAPI_PROXY,
+    PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
+    PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE,
+    GOOGLE_APPLICATION_CREDENTIALS: _env.GOOGLE_APPLICATION_CREDENTIALS,
+    REDIS_PASSWORD: _env.REDIS_PASSWORD,
+
+    INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY,
+    D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
+    D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
 }

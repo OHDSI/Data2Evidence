@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'ObservationPeriodBlock',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -108,7 +105,7 @@ watch(daysAfter, (newValue: number) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000080;
+  color: var(--color-primary, #000080);
   &__container {
     display: flex;
     flex-direction: column;
@@ -129,14 +126,14 @@ watch(daysAfter, (newValue: number) => {
     align-items: center;
     min-width: 20px;
     height: 20px;
-    border: 1px solid #000080;
+    border: 1px solid var(--color-primary, #000080);
     border-radius: 4px;
     margin: -4px 4px;
     text-align: center;
     line-height: 30px;
     font-size: 12px;
     font-weight: 500;
-    color: #000080;
+    color: var(--color-primary, #000080);
     cursor: pointer;
     .day-digit {
       padding: 0 2px;

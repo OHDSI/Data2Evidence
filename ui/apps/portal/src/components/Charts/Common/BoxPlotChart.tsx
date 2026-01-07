@@ -4,6 +4,8 @@ import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import "./BoxPlotChart.scss";
 import { useTranslation } from "../../../contexts";
+import { chartColors } from "./chartColors";
+import { getAxisNameGap } from "../util";
 
 interface BoxPlotChartProps {
   data: any[];
@@ -11,9 +13,10 @@ interface BoxPlotChartProps {
   xAxisName: string;
   yAxisName: string;
   extraChartConfigs?: any;
+  axisBaseGap?: number;
 }
 
-const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName, extraChartConfigs }) => {
+const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName, extraChartConfigs, axisBaseGap }) => {
   const { getText, i18nKeys } = useTranslation();
   if (data.length === 0) {
     return (
@@ -22,7 +25,21 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
       </ChartContainer>
     );
   }
+  const seriesForYGap = [
+    {
+      data: data.flatMap((d) => [Number(d.MAXVALUE)]),
+    },
+  ];
+  const seriesForXGap = [
+    {
+      data: data.map((d) => String(d.CATEGORY)),
+    },
+  ];
+  const xAxisNameGap = getAxisNameGap(seriesForXGap, extraChartConfigs?.xAxisFormat, axisBaseGap);
+  const yAxisNameGap = getAxisNameGap(seriesForYGap, extraChartConfigs?.yAxisFormat, axisBaseGap);
 
+  const maxLabelLength = Math.max(...data.map((d) => String(d.CATEGORY || "").length));
+  const shouldRotate = maxLabelLength > 8 || data.length > 6;
   const option = {
     dataset: [
       {
@@ -43,13 +60,13 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
       trigger: "item",
       formatter: function (params: any) {
         return `
-        Max: ${params.data["MAX_VALUE"]} <br />
-        P90: ${params.data["P90_VALUE"]} <br />
-        P75: ${params.data["P75_VALUE"]} <br />
-        Median: ${params.data["MEDIAN_VALUE"]} <br />
-        P25: ${params.data["P25_VALUE"]} <br />
-        P10: ${params.data["P10_VALUE"]} <br />
-        Min: ${params.data["MIN_VALUE"]} <br />
+        Max: ${params.data["MAXVALUE"]} <br />
+        P90: ${params.data["P90VALUE"]} <br />
+        P75: ${params.data["P75VALUE"]} <br />
+        Median: ${params.data["MEDIANVALUE"]} <br />
+        P25: ${params.data["P25VALUE"]} <br />
+        P10: ${params.data["P10VALUE"]} <br />
+        Min: ${params.data["MINVALUE"]} <br />
         `;
       },
       confine: true,
@@ -58,9 +75,10 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
       type: "category",
       name: xAxisName,
       nameLocation: "middle",
-      nameGap: 25,
+      nameGap: xAxisNameGap,
       axisLabel: {
         interval: 0,
+        rotate: shouldRotate ? 270 : 0,
       },
       nameTextStyle: {
         fontSize: 14,
@@ -70,7 +88,7 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
     yAxis: {
       name: yAxisName,
       nameLocation: "middle",
-      nameGap: 50,
+      nameGap: yAxisNameGap,
       nameTextStyle: {
         fontSize: 14,
         fontWeight: "bold",
@@ -86,12 +104,13 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
         },
         encode: {
           x: "CATEGORY",
-          y: ["MIN_VALUE", "P25_VALUE", "MEDIAN_VALUE", "P75_VALUE", "MAX_VALUE"],
+          y: ["MINVALUE", "P25VALUE", "MEDIANVALUE", "P75VALUE", "MAXVALUE"],
           itemName: ["CATEGORY"],
-          tooltip: ["MIN_VALUE", "P10_VALUE", "P25_VALUE", "MEDIAN_VALUE", "P75_VALUE", "P90_VALUE", "MAX_VALUE"],
+          tooltip: ["MINVALUE", "P10VALUE", "P25VALUE", "MEDIANVALUE", "P75VALUE", "P90VALUE", "MAXVALUE"],
         },
       },
     ],
+    color: chartColors,
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 

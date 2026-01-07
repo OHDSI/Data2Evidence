@@ -7,11 +7,11 @@ export default {
       PostDays: 0,
     },
     PrimaryCriteriaLimit: {
-      Type: 'All' as const,
+      Type: 'First' as const,
     },
   },
   QualifiedLimit: {
-    Type: 'All' as const,
+    Type: 'First' as const,
   },
   ExpressionLimit: {
     Type: 'All' as const,
@@ -131,11 +131,10 @@ export default {
                     {
                       Criteria: {
                         ConditionOccurrence: {
-                          // Uncomment when implemented
-                          // Age: {
-                          //   Value: 5,
-                          //   Op: 'gt',
-                          // },
+                          Age: {
+                            Value: 5,
+                            Op: 'gt',
+                          },
                         },
                       },
                       StartWindow: {
@@ -185,24 +184,21 @@ export default {
         Type: 'ALL' as const,
         CriteriaList: [],
         DemographicCriteriaList: [
-          // Uncomment when implemented
-          // {
-          //   Age: {
-          //     Value: 7,
-          //     Op: 'gt',
-          //   },
-          // },
+          {
+            Age: {
+              Value: 7,
+              Op: 'gt',
+            },
+          },
         ],
         Groups: [],
       },
     },
   ],
-  EndStrategy: {},
   CensoringCriteria: [],
   CollapseSettings: {
     CollapseType: 'ERA' as const,
     EraPad: 0,
   },
   CensorWindow: {},
-  cdmVersionRange: '>=5.0.0',
 }

@@ -62,12 +62,6 @@ const textUtils = {
    */
   getText(sKey: string, aArgs?: string[]) {
     return sKey + aArgs
-    // if (!TextUtils.mResourceBundles[sKey]) {
-    //   // console.error('ResourceBundle has to be initialized
-    //   // before getText is called', null, 'hc.core');
-    //   return sMessageKey;
-    // }
-    // return TextUtils.formatMessage(TextUtils.mResourceBundles[sKey].getText(sMessageKey), aArgs);
   },
 
   // mock function
@@ -106,24 +100,6 @@ const textUtils = {
    * @param {string}                  sMessage           The message of the notification
    */
   notifyUser(sLevel: string, sMessage: string) {
-    // if ([sap.ui.core.MessageType.Warning, sap.ui.core.MessageType.Error]
-    // .indexOf(sLevel) !== -1) {
-    //   const mOptions = {
-    //     styleClass: FioriUtils.getContentDensityClass(),
-    //   };
-    //   if (typeof fMessageBoxClosed === 'function') {
-    //     mOptions.onClose = fMessageBoxClosed;
-    //   }
-    //   if (MessageBox[sLevel.toLowerCase()]) {
-    //     MessageBox[sLevel.toLowerCase()](sMessage, mOptions);
-    //   } else {
-    //     // Remove else block with SAPUI5 1.30
-    //     mOptions.icon = sLevel.toUpperCase();
-    //     MessageBox.alert(sMessage, mOptions);
-    //   }
-    // } else {
-    //   sap.m.MessageToast.show(sMessage);
-    // }
     return sMessage
   },
 }

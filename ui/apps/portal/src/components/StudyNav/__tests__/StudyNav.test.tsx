@@ -1,6 +1,5 @@
 import React from "react";
 import { render } from "@testing-library/react";
-import "@testing-library/jest-dom/extend-expect";
 import { StudyNav } from "../StudyNav";
 import { Study } from "../../../types";
 import { AppProvider } from "../../../contexts";
@@ -41,6 +40,12 @@ const studies: Study[] = [
     plugin: "",
   },
 ];
+
+// Mock the environment
+jest.mock("../../../env", () => ({
+  REACT_APP_IDP_NAME_PROP: "name",
+  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: "http://localhost:3001",
+}));
 
 it("has empty study", () => {
   const handleClick = jest.fn();

@@ -12,6 +12,7 @@ import {
 } from "../types.ts";
 import { env } from "../env.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
+import { individualFilterWhereOR } from "./cachedb.ts";
 
 export class CachedbDAO {
   private readonly jwt: string;
@@ -20,6 +21,7 @@ export class CachedbDAO {
   private readonly semanticRatio: number;
   private readonly databaseCode: string;
   private readonly schemaName: string;
+  private readonly resultSchemaName: string;
   private readonly fts_concept_identifier: string;
 
   constructor(
@@ -28,7 +30,8 @@ export class CachedbDAO {
     vocabSchemaName: string,
     semanticRatio: number,
     databaseCode: string,
-    schemaName: string
+    schemaName: string,
+    resultSchemaName: string
   ) {
     this.jwt = jwt;
     this.datasetId = datasetId;
@@ -36,6 +39,7 @@ export class CachedbDAO {
     this.semanticRatio = semanticRatio;
     this.databaseCode = databaseCode;
     this.schemaName = schemaName;
+    this.resultSchemaName = resultSchemaName;
     this.fts_concept_identifier = env.USE_TREX_DB_CONN
       ? `fts_${vocabSchemaName}_concept`
       : `${vocabSchemaName}.fts_main_concept`;
@@ -85,6 +89,32 @@ export class CachedbDAO {
         totalHits: results[1] ? parseInt(results[1].rows[0].count) : 0,
       };
       return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
+    const client = this.getDuckdbConnection();
+    try {
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await getGTEEmbedding(searchText)).join(",")
+          : "";
+      const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
+        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+
+      const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
+      const countSqlParams = duckdbFtsBaseQueryParams;
+      const results = await client.query<{ count: string }>(
+        countSql,
+        countSqlParams
+      );
+
+      return results ? parseInt(results.rows[0].count) : 0;
     } catch (error) {
       console.error(error);
       throw error;
@@ -488,12 +518,12 @@ export class CachedbDAO {
     });
 
     const filterList = [
-      ...conceptClassIdFilter,
-      ...domainIdFilter,
-      ...standardConceptFilter,
-      ...vocabularyIdFilter,
-      ...validityFilter,
-    ];
+      individualFilterWhereOR(conceptClassIdFilter),
+      individualFilterWhereOR(domainIdFilter),
+      individualFilterWhereOR(standardConceptFilter),
+      individualFilterWhereOR(vocabularyIdFilter),
+      individualFilterWhereOR(validityFilter),
+    ].filter(Boolean); // Remove empty strings from array
 
     if (filterList.length === 0) {
       return "";
@@ -598,7 +628,7 @@ export class CachedbDAO {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
       // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-      // https://github.com/alp-os/internal/issues/1411
+      // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
         select concept_id_1, concept_id_2, relationship_id from ${
           this.vocabSchemaName
@@ -622,7 +652,7 @@ export class CachedbDAO {
     const client = this.getDuckdbConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
     // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-    // https://github.com/alp-os/internal/issues/1411
+    // https://github.com/OHDSI/Data2Evidence/issues/1057
     try {
       const sql = `
       select ancestor_concept_id, descendant_concept_id, min_levels_of_separation, max_levels_of_separation from ${
@@ -649,7 +679,7 @@ export class CachedbDAO {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
       // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
-      // https://github.com/alp-os/internal/issues/1411
+      // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
         select concept_id_1, concept_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason from ${
           this.vocabSchemaName
@@ -781,7 +811,8 @@ export class CachedbDAO {
     return new TrexDuckdbConnection(
       this.databaseCode,
       this.schemaName,
-      this.vocabSchemaName
+      this.vocabSchemaName,
+      this.resultSchemaName
     );
   };
 }
@@ -792,7 +823,8 @@ class TrexDuckdbConnection {
   constructor(
     databaseCode: string,
     schemaName: string,
-    vocabSchemaName: string
+    vocabSchemaName: string,
+    resultSchemaName: string
   ) {
     try {
       const dbm = Trex.databaseManager();
@@ -800,6 +832,7 @@ class TrexDuckdbConnection {
         databaseCode,
         schemaName,
         vocabSchemaName,
+        resultSchemaName,
         {
           duckdb: (e: unknown) => e,
         } // Dummy function which returns itself, originally used for translation function

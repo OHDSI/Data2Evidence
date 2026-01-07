@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'Tooltip',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -27,7 +24,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  show: true
+  show: true,
 })
 
 // Tooltip state management (moved from useTooltip composable)
@@ -72,19 +69,12 @@ const handleMouseLeave = () => {
 </script>
 
 <template>
-  <div 
-    v-if="shouldShowForActiveKey" 
-    class="tooltip-container"
-  >
-    <div 
-      class="info-icon-wrapper"
-      @mouseenter="handleMouseEnter"
-      @mouseleave="handleMouseLeave"
-    >
+  <div v-if="shouldShowForActiveKey" class="tooltip-container">
+    <div class="info-icon-wrapper" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
       <InfoIcon class="info-icon" />
     </div>
-    <div 
-      v-show="activeKey && isTooltipVisible(activeKey)" 
+    <div
+      v-show="activeKey && isTooltipVisible(activeKey)"
       class="tooltip-content"
       @mouseenter="handleMouseEnter"
       @mouseleave="handleMouseLeave"
@@ -106,14 +96,14 @@ const handleMouseLeave = () => {
     display: flex;
     align-items: center;
     padding: 6px;
-    
+
     .info-icon {
       color: #666;
       transition: color 0.2s ease;
       display: block;
-      
+
       &:hover {
-        color: #000080;
+        color: var(--color-primary, #000080);
       }
     }
   }

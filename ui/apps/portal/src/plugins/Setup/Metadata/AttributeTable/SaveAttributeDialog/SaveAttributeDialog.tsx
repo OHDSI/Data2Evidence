@@ -1,8 +1,8 @@
 import Divider from "@mui/material/Divider";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
-import { Box, Button, Dialog, FormControl, InputLabel, TextField } from "@portal/components";
-import React, { FC, useCallback, useEffect, useState } from "react";
+import { Button, Dialog, FormControl, InputLabel, TextField } from "@portal/components";
+import React, { FC, FormEvent, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../../axios/api";
 import { useFeedback, useTranslation } from "../../../../../contexts";
 import { CloseDialogType, DatasetAttributeConfig } from "../../../../../types";
@@ -59,33 +59,48 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
     [onClose]
   );
 
-  const handleSave = useCallback(async () => {
-    try {
-      setSaving(true);
-      if (isEditMode) {
-        await api.systemPortal.updateDatasetAttributeConfig(formData);
-      } else {
-        await api.systemPortal.addDatasetAttributeConfig(formData);
+  const handleSave = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      
+      const trimmedData = {
+        ...formData,
+        id: formData.id.trim(),
+        name: formData.name.trim(),
+      };
+      
+      if (!trimmedData.id || !trimmedData.name) {
+        return;
       }
-      setFeedback({
-        type: "success",
-        message: getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SUCCESS),
-        autoClose: 6000,
-      });
-      setRefetch((refetch) => refetch + 1);
-      setFormData(EMPTY_FORM_DATA);
-      handleClose("success");
-    } catch (err: any) {
-      setFeedback({
-        type: "error",
-        message: err.data?.error || err.message || "An error occurred",
-        description: err.data?.message || "",
-        autoClose: 6000,
-      });
-    } finally {
-      setSaving(false);
-    }
-  }, [handleClose, formData, setRefetch, setFeedback, isEditMode, getText]);
+      
+      try {
+        setSaving(true);
+        if (isEditMode) {
+          await api.systemPortal.updateDatasetAttributeConfig(trimmedData);
+        } else {
+          await api.systemPortal.addDatasetAttributeConfig(trimmedData);
+        }
+        setFeedback({
+          type: "success",
+          message: getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SUCCESS),
+          autoClose: 6000,
+        });
+        setRefetch((refetch) => refetch + 1);
+        setFormData(EMPTY_FORM_DATA);
+        handleClose("success");
+      } catch (err: any) {
+        setFeedback({
+          type: "error",
+          message: err.data?.error || err.message || "An error occurred",
+          description: err.data?.message || "",
+          autoClose: 6000,
+        });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [handleClose, formData, setRefetch, setFeedback, isEditMode, getText]
+  );
 
   return (
     <Dialog
@@ -96,9 +111,9 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
       onClose={() => handleClose("cancelled")}
     >
       <Divider />
-      <>
+      <form onSubmit={handleSave}>
         <div className="save-attribute-dialog__content">
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               label={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__ATTRIBUTE_ID)}
               variant="standard"
@@ -106,18 +121,20 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
               disabled={isEditMode}
               value={formData.id}
               onChange={(event) => handleFormDataChange({ id: event.target?.value })}
+              autoFocus={!isEditMode}
             />
-          </Box>
-          <Box mb={4}>
+          </div>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               label={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__ATTRIBUTE_NAME)}
               variant="standard"
               sx={{ width: "100%" }}
               value={formData.name}
               onChange={(event) => handleFormDataChange({ name: event.target?.value })}
+              autoFocus={isEditMode}
             />
-          </Box>
-          <Box mb={4}>
+          </div>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl fullWidth>
               <InputLabel id="category-select-label">{getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__CATEGORY)}</InputLabel>
               <Select
@@ -134,8 +151,8 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
                 ))}
               </Select>
             </FormControl>
-          </Box>
-          <Box mb={4}>
+          </div>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl fullWidth>
               <InputLabel id="datatype-select-label">{getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__DATATYPE)}</InputLabel>
               <Select
@@ -152,19 +169,24 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
                 ))}
               </Select>
             </FormControl>
-          </Box>
+          </div>
         </div>
         <div className="save-attribute-dialog__footer">
-          <Box display="flex" gap={1} className="save-attribute-dialog__footer-actions">
+          <div style={{ display: "flex", gap: "8px" }} className="save-attribute-dialog__footer-actions">
             <Button
               text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__CANCEL)}
               variant="outlined"
               onClick={() => handleClose("cancelled")}
             />
-            <Button text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SAVE)} onClick={handleSave} loading={saving} />
-          </Box>
+            <Button 
+              type="submit" 
+              text={getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SAVE)} 
+              loading={saving}
+              disabled={!formData.id.trim() || !formData.name.trim()}
+            />
+          </div>
         </div>
-      </>
+      </form>
     </Dialog>
   );
 };

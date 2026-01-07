@@ -1,21 +1,32 @@
 import express, { Application } from "express";
+import http from "http";
 import dataSource from "./src/db/datasource.ts";
 import { StrategusResultsRouter } from "./src/strategus-results/routes.ts";
 import StrategusAnalysisRouter from "./src/analysis/routes.ts";
+import StrategusViewerTemplateRouter from "./src/templates/routes.ts";
 
 export class App {
   private app: Application;
+  private server: http.Server;
   private readonly logger = console;
 
   constructor() {
     this.app = express();
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: "50mb" }));
+    this.server = http.createServer(this.app);
   }
 
   async start() {
-    this.app.use("/strategus-results", new StrategusResultsRouter().router);
+    this.app.use(
+      "/strategus-results",
+      new StrategusResultsRouter(this.server).router
+    );
+    this.app.use(
+      "/strategus/template",
+      new StrategusViewerTemplateRouter().router
+    );
     this.app.use("/strategus/analysis", new StrategusAnalysisRouter().router);
-    this.app.listen(10000);
+    this.server.listen(10000);
     this.logger.info("Strategus Results service is running on port 10000");
   }
 

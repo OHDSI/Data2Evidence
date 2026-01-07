@@ -4,25 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "postinstall": "wget -O llm.gguf https://huggingface.co/QuantFactory/Dolphin3.0-Llama3.2-1B-GGUF/resolve/main/Dolphin3.0-Llama3.2-1B.Q4_K_M.gguf",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tbuild node_modules/@data2evidence/trex"
+    "build": "tbuild ."
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@data2evidence/trex": "latest",
-    "deno": "latest"
+    "@trex/cli": "latest"
   },
   "trex": {
-    "model": {
-      "path": "llm.gguf"
-    },
     "functions": {
       "init": [
         {
-          "function": "/strategus-analysis/src/init",
-          "imports": "/strategus-analysis/deno.json",
+          "function": "/strategus-analysis-init",
+          "imports": "/strategus-analysis-init/deno.json",
           "env": "strategus-analysis"
         },
         {
@@ -42,13 +37,13 @@
           "waitforEnvVar": "PREFECT_HEALTH_CHECK"
         },
         {
-          "function": "/files-manager/src/init",
-          "imports": "/files-manager/deno.json",
+          "function": "/files-manager-init",
+          "imports": "/files-manager-init/deno.json",
           "env": "files-manager"
         },
         {
-          "function": "/perseus/src/init",
-          "imports": "/perseus/deno.json",
+          "function": "/perseus-init",
+          "imports": "/perseus-init/deno.json",
           "env": "perseus"
         },
         {
@@ -57,23 +52,23 @@
           "env": "jobplugins"
         },
         {
-          "function": "/alp-usermgmt/src/init",
-          "imports": "/alp-usermgmt/deno.json",
+          "function": "/alp-usermgmt-init",
+          "imports": "/alp-usermgmt-init/deno.json",
           "env": "alp-usermgmt"
         },
         {
-          "function": "/portal/src/init",
-          "imports": "/portal/deno.json",
+          "function": "/portal-init",
+          "imports": "/portal-init/deno.json",
           "env": "portal"
         },
         {
-          "function": "/white-rabbit/src/init",
-          "imports": "/white-rabbit/deno.json",
+          "function": "/white-rabbit-init",
+          "imports": "/white-rabbit-init/deno.json",
           "env": "white-rabbit"
         },
         {
-          "function": "/supabase/src/init",
-          "imports": "/supabase/deno.json",
+          "function": "/supabase-storage-init",
+          "imports": "/supabase-storage-init/deno.json",
           "env": "supabase-storage"
         }
       ],
@@ -129,6 +124,12 @@
           "function": "/code-suggestion",
           "imports": "/code-suggestion/deno.json",
           "env": "code-suggestion"
+        },
+        {
+          "source": "/mcp",
+          "function": "/mcp-server",
+          "imports": "/mcp-server/deno.json",
+          "env": "mcp-server"
         },
         {
           "source": "/data-mapping",
@@ -226,6 +227,11 @@
           "rmsrc": true
         },
         {
+          "source": "/jupyter-viewer",
+          "service": "jupyter-gateway-viewer",
+          "rmsrc": true
+        },
+        {
           "source": "/prefect/docs",
           "service": "prefect"
         },
@@ -285,8 +291,303 @@
           "source": "/mlflow",
           "service": "mlflow",
           "rmsrc": true
+        },
+        {
+          "source": "/dockerlogs",
+          "service": "docker-logs",
+          "rmsrc": false
         }
       ],
+      "env": {
+        "_shared": {
+          "DB_SVC__IDP_SUBJECT_PROP": "sub",
+          "DB_SVC__LOG_LEVEL": "info",
+          "DB_SVC__PATH": "/alpdb",
+          "DISABLE_SSL": "TRUE",
+          "HANA__READ_ROLE": "TENANT_READ_ROLE",
+          "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
+          "PG__READ_ROLE": "postgres_tenant_read_role",
+          "IDP__ALP_SVC__CLIENT_ID": "${LOGTO__ALP_SVC__CLIENT_ID}",
+          "IDP__ALP_SVC__CLIENT_SECRET": "${LOGTO__ALP_SVC__CLIENT_SECRET}",
+          "IDP__SCOPE": "https://alp-default",
+          "IDP_SUBJECT_PROP": "sub",
+          "MINIO__ACCESS_KEY": "${MINIO__ACCESS_KEY:-root}",
+          "MINIO__ENDPOINT": "${MINIO__ENDPOINT:-${PROJECT_NAME:-d2e}-minerva-s3}",
+          "MINIO__PORT": "${MINIO__PORT:-9000}",
+          "MINIO__REGION": "${MINIO__REGION:-ap-southeast-1}",
+          "MINIO__SECRET_KEY": "${MINIO__SECRET_KEY}",
+          "MINIO__SSL": "${MINIO__SSL:-false}",
+          "CACHEDB__PORT": 41191,
+          "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
+          "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
+          "NODE_ENV": "${NODE_ENV:-development}",
+          "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
+          "PG__DB_NAME": "${PG_DB_NAME:-alp}",
+          "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
+          "PG__DEBUG": "${PG_DEBUG:-1}",
+          "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG__SSL": "${PG__SSL:-false}",
+          "PG__MAX_POOL": 10,
+          "PG__MIN_POOL": 0,
+          "PG__PORT": "${PG_PORT:-5432}",
+          "PG__IDLE_TIMEOUT_IN_MS": 1000,
+          "PG__DIALECT": "postgresql",
+          "LOCAL_DEBUG": "false",
+          "isHttpTestRun": "${isHttpTestRun}"
+        },
+        "analytics-svc": {
+          "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
+          "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
+          "ANALYTICS_SVC__PORT": 41102,
+          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 120,
+          "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
+          "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
+          "LOCAL_DEBUG": "false",
+          "USE_DUCKDB": "${USE_DUCKDB:-true}",
+          "USE_CACHEDB": "${USE_CACHEDB:-true}",
+          "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
+          "USE_EXTENSION_FOR_COHORT_CREATION": "false",
+          "isTestEnv": "${isTestEnv}",
+          "local": "${local}",
+          "TESTSCHEMA": "${TESTSCHEMA}",
+          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}",
+          "BIGQUERY_CDM_VERSION": "${BIGQUERY_CDM_VERSION}"
+        },
+        "mri-pg-config": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "cdw_config",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
+        },
+        "query-gen-svc": {
+          "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
+          "isTestEnv": "${isTestEnv}",
+          "TESTSCHEMA": "${TESTSCHEMA}",
+          "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
+          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}",
+          "OMOP_RELATIONSHIPS_FOR_DESCENDANTS": "${OMOP_RELATIONSHIPS_FOR_DESCENDANTS}"
+        },
+        "alp-usermgmt": {
+          "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
+          "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
+          "IDP__ALP_ADMIN__CLIENT_ID": "${LOGTO_API_M2M_CLIENT_ID}",
+          "IDP__ALP_ADMIN__CLIENT_SECRET": "${LOGTO_API_M2M_CLIENT_SECRET}",
+          "IDP__ALP_ADMIN__RESOURCE": "https://default.logto.app/api",
+          "IDP__BASE_URL": "${IDP__BASE_URL:-http://${PROJECT_NAME:-d2e}-logto-1:3001}",
+          "IDP__FETCH_USER_INFO_TYPE": "logto",
+          "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
+          "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
+          "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY:-logto}",
+          "AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}",
+          "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
+          "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG__USER_MGMT__ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG__USER_MGMT__DB_NAME": "${PG_DB_NAME:-alp}",
+          "PG__USER_MGMT__PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG__USER_MGMT__SCHEMA": "usermgmt",
+          "PG__USER_MGMT__USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "USER_MGMT__IDP_SUBJECT_PROP": "sub",
+          "USER_MGMT__LOG_LEVEL": "info",
+          "USER_MGMT__PATH": "/usermgmt/",
+          "USER_MGMT__PORT": 41104
+        },
+        "white-rabbit": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "white_rabbit"
+        },
+        "supabase-storage": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "storage"
+        },
+        "bookmark-svc": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
+        },
+        "mri-pa-config": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "cdw_config",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
+        },
+        "cdw-svc": {
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "cdw_config",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PORT": 41114,
+          "isTestEnv": "${isTestEnv}"
+        },
+        "jobplugins-init": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "jobplugins",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
+        },
+        "jobplugins": {
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
+          "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}",
+          "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
+        },
+        "dataset": {
+          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+        },
+        "alpdb": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}"
+        },
+        "concept-mapping": {},
+        "portal": {
+          "PG_MANAGE_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_MANAGE_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "portal",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}",
+          "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
+          "APP__TENANT_NAME": "${APP__TENANT_NAME:-Tenant}",
+          "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
+          "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+          "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
+          "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
+          "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}",
+          "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
+          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}"
+        },
+        "files-manager": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_SCHEMA": "files_manager"
+        },
+        "terminology-svc": {
+          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}",
+          "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}"
+        },
+        "perseus": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "perseus"
+        },
+        "code-suggestion": {
+          "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AI_MODEL": "${AI_MODEL:-null}"
+        },
+        "data-mapping": {
+          "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AI_MODEL": "${AI_MODEL:-null}"
+        },
+        "demo": {
+          "DEMO__DB_CODE": "demo_database",
+          "DEMO__DB_CDM_SCHEMA": "demo_cdm",
+          "DEMO__DB_RESULT_SCHEMA": "demo_cdm",
+          "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
+          "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
+          "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
+          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"source\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"HIDDEN\", \"detail\": { \"name\": \"Demo source dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }"
+        },
+        "d2e-webapi": {},
+        "alp-dataflow-gen-init": {
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
+          "CUSTOM_WORK_POOL_CONFIGURATION": "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
+          "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
+          "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
+          "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",
+          "FHIR_SCHEMA_JSON_PATH": "/home/docker/fhir",
+          "PYTHON_VERIFY_SSL": "false",
+          "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
+          "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
+          "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
+          "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
+          "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-1}",
+          "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
+          "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
+          "LIQUIBASE_PATH": "",
+          "HANA__DRIVER_CLASS_PATH": "${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}",
+          "POSTGRES__DRIVER_CLASS_PATH": "${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}",
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
+          "DATABASE_CREDENTIALS": "{}",
+          "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
+          "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
+          "WORKPOOL_NAME": "docker-pool",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+          "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+          "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+          "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
+          "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
+          "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
+          "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
+          "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
+          "GOOGLE_APPLICATION_CREDENTIALS": "/tmp/google-credentials.json",
+          "PREFECT__LOCAL_DEBUG": "${PREFECT__LOCAL_DEBUG:-false}",
+          "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
+          "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
+        },
+        "jupyter-gateway": {},
+        "jupyter-gateway-viewer": {},
+        "mlflow": {},
+        "strategus-analysis": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}",
+          "PG_SCHEMA": "strategus",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+          "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+          "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
+          "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
+        }
+      },
       "roles": {
         "MRI_SUPER_USER": [
           "PA.svc",
@@ -383,6 +684,7 @@
           "portal.supabaseStorage.delete",
           "portal.notebook.systemAdmin.write",
           "portal.gitStudies.read",
+          "portal.gitDashboard.read",
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.dataflow.read",
           "dataflowmgmt.dataflow.add",
@@ -416,7 +718,6 @@
           "dbSvc.vocabSchemas.read",
           "dbSvc.schema.vocabSchema.read",
           "dbSvc.schema.snapshot.metadata.read",
-          "dbSvc.snapshot.parquet.create",
           "dbSvc.schema.delete",
           "gateway.dashboardGate.register",
           "gateway.dataset.dashboards.read",
@@ -451,10 +752,10 @@
           "whiteRabbit.post",
           "demo.setup",
           "gateway.external.dashboards.read",
-          "strategus.results.read",
           "strategus.results.write",
           "strategus.results.delete",
-          "mlflow"
+          "mlflow",
+          "d2e.container.logs.read"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content",
@@ -483,6 +784,7 @@
           "portal.dataset.release.list.read",
           "portal.config.read",
           "codesuggestion.tenantview.read",
+          "mcpchat.tenantview.read",
           "d2e.webapi.public"
         ],
         "RESEARCHER": [
@@ -502,11 +804,17 @@
           "gateway.terminology.conceptSet.create",
           "gateway.terminology.conceptSet.update",
           "gateway.terminology.conceptSet.delete",
+          "gateway.terminology.concept.count.read",
           "gateway.terminology.concept.filterOptions.read",
           "gateway.terminology.concept.recommended.read",
           "gateway.terminology.concept.hierarchy.read",
+          "gateway.terminology.concept.getStandardConcepts.read",
+          "gateway.terminology.concept.searchByName.read",
+          "gateway.terminology.concept.searchById.read",
+          "gateway.terminology.concept.searchByCode.read",
           "gateway.terminology.fhir.read",
           "codesuggestion.read",
+          "mcpchat.read",
           "portal.userArtifact.bookmarks.read",
           "portal.userArtifact.bookmarks.write",
           "portal.userArtifact.bookmarks.delete",
@@ -538,14 +846,26 @@
           "filesmanager.read",
           "filesmanager.post",
           "filesmanager.delete",
-          "whiteRabbit.post"
+          "whiteRabbit.post",
+          "portal.userArtifact.write",
+          "portal.dataset.systemAdmin.read"
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
           "strategus.analysis.read",
           "strategus.analysis.write",
           "jobplugins.flowRun.strategus.removeResults.add",
-          "jupyter"
+          "jupyter",
+          "jobplugins.dqd.researcher.execute",
+          "jobplugins.cohortDqd.researcher.execute",
+          "jobplugins.analysisUi.researcher.execute",
+          "portal.dataset.read"
+        ],
+        "STUDY_RESULTS_READ_RESEARCHER": [
+          "strategus.analysis.read",
+          "strategus.results.read",
+          "strategus.results.write",
+          "strategus.results.delete"
         ]
       },
       "scopes": [
@@ -644,9 +964,33 @@
           ]
         },
         {
-          "path": "^/jobplugins(.*)",
+          "path": "^/jobplugins/researcher/dqd/flow-run(.*)",
           "scopes": [
-            "jobplugins"
+            "jobplugins.dqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/cohort-dqd/flow-run(.*)",
+          "scopes": [
+            "jobplugins.cohortDqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/analysis-ui/flow-run(.*)",
+          "scopes": [
+            "jobplugins.analysisUi.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
           ]
         },
         {
@@ -674,7 +1018,7 @@
           ]
         },
         {
-          "path": "^/analytics-svc/api/services/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/exists",
+          "path": "^/analytics-svc/api/services/alpdb/schema/exists",
           "scopes": [
             "dbSvc.schema.exists.read"
           ],
@@ -995,6 +1339,17 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT"
           ]
         },
         {
@@ -1414,6 +1769,15 @@
           ]
         },
         {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
+          ]
+        },
+        {
           "path": "^/system-portal/user-artifact/([^/]+)/concept_sets/shared/list$",
           "scopes": [
             "portal.userArtifact.conceptSets.read"
@@ -1457,6 +1821,15 @@
           ],
           "httpMethods": [
             "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
           ]
         },
         {
@@ -1524,7 +1897,16 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/upload/csv",
+          "path": "^/system-portal/supabase-storage/list/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/upload/file",
           "scopes": [
             "portal.supabaseStorage.write"
           ],
@@ -1533,7 +1915,16 @@
           ]
         },
         {
-          "path": "^/system-portal/supabase-storage/delete/csv",
+          "path": "^/system-portal/supabase-storage/get/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/file",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
@@ -1554,6 +1945,15 @@
           "path": "^/system-portal/git-studies/study/strategus",
           "scopes": [
             "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-dashboards",
+          "scopes": [
+            "portal.gitDashboard.read"
           ],
           "httpMethods": [
             "GET"
@@ -1653,6 +2053,15 @@
           ]
         },
         {
+          "path": "^/terminology/concept/count(.*)",
+          "scopes": [
+            "gateway.terminology.concept.count.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/terminology/concept/filter-options(.*)",
           "scopes": [
             "gateway.terminology.concept.filterOptions.read"
@@ -1743,7 +2152,34 @@
           ]
         },
         {
-          "path": "^/jobplugins/dataflow/file/csv$",
+          "path": "^/jobplugins/dataflow/node/file/list$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
@@ -1907,6 +2343,24 @@
           ]
         },
         {
+          "path": "^/jobplugins/dqd/data-quality(/category|/domain)?/history$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.history.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/domain/continuity$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.continuity.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.cancel"
@@ -1985,6 +2439,12 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins(.*)",
+          "scopes": [
+            "jobplugins"
           ]
         },
         {
@@ -2123,15 +2583,6 @@
           ]
         },
         {
-          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/schemasnapshotparquet/[a-zA-Z0-9_]+(.*)",
-          "scopes": [
-            "dbSvc.snapshot.parquet.create"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
           "path": "^/alpdb/[a-zA-Z]+/dataCharacterization/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+",
           "scopes": [
             "dbSvc.schema.create"
@@ -2263,7 +2714,7 @@
             "gateway.db.database.test"
           ],
           "httpMethods": [
-            "GET"
+            "POST"
           ]
         },
         {
@@ -2324,6 +2775,16 @@
           ]
         },
         {
+          "path": "^/mcp/chat",
+          "scopes": [
+            "mcpchat.read",
+            "mcpchat.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/data-mapping",
           "scopes": [
             "datamapping.post"
@@ -2367,11 +2828,28 @@
           ]
         },
         {
+          "path": "^/dockerlogs(.*)",
+          "scopes": [
+            "d2e.container.logs.read"
+          ]
+        },
+        {
           "path": "^/strategus-results",
           "scopes": [
             "strategus.results.read",
             "strategus.results.write",
             "strategus.results.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/strategus/template",
+          "scopes": [
+            "strategus.results.read"
           ]
         },
         {
