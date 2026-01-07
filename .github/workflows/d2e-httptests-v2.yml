@@ -233,6 +233,7 @@ jobs:
 
       - name: Check PG DB connection
         run: |
+          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
           echo "PGUSER: ${PGUSER}"
