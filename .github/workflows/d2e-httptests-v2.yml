@@ -219,6 +219,7 @@ jobs:
       - name: Check status of docker containers
         run: |
           docker ps -a
+          docker exec d2e-trex printenv DEMO__DB_PASSWORD
           PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
           echo "PGPORT: ${PGPORT}"
           echo "PGPASSWORD: ${PGPASSWORD}"
