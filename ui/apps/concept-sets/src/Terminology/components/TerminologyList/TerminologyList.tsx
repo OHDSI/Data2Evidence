@@ -375,10 +375,17 @@ const TerminologyList: FC<TerminologyListProps> = ({
             filterOptions[filter.id as keyof FilterOptions];
           if (!availableOptions) return filter;
 
-          // Only keep values that exist in the filter options
-          const validValues = filter.value.filter((val) =>
-            availableOptions.hasOwnProperty(val)
-          );
+          // Only keep values that exist in the filter options (case-insensitive match)
+          const validValues = filter.value
+            .map((val) => {
+              // Find matching key in availableOptions (case-insensitive)
+              const matchingKey = Object.keys(availableOptions).find(
+                (key) => key.toLowerCase() === val.toLowerCase()
+              );
+              // Return the properly capitalized value from availableOptions
+              return matchingKey;
+            })
+            .filter((val): val is string => val !== undefined);
 
           return { ...filter, value: validValues };
         })
