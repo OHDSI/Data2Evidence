@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'Notebook'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -15,7 +15,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Notebooks' }).click()
 
   //Create notebook
-  await page.getByRole('button', { name: 'Add New Notebook' }).click({ timeout: 2000 })
+  await page.getByRole('button', { name: 'New Notebook' }).click()
   await page.getByRole('textbox', { name: 'Name' }).click()
   await page.getByRole('textbox', { name: 'Name' }).fill('Test Notebook')
   await page.getByRole('button', { name: 'Create' }).click({ timeout: 2000 })
