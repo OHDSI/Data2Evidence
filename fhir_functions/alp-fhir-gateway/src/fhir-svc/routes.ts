@@ -81,7 +81,72 @@ export class FhirRouter {
             resourcePath,
             queryParams,
             body,
-            headers
+            headers,
+            false
+          );
+
+          if (!fhirResponse) {
+            let log_msg = `No response received from FHIR server.`;
+            this.logger.error(log_msg);
+            return res.status(500).send(log_msg);
+          }
+
+          if (isBinaryReq === true && httpMethod === HTTPMethod.GET) {
+            res.set("Content-Type", fhirResponse.headers);
+            res
+              .status(fhirResponse.status)
+              .set("Content-Type", fhirResponse.headers["content-type"])
+              .set("Content-Disposition", "inline")
+              .send(fhirResponse.data);
+          } else {
+            res
+              .status(fhirResponse.status)
+              .set(fhirResponse.headers)
+              .send(fhirResponse.data);
+          }
+        } catch (error) {
+          let log_msg = `Failed to forward ${req.method} request - ${error.message}!`;
+          this.logger.error(log_msg);
+          res.status(500).send(log_msg);
+        }
+      }
+    );
+
+    this.router.get(
+      "/superadmin/*",
+      async (req, res) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+          res.status(400).json({ errors: errors.array() });
+          return;
+        }
+        try {
+          const { "0": resourcePath } = req.params;
+          const token = req.headers.authorization;
+          const httpMethod = req.method;
+
+          const queryParams = req.query ? req.query : {};
+          const body = req.body ? req.body : {};
+
+          // check if incoming request is for Binary resource type
+          let resource;
+          resource = resourcePath ? resourcePath.split("/")[0] : "";
+          const isBinaryReq = resource === "Binary" ? true : false;
+
+          const headers = req.headers
+            ? filterHeaders(req.headers, isBinaryReq, httpMethod)
+            : {};
+
+          // Forward request
+          const fhirResponse = await forwardRequest(
+            token,
+            httpMethod,
+            'SuperAdmin',
+            resourcePath,
+            queryParams,
+            body,
+            headers,
+            true
           );
 
           if (!fhirResponse) {

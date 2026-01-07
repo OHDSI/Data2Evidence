@@ -172,51 +172,60 @@ export const forwardRequest = async (
   resourcePath: string,
   queryParams: any,
   body: any,
-  fhirHeaders: Headers
+  fhirHeaders: Headers,
+  isAdminRequest: boolean = false
 ) => {
-  // await fhirApi.clientCredentialsLogin();
-
-  //Get datasetId for incoming token study code
-  const datasetId = await getDatasetId(token, projectName);
-  if(datasetId === null){
-    throw new Error(`No dataset id found for project '${projectName}'`);
-  }
-  //DatasetId is the Fhir project name
-  projectName = datasetId;
-  
   //Authenticate with superadmin credentials
   let fhirApi = new FhirAPI(token);
   let adminCredentials = fhirApi.getAdminCredentials();
-
-  //Check fhir project exists which has unique name
-  const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
-  if (projectExists !== undefined && projectExists === false) {
-    throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
-  }
-
-  //Get client ID and secret for project
-  const projClientCredentials = await getProjectCredentials(
-    fhirApi,
-    projectName,
-    adminCredentials
-  );
-
-  //Add dataset metadata to req body
   let resourceDetails = body;
-  const metaInfo = {
-    author: {
-      reference: `ClientApplication/${projClientCredentials.clientId}`,
-    },
-    id: datasetId,
-  };
-  resourceDetails.meta = metaInfo;
+  if (isAdminRequest === false) {
+    //Get datasetId for incoming token study code
+    const datasetId = await getDatasetId(token, projectName);
+    if(datasetId === null){
+      throw new Error(`No dataset id found for project '${projectName}'`);
+    }
+    //DatasetId is the Fhir project name
+    projectName = datasetId;
+    
+    //Check fhir project exists which has unique name
+    const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
+    if (projectExists !== undefined && projectExists === false) {
+      throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
+    }
 
-  return await fhirApi.forwardRequest(
-    resourcePath,
-    projClientCredentials,
-    httpMethod,
-    queryParams,
-    resourceDetails,
-    fhirHeaders
-  );
-};
+    //Get client ID and secret for project
+    const projClientCredentials = await getProjectCredentials(
+      fhirApi,
+      projectName,
+      adminCredentials
+    );
+    //Add dataset metadata to req body if resourceDetails is present
+    if (resourceDetails) {
+      const metaInfo = {
+        author: {
+          reference: `ClientApplication/${projClientCredentials.clientId}`,
+        },
+        id: datasetId,
+      };
+      resourceDetails.meta = metaInfo;
+      return await fhirApi.forwardRequest(
+        resourcePath,
+        projClientCredentials,
+        httpMethod,
+        queryParams,
+        resourceDetails,
+        fhirHeaders
+      );
+    } 
+  } else {
+    return await fhirApi.forwardRequest(
+      resourcePath,
+      adminCredentials,
+      httpMethod,
+      queryParams,
+      resourceDetails,
+      fhirHeaders
+    );
+  }
+}
