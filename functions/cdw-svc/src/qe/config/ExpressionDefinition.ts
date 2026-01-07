@@ -26,10 +26,10 @@ Miscellaneous Functions:
 
 export class ExpressionDefinition {
     public expressions: Array<{ regex: RegExp; placeholder?: string }>;
-    private aPlaceholders: string[];
+    private aPlaceholders: string[] = ["CDM_COHORT_DEF", "RESULT_COHORT_DEF"];
 
     constructor(defaultPholderTableMap: any) {
-        this.aPlaceholders = Object.keys(defaultPholderTableMap).map((key) => key.replace("@", ""));
+        this.aPlaceholders = this.aPlaceholders.concat(Object.keys(defaultPholderTableMap).map((key) => key.replace("@", "")));
 
         this.expressions = [
             // Column access
@@ -123,6 +123,8 @@ export class ExpressionDefinition {
             { regex: /STRING_AGG[\s]*\([\s]*<EXP>[\s]*(,[\s]*<EXP>[\s]*)?\)/, placeholder: "<AGGR>" },
 
             // Regex functions
+            // CONTAINS(<EXP>,<EXP>,FUZZY <EXP>)CONTAINS (<EXP>, <EXP>, FUZZY <EXP>)
+            { regex: /[\s]*CONTAINS[\s]*\([\s]*<EXP>[\s]*,[\s]*<EXP>[\s]*,[\s]*FUZZY[\s]*<EXP>\)[\s]*/, placeholder: "<COND>" },
             // <EXP>/<AGGR> LIKE_REGEXPR <EXP>/<AGGR> [FLAG {i|m|s|x}]
             { regex: /<((?:EXP)|(?:AGGR))>[\s]+LIKE_REGEXPR[\s]+<((?:EXP)|(?:AGGR))>[\s]+FLAG[\s]+<((?:EXP)|(?:AGGR))>[\s]*/, placeholder: "<COND>" },
             // REPLACE_REGEXPR (<EXP>/<AGGR> IN <EXP>/<AGGR> WITH <EXP>/<AGGR>) LIKE_REGEXPR <EXP>/<AGGR> FLAG <EXP>/<AGGR>

@@ -44,6 +44,7 @@ export interface Study {
   tokenStudyCode: string;
   schemaName: string;
   vocabSchemaName?: string;
+  resultSchemaName?: string;
   type: DatasetType;
   visibilityStatus: string;
   publicKey: string;
@@ -68,7 +69,6 @@ export interface NewStudyInput {
   cdmSchemaValue: string;
   vocabSchemaValue?: string;
   resultSchemaValue: string;
-  cleansedSchemaOption: boolean;
   tenantName?: string;
   dataModel?: string;
   plugin: string;
@@ -91,6 +91,7 @@ export interface NewStudyInput {
 export interface CopyStudyInput {
   newStudyName: string;
   sourceStudyId: string;
+  sourceType: SourceDatasetType
   snapshotLocation: string;
   dataModel: string;
   snapshotCopyConfig?: SnapshotCopyConfig;
@@ -219,6 +220,8 @@ export interface UpdateStudyMetadataInput {
   attributes: NewStudyMetadataInput[];
   tags: string[];
   dashboards: DatasetDashboard[];
+  vocabSchemaName?: string;
+  resultSchemaName?: string;
 }
 
 // remove once backend is deprecated

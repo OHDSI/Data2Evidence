@@ -40,10 +40,6 @@
           "target": "/resources/flow"
         },
         {
-          "source": "/analysis",
-          "target": "/resources/analysis"
-        },
-        {
           "source": "/mapping",
           "target": "/resources/mapping"
         },
@@ -148,14 +144,20 @@
         "researcher": [
           {
             "enabled": true,
+            "type": "app",
+            "autoMount": true,
             "featureFlag": "conceptSets",
             "name": "Concepts",
             "nameI18nKey": "UI_PLUGIN_CONCEPTS",
-            "pluginPath": "plugins/Researcher/ConceptSets/module",
+            "pluginPath": "/resources/concept-sets/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "route": "concepts"
+            "route": "concepts",
+            "datasetTypes": [
+              "omop",
+              "hana__omop"
+            ]
           },
           {
             "enabled": true,
@@ -265,10 +267,10 @@
             "route": "metadata"
           },
           {
-            "description": "Configure patient analytics",
+            "description": "Configure Cohort Builder",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PATIENT_ANALYTICS_DESCRIPTION",
             "enabled": true,
-            "name": "Patient Analytics config",
+            "name": "Cohort Builder config",
             "nameI18nKey": "UI_PLUGIN_PATIENT_ANALYTICS_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/PatientAnalyticsConfig/module",

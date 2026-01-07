@@ -316,6 +316,11 @@ const defaultPholderTableMap: PholderTableMapType = {
     "@TEXT.INTERACTION_ID": '"CONCEPT_ID"',
     "@TEXT.INTERACTION_TEXT_ID": '"CONCEPT_ID"',
     "@TEXT.VALUE": '"CONCEPT_NAME"',
+    "@COHORT": '$$SCHEMA$$.cohort',
+    "@COHORT.PATIENT_ID": '"subject_id"',
+    "@COHORT.INTERACTION_TYPE": '"cohort_definition_id"',
+    "@CDM_COHORT_DEF": '$$SCHEMA$$.cohort_definition',
+    "@RESULT_COHORT_DEF": '$$RESULT_SCHEMA$$.cohort_definition',
 };
 
 const defaultSettings: GlobalSettingsType = {

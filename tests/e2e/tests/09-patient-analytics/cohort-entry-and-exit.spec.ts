@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   // Go to PA config and ensure CEE is checked
   await page
     .locator('div')
-    .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
+    .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
     .getByTestId('button')
     .click()
   await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()
@@ -66,7 +66,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Setup' }).click()
   await page
     .locator('div')
-    .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
+    .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
     .getByTestId('button')
     .click()
   await page.locator('[id="__xmlview0--dataModelConfigurationsCombo-arrow"]').click()

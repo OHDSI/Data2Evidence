@@ -23,7 +23,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .custom_types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
-from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json
+from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file
 
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -41,6 +41,7 @@ class Node:
 
 class Flow(Node):
     def __init__(self, _node):
+        super().__init__(_node)
         self.graph = _node["graph"]
         self.executor_type = _node["executor_options"]["executor_type"]
         self.executor_host = _node["executor_options"]["executor_address"]["host"]
@@ -180,6 +181,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = TreatmentPatterns(node)
         case "kaplan_meier_node":
             nodeobj = KaplanMeierCMAnalysis(node)
+        case "cohort_survival_module_node":
+            nodeobj = CohortSurvivalModuleNode(node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
@@ -1103,6 +1106,42 @@ class KaplanMeierCMAnalysis(Node):
             except Exception as e:
                 return Result(True, tb.format_exc(), self, task_run_context)
 
+class CohortSurvivalModuleNode(Node):
+    def __init__(self, node):
+        super().__init__(node)
+        self.strata = node.get("strata", None) # must be a string with comma separated values
+        self.eventGap = int(node.get("eventGap", 7)) # parse to int
+        self.followupDays = int(node.get("followupDays", 365)) # parse to int
+        self.analysisType = node.get("analysisType", "single_event")
+        self.competingOutcomeCohortTable = node.get("competingOutcomeCohortTable", None)
+
+        self.targetCohortTable = node.get("targetCohortTable", "cohort")
+        self.outcomeCohortTable = node.get("outcomeCohortTable", "cohort")
+
+    def task(self, input: Dict[str, Result], task_run_context):
+        with ro.default_converter.context():
+            try:
+                ro.r(set_trex_env_var(USE_TREX_CONNECTION))
+                rStrategus = ro.packages.importr('Strategus')
+                rCohortSurvivalModule = rStrategus.CohortSurvivalModule['new']()
+                rCreateCohortSurvivalModuleSpecifications = rCohortSurvivalModule['createModuleSpecifications']
+                cohortDefNodes = get_input_nodes_by_class_type_from_results(input, CohortDefinitionSharedResource)
+                targetCohortIds = [node.cohortId for node in cohortDefNodes if node.cohortType == CohortNodeType.TARGET]
+                outcomeCohortIds = [node.cohortId for node in cohortDefNodes if node.cohortType == CohortNodeType.OUTCOME]
+                rCohortSurvivalModuleSpec = rCreateCohortSurvivalModuleSpecifications(
+                    targetCohortId = convert_py_to_R(targetCohortIds[0]),
+                    targetCohortTable = convert_py_to_R(self.targetCohortTable),
+                    outcomeCohortId = convert_py_to_R(outcomeCohortIds[0]),
+                    outcomeCohortTable = convert_py_to_R(self.outcomeCohortTable),
+                    strata = convert_py_to_R([s.strip() for s in self.strata.split(",")]) if self.strata else convert_py_to_R(None),
+                    eventGap = convert_py_to_R(self.eventGap),
+                    followUpDays = convert_py_to_R(self.followupDays),
+                    competingOutcomeCohortTable = convert_py_to_R(self.competingOutcomeCohortTable) if self.competingOutcomeCohortTable else convert_py_to_R(None),
+                    analysisType = convert_py_to_R(self.analysisType)
+                )
+                return Result(False,  rCohortSurvivalModuleSpec, self, task_run_context)
+            except Exception as e:
+                return Result(True, tb.format_exc(), self, task_run_context)
 
 class StrategusNode(Node):
     def __init__(self, node):
@@ -1169,6 +1208,13 @@ class StrategusNode(Node):
                 analysisSpecJson = convert_R_to_py(rParallelLogger.convertSettingsToJson(rSpec))
 
                 execute(rSpec, rExecutionSettings, rConnectionDetails)
+
+                print('Saving strategus log file as an artifact...')
+                execution_log_file_path = path_to_results + '/strategus-log.txt'
+                save_strategus_log_file(execution_log_file_path)
+                success, errorMsg = is_strategus_execution_successful(execution_log_file_path)
+                if not success:
+                    return Result(True, errorMsg, self, task_run_context)
                 return Result(False, analysisSpecJson, self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
@@ -1184,7 +1230,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
-            rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
             databaseConnectorJarFolder = '/app/inst/drivers'
@@ -1208,6 +1253,16 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
 
             print('Strategus execution started...')
             execute(rAnalysisSpec, rExecutionSettings, rConnectionDetails)
+
+            print('Saving strategus log file as an artifact...')
+            executionSettingsJson = json.loads(executionSettings)
+            execution_log_file_path = executionSettingsJson['resultsFolder'] + '/strategus-log.txt'
+            save_strategus_log_file(execution_log_file_path)
+            # fail the flow when execution has errors
+            success, errorMsg = is_strategus_execution_successful(execution_log_file_path)
+            if not success:
+                raise RuntimeError(errorMsg)
+
         except Exception as e:
             print('Error: ', tb.format_exc())
             raise RuntimeError('Execution of strategus has failed')
@@ -1216,19 +1271,19 @@ def execute(rSpec, rExecutionSettings, rConnectionDetails):
     with ro.default_converter.context():
         ro.r(set_trex_env_var(USE_TREX_CONNECTION))
         rStrategus = importr('Strategus')
-    try:
-        rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
-    except Exception as e:
-        log_file_path = f"/app/errorReportSql.txt"
-        # if file exists, create an artifact to store the error logs
-        if os.path.exists(log_file_path):
-            with open(log_file_path, "r") as f:
-                file_contents = f.read()
-                create_markdown_artifact(
-                    key="strategus-analysis-error-logs",
-                    markdown=file_contents
-                )
-        raise RuntimeError('Execution of strategus has failed')
+        try:
+            rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
+        except Exception as e:
+            log_file_path = f"/app/errorReportSql.txt"
+            # if file exists, create an artifact to store the error logs
+            if os.path.exists(log_file_path):
+                with open(log_file_path, "r") as f:
+                    file_contents = f.read()
+                    create_markdown_artifact(
+                        key="strategus-analysis-error-logs",
+                        markdown=file_contents
+                    )
+            raise RuntimeError('Execution of strategus has failed')
 
 @flow(name="upload-strategus-results",
       log_prints=True)
@@ -1246,13 +1301,12 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
                 use_cache_db=False,
-                database_code=database_code, 
-                is_study_results_db = True
+                database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
-                dbms='postgresql', 
-                connectionString=construct_jdbc_url(db_credentials),
+                dbms=dbdao.get_database_connector_dbms_val(), 
+                connectionString=dbdao.get_database_connector_connection_string(),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
                 pathToDriver = databaseConnectorJarFolder
@@ -1313,7 +1367,7 @@ def drop_strategus_results_schema(dbSettings):
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
         use_cache_db=False,
-        database_code=database_code, is_study_results_db=True
+        database_code=database_code
     )
 
     if(dbdao.check_schema_exists(results_schema)):

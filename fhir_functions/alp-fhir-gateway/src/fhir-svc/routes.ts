@@ -3,8 +3,8 @@ import { validationResult } from "express-validator";
 import {
   createProject,
   deleteProject,
-  forwardRequest,
-  testClientCredentials,
+  fhirServerHealthCheck,
+  forwardRequest
 } from "./services";
 
 import { validateCreateFhirProjectDto, validateDeleteFhirProjectDto, validateProxyDto } from "./middleware";
@@ -132,5 +132,11 @@ export class FhirRouter {
         }
       }
     );
+
+    this.router.get("/fhir-server/healthcheck", async (req: any, res: any) => {
+      const token = req.headers.authorization;
+      const fhirResponse: any = await fhirServerHealthCheck(token);
+      return res.status(fhirResponse.status).send(fhirResponse.data);
+    });
   }
 }

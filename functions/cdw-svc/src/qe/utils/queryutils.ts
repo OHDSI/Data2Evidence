@@ -261,7 +261,7 @@ export function getColumnPlaceholdersFromExpression(expression: string): RegExpM
 }
 
 export function getTablePlaceholdersFromExpression(expression: string): RegExpMatchArray  {
-    return expression.match(/@[A-Z]+/g);
+    return expression.match(/@[A-Z_]+/g);
 }
 
 export function buildPlaceholderMapAliasTable(placeholderTableMap: any) {

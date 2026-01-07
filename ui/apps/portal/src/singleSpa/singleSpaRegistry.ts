@@ -5,7 +5,6 @@ import { resolveModuleUrl } from "./overrideUtils";
 
 const registeredApps: Map<string, RegisteredApp> = new Map();
 const moduleCache: Map<string, Promise<any>> = new Map();
-const customPropsStore: Map<string, Record<string, any>> = new Map();
 
 export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promise<void> {
   if (registeredApps.has(config.id)) {
@@ -15,12 +14,8 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
 
   console.debug(`[singleSpaRegistry] ${config.id} - register`, { config });
 
-  customPropsStore.set(config.id, config.customProps || {});
-
-  const activeWhen = createActivityFunction(
-    config.basePath,
-    false // Not always active by default
-  );
+  const initialProps = config.customProps || {};
+  const activeWhen = createActivityFunction(config.basePath, config.customProps?.autoMount);
 
   const registration = {
     name: config.id,
@@ -42,7 +37,7 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
     },
     activeWhen,
     customProps: () => ({
-      ...customPropsStore.get(config.id),
+      ...initialProps,
       containerId: generateContainerId(config.id),
     }),
   };
@@ -63,7 +58,12 @@ export function updateCustomProps(appId: string, customProps: Record<string, any
   }
 
   console.debug(`[singleSpaRegistry] ${appId} - updating custom props`, customProps);
-  customPropsStore.set(appId, customProps);
+
+  window.dispatchEvent(
+    new CustomEvent("custom-props-changed", {
+      detail: { appId, ...customProps },
+    })
+  );
 }
 
 export function startSingleSpa(options?: { urlRerouteOnly?: boolean }): void {

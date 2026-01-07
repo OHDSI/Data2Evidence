@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, defineProps, computed, ref, watch } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 import PatientsActiveIcon from './icons/PatientsActiveIcon.vue'
@@ -15,7 +15,7 @@ import { getCardsFormatted, getAxisFormatted } from './helpers/bookmarkItems'
 import { onErrorCaptured } from 'vue'
 import MriFrontendConfig from '../lib/MriFrontEndConfig'
 import AxisModel from '../lib/models/AxisModel'
-import { getBookmarkType } from '../utils/BookmarkUtils'
+import { getBookmarkType, canModifyBookmark } from '../utils/BookmarkUtils'
 import { getPortalAPI } from '../utils/PortalUtils'
 
 const store = useStore()
@@ -39,6 +39,9 @@ const {
 } = store.getters
 
 const isLocal = computed(() => getPortalAPI()?.isLocal)
+
+// Get current username from JWT token for ownership checks
+const currentUsername = computed(() => getPortalAPI()?.username || '')
 
 const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
@@ -261,8 +264,21 @@ const openAtlasLink = (id: number) => {
 
 const getBookmarkCardClass = (bookmarkDisplay: any) => {
   const type = getBookmarkType(bookmarkDisplay)
-  console.log('Bookmark type for', bookmarkDisplay.displayName, ':', type, 'disabled:', type === 'M')
   return `item-card-body ${type === 'M' ? 'item-card-body-disabled' : ''}`
+}
+
+// Check if current user can modify (rename/delete) a bookmark
+const canModify = (bookmarkDisplay: BookmarkDisplay): boolean => {
+  // For D2E bookmarks, check the bookmark object
+  if (bookmarkDisplay.bookmark) {
+    return canModifyBookmark(bookmarkDisplay.bookmark, currentUsername.value)
+  }
+  // For Atlas cohort definitions, check the atlasCohortDefinition object
+  if (bookmarkDisplay.atlasCohortDefinition) {
+    return canModifyBookmark(bookmarkDisplay.atlasCohortDefinition, currentUsername.value)
+  }
+  // Materialized cohorts without bookmark/atlas definition cannot be modified
+  return false
 }
 
 // Pagination navigation methods
@@ -339,7 +355,7 @@ onErrorCaptured((err, instance, info) => {
         >
           <div style="padding: 24px">
             <div style="display: flex; justify-content: space-between">
-              <div style="color: #ff5e59">
+              <div style="color: #ff5e59; overflow: hidden; text-overflow: ellipsis">
                 {{
                   getBookmarkType(bookmarkDisplay) === 'M'
                     ? bookmarkDisplay.cohortDefinition.cohortDefinitionName
@@ -385,7 +401,7 @@ onErrorCaptured((err, instance, info) => {
                 <div style="display: flex; margin-top: 15px">
                   <div class="bookmark-item-content">
                     <template
-                      v-for="container in getCardsFormatted({
+                      v-for="(container, containerIndex) in getCardsFormatted({
                         mriFrontEndConfig,
                         boolContainers: bookmarkDisplay.bookmark.filterCardData,
                         getText,
@@ -393,7 +409,7 @@ onErrorCaptured((err, instance, info) => {
                           mriFrontEndConfig.getAttributeByPath(attributeId)?.oInternalConfigAttribute?.type,
                         getDomainValues,
                       })"
-                      :key="container.content"
+                      :key="containerIndex"
                     >
                       <div>
                         <template v-for="filterCard in container.content" :key="filterCard.name">
@@ -504,8 +520,10 @@ onErrorCaptured((err, instance, info) => {
                   <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.description }}</div>
                 </div>
                 <div style="display: flex">
-                  <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Cohort Name:</div>
-                  <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.cohortDefinitionName }}</div>
+                  <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px; white-space: nowrap;">Cohort Name:</div>
+                  <div class="ui-light-text" style="overflow: hidden; text-overflow: ellipsis">
+                    {{ bookmarkDisplay.cohortDefinition.cohortDefinitionName }}
+                  </div>
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Patient Count:</div>
@@ -537,6 +555,7 @@ onErrorCaptured((err, instance, info) => {
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
             @click="onSelectBookmark(bookmarkDisplay)"
+            :title="getText('MRI_PA_TOOLTIP_SELECT_BOOKMARK')"
           >
             <PlusInBoxIcon
               :type="
@@ -548,11 +567,17 @@ onErrorCaptured((err, instance, info) => {
           <div
             v-if="!isLocal"
             :class="`icon-button ${
-              ['D', 'M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
+              ['D', 'M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) && canModify(bookmarkDisplay)
+                ? ''
+                : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click.stop="renameBookmark(bookmarkDisplay)"
-            :title="getText('MRI_PA_TOOLTIP_RENAME_BOOKMARK')"
+            @click.stop="canModify(bookmarkDisplay) && renameBookmark(bookmarkDisplay)"
+            :title="
+              canModify(bookmarkDisplay)
+                ? getText('MRI_PA_TOOLTIP_RENAME_BOOKMARK')
+                : 'You can only modify filters you own'
+            "
           >
             <EditIcon />
           </div>
@@ -581,10 +606,14 @@ onErrorCaptured((err, instance, info) => {
           </div>
 
           <div
-            class="icon-button"
+            :class="`icon-button ${canModify(bookmarkDisplay) ? '' : 'icon-button-disabled'}`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click.stop="deleteBookmark(bookmarkDisplay)"
-            :title="getText('MRI_PA_TOOLTIP_DELETE_BOOKMARK')"
+            @click.stop="canModify(bookmarkDisplay) && deleteBookmark(bookmarkDisplay)"
+            :title="
+              canModify(bookmarkDisplay)
+                ? getText('MRI_PA_TOOLTIP_DELETE_BOOKMARK')
+                : 'You can only modify filters you own'
+            "
           >
             <TrashCanIcon />
           </div>

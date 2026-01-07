@@ -43,6 +43,7 @@ export interface Plugins {
   requiredRoles?: string[];
   featureFlag?: string;
   menus?: string[];
+  datasetTypes?: string[];
 }
 
 export interface PluginDropdown {
@@ -60,6 +61,7 @@ export interface IPluginItem {
   enabled?: boolean;
   requiredRoles?: string[];
   type?: string;
+  autoMount?: boolean;
   proxySource?: string;
   proxyDestination?: string;
   proxyTarget?: string;
@@ -74,6 +76,7 @@ export interface IPluginItem {
   notes?: string;
   notesI18nKey?: keyof LanguageMappings;
   children?: IPluginItem[];
+  datasetTypes?: string[];
 }
 
 export interface IPlugin {

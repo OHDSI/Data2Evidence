@@ -7,7 +7,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test(TEST_NAME, async ({ page }) => {
   test.slow()
   // Sign in
-  await page.goto(`/portal`)
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -18,7 +18,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo datasetDemo datasetTotal').click()
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
-  await expect(page.getByText('2694 / 2694')).toBeVisible()
+  await expect(page.getByText('2,694 / 2,694')).toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Add filter card
@@ -32,8 +33,16 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: '+' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Search' }).click()
-  await page.getByRole('row', { name: '257012 40055000 Chronic' }).locator('path').click()
-  await page.getByRole('row', { name: '4294548 75498004 Acute' }).locator('path').click()
+  await page
+    .getByRole('row', { name: /40055000.*Chronic/ })
+    .locator('td')
+    .first()
+    .click()
+  await page
+    .getByRole('row', { name: /75498004.*Acute/ })
+    .locator('td')
+    .first()
+    .click()
   await expect(page.getByRole('tablist')).toContainText('2')
   await page.getByRole('tab', { name: 'Selected concepts' }).click()
   await expect(page.locator('tbody')).toContainText('257012')
@@ -45,7 +54,7 @@ test(TEST_NAME, async ({ page }) => {
   // Wait for concept set to be succesfully created
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.getByText('1132 / 2694')).toBeVisible()
+  await expect(page.getByText('1,132 / 2,694')).toBeVisible()
 
   // Dismiss popover if present
   try {
@@ -58,7 +67,11 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Set X1-axis to condition concept name
-  await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
+  await page
+    .locator('div.axis-menu-button-wrapper')
+    .first()
+    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
+    .click()
   await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -71,31 +84,33 @@ test(TEST_NAME, async ({ page }) => {
     .getByPlaceholder('Enter search term')
     .fill('Chronic sinusitis')
   await page.getByText('Chronic sinusitis - Chronic sinusitis').click()
-  await expect(page.getByText('812 / 2694')).toBeVisible()
+  await expect(page.getByText('812 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Set X1-axis to gender
+  await page.getByRole('button', { name: 'Basic Data Gender ◢' }).click()
+  await page.locator('#pane-right').getByRole('list').getByText('Reset Selection').click()
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').click()
+  await page.locator('#pane-right').getByRole('list').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Set Y-axis to month of birth
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
-  await page.locator('div.dropdownmenu-container').getByText('Month of Birth').nth(1).click()
+  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
+  await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Set Y-axis to patient count
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
+  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
   await page.locator('div.dropdownmenu-container').getByText('Patient Count').first().click()
 
   // Set X1-axis to condition concept name
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
+  await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
 
   // Remove condition concept name value in filter card
@@ -103,14 +118,24 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set X2-axis to race concept id
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
+  await page
+    .locator('div.dropdownmenu-container')
+    .getByRole('listitem')
+    .filter({ hasText: 'Basic Data' })
+    .last()
+    .click()
   await page.locator('#pane-right').getByText('Race concept id').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.02 })
 
   // Set X2-axis to year of birth with bin size of 50
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(1).click()
+  await page
+    .locator('div.dropdownmenu-container')
+    .getByRole('listitem')
+    .filter({ hasText: 'Basic Data' })
+    .last()
+    .click()
   await page.locator('#pane-right').getByText('Year of Birth').first().click()
   await page.locator('button.binningButton').nth(1).click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
@@ -127,7 +152,12 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set attribute for stacked chart
   await page.locator('div.axis-menu-button-wrapper').nth(4).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').nth(2).click()
+  await page
+    .locator('div.dropdownmenu-container')
+    .getByRole('listitem')
+    .filter({ hasText: 'Basic Data' })
+    .last()
+    .click()
   await page.locator('#pane-right').getByText('Month of Birth').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 1200 })
@@ -136,13 +166,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTitle('Basic Data - Month of Birth').first().click()
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('11')
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
-  await expect(page.getByText('115 / 2694')).toBeVisible()
+  await expect(page.getByText('115 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Remove condition occurrence filter card
   await page.locator('span[title="Select Filter Attributes"]').nth(1).click()
   await page.getByRole('menuitem').getByText('Remove Filter Card').click()
-  await expect(page.getByText('247 / 2694')).toBeVisible()
+  await expect(page.getByText('247 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
 
   // Switch to list view

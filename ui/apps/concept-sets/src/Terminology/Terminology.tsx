@@ -26,13 +26,17 @@ import {
 import { tabNames } from "./utils/constants";
 import { TabName, ConceptSet } from "./utils/types";
 import { usePortal, useTranslation } from "../hooks";
+import { getPortalAPI } from "../utils/PortalUtils";
 import { api } from "../axios/api";
 import {
   mapd2eWebapiConcept,
   mapd2eWebapiConceptSet,
 } from "./utils/d2eWebapiMappers";
+
 import { i18nKeys } from "../context/state";
 import "./Terminology.scss";
+
+const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
 
 export interface TerminologyProps {
   onConceptIdSelect?: (
@@ -95,6 +99,7 @@ const NameSection = ({
   conceptSetId,
   onClickClose,
   errorMsg,
+  canShare,
 }: {
   conceptSetName: string;
   setConceptSetName: React.Dispatch<React.SetStateAction<string>>;
@@ -106,6 +111,7 @@ const NameSection = ({
   conceptSetId: number | null;
   onClickClose(): void;
   errorMsg: string;
+  canShare: boolean;
 }) => {
   const { getText } = useTranslation();
 
@@ -136,6 +142,7 @@ const NameSection = ({
           variant="standard"
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
+          onBlur={(e) => setConceptSetName(e.target.value.trim())}
           disabled={isLoading}
         />
         <Box
@@ -149,20 +156,22 @@ const NameSection = ({
             },
           }}
         >
-          <div style={{ marginBottom: -15, marginLeft: 10 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={conceptSetShared}
-                  onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                    setConceptSetShared(event.target.checked);
-                  }}
-                  disabled={!isUserConceptSet}
-                />
-              }
-              label={getText(i18nKeys.TERMINOLOGY__SHARED)}
-            />
-          </div>
+          {canShare && (
+            <div style={{ marginBottom: -15, marginLeft: 10 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={conceptSetShared}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      setConceptSetShared(event.target.checked);
+                    }}
+                    disabled={!isUserConceptSet}
+                  />
+                }
+                label={getText(i18nKeys.TERMINOLOGY__SHARED)}
+              />
+            </div>
+          )}
           {isUserConceptSet && (
             <Button
               style={{ marginLeft: 10 }}
@@ -353,6 +362,15 @@ export const Terminology: FC<TerminologyProps> = ({
   const { datasetId, userName } = usePortal();
   const activeDatasetId = selectedDatasetId || datasetId;
   const isConceptSet = mode === "CONCEPT_SET";
+
+  // Check if user can share based on adminOnlySharing feature flag
+  const portalAPI = getPortalAPI();
+  const features = portalAPI?.features ?? [];
+  const featuresLoading = portalAPI?.featuresLoading ?? true;
+  const adminOnlySharingEnabled =
+    features.find((f) => f.feature === FEATURE_ADMIN_ONLY_SHARING)?.isEnabled ??
+    false;
+  const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
   const isConceptMultiSelect = mode === "CONCEPT_MULTI_SELECT";
 
   // Show simplified interface for multi-select mode
@@ -465,7 +483,7 @@ export const Terminology: FC<TerminologyProps> = ({
           isExcluded: !!concept.isExcluded,
         };
       }),
-      name: conceptSetName,
+      name: conceptSetName.trim(),
       shared: conceptSetShared,
       ...(!conceptSetId && { userName }),
     };
@@ -474,14 +492,14 @@ export const Terminology: FC<TerminologyProps> = ({
       // 0 is the conceptSetId placeholder when creating a new concept set
       const isNameUsed = await checkIfConceptSetExists(
         conceptSetId || 0,
-        conceptSetName,
+        conceptSet.name,
         activeDatasetId
       );
 
       if (isNameUsed) {
         setErrorMsg(
           getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [
-            `"${conceptSetName}"`,
+            `"${conceptSet.name}"`,
           ])
         );
         return;
@@ -775,6 +793,7 @@ export const Terminology: FC<TerminologyProps> = ({
             conceptSetId={conceptSetId}
             onClickClose={onClickClose}
             errorMsg={errorMsg}
+            canShare={canShare}
           />
         ) : null}
         <div

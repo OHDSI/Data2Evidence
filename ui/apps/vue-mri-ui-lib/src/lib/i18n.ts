@@ -49,7 +49,7 @@ export const i18n = {
     MRI_PA_CFG_ERROR_NO_MEASURE: 'Please choose at least one initial measure for the y-axis.',
     MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION: 'Add Configuration',
     MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION_TOOLTIP: 'Add New Configuration',
-    MRI_PA_CFG_TITLE_PATIENT_ANALYTICS_CONFIG: 'Patient Analytics Configuration',
+    MRI_PA_CFG_TITLE_PATIENT_ANALYTICS_CONFIG: 'Cohort Builder Configuration',
     MRI_PA_CFG_DATA_MODEL_CONFIG_TEXT: 'Data Model Configuration:',
     MRI_PA_CFG_NO_CONFIGS_FOUND_TEXT: 'No Defined Configurations',
     MRI_PA_CFG_TITLE_ENTER_CONFIG_NAME: 'Enter Configuration Name',
@@ -297,7 +297,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP:
       'Activate the option to generate a calculation view as external access point',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5 Component',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: 'Visualization Type',
     MRI_PA_TITLE: 'Patient Analytics',
     MRI_PA_INPUT_PLACEHOLDER_ALL: 'All',
@@ -419,6 +418,7 @@ export const i18n = {
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_QUESTION_TEXT: 'Do you want to save or discard changes?',
     MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE: 'Import ATLAS Cohort Definition',
     MRI_PA_TOOLTIP_RENAME_BOOKMARK: 'Rename Saved Filter',
+    MRI_PA_TOOLTIP_SELECT_BOOKMARK: 'Select Saved Filter',
     MRI_PA_ATTRIBUTE_MENU_BUTTON_PLACEHOLDER: 'Select Attribute',
     MRI_PA_DISAGGR_MISSING_LIMIT_OFFSET:
       'Disaggregation request must contain both integer parameters "limit" and "offset".',
@@ -1196,7 +1196,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP:
       'Aktivieren Sie die Option zum Generieren einer Berechnungssicht als externem Zugriffspunkt',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5-Komponente',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: 'Visualisierungstyp',
     MRI_PA_TITLE: 'Patientenanalyse',
     MRI_PA_INPUT_PLACEHOLDER_ALL: 'Alle',
@@ -1321,6 +1320,7 @@ export const i18n = {
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_QUESTION_TEXT: 'Möchten Sie die Änderungen speichern oder verwerfen?',
     MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE: 'ATLAS-Kohortendefinition importieren',
     MRI_PA_TOOLTIP_RENAME_BOOKMARK: 'Gesicherten Filter umbenennen',
+    MRI_PA_TOOLTIP_SELECT_BOOKMARK: 'Gesicherten Filter auswählen',
     MRI_PA_ATTRIBUTE_MENU_BUTTON_PLACEHOLDER: 'Attribut auswählen',
     MRI_PA_DISAGGR_MISSING_LIMIT_OFFSET:
       'Disaggregationsanfrage muss die Integer-Parameter "limit" und "offset" enthalten.',
@@ -2078,7 +2078,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_LABEL: '启用计算视图作为外部访问点',
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP: '激活此选项以生成作为外部访问点的计算视图',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5 组件',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: '可视化类型',
     MRI_PA_TITLE: '病患分析',
     MRI_PA_INPUT_PLACEHOLDER_ALL: '全部',
@@ -2195,6 +2194,7 @@ export const i18n = {
     MRI_PA_BOOKMARK_UNSAVED_DIALOG_QUESTION_TEXT: '您想保存还是放弃更改？',
     MRI_PA_BOOKMARK_IMPORT_ATLAS_COHORT_DEFINITION_TITLE: '导入 ATLAS 群组定义',
     MRI_PA_TOOLTIP_RENAME_BOOKMARK: '重命名已保存的过滤器',
+    MRI_PA_TOOLTIP_SELECT_BOOKMARK: '选择已保存的过滤器',
     MRI_PA_ATTRIBUTE_MENU_BUTTON_PLACEHOLDER: '选择属性',
     MRI_PA_DISAGGR_MISSING_LIMIT_OFFSET: '分解请求必须包含整数参数“限制”和“偏移量”。',
     MRI_PA_BUTTON_DRILL_DOWN: '按选择过滤',
@@ -2647,4 +2647,3 @@ function getKeyMap<T extends object>(obj: T) {
 // can be getText(i18nKeys.MRI_PA_FILTERCARD_SELECTION_NONE)
 // to prevent typos with the values
 export const i18nKeys = getKeyMap(i18n.en)
-

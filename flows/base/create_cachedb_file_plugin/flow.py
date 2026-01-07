@@ -65,7 +65,8 @@ def create_cache_flow(options: CreateCacheOptions):
         timestamp_filter=options.snapshot_copy_config.timestamp if options.snapshot_copy_config else None,
         patient_filter=options.snapshot_copy_config.patients_to_be_copied if options.snapshot_copy_config else None,
         fts_tables=options.tables_to_create_duckdb_fts_index,
-        limit_statement=""  # Limit 0 only applied to CDW config
+        limit_statement="",  # Limit 0 only applied to CDW config
+        vocab_schema=options.vocab_schema_name
     )
 
 
@@ -89,6 +90,9 @@ def create_cache_flow(options: CreateCacheOptions):
 
             # Extensions should already be loaded in trex
             # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
+
+            # Update cache information
+            pg_cursor.execute("CALL pg_clear_cache();")
 
             logger.info(
                 f"Creating cache for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."

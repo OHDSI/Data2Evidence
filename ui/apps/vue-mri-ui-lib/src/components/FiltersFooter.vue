@@ -96,7 +96,7 @@
                       tabindex="0"
                       v-focus
                       required
-                      maxlength="40"
+                      maxlength="255"
                       @keydown.enter="saveBookmark"
                     />
                     <div
@@ -106,7 +106,7 @@
                       {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
                     </div>
                     <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-                      Filter name must not exceed 40 characters
+                      Filter name must not exceed 255 characters
                     </div>
                     <div
                       class="invalid-feedback"
@@ -118,7 +118,7 @@
                 </div>
               </div>
 
-              <div class="row row-checkbox">
+              <div v-if="canShare" class="row row-checkbox">
                 <appCheckbox
                   v-model="shareBookmark"
                   :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
@@ -171,7 +171,7 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters, mapMutations } from 'vuex'
+import { mapActions, mapGetters, mapMutations, useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
@@ -180,6 +180,7 @@ import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
 import { getPortalAPI } from '../utils/PortalUtils'
+import { useUserRole } from '../composables/useUserRole'
 
 export default {
   name: 'filtersFooter',
@@ -190,6 +191,11 @@ export default {
       default: false,
     },
   },
+  setup() {
+    const store = useStore()
+    const { canShare } = useUserRole()
+    return { canShare }
+  },
   data() {
     return {
       showSaveBookmark: false,
@@ -198,7 +204,7 @@ export default {
       saveDialogWidth: 260,
       cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
       cohortName: '',
-      maxLength: 40,
+      maxLength: 255,
       maxFiltercardCount: 10,
     }
   },

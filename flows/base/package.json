@@ -27,7 +27,7 @@
             "type": "object",
             "properties": {
               "options": {
-                "$ref": "#/definitions/DataloadOptions",
+                "$ref": "#/definitions/OmopCDMPluginOptions",
                 "position": 0,
                 "title": "options"
               }
@@ -44,7 +44,7 @@
                 "title": "FlowActionType",
                 "type": "string"
               },
-              "DataloadOptions": {
+              "OmopCDMPluginOptions": {
                 "properties": {
                   "flow_action_type": {
                     "$ref": "#/definitions/FlowActionType"
@@ -53,34 +53,72 @@
                     "title": "Database Code",
                     "type": "string"
                   },
+                  "data_model": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Model"
+                  },
                   "schema_name": {
-                    "title": "Schema Name",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Schema Name"
                   },
                   "vocab_schema": {
-                    "title": "Vocabulary Schema",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Vocabulary Schema"
                   },
                   "results_schema": {
-                    "title": "Results Schema",
-                    "type": "string"
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Results Schema"
+                  },
+                  "datasets": {
+                    "anyOf": [
+                      { "items": {}, "type": "array" },
+                      { "type": "null" }
+                    ],
+                    "default": null,
+                    "title": "Datasets"
+                  },
+                  "load_csvs": {
+                    "anyOf": [
+                      { "type": "boolean" },
+                      { "type": "null" }
+                    ],
+                    "default": false,
+                    "title": "Load CSVs into CDM schema"
                   }
                 },
                 "required": [
                   "flow_action_type",
-                  "database_code",
-                  "schema_name",
-                  "vocab_schema",
-                  "results_schema"
+                  "database_code"
                 ],
-                "title": "DataloadOptions",
+                "title": "OmopCDMPluginOptions",
                 "type": "object"
               }
             }
           },
           "type": "datamodel",
           "datamodels": [
-            "omop5-3"
+            "omop5-3",
+            "omop5-4"
           ]
         },
         {
@@ -136,6 +174,18 @@
                     ],
                     "default": null,
                     "title": "Schemaname"
+                  },
+                  "vocabSchemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Vocab Schema name"
                   },
                   "resultsSchemaName": {
                     "anyOf": [
@@ -766,11 +816,16 @@
                   "schemaName": {
                     "title": "Schemaname",
                     "type": "string"
+                  },
+                  "cacheSchemaName": {
+                    "title": "Cacheschemaname",
+                    "type": "string"
                   }
                 },
                 "required": [
                   "databaseCode",
-                  "schemaName"
+                  "schemaName",
+                  "cacheSchemaName"
                 ],
                 "title": "CreateDuckdbDatabaseFileType",
                 "type": "object"
@@ -778,6 +833,68 @@
             }
           },
           "type": "create_cachedb_fhir"
+        },
+        {
+          "name": "admin_share_plugin",
+          "entrypoint": "flows.admin_share_plugin.flow.admin_share_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/AdminSharePluginType",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "AdminSharePluginType": {
+                "properties": {
+                  "concept_set_ids": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Concept Set Ids"
+                  },
+                  "cohort_definition_ids": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Cohort Definition Ids"
+                  },
+                  "shared": {
+                    "default": true,
+                    "title": "Shared",
+                    "type": "boolean"
+                  }
+                },
+                "title": "AdminSharePluginType",
+                "type": "object"
+              }
+            }
+          },
+          "type": "adminshare"
         }
       ]
     }

@@ -234,10 +234,11 @@ export const searchConcept = async (
   };
 
   // ATLAS UI expects all concept search results in a single request, so send count as 9999
+  const offset = page * rowsPerPage;
   const concepts = await terminologySvcApi.searchConcept(
     datasetId,
     query,
-    page,
+    offset,
     rowsPerPage,
     filters
   );

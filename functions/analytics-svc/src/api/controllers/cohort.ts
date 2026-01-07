@@ -497,6 +497,12 @@ async function getCohortFromMriQuery(
     try {
         const patientIds = [];
 
+        // Add mriquery to cohort definition syntax
+        const syntax = {
+            mriquery: req.body.mriquery,
+            ...JSON.parse(req.body.syntax),
+        };
+
         // Create cohort object
         let cohort = <CohortType>{
             patientIds,
@@ -505,7 +511,7 @@ async function getCohortFromMriQuery(
             creationTimestamp: new Date().toISOString().split("T")[0],
             definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
             subjectConceptId: req.body.subjectConceptId ?? 0,
-            syntax: req.body.syntax,
+            syntax: JSON.stringify(syntax),
         };
 
         return cohort;

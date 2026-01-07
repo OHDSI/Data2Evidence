@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -18,6 +18,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
-  await expect(page.getByText('1321 / 2694')).toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page.getByText('1,321 / 2,694')).toBeVisible()
+  await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
 })

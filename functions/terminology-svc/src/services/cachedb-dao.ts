@@ -12,6 +12,7 @@ import {
 } from "../types.ts";
 import { env } from "../env.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
+import { individualFilterWhereOR } from "./cachedb.ts";
 
 export class CachedbDAO {
   private readonly jwt: string;
@@ -517,12 +518,12 @@ export class CachedbDAO {
     });
 
     const filterList = [
-      ...conceptClassIdFilter,
-      ...domainIdFilter,
-      ...standardConceptFilter,
-      ...vocabularyIdFilter,
-      ...validityFilter,
-    ];
+      individualFilterWhereOR(conceptClassIdFilter),
+      individualFilterWhereOR(domainIdFilter),
+      individualFilterWhereOR(standardConceptFilter),
+      individualFilterWhereOR(vocabularyIdFilter),
+      individualFilterWhereOR(validityFilter),
+    ].filter(Boolean); // Remove empty strings from array
 
     if (filterList.length === 0) {
       return "";

@@ -16,6 +16,23 @@ const main = () => {
     bodyLimit: 10485760, // 10MiB
   });
 
+  // Add wildcard parser for DELETE requests with invalid Content-Type
+  // This runs BEFORE default parsers, so it only catches requests they would reject
+  app.addContentTypeParser("*", { parseAs: "buffer" }, (req, payload, done) => {
+    // Only handle DELETE requests with invalid/undefined Content-Type
+    if (
+      req.method === "DELETE" &&
+      (!req.headers["content-type"] ||
+        req.headers["content-type"] === "undefined" ||
+        req.headers["content-type"] === "null")
+    ) {
+      done(null, null);
+    } else {
+      // Let default parsers handle everything else
+      done(null, payload);
+    }
+  });
+
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
@@ -64,6 +81,10 @@ const main = () => {
   });
   app.register(fastifySwaggerUI, {
     routePrefix: `/${routePrefix}/documentation`,
+    logo: {
+      type: "text/plain",
+      content: "",
+    },
   });
 
   app.after(() => app.register(routes, { prefix: routePrefix }));

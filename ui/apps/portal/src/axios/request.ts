@@ -51,7 +51,7 @@ const requestNoCache = async <T = any>(options: AxiosRequestConfig): Promise<T> 
 };
 
 export const request = memoize(requestNoCache, {
-  maxAge: 3000,
+  maxAge: 800,
   promise: true,
   normalizer: (args) => JSON.stringify(args),
 });

@@ -101,7 +101,7 @@ const getters = {
 
         axisInfo.binsize =
           allAxes[i].props.binsize === ''
-            ? rootGetters.getMriFrontendConfig.getAttributeByPath(axisInfo.attributeId).getDefaultBinSize() ?? 'n/a'
+            ? (rootGetters.getMriFrontendConfig.getAttributeByPath(axisInfo.attributeId).getDefaultBinSize() ?? 'n/a')
             : allAxes[i].props.binsize
       }
       axisSelection.push(axisInfo)
@@ -149,6 +149,8 @@ const getters = {
       // cohort definitions without bookmark
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
+        // displayBookmarkDateFormat expects ISO String
+        cohortDefinition.createdOn = new Date(cohortDefinition.createdOn).toISOString()
         // check bookmark exists, if yes, should use the bookmark name
         const bookmark = bookmarks.find(
           bookmark =>
@@ -322,13 +324,60 @@ const actions = {
   setFilterSummaryVisibility({ commit }, { filterSummaryVisibility }) {
     commit(types.SET_FILTERSUMMARY, { filterSummaryVisibility })
   },
+  /**
+   * Load bookmark data directly to state (used by deep links)
+   * Unlike loadbookmarkToState, this takes the parsed bookmark object directly
+   */
+  loadBookmarkDataToState({ commit, dispatch, getters, rootGetters }, { bookmark, chartType }) {
+    // Set a virtual active bookmark so the UI shows the cohort tab
+    commit(types.SET_ACTIVE_BOOKMARK, {
+      bookmarkname: 'Linked Cohort',
+      bmkId: 'deep-link',
+      isNew: true,
+    })
+
+    // Check if the chart type is changing - if so, the new chart will call setFireRequest on mount
+    const currentActiveChart = rootGetters.getActiveChart
+    const chartIsChanging = chartType && chartType !== currentActiveChart
+    console.debug(
+      '[Bookmark] loadBookmarkDataToState - currentChart:',
+      currentActiveChart,
+      'newChart:',
+      chartType,
+      'changing:',
+      chartIsChanging
+    )
+    return dispatch('_loadParsedBookmarkToState', {
+      parsedBookmark: bookmark,
+      chartType,
+      skipFireRequest: chartIsChanging,
+    })
+  },
   loadbookmarkToState({ commit, dispatch, getters, rootGetters }, { bmkId, chartType }) {
     const parsedBookmark = getters.getBookmarkById(bmkId)
 
     commit(types.SET_ACTIVE_BOOKMARK, getters.getBookmark(bmkId))
+    return dispatch('_loadParsedBookmarkToState', { parsedBookmark, chartType })
+  },
+  /**
+   * Internal action to load a parsed bookmark to state
+   * @param skipFireRequest - if true, don't call setFireRequest (chart will do it on mount)
+   */
+  _loadParsedBookmarkToState(
+    { commit, dispatch, getters, rootGetters },
+    { parsedBookmark, chartType, skipFireRequest = false }
+  ) {
     // TODO: send API request to check Filter is compatible
     // if error "Show toast Message"
-    const ifr = BMv2Parser.convertBM2IFR(parsedBookmark.filter)
+    console.debug('[Bookmark] Loading parsed bookmark to state:', parsedBookmark)
+    let ifr
+    try {
+      ifr = BMv2Parser.convertBM2IFR(parsedBookmark.filter)
+      console.debug('[Bookmark] BMv2Parser.convertBM2IFR result:', ifr)
+    } catch (error) {
+      console.error('[Bookmark] BMv2Parser.convertBM2IFR failed:', error)
+      return Promise.reject(error)
+    }
     return new Promise((resolve, reject) => {
       dispatch('setIFRState', { ifr })
         .then(() => {
@@ -399,9 +448,15 @@ const actions = {
             })
           }
           if (chartType) {
+            console.debug('[Bookmark] Setting active chart:', chartType)
             dispatch('setActiveChart', chartType)
           }
-          dispatch('setFireRequest')
+          if (!skipFireRequest) {
+            console.debug('[Bookmark] Firing request (setFireRequest)')
+            dispatch('setFireRequest')
+          } else {
+            console.debug('[Bookmark] Skipping setFireRequest (chart will call it on mount)')
+          }
           resolve(null)
         })
         .catch(e => {

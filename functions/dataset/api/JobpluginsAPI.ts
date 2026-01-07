@@ -1,6 +1,9 @@
 // import https from "node:https";
 import { AxiosRequestConfig } from "npm:axios";
-import { ICreateDatamodelFlowRunDto } from "../../jobplugins/src/types.ts";
+import {
+  ICreateDatamodelFlowRunDto,
+  ICreateFhirCacheFlowRunDto,
+} from "../../jobplugins/src/types.ts";
 import { services } from "../env.ts";
 import { post } from "./request-util.ts";
 
@@ -54,6 +57,17 @@ export class JobPluginsAPI {
     throw new Error("Failed create datamodel flow run");
   }
 
+  async createFhirCacheFlowRun(data: ICreateFhirCacheFlowRunDto) {
+    this.logger.info("Running create FHIR cache flow run");
+    const options = await this.getRequestConfig();
+    const url = `${this.baseURL}/cachedb/create-fhir-file`;
+    const result = await this.channel.post(url, data, options);
+    if (result.data) {
+      return result.data;
+    }
+    throw new Error("Failed create FHIR cache flow run");
+  }
+
   async getDatamodels() {
     this.logger.info("Running get datamodel list");
     const options = await this.getRequestConfig();
@@ -79,14 +93,11 @@ export class JobPluginsAPI {
   async createCDMSchema(
     databaseCode: string,
     schemaName: string,
-    cleansedSchemaOption: boolean,
     dataModel: string,
     dialect: string,
     vocabSchema: string
   ): Promise<any> {
-    this.logger.info(
-      `Create CDM schema ${schemaName} in ${databaseCode} with cleansed schema option set to ${cleansedSchemaOption}`
-    );
+    this.logger.info(`Create CDM schema ${schemaName} in ${databaseCode}`);
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/db-svc/run`;
     const body = {
@@ -94,7 +105,6 @@ export class JobPluginsAPI {
       requestType: "post",
       requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}/schema/${schemaName}`,
       requestBody: {
-        cleansedSchemaOption: cleansedSchemaOption,
         vocabSchema: vocabSchema,
       },
     };
@@ -134,38 +144,6 @@ export class JobPluginsAPI {
     }
     throw new Error(
       `Failed to copy CDM schema ${sourceSchemaName} in ${databaseCode}`
-    );
-  }
-
-  async copyCDMSchemaParquet(
-    databaseCode: string,
-    sourceSchemaName: string,
-    targetSchemaName: string,
-    dialect: string,
-    snapshotCopyConfig: any
-  ): Promise<any> {
-    const data = {
-      database: databaseCode,
-      sourceSchema: sourceSchemaName,
-      targetSchemaName: targetSchemaName,
-    };
-    this.logger.info(
-      `Copy CDM schema (${JSON.stringify(data)}) into parquet file`
-    );
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "copyCDMSchemaParquet",
-      requestType: "post",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshotparquet/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
-      requestBody: { snapshotCopyConfig: snapshotCopyConfig },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
-      return result.data;
-    }
-    throw new Error(
-      `Failed to copy CDM schema ${sourceSchemaName} in ${databaseCode} as parquet`
     );
   }
 

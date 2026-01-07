@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -17,15 +17,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
-    await page.getByTitle('Basic Data - Age').click()
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>55')
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
-    await expect(page.getByText('1971 / 2694')).toBeVisible()
+    await page.locator('div[title="Basic Data - Month of Birth"]').click()
+    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('>2')
+    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+    await expect(page.getByText('2,255 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
   //Add Condition Occurrence filter card
@@ -46,7 +46,11 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '40055000 Chronic sinusitis' }).locator('path').click()
+      await page
+        .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
+        .locator('td')
+        .first()
+        .click()
       await page.getByRole('button', { name: 'Create' }).click()
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -64,7 +68,9 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByText('Chronic sinusitis').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('629 / 2694')).toBeVisible()
+    await expect(page.getByText('682 / 2,694')).toBeVisible()
+    await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
+    await page.getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Save the filter card
@@ -116,7 +122,7 @@ test(TEST_NAME, async ({ page }) => {
     expect(rowCount).toBeGreaterThan(1)
     // Confirm patientlist-control has rowcount="812"
     const rowCountAttr = await page.locator('.patientlist-control').getAttribute('rowcount')
-    expect(rowCountAttr).toBe('629')
+    expect(rowCountAttr).toBe('682')
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
     await page.getByText(' Sort Ascending').click()
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()

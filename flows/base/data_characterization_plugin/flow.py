@@ -19,7 +19,6 @@ from .types import DCOptionsType, AchillesParams
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
-
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
 from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
 
@@ -75,6 +74,9 @@ def data_characterization_plugin(options: DCOptionsType):
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
     )
+    # For TREX connections, set vocabSchemaName to schemaName
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        achilles_params.vocabSchemaName = options.schemaName
 
     dc_schema = create_results_schema(
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
@@ -276,17 +278,18 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         logger.error(f"Error message from Achilles run: {error_message}")
 
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
+        failed_analysis_ids_str = ""
 
         if failed_analysis_ids:
             failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
-            logger.error(f"The following analysis IDs failed: {failed_analysis_ids_str}")
+            logger.error(f"The following analysis IDs failed: \"{failed_analysis_ids_str}\"")
 
         error_result = {
             "flow_run_id": flow_run_id,
             "result": {},
             "error": True,
             "error_message": error_message,
-            "failed_analysis_ids": failed_analysis_ids,
+            "failed_analysis_ids": failed_analysis_ids_str,
         }
 
         create_markdown_artifact(

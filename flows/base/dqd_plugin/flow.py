@@ -18,7 +18,6 @@ from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMo
 
 os.environ["plugin_name"] = "dqd_plugin"
 
-
 @flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
@@ -37,7 +36,7 @@ def dqd_plugin(options: DqdOptionsType):
         if dbdao.dialect == SupportedDatabaseDialects.HANA
         else options.use_trex_connection
     )
-
+    
     r_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
@@ -51,6 +50,9 @@ def dqd_plugin(options: DqdOptionsType):
         connectionDetails=r_connection_string,
         use_trex_connection=use_trex_connection,
     )
+    # For TREX connections, set vocabSchemaName to schemaName
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        dqd_parameters.vocabSchemaName = options.schemaName
 
     if (
         options.cohortDefinitionId

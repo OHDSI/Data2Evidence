@@ -17,6 +17,13 @@ export default defineConfig(({ command, mode }) => {
   return {
     mode,
     define: { "process.env.NODE_ENV": `"${mode}"` },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: "modern-compiler",
+        },
+      },
+    },
     plugins: [
       cssInjectedByJsPlugin(),
       react(),
@@ -70,6 +77,7 @@ export default defineConfig(({ command, mode }) => {
     },
     server: {
       port: 8082,
+      cors: true,
     },
     preview: {
       port: 8082,

@@ -25,6 +25,7 @@ interface ResearcherStudyPluginRendererProps {
   subFeatureFlags: SubFeatureFlags;
   route?: string;
   type?: string; // Plugin type: "app" for single-spa, undefined for legacy
+  autoMount?: boolean;
 }
 
 export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProps> = ({
@@ -37,6 +38,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
   subFeatureFlags,
   route,
   type: configType,
+  autoMount,
 }) => {
   const {
     userId,
@@ -65,6 +67,8 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
             basePath,
             url: path,
             customProps: {
+              appId,
+              autoMount,
               getToken: getAuthToken,
               username,
               idpUserId,

@@ -13,13 +13,20 @@
           <div class="div-bookmark-dialog">
             <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span>
             <div class="input-container">
-              <input class="form-control" v-focus required maxlength="40" v-model="renamedBookmark" />
+              <input
+                class="form-control"
+                v-focus
+                required
+                maxlength="255"
+                v-model="renamedBookmark"
+                @keydown.enter="confirmRenameBookmark"
+              />
             </div>
             <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']">
               {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
             </div>
             <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-              Filter name must not exceed 40 characters
+              Filter name must not exceed 255 characters
             </div>
             <div class="invalid-feedback" v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']">
               {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
@@ -213,13 +220,12 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
-
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
   data() {
     return {
-      maxLength: 40,
+      maxLength: 255,
       selectedBookmark: {},
       renamedBookmark: '',
       schemaName: '',
@@ -386,6 +392,7 @@ export default {
       }
     },
     confirmRenameBookmark() {
+      if (this.hasExceededLength) return
       const bookmarkDisplay = this.selectedBookmark
 
       this.renamedBookmark = this.renamedBookmark.trim()

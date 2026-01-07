@@ -61,7 +61,7 @@ export const OidcApp: FC = () => {
       if (TOKEN_EVENTS.includes(name) && idpRelyingParty === "azure") {
         try {
           const decoded = await getOidcTokenPayload();
-          if (!decoded || !("thirdPartyToken" in decoded)) {
+          if (decoded && !("thirdPartyToken" in decoded)) {
             setFeedback({
               type: "error",
               message: getText(i18nKeys.OIDC_TOKEN__THIRD_PARTY_TOKEN_MISSING),
@@ -76,9 +76,7 @@ export const OidcApp: FC = () => {
         try {
           const accessToken = await getOidcToken(false);
           if (accessToken) {
-            window.dispatchEvent(
-              new CustomEvent("oidc:token_refreshed", { detail: { accessToken } })
-            );
+            window.dispatchEvent(new CustomEvent("oidc:token_refreshed", { detail: { accessToken } }));
           }
         } catch (e) {
           console.error("Unable to retrieve refreshed access token", e);

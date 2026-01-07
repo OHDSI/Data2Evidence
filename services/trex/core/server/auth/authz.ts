@@ -20,6 +20,7 @@ export const ROLES = {
   RESEARCHER: "RESEARCHER",
   STUDY_RESEARCHER: "RESEARCHER",
   STUDY_WRITE_DQD_RESEARCHER: "STUDY_WRITE_DQD_RESEARCHER",
+  STUDY_RESULTS_READ_RESEARCHER: "STUDY_RESULTS_READ_RESEARCHER",
   VALIDATE_TOKEN_ROLE: "VALIDATE_TOKEN",
   ADMIN_DATA_READER_ROLE: "ADMIN_DATA_READER",
   BI_DATA_READER_ROLE: "BI_DATA_READER",
@@ -138,16 +139,19 @@ const buildUserFromToken = (
     if (userMgmtGroups.alp_role_study_write_dqd_researcher === true) {
       roles.push(ROLES.STUDY_WRITE_DQD_RESEARCHER);
     }
+    if (userMgmtGroups.alp_role_study_results_read_researcher === true) {
+      roles.push(ROLES.STUDY_RESULTS_READ_RESEARCHER);
+    }
     if (userMgmtGroups.alp_role_tenant_viewer?.length > 0) {
       roles.push(ROLES.TENANT_VIEWER);
     }
     if (userMgmtGroups.alp_role_study_researcher?.length > 0) {
       //roles.push(ROLES.RESEARCHER)
-      for (const datasetId of userMgmtGroups.alp_role_study_researcher) {
-        //if (url.includes(datasetId) || url.includes('/system-portal/notebook') || url.includes('/terminology')) {
-        //  break
-        //}
-      }
+      //for (const datasetId of userMgmtGroups.alp_role_study_researcher) {
+      //if (url.includes(datasetId) || url.includes('/system-portal/notebook') || url.includes('/terminology')) {
+      //  break
+      //}
+      //}
     }
   }
   const mriRoles: string[] = Array.from(roles);
@@ -273,7 +277,11 @@ export async function authz(c: Context, next: any) {
     let bearerToken = c.req.raw.headers.get("authorization");
     // Check for cookie if no token in authorization header
     // And for req with /fhir-server path, token is part of cookie
-    if (!bearerToken || bearerToken === "" || (bearerToken && originalUrl.startsWith("/fhir-server/"))) {
+    if (
+      !bearerToken ||
+      bearerToken === "" ||
+      (bearerToken && originalUrl.startsWith("/fhir-server/"))
+    ) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
@@ -286,13 +294,6 @@ export async function authz(c: Context, next: any) {
             break;
           }
         }
-      }
-    }
-    if (!bearerToken && c.req.url) {
-      const requestUrl = new URL(c.req.url);
-      const urlToken = requestUrl.searchParams.get("token");
-      if (urlToken) {
-        bearerToken = `Bearer ${urlToken}`;
       }
     }
 

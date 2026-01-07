@@ -107,7 +107,7 @@ export class D2eWebapi {
     });
   }
 
-  public async createConceptSet(name: string, datasetId: string): Promise<number> {
+  public async createConceptSet(name: string, datasetId: string, shared?: boolean): Promise<number> {
     if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       const conceptSetId = await api.publicWebapiProxyAPI.createConceptSet(name);
       return conceptSetId;
@@ -117,7 +117,7 @@ export class D2eWebapi {
         url: `/conceptset`,
         method: "POST",
         headers: { datasetid: datasetId },
-        data: { name },
+        data: { name, shared },
       });
 
       return conceptSet.id;
@@ -154,6 +154,19 @@ export class D2eWebapi {
         method: "PUT",
         headers: { datasetid: datasetId },
         data,
+      });
+    }
+  }
+
+  public deleteConceptSet(conceptSetId: number, datasetId: string) {
+    if (env.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+      return api.publicWebapiProxyAPI.deleteConceptSet(conceptSetId);
+    } else {
+      return request<number>({
+        baseURL: D2E_WEBAPI_BASE_URL,
+        url: `/conceptset/${conceptSetId}`,
+        method: "DELETE",
+        headers: { datasetid: datasetId },
       });
     }
   }

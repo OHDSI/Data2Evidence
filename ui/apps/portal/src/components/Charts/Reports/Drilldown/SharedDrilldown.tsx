@@ -9,7 +9,7 @@ import TreeMapChartTable from "../../Common/TreeMap/TreeMapChartTable";
 import DrilldownTrellisChart from "../../Common/Drilldown/DrilldownTrellisChart/DrilldownTrellisChart";
 import DrilldownPrevalenceByMonthChart from "../../Common/Drilldown/DrilldownPrevalenceByMonthChart/DrilldownPrevalenceByMonthChart";
 
-import { parseDrilldownPieChartData, parseDrilldownBarChartData } from "../../util";
+import { parseDrilldownBarChartData, parsePieChartData } from "../../util";
 
 import { DRILLDOWN_REPORT_BASE_TYPE } from "../../../DQD/types";
 import "./SharedDrilldown.scss";
@@ -19,9 +19,10 @@ interface SharedDrilldownProps {
   flowRunId: string;
   sourceKey: string;
   datasetId: string;
+  title?: string;
 }
 
-const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datasetId }) => {
+const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datasetId, title }) => {
   const { getText, i18nKeys } = useTranslation();
   const [data, setData] = useState({
     treemap: [],
@@ -87,7 +88,7 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
         )}
         {drilldownData.prevalenceByMonth && <DrilldownPrevalenceByMonthChart data={drilldownData.prevalenceByMonth} />}
         <div className="chart__container">
-          {drilldownData.byType && <PieChart title="Type" data={parseDrilldownPieChartData(drilldownData.byType)} />}
+          {drilldownData.byType && <PieChart title="Type" data={parsePieChartData(drilldownData.byType)} />}
           {drilldownData.ageAtFirstOccurrence && (
             <BoxPlotChart
               data={drilldownData.ageAtFirstOccurrence}
@@ -110,19 +111,19 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
           {drilldownData.byValueAsConcept && (
             <PieChart
               title={getText(i18nKeys.SHARED_DRILLDOWN__PIE_CHART_1_TITLE)}
-              data={parseDrilldownPieChartData(drilldownData.byValueAsConcept)}
+              data={parsePieChartData(drilldownData.byValueAsConcept)}
             />
           )}
           {drilldownData.byOperator && (
             <PieChart
               title={getText(i18nKeys.SHARED_DRILLDOWN__PIE_CHART_2_TITLE)}
-              data={parseDrilldownPieChartData(drilldownData.byOperator)}
+              data={parsePieChartData(drilldownData.byOperator)}
             />
           )}
           {drilldownData.byQualifier && (
             <PieChart
               title={getText(i18nKeys.SHARED_DRILLDOWN__PIE_CHART_3_TITLE)}
-              data={parseDrilldownPieChartData(drilldownData.byQualifier)}
+              data={parsePieChartData(drilldownData.byQualifier)}
             />
           )}
         </div>
@@ -131,7 +132,7 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
           {drilldownData.measurementValueDistribution && (
             <PieChart
               title={getText(i18nKeys.SHARED_DRILLDOWN__PIE_CHART_4_TITLE)}
-              data={parseDrilldownPieChartData(drilldownData.measurementValueDistribution)}
+              data={parsePieChartData(drilldownData.measurementValueDistribution)}
             />
           )}
           {/* // TODO: Measurement value distribution */}
@@ -167,11 +168,7 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
               <Loader text={getText(i18nKeys.SHARED_DRILLDOWN__LOADER, [sourceKey, selectedConceptId])} />
             </div>
           )}
-          <TreeMapChartTable
-            title={getText(i18nKeys.SHARED_DRILLDOWN__TREE_MAP_CHART_TITLE)}
-            data={data}
-            setSelectedConceptId={setSelectedConceptId}
-          />
+          <TreeMapChartTable title={title ?? sourceKey} data={data} setSelectedConceptId={setSelectedConceptId} />
         </div>
       )}
 

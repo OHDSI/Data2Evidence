@@ -18,7 +18,7 @@ env:
 jobs:
   pick_runner:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
@@ -27,7 +27,7 @@ jobs:
 
   check_file_changes:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
@@ -57,7 +57,7 @@ jobs:
 
   run-http-tests:
     needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     timeout-minutes: 80
     env:
@@ -111,20 +111,21 @@ jobs:
       - name: npm install
         if: success() || failure()
         run: |
-          npm install 
+          npm install
 
       - name: Initialise d2e
         if: success() || failure()
         id: init
         run: |
-          ./scripts/cli.sh -e -v develop --env-file .env.local -p 41100 -d ./functions init
+          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
-      # - name: Initialise HANA
-      #   if: success() || failure()
-      #   id: inithana
-      #   run: |
-      #     timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true ./scripts/cli.sh -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
-      - name: Initializing env vars
+      - name: Initialise HANA
+        if: success() || failure()
+        id: inithana
+        run: |
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
+      - name: Remove empty lines, replace ; within the query with a place holder
         run: |
           grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
           echo "USE_TREX_DB_CONN=true" >> $DOTENV_FILE
@@ -134,7 +135,7 @@ jobs:
 
       - name: Build system services
         run: |
-          ./scripts/cli.sh -v develop -e -n .env.local -d ./functions -p 41100 build
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -148,7 +149,7 @@ jobs:
 
       - name: Start system services
         run: |
-          ./scripts/cli.sh -v develop -e -n .env.local -d ./functions -p 41100 start
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
           echo "Waiting 120 secs for services to start..."
           sleep 120
           
@@ -193,7 +194,7 @@ jobs:
       - name: Login to logto and get Bearer token and sub
         run: |
           # Get sign in page
-          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fportal%2Flogin-callback&client_id=$LOGTO__ALP_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
+          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__ALP_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
           printf "%s\n" "$response"
 
           # Extract cookies
@@ -256,22 +257,22 @@ jobs:
           authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
 
           # Complete login
-          response=$(curl -ik "https://localhost:41100/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
+          response=$(curl -ik "https://localhost:41100/d2e/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
               --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
               --header 'referer: https://localhost:41100/sign-in' \
               --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
           # Get Bearer token
-          response=$(curl -ik 'https://localhost:41100/oauth/token' \
+          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
               --header 'accept: application/json, text/javascript, */*; q=0.01' \
               --header 'content-type: application/x-www-form-urlencoded' \
               --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}" \
               --header 'origin: https://localhost:41100' \
-              --header 'referer: https://localhost:41100/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
+              --header 'referer: https://localhost:41100/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
               --data-urlencode 'grant_type=authorization_code' \
               --data-urlencode "client_id=$LOGTO__ALP_APP__CLIENT_ID" \
-              --data-urlencode 'redirect_uri=https://localhost:41100/portal/login-callback' \
+              --data-urlencode 'redirect_uri=https://localhost:41100/d2e/portal/login-callback' \
               --data-urlencode "code=$authorization_code" \
               --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I')
           printf "%s\n" "$response"
@@ -307,12 +308,12 @@ jobs:
           echo $IDP_SUB
 
           # Endpoint to update user management with idp user id
-          response=$(curl -ik 'https://localhost:41100/usermgmt/api/user-group/list' \
+          response=$(curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/list' \
               -H 'accept: application/json, text/plain, */*' \
               -H "authorization: Bearer $BEARER_TOKEN" \
               -H 'content-type: application/json' \
               -H 'origin: https://localhost:41100' \
-              -H 'referer: https://localhost:41100/portal/no-access' \
+              -H 'referer: https://localhost:41100/d2e/portal/no-access' \
               --data-raw "{\"userId\":\"$IDP_SUB\"}")
           printf "%s\n" "$response"
           USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
@@ -320,19 +321,19 @@ jobs:
           echo "USER_MGMT_ID:"
           echo $USER_MGMT_ID
 
-
-      # - name: Seed db credentials
-      #   run: |
-      #     echo "Seed db credentials"
-      #     export ENCSALT=salt
-      #     ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
-      #     echo $ENCRYPTED_CREDS
-      #     echo "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
-      #     curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/trex/db/' \
-      #         --header 'Referer: https://localhost:41100/sign-in' \
-      #         --header 'accept: application/json, text/plain, */*' \
-      #         --header 'Content-Type: application/json' \
-      #         --header "authorization: Bearer $BEARER_TOKEN" 
+      - name: Seed db credentials
+        run: |
+          echo "Seed db credentials"
+          export ENCSALT=salt
+          ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
+          echo $ENCRYPTED_CREDS
+          echo "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
+          curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/d2e/trex/db/' \
+              --header 'Referer: https://localhost:41100/sign-in' \
+              --header 'accept: application/json, text/plain, */*' \
+              --header 'Content-Type: application/json' \
+              --header "authorization: Bearer $BEARER_TOKEN" \
+              --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
 
       # Restart is required for alp-trex container after seeding database credentials into the db table
       - name: Restart alp-trex service
@@ -398,18 +399,13 @@ jobs:
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
 
-      - name: Setup Test DB
-        run: |
-          sudo apt install -y jq
-          PGUSER=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
-          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
-          echo "PGPORT: ${PGPORT}"
-          echo "PGPASSWORD: ${PGPASSWORD}"
-          echo "PGUSER: ${PGUSER}"
-          echo "PGHOST: ${PGHOST}"
-          echo "PGDATABASE: ${PGDATABASE}"
-          yarn --prefer-offline
-          yarn inittestdb
+          curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
+              -H 'accept: application/json, text/plain, */*' \
+              -H "authorization: Bearer $BEARER_TOKEN" \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H 'referer: https://localhost:41100/d2e/portal/systemadmin/dataset-overview' \
+              --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
 
       - name: Install dependencies in backend integration tests
         run: |

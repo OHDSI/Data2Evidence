@@ -6,6 +6,24 @@ import Sorter from '@/utils/Sorter'
 
 const state = {}
 
+// Helper function to truncate text at word boundary
+const truncateAtWordBoundary = (text: string, maxLength: number): string => {
+  if (!text) return text
+  if (text.length <= maxLength) {
+    return text
+  }
+
+  // Find the last space before maxLength
+  const truncated = text.slice(0, maxLength)
+  const lastSpaceIndex = truncated.lastIndexOf(' ')
+
+  // If there's a space, truncate there; otherwise truncate at maxLength
+  if (lastSpaceIndex > 0) {
+    return text.slice(0, lastSpaceIndex) + '...'
+  }
+  return truncated + '...'
+}
+
 const getters = {
   /*
     Adds bar chart traces expected by Plotly based on chartData
@@ -13,13 +31,15 @@ const getters = {
   dataToTraces:
     (state, getters) =>
     (chartData, selection = [], totalSelected = 0) => {
-      const xAxes = chartData.categories.filter(category => category.axis === Constants.AxisId.X)
+      const xAxes: { id: string; axis: number; name: string }[] = chartData.categories.filter(
+        category => category.axis === Constants.AxisId.X
+      )
       // Flag to toggle the bar chart category type
       chartData.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
       // Get the unique y-axis attribute id if any
       const yAxis = chartData.categories.filter(category => category.axis === Constants.AxisId.Y)
 
-      const categoryArray = []
+      const categoryArray: { name: string | number; data: Record<string, string | number>[] }[] = []
       if (yAxis.length !== 0) {
         // Dictionary-based data categorization based on the unique y-axis attribute
         const yAttrKey = yAxis[0].id
@@ -54,19 +74,35 @@ const getters = {
       // Reversed since the last trace will appear at the top
       chartData.traces = categoryArray.reverse().map((category, index) => {
         let xData = []
-        // Custom hover labelling
+        let customdataArray = []
+        // Custom tooltip labelling
         let hoverTemplate = ''
         if (xAxes.length === 1) {
-          xData = category.data.map(data => data[xAxes[0].id])
-          hoverTemplate += '%{data.customdata.x[0].name}: %{x}<br>'
+          xData = category.data.map(data =>
+            truncateAtWordBoundary(String(data[xAxes[0].id]), Constants.XAxisLabelMaxLength)
+          )
+          customdataArray = category.data.map(dataPoint => ({
+            x: xAxes,
+            y: yAxis,
+            fullLabels: [dataPoint[xAxes[0].id]],
+          }))
+          hoverTemplate += '%{customdata.x[0].name}: %{customdata.fullLabels[0]}<br>'
         } else {
-          xData = xAxes.map(xAxis => category.data.map(data => data[xAxis.id]))
+          // Truncate labels for x-axis display
+          xData = xAxes.map(xAxis =>
+            category.data.map(data => truncateAtWordBoundary(String(data[xAxis.id]), Constants.XAxisLabelMaxLength))
+          )
+          // Build customdata array with full labels for each data point
+          customdataArray = category.data.map(dataPoint => {
+            const fullLabels = xAxes.map(xAxis => dataPoint[xAxis.id])
+            return { x: xAxes, y: yAxis, fullLabels }
+          })
           for (let i = 0; i < xAxes.length; i++) {
-            hoverTemplate += '%{data.customdata.x[' + i + '].name}: %{x[' + i + ']}<br>'
+            hoverTemplate += '%{customdata.x[' + i + '].name}: %{customdata.fullLabels[' + i + ']}<br>'
           }
         }
         if (category.name !== '') {
-          hoverTemplate += '%{data.customdata.y[0].name}: ' + category.name + '<br>'
+          hoverTemplate += '%{customdata.y[0].name}: ' + category.name + '<br>'
         }
         hoverTemplate += toolTipSelected
 
@@ -75,10 +111,7 @@ const getters = {
           y: category.data.map(data => data[measureId]),
           type: 'bar',
           hovertemplate: hoverTemplate,
-          customdata: {
-            x: xAxes,
-            y: yAxis,
-          },
+          customdata: customdataArray,
           selectedpoints: selection ? selection[index] : [],
           name: category.name,
         }
@@ -108,7 +141,12 @@ const getters = {
             filterCardName = getters.getMriFrontendConfig.getFilterCardByPath(sParent).getName()
           }
 
-          measure.name = `${filterCardName} - ${getters.getMriFrontendConfig.getAttributeByPath(measure.id).getName()}`
+          // Only add prefix if it's not already there to prevent duplicate prefixes
+          const attributeName = getters.getMriFrontendConfig.getAttributeByPath(measure.id).getName()
+
+          if (!measure.name || !measure.name.startsWith(filterCardName + ' - ')) {
+            measure.name = `${filterCardName} - ${attributeName}`
+          }
         })
 
         let bHasDummyCategory = false

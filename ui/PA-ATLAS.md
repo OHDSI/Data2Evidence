@@ -90,7 +90,6 @@ interface PortalProps {
   username: string;
   datasetId: string; // from portalAPI.studyId
   locale: string;
-  isActiveRoute: boolean;
   isAtlas: boolean; // from portalAPI.isLocal
 }
 ```

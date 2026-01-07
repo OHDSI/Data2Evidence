@@ -63,7 +63,7 @@ export default {
       window.addEventListener('click', this.closeInput)
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeInput)
   },
   data() {
@@ -126,7 +126,7 @@ export default {
       return ['MriPaToken', item.valid ? 'MriPaValidToken' : 'MriPaFailToken']
     },
     closeInput(event) {
-      if (this.inputVisible && !this.$refs.container.contains(event.target)) {
+      if (this.inputVisible && this.$refs.container && !this.$refs.container.contains(event.target)) {
         this.inputVisible = false
       }
     },

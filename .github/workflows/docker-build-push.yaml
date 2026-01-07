@@ -50,7 +50,7 @@ jobs:
   check_file_changes:
     environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
       rkernel: ${{ steps.file_changes.outputs.rkernel }}
@@ -69,13 +69,16 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
             rkernel:
+              - "./services/enterprise-gateway/CustomKernelManager/**"
+              - "./services/enterprise-gateway/kernels/**"
               - "./services/enterprise-gateway/r-strategus-lib/**"
+              - "./flows/hades/renv.lock"
               - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
               - ".github/workflows/docker-build-push.yaml"
 
   bld:
     needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
@@ -205,7 +208,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains('release', github.ref_name) }}
+        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'merge_group'}}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
@@ -239,6 +242,14 @@ jobs:
   docker-success:
     needs: bld
     runs-on: ubuntu-latest
+    if: always()
+    env:
+      BUILD_JOB_STATUS: ${{ needs.bld.result }}
     steps:
       - name: Check
-        run: echo "Check"
+        run: |
+          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
+            exit 0
+          else
+            exit 1
+          fi

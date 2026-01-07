@@ -20,7 +20,8 @@ run_ssh.sh
 .DS_Store
 *eszip
 **/.parcel-cache/
-
+!functions/package-lock.json
+!fhir_functions/package-lock.json
 
 pkg/*.tgz
 target
@@ -70,3 +71,4 @@ ui/**/library-parameters.json
 ui/**/*private*
 ui/.nx
 ui/pyqetest
+scripts/dist/
