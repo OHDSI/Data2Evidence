@@ -5,6 +5,7 @@ import {
   IWebapiConcept,
   IWebapiConceptSet,
   IWebapiConceptSetExpression,
+  IWebapiConceptRecordCount,
 } from "../types/terminology";
 import { api } from "./api";
 import { getPortalAPI } from "../utils/PortalUtils";
@@ -40,6 +41,16 @@ export class D2eWebapi {
       url: `/vocabulary/${datasetId}/search?${params}`,
       method: "POST",
       data,
+      headers: { datasetid: datasetId },
+    });
+  }
+
+  public getConceptRecordCounts(datasetId: string, conceptIds: number[]) {
+    return request<IWebapiConceptRecordCount[]>({
+      baseURL: D2E_WEBAPI_BASE_URL,
+      url: `/cdmresults/${datasetId}/conceptRecordCount`,
+      method: "POST",
+      data: conceptIds,
       headers: { datasetid: datasetId },
     });
   }
@@ -108,7 +119,8 @@ export class D2eWebapi {
 
   public async createConceptSet(
     name: string,
-    datasetId: string
+    datasetId: string,
+    shared?: boolean
   ): Promise<number> {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       const conceptSetId = await api.publicWebapiProxyAPI.createConceptSet(
@@ -121,7 +133,7 @@ export class D2eWebapi {
         url: `/conceptset`,
         method: "POST",
         headers: { datasetid: datasetId },
-        data: { name },
+        data: { name, shared },
       });
 
       return conceptSet.id;
