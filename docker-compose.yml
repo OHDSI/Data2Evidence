@@ -382,7 +382,7 @@ services:
         (publicurlredirect) {
           $CADDY__ALP__ALIAS_PUBLIC_FQDN {
             $TLS__CADDY_DIRECTIVE
-            redir https://$CADDY__D2E__PUBLIC_FQDN{uri} permanent
+            redir https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}{uri} permanent
           }
         }
 
@@ -492,7 +492,7 @@ services:
         #   }
         # }
 
-        https://$CADDY__D2E__PUBLIC_FQDN${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
+        https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
           $TLS__CADDY_DIRECTIVE
 
           @aliasbasepaths {
@@ -511,7 +511,7 @@ services:
     volumes:
       - caddy:/data
     environment:
-      CADDY__D2E__PUBLIC_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:443
+      CADDY__D2E__PUBLIC_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}
       TLS__CADDY_DIRECTIVE: ${TLS__CADDY_DIRECTIVE:-tls internal}
       INSTANCE_SPECIFIC_CONFIG: ${INSTANCE_SPECIFIC_CONFIG:-}
       CADDY__ALP__ALIAS_PUBLIC_FQDN: ${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}
