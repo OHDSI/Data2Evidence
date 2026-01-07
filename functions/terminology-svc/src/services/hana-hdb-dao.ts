@@ -15,6 +15,7 @@ import {
   IHanaConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
+import { individualFilterWhereOR } from "./cachedb.ts";
 
 export class HanaHDBDao {
   private readonly jwt: string;
@@ -348,12 +349,12 @@ export class HanaHDBDao {
     });
 
     const filterList = [
-      ...conceptClassIdFilter,
-      ...domainIdFilter,
-      ...standardConceptFilter,
-      ...vocabularyIdFilter,
-      ...validityFilter,
-    ];
+      individualFilterWhereOR(conceptClassIdFilter),
+      individualFilterWhereOR(domainIdFilter),
+      individualFilterWhereOR(standardConceptFilter),
+      individualFilterWhereOR(vocabularyIdFilter),
+      individualFilterWhereOR(validityFilter),
+    ].filter(Boolean); // Remove empty strings from array
 
     if (filterList.length === 0) {
       return "";

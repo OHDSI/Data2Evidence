@@ -10,7 +10,11 @@ import {
   StandardConcepts,
 } from "../plugins/Researcher/Terminology/utils/types";
 
-import { RowObject } from "../plugins/SystemAdmin/ConceptMapping/types";
+type RowObject = {
+  index: number;
+  searchText: string;
+  domainId?: string;
+};
 
 const TERMINOLOGY_BASE_URL = "terminology";
 

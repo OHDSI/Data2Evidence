@@ -50,7 +50,7 @@ export default {
     })
     this.menuButton = this.$refs.menuButton
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
   },
   computed: {

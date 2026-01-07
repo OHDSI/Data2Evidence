@@ -174,7 +174,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'OK' }).click()
   await page.getByRole('button').first().click()
   await page.getByTestId('button').nth(4).click()
-  await expect(page.locator('[id="__page7-title-inner"]')).toContainText('Patient Analytics Configuration')
+  await expect(page.locator('[id="__page7-title-inner"]')).toContainText('Cohort Builder Configuration')
   await expect(page.locator('[id="__xmlview21--dataModelConfigurationsCombo-inner"]')).toHaveValue('Testerson Config')
   await page.getByRole('button', { name: 'Add Configuration' }).click()
   await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).click()
