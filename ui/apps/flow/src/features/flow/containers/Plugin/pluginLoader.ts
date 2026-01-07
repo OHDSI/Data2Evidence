@@ -22,7 +22,7 @@ export const importPluginModule = (url: string): Promise<any> => {
         }
       })
       .catch((err: any) => {
-        console.warn("Error loading plugin: ", module, err);
+        console.warn("Error loading plugin: ", url, err);
       });
   });
 };
