@@ -360,19 +360,30 @@ const TerminologyList: FC<TerminologyListProps> = ({
   }, [columnFilters.length, defaultFilters]);
 
   useEffect(() => {
-    if (useDefaultFilters && defaultFilters) {
-      // Trust defaultFilters from parent component (PA-Atlas)
-      // Apply them immediately without waiting for filterOptions to load
+    if (useDefaultFilters && defaultFilters && filterOptions) {
+      // Validate default filters against loaded filter options to prevent empty pills
       const filters = JSON.parse(
         JSON.stringify(defaultFilters)
       ) as typeof defaultFilters;
 
-      // Only keep filters with non-empty values
-      const validFilters = filters.filter((f) => f.value.length > 0);
+      // Filter out values that don't exist in filterOptions
+      const validFilters = filters
+        .map((filter) => {
+          const availableOptions =
+            filterOptions[filter.id as keyof FilterOptions];
+          if (!availableOptions) return filter;
 
+          // Only keep values that exist in the filter options
+          const validValues = filter.value.filter((val) =>
+            availableOptions.hasOwnProperty(val)
+          );
+
+          return { ...filter, value: validValues };
+        })
+        .filter((f) => f.value.length > 0);
       setColumnFilters(validFilters);
     }
-  }, [defaultFilters, useDefaultFilters]);
+  }, [defaultFilters, useDefaultFilters, filterOptions]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
