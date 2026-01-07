@@ -1,10 +1,12 @@
 export const RESULT_VIEWER_TEMPLATE = `library(OhdsiShinyAppBuilder)
-library(OhdsiShinyModules)
-library(shiny)
-library(future)
-library(TreatmentPatterns)
 library(CohortSurvival)
+library(dplyr)
+library(future)
+library(OhdsiShinyModules)
+library(omopgenerics)
 library(readr)
+library(shiny)
+library(TreatmentPatterns)
 
 resultsDatabaseSchema <- "$DATABASE_SCHEMA"
 
@@ -101,11 +103,12 @@ survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
       res <- DatabaseConnector::querySql(
         conn,
         paste0(
-          "SELECT DISTINCT DATABASE_ID
-              FROM ", resultsDatabaseSchema, ".cs_survival_results"
+          "SELECT DISTINCT cdm_name AS database_id
+              from ", resultsDatabaseSchema, ".cs_survival_results
+             WHERE cdm_name IS NOT NULL"
         )
       )
-      return(res$DATABASE_ID)
+      return(res$database_id)
     })
     observeEvent(dataset_choices(), {
       updateSelectInput(
@@ -116,24 +119,47 @@ survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
       )
     })
     output$km_plot <- renderPlot({
-      req(input$dataset)  # Wait for dataset to be selected
-      conn <- connectionHandler$getConnection()
-      cs_data <- DatabaseConnector::querySql(
-        conn,
-        paste0(
-          "SELECT *
-             FROM ", resultsDatabaseSchema, ".cs_survival_results
-            WHERE DATABASE_ID = '", input$dataset, "'"
+        req(input$dataset)  # Wait for dataset to be selected
+        conn <- connectionHandler$getConnection()
+        sql_query <- paste0(
+            "SELECT * FROM ", resultsDatabaseSchema, ".cs_survival_results WHERE cdm_name = '", input$dataset, "' OR cdm_name IS NULL"
         )
-      )
-      colnames(cs_data) <- tolower(colnames(cs_data))
-      # Write to temporary CSV file
-      temp_file <- tempfile(fileext = ".csv")
-      on.exit(unlink(temp_file), add = TRUE)  # Clean up when function exits
-      write_file(cs_data$surv_results, temp_file)
-      # Import using omopgenerics function
-      cs_data <- importSummarisedResult(path = temp_file)
-      plotSurvival(cs_data)
+        #print(paste("Executing SQL query:\n", sql_query))
+        cs_data <- DatabaseConnector::querySql(
+            conn,
+            sql_query
+        )
+        cs_data$row_id <- NULL
+        colnames(cs_data) <- tolower(colnames(cs_data))
+        # Write to temporary CSV file
+        temp_file <- tempfile(fileext = ".csv")
+        on.exit(unlink(temp_file), add = TRUE)  # Clean up when function exits
+        readr::write_csv(cs_data, temp_file)
+        # Import using omopgenerics function
+        cs_data <- omopgenerics::importSummarisedResult(path = temp_file)
+        
+        # Check strata information
+        strata_names <- unique(cs_data$strata_name)
+        # Determine facet parameter based on strata_name
+        # Filter out "overall" and find actual strata
+        actual_strata <- strata_names[strata_names != "overall"]
+
+        if (length(actual_strata) > 0) {
+            strata_type <- actual_strata[1]  # Use first non-overall strata
+            facet_var <- strata_type
+        } else {
+            strata_type <- NULL
+            facet_var <- NULL
+        }
+
+        # Plot based on detected strata
+        if (!is.null(facet_var)) {
+            #print(paste("Plotting with facet:", facet_var, "\n"))
+            CohortSurvival::plotSurvival(cs_data, facet = facet_var)
+        } else {
+            #cat("\nPlotting without stratification\n")
+            surv_plot <- CohortSurvival::plotSurvival(cs_data)
+        }
     })
   })
 }

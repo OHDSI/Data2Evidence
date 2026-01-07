@@ -51,8 +51,8 @@ import VariantConstraintPatternDefinition from '../utils/VariantConstraintPatter
 import VariantConstraintTokenDefinition from '../utils/VariantConstraintTokenDefinition'
 import appIcon from './app-icon.vue'
 import popper from '../../components/Popper.vue'
+import { VariantValidator } from '../../utils/VariantValidator'
 
-declare var sap
 const parser = new InputParser(
   VariantConstraintTokenDefinition.tokenDefinitions,
   VariantConstraintPatternDefinition.acceptedPatterns
@@ -106,9 +106,9 @@ export default {
     this.target = this.$refs.container
     this.popperRef = this.$refs.popperRef
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeInput)
-    window.addEventListener('click', this.closeSuggestion)
+    window.removeEventListener('click', this.closeSuggestion)
   },
   watch: {
     // tslint:disable-next-line
@@ -272,39 +272,46 @@ export default {
         oFilter,
       }
     },
-    validateLocation(text) {
-      sap.ui.require(['/hc/mri/pa/ui/lib/VariantValidator'], VariantValidator => {
-        VariantValidator.validate(text).done(mData => {
-          if (mData.status === 'Valid') {
-            const oFilter = {
-              op: '=',
-              value: JSON.stringify({
-                text,
-                ...mData,
-              }),
-            }
-            const addThis = {
+    async validateLocation(text) {
+      try {
+        const mData = await VariantValidator.validate(text)
+        if (mData.status === 'Valid') {
+          const oFilter = {
+            op: '=',
+            value: JSON.stringify({
               text,
-              oFilter,
-              id: this.tagId,
-              valid: true,
-            }
-            this.tokens.push(addThis)
-            this.filters.push(oFilter)
-            this.updateConstraintValue({
-              constraintId: this.model.id,
-              value: [...this.filters],
-            })
-          } else {
-            const tag = {
-              text,
-              id: this.tagId,
-              valid: false,
-            }
-            this.tokens.push(tag)
+              ...mData,
+            }),
           }
-        })
-      })
+          const addThis = {
+            text,
+            oFilter,
+            id: this.tagId,
+            valid: true,
+          }
+          this.tokens.push(addThis)
+          this.filters.push(oFilter)
+          this.updateConstraintValue({
+            constraintId: this.model.id,
+            value: [...this.filters],
+          })
+        } else {
+          const tag = {
+            text,
+            id: this.tagId,
+            valid: false,
+          }
+          this.tokens.push(tag)
+        }
+      } catch (error) {
+        console.error('Variant validation failed:', error)
+        const tag = {
+          text,
+          id: this.tagId,
+          valid: false,
+        }
+        this.tokens.push(tag)
+      }
     },
     up() {
       if (this.current > 0) {

@@ -15,7 +15,6 @@ const moduleNames = [
   "SystemAdmin/Terminology",
   "SystemAdmin/Athena",
   "SystemAdmin/FlowOverview",
-  "SystemAdmin/ConceptMapping",
   "SystemAdmin/StudyPage",
   "SystemAdmin/D2ELogs",
   "Cohort",
