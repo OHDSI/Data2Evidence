@@ -232,15 +232,6 @@ def runStrategus(json_graph, options):
     
     if isinstance(analysisSpec, str):
         analysisSpec = json.loads(analysisSpec)
-    
-    # try:
-    #     for resourceIndex in range(len(analysisSpec['sharedResources'])):
-    #         for cohortDefIndex in range(len(analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'])):
-    #             cohortDef = analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex]
-    #             analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex] = json.loads(cohortDef["cohortDefinition"])
-    # except Exception as e:
-    #     logger.error(f"Error converting cohortDefinitions to JSON: {e}")
-    #     raise e
 
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
