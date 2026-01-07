@@ -13,7 +13,7 @@
           <div class="div-bookmark-dialog">
             <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span>
             <div class="input-container">
-              <!-- maxLength for input is 255+1 to allow invalid-feedback to be shown -->
+              <!-- maxLength for input is this.maxLength+1 to allow invalid-feedback to be shown -->
               <input
                 class="form-control"
                 v-focus

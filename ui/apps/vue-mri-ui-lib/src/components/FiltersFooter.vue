@@ -88,7 +88,7 @@
                 </div>
                 <div class="row">
                   <div class="col">
-                    <!-- maxLength for input is 255+1 to allow invalid-feedback to be shown -->
+                    <!-- maxLength for input is this.maxLength+1 to allow invalid-feedback to be shown -->
                     <input
                       class="form-control"
                       :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
