@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useState } from "react";
+import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { Card, Loader } from "@portal/components";
 import { StarboardEmbed } from "@data2evidence/d2e-starboard-wrap";
 
@@ -43,6 +43,7 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
   const [showTemplateDialog, openTemplateDialog, closeTemplateDialog] = useDialogHelper(false);
 
   const activeDatasetId = datasetId!;
+  const loadedNotebookIdRef = useRef<string | undefined>(undefined);
 
   const updateActiveNotebook = useCallback((notebook?: StarboardNotebook) => {
     setActiveNotebook(notebook);
@@ -243,8 +244,12 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
 
   useEffect(() => {
     if (notebooks?.length !== 0 && activeNotebook) {
-      const notebookContent = activeNotebook?.notebookContent || "";
-      loadNotebookContent(notebookContent);
+      // Only reload if switching to a different notebook, not when the same notebook is updated (e.g., after save)
+      if (loadedNotebookIdRef.current !== activeNotebook.id) {
+        const notebookContent = activeNotebook?.notebookContent || "";
+        loadNotebookContent(notebookContent);
+        loadedNotebookIdRef.current = activeNotebook.id;
+      }
     }
   }, [activeNotebook, loadNotebookContent, notebooks]);
 
