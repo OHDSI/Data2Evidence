@@ -182,29 +182,6 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      # - name: UI Setup bun
-      #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
-      #   uses: oven-sh/setup-bun@v2
-      #   with:
-      #     bun-version: 1.2.23
-      # - name: UI Build
-      #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
-      #   working-directory: ./ui
-      #   env:
-      #     CI: false
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y build-essential curl file git
-      #     bun install
-      #     bun build-all
-      #     UI_BUILD_EXIT_CODE=$?
-      #     [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
-
-      # - name: UI docker-compose-local
-      #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
-      #   run: |
-      #     sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
-
       - name: Restart d2e services
         if: success() || failure()
         run: |
@@ -216,6 +193,20 @@ jobs:
         run: sleep 10
 
       ###########
+  # run-http-tests:
+  #   needs: [demosetup]
+  #   env:
+  #     PGUSER: postgres
+  #     PGPASSWORD: $(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+  #     PGHOST: localhost
+  #     PGPORT: 15432
+  #     PGDATABASE: postgres
+  #     TESTSCHEMA: HTTP_${{github.run_id}}
+  #     isTestEnv: "true"
+  #     isHttpTestRun: "true"
+  #     USE_TREX_DB_CONN: "true"
+    
+  #   steps:
       - name: Check status of docker containers
         run: |
           docker ps -a
@@ -264,12 +255,13 @@ jobs:
           yarn
 
       - name: Run HTTP tests
+        env:
+          HANASERVER: ${PGHOST}
+          HDIPORT: ${PGPORT}
+          HDIUSER: ${PGUSER}
+          HDIPW: $(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
         working-directory: ./tests/backend_integration_tests
         run: |
-            HANASERVER=${PGHOST}
-            HDIPORT=${PGPORT}
-            HDIUSER=${PGUSER}
-            HDIPW=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
             echo "HDIPORT: ${HDIPORT}"
             echo "HDIPW: ${HDIPW}"
             echo "HDIUSER: ${HDIUSER}"
@@ -282,42 +274,12 @@ jobs:
             yarn test-specs --test_schema_name=$TESTSCHEMA
         
       ###########
-      # - name: UI Mounting build
-      #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
-      #   run: |
-      #     docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-      #     docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
-      # - name: e2e tests setup
-      #   run: |
-      #     cd ./tests/e2e
-      #     npm install
-      #     npm run init
-
-      # - name: e2e tests
-      #   # continue-on-error: true
-      #   run: |
-      #     cd ./tests/e2e
-      #     npm test
-
-      # - name: Upload Error Context
-      #   if: always() # Always run, even if the previous step fails
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: error-context
-      #     path: tests/e2e/test-results/**/*
 
       - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
-
-      # - name: Publish Test Report
-      #   if: always()
-      #   uses: ctrf-io/github-test-reporter@v1
-      #   with:
-      #     report-path: "./tests/e2e/ctrf/*.json"
-      #     file-report: true
 
       - name: Stop d2e services
         if: success() || failure()
