@@ -41,7 +41,7 @@ export default {
     }
     this.fireCompareRequest()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (barCompareChart) {
       Plotly.purge(barCompareChart)
     }

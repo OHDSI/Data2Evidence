@@ -339,7 +339,7 @@
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 600,
+          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 120,
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
           "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
           "LOCAL_DEBUG": "false",
@@ -564,7 +564,7 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
-          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-alp_fhir}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
           "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},
