@@ -18,7 +18,7 @@
                 class="form-control"
                 v-focus
                 required
-                maxlength="256"
+                :maxlength="this.maxLength+1"
                 v-model="renamedBookmark"
                 @keydown.enter="confirmRenameBookmark"
               />

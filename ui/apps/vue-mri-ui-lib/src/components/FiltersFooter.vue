@@ -97,7 +97,7 @@
                       tabindex="0"
                       v-focus
                       required
-                      maxlength="256"
+                      :maxlength="this.maxLength+1"
                       @keydown.enter="saveBookmark"
                     />
                     <div
