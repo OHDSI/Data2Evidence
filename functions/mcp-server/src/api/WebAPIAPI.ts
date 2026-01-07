@@ -1,6 +1,7 @@
 import { env } from "../env";
 import axios from "axios";
 import { D2ECohortDefinition } from "../types/tool-schemas";
+import { getUserName } from "../utils/request-helpers";
 
 export class WebAPIAPI {
   private readonly token: string;
@@ -44,6 +45,7 @@ export class WebAPIAPI {
       throw new Error(`Error while getting atlas cohort definition`);
     }
   }
+
   async getAtlasCohortDefinition(cohortId: number): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -68,6 +70,7 @@ export class WebAPIAPI {
       const url = `${this.baseURL}/cohortdefinition`;
 
       const currentTime = Date.now();
+      const userName = await getUserName(authorization);
       const expression =
         typeof cohortDefinition.expression === "string"
           ? JSON.parse(cohortDefinition.expression)
@@ -79,9 +82,9 @@ export class WebAPIAPI {
         description: `${cohortDefinition.cohortInfo}`,
         expressionType: "SIMPLE_EXPRESSION",
         expression: expression,
-        createdBy: cohortDefinition.userName || "researcher",
+        createdBy: userName,
         createdDate: currentTime,
-        modifiedBy: cohortDefinition.userName || "researcher",
+        modifiedBy: userName,
         modifiedDate: currentTime,
         tags: [],
       };
@@ -129,12 +132,16 @@ export class WebAPIAPI {
     }
   }
 
-  async updateAtlasCohortDefinition(cohortDefinition: any): Promise<any> {
+  async updateAtlasCohortDefinition(
+    cohortDefinition: any,
+    authorization: string
+  ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cohortdefinition/${cohortDefinition.cohortId}`;
 
       const currentTime = Date.now();
+      const userName = await getUserName(authorization);
       const expression =
         typeof cohortDefinition.expression === "string"
           ? JSON.parse(cohortDefinition.expression)
@@ -148,7 +155,7 @@ export class WebAPIAPI {
         expression: expression,
         createdBy: cohortDefinition.createdBy,
         createdDate: cohortDefinition.createdDate,
-        modifiedBy: cohortDefinition.userName,
+        modifiedBy: userName,
         modifiedDate: currentTime,
         tags: [],
       };

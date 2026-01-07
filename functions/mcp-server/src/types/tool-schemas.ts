@@ -47,7 +47,6 @@ export interface PhenotypeData {
 export interface CreateCohortDefinitionRequest {
   expression: any;
   cohortInfo: string;
-  userName: string;
 }
 
 /**
@@ -60,7 +59,6 @@ export interface UpdateCohortDefinitionRequest {
   createdBy: string | null;
   createdDate: number | null;
   expression: any;
-  userName: string;
 }
 
 /**
@@ -94,7 +92,6 @@ export const CreateCohortDefinitionInput = {
       "The validated ATLAS cohort definition JSON including concept sets and expression"
     ),
   cohortInfo: z.string().describe("The cohort description"),
-  userName: z.string().describe("User name creating the cohort"),
   isValidCohortDefinition: z
     .boolean()
     .describe(
@@ -109,7 +106,6 @@ export const UpdateCohortDefinitionInput = {
     .describe(
       "The validated ATLAS cohort definition JSON including concept sets and expression"
     ),
-  userName: z.string().describe("User name updating the cohort"),
   isValidCohortDefinition: z
     .boolean()
     .describe("Set after validating with validate_atlas_cohort_definition tool")
