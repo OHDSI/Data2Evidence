@@ -18,7 +18,7 @@ env:
   PGUSER: postgres
   PGPASSWORD: mypass
   PGHOST: localhost
-  PGPORT: 5432
+  PGPORT: 15432
   PGDATABASE: postgres
   TESTSCHEMA: HTTP_${{github.run_id}}
   isTestEnv: "true"
