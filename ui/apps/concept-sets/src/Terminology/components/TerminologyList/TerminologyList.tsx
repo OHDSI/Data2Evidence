@@ -26,7 +26,10 @@ import { Terminology } from "../../../axios/terminology";
 import { api } from "../../../axios/api";
 import { tabNames } from "../../utils/constants";
 import SearchBar from "../../../components/SearchBar/SearchBar";
-import { mapd2eWebapiConcept } from "../../utils/d2eWebapiMappers";
+import {
+  mapd2eWebapiConcept,
+  combinedConceptAndConceptRecordCounts,
+} from "../../utils/d2eWebapiMappers";
 import { i18nKeys } from "../../../context/state";
 import { getPortalAPI } from "../../../utils/PortalUtils";
 
@@ -251,9 +254,25 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 ),
               ]);
             }
+            // Get concept record counts (only for non-Atlas mode)
+            let mappedConcepts;
+            if (!isAtlas) {
+              const conceptRecordCounts =
+                await api.d2eWebapi.getConceptRecordCounts(
+                  datasetId,
+                  concepts.map((e) => e.CONCEPT_ID)
+                );
+              mappedConcepts = combinedConceptAndConceptRecordCounts(
+                concepts.map(mapd2eWebapiConcept),
+                conceptRecordCounts
+              );
+            } else {
+              mappedConcepts = concepts.map(mapd2eWebapiConcept);
+            }
+
             const response = {
               count: conceptsCount,
-              data: concepts.map(mapd2eWebapiConcept),
+              data: mappedConcepts,
             };
             response.data.map((data: any) => {
               data["conceptCode"] = data["code"] as string;
@@ -343,6 +362,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
       JSON.stringify(columnFilters),
       allFilterOptionsZeroed,
       getText,
+      isAtlas,
     ]
   );
 
@@ -490,6 +510,14 @@ const TerminologyList: FC<TerminologyListProps> = ({
       "domainId",
       "conceptClassId",
       "validity",
+      ...(listData.some((d) => d.recordCount) ? ["recordCount"] : []),
+      ...(listData.some((d) => d.descendantRecordCount)
+        ? ["descendantRecordCount"]
+        : []),
+      ...(listData.some((d) => d.personCount) ? ["personCount"] : []),
+      ...(listData.some((d) => d.descendantPersonCount)
+        ? ["descendantPersonCount"]
+        : []),
     ];
     const basicColumns: MRT_ColumnDef<FhirValueSetExpansionContainsWithExt>[] =
       [
@@ -579,6 +607,50 @@ const TerminologyList: FC<TerminologyListProps> = ({
           grow: true,
           size: 150,
         },
+        ...(listData.some((d) => d.recordCount)
+          ? [
+              {
+                accessorKey: "recordCount",
+                header: getText(i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT),
+                grow: true,
+                size: 50,
+              },
+            ]
+          : []),
+        ...(listData.some((d) => d.descendantRecordCount)
+          ? [
+              {
+                accessorKey: "descendantRecordCount",
+                header: getText(
+                  i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT
+                ),
+                grow: true,
+                size: 50,
+              },
+            ]
+          : []),
+        ...(listData.some((d) => d.personCount)
+          ? [
+              {
+                accessorKey: "personCount",
+                header: getText(i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT),
+                grow: true,
+                size: 50,
+              },
+            ]
+          : []),
+        ...(listData.some((d) => d.descendantPersonCount)
+          ? [
+              {
+                accessorKey: "descendantPersonCount",
+                header: getText(
+                  i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT
+                ),
+                grow: true,
+                size: 50,
+              },
+            ]
+          : []),
       ];
 
     const addButton: MRT_ColumnDef<FhirValueSetExpansionContainsWithExt>[] = [
