@@ -1,4 +1,4 @@
-drop schema "HTTPTEST_SCHEMA" cascade;
+-- drop schema "HTTPTEST_SCHEMA" cascade;
 create schema "HTTPTEST_SCHEMA";
 create table "HTTPTEST_SCHEMA"."bookmark" (
     "ID" VARCHAR(40),
