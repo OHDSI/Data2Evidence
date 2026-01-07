@@ -118,7 +118,7 @@ export default {
 
     this.setupCharts()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // window.removeEventListener('resize', this.renderChart);
   },
 }

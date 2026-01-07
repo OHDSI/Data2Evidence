@@ -49,7 +49,7 @@ export const i18n = {
     MRI_PA_CFG_ERROR_NO_MEASURE: 'Please choose at least one initial measure for the y-axis.',
     MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION: 'Add Configuration',
     MRI_PA_CFG_OVERVIEW_ADD_CONFIGURATION_TOOLTIP: 'Add New Configuration',
-    MRI_PA_CFG_TITLE_PATIENT_ANALYTICS_CONFIG: 'Patient Analytics Configuration',
+    MRI_PA_CFG_TITLE_PATIENT_ANALYTICS_CONFIG: 'Cohort Builder Configuration',
     MRI_PA_CFG_DATA_MODEL_CONFIG_TEXT: 'Data Model Configuration:',
     MRI_PA_CFG_NO_CONFIGS_FOUND_TEXT: 'No Defined Configurations',
     MRI_PA_CFG_TITLE_ENTER_CONFIG_NAME: 'Enter Configuration Name',
@@ -297,7 +297,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP:
       'Activate the option to generate a calculation view as external access point',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5 Component',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: 'Visualization Type',
     MRI_PA_TITLE: 'Patient Analytics',
     MRI_PA_INPUT_PLACEHOLDER_ALL: 'All',
@@ -1197,7 +1196,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP:
       'Aktivieren Sie die Option zum Generieren einer Berechnungssicht als externem Zugriffspunkt',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5-Komponente',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: 'Visualisierungstyp',
     MRI_PA_TITLE: 'Patientenanalyse',
     MRI_PA_INPUT_PLACEHOLDER_ALL: 'Alle',
@@ -2080,7 +2078,6 @@ export const i18n = {
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_LABEL: '启用计算视图作为外部访问点',
     MRI_PA_CFG_ACCESS_POINT_CALCVIEW_TOOLTIP: '激活此选项以生成作为外部访问点的计算视图',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_IFRAME: 'iframe',
-    MRI_PA_CFG_CUSTOM_CHART_OPTION_Ui5: 'Ui5 组件',
     MRI_PA_CFG_CUSTOM_CHART_OPTION_COLUMN: '可视化类型',
     MRI_PA_TITLE: '病患分析',
     MRI_PA_INPUT_PLACEHOLDER_ALL: '全部',

@@ -275,6 +275,38 @@ export class DatasetRouter {
               type: cacheDatasetType,
             };
             newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
+
+            // Trigger cache creation for existing schema with OMOP cache type
+            if (
+              schemaOption === CDMSchemaTypes.ExistingCDM &&
+              cacheDatasetType === CacheDatasetType.OMOP
+            ) {
+              try {
+                this.logger.info(
+                  `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`
+                );
+
+                const dataModels = await jobpluginsAPI.getDatamodels();
+                const dataModelInfo = dataModels.find(
+                  (model) => model.datamodel === dataModel
+                );
+
+                await jobpluginsAPI.createDatamartCacheFlowRun(
+                  id,
+                  newCacheDataset.id,
+                  {},
+                  dataModelInfo?.flowId,
+                  `datamart-cache-${schemaName}`
+                );
+              } catch (error) {
+                this.logger.error(
+                  `Error while creating cache for existing schema! ${error}`
+                );
+                return res
+                  .status(500)
+                  .send("Error while creating cache for existing schema");
+              }
+            }
           }
 
           return res

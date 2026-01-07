@@ -30,6 +30,33 @@
       padding-left: 23px;
       word-wrap: break-word;
     }
+
+    .cache-datasets-header-row {
+      background-color: #f5f5f5;
+    }
+
+    .cache-datasets-header-cell {
+      background-color: #f5f5f5;
+      color: #000080;
+      font-weight: 500;
+      font-size: 14px;
+      height: 32px;
+      padding: 0 1% 0 23px;
+      line-height: 1;
+    }
+
+    .dataset-separator-row {
+      height: 8px;
+      background-color: #ebf1f8;
+    }
+
+    .dataset-separator-cell {
+      padding: 0;
+      height: 32px;
+      border: none;
+      background-color: #ebf1f8;
+    }
+
     .MuiButton-text {
       padding: 7px 8px;
     }
@@ -72,6 +99,7 @@
     }
 
     .expand-icon-button {
+      margin-top: 14px;
       padding: 4px;
       display: flex;
       align-items: center;

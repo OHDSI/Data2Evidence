@@ -16,5 +16,7 @@ export const usePortal = () => {
     userId: portal.userId,
     datasetId: portal.datasetId || "",
     getToken,
+    features: portal.features,
+    featuresLoading: portal.featuresLoading,
   };
 };
