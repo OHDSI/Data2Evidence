@@ -54,11 +54,14 @@ jobs:
         run: |
           npm install
 
+      # - name: Patch seed config for e2e tests
+      #   run: node ./scripts/patch-seed-for-e2e.js
+
       - name: Initialise d2e
         if: success() || failure()
         id: init
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop init
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
       - uses: dorny/paths-filter@v3
         id: file_changes
         with:
@@ -95,7 +98,7 @@ jobs:
         if: success() || failure()
         id: pull
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop -d ./functions build
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Prune images
@@ -114,7 +117,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -133,12 +136,28 @@ jobs:
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Setupdemo
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemo
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Checkflow
         if: success() || failure()
@@ -150,7 +169,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions checkflow
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
@@ -168,193 +187,30 @@ jobs:
       #     sudo apt-get update
       #     sudo apt-get install -y build-essential curl file git
       #     bun install
-      #     bun build-all 2>&1 | tee build-logs.txt
-      # - name: Upload UI Build Logs
-      #   if: ${{ steps.file_changes.outputs.ui == 'true' && failure() }}
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: ui-build-logs
-      #     path: ui/build-logs.txt
+      #     bun build-all
+      #     UI_BUILD_EXIT_CODE=$?
+      #     [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
+
       # - name: UI docker-compose-local
       #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
       #   run: |
       #     sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
 
-      - name: Print env vars
-        run: |
-          echo $(docker exec d2e-trex printenv)
-          
-      - name: Login to logto and get Bearer token and sub
-        run: |
-          # Get sign in page
-          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fportal%2Flogin-callback&client_id=$LOGTO__ALP_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
-          printf "%s\n" "$response"
-
-          # Extract cookies
-          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-
-          # Sign in
-          response=$(curl -ik --request PUT 'https://localhost:41100/api/interaction' \
-              --header 'content-type: application/json' \
-              --header 'Referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}" \
-              --data '{
-              "event": "SignIn",
-              "identifier": {
-                  "username": "admin",
-                  "password": "Updatepassword12345"
-              }
-          }')
-          printf "%s\n" "$response"
-
-          # Submit sign in page
-          response=$(curl -ik --request POST 'https://localhost:41100/api/interaction/submit' \
-              --header 'accept: application/json' \
-              --header 'origin: https://localhost:41100' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          # Get session
-          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          session_cookie=$(printf "%s\n" "$response" | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-          session_sig_cookie=$(printf "%s\n" "$response" | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
-
-          # Submit consent page
-          response=$(curl -ik 'https://localhost:41100/consent' \
-              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          # Get authorization code
-          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
-              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
-
-          # Complete login
-          response=$(curl -ik "https://localhost:41100/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
-              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
-              --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
-          printf "%s\n" "$response"
-
-          # Get Bearer token
-          response=$(curl -ik 'https://localhost:41100/oauth/token' \
-              --header 'accept: application/json, text/javascript, */*; q=0.01' \
-              --header 'content-type: application/x-www-form-urlencoded' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}" \
-              --header 'origin: https://localhost:41100' \
-              --header 'referer: https://localhost:41100/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
-              --data-urlencode 'grant_type=authorization_code' \
-              --data-urlencode "client_id=$LOGTO__ALP_APP__CLIENT_ID" \
-              --data-urlencode 'redirect_uri=https://localhost:41100/portal/login-callback' \
-              --data-urlencode "code=$authorization_code" \
-              --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I')
-          printf "%s\n" "$response"
-
-          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
-          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV # Make available to subsequent github actions steps
-
-          echo "BEARER TOKEN:"
-          echo $BEARER_TOKEN
-          # Get the idp sub
-
-          decode_base64_url() {
-              local len=$((${#1} % 4))
-              local result="$1"
-              if [ $len -eq 2 ]; then
-                  result="$1"'=='
-              elif [ $len -eq 3 ]; then
-                  result="$1"'='
-              fi
-              echo "$result" | tr '_-' '/+' | openssl enc -d -base64
-          }
-
-          decode_jwt() {
-              decode_base64_url $(echo -n $2 | cut -d "." -f $1)
-          }
-
-          DECODED_TOKEN="$(decode_jwt 2 $BEARER_TOKEN)"
-          echo "DECODED TOKEN:"
-          echo $DECODED_TOKEN
-          export IDP_SUB=$(echo $(echo $DECODED_TOKEN | grep -o '"sub":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"'))
-          echo "IDP_SUB=$IDP_SUB" >> $GITHUB_ENV # Make available to subsequent github actions steps
-          echo "IDP SUB:"
-          echo $IDP_SUB
-
-          # Endpoint to update user management with idp user id
-          response=$(curl -ik 'https://localhost:41100/usermgmt/api/user-group/list' \
-              -H 'accept: application/json, text/plain, */*' \
-              -H "authorization: Bearer $BEARER_TOKEN" \
-              -H 'content-type: application/json' \
-              -H 'origin: https://localhost:41100' \
-              -H 'referer: https://localhost:41100/portal/no-access' \
-              --data-raw "{\"userId\":\"$IDP_SUB\"}")
-          printf "%s\n" "$response"
-          USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
-          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps
-          echo "USER_MGMT_ID:"
-          echo $USER_MGMT_ID
-
-      - name: Seed db credentials
-        run: |
-          echo "Seed db credentials"
-          export ENCSALT=salt
-          ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
-          echo $ENCRYPTED_CREDS
-          echo "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
-          curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/trex/db/' \
-              --header 'Referer: https://localhost:41100/sign-in' \
-              --header 'accept: application/json, text/plain, */*' \
-              --header 'Content-Type: application/json' \
-              --header "authorization: Bearer $BEARER_TOKEN" \
-              --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
-
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
 
-      - name: Seed dummy dataset
-        run: |
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
-          ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
-
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
-          ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
-
-          curl -ik 'https://localhost:41100/usermgmt/api/user-group/register-study-roles' \
-              -H 'accept: application/json, text/plain, */*' \
-              -H "authorization: Bearer $BEARER_TOKEN" \
-              -H 'content-type: application/json' \
-              -H 'origin: https://localhost:41100' \
-              -H 'referer: https://localhost:41100/portal/systemadmin/dataset-overview' \
-              --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
+      - name: Wait for services to be ready to avoid mounting race condition
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: sleep 10
 
       # - name: UI Mounting build
       #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
       #   run: |
-      #     docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
-      #     docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/node_modules/\@data2evidence/d2e-ui/resources"
+      #     docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+      #     docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
       # - name: e2e tests setup
       #   run: |
@@ -368,44 +224,17 @@ jobs:
       #     cd ./tests/e2e
       #     npm test
 
-      - name: Check PG DB connection
-        run: |
-          # postgres://postgres:WJUFCC@demodb:5432/postgres
-          docker ps
-          docker exec d2e-trex printenv
-          echo $(docker exec d2e-trex printenv)
-          PGUSER=postgres
-          PGPASSWORD=$(docker exec d2e-trex printenv DEMO__DB_PASSWORD)
-          PGPORT=5432
-          PGHOST=localhost
-          PGDATABASE=alp
-          echo "PGPORT: ${PGPORT}"
-          echo "PGPASSWORD: ${PGPASSWORD}"
-          echo "PGUSER: ${PGUSER}"
-          echo "PGHOST: ${PGHOST}"
-          echo "PGDATABASE: ${PGDATABASE}"
-          sudo apt install -y postgresql-client
-          echo "**********************************************"
-          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
-          echo "++++++++++++++++++++++++++++++++++++++++++++++"
-          export PGPASSWORD='${PGPASSWORD}';psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
-          echo "=============================================="
-
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn inittestdb
-      - name: Upload Error Context
-        if: always() # Always run, even if the previous step fails
-        uses: actions/upload-artifact@v4
-        with:
-          name: error-context
-          path: tests/e2e/test-results/**/*
+      # - name: Upload Error Context
+      #   if: always() # Always run, even if the previous step fails
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: error-context
+      #     path: tests/e2e/test-results/**/*
 
       - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
       # - name: Publish Test Report
       #   if: always()
@@ -418,7 +247,7 @@ jobs:
         if: success() || failure()
         id: stop
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
 
       - name: Prune system
         if: always()
