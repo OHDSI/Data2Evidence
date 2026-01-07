@@ -21,11 +21,10 @@ interface ManageStrategusResultViewerDialogProps {
 const SafeEditor = Editor as any;
 
 const ManageStrategusResultViewerDialog: FC<ManageStrategusResultViewerDialogProps> = ({ study, open, onClose }) => {
-  console.log(study);
   loader.config({ monaco });
   const { getText } = useTranslation();
   const [viewerCode, setViewerCode] = useState<string>("");
-  const [defaultviewerCode, setDefaultviewerCode] = useState<string>(study?.viewerCode || "");
+  const [defaultViewerCode, setDefaultViewerCode] = useState<string>(study?.viewerCode || "");
   const [templates, setTemplates] = useState<StudyDashboardTemplateData[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   const [loading, setLoading] = useState(false);
@@ -40,7 +39,7 @@ const ManageStrategusResultViewerDialog: FC<ManageStrategusResultViewerDialogPro
 
   useEffect(() => {
     getTemplates();
-    setViewerCode(defaultviewerCode);
+    setViewerCode(defaultViewerCode);
   }, [getTemplates]);
 
   const handleStartViewer = useCallback(async () => {
@@ -76,7 +75,7 @@ const ManageStrategusResultViewerDialog: FC<ManageStrategusResultViewerDialogPro
         type: "success",
         message: getText(i18nKeys.MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG__SAVE_SUCCESS),
       });
-      setDefaultviewerCode(viewerCode);
+      setDefaultViewerCode(viewerCode);
       setSelectedTemplate("default");
     } catch (error) {
       console.error("Failed to save code:", error);
@@ -118,7 +117,7 @@ const ManageStrategusResultViewerDialog: FC<ManageStrategusResultViewerDialogPro
               const filename = event.target.value;
               setSelectedTemplate(filename);
               if (filename === "default") {
-                setViewerCode(defaultviewerCode);
+                setViewerCode(defaultViewerCode);
               } else {
                 const tmpl = templates.find((t) => t.filename === filename);
                 if (tmpl?.content) {

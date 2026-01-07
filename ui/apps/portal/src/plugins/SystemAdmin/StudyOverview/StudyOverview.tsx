@@ -199,20 +199,29 @@ const StudyOverview: FC = () => {
     [openManageDashboardDialog]
   );
 
-  const handleRunStrategusStudy = useCallback((study: NetworkStrategusStudy) => {
-    setActiveStrategusStudy(study);
-    openRunStrategusStudyDialog();
-  }, []);
+  const handleRunStrategusStudy = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openRunStrategusStudyDialog();
+    },
+    [openRunStrategusStudyDialog]
+  );
 
-  const handleCleanupStrategusStudy = useCallback((study: NetworkStrategusStudy) => {
-    setActiveStrategusStudy(study);
-    openCleanupStrategusStudyDialog();
-  }, []);
+  const handleCleanupStrategusStudy = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openCleanupStrategusStudyDialog();
+    },
+    [openCleanupStrategusStudyDialog]
+  );
 
-  const handleManageStrategusResultViewer = useCallback((study: NetworkStrategusStudy) => {
-    setActiveStrategusStudy(study);
-    openManageStrategusResultViewerDialog();
-  }, []);
+  const handleManageStrategusResultViewer = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openManageStrategusResultViewerDialog();
+    },
+    [openManageStrategusResultViewerDialog]
+  );
 
   const toggleRow = useCallback((datasetId: string) => {
     setExpandedRows((prev) => ({

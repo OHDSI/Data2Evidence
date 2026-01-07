@@ -49,7 +49,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
         autoClose: 5000,
       });
     } catch (error) {
-      console.error(`[${study.id}] Error cleaning up study:`, error);
+      console.error(`[${study.studyId}] Error cleaning up study:`, error);
       setFeedback({
         type: "error",
         message: getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__ERROR_CLEANUP_STUDY, [study.studyId]),
@@ -58,7 +58,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
     } finally {
       setIsCleaningUp(false);
     }
-  }, [selectedDatasetId, setFeedback, study]);
+  }, [selectedDatasetId, setFeedback, study, isCleaningUp, getText]);
 
   if (loadingDatasets) return <Loader />;
 
@@ -114,7 +114,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
           text={getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__CLEANUP_STUDY)}
           onClick={handleCleanupStudy}
           block
-          disabled={isCleaningUp || !selectedDatasetId || !study?.id}
+          disabled={isCleaningUp || !selectedDatasetId || !study?.studyId}
         />
       </div>
     </Dialog>

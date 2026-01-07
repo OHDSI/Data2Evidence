@@ -3,9 +3,9 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import { SelectChangeEvent } from "@mui/material/Select";
 import { FormControl } from "@mui/material";
-import { Study, DatasetType, ActionValue, NetworkStrategusStudy } from "../../../../types";
+import { NetworkStrategusStudy } from "../../../../types";
 import { SxProps } from "@mui/system";
-import { useTranslation, useUser } from "../../../../contexts";
+import { useTranslation } from "../../../../contexts";
 
 interface ActionSelectorProps {
   study: NetworkStrategusStudy;
@@ -74,7 +74,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
           break;
       }
     },
-    [study]
+    [study, handleRunStrategusStudy, handleCleanupStrategusStudy, handleManageStrategusResultViewer]
   );
 
   return (
