@@ -2,7 +2,7 @@
   <div class="axis-menu-button-wrapper" v-bind:style="componentStyle">
     <div class="iconWrapper">
       <label class="iconLabel">
-        <span class="icon" v-bind:style="'font-family:' + iconFamily">{{ icon }}</span>
+        <span class="icon cursorDefault" v-bind:style="'font-family:' + iconFamily">{{ icon }}</span>
       </label>
     </div>
     <div class="buttonWrapper" ref="menuButtonWrapper">
@@ -50,7 +50,7 @@ export default {
     })
     this.menuButton = this.$refs.menuButton
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
   },
   computed: {

@@ -17,16 +17,16 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
     tooltip: {
       formatter: function (info: any) {
         const value = info.value;
-        const conceptPath = info.name;
         const numPersons = value[0];
         const recordsPerPerson = value[1];
         const percentPersons = value[2];
+        const conceptPath = value[4] || info.name;
 
         // Parse conceptPath string, replace || with breaklines with growing indentation
         const parsedConceptPath = conceptPath
           .split("||")
           .map((e: string, index: number) => {
-            return e + "<br>" + "&nbsp;".repeat(index + 1);
+            return `<div style="padding-left: ${index * 10}px">${e.trim()}</div>`;
           })
           .join("");
         return [
@@ -37,10 +37,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
         ].join("");
       },
       confine: true,
-      textStyle: {
-        overflow: "break",
-        width: 10,
-      },
+      className: "treemap-tooltip",
     },
     toolbox: {
       show: true,
@@ -66,7 +63,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
         visualDimension: 1,
         levels: [
           {
-            color: ["#aaa", "#269f3c"],
+            color: ["#aaa", "#000E7E"],
             colorMappingBy: "value",
             itemStyle: {
               gapWidth: 1,

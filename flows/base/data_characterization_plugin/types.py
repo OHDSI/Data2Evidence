@@ -9,6 +9,7 @@ class DCOptionsType(BaseModel):
     vocabSchemaName: str
     releaseDate: Optional[str] = None
     resultsSchema: str
+    executeConceptRecordCount: Optional[bool] = True
 
     @property
     def use_cache_db(self) -> bool:
@@ -24,7 +25,7 @@ class DCOptionsType(BaseModel):
 
 class AchillesParams(DCOptionsType):
     # Achilles-specific parameters with defaults
-    outputFolder: str
+    outputFolder: str = "achilles_output"
     setDBDriverEnv: str
     connectionDetails: str
 

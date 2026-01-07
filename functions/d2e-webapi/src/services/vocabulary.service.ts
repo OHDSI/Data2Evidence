@@ -12,10 +12,10 @@ import {
   IConceptRelatedResponseDto,
   IConceptListDto,
 } from "../dto/vocabulary.ts";
-import { CachedbDAO } from "../dao/cachedb.dao.ts";
+import { TrexDAO } from "../dao/trex.dao.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { IConcept } from "../types.ts";
-import { IAncestorsLookup, CachedbDialect } from "../dao/types.ts";
+import { IAncestorsLookup } from "../dao/types.ts";
 import {
   ILookupIdentifierAncestorsResponseDto,
   IVocabularySourceInfo,
@@ -34,7 +34,7 @@ export const getVocabularySourceInfo = async (
 
   // Get dialect
   const portalServerApi = new PortalServerAPI(token);
-  const { dialect } = await portalServerApi.getDatasetDetails(datasetId);
+  const { dialect } = await portalServerApi.getDataset(datasetId);
 
   // Construct response
   const result = {
@@ -99,16 +99,8 @@ export const getConceptsFromIdentifiers = async (
   datasetId: string,
   conceptIds: number[]
 ): Promise<IConcept[]> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const { vocabSchemaName } = await portalServerApi.getDatasetDetails(
-    datasetId
-  );
-
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.DUCKDB);
-  const concepts = await cachedbDao.getConceptsFromIdentifiers(
-    vocabSchemaName,
-    conceptIds
-  );
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+  const concepts = await trexDao.getConceptsFromIdentifiers(conceptIds);
 
   const mappedConcepts = concepts.map((concept) => {
     return {
@@ -131,14 +123,8 @@ export const getAncestorsFromIdentifiers = async (
   ancestors: number[],
   descendants: number[]
 ): Promise<ILookupIdentifierAncestorsResponseDto> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const { vocabSchemaName } = await portalServerApi.getDatasetDetails(
-    datasetId
-  );
-
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.DUCKDB);
-  const results = await cachedbDao.getAncestorsFromIdentifiers(
-    vocabSchemaName,
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+  const results = await trexDao.getAncestorsFromIdentifiers(
     ancestors,
     descendants
   );
@@ -164,14 +150,10 @@ export const getRecommendedConceptsFromIdentifiers = async (
   datasetId: string,
   conceptIds: number[]
 ): Promise<IConceptRecommendedListResponseDto> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const { vocabSchemaName } = await portalServerApi.getDatasetDetails(
-    datasetId
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+  const recommendedConceptsMapping = await trexDao.getExactConceptRecommended(
+    conceptIds
   );
-
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.DUCKDB);
-  const recommendedConceptsMapping =
-    await cachedbDao.getExactConceptRecommended(vocabSchemaName, conceptIds);
   if (recommendedConceptsMapping.length === 0) {
     return [];
   }
@@ -180,8 +162,7 @@ export const getRecommendedConceptsFromIdentifiers = async (
     (e) => e.concept_id_2
   );
 
-  const recommendedConcepts = await cachedbDao.getMultipleExactConcepts(
-    vocabSchemaName,
+  const recommendedConcepts = await trexDao.getMultipleExactConcepts(
     recommendedConceptMappingIds
   );
 
@@ -253,10 +234,11 @@ export const searchConcept = async (
   };
 
   // ATLAS UI expects all concept search results in a single request, so send count as 9999
+  const offset = page * rowsPerPage;
   const concepts = await terminologySvcApi.searchConcept(
     datasetId,
     query,
-    page,
+    offset,
     rowsPerPage,
     filters
   );
@@ -315,15 +297,8 @@ export const getMappedConcepts = async (
   datasetId: string,
   conceptIds: number[]
 ): Promise<IConceptListResponseDto> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const { vocabSchemaName } = await portalServerApi.getDatasetDetails(
-    datasetId
-  );
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.DUCKDB);
-  const concepts = await cachedbDao.getMappedConceptsLookup(
-    vocabSchemaName,
-    conceptIds
-  );
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+  const concepts = await trexDao.getMappedConceptsLookup(conceptIds);
 
   // Map results to webapi format
   const mappedResults: IConceptListResponseDto = concepts.map((concept) => {
@@ -351,12 +326,8 @@ export const getDomains = async (
   token: string,
   datasetId: string
 ): Promise<IDomainsResponseDto> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const { vocabSchemaName } = await portalServerApi.getDatasetDetails(
-    datasetId
-  );
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.DUCKDB);
-  const domains = await cachedbDao.getDomains(vocabSchemaName);
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+  const domains = await trexDao.getDomains();
 
   // Map results to webapi format
   const mappedResults: IDomainsResponseDto = domains.map((domain) => {
@@ -373,12 +344,8 @@ export const getVocabularies = async (
   token: string,
   datasetId: string
 ): Promise<IVocabulariesResponseDto> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const { vocabSchemaName } = await portalServerApi.getDatasetDetails(
-    datasetId
-  );
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.DUCKDB);
-  const vocabularies = await cachedbDao.getVocabularies(vocabSchemaName);
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+  const vocabularies = await trexDao.getVocabularies();
 
   // Map results to webapi format
   const mappedResults: IVocabulariesResponseDto = vocabularies.map(
@@ -400,16 +367,9 @@ export const getRelatedConceptsFromIdentifier = async (
   datasetId: string,
   conceptId: number
 ): Promise<IConceptRelatedResponseDto> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const { vocabSchemaName } = await portalServerApi.getDatasetDetails(
-    datasetId
-  );
-  const cachedbDao = new CachedbDAO(token, datasetId, CachedbDialect.DUCKDB);
+  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
   const relatedConceptsFromIdentifier =
-    await cachedbDao.getRelatedConceptsFromIdentifier(
-      vocabSchemaName,
-      conceptId
-    );
+    await trexDao.getRelatedConceptsFromIdentifier(conceptId);
 
   // Map results to webapi format
   const mappedResults: IConceptRelatedResponseDto = [];

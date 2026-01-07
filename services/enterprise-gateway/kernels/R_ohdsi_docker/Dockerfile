@@ -1,18 +1,23 @@
+ARG R_VERSION=4.4.3
+ARG BASE_CONTAINER=quay.io/jupyter/r-notebook:r-${R_VERSION}
+
 FROM alpine AS builder
 
 # Create .Renviron file with GITHUB_PAT
 ARG GITHUB_PAT
-ARG BUILD_TYPE
 RUN echo "GITHUB_PAT=$GITHUB_PAT" >> .Renviron
 
-FROM elyra/kernel-r:3.2.3
+FROM elyra/kernel-r:3.2.3 AS elyra-base
+
+FROM ${BASE_CONTAINER}
+
+RUN conda install --quiet --yes \
+    'r-argparse' \
+    pycryptodomex && \
+    conda clean --all && \
+    fix-permissions $CONDA_DIR
 
 USER root
-RUN mkdir -p /app
-
-WORKDIR /app
-# GITHUB_PAT authentication for OHDSI remotes::install_github
-COPY --from=builder .Renviron .
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -32,16 +37,29 @@ RUN apt-get update && \
     libfontconfig1-dev \
     libfreetype6-dev \
     libblas-dev \    
+    libgit2-dev \
+    libglpk-dev \
+    libnode-dev \
     liblapack-dev  \
     gfortran \
-    libmagick++-dev
+    libmagick++-dev \
+    software-properties-common \
+    wget \
+    less \
+    curl \
+    libkrb5-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# # GitHub setup & test
-# RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
-# # RUN ssh-add -l # debug only
-# RUN git ls-remote https://github.com/data2evidence/d2e-DatabaseConnector.git | grep HEAD || exit 1
-# RUN git ls-remote https://github.com/data2evidence/d2e-SqlRender.git | grep HEAD || exit 1
-# RUN git config --global advice.detachedHead false
+RUN mkdir -p /app
+
+WORKDIR /app
+
+# GitHub setup & test
+RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
+# RUN ssh-add -l # debug only
+RUN git ls-remote https://github.com/data2evidence/d2e-DatabaseConnector.git | grep HEAD || exit 1
+RUN git ls-remote https://github.com/data2evidence/d2e-SqlRender.git | grep HEAD || exit 1
+RUN git config --global advice.detachedHead false
 
 # Set environment variables
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
@@ -55,58 +73,56 @@ RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='h
 RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME}/bin/java 100 && \
     update-alternatives --install /usr/bin/javac javac ${JAVA_HOME}/bin/javac 100 && \
     rm openjdk.tgz*
-
 # Verify the installation
 RUN java -version && R CMD javareconf
 
-# Install Dependencies
-RUN Rscript -e 'options(install.packages.compile.from.source = "never")'
-RUN Rscript -e 'install.packages(c("remotes", "devtools", "rJava", "usethis"), repos="https://cran.r-project.org")'
+# install renv package
+RUN Rscript -e 'install.packages("renv", repos="https://cran.r-project.org")'
 
-# HADES Dependencies
-# https://github.com/r-lib/remotes https://search.r-project.org/CRAN/refmans/remotes/html/install_git.html
-RUN Rscript -e 'remotes::install_github("OHDSI/Andromeda@v0.6.7")' # https://github.com/OHDSI/Andromeda
-RUN Rscript -e 'remotes::install_github("OHDSI/BrokenAdaptiveRidge@v1.0.0")' # https://github.com/OHDSI/BrokenAdaptiveRidge
-RUN Rscript -e 'remotes::install_github("OHDSI/Cyclops@v3.6.0")' # https://github.com/OHDSI/Cyclops
-RUN Rscript -e 'remotes::install_github("rstudio/reticulate@v1.41.0")' # https://github.com/rstudio/reticulate
-RUN Rscript -e 'remotes::install_github("OHDSI/DataQualityDashboard@v2.6.3", upgrade = "never")' # https://github.com/OHDSI/DataQualityDashboard same version installed by HADES
+# COPY kernel launcher scripts and files from elyra-base
+COPY --from=elyra-base /usr/local/bin/jupyter_enterprise_gateway_kernel_image_files*.tar.gz /usr/local/bin/
+COPY --from=elyra-base /usr/local/bin/kernel-launchers /usr/local/bin/kernel-launchers
+COPY --from=elyra-base /usr/local/bin/bootstrap-kernel.sh /usr/local/bin
+COPY services/enterprise-gateway/kernels/R_ohdsi_docker/launch_IRkernel.R /usr/local/bin/kernel-launchers/R/scripts/launch_IRkernel.R
+COPY services/enterprise-gateway/kernels/R_ohdsi_docker/server_listener.py /usr/local/bin/kernel-launchers/R/scripts/server_listener.py
 
-# OHDSI HADES
-# private d2e repo auth - ssh key
-# public HADES repo auth - .Renviron:GITHUB_PAT - https://ohdsi.github.io/Hades/rSetup.html#GitHub_Personal_Access_Token
-RUN Rscript -e 'remotes::install_github("OHDSI/Hades@v1.18.0")' # https://github.com/OHDSI/Hades https://ohdsi.github.io/Hades/installingHades.html
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortGenerator@v0.11.2", quiet=FALSE, upgrade="never",force=TRUE, dependencies=FALSE)'
-RUN Rscript -e 'remotes::install_github("OHDSI/CohortIncidence@v4.0.0")'
+# GITHUB_PAT authentication for OHDSI remotes::install_github
+COPY --from=builder .Renviron .
+COPY ./flows/hades/renv.lock ./flows/build/.Rprofile ./flows/build/install_and_verify_r_packages.R /app/
 
-#RUN Rscript -e 'remotes::install_github("OHDSI/Strategus@v1.3.0", upgrade = "never")' # Requires latest DatabaseConnector https://github.com/OHDSI/Strategus
-# include a d2e version of Strategus - with CohortSurvival module integrated
-RUN Rscript -e 'remotes::install_github("darwin-eu/TreatmentPatterns@v3.1.1", upgrade = "never", dependencies=TRUE)'
-RUN Rscript -e 'remotes::install_github("data2evidence/Strategus_d2e@develop", upgrade = "never", dependencies=TRUE)'
-
-# mlflow
-RUN pip3 install --upgrade pip
-RUN pip3 install mlflow==2.22.1
-RUN Rscript -e 'install.packages("mlflow", version ="2.22.1", repos="https://cran.r-project.org")'
-
-# OHDSI studies viewer
-RUN Rscript -e 'install.packages("https://cran.r-project.org/src/contrib/Archive/Matrix/Matrix_1.6-1.tar.gz", repos = NULL, type = "source")'
-RUN Rscript -e 'install.packages(c("MatrixModels", "quantreg", "shiny", "shinydashboard","svglite","car","rstatix", "kableExtra", "ggpubr"), dependencies=TRUE, repos="https://cloud.r-project.org")'
-RUN Rscript -e 'remotes::install_github("ohdsi/OhdsiShinyAppBuilder")'
-RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiReportGenerator", dependencies = TRUE,quiet=FALSE)'
-RUN Rscript -e 'remotes::install_github("OHDSI/OhdsiShinyModules@RC-3.2.0", dependencies=TRUE,quiet=FALSE)'
-
-# OHDSI packages and versions - final
-RUN Rscript -e 'as.data.frame(installed.packages())[,c("Package", "Version")]' | awk '{print $1,$NF}' | grep -E "$(grep -l -i ohdsi /usr/local/lib/R/site-library/*/DESCRIPTION | awk -F/ '{print $(NF-1)}' | paste -sd '|')"
-
+# Copy R scripts and drivers
 COPY --chown=jovyan:user ./flows/drivers /app/inst/drivers
 COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app/rD2E
 
+# Packages from https://packagemanager.posit.co/cran/__linux__/noble/2025-09-22/src/contrib/PACKAGES
+ARG POSIT_DATE=2025-09-22
+ARG CODENAME=noble
+
+# Set R repository options
+COPY <<-EOF /usr/local/lib/R/etc/Rprofile.site
+    options(repos=c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
+    options(renv.config.repos.override = c(CRAN='https://packagemanager.posit.co/cran/__linux__/$CODENAME/$POSIT_DATE'))
+    options(HTTPUserAgent = sprintf("R/%s R (%s)", getRversion(), paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
+    options(download.file.extra = sprintf('--header "User-Agent: R (%s)"', paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"])))
+EOF
+
+# Install R depdendencies in global library
+ARG REQUIRED_R_PACKAGES="Hades CohortGenerator CohortIncidence Strategus Characterization CirceR CohortDiagnostics CohortIncidence CohortMethod FeatureExtraction PatientLevelPrediction SelfControlledCaseSeries DatabaseConnector TreatmentPatterns Cyclops Andromeda BrokenAdaptiveRidge"
+RUN chmod +x /app/install_and_verify_r_packages.R && \
+    /app/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" /opt/conda/lib/R/site-library && \
+    R CMD javareconf && \
+    rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
+
+RUN rm -f .Renviron
+
 WORKDIR /app/rD2E
-# R CMD build . && R CMD check $(ls -t . | head -n1)
 RUN Rscript -e 'devtools::install(pkg="/app/rD2E", build=TRUE, dependencies=TRUE)'
 RUN chown jovyan /app && chmod 711 /app
 
-WORKDIR /app
-RUN rm .Renviron
-
 USER jovyan
+
+ENV KERNEL_LANGUAGE R
+
+# Disble healthcheck inherited from notebook image
+HEALTHCHECK NONE
+CMD /usr/local/bin/bootstrap-kernel.sh

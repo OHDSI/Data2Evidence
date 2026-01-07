@@ -1,10 +1,11 @@
 import { services } from "../env.ts";
 import { OpenIDAPI } from "./OpenIDAPI.ts";
-import { CsvFileOperationResponse } from "../types.ts";
+import { FileOperationResponse } from "../types.ts";
 
 export class PortalServerAPI {
   private readonly baseURL: string;
   private readonly token: string;
+  private readonly channel;
 
   constructor(token: string) {
     this.token = token;
@@ -13,6 +14,7 @@ export class PortalServerAPI {
     }
     if (services.portalServer) {
       this.baseURL = services.portalServer;
+      this.channel = Trex.tokioChannel("d2e-functions/portal");
     } else {
       throw new Error("No url is set for PortalServerAPI");
     }
@@ -33,11 +35,11 @@ export class PortalServerAPI {
         releaseId
       )}`;
       const options = this.createOptions("GET");
-      const result = await fetch(url, options);
-      if (!result.ok) {
+      const result = this.channel.get(url, options);
+      if (result.status !== 200) {
         throw new Error("Error while getting dataset release by id");
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while getting dataset release by id: ${error}`);
       throw error;
@@ -49,11 +51,14 @@ export class PortalServerAPI {
       const url = `${this.baseURL}/dataset`;
       const queryParams = new URLSearchParams({ datasetId });
       const options = this.createOptions("GET");
-      const result = await fetch(`${url}?${queryParams.toString()}`, options);
-      if (!result.ok) {
+      const result = await this.channel.get(
+        `${url}?${queryParams.toString()}`,
+        options
+      );
+      if (result.status !== 200) {
         throw new Error("Error while getting dataset by datasetId");
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while getting dataset by datasetId: ${error}`);
       throw error;
@@ -64,24 +69,36 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/config/secret/${type}`;
       const options = this.createOptions("GET");
-      const result = await fetch(url, options);
-      if (!result.ok) {
+      const result = await this.channel.get(url, options);
+      if (result.status !== 200) {
         console.log(`Config type '${type}' not found or inaccessible`);
         return null;
       }
-      return await result.json();
+      return result.data;
     } catch (error) {
       console.error(`Error while getting system config: ${error}`);
       return null;
     }
   }
 
-  async uploadCsvFile(
-    nodeId: string,
-    file: File
-  ): Promise<CsvFileOperationResponse> {
+  async listFiles(nodeId: string): Promise<any> {
     try {
-      const url = `${this.baseURL}/supabase-storage/upload/csv`;
+      const url = `${this.baseURL}/supabase-storage/list/file`;
+      const options = this.createOptions("GET");
+      const result = await this.channel.get(`${url}?nodeId=${nodeId}`, options);
+      if (result.status !== 200) {
+        throw new Error(`Error while listing files for nodeId ${nodeId}`);
+      }
+      return result.json();
+    } catch (error) {
+      console.error(`Error while listing files for nodeId ${nodeId}: ${error}`);
+      throw error;
+    }
+  }
+
+  async uploadFile(nodeId: string, file: File): Promise<FileOperationResponse> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/upload/file`;
       const formData = new FormData();
       formData.append("file", file, file.name);
 
@@ -93,40 +110,74 @@ export class PortalServerAPI {
         body: formData,
       };
 
+      // const result = await this.channel.post(
+      //   `${url}?nodeId=${nodeId}`,
+      //   formData,
+      //   options
+      // );
+      // TODO: Use trex channel after form data issue been resolved
       const result = await fetch(`${url}?nodeId=${nodeId}`, options);
       if (!result.ok) {
         const errorText = await result.text();
         throw new Error(
-          `Error while uploading CSV file: ${result.status} - ${errorText}`
+          `Error while uploading file ${file.name} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
       return await result.json();
     } catch (error) {
-      console.error(`Error while uploading CSV file: ${error}`);
+      console.error(
+        `Error while uploading file ${file.name} for nodeId ${nodeId}: ${error}`
+      );
       throw error;
     }
   }
 
-  async deleteCsvFile(
-    nodeId: string,
-    fileName: string
-  ): Promise<CsvFileOperationResponse> {
+  async getFile(nodeId: string, fileName: string): Promise<any> {
     try {
-      const url = `${this.baseURL}/supabase-storage/delete/csv`;
-      const options = this.createOptions("DELETE");
-      const result = await fetch(
+      const url = `${this.baseURL}/supabase-storage/get/file`;
+      const options = this.createOptions("GET");
+      const result = await this.channel.get(
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
-      if (!result.ok) {
+
+      if (result.status !== 200) {
         const errorText = await result.text();
         throw new Error(
-          `Error while deleting CSV file: ${result.status} - ${errorText}`
+          `Error while downloading file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
         );
       }
       return await result.json();
     } catch (error) {
-      console.error(`Error while deleting CSV file: ${error}`);
+      console.error(
+        `Error while downloading file ${fileName} for nodeId ${nodeId}: ${error}`
+      );
+      throw error;
+    }
+  }
+
+  async deleteFile(
+    nodeId: string,
+    fileName: string
+  ): Promise<FileOperationResponse> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/delete/file`;
+      const options = this.createOptions("DELETE");
+      const result = this.channel.delete(
+        `${url}?nodeId=${nodeId}&fileName=${fileName}`,
+        options
+      );
+      if (result.status !== 200) {
+        const errorText = await result.statusText;
+        throw new Error(
+          `Error while deleting file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
+        );
+      }
+      return result.data;
+    } catch (error) {
+      console.error(
+        `Error while deleting file ${fileName} for nodeId ${nodeId}: ${error}`
+      );
       throw error;
     }
   }

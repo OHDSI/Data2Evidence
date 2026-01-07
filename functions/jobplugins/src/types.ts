@@ -93,12 +93,14 @@ export interface CohortGeneratorFlowRunDto {
 interface CohortGeneratorFlowRunOptions {
   databaseCode: string;
   schemaName: string;
+  resultsSchemaName: string;
   stringvocabSchemaName: string;
   cohortJson: CohortJson;
   datasetId: string;
   description: string;
   owner: string;
 }
+
 interface CohortJson {
   id: number;
   name: string;
@@ -165,6 +167,12 @@ export interface ICreateDatamodelFlowRunDto {
 export interface ICreateDatamartFlowRunDto {
   flowRunName: string;
   options: object;
+}
+
+export interface ICreateFhirCacheFlowRunDto {
+  databaseCode: string;
+  schemaName: string;
+  cacheSchemaName: string;
 }
 
 export interface IGetVersionInfoFlowRunDto {
@@ -314,7 +322,7 @@ interface ICreateDatamodelFlowRunOptions {
     database_code: string;
     data_model: string;
     schema_name: string;
-    cleansed_schema_option: string;
+    results_schema: string;
     vocab_schema: string;
     plugin: string;
   };
@@ -332,8 +340,13 @@ interface IGetVersionInfoFlowRunOptions {
 }
 
 export interface ICreateCachedbFileFlowRunDto {
+  flowActionType: string;
   databaseCode: string;
   schemaName: string;
+  snapshotSchemaName?: string;
+  resultsSchemaName?: string;
+  snapshotCopyConfig?: object;
+  vocabSchemaName: string;
 }
 
 export interface ICreateWhiteRabbitFlowRunDto {
@@ -387,7 +400,7 @@ export type CanvasResult =
       error: string;
     };
 
-export interface CsvFileOperationResponse {
+export interface FileOperationResponse {
   status: "success";
   filePath: string;
   bucket: string;
@@ -399,4 +412,11 @@ export interface TemplateDto {
   description: string;
   nodes: IReactFlowNode[];
   edges: IReactFlowEdge[];
+}
+
+export interface TemplateFhirDto {
+  id: string;
+  name: string;
+  description: string;
+  structureMap: string;
 }

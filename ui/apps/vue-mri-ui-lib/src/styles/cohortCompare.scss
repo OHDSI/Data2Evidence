@@ -1,3 +1,4 @@
+@import './screen';
 .compareContainer {
   .modal-wrapper {
     .modal-container {
@@ -6,8 +7,8 @@
         text-align: center;
         padding: 0;
         height: 40px;
-        background-color: $TabBarHeaderBG;
-        color: $MriHeaderTextDark;
+        background-color: var(--color-tab-bar-header-bg);
+        color: var(--color-mri-header-text-dark);
         font-weight: bold;
       }
       .modal-body {
@@ -15,7 +16,7 @@
         overflow-y: hidden;
         max-height: 100vh;
         .chartToolbarContainer {
-          background-color: $MRICardHeaderBG;
+          background-color: var(--color-mri-card-header-bg);
           text-align: center;
           justify-content: center;
           display: flex;
@@ -43,9 +44,9 @@
                   width: 50px !important;
                   margin: 0;
                   .modal-header {
-                    background-color: $UiExtraLightBG;
+                    background-color: var(--color-ui-extra-light-bg);
                     box-shadow: none;
-                    color: $UiDarkText;
+                    color: var(--color-ui-dark-text);
                     text-align: center;
                     padding: 0;
                     height: 40px;
@@ -63,7 +64,7 @@
               left: 75px;
               direction: inherit;
               text-align: left;
-              color: $MriHeaderTextDark;
+              color: var(--color-mri-header-text-dark);
               font-size: 12px;
             }
           }
@@ -84,8 +85,8 @@
       .modal-header {
         text-align: center;
         padding: 0;
-        background-color: $UiLightestBG;
-        color: $MriErrorColor;
+        background-color: var(--color-ui-lightest-bg);
+        color: var(--color-mri-error);
         font-weight: normal;
         line-height: 3rem;
       }
@@ -112,7 +113,7 @@
     padding-top: 0.5rem;
     padding-right: 1rem;
     .toolbarButton {
-      color: $MriHeaderTextDark;
+      color: var(--color-mri-header-text-dark);
       outline: none;
       background: none;
       border: none;
@@ -120,8 +121,8 @@
       width: 33px;
     }
     .toolbarButton:hover {
-      background-color: $MriButtonHoverDark;
-      color: $MriLightestText;
+      background-color: var(--color-mri-button-hover-dark);
+      color: var(--color-mri-lightest-text);
       height: 30px;
       width: 33px;
       border-radius: 3.1px;
@@ -137,6 +138,6 @@
   }
 
   .sapMPageBgSolid {
-    background-color: $UiLightestBG;
+    background-color: var(--color-ui-lightest-bg);
   }
 }

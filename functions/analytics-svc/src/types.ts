@@ -370,6 +370,7 @@ export interface StudyAnalyticsCredential {
     encrypt: boolean;
     probeSchema: string;
     vocabSchema: string;
+    resultSchema: string;
     dialect: string;
     schema: string;
     max?: number;
@@ -382,6 +383,7 @@ export interface StudyDbMetadata {
     schemaName: string;
     databaseName: string;
     vocabSchemaName: string;
+    resultSchemaName: string;
     dialect: string;
     databaseCode: string;
 }
@@ -415,7 +417,7 @@ export type CohortDefinitionTableType = {
     id?: number;
     name: string;
     description: string;
-    creationTimestamp: Date;
+    creationTimestamp: string;
     definitionTypeConceptId?: string;
     subjectConceptId?: number;
     syntax?: string;
@@ -468,12 +470,6 @@ export interface IDatasetFilterParamsDto {
 
 export interface IDatasetSchemaFilterResultDto {
     [datasetSchema: string]: { isMatched: boolean };
-}
-
-// Bookmark materialized cohort definitions are tagged to a datasetId
-export interface IMaterializedBookmarkCohortDefinition {
-    datasetId: string;
-    cohortDefinitionId: number;
 }
 
 export enum ANALYTICS_DB_DIALECTS {

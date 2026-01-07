@@ -14,6 +14,9 @@
   "bugs": {
     "url": "https://github.com/OHDSI/d2e/issues"
   },
+  "dependencies": {
+    "@synanetics/fhir-transform": "0.8.2"
+  },
   "homepage": "https://github.com/OHDSI/d2e/flows#readme",
   "trex": {
     "flow": {
@@ -160,6 +163,73 @@
                 "required": [
                   "path",
                   "table_name"
+                ],
+                "title": "FileType",
+                "type": "object"
+              }
+            }
+          },
+          "type": "data_load"
+        },
+        {
+          "name": "data_load_fhir_plugin",
+          "entrypoint": "flows.data_load_fhir_plugin.flow.data_load_fhir_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/DataloadOptions",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "DataloadOptions": {
+                "properties": {
+                  "files": {
+                    "items": {
+                      "$ref": "#/definitions/FileType"
+                    },
+                    "title": "Files",
+                    "type": "array"
+                  },
+                  "dataset_token": {
+                    "title": "Dataset Token",
+                    "type": "string"
+                  },
+                  "truncate_tables": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": false,
+                    "title": "Truncate Tables"
+                  }
+                },
+                "required": [
+                  "files",
+                  "dataset_token"
+                ],
+                "title": "DataloadOptions",
+                "type": "object"
+              },
+              "FileType": {
+                "properties": {
+                  "path": {
+                    "title": "Path",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
                 ],
                 "title": "FileType",
                 "type": "object"
@@ -370,148 +440,148 @@
           "name": "dicom_etl_plugin",
           "entrypoint": "flows.dicom_etl_plugin.flow.dicom_etl_plugin",
           "parameter_openapi_schema": {
-              "title": "Parameters",
-              "type": "object",
-              "properties": {
-                  "options": {
-                      "$ref": "#/definitions/DICOMETLOptions",
-                      "position": 0,
-                      "title": "options"
-                  }
-              },
-              "required": [
-                  "options"
-              ],
-              "definitions": {
-                  "DICOMETLOptions": {
-                      "properties": {
-                          "flow_action_type": {
-                              "$ref": "#/definitions/FlowActionType"
-                          },
-                          "database_code": {
-                              "title": "Database Code",
-                              "type": "string"
-                          },
-                          "medical_imaging_schema_name": {
-                              "title": "Medical Imaging Schema Name",
-                              "type": "string"
-                          },
-                          "cdm_schema_name": {
-                              "title": "Cdm Schema Name",
-                              "type": "string"
-                          },
-                          "vocab_schema_name": {
-                              "title": "Vocab Schema Name",
-                              "type": "string"
-                          },
-                          "to_truncate": {
-                              "anyOf": [
-                                  {
-                                      "type": "boolean"
-                                  },
-                                  {
-                                      "type": "null"
-                                  }
-                              ],
-                              "default": false,
-                              "title": "To Truncate"
-                          },
-                          "dicom_files_abs_path": {
-                              "anyOf": [
-                                  {
-                                      "type": "string"
-                                  },
-                                  {
-                                      "type": "null"
-                                  }
-                              ],
-                              "default": "/app/dicom_files",
-                              "title": "Dicom Files Abs Path"
-                          },
-                          "upload_files": {
-                              "anyOf": [
-                                  {
-                                      "type": "boolean"
-                                  },
-                                  {
-                                      "type": "null"
-                                  }
-                              ],
-                              "default": false,
-                              "title": "Upload Files"
-                          },
-                          "person_to_patient_mapping": {
-                              "anyOf": [
-                                  {
-                                      "$ref": "#/definitions/PersonPatientMapping"
-                                  },
-                                  {
-                                      "type": "null"
-                                  }
-                              ],
-                              "default": null
-                          },
-                          "ingest_eav_table": {
-                              "anyOf": [
-                                  {
-                                      "type": "boolean"
-                                  },
-                                  {
-                                      "type": "null"
-                                  }
-                              ],
-                              "default": true,
-                              "title": "Ingest Eav Table"
-                          }
-                      },
-                      "required": [
-                          "flow_action_type",
-                          "database_code",
-                          "medical_imaging_schema_name",
-                          "cdm_schema_name",
-                          "vocab_schema_name"
-                      ],
-                      "title": "DICOMETLOptions",
-                      "type": "object"
-                  },
-                  "FlowActionType": {
-                      "enum": [
-                          "ingest_metadata",
-                          "load_vocab"
-                      ],
-                      "title": "FlowActionType",
-                      "type": "string"
-                  },
-                  "PersonPatientMapping": {
-                      "properties": {
-                          "schema_name": {
-                              "title": "Schema Name",
-                              "type": "string"
-                          },
-                          "table_name": {
-                              "title": "Table Name",
-                              "type": "string"
-                          },
-                          "person_id_column_name": {
-                              "title": "Person Id Column Name",
-                              "type": "string"
-                          },
-                          "patient_id_column_name": {
-                              "title": "Patient Id Column Name",
-                              "type": "string"
-                          }
-                      },
-                      "required": [
-                          "schema_name",
-                          "table_name",
-                          "person_id_column_name",
-                          "patient_id_column_name"
-                      ],
-                      "title": "PersonPatientMapping",
-                      "type": "object"
-                  }
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/DICOMETLOptions",
+                "position": 0,
+                "title": "options"
               }
             },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "DICOMETLOptions": {
+                "properties": {
+                  "flow_action_type": {
+                    "$ref": "#/definitions/FlowActionType"
+                  },
+                  "database_code": {
+                    "title": "Database Code",
+                    "type": "string"
+                  },
+                  "medical_imaging_schema_name": {
+                    "title": "Medical Imaging Schema Name",
+                    "type": "string"
+                  },
+                  "cdm_schema_name": {
+                    "title": "Cdm Schema Name",
+                    "type": "string"
+                  },
+                  "vocab_schema_name": {
+                    "title": "Vocab Schema Name",
+                    "type": "string"
+                  },
+                  "to_truncate": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": false,
+                    "title": "To Truncate"
+                  },
+                  "dicom_files_abs_path": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": "/app/dicom_files",
+                    "title": "Dicom Files Abs Path"
+                  },
+                  "upload_files": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": false,
+                    "title": "Upload Files"
+                  },
+                  "person_to_patient_mapping": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/PersonPatientMapping"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "ingest_eav_table": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": true,
+                    "title": "Ingest Eav Table"
+                  }
+                },
+                "required": [
+                  "flow_action_type",
+                  "database_code",
+                  "medical_imaging_schema_name",
+                  "cdm_schema_name",
+                  "vocab_schema_name"
+                ],
+                "title": "DICOMETLOptions",
+                "type": "object"
+              },
+              "FlowActionType": {
+                "enum": [
+                  "ingest_metadata",
+                  "load_vocab"
+                ],
+                "title": "FlowActionType",
+                "type": "string"
+              },
+              "PersonPatientMapping": {
+                "properties": {
+                  "schema_name": {
+                    "title": "Schema Name",
+                    "type": "string"
+                  },
+                  "table_name": {
+                    "title": "Table Name",
+                    "type": "string"
+                  },
+                  "person_id_column_name": {
+                    "title": "Person Id Column Name",
+                    "type": "string"
+                  },
+                  "patient_id_column_name": {
+                    "title": "Patient Id Column Name",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "schema_name",
+                  "table_name",
+                  "person_id_column_name",
+                  "patient_id_column_name"
+                ],
+                "title": "PersonPatientMapping",
+                "type": "object"
+              }
+            }
+          },
           "type": "dicom_etl"
         },
         {
@@ -520,134 +590,321 @@
           "parameter_openapi_schema": {
             "type": "object",
             "title": "Parameters",
-            "required": ["options"],
+            "required": [
+              "options"
+            ],
             "properties": {
-                "options": {
-                    "$ref": "#/definitions/MimicOMOPOptionsType",
-                    "title": "options",
-                    "position": 0
-                }
+              "options": {
+                "$ref": "#/definitions/MimicOMOPOptionsType",
+                "title": "options",
+                "position": 0
+              }
             },
             "definitions": {
-                "FlowActionType": {
-                    "enum": [
-                        "mimic_to_database",
-                        "mimic_to_duckdb",
-                        "duckdb_to_database"
-                    ],
+              "FlowActionType": {
+                "enum": [
+                  "mimic_to_database",
+                  "mimic_to_duckdb",
+                  "duckdb_to_database"
+                ],
+                "type": "string",
+                "title": "FlowActionType"
+              },
+              "MimicOMOPOptionsType": {
+                "type": "object",
+                "title": "MimicOMOPOptionsType",
+                "required": [
+                  "flow_action_type"
+                ],
+                "properties": {
+                  "mimic_dir": {
                     "type": "string",
-                    "title": "FlowActionType"
-                },
-                "MimicOMOPOptionsType": {
-                    "type": "object",
-                    "title": "MimicOMOPOptionsType",
-                    "required": ["flow_action_type"],
-                    "properties": {
-                        "mimic_dir": {
-                            "type": "string",
-                            "title": "Mimic Dir",
-                            "default": "/app/mimic_omop/mimic"
-                        },
-                        "vocab_dir": {
-                            "type": "string",
-                            "title": "Vocab Dir",
-                            "default": "/app/mimic_omop/vocab"
-                        },
-                        "chunk_size": {
-                            "type": "integer",
-                            "title": "Chunk Size",
-                            "default": 5000
-                        },
-                        "schema_name": {
-                            "anyOf": [
-                                {"type": "string"},
-                                {"type": "null"}
-                            ],
-                            "title": "Schema Name",
-                            "default": null
-                        },
-                        "database_code": {
-                            "anyOf": [
-                                {"type": "string"},
-                                {"type": "null"}
-                            ],
-                            "title": "Database Code",
-                            "default": null
-                        },
-                        "duckdb_file_path": {
-                            "type": "string",
-                            "title": "Duckdb File Path",
-                            "default": 
-    "/app/mimic_omop/mimic/mimic_omop_duckdb"
-                        },
-                        "flow_action_type": {
-                            "$ref": "#/definitions/FlowActionType"
-                        },
-                        "load_mimic_vocab": {
-                            "type": "boolean",
-                            "title": "Load Mimic Vocab",
-                            "default": true
-                        },
-                        "overwrite_schema": {
-                            "type": "boolean",
-                            "title": "Overwrite Schema",
-                            "default": false
-                        }
-                    }
+                    "title": "Mimic Dir",
+                    "default": "/app/mimic_omop/mimic"
+                  },
+                  "vocab_dir": {
+                    "type": "string",
+                    "title": "Vocab Dir",
+                    "default": "/app/mimic_omop/vocab"
+                  },
+                  "chunk_size": {
+                    "type": "integer",
+                    "title": "Chunk Size",
+                    "default": 5000
+                  },
+                  "schema_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Schema Name",
+                    "default": null
+                  },
+                  "database_code": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "title": "Database Code",
+                    "default": null
+                  },
+                  "duckdb_file_path": {
+                    "type": "string",
+                    "title": "Duckdb File Path",
+                    "default": "/app/mimic_omop/mimic/mimic_omop_duckdb"
+                  },
+                  "flow_action_type": {
+                    "$ref": "#/definitions/FlowActionType"
+                  },
+                  "load_mimic_vocab": {
+                    "type": "boolean",
+                    "title": "Load Mimic Vocab",
+                    "default": true
+                  },
+                  "overwrite_schema": {
+                    "type": "boolean",
+                    "title": "Overwrite Schema",
+                    "default": false
+                  }
                 }
+              }
             }
-            },
+          },
           "type": "mimic"
         },
         {
           "name": "white_rabbit_plugin",
           "entrypoint": "flows.white_rabbit_plugin.flow.white_rabbit_plugin",
           "parameter_openapi_schema": {
-              "title": "Parameters",
-              "type": "object",
-              "properties": {
-                  "options": {
-                      "$ref": "#/definitions/WhiteRabbitRequestType",
-                      "position": 0,
-                      "title": "options"
-                  }
-              },
-              "required": [
-                  "options"
-              ],
-              "definitions": {
-                "WhiteRabbitRunType": {
-                    "enum": [
-                        "SCAN_REPORT_FILES",
-                        "SCAN_REPORT_DB",
-                        "GENERATE_ETL_REPORT"
-                    ],
-                    "title": "WhiteRabbitRunType",
-                    "type": "string"
-                },
-                "WhiteRabbitRequestType": {
-                    "properties": {
-                      "run_type": {
-                        "$ref": "#/definitions/WhiteRabbitRunType"
-                      },
-                      "data": {
-                        "title": "Data",
-                        "type": "object"
-                      },
-                      "username": {
-                          "default": "",
-                          "title": "username",
-                          "type": "string"
-                        }
-                    },
-                    "required": [
-                      "run_type",
-                      "data"
-                    ],
-                    "title": "WhiteRabbitRequestType",
-                    "type": "object"
-                }
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/WhiteRabbitRequestType",
+                "position": 0,
+                "title": "options"
               }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "CSVSettingsType": {
+                "properties": {
+                  "delimiter": {
+                    "default": ",",
+                    "title": "Delimiter",
+                    "type": "string"
+                  }
+                },
+                "title": "CSVSettingsType",
+                "type": "object"
+              },
+              "WhiteRabbitDataType": {
+                "properties": {
+                  "node_id": {
+                    "title": "Node Id",
+                    "type": "string"
+                  },
+                  "settings": {
+                    "anyOf": [
+                      {
+                        "$ref": "#/definitions/CSVSettingsType"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
+                  },
+                  "files": {
+                    "anyOf": [
+                      {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Files"
+                  },
+                  "database_code": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Database Code"
+                  },
+                  "tables_to_scan": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Tables To Scan"
+                  },
+                  "port": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Port"
+                  },
+                  "schema": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Schema"
+                  },
+                  "server": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Server"
+                  },
+                  "database": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Database"
+                  },
+                  "password": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Password"
+                  },
+                  "data_type": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Data Type"
+                  },
+                  "user_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "User Name"
+                  },
+                  "server_location": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Server Location"
+                  }
+                },
+                "required": [
+                  "node_id"
+                ],
+                "title": "WhiteRabbitDataType",
+                "type": "object"
+              },
+              "WhiteRabbitRequestType": {
+                "properties": {
+                  "run_type": {
+                    "$ref": "#/definitions/WhiteRabbitRunType"
+                  },
+                  "data": {
+                    "$ref": "#/definitions/WhiteRabbitDataType"
+                  },
+                  "username": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Username"
+                  }
+                },
+                "required": [
+                  "run_type",
+                  "data"
+                ],
+                "title": "WhiteRabbitRequestType",
+                "type": "object"
+              },
+              "WhiteRabbitRunType": {
+                "enum": [
+                  "SCAN_REPORT_FILES",
+                  "SCAN_REPORT_DB",
+                  "GENERATE_ETL_REPORT"
+                ],
+                "title": "WhiteRabbitRunType",
+                "type": "string"
+              }
+            }
           },
           "type": "white_rabbit"
         },
@@ -655,66 +912,65 @@
           "name": "ner_extract_plugin",
           "entrypoint": "flows.ner_extract_plugin.flow.ner_extract_plugin",
           "parameter_openapi_schema": {
-              "title": "Parameters",
-              "type": "object",
-              "properties": {
-                  "options": {
-                      "$ref": "#/definitions/NerExtractOptions",
-                      "position": 0,
-                      "title": "options"
-                  }
-              },
-              "required": [
-                  "options"
-              ],
-              "definitions": {
-                  "NerExtractOptions": {
-                      "properties": {
-                          "database_code": {
-                              "title": "Database Code",
-                              "type": "string"
-                          },
-                          "schema_name": {
-                              "title": "Schema Name",
-                              "type": "string"
-                          },
-                          "note_table": {
-                              "anyOf": [
-                                  {
-                                      "type": "string"
-                                  },
-                                  {
-                                      "type": "null"
-                                  }
-                              ],
-                              "default": "note",
-                              "title": "Note Table"
-                          },
-                          "note_nlp_table": {
-                              "anyOf": [
-                                  {
-                                      "type": "string"
-                                  },
-                                  {
-                                      "type": "null"
-                                  }
-                              ],
-                              "default": "note_nlp",
-                              "title": "Note Nlp Table"
-                          }
-                      },
-                      "required": [
-                          "database_code",
-                          "schema_name"
-                      ],
-                      "title": "NerExtractOptions",
-                      "type": "object"
-                  }
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/NerExtractOptions",
+                "position": 0,
+                "title": "options"
               }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "NerExtractOptions": {
+                "properties": {
+                  "database_code": {
+                    "title": "Database Code",
+                    "type": "string"
+                  },
+                  "schema_name": {
+                    "title": "Schema Name",
+                    "type": "string"
+                  },
+                  "note_table": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": "note",
+                    "title": "Note Table"
+                  },
+                  "note_nlp_table": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": "note_nlp",
+                    "title": "Note Nlp Table"
+                  }
+                },
+                "required": [
+                  "database_code",
+                  "schema_name"
+                ],
+                "title": "NerExtractOptions",
+                "type": "object"
+              }
+            }
           },
           "type": "NLP"
         }
-        
       ]
     }
   }

@@ -1,0 +1,42 @@
+name: d2e/flows/strategus analysis-ui flow nodes tests
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
+  push:
+    branches:
+      - develop
+      - "release/*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  test-strategus-nodes:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: check_file_changed
+        with:
+          filters: |
+            has_strategus_changes:
+              - 'flows/hades/strategus_plugin/**'
+
+      - name: Determine condition to run
+        env:
+          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || github.event_name == 'merge_group' || steps.check_file_changed.outputs.has_strategus_changes == 'True' }}
+        run: |
+          echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: temporary build docker image for flow-hades
+        if: env.WF_RUN == 'true'
+        run: |
+          docker pull --platform linux/amd64 ghcr.io/ohdsi/d2e/flow-hades:develop
+          docker compose -f ./flows/hades/strategus_plugin/dc-local.yml up

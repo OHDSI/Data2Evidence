@@ -40,11 +40,13 @@ export const TENANT_ROLES: { [key: string]: string } = {
 export const ALP_USER_ADMIN = "ALP_USER_ADMIN";
 export const ALP_DASHBOARD_VIEWER = "ALP_DASHBOARD_VIEWER";
 export const STUDY_WRITE_DQD_RESEARCHER = "STUDY_WRITE_DQD_RESEARCHER"
+export const STUDY_RESULTS_READ_RESEARCHER = "STUDY_RESULTS_READ_RESEARCHER"
 
 export const ALP_ROLES: { [key: string]: string } = {
   [ALP_USER_ADMIN]: "User Admin",
   [ALP_DASHBOARD_VIEWER]: "Dashboard Viewer",
-  [STUDY_WRITE_DQD_RESEARCHER]: "Job Runner"
+  [STUDY_WRITE_DQD_RESEARCHER]: "Job Runner",
+  [STUDY_RESULTS_READ_RESEARCHER]: "View Study Results",
 };
 
 export const ALP_SYSTEM_ADMIN = "ALP_SYSTEM_ADMIN";
@@ -57,5 +59,7 @@ export const FEATURE_DATASET_FILTER = "datasetFilter";
 export const FEATURE_DATASET_SEARCH = "datasetSearch";
 export const FEATURE_FHIR_SERVER = "fhirServer";
 export const FEATURE_MAPPING_SUGGESTION = "mappingSuggestion";
+export const FEATURE_DOCKER_LOGS = "d2eLogs";
+export const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
 
 export * from "./FeatureGate";

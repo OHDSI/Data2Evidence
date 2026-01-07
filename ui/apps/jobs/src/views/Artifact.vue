@@ -21,7 +21,7 @@
                 </p-content>
             </template>
             <template v-else>
-                <p-tabs v-model="tab" :tabs="tabs">
+                <p-tabs v-model:selected="tab" :tabs="tabs">
                     <template #artifact>
                         <ArtifactDataView :artifact="artifact" />
                     </template>

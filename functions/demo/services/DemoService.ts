@@ -2,6 +2,7 @@ import { DatasetAPI } from "../api/DatasetAPI.ts";
 import { DbCredentialsAPI } from "../api/DbCredentialsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalAPI } from "../api/PortalAPI.ts";
+import { UserMgmtAPI } from "../api/UserMgmtAPI.ts";
 import { env } from "../env.ts";
 import {
   IDbCreateDto,
@@ -89,9 +90,14 @@ export class DemoService {
         dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
         dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA
     );
-    if (exist) {
+
+    const cacheDataset = datasets.find(
+      (dataset) => dataset.sourceStudyId === exist?.id
+    );
+
+    if (exist && cacheDataset) {
       this.logger.info(`Dataset exists: ${JSON.stringify(exist)}`);
-      return exist;
+      return { ...exist, cacheId: cacheDataset.id };
     }
 
     const datasetAPI = new DatasetAPI(token);
@@ -100,6 +106,7 @@ export class DemoService {
       databaseCode: env.DEMO_DB_CODE,
       cdmSchemaValue: env.DEMO_DB_CDM_SCHEMA,
       vocabSchemaValue: env.DEMO_DB_CDM_SCHEMA,
+      resultSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
     };
 
     const result = await datasetAPI.createDataset(dataset);
@@ -119,11 +126,11 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { id: datasetId, vocabSchemaName } = dataset;
+    const { cacheId: datasetId, vocabSchemaName } = dataset;
     const dqdFlowRun = await jobPluginsAPI.createDqdFlowRun({
       datasetId,
       releaseId: "",
-      vocabSchemaName,
+      vocabSchemaName: datasetId,
       comment: "Demo setup",
     });
 
@@ -173,7 +180,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { id: datasetId } = dataset;
+    const { cacheId: datasetId } = dataset;
     const result = await jobPluginsAPI.createDcFlowRun({
       datasetId,
       releaseId: "",
@@ -200,8 +207,11 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { id: datasetId } = dataset;
-    const result = await jobPluginsAPI.createCacheFlowRun({ datasetId });
+    const { id: datasetId, cacheId: cacheDatasetId } = dataset;
+    const result = await jobPluginsAPI.createCacheFlowRun({
+      datasetId,
+      cacheDatasetId,
+    });
 
     this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
     const flowRunId = result.flowRunId ? result : result.data;
@@ -233,21 +243,33 @@ export class DemoService {
     if (!dataset) {
       throw new Error("Dataset not found");
     }
+    const portalAPI = new PortalAPI(token);
+    const { cacheId: datasetId } = dataset;
+
+    const cacheDataset = await portalAPI.getDataset(datasetId);
+
+    if (!cacheDataset) {
+      throw new Error("Cache dataset not found");
+    }
 
     if (!dataset?.plugin) {
       throw new Error("Dataset has empty plugin");
     }
 
+    if (!cacheDataset?.plugin) {
+      throw new Error("Cache dataset has empty plugin");
+    }
+
     const result = await jobPluginsAPI.createGetVersionInfoFlowRun({
-      flowRunName: `${dataset.plugin}-get_version_info`,
+      flowRunName: `cache-get_version_info`,
       options: {
         options: {
-          flow_action_type: "get_version_info",
+          flowActionType: "get_version_info",
           token: "",
           database_code: "",
           data_model: "",
-          plugin: dataset.plugin,
-          datasets: [dataset],
+          plugin: "create_cachedb_file_plugin",
+          datasets: [cacheDataset],
         },
       },
     });
@@ -297,6 +319,35 @@ export class DemoService {
       `Phenotype flow-run created: ${JSON.stringify(result.data || result)}`
     );
     return result.flowRunId ? result : result.data;
+  }
+
+  public async addResearcherRoleToDataset(
+    token: string,
+    _input: any,
+    progress?: IProgress
+  ) {
+    this.logger.info("Adding researcher role to demo dataset");
+    const dataset = progress?.steps?.find(
+      (step) => step.code === "dataset"
+    )?.result;
+    const { cacheId: datasetId } = dataset;
+
+    if (!dataset) {
+      this.logger.error("Dataset not found in progress");
+      throw new Error("Dataset not found");
+    }
+
+    const userMgmtAPI = new UserMgmtAPI(token);
+    const result = await userMgmtAPI.registerStudyRoles({
+      userIds: ["a6660e40-261e-4782-873e-f76b4328aecf"],
+      tenantId: "e0348e4d-2e17-43f2-a3c6-efd752d17c23",
+      studyId: datasetId,
+      roles: ["RESEARCHER"],
+    });
+    this.logger.info(
+      `Researcher role added to admin: ${JSON.stringify(result)}`
+    );
+    return result;
   }
 
   private async encrypt(data: string, salt: string) {

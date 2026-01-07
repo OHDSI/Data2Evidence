@@ -4,7 +4,6 @@ import Divider from "@mui/material/Divider";
 import { SxProps } from "@mui/system";
 import {
   Autocomplete,
-  Box,
   Button,
   Chip,
   Dialog,
@@ -282,6 +281,22 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         return;
       }
 
+      // Parse extra JSON from Extra (Internal) if present
+      const internalExtra = formData.extra.find((ext) => ext.serviceScope === SERVICE_SCOPE_TYPES.INTERNAL);
+      let extra: Record<string, any> | undefined;
+      if (internalExtra?.value) {
+        try {
+          extra = JSON.parse(internalExtra.value);
+        } catch (err) {
+          console.error("Invalid extra JSON", err);
+          setFeedback({
+            type: "error",
+            message: "Invalid JSON in Extra (Internal). Please correct the JSON before testing the connection.",
+          });
+          return;
+        }
+      }
+
       const testResult: ITestingResult = {};
       for (const cred of credentials) {
         try {
@@ -291,6 +306,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
             database: formData.name,
             user: cred.username,
             password: cred.password,
+            ...(extra && { extra }),
           };
           const result = await api.dbCredentialsMgr.testConnection(params);
 
@@ -331,7 +347,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
     >
       <Divider />
       <div className="save-db-dialog__content">
-        <Box mb={4} display="flex" gap={4}>
+        <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>
           <TextField
             label={getText(i18nKeys.SAVE_DB_DIALOG__DATABASE_ID)}
             variant="standard"
@@ -354,12 +370,12 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               ))}
             </Select>
           </FormControl>
-        </Box>
+        </div>
         {formData.dialect === DB_DIALECTS.BIG_QUERY ? (
           <BigQueryForm data={pick(formData, "host", "name")} onChange={(changes) => handleFormDataChange(changes)} />
         ) : (
           <>
-            <Box mb={4} display="flex" gap={4}>
+            <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>
               <TextField
                 label={getText(i18nKeys.SAVE_DB_DIALOG__HOST)}
                 variant="standard"
@@ -382,10 +398,10 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                 value={formData.name}
                 onChange={(event) => handleFormDataChange({ name: event.target?.value })}
               />
-            </Box>
+            </div>
 
-            <Box fontWeight="bold">{getText(i18nKeys.SAVE_DB_DIALOG__VOCAB_SCHEMAS)}</Box>
-            <Box mb={4}>
+            <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.SAVE_DB_DIALOG__VOCAB_SCHEMAS)}</div>
+            <div style={{ marginBottom: "32px" }}>
               <Autocomplete
                 multiple
                 freeSolo
@@ -404,17 +420,17 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                 value={formData.vocabSchemas}
                 onChange={(_, vocabSchemas) => handleFormDataChange({ vocabSchemas })}
               />
-            </Box>
+            </div>
           </>
         )}
 
-        <Box mb={4}>
-          <Box mb={2}>
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <b>{getText(i18nKeys.SAVE_DB_DIALOG__EXTRA)}</b>
-          </Box>
+          </div>
           {formData?.extra?.map((extra, index) => (
-            <Box key={index} display="flex" gap={3} mb={1}>
-              <Box flex="1">
+            <div key={index} style={{ display: "flex", gap: "24px", marginBottom: "8px" }}>
+              <div style={{ flex: "1" }}>
                 <TextField
                   label={getText(i18nKeys.SAVE_DB_DIALOG__VALUE)}
                   variant="standard"
@@ -433,8 +449,8 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     })
                   }
                 />
-              </Box>
-              <Box sx={{ width: "130px" }}>
+              </div>
+              <div style={{ width: "130px" }}>
                 <FormControl fullWidth variant="standard">
                   <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
                   <Select
@@ -461,11 +477,11 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     ))}
                   </Select>
                 </FormControl>
-              </Box>
-            </Box>
+              </div>
+            </div>
           ))}
-        </Box>
-        <Box mb={4} sx={{ width: "250px" }} hidden={formData.dialect !== DB_DIALECTS.HANA}>
+        </div>
+        <div style={{ marginBottom: "32px", width: "250px" }} hidden={formData.dialect !== DB_DIALECTS.HANA}>
           <FormControl fullWidth variant="standard">
             <InputLabel id="authentication-mode-select-label">
               {getText(i18nKeys.SAVE_DB_DIALOG__AUTHENTICATION_MODE)}
@@ -483,19 +499,19 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               ))}
             </Select>
           </FormControl>
-        </Box>
-        <Box
-          mb={4}
+        </div>
+        <div
+          style={{ marginBottom: "32px" }}
           hidden={
             formData.authenticationMode !== AUTHENTICATION_MODES.PASSWORD || formData.dialect === DB_DIALECTS.BIG_QUERY
           }
         >
-          <Box mb={2}>
+          <div style={{ marginBottom: "16px" }}>
             <b>{getText(i18nKeys.SAVE_DB_DIALOG__CREDENTIALS)}</b>
-          </Box>
+          </div>
           {formData?.credentials?.map((cred, index) => (
-            <Box key={index} display="flex" gap={3} mb={1}>
-              <Box sx={{ width: "100px" }}>
+            <div key={index} style={{ display: "flex", gap: "24px", marginBottom: "8px" }}>
+              <div style={{ width: "100px" }}>
                 <FormControl fullWidth variant="standard">
                   <InputLabel id="user-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__PRIVILEGE)}</InputLabel>
                   <Select
@@ -534,8 +550,8 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     ))}
                   </Select>
                 </FormControl>
-              </Box>
-              <Box flex="1">
+              </div>
+              <div style={{ flex: "1" }}>
                 <TextField
                   label={getText(i18nKeys.SAVE_DB_DIALOG__USERNAME)}
                   variant="standard"
@@ -554,8 +570,8 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     })
                   }
                 />
-              </Box>
-              <Box sx={{ width: "200px" }}>
+              </div>
+              <div style={{ width: "200px" }}>
                 <TextField
                   label={getText(i18nKeys.SAVE_DB_DIALOG__PASSWORD)}
                   variant="standard"
@@ -575,8 +591,8 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     })
                   }
                 />
-              </Box>
-              <Box sx={{ width: "130px" }}>
+              </div>
+              <div style={{ width: "130px" }}>
                 <FormControl fullWidth variant="standard">
                   <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
                   <Select
@@ -615,8 +631,8 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     ))}
                   </Select>
                 </FormControl>
-              </Box>
-              <Box sx={{ width: "50px", alignSelf: "flex-end" }}>
+              </div>
+              <div style={{ width: "50px", alignSelf: "flex-end" }}>
                 {Object.keys(testingResult).includes(cred.username) && (
                   <Tooltip
                     title={
@@ -633,15 +649,15 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     )}
                   </Tooltip>
                 )}
-              </Box>
-            </Box>
+              </div>
+            </div>
           ))}
-        </Box>
-        <Box mb={4} hidden={formData.dialect !== DB_DIALECTS.POSTGRES}>
-          <Box mb={2}>
+        </div>
+        <div style={{ marginBottom: "32px" }} hidden={formData.dialect !== DB_DIALECTS.POSTGRES}>
+          <div style={{ marginBottom: "16px" }}>
             <b>{getText(i18nKeys.SAVE_DB_DIALOG__CACHE_REPLICATION)}</b>
-          </Box>
-          <Box mb={1} display="flex" gap={4}>
+          </div>
+          <div style={{ marginBottom: "8px", display: "flex", gap: "32px" }}>
             <TextField
               label={getText(i18nKeys.SAVE_DB_DIALOG__PUBLICATION)}
               variant="standard"
@@ -649,11 +665,11 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
               value={formData.publication}
               onChange={(event) => handleFormDataChange({ publication: event.target?.value })}
             />
-          </Box>
-        </Box>
+          </div>
+        </div>
       </div>
       <div className="save-db-dialog__footer">
-        <Box display="flex" gap={1} className="save-db-dialog__footer-actions">
+        <div style={{ display: "flex", gap: "8px" }} className="save-db-dialog__footer-actions">
           {formData.dialect !== DB_DIALECTS.BIG_QUERY && (
             <Button
               text={getText(i18nKeys.SAVE_DB_DIALOG__TEST_CONNECTION)}
@@ -671,7 +687,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
             onClick={() => handleClose("cancelled")}
           />
           <Button text={getText(i18nKeys.SAVE_DB_DIALOG__SAVE)} onClick={handleSave} loading={saving} />
-        </Box>
+        </div>
       </div>
     </Dialog>
   );

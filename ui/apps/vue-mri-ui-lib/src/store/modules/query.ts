@@ -1,4 +1,3 @@
-declare var sap
 // tslint:disable:no-shadowed-variable
 import axios from 'axios'
 import { denormalize, normalize, schema } from 'normalizr'
@@ -17,6 +16,7 @@ import KeyCounter from '../../lib/utils/KeyCounter'
 import Constants from '../../utils/Constants'
 import DateUtils from '../../utils/DateUtils'
 import QueryString from '../../utils/QueryString'
+import { VariantValidator } from '../../utils/VariantValidator'
 import * as types from '../mutation-types'
 import Plotly from '../../lib/CustomPlotly'
 
@@ -718,35 +718,34 @@ const actions = {
       resolve(filterCardObj.id)
     })
   },
-  addGeneticFilterCard({ dispatch, getters }, { geneNames }) {
-    dispatch('addFilterCard', {
+  async addGeneticFilterCard({ dispatch, getters }, { geneNames }) {
+    const filterCardId = await dispatch('addFilterCard', {
       configPath: 'patient.interactions.ga_mutation',
-    }).then(async filterCardId => {
-      const constraints = getters.getFilterCardConstraints(filterCardId)
-      const locationConstraint = constraints.find(c => getters.isVariantConstraint(c.id))
-      await geneNames.forEach(async text => {
-        await sap.ui.require(['/hc/mri/pa/ui/lib/VariantValidator'], VariantValidator => {
-          VariantValidator.validate(text).done(mData => {
-            if (mData.status === 'Valid') {
-              const oFilter = {
-                op: '=',
-                value: JSON.stringify({
-                  text,
-                  ...mData,
-                }),
-              }
-              const constraints = getters.getFilterCardConstraints(filterCardId)
-              const locationConstraint = constraints.find(c => getters.isVariantConstraint(c.id))
-              locationConstraint.props.value.push(oFilter)
-              dispatch('updateConstraintValue', {
-                constraintId: locationConstraint.id,
-                value: locationConstraint.props.value,
-              })
-            }
-          })
-        })
-      })
     })
+
+    for (const text of geneNames) {
+      try {
+        const mData = await VariantValidator.validate(text)
+        if (mData.status === 'Valid') {
+          const oFilter = {
+            op: '=',
+            value: JSON.stringify({
+              text,
+              ...mData,
+            }),
+          }
+          const constraints = getters.getFilterCardConstraints(filterCardId)
+          const locationConstraint = constraints.find(c => getters.isVariantConstraint(c.id))
+          locationConstraint.props.value.push(oFilter)
+          dispatch('updateConstraintValue', {
+            constraintId: locationConstraint.id,
+            value: locationConstraint.props.value,
+          })
+        }
+      } catch (error) {
+        console.error('Variant validation failed for:', text, error)
+      }
+    }
   },
   addFilterCardConstraint({ commit, getters }, { filterCardId, key }) {
     const filterCard = getters.getFilterCard(filterCardId)
@@ -1050,11 +1049,11 @@ const actions = {
             const andContainer = []
             const filterVal1 = {
               op: '>',
-              value: matchIntervals[0],
+              value: parseInt(matchIntervals[0]),
             }
             const filterVal2 = {
               op: '<',
-              value: matchIntervals[1],
+              value: parseInt(matchIntervals[1]),
             }
 
             andContainer.push(filterVal1)
@@ -1071,7 +1070,7 @@ const actions = {
             const andContainer = []
             const filterVal1 = {
               op: '=',
-              value: matchIntervals[0],
+              value: parseInt(matchIntervals[0]),
             }
             collectedConstraints[oData.id].filterValues.push(filterVal1)
           }

@@ -3,7 +3,9 @@ import React, { FC } from "react";
 import ReactECharts from "echarts-for-react";
 import { LineChartFormatConfig } from "../../../plugins/SystemAdmin/DQD/types";
 import ChartContainer from "./ChartContainer";
+import { chartColors } from "./chartColors";
 import "./LineChart.scss";
+import { getAxisNameGap } from "../util";
 
 interface LineChartProps {
   lineChartXAxisData: any[];
@@ -13,6 +15,7 @@ interface LineChartProps {
   yAxisName: string;
   lineChartFormatConfig?: LineChartFormatConfig;
   extraChartConfigs?: any;
+  axisBaseGap?: number;
 }
 
 export interface LineSeries {
@@ -32,8 +35,16 @@ const LineChart: FC<LineChartProps> = ({
   yAxisName,
   lineChartFormatConfig,
   extraChartConfigs,
+  axisBaseGap,
 }) => {
+  const yAxisNameGap = getAxisNameGap(series, lineChartFormatConfig?.yAxisFormat, axisBaseGap);
   const option = {
+    grid: {
+      left: "4%",
+      bottom: "8%",
+      containLabel: true,
+    },
+
     tooltip: {
       trigger: "axis",
       formatter: lineChartFormatConfig?.tooltipFormat,
@@ -75,7 +86,7 @@ const LineChart: FC<LineChartProps> = ({
     yAxis: {
       name: yAxisName,
       nameLocation: "middle",
-      nameGap: 50,
+      nameGap: yAxisNameGap,
       nameTextStyle: {
         fontSize: 14,
         fontWeight: "bold",
@@ -86,6 +97,7 @@ const LineChart: FC<LineChartProps> = ({
       },
     },
     series: series,
+    color: chartColors,
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 

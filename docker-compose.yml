@@ -3,6 +3,7 @@ networks:
   alp:
   data:
   enterprise-gateway:
+  enterprise-gateway-viewer:
 
 volumes:
   caddy:
@@ -14,9 +15,8 @@ volumes:
   trex:
   demodb-data:
   dicom-sqlite-storage:
-  fhir-binary-1:
-  supabase-storage-data:
   hana-data:
+  supabase-storage-data:
 
 x-envs:
   env_converter: &x-converter
@@ -46,7 +46,7 @@ x-envs:
     REDIS_PORT: ${REDIS_PORT:-6379}
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
-    TREX__SQL__PORT: 5432
+    TREX__SQL__PORT: 5433
     TREX__SQL__USER: postgres
     TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD:-pencil} # Password for the trex sql interface
     TREX__SQL__DBNAME: postgres
@@ -56,6 +56,22 @@ x-envs:
     TLS__INTERNAL__CRT: ${TLS__INTERNAL__CRT}
     TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
+  enterprise-gateway: &x-enterprise-gateway
+    EG_KERNEL_LAUNCH_TIMEOUT:  ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
+    EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
+    EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
+    # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
+    EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
+    EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
+    EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
+    KG_PORT: ${KG_PORT:-8888}
+    EG_BASE_URL: /jupyter
+    EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
+    EG_DOCKER_MODE: docker
+    EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+    TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
+    EG_ENV_WHITELIST: "KERNEL_USERNAME"
+    EG_MAX_KERNELS_PER_USER: 1
 
 services:
   trex:
@@ -80,17 +96,15 @@ services:
         priority: 10
       enterprise-gateway:
         priority: 20
+      enterprise-gateway-viewer:
+        priority: 20
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated # Volume for dynamically generated cdw-config duckdb file
-      # GOOGLE_APPLICATION_CREDENTIALS can be set in your .env file
-      # If not present, the credentials volume/secret will not be mounted
-      # Ensure that 'BigQuery Read Session User' role is assigned to the service account
-      - ${GOOGLE_APPLICATION_CREDENTIALS:-/dev/null}:/run/secrets/google-credentials.json:ro
     healthcheck:
       interval: 60s
       retries: 30
-      start_period: 60s
+      start_period: 180s
       test:
         - CMD
         - npm
@@ -105,6 +119,7 @@ services:
         - *x-pg
         - *x-trex-sql
       REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
+      TPM_USE_NODE_MODULES: "false"
       SERVICE_ROUTES: |-
         {
         "analytics": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001",
@@ -123,16 +138,18 @@ services:
         "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api",
         "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
         "minio": "",
-        "fhir": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/fhir/R4",
-        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-minerva-fhir-server-1:8103/oauth2/token",
-        "fhirSvc": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/fhir",
+        "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-server/fhir/R4",
+        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-server/oauth2/token",
+        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-gateway",
         "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
         "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
         "dicomServer": "http://${PROJECT_NAME:-d2e}-dicom-server-1:8042",
         "logto": "http://${PROJECT_NAME:-d2e}-logto-1:3001",
         "jupyter-gateway": "http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888/jupyter",
+        "jupyter-gateway-viewer": "http://${PROJECT_NAME:-d2e}-enterprise-gateway-viewer:8888/jupyter",
         "kpi-dashboard": "${EXTERNAL__KPI_DASHBOARD_URL:-http://docker-dash:8050}",
+        "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000"
         }
@@ -143,7 +160,7 @@ services:
       PG_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
-      PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
@@ -153,6 +170,7 @@ services:
       GATEWAY__IDP_AUTH_TYPE: logto
       GATEWAY__IDP_SUBJECT_PROP: sub
       GATEWAY__WO_PROTOCOL_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
+      HANA__DRIVER_CLASS_PATH: ${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}
       CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
       IDP__ALP_DATA_CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
       IDP__ALP_SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
@@ -170,16 +188,21 @@ services:
       LOGTO__SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
       LOGTO__SVC_CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
       LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
+      LOGTO__ADMIN_SERVER__FQDN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3002
+      LOGTO__DEFAULT_TENANT__FQDN_URL: ${LOGTO__DEFAULT_TENANT__FQDN_URL:-https://default.logto.app/api}
+      LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       NODE_ENV: development
+      POSTGRES__DRIVER_CLASS_PATH: ${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
-      PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data", "${PROJECT_NAME:-d2e}_cdw-config-cachedb-data-1:/app/cdw-config/duckdb_data", "${PROJECT_NAME:-d2e}_r-libs:/home/docker/plugins/R/site-library"]}'
+      PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire"]}'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "fhir"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
+      TPM_REGISTRY_URL: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
       PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: "${PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG:-{}}" #{"current": "ghcr.io/ohdsi/d2e", "new": ""}
       PLUGINS_INFORMATION_URL: ${PLUGINS_INFORMATION_URL:-https://feeds.dev.azure.com/data2evidence/d2e/_apis/packaging/Feeds/d2e/packages?api-version=7.1&includeDescription=true}
@@ -188,8 +211,10 @@ services:
       DATAFLOW_TEMPLATE_BRANCH: ${DATAFLOW_TEMPLATE_BRANCH:-main}
       NOTEBOOK_TEMPLATE_REPO_URL: ${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
       NOTEBOOK_TEMPLATE_REPO_BRANCH: ${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}
+      FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL: ${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}
+      FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH: ${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-main}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD}
-      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/google-credentials.json
+      GOOGLE_APPLICATION_CREDENTIALS: /usr/src/data/google-credentials.json
       PG_ADMIN_PASSWORD: ${PG_ADMIN_PASSWORD}
       PG_WRITE_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_STUDY_RESULTS_READ_PASSWORD: ${PG_STUDY_RESULTS_READ_PASSWORD}
@@ -210,7 +235,22 @@ services:
       DEMO__DB_PASSWORD: ${DEMO__DB_PASSWORD:-mypass}
       USE_PUBLIC_WEBAPI_PROXY: ${USE_PUBLIC_WEBAPI_PROXY:-false}
       PUBLIC_WEBAPI_PROXY_URL: ${PUBLIC_WEBAPI_PROXY_URL:-http://localhost:3001}
-      
+      PUBLIC_WEBAPI_DATASOURCE: ${PUBLIC_WEBAPI_DATASOURCE:-SYNPUF1K}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SQL_RETURN_ON: ${SQL_RETURN_ON:-false}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_API_ENDPOINT: ${AZURE_OPENAI_API_ENDPOINT:-}
+      AZURE_OPENAI_API_DEPLOYMENT_NAME: ${AZURE_OPENAI_API_DEPLOYMENT_NAME:-}
+      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-}
+      AZURE_OPENAI_API_INSTANCE_NAME: ${AZURE_OPENAI_API_INSTANCE_NAME:-}
+      AI_MODEL: ${AI_MODEL:-azure:gpt-4o}
+      BIGQUERY_CDM_VERSION: ${BIGQUERY_CDM_VERSION:-5.3.1}
+      D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
+      D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
+      INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
+      IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
+      AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
+
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
@@ -264,16 +304,6 @@ services:
             "+strategus": {},
             "+fhir": {}
            }
-          },
-          "+${PG__FHIR_DB_NAME:-alp_fhir}": {
-           "schemas": {
-            "+public": {}
-           }
-          },
-          "+${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
-           "schemas": {
-            "+public": {}
-           }
           }
          }
         }
@@ -297,22 +327,6 @@ services:
           "writerPassword": "${PG_WRITE_PASSWORD}",
           "logtoManager": "${PG_LOGTO_MANAGER:-${PG__LOGTO_MANAGER_USER:-logto_postgres}}",
           "logtoManagerPassword": "${PG__LOGTO_MANAGER_PASSWORD}"
-         },
-         "${PG__FHIR_DB_NAME:-alp_fhir}": {
-          "manager": "${PG_ADMIN_USER:-alp_pg_admin_user}",
-          "managerPassword": "${PG_ADMIN_PASSWORD}",
-          "reader": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "readerPassword": "${PG_WRITE_PASSWORD}",
-          "writer": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "writerPassword": "${PG_WRITE_PASSWORD}"
-         },
-         "${PG__STUDY_RESULTS_DB_NAME:-study_results}": {
-          "manager": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "managerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "writer": "${PG_STUDY_RESULTS_ADMIN_USER:-study_results_pg_admin_user}",
-          "writerPassword": "${PG_STUDY_RESULTS_ADMIN_PASSWORD}",
-          "reader": "${PG_STUDY_RESULTS_READ_USER:-study_results_pg_read_user}",
-          "readerPassword": "${PG_STUDY_RESULTS_READ_PASSWORD}"
          }
         }
       POSTGRES_MANAGE_ROLES_USERS: ${POSTGRES_MANAGE_ROLES_USERS:-{}}
@@ -325,6 +339,7 @@ services:
   alp-caddy:
     container_name: &c1 ${PROJECT_NAME:-d2e}-caddy
     hostname: ${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-alp.local}
+    platform: linux/amd64
     image: caddy:2.8-alpine
     logging:
       options:
@@ -334,7 +349,8 @@ services:
         priority: 20
       enterprise-gateway:
         priority: 20
-    platform: linux/amd64
+      enterprise-gateway-viewer:
+        priority: 20
     command: >
       sh -c "
         mkdir -p /srv/caddy-config &&
@@ -357,6 +373,17 @@ services:
           }
         }
 
+        (proxy_headers_codespaces) {
+          header_up Host {upstream_hostport}
+          header_up X-Forwarded-Host ${CADDY__ALP__PUBLIC_FQDN}
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Forwarded-For {remote}
+        }
+
+        (proxy_headers_default) {
+          header_up Host {upstream_hostport}
+        }
+
         (portal) {
           log {
             format console {
@@ -366,18 +393,20 @@ services:
 
           # Logto api server
           @logto {
-            path /index.*
-            path /assets/* # logto assets are moved to this path
             path /api/*
             path /oidc/*
             path /sign-in
             path /consent
             path /callback/* # For azure connector
+
+            path /d2e/logto/index.*
+            path /d2e/logto/assets/* # logto assets are moved to this path
           }
 
           handle @logto {
+            uri strip_prefix /d2e/logto
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001 {
-              header_up Host {upstream_hostport}
+              import ${PROXY_HEADERS_MODE:-proxy_headers_default}
               transport http {
                 read_buffer 8192
               }
@@ -395,7 +424,7 @@ services:
             header Connection *Upgrade*
             header Upgrade websocket
           }
-
+          
           handle @jupyter_websocket {
             reverse_proxy https://${PROJECT_NAME:-d2e}-trex:33000 {
               transport http {
@@ -403,38 +432,25 @@ services:
                 tls_insecure_skip_verify
                 read_buffer 8192
               }
-
               method GET
               rewrite /usermgmt/api/me/is_token_valid_internal
               header_up X-Forwarded-Method {method}
               header_up X-Forwarded-Uri {uri}
               header_up authorization {http.request.uri.query.token}
-
               @good status 2xx
               handle_response @good {
                 request_header Remote-User {rp.header.Remote-User}
                 request_header Remote-Email {rp.header.Remote-Email}
               }
             }
-
             reverse_proxy @jupyter_websocket http://${PROJECT_NAME:-d2e}-enterprise-gateway:8888
           }
 
           handle @strategus_websocket {
-            @study_id path_regexp /strategus-results/([^/]+)
+            @study_id path_regexp ^/strategus-results/([^/]+)/(.*)$
             handle @study_id {
               uri strip_prefix /strategus-results/{re.1}
-              reverse_proxy {re.1}:3838 {
-                transport http {
-                  read_buffer 8192
-                }
-                header_up Host {re.1}:3838
-                header_up Connection {http.request.header.Connection}
-                header_up Upgrade {http.request.header.Upgrade}
-                header_up Sec-WebSocket-Key {http.request.header.Sec-WebSocket-Key}
-                header_up Sec-WebSocket-Version {http.request.header.Sec-WebSocket-Version}
-                header_up Sec-WebSocket-Protocol {http.request.header.Sec-WebSocket-Protocol}
-              }
+              reverse_proxy {re.1}:3838
             }
           }
 
@@ -452,9 +468,24 @@ services:
 
         $INSTANCE_SPECIFIC_CONFIG
 
-        https://$CADDY__ALP__PUBLIC_FQDN {
+        # Enable if need to access admin console
+        # http://localhost:3002 {
+        #   uri strip_prefix /d2e/logto
+        #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002 {
+        #     import ${PROXY_HEADERS_MODE:-proxy_headers_default}
+        #     transport http {
+        #       read_buffer 8192
+        #     }
+        #   }
+        # }
+
+        https://$CADDY__ALP__PUBLIC_FQDN${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
           $TLS__CADDY_DIRECTIVE
-          redir / /portal
+
+          @aliasbasepaths {
+              path_regexp portal_basepath ^/(d2e|portal)(/)?$
+          }
+          redir @aliasbasepaths /d2e/portal
           import portal
         }
       EOT
@@ -462,6 +493,7 @@ services:
       "
     ports:
       - ${CADDY_PORT:-${PORT:-443}}:443
+      # - 3002:3002 # Enable if need to access admin console
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - caddy:/data
@@ -480,8 +512,6 @@ services:
     container_name: &c2 ${PROJECT_NAME:-d2e}-dataflow-gen-1
     depends_on:
       alp-logto-post-init:
-        condition: service_completed_successfully
-      supabase-storage-post-init:
         condition: service_completed_successfully
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
@@ -604,7 +634,7 @@ services:
       # LOGTO__CONNECTOR_CONFIG: '{ "id": "y9nq6f91yeg19kwt1x6xz","connectorId": "azuread-alp", "config": { "clientId": "${ENTRA__CLIENT_ID}", "tenantId": "${ENTRA__TENANT_ID}", "clientSecret": "${ENTRA__CLIENT_SECRET}", "cloudInstance": "https://login.microsoftonline.com"}, "syncProfile": true}'
       # LOGTO__DISABLE_BASIC_AUTH: ${LOGTO__DISABLE_BASIC_AUTH:-true}
       # LOGTO__CUSTOM_JWT: '{"environmentVariables": {"clientId": "${ENTRA__CLIENT_ID}", "tenantId": "${ENTRA__TENANT_ID}", "clientSecret": "${ENTRA__CLIENT_SECRET}"}, "script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  const clientId = environmentVariables?.clientId || \"\";\n  const clientSecret = environmentVariables?.clientSecret || \"\";\n  const tenantId = environmentVariables?.tenantId || \"\";\n  const refreshToken = extra.thirdPartyRefreshToken || \"\";\n\n  const tokenEndpoint = `https://login.microsoftonline.com/$${tenantId}/oauth2/v2.0/token`;\n\n  const params =\n    `client_id=$${encodeURIComponent(clientId)}` +\n    `&client_secret=$${encodeURIComponent(clientSecret)}` +\n    `&refresh_token=$${encodeURIComponent(refreshToken)}` +\n    `&grant_type=refresh_token` +\n    `&scope=openid`;\n\n  let thirdPartyToken = extra.thirdPartyToken;\n  let thirdPartyRefreshToken = refreshToken;\n  try {\n    const response = await fetch(tokenEndpoint, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/x-www-form-urlencoded\" },\n      body: params,\n    });\n\n    if (!response.ok) {\n      const responseBody = await response.text();\n      throw new Error(`Error refreshing token: $${response.statusText}: $${responseBody}: $${params}`);\n    }\n\n    const data = await response.json();\n    thirdPartyToken = data.id_token;\n    thirdPartyRefreshToken = data.refresh_token;\n  } catch (error) {\n    throw error;\n  }\n\n  return { thirdPartyToken, thirdPartyRefreshToken };\n};\n", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}}'
-      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__ALP_SVC__CLIENT_ID}", "secret": "${LOGTO__ALP_SVC__CLIENT_SECRET}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__ALP_DATA__CLIENT_ID}", "secret": "${LOGTO__ALP_DATA__CLIENT_SECRET}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__ALP_APP__CLIENT_ID}", "secret": "${LOGTO__ALP_APP__CLIENT_SECRET}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/portal/login-callback","https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/ui/gateway/dashboard","https://localhost:4000/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/portal","https://localhost:4000/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
+      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__ALP_SVC__CLIENT_ID}", "secret": "${LOGTO__ALP_SVC__CLIENT_SECRET}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__ALP_DATA__CLIENT_ID}", "secret": "${LOGTO__ALP_DATA__CLIENT_SECRET}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__ALP_APP__CLIENT_ID}", "secret": "${LOGTO__ALP_APP__CLIENT_SECRET}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/d2e/portal/login-callback","https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/d2e/ui/gateway/dashboard","https://localhost:4000/d2e/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/d2e/portal","https://localhost:4000/d2e/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
       LOGTO__RESOURCE: '{"name":"alp-default","indicator":"https://alp-default","accessTokenTtl":3600}'
       LOGTO__USER: '{"username":"admin","initialPassword":"Updatepassword12345"}'
       LOGTO__ROLES: '[{"name":"role.systemadmin","description":"ALP System admin","type":"User"},{"name":"role.useradmin","description":"ALP User admin","type":"User"},{"name":"role.dashboardviewer","description":"ALP Dashboard viewer","type":"User"}]'
@@ -612,6 +642,9 @@ services:
       LOGTO__ADMIN_SERVER__FQDN_URL: "http://${PROJECT_NAME:-d2e}-logto-1:3002"
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: ${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}
       LOGTO__ALP_ADMIN_APP: '{"application": {"id": "${LOGTO_API_M2M_CLIENT_ID}", "name":"alp-admin","description":"alp-admin", "secret": "${LOGTO_API_M2M_CLIENT_SECRET}"}, "role": { "name":"api-access","description":"Logto API access"}}'
+      LOGTO__TERM_OF_USE_URL: ${LOGTO__TERM_OF_USE_URL:-}
+      LOGTO__PRIVACY_POLICY_URL: ${LOGTO__PRIVACY_POLICY_URL:-}
+      LOGTO__CUSTOM_CSS: ${LOGTO__CUSTOM_CSS:-}
       CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
 
   alp-logto:
@@ -642,9 +675,6 @@ services:
         priority: 20
       data:
         priority: 10
-    # Enable if need to access admin console
-    # ports:
-    #  - 3002:3002
     entrypoint:
       - sh
       - -c
@@ -655,6 +685,7 @@ services:
         - *x-tls
       ADMIN_DISABLE_LOCALHOST: ${LOGTO__DISABLE_ADMIN_CONSOLE:-false}
       # ADMIN_ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3002 # Enable if need to access admin console
+      # ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3001 # Enable if need to access admin console
       DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}?options=-c%20search_path%3Dlogto
       ENDPOINT: https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
@@ -690,11 +721,15 @@ services:
         priority: 10
       enterprise-gateway:
         priority: 10
+      enterprise-gateway-viewer:
+        priority: 10
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     command:
       - "postgres"
       - "-c"
       - "wal_level=logical"
+      - "-c"
+      - "max_connections=1000"
     shm_size: 1gb
     volumes:
       - pg-minerva-data-1:/var/lib/postgresql/data
@@ -763,7 +798,6 @@ services:
       alp:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    profiles: [fhir]
 
   supabase-storage:
     container_name: &c19 ${PROJECT_NAME:-d2e}-supabase-storage-${BASE_PORT:-1}
@@ -802,9 +836,27 @@ services:
     volumes:
       - supabase-storage-data:/var/lib/storage
     entrypoint: ["/bin/sh", "-c"]
-    command: > # Wait 30 seconds for trex to finish migrations
-      "echo 'Waiting 30 seconds before starting...' && sleep 30 && echo 'Starting server now' && node dist/start/server.js"
-
+    command: >
+      "set -e;
+      echo 'Waiting 30 seconds for trex migrations...';
+      sleep 30;
+      echo 'Installing postgresql-client...';
+      apk add --no-cache postgresql-client > /dev/null 2>&1;
+      echo 'Starting storage server in background (will run migrations)...';
+      node dist/start/server.js &
+      SERVER_PID=\$!;
+      echo 'Waiting 20 seconds for storage migrations to complete...';
+      sleep 20;
+      echo 'Updating public.objects view to include user_metadata...';
+      export PGPASSWORD='${PG_SUPER_PASSWORD}';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'ALTER TABLE IF EXISTS storage.objects DISABLE ROW LEVEL SECURITY;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'DROP VIEW IF EXISTS public.objects CASCADE;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'CREATE VIEW public.objects AS SELECT * FROM storage.objects;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO authenticated;';
+      psql -h '${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}' -p '${PG_PORT:-5432}' -U '${PG_SUPER_USER:-postgres}' -d '${PG_DB_NAME:-alp}' -c 'GRANT SELECT ON public.objects TO anon;';
+      echo 'View setup complete. Storage server continuing...';
+      wait \$SERVER_PID;"
     environment:
       <<:
         - *x-tls
@@ -816,7 +868,7 @@ services:
       SERVICE_KEY: ${SUPABASE_STORAGE_JWT_TOKEN:-mytoken}
       MIGRATIONS_SCHEMA: storage
       MIGRATIONS_TABLE: migrations
-      SKIP_MIGRATIONS: "true"
+      SKIP_MIGRATIONS: "false"
       STORAGE_BACKEND: file
       GLOBAL_S3_BUCKET: stub
       GLOBAL_S3_ENDPOINT: http://supabase-storage:9000/s3
@@ -826,87 +878,10 @@ services:
       TENANT_ID: stub
       REGION: stub
 
-  supabase-storage-post-init:
-    container_name: ${PROJECT_NAME:-d2e}-supabase-storage-post-init-1
-    image: postgres:15-alpine
-    depends_on:
-      supabase-storage:
-        condition: service_healthy
-    networks:
-      alp:
-        priority: 20
-    environment:
-      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-      PGPORT: ${PG_PORT:-5432}
-      PGDATABASE: ${PG_DB_NAME:-alp}
-      PGUSER: ${PG_SUPER_USER:-postgres}
-      PGPASSWORD: ${PG_SUPER_PASSWORD}
-    command: >
-      sh -c "
-        echo 'Updating public.objects view to include user_metadata column...' &&
-        psql -c 'ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;' &&
-        psql -c 'CREATE OR REPLACE VIEW public.objects AS SELECT * FROM storage.objects;' &&
-        echo 'Granting permissions on updated view...' &&
-        psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
-        echo 'Supabase Storage post-initialization complete!' &&
-        exit 0
-      "
-
-  fhir-server:
-    container_name: &c6 ${PROJECT_NAME:-d2e}-minerva-fhir-server-1
-    depends_on:
-      trex:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      alp-minerva-pg-mgmt-init:
-        condition: service_completed_successfully
-    healthcheck:
-      interval: 20s
-      retries: 5
-      start_period: 420s
-      test:
-        - CMD
-        - wget
-        - --no-proxy
-        - -O
-        - fhir.status
-        - http://localhost:8103/healthcheck
-    hostname: fhir-server-1
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-fhir-server:${DOCKER_TAG_NAME:-develop}
-    platform: linux/amd64
-    logging:
-      options:
-        tag: *c6
-    networks:
-      alp:
-        priority: 20
-    restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
-    volumes:
-      - fhir-binary-1:/home/docker/app/medplum/binary
-    environment:
-      <<:
-        - *x-pg
-        - *x-redis
-        - *x-fhir
-      PG__DB_NAME: alp
-      PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
-      PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      DUCKDB_PATH: /home/docker/app
-      FHIR_CUSTOM_SCHEMA: ${FHIR_CUSTOM_SCHEMA:-fhir}
-      FHIR_SCHEMA_PATH: /home/docker/app/medplum/packages/definitions/dist/fhir/r4
-      FHIR_SCHEMA_FILE_NAME: fhir.schema.json
-      BINARY_UPLOAD_LIMIT_SIZE: ${BINARY_UPLOAD_LIMIT_SIZE:-50mb}
-    profiles: [fhir]
-
   dicom-server:
     # uses 8042 port on the container
     image: orthancteam/orthanc:24.6.1
     container_name: &c27 ${PROJECT_NAME:-d2e}-dicom-server-${BASE_PORT:-1}
-    depends_on:
-      alp-minio-post-init:
-        condition: service_completed_successfully
     logging:
       options:
         tag: *c27
@@ -943,6 +918,12 @@ services:
   enterprise-gateway:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
     container_name: &c28 ${PROJECT_NAME:-d2e}-enterprise-gateway
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     platform: linux/amd64
     logging:
       options:
@@ -951,22 +932,9 @@ services:
       enterprise-gateway:
     user: root # Run as root
     environment:
+      <<:
+        - *x-enterprise-gateway
       EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway}
-      EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
-      EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
-      EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
-      # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
-      EG_ALLOWED_KERNELS: ${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-'r_ohdsi_docker'}} # /jupyter/api/kernelspecs
-      EG_MIRROR_WORKING_DIRS: ${EG_MIRROR_WORKING_DIRS:-False}
-      EG_RESPONSE_PORT: ${EG_RESPONSE_PORT:-8877}
-      KG_PORT: ${KG_PORT:-8888}
-      EG_BASE_URL: /jupyter
-      EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
-      EG_DOCKER_MODE: docker
-      EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
-      TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
-      EG_ENV_WHITELIST: "KERNEL_USERNAME"
-      EG_MAX_KERNELS_PER_USER: 1
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     labels:
@@ -978,6 +946,38 @@ services:
       labels:
         app: "enterprise-gateway"
         component: "enterprise-gateway"
+
+  enterprise-gateway-viewer:
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-enterprise-gateway:${DOCKER_TAG_NAME:-develop}
+    container_name: &c29 ${PROJECT_NAME:-d2e}-enterprise-gateway-viewer
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/jupyter/api || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    platform: linux/amd64
+    logging:
+      options:
+        tag: *c29
+    networks:
+      enterprise-gateway-viewer:
+    user: root # Run as root
+    environment:
+      <<:
+        - *x-enterprise-gateway
+      EG_DOCKER_NETWORK: ${EG_DOCKER_NETWORK:-${PROJECT_NAME:-d2e}_enterprise-gateway-viewer}
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    labels:
+      app: "enterprise-gateway-viewer"
+      component: "enterprise-gateway-viewer"
+    deploy:
+      replicas: 1
+      endpoint_mode: dnsrr
+      labels:
+        app: "enterprise-gateway-viewer"
+        component: "enterprise-gateway-viewer"
 
   mlflow:
     image: ghcr.io/mlflow/mlflow:v3.0.0
@@ -1020,5 +1020,5 @@ services:
       alp:
     environment:
       - DOZZLE_FILTER=name=${PROJECT_NAME:-d2e}
-      - DOZZLE_BASE=/logs
+      - DOZZLE_BASE=/dockerlogs
       - DOZZLE_NO_ANALYTICS=true

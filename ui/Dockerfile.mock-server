@@ -1,0 +1,38 @@
+FROM node:22.20.0-trixie-slim AS builder
+
+RUN apt update && apt install git bzip2 curl unzip -y
+
+# Install bun
+RUN curl -fsSL https://bun.com/install | bash
+
+ENV BUN_INSTALL="/root/.bun" \
+    PATH="/root/.bun/bin:$PATH"
+
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY ./ui/package.json ./ui/bun.lock ./
+COPY ./ui/apps ./apps
+COPY ./ui/libs ./libs
+
+# Install dependencies with bun
+RUN bun install --frozen-lockfile
+
+# Copy the rest of the application (node_modules excluded via .dockerignore)
+COPY ./ui .
+
+WORKDIR /app/apps/vue-mri-ui-lib
+
+ENV VUE_APP_STANDALONE_ATLAS="true"
+
+RUN npm run build:mock
+
+RUN rm -rf /app/apps/vue-mri-ui-lib/node_modules
+
+FROM node:22.20.0-trixie-slim AS prod
+
+COPY --from=builder /app/apps/vue-mri-ui-lib /app/apps/vue-mri-ui-lib
+
+WORKDIR /app/apps/vue-mri-ui-lib
+
+CMD ["npm", "run", "start:mock"]

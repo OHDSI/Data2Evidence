@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <template>
   <label class="toggle-switch">
     <input
@@ -69,11 +61,10 @@ const emit = defineEmits<{
 }
 
 input:checked + .slider {
-  background-color: navy;
+  background-color: var(--color-primary, #000080);
 }
 
 input:checked + .slider:before {
   transform: translateX(26px);
 }
 </style>
-

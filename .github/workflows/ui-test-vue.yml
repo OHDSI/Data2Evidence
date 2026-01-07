@@ -9,57 +9,69 @@ on:
     branches:
       - develop
 jobs:
-  test-mri-frontend:
+  pick_runner:
     runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+  test-mri-frontend:
+    needs: [pick_runner]
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     defaults:
       run:
         working-directory: ./ui
     steps:
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed,
+        # if set to "true" but frees about 6 GB
+        tool-cache: true
+
+        # all of these default to true, but feel free to set to
+        # "false" if necessary for your workflow
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
     - uses: actions/checkout@v4
 
-    - name: check if vue files has changed
-      shell: bash
-      # Give an id to the step, so we can reference it later
+    - name: Check if vue files have changed
+      uses: dorny/paths-filter@v3
       id: check_vue_files_changed
-      run: |
-        # Fetch develop & get file changes from feature branch
-        git fetch origin develop
-
-        # Diff HEAD with the last commit of develop & filter for 'apps/vue-mri-ui-lib'
-        diff=$(git diff --name-only origin/develop HEAD | grep '^apps/vue-mri-ui-lib' || :)
-
-        # Check if a file under apps/vue-mri-ui-lib has changed (added, modified, deleted)
-        hasDiff=$(if [ ${#diff} -gt 0 ] ; then echo "True" ; else echo "False"; fi)
-
-        # Set the output named "vue_mri_ui_lib_changed"
-        echo "vue_mri_ui_lib_changed=$hasDiff" >> $GITHUB_OUTPUT
-        echo "Files changed: $diff"
-        echo "vue-mri-ui-lib changed: $hasDiff"
-
-    - name: Setup node if vue files have changed
-      uses: actions/setup-node@v4
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
       with:
-        node-version: '18.14.0'
+        filters: |
+          vue_mri_ui_lib_changed:
+            - 'ui/apps/vue-mri-ui-lib/**'
+            - '.github/workflows/ui-test-vue.yml'
 
-    - name: Get yarn cache directory path
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
-      id: yarn-cache-dir-path
-      run: echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
+    - name: Setup bun if vue files have changed
+      uses: oven-sh/setup-bun@v2
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
+      with:
+        bun-version: 1.2.23
+
+    - name: Get bun cache directory path
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
+      id: bun-cache-dir-path
+      run: echo "dir=$(bun pm cache)" >> $GITHUB_OUTPUT
 
     - uses: actions/cache@v4
-      id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+      id: bun-cache # use this to check for `cache-hit` (`steps.bun-cache.outputs.cache-hit != 'true'`)
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
       with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ hashFiles('./yarn.lock') }}
+        path: ${{ steps.bun-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-bun-${{ hashFiles('./bun.lock') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-
+          ${{ runner.os }}-bun-
 
-    - name: Build Project
-      if: github.ref_name == 'develop' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'True'
+    - name: Run unit tests with
+      if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_vue_files_changed.outputs.vue_mri_ui_lib_changed == 'true'
       run: |
-        cd apps/vue-mri-ui-lib
-        yarn
-        yarn test:ci
-        cd -
+        bun install
+        bunx nx run vue-mri:test:ci

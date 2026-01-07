@@ -1,15 +1,14 @@
-@import '../styles/mri-variables';
 .ui-lightest-bg {
-  background: $UiLightestBG;
+  background: var(--color-ui-lightest-bg);
 }
 .ui-light-text {
-  color: $UiLightText;
+  color: var(--color-ui-light-text, #595757);
 }
 .ui-darkest-text {
-  color: $UiDarkestText;
+  color: var(--color-ui-darkest-text);
 }
 .ui-dark-text {
-  color: $UiDarkText;
+  color: var(--color-ui-dark-text);
 }
 
 // TODO: remove filtercard-summary below, as the style guide is under progress
@@ -25,13 +24,13 @@
     width: 1px;
     height: 0px;
     border: none;
-    outline-color: $UiLightestBG;
+    outline-color: var(--color-ui-lightest-bg);
   }
   input.mri-bookmark-id::selection {
-    background: $UiLightestBG;
+    background: var(--color-ui-lightest-bg);
   }
   input.mri-bookmark-id::-moz-selection {
-    background: $UiLightestBG;
+    background: var(--color-ui-lightest-bg);
   }
   .bookmark-button {
     font-size: 18px;
@@ -39,12 +38,12 @@
     background: none;
     border: 1px solid transparent;
     border-radius: 3px;
-    color: $MriDisabledText;
+    color: var(--color-mri-disabled-text);
     cursor: pointer;
   }
   .bookmark-button:hover {
-    border-color: $MriButtonHoverDark;
-    color: $MriButtonHoverDark;
+    border-color: var(--color-mri-button-hover-dark);
+    color: var(--color-mri-button-hover-dark);
   }
   .button-radius {
     border-radius: 6px;
@@ -68,21 +67,21 @@
       th {
         padding: 5px;
         box-sizing: border-box;
-        border: 1px solid $UiDarkBorder;
-        background-color: $UiMediumBG;
+        border: 1px solid var(--color-ui-dark-border);
+        background-color: var(--color-ui-medium-bg);
         text-align: center;
       }
     }
     td {
       padding: 5px;
       box-sizing: border-box;
-      border-right: 1px solid $UiDarkBorder;
-      border-left: 1px solid $UiDarkBorder;
-      border-bottom: 1px solid $UiDarkBorder;
+      border-right: 1px solid var(--color-ui-dark-border);
+      border-left: 1px solid var(--color-ui-dark-border);
+      border-bottom: 1px solid var(--color-ui-dark-border);
     }
   }
   .moreInfoText {
-    color: $MriInfoColor;
+    color: var(--color-mri-info);
     margin-bottom: 0;
   }
   .import-json-textarea {
@@ -90,14 +89,14 @@
     transition: border-color 0.2s ease;
   }
   .import-json-textarea__error {
-    border-color: $MriErrorColor;
+    border-color: var(--color-mri-error);
     &:focus-visible {
-      border-color: $MriErrorColor;
+      border-color: var(--color-mri-error);
       outline: none;
     }
   }
   .import-json-error {
-    color: $MriErrorColor;
+    color: var(--color-mri-error);
     padding-top: 0.5rem;
   }
   .div-bookmark-dialog {
@@ -114,7 +113,7 @@
       font-size: 0.875rem;
       width: auto;
       background: none;
-      border: 1px solid $MriDropDownBorderLight;
+      border: 1px solid var(--color-mri-dropdown-border-light);
       border-radius: 3px;
       color: #00679e;
       cursor: pointer;
@@ -131,7 +130,7 @@
       }
       .buttonInner:active {
         background-color: #00679e;
-        color: $MriLightestText;
+        color: var(--color-mri-lightest-text);
       }
     }
     .input-container {
@@ -142,9 +141,9 @@
         width: 84%;
         height: 1.625rem;
         padding: 0 0.5rem;
-        color: $UiDarkestText;
-        background: $UiLightestBG;
-        border: 1px solid $MriDropDownBorderLight;
+        color: var(--color-ui-darkest-text);
+        background: var(--color-ui-lightest-bg);
+        border: 1px solid var(--color-mri-dropdown-border-light);
         font-size: 0.875rem;
         line-height: normal;
         -webkit-user-select: text;
@@ -158,11 +157,11 @@
   .bookmark-title {
     display: flex;
     align-items: center;
-    background-color: $UiLightBG;
-    border-bottom: 2px solid $UiMediumBorder;
+    background-color: var(--color-ui-light-bg);
+    border-bottom: 2px solid var(--color-ui-medium-border);
     height: 33px;
     .actionButton {
-      color: $UiLightText;
+      color: var(--color-ui-light-text);
       outline: none;
       background: none;
       border: none;
@@ -170,8 +169,8 @@
       padding-right: 8px;
     }
     .actionButton:hover {
-      background-color: $MriBrandHover;
-      color: $MriLightestText;
+      background-color: var(--color-mri-brand-hover);
+      color: var(--color-mri-lightest-text);
     }
     .actionButton .icon {
       font-size: 16px;
@@ -190,8 +189,8 @@
       flex-shrink: 1;
     }
     .separator {
-      background-color: $UiMediumBG;
-      border-right: 1px solid $UiLightestBorder;
+      background-color: var(--color-ui-medium-bg);
+      border-right: 1px solid var(--color-ui-lightest-border);
       height: 23px;
       width: 1px;
     }
@@ -226,7 +225,7 @@
       padding: 1rem;
       gap: 0.5rem;
       .bookmark-content__header-title {
-        color: $UiDarkText;
+        color: var(--color-ui-dark-text);
       }
       .bookmark-content__header-button-group {
         display: flex;
@@ -237,12 +236,12 @@
           gap: 0.3rem;
           align-items: center;
           justify-content: center;
-          color: $UiDarkText;
+          color: var(--color-ui-dark-text);
         }
       }
     }
     .bookmark-noContent {
-      color: $UiDarkText;
+      color: var(--color-ui-dark-text);
       font-size: 14px;
       font-weight: normal;
       margin: 10px;
@@ -272,8 +271,8 @@
           flex-direction: column;
           justify-content: space-between;
           box-sizing: border-box;
-          background-color: $UiLightestBG;
-          border: 1px solid $UiMediumBorder;
+          background-color: var(--color-ui-lightest-bg);
+          border: 1px solid var(--color-ui-medium-border);
           border-radius: 18px;
           box-shadow: 0 3px 12px 0 rgba(0, 0, 0, 0.08);
           font-size: 12px;
@@ -283,7 +282,7 @@
           overflow-wrap: anywhere;
           cursor: pointer;
           .bookmark-item-table {
-            color: $UiLightText;
+            color: var(--color-ui-light-text);
             width: 100%;
             .bookmark-item-cards {
               width: 100%;
@@ -335,11 +334,11 @@
               }
               .bookmark-headelement {
                 font-weight: bold;
-                color: $UiDarkText;
+                color: var(--color-ui-dark-text);
               }
               .bookmark-constraint {
                 border-radius: 0.125rem;
-                color: $UiLightText;
+                color: var(--color-ui-light-text);
                 font-weight: normal;
                 padding: 0 2px;
               }
@@ -380,12 +379,12 @@
           }
         }
         .bookmark-item-container:hover {
-          border: 1px solid $MriButtonHoverDark;
+          border: 1px solid var(--color-mri-button-hover-dark);
           .bookmark-item-table {
             .bookmark-filtercard {
               .bookmark-constraint {
-                border-color: $MriTokenValidBorder;
-                color: $UiLightText;
+                border-color: var(--color-mri-token-valid-border);
+                color: var(--color-ui-light-text);
               }
             }
           }

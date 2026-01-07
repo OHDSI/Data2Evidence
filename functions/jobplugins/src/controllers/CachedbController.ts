@@ -15,15 +15,23 @@ export class CachedbController {
 
   private registerRoutes() {
     // POST /cachedb/create-file
+    this.router.post("/create-file", async (req: Request, res: Response) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+      await this.createCachedbFileFlowRun(req, res);
+    });
+
+    // POST /cachedb/create-fhir-file
     this.router.post(
-      "/create-file",
-      validateCreateCachedbFileFlowRunDto(),
+      "/create-fhir-file",
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
           return res.status(400).json({ errors: errors.array() });
         }
-        await this.createCachedbFileFlowRun(req, res);
+        await this.createFhirCacheFileFlowRun(req, res);
       }
     );
 
@@ -60,17 +68,54 @@ export class CachedbController {
       const params = req.body;
 
       const portalServerApi = new PortalServerAPI(token);
-      const { databaseCode, schemaName } = await portalServerApi.getDataset(
-        params.datasetId
-      );
+      const flowActionType = "create_datamart_cache";
+      const { databaseCode, schemaName, resultsSchemaName, vocabSchemaName } =
+        await portalServerApi.getDataset(params.datasetId);
+
+      const cacheDatasetId = params?.cacheDatasetId;
+      let snapshotSchemaName;
+
+      if (cacheDatasetId) {
+        const { schemaName } = await portalServerApi.getDataset(
+          params.cacheDatasetId
+        );
+        snapshotSchemaName = schemaName;
+      }
+
+      let snapshotCopyConfig;
+      if (params.snapshotCopyConfig) {
+        snapshotCopyConfig = params.snapshotCopyConfig;
+      }
 
       const result = await this.cachedbService.createCachedbFileFlowRun(
-        { databaseCode, schemaName },
+        {
+          flowActionType,
+          databaseCode,
+          schemaName,
+          resultsSchemaName,
+          snapshotSchemaName,
+          snapshotCopyConfig,
+          vocabSchemaName
+        },
         token
       );
       res.send(result);
     } catch (error) {
       console.error(`Error creating cachedb file flow run: ${error}`);
+      res.status(500).send(`Error occurs: ${error}`);
+    }
+  }
+
+  private async createFhirCacheFileFlowRun(req: Request, res: Response) {
+    try {
+      const token = req.headers.authorization!;
+      const result = await this.cachedbService.createFhirCacheFileFlowRun(
+        req.body,
+        token
+      );
+      res.send(result);
+    } catch (error) {
+      console.error(`Error creating fhir cache file flow run: ${error}`);
       res.status(500).send(`Error occurs: ${error}`);
     }
   }

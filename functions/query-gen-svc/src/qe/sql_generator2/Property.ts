@@ -84,7 +84,8 @@ export class Property extends AstElement {
                 }
 
                 let joinType = "LEFT JOIN";
-                if (this.parent.getType() === "IsNull") {
+                //optionalFiltering Is a new configuration property to indicate if the join should be left join in a filter context.
+                if (this.parent.getType() === "IsNull" || attrConfig.__config.optionalFiltering) {
                     joinType = "left join";
                 } else if (
                     this.parent instanceof Operator ||
@@ -221,6 +222,127 @@ export class Property extends AstElement {
                         }
                     }
                 }
+
+                //If including descendants, then its an inner join between Concept, Concept relationship and Concept Ancestor Table with the joining keys as 
+                // 1 - CONCEPT_RELATIONSHIP.CONCEPT_ID_1 = CONCEPT.CONCEPT_ID and CONCEPT_RELATIONSHIP.RELATIONSHIP_ID = 'Maps to'
+                // 2 - CONCEPT_RELATIONSHIP.CONCEPT_ID_2 = CONCEPT_ANCESTOR.ANCESTOR_CONCEPT_ID and 
+                // 3 - CONCEPT_ANCESTOR.DESCENDANT_CONCEPT_ID = @INTERACTION.<ANY_CONCEPT_ID_COLUMN>
+                // The only Pre-requisite is @REF/Concept must be defined in the Data source expression.
+                if (attrConfig.__config.includeDescendants) {
+
+                    //Please dont change the order of these joins as they are dependent on each other
+                    let refAlias;
+                    try {
+                        refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+                    } catch (e) {
+                        if(!refAlias) {
+                            this.scopeEntityDef.addTableAlias(
+                                { baseEntity: "@REF", table: attrConfig.placeholderMap["@REF"] },
+                                false,
+                                "INNER JOIN",
+                                true
+                            );
+                            refAlias = this.scopeEntityDef.getTableAliasByBaseEntity("@REF");
+                        }
+                    }
+
+                    //Build Concept Relationship
+                    const conceptRelationshipPlaceholder = "@TEXT";
+
+                    //Add Concept Ancestor
+                    this.scopeEntityDef.addTableAlias(
+                        { baseEntity: "@TEXT", table: attrConfig.placeholderMap["@TEXT"] },
+                        false,
+                        "INNER JOIN",
+                        true
+                    );
+
+                    // const conRelAliasObj = this.scopeEntityDef.getTableAliasByBaseEntity("@REF0");
+                    const conRelAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[conceptRelationshipPlaceholder]);
+                    const relationships = Deno.env.get("OMOP_RELATIONSHIPS_FOR_DESCENDANTS") || `'Maps to','Subsumes'`;
+                    
+                    
+                    let descendantsFilterExpression = attrConfig.__config.includeDescendantsExpression;
+                    if(!descendantsFilterExpression) {
+                        throw new Error("Expression undefined in the descendantsFilterExpression!")
+                    }
+
+                    const columnConceptIDEntityPlaceholderMap = {
+                        "@COND": 902379,
+                        "@DRUGEXP": 1147096,
+                        "@MEAS": 1147140,
+                        "@PROC": 1147084,
+                    }
+                    const descendantsPlaceholder = descendantsFilterExpression.match(/@[^.^\s]+/g)[0];
+                    const descendantsAlias = this.scopeEntityDef.getTableAliasByBaseEntity(descendantsPlaceholder);
+                    descendantsFilterExpression = descendantsFilterExpression.replaceAll(descendantsPlaceholder, descendantsAlias);
+                    const ancestorColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.INTERACTION_ID`]
+                    const descendantColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.INTERACTION_TEXT_ID`]
+                    const conceptColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.VALUE`]
+
+                    const finalDescendantsJoinExpression = QueryObject.format("%UNSAFE", 
+                                            `${conRelAliasObj.alias}.${descendantColumn} = ${descendantsFilterExpression} AND 
+                                             ${conRelAliasObj.alias}.${ancestorColumn} = ${refAlias}.CONCEPT_ID AND 
+                                             ${conRelAliasObj.alias}.${conceptColumn} = ${columnConceptIDEntityPlaceholderMap[descendantsPlaceholder]}`)
+
+                    conRelAliasObj.on = []; //initialize
+                    this.pushOnCondition(
+                        conRelAliasObj.on,
+                        finalDescendantsJoinExpression
+                    )
+
+                    //Detect if its on the x1 or x2
+                    //If yes, append Inner JOIN referring to another Vocabulary concept table
+                    //Modify group by and its attribute config to point to the new reference @REFX placeholder
+                    const groupByNode = queryNode.node.groupBy?.find((groupBy) => groupBy.path === this.node.path);
+                    if(groupByNode) {
+                        const newRefPlaceholder = this.getNewMaxPlaceholderRefPlaceholder(attrConfig.placeholderMap);
+                        attrConfig.placeholderMap[newRefPlaceholder] = attrConfig.placeholderMap["@REF"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.CODE`] = attrConfig.placeholderMap["@REF.CODE"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.TEXT`] = attrConfig.placeholderMap["@REF.TEXT"];
+                        attrConfig.placeholderMap[`${newRefPlaceholder}.VOCABULARY_ID`] = attrConfig.placeholderMap["@REF.VOCABULARY_ID"];
+                        if(!groupByNode.attrConfig) {
+                            groupByNode.attrConfig = JSON.parse(JSON.stringify(attrConfig))
+                        }
+                        groupByNode.attrConfig.baseEntity = newRefPlaceholder;
+                        groupByNode.attrConfig.__config.expression = groupByNode.attrConfig.__config.expression.replaceAll("@REF", newRefPlaceholder);
+                        groupByNode.attrConfig.__config.defaultFilter = groupByNode.attrConfig.__config.defaultFilter.replaceAll("@REF", newRefPlaceholder);
+                        
+                        this.scopeEntityDef.addTableAlias(
+                            { baseEntity: newRefPlaceholder, table: attrConfig.placeholderMap[newRefPlaceholder] },
+                            false,
+                            "INNER JOIN",
+                            true
+                        );
+
+                        //Add the ON condition between additional concept table and the descendant expression
+                        let maxRefAlias;
+                        try {
+                         maxRefAlias = this.scopeEntityDef.getTableAliasByBaseEntity(newRefPlaceholder);
+                        } catch (e) {
+                            //Expected scenario and handled
+                            maxRefAlias = null;
+                        }
+                        const maxRefAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[newRefPlaceholder]);
+                        if (maxRefAlias){
+                            const finalmaxDescendantsJoinExpression = QueryObject.format("%UNSAFE", 
+                                            `${conRelAliasObj.alias}.FACET_CONCEPT_ID = ${maxRefAliasObj.alias}.CONCEPT_ID`)
+                            if(!maxRefAliasObj.on) maxRefAliasObj.on = []; //initialize
+                            this.pushOnCondition(
+                                maxRefAliasObj.on,
+                                finalmaxDescendantsJoinExpression
+                            )
+                        } else { //This indicated that no new node has been created for this new placeholder and it reused the existing node for @REF
+                            if(!maxRefAliasObj.on) {
+                                maxRefAliasObj.on = []; //initialize
+                                this.pushOnCondition(
+                                    maxRefAliasObj.on,
+                                    "1=1"
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -232,6 +354,17 @@ export class Property extends AstElement {
             }
         }
         onArray.push(onStatement);
+    }
+
+    private getNewMaxPlaceholderRefPlaceholder(placeholderMap) {
+        const sortedArray = Object.keys(placeholderMap).filter((x) => x.startsWith("@REF")).map(x => x.match(/@[^.^\s]+/g)[0]).sort();
+        if (sortedArray[sortedArray.length - 1] === "@REF") {
+            return "@REF0";
+        } else {
+            const maxRef = sortedArray[sortedArray.length - 1];
+            const refNumber = parseInt(maxRef.replace("@REF", ""));
+            return "@REF" + (refNumber + 1);
+        }
     }
 
     public getSQLWithAlias(): QueryObject {

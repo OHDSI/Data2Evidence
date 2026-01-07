@@ -17,6 +17,7 @@ class CohortGeneratorOptionsType(BaseModel):
     databaseCode: str
     schemaName: str
     vocabSchemaName: str
+    resultsSchemaName: str
     cohortJson: CohortJsonType
     datasetId: str
     description: str

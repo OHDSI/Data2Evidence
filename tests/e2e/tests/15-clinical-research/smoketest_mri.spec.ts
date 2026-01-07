@@ -5,7 +5,7 @@ const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -29,11 +29,11 @@ test(TEST_NAME, async ({ page }) => {
     await expect(section.getByText('Active')).toBeVisible({ timeout: 20000 })
   })
 
-  await test.step('Check Patient Analytics config overview section for OMOP_DM', async () => {
+  await test.step('Check Cohort Builder config overview section for OMOP_DM', async () => {
     await page.getByRole('button').filter({ hasText: /^$/ }).first().click()
     await page
       .locator('div')
-      .filter({ hasText: /^Patient Analytics configConfigure patient analyticsConfigure$/ })
+      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
     await page.locator('[id="__xmlview20--dataModelConfigurationsCombo-inner"]').click()
@@ -57,7 +57,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Demo dataset').nth(1).click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
@@ -68,7 +68,7 @@ test(TEST_NAME, async ({ page }) => {
 
     //Add Concept set
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist')
+    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Sprain of wrist')
     try {
       await expect(page.getByText('Sprain of wrist')).toBeVisible({ timeout: 10000 })
       await page.getByText('Sprain of wrist').click()
@@ -83,18 +83,18 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Sprain of wrist')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '70704007 Sprain of wrist' }).locator('path').click()
+      await page.getByRole('row', { name: /70704007.*Sprain of wrist/ }).locator('td').first().click()
       await page.getByRole('button', { name: 'Create' }).click()
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
       await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Sprain of wrist')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Sprain of wrist')
       await expect(page.getByText('Sprain of wrist')).toBeVisible({ timeout: 10000 })
       await page.getByText('Sprain of wrist').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     }
-    await expect(page.getByText('677 / 2694')).toBeVisible()
+    await expect(page.getByText('677 / 2,694')).toBeVisible()
   })
 
   await test.step('Update x1 filter to condition concept name', async () => {
@@ -118,7 +118,7 @@ test(TEST_NAME, async ({ page }) => {
       )
       .first()
       .click()
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media')
+    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Otitis media')
     try {
       await expect(page.getByText('Otitis media')).toBeVisible({ timeout: 10000 })
       await page.getByText('Otitis media').click()
@@ -132,7 +132,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Otitis media')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '65363002 Otitis media' }).locator('path').click()
+      await page.getByRole('row', { name: /65363002.*Otitis media/ }).locator('td').first().click()
       await page.getByRole('button', { name: 'Create' }).click()
       await page.getByRole('button', { name: 'Close' }).click({ timeout: 20000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -142,13 +142,13 @@ test(TEST_NAME, async ({ page }) => {
         )
         .first()
         .click()
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Otitis media')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Otitis media')
       await expect(page.getByText('Otitis media')).toBeVisible({ timeout: 10000 })
       await page.getByText('Otitis media').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     }
-    await expect(page.getByText('2193 / 2694')).toBeVisible()
+    await expect(page.getByText('2,193 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible()
   })
@@ -157,7 +157,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click()
-    await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis')
+    await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Viral sinusitis')
     try {
       // If the concept is already created, it will be visible
       await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 })
@@ -172,18 +172,18 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
-      await page.getByRole('row', { name: '444814009 Viral sinusitis' }).locator('path').click()
+      await page.getByRole('row', { name: /444814009.*Viral sinusitis/ }).locator('td').first().click()
       await page.getByRole('button', { name: 'Create' }).click()
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.2"]').getByText('All').click()
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-      await page.getByRole('textbox', { name: 'Enter search term' }).fill('Viral sinusitis')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('')
+      await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('Viral sinusitis')
       await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 })
       await page.getByText('Viral sinusitis').click({ timeout: 10000 })
       await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
     }
-    await expect(page.getByText('2188 / 2694')).toBeVisible()
+    await expect(page.getByText('2,188 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).not.toBeVisible()
@@ -204,7 +204,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('div:nth-child(4) > .col > .app-single-select > .multiselect > .multiselect__select').click()
     await page.locator('span').filter({ hasText: 'Condition Occurrence B' }).nth(2).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page.getByText('2156 / 2694')).toBeVisible()
+    await expect(page.getByText('2,156 / 2,694')).toBeVisible()
   })
   await test.step('Save the filter card', async () => {
     await page.getByRole('button', { name: 'Save' }).click()
@@ -228,7 +228,7 @@ test(TEST_NAME, async ({ page }) => {
     // Click the 'Remove Filter Card' under this specific card
     await dropdownMenu.getByText('Remove Filter Card', { exact: true }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page.getByText('2193 / 2694')).toBeVisible()
+    await expect(page.getByText('2,193 / 2,694')).toBeVisible()
   })
 
   await test.step('Reset the Condition Occurrence A filter card', async () => {
@@ -246,7 +246,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     // Click elsewhere to remove focus from the dropdown and close it
     await page.click('body')
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).toBeVisible()
@@ -259,7 +259,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Basic Data').nth(3).click()
     await page.locator('#pane-right').getByText('Month of Birth').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-    await expect(page.getByText('2694 / 2694')).toBeVisible()
+    await expect(page.getByText('2,694 / 2,694')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Sprain of wrist' })).not.toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Otitis media' })).not.toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Viral sinusitis' })).not.toBeVisible()

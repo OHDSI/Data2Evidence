@@ -1,13 +1,13 @@
 import { HttpException, Injectable, SCOPE } from '@danet/core'
 import { Brackets } from 'npm:typeorm'
+import { RequestContextService } from '../../common/request-context.service.ts'
 import { createLogger } from '../../logger.ts'
 import { TenantService } from '../../tenant/tenant.service.ts'
 import { IDataset, IDatasetQueryDto, IDatasetResponseDto, IDatasetSearchDto, ITenant } from '../../types.d.ts'
 import { UserMgmtService } from '../../user-mgmt/user-mgmt.service.ts'
 import { DatasetFilterService } from '../dataset-filter.service.ts'
 import { Dataset } from '../entity/index.ts'
-import { DatasetDashboardRepository, DatasetReleaseRepository, DatasetRepository } from '../repository/index.ts'
-import { RequestContextService } from '../../common/request-context.service.ts'
+import { DatasetCodeRepository, DatasetDashboardRepository, DatasetReleaseRepository, DatasetRepository } from '../repository/index.ts'
 
 const SWAP_TO = {
   STUDY: ['dataset', 'study'],
@@ -24,6 +24,7 @@ export class DatasetQueryService {
     private readonly datasetRepo: DatasetRepository,
     private readonly releaseRepo: DatasetReleaseRepository,
     private readonly dashboardRepo: DatasetDashboardRepository,
+    private readonly datasetCodeRepo: DatasetCodeRepository,
     private readonly datasetFilterService: DatasetFilterService,
     private readonly userMgmtService: UserMgmtService,
     private readonly requestContextService: RequestContextService
@@ -58,8 +59,8 @@ export class DatasetQueryService {
 
     const tenant = this.tenantService.getTenant()
 
-    const datasetDto = await this.buildDatasetResponseDto(dataset, tenant)
-    return this.swapVariables(datasetDto, SWAP_TO.STUDY)
+    const swapped = this.swapVariables(await this.buildDatasetResponseDto(dataset, tenant), SWAP_TO.STUDY)
+    return swapped as IDataset
   }
 
   async getDatasets(queryParams?: IDatasetQueryDto) {
@@ -148,8 +149,13 @@ export class DatasetQueryService {
       'dataset.databaseCode',
       'dataset.schemaName',
       'dataset.vocabSchemaName',
+      'dataset.resultSchemaName',
+      'dataset.flowParameters',
+      'dataset.sourceDatasetId',
       'dataset.dataModel',
       'dataset.plugin',
+      'dataset.paConfigId',
+      'dataset.type',
       'datasetDetail.name',
       'datasetDetail.description',
       'datasetDetail.summary',
@@ -171,7 +177,7 @@ export class DatasetQueryService {
   private getDatasetsColumns(role?: string) {
     const baseColumns = [...this.getDatasetBaseColumns(), 'dataset.tokenDatasetCode']
     if (role === 'systemAdmin') {
-      return baseColumns.concat(['dataset.paConfigId', 'dataset.type', 'dataset.visibilityStatus', 'dataset.fhir_project_id'])
+      return baseColumns.concat(['dataset.type', 'dataset.visibilityStatus', 'dataset.fhir_project_id'])
     }
     return baseColumns
   }
@@ -223,13 +229,28 @@ export class DatasetQueryService {
     }
   }
 
-  async buildDatasetResponseDto(dataset: Dataset, tenant: ITenant): Promise<IDatasetResponseDto> {
-    const { databaseCode, ...entity } = dataset
+  async getDatasetCode(datasetId: string, type: string) {
+    const datasetCode = await this.datasetCodeRepo.getDatasetCode(datasetId, type)
+    
+    if (!datasetCode) {
+      throw new HttpException(404, `Dataset code of type ${type} for dataset id ${datasetId} not found`)
+    }
+    
+    return {
+      datasetId: datasetCode.datasetId,
+      code: datasetCode.code,
+      type: datasetCode.type
+    }
+  }
+
+  buildDatasetResponseDto(dataset: Dataset, tenant: ITenant): IDatasetResponseDto {
+    const { databaseCode, flowParameters, ...entity } = dataset
     return {
       // TODO: Remove on 16 February 2024
       databaseName: databaseCode,
       databaseCode,
       ...entity,
+      flowParameters,
       tenant
     }
   }

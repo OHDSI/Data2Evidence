@@ -42,7 +42,6 @@ import SacChart from './SACChart.vue'
 import SortMenuButton from './SortMenuButton.vue'
 import CohortEntryExit from './CohortEntryExit.vue'
 import StackBarChart from './StackBarChart.vue'
-import VariantBrowser from './VariantBrowser.vue'
 import CohortsAppMenu from './CohortsAppMenu.vue'
 import patientCount from './PatientCount.vue'
 
@@ -79,7 +78,7 @@ export default {
       window.addEventListener('click', this.closeSubMenu)
     })
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
   },
   computed: {
@@ -133,9 +132,9 @@ export default {
     chartSelection() {
       return this.getChartSelection()
     },
-    displayShowCohortEntryExit() {      
-      return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
-    }
+    displayShowCohortEntryExit() {
+      return this.getMriFrontendConfig?._internalConfig?.panelOptions?.cohortEntryExit || false
+    },
   },
   methods: {
     ...mapActions(['setFireRequest', 'setKMDisplayInfo']),
@@ -162,9 +161,7 @@ export default {
     SortMenuButton,
     CohortEntryExit,
     StackBarChart,
-    VariantBrowser,
     PatientListContainer,
-    // CustomChart,
     SacChart,
     appLabel,
     appCheckbox,

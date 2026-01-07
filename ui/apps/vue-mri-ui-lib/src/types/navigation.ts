@@ -8,6 +8,8 @@ export interface NavigationItem {
   visible?: boolean
   active?: boolean
   type?: 'app' | 'component'
+  autoMount?: boolean
+  customProps?: Record<string, unknown>
 }
 
 export interface InternalNavigationEvent {
@@ -19,3 +21,4 @@ export interface NavigationConfig {
   apps: NavigationItem[]
   components: NavigationItem[]
 }
+

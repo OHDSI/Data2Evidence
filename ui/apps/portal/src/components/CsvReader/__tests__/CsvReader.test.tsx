@@ -1,12 +1,17 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react";
-import "@testing-library/jest-dom/extend-expect";
 import { CsvReader } from "../CsvReader";
 import { AppProvider } from "../../../contexts";
 
 afterEach(() => {
   jest.clearAllMocks();
 });
+
+// Mock the environment
+jest.mock("../../../env", () => ({
+  REACT_APP_IDP_NAME_PROP: "name",
+  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: "http://localhost:3001",
+}));
 
 it("should trigger readAsText", async () => {
   const handleFileLoaded = jest.fn();

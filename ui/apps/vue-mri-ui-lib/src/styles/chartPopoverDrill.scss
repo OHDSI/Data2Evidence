@@ -1,23 +1,22 @@
-@import './mri-variables';
 $chartPopoverDrillHeaderHeight: 48px !default;
 .chartPopoverDrill {
   position: fixed;
   z-index: 950;
   display: block;
   overflow: visible;
-  background-color: $UiLightestBG;
+  background-color: var(--color-ui-lightest-bg);
   border-radius: 2px;
-  box-shadow: 0 2px 8px transparentize($MriBoxShadow, $MriBoxShadowGlow);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   font-family: Helvetica, Arial, sans-serif;
   width: 176px;
   display: flex;
   flex-direction: column;
-  border: 1px solid $UiMediumBorder;
+  border: 1px solid var(--color-ui-medium-border);
   .popover-header-container {
     height: $chartPopoverDrillHeaderHeight;
-    background-color: $UiExtraLightBG;
-    border-bottom: 1px solid $UiMediumBorder;
-    color: $UiLightText;
+    background-color: var(--color-ui-extra-light-bg);
+    border-bottom: 1px solid var(--color-ui-medium-border);
+    color: var(--color-ui-light-text);
     box-sizing: border-box;
     width: 100%;
     text-align: center;
@@ -27,7 +26,7 @@ $chartPopoverDrillHeaderHeight: 48px !default;
     line-height: $chartPopoverDrillHeaderHeight;
   }
   .popover-header-close {
-    color: $UiLightText;
+    color: var(--color-ui-light-text);
     position: absolute;
     right: 0;
   }
@@ -38,12 +37,12 @@ $chartPopoverDrillHeaderHeight: 48px !default;
     flex-basis: auto;
   }
   .popover-footer {
-    border-top: 1px solid $UiMediumBorder;
+    border-top: 1px solid var(--color-ui-medium-border);
     button {
-      color: $MriLightestText;
+      color: var(--color-mri-lightest-text);
     }
     text-align: center;
-    background-color: $MriContrast;
+    background-color: var(--color-mri-contrast);
     filter: none;
     background-image: none;
   }
@@ -58,6 +57,6 @@ $chartPopoverDrillHeaderHeight: 48px !default;
     left: 50%;
     margin-left: -0.5rem;
     border-color: transparent;
-    border-top-color: $MriContrast;
+    border-top-color: var(--color-mri-contrast);
   }
 }

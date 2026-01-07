@@ -1,0 +1,34 @@
+.manage-dashboard-dialog {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 25px; 
+
+    &__content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  &__content {
+    min-height: 200px;
+    margin: 10px 25px;
+    overflow: auto;
+    scrollbar-color: #c7c7c7 transparent;
+    .u-padding-vertical--small {
+      padding-right: 20px;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

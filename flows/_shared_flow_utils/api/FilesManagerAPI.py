@@ -1,37 +1,31 @@
 import requests
 from prefect.logging import get_run_logger
 from _shared_flow_utils.api.BaseAPI import BaseAPI
-from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 
 class FilesManagerAPI(BaseAPI):
     def __init__(self):
+        super().__init__()
         self.url = self.get_service_route("filesManager")
         self.logger = get_run_logger()
-        self.auth = OpenIdAPI()
-
-    def _get_headers(self):
-        token = self.auth.getClientCredentialToken()
-        return {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
+        self.headers = self.get_options()
 
     def get_file(self, user_data_id: str) -> bytes:
         url = f"{self.url}/{user_data_id}"
-        headers = self._get_headers()
 
         self.logger.info(f"Getting file from {url}")
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=self.headers,
+                                verify=self.get_verify_value())
         response.raise_for_status()
 
         return response.content
 
-    def save_file(self, username: str, dataKey="scan-report", file_path: str = "./ScanReport.xlsx"):
+    def save_file(self, username: str, file_path: str, data_key: str = "scan-report"):
         url = f"{self.url}/"
-        headers = self._get_headers()
+        headers = self.headers
         # Remove Content-Type header - requests will set it automatically with the correct boundary
         headers.pop('Content-Type', None)
+
 
         with open(file_path, 'rb') as file:
 
@@ -45,10 +39,13 @@ class FilesManagerAPI(BaseAPI):
 
             data = {
                 'username': username,
-                'dataKey': dataKey
+                'dataKey': data_key
             }
-            result = requests.post(url, headers=headers,
-                                   data=data, files=files)
+            result = requests.post(url,
+                                   headers=headers,
+                                   verify=self.get_verify_value(),
+                                   data=data,
+                                   files=files)
 
         if ((result.status_code >= 400) and (result.status_code < 600)):
             raise Exception(

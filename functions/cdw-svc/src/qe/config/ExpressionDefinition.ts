@@ -26,10 +26,10 @@ Miscellaneous Functions:
 
 export class ExpressionDefinition {
     public expressions: Array<{ regex: RegExp; placeholder?: string }>;
-    private aPlaceholders: string[];
+    private aPlaceholders: string[] = ["CDM_COHORT_DEF", "RESULT_COHORT_DEF"];
 
     constructor(defaultPholderTableMap: any) {
-        this.aPlaceholders = Object.keys(defaultPholderTableMap).map((key) => key.replace("@", ""));
+        this.aPlaceholders = this.aPlaceholders.concat(Object.keys(defaultPholderTableMap).map((key) => key.replace("@", "")));
 
         this.expressions = [
             // Column access
@@ -123,8 +123,12 @@ export class ExpressionDefinition {
             { regex: /STRING_AGG[\s]*\([\s]*<EXP>[\s]*(,[\s]*<EXP>[\s]*)?\)/, placeholder: "<AGGR>" },
 
             // Regex functions
+            // CONTAINS(<EXP>,<EXP>,FUZZY <EXP>)CONTAINS (<EXP>, <EXP>, FUZZY <EXP>)
+            { regex: /[\s]*CONTAINS[\s]*\([\s]*<EXP>[\s]*,[\s]*<EXP>[\s]*,[\s]*FUZZY[\s]*<EXP>\)[\s]*/, placeholder: "<COND>" },
             // <EXP>/<AGGR> LIKE_REGEXPR <EXP>/<AGGR> [FLAG {i|m|s|x}]
             { regex: /<((?:EXP)|(?:AGGR))>[\s]+LIKE_REGEXPR[\s]+<((?:EXP)|(?:AGGR))>[\s]+FLAG[\s]+<((?:EXP)|(?:AGGR))>[\s]*/, placeholder: "<COND>" },
+            // REPLACE_REGEXPR (<EXP>/<AGGR> IN <EXP>/<AGGR> WITH <EXP>/<AGGR>) LIKE_REGEXPR <EXP>/<AGGR> FLAG <EXP>/<AGGR>
+            { regex: /REPLACE_REGEXPR[\s]*\([\s]*<((?:EXP)|(?:AGGR))>[\s]+IN[\s]+<((?:EXP)|(?:AGGR))>[\s]+WITH[\s]+<((?:EXP)|(?:AGGR))>[\s]*\)[\s]+LIKE_REGEXPR[\s]+<((?:EXP)|(?:AGGR))>[\s]+FLAG[\s]+<((?:EXP)|(?:AGGR))>[\s]*/, placeholder: "<COND>" },
             // LOCATE_REGEXPR([START|AFTER] <EXP>/<AGGR> [FLAG {i|m|s|x}] IN <EXP>/<AGGR> [FROM <EXP>/<AGGR>] [OCCURRENCE <EXP>/<AGGR>] [GROUP <EXP>/<AGGR>])
             { regex: /LOCATE_REGEXPR[\s]*\([\s]*(?:(?:START|AFTER)[\s]+)?<((?:EXP)|(?:AGGR))>[\s]+(?:FLAG[\s]+'[imsx]{1,4}'[\s]+)?IN[\s]+<((?:EXP)|(?:AGGR))>(?:[\s]+FROM[\s]+<((?:EXP)|(?:AGGR))>)?(?:[\s]+OCCURRENCE[\s]+<((?:EXP)|(?:AGGR))>)?(?:[\s]+GROUP[\s]+<((?:EXP)|(?:AGGR))>)?[\s]*\)/ },
             // OCCURRENCES_REGEXPR(<EXP>/<AGGR> [FLAG {i|m|s|x}] IN <EXP>/<AGGR> [FROM <EXP>/<AGGR>])
@@ -144,7 +148,7 @@ export class ExpressionDefinition {
             { regex: /<((?:EXP)|(?:AGGR))>[\s]*(\*|\/|\+|-|\|\|)[\s]*<((?:EXP)|(?:AGGR))>/ },
 
             // Constants
-            { regex: /'(?:(?:'')|[^'])+'/, placeholder: "<EXP>" },
+            { regex: /'(?:(?:'')|[^'])*'/, placeholder: "<EXP>" },
             { regex: /\d+(\.\d+)?/, placeholder: "<EXP>" },
             { regex: /NULL/, placeholder: "<EXP>" },
 

@@ -4,6 +4,8 @@ import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import "./BoxPlotChart.scss";
 import { useTranslation } from "../../../contexts";
+import { chartColors } from "./chartColors";
+import { getAxisNameGap } from "../util";
 
 interface BoxPlotChartProps {
   data: any[];
@@ -11,9 +13,10 @@ interface BoxPlotChartProps {
   xAxisName: string;
   yAxisName: string;
   extraChartConfigs?: any;
+  axisBaseGap?: number;
 }
 
-const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName, extraChartConfigs }) => {
+const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName, extraChartConfigs, axisBaseGap }) => {
   const { getText, i18nKeys } = useTranslation();
   if (data.length === 0) {
     return (
@@ -22,7 +25,21 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
       </ChartContainer>
     );
   }
+  const seriesForYGap = [
+    {
+      data: data.flatMap((d) => [Number(d.MAXVALUE)]),
+    },
+  ];
+  const seriesForXGap = [
+    {
+      data: data.map((d) => String(d.CATEGORY)),
+    },
+  ];
+  const xAxisNameGap = getAxisNameGap(seriesForXGap, extraChartConfigs?.xAxisFormat, axisBaseGap);
+  const yAxisNameGap = getAxisNameGap(seriesForYGap, extraChartConfigs?.yAxisFormat, axisBaseGap);
 
+  const maxLabelLength = Math.max(...data.map((d) => String(d.CATEGORY || "").length));
+  const shouldRotate = maxLabelLength > 8 || data.length > 6;
   const option = {
     dataset: [
       {
@@ -58,9 +75,10 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
       type: "category",
       name: xAxisName,
       nameLocation: "middle",
-      nameGap: 25,
+      nameGap: xAxisNameGap,
       axisLabel: {
         interval: 0,
+        rotate: shouldRotate ? 270 : 0,
       },
       nameTextStyle: {
         fontSize: 14,
@@ -70,7 +88,7 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
     yAxis: {
       name: yAxisName,
       nameLocation: "middle",
-      nameGap: 50,
+      nameGap: yAxisNameGap,
       nameTextStyle: {
         fontSize: 14,
         fontWeight: "bold",
@@ -92,6 +110,7 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
         },
       },
     ],
+    color: chartColors,
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 

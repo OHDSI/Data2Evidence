@@ -4,18 +4,30 @@ from pathlib import Path
 DATASET = "GiBleed"
 CDM_VERSION = "5.3"
 
+# Root folder where constant.py lives
+BASE_DIR = Path(__file__).resolve().parent
+
 BASE_URL = f"https://github.com/OHDSI/EunomiaDatasets/raw/main/datasets/{DATASET}/{DATASET}_{CDM_VERSION}.zip"
 
-DATA_DIR = Path(f"/app/base/hana_load_plugin/{DATASET}")
+DATA_DIR = BASE_DIR / DATASET
 ZIP_PATH = DATA_DIR / f"{DATASET}_{CDM_VERSION}.zip"
 EXTRACT_DIR = DATA_DIR / f"{DATASET}_{CDM_VERSION}"
 
-CREATE_SCRIPT_DIR = Path("/app/base/hana_load_plugin/create_script")
+CREATE_SCRIPT_DIR = BASE_DIR / "db"
 
 # Hana does not support foreign keys, so we skip hana_constraints.sql
 SQL_FILES_ORDER = [
     "hana_ddl.sql",
-    "hana_primarykey.sql",
+    # "hana_primarykey.sql", #usage of primary key is skipped due to duplicated primary keys in the dataset
     "hana_indices.sql"
     # "hana_constraints.sql",
 ]
+
+
+# Hardcoded from athena vocab
+CDM_VERSION_CONCEPT_CODE_MAPPING = {
+    "CDM v5.3.1": 1147638,
+    "CDM v5.3.2": 902376,
+    "CDM v5.4.0": 756265,
+    "CDM v5.4.1": 798878
+}

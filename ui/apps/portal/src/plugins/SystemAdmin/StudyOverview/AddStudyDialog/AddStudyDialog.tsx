@@ -1,13 +1,3 @@
-import React, {
-  FC,
-  useCallback,
-  useState,
-  useEffect,
-  ChangeEvent,
-  SetStateAction,
-  useMemo,
-  SyntheticEvent,
-} from "react";
 import Divider from "@mui/material/Divider";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
@@ -15,28 +5,24 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import { SxProps } from "@mui/system";
-import { Button, Dialog, Checkbox, TextField, IconButton, AddSquareIcon, Box, Autocomplete } from "@portal/components";
-import {
-  NewStudyInput,
-  Feedback,
-  CloseDialogType,
-  Study,
-  IDatabase,
-  NewStudyMetadataInput,
-  NewFhirProjectInput,
-} from "../../../../types";
+import { Autocomplete, Button, Checkbox, Dialog, TextField } from "@portal/components";
+import React, { ChangeEvent, FC, SyntheticEvent, useCallback, useEffect, useMemo, useState } from "react";
 import SimpleMDE from "react-simplemde-editor";
-import {
-  useDatasetAttributeConfigs,
-  usePaConfigs,
-  useTenant,
-  useDbVocabSchemas,
-  useEnabledFeatures,
-} from "../../../../hooks";
-import MetadataForm from "../UpdateStudyDialog/MetadataForm/MetadataForm";
 import { api } from "../../../../axios/api";
-import { useTranslation } from "../../../../contexts";
 import { FEATURE_FHIR_SERVER } from "../../../../config";
+import { DatasetMap } from "../../../../constant";
+import { useTranslation } from "../../../../contexts";
+import { useDbVocabSchemas, useEnabledFeatures, usePaConfigs, useTenant } from "../../../../hooks";
+import {
+  CacheDatasetType,
+  CloseDialogType,
+  Feedback,
+  IDatabase,
+  NewFhirProjectInput,
+  NewStudyInput,
+  SourceDatasetType,
+  Study,
+} from "../../../../types";
 import "./AddStudyDialog.scss";
 
 interface AddStudyDialogProps {
@@ -49,7 +35,7 @@ interface AddStudyDialogProps {
 }
 
 const mdeOptions = {
-  hideIcons: ["side-by-side", "fullscreen"],
+  hideIcons: ["side-by-side", "fullscreen"] as readonly ("side-by-side" | "fullscreen")[],
   maxHeight: "150px",
 };
 
@@ -59,6 +45,11 @@ const customDataModelOption: Datamodel = {
   flowId: "",
 };
 
+const cacheDatasetTypeOptions: { title: string; type: CacheDatasetType }[] = [
+  { title: "OMOP", type: CacheDatasetType.OMOP },
+  { title: "Other datamodel", type: CacheDatasetType.NON_OMOP },
+];
+
 interface FormData {
   type: string;
   tokenStudyCode: string;
@@ -66,10 +57,11 @@ interface FormData {
   cdmSchemaValue: string;
   isSameCdmSchemaForVocab: boolean;
   vocabSchemaValue: string;
+  resultSchemaValue: string;
+  autoGenerateResultSchema: boolean;
   name: string;
   summary: string;
   showRequestAccess: boolean;
-  cleansedSchemaOption: boolean;
   description: string;
   dataModel: string;
   dataModelCustom: string;
@@ -78,6 +70,9 @@ interface FormData {
   dialect: string;
   paConfigId: string;
   visibilityStatus: string;
+
+  cacheDatasetName: string;
+  cacheDatasetType: CacheDatasetType;
 }
 
 interface FormError {
@@ -91,6 +86,9 @@ interface FormError {
     required: boolean;
   };
   vocabSchemaValue: {
+    required: boolean;
+  };
+  resultSchemaValue: {
     required: boolean;
   };
   tokenStudyCode: {
@@ -112,6 +110,13 @@ interface FormError {
   name: {
     required: boolean;
   };
+
+  cacheDatasetName: {
+    required: boolean;
+  };
+  cacheDatasetType: {
+    required: boolean;
+  };
 }
 
 const EMPTY_FORM_ERROR: FormError = {
@@ -120,24 +125,28 @@ const EMPTY_FORM_ERROR: FormError = {
   schemaOption: { required: false },
   cdmSchemaValue: { required: false },
   vocabSchemaValue: { required: false },
+  resultSchemaValue: { required: false },
   dataModel: { required: false },
   dataModelCustom: { required: false },
   databaseCode: { required: false },
   paConfigId: { required: false },
   name: { required: false },
+  cacheDatasetName: { required: false },
+  cacheDatasetType: { required: false },
 };
 
 const EMPTY_FORM_DATA: FormData = {
-  type: "",
+  type: SourceDatasetType.SOURCE,
   tokenStudyCode: "",
   schemaOption: "",
   cdmSchemaValue: "", //Optional
-  isSameCdmSchemaForVocab: false,
+  isSameCdmSchemaForVocab: true,
   vocabSchemaValue: "", //Optional
+  resultSchemaValue: "",
+  autoGenerateResultSchema: false,
   name: "",
   summary: "",
   showRequestAccess: false,
-  cleansedSchemaOption: false,
   description: "",
   dataModel: "", //Optional
   dataModelCustom: "", //Optional
@@ -145,10 +154,11 @@ const EMPTY_FORM_DATA: FormData = {
   databaseCode: "", //Optional
   dialect: "",
   paConfigId: "",
-  visibilityStatus: "DEFAULT",
-};
+  visibilityStatus: "HIDDEN",
 
-const EMPTY_STUDY_METADATA: NewStudyMetadataInput = { attributeId: "", value: "" };
+  cacheDatasetName: "",
+  cacheDatasetType: CacheDatasetType.OMOP,
+};
 
 /**
  * Schema Options Values
@@ -164,8 +174,10 @@ interface Datamodel {
   flowId: string;
 }
 
-const FHIR_DB_CODE = "alp_fhir"; // dummy value set for the database in FHIR dataset creation
-const FHIR_SCHEMA_NAME = "fhir"; // hardcoded schema name for FHIR dataset creation
+// hardcoded values for FHIR dataset creation
+const FHIR_DB_CODE = "d2e_fhir";
+const FHIR_SCHEMA_NAME = "fhir";
+const FHIR_DIALECT = "postgres";
 
 export const SchemaTypes = {
   CreateCDM: "create_cdm",
@@ -208,13 +220,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   const [schemas, setSchemas] = useState<string[]>([]);
   const [paConfigs] = usePaConfigs();
   const [vocabSchemas] = useDbVocabSchemas(formData.databaseCode);
-  const [attributeConfigs] = useDatasetAttributeConfigs();
-  const [studyMetadata, setStudyMetadata] = useState<NewStudyMetadataInput[]>([EMPTY_STUDY_METADATA]);
-  const [studyTagsData, setStudyTagsData] = useState<Array<string>>([]);
 
   const [feedback, setFeedback] = useState<Feedback>({});
-  const [formMetadataErrorIndex, setFormMetadataErrorIndex] = useState<Array<Number>>([]);
-  const featureFlags = useEnabledFeatures();
+  const [featureFlags] = useEnabledFeatures();
 
   const SchemaOptions: dropdownOption[] = useMemo(() => {
     const result: dropdownOption[] = [
@@ -239,10 +247,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, [featureFlags]);
 
   const displayDatabases = useMemo(
-    () =>
-      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(
-        formData.schemaOption
-      ),
+    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
     [formData.schemaOption]
   );
 
@@ -257,7 +262,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displaySameCdmVocabSchemaCheckbox = useMemo(
-    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM].includes(formData.schemaOption),
+    () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
     [formData.schemaOption]
   );
 
@@ -270,28 +275,30 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displayVocabSchemaInput = useMemo(
-    () => formData.schemaOption === SchemaTypes.ExistingCDM,
-    [formData.schemaOption]
+    () => formData.schemaOption === SchemaTypes.ExistingCDM && !formData.isSameCdmSchemaForVocab,
+    [formData.schemaOption, formData.isSameCdmSchemaForVocab]
   );
 
   const displaySchemaNameInput = useMemo(
-    () =>
-      formData.schemaOption === SchemaTypes.CustomCDM ||
-      formData.schemaOption === SchemaTypes.ExistingCDM,
+    () => formData.schemaOption === SchemaTypes.CustomCDM || formData.schemaOption === SchemaTypes.ExistingCDM,
     [formData.schemaOption]
   );
+
+  const displayResultSchemaInput = useMemo(() => formData.schemaOption !== SchemaTypes.FHIR, [formData.schemaOption]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       setFeedback({});
       setFormData(EMPTY_FORM_DATA);
       setFormError(EMPTY_FORM_ERROR);
-      setStudyMetadata([]);
-      setStudyTagsData([]);
       typeof onClose === "function" && onClose(type);
     },
     [onClose, setFeedback]
   );
+
+  const displayCacheConfiguration = useMemo(() => {
+    return formData.dialect !== "hana";
+  }, [formData.dialect]);
 
   const getDataModels = useCallback(async () => {
     try {
@@ -343,33 +350,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     setFormData((formData) => ({ ...formData, ...changes }));
   }, []);
 
-  const handleRemoveLine = useCallback(
-    <T extends {}>(index: number, state: Array<T>, setState: (value: SetStateAction<T[]>) => void) => {
-      const copyLine = [...state];
-      copyLine.splice(index, 1);
-      setState(copyLine);
-    },
-    []
-  );
-
-  const handleAddMetadataForm = useCallback(() => {
-    setStudyMetadata([...studyMetadata, EMPTY_STUDY_METADATA]);
-  }, [studyMetadata]);
-
-  const handleMetadataChange = useCallback(
-    (attributeId: string, valueNew: string, index: number) => {
-      const newMetadata = { attributeId: attributeId, value: valueNew };
-      const currentMetadata = [...studyMetadata];
-      currentMetadata[index] = newMetadata;
-      setStudyMetadata(currentMetadata);
-    },
-    [studyMetadata]
-  );
-
-  const handleTagChange = useCallback((event: any, value: string[]) => {
-    setStudyTagsData(value);
-  }, []);
-
   const tokenIsValid = useCallback((token: string) => {
     const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
     if (token.match(tokenFormat)) {
@@ -384,11 +364,16 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       isSameCdmSchemaForVocab,
       vocabSchemaValue,
+      resultSchemaValue,
       dataModel,
       dataModelCustom,
       databaseCode,
       paConfigId,
       name,
+      dialect,
+
+      cacheDatasetName,
+      cacheDatasetType,
     } = formData;
 
     let formError: FormError | {} = {};
@@ -425,23 +410,38 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     }
 
     if (
-      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM].includes(schemaOption) &&
+      [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(schemaOption) &&
       !isSameCdmSchemaForVocab &&
       !vocabSchemaValue
     ) {
       formError = { ...formError, vocabSchemaValue: { required: true } };
     }
 
-    if (schemaOption === SchemaTypes.ExistingCDM && !vocabSchemaValue) {
-      formError = { ...formError, vocabSchemaValue: { required: true } };
+    // Result schema is only required if:
+    // 1. Not FHIR
+    // 2. Either not CreateCDM, OR CreateCDM but use default result schema is unchecked
+    if (
+      !resultSchemaValue &&
+      schemaOption !== SchemaTypes.FHIR &&
+      !(schemaOption === SchemaTypes.CreateCDM && formData.autoGenerateResultSchema)
+    ) {
+      formError = { ...formError, resultSchemaValue: { required: true } };
     }
 
     if (!paConfigId) {
       formError = { ...formError, paConfigId: { required: true } };
     }
 
-    if (!name) {
+    if (!name.trim()) {
       formError = { ...formError, name: { required: true } };
+    }
+
+    if (!cacheDatasetName && dialect !== "hana") {
+      formError = { ...formError, cacheDatasetName: { required: true } };
+    }
+
+    if (!cacheDatasetType && dialect !== "hana") {
+      formError = { ...formError, cacheDatasetType: { required: true } };
     }
 
     if (Object.keys(formError).length > 0) {
@@ -450,18 +450,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     }
     return false;
   }, [formData, schemas, tokenIsValid]);
-
-  const isFormMetadataError = useCallback(() => {
-    const indexError: Number[] = [];
-    studyMetadata.forEach((metadata, index) => {
-      if (!metadata.value && metadata.attributeId) {
-        indexError.push(index);
-      }
-    });
-
-    setFormMetadataErrorIndex(indexError);
-    return indexError.length > 0;
-  }, [studyMetadata]);
 
   const parseDatamodelOption = useCallback((dataModelOption: string) => {
     const parsedOption = dataModelOption.replace(/[[\]]/g, "").split(" ");
@@ -472,7 +460,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (isFormError() || isFormMetadataError()) {
+    console.log("Submitting form data:", formData);
+    if (isFormError()) {
+      console.error("Form has errors:", formError);
       return;
     }
 
@@ -485,7 +475,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       schemaOption,
       cdmSchemaValue,
       vocabSchemaValue,
-      cleansedSchemaOption,
+      resultSchemaValue,
       name,
       summary,
       showRequestAccess,
@@ -496,47 +486,54 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       dialect,
       paConfigId,
       visibilityStatus,
-    } = formData;
 
+      cacheDatasetName,
+      cacheDatasetType,
+    } = formData;
     const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
 
     const dataModelDetails = parseDatamodelOption(dataModel);
+    const parsedDataModel =
+      dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
     let fhirProjectId;
+
+    const parsedDatasetType = dialect === "hana" ? `hana__${type}` : type;
 
     const input: NewStudyInput = {
       tenantId: tenant?.id || "",
       detail: {
-        name,
+        name: name.trim(),
         summary,
         description,
         showRequestAccess,
       },
-      type,
+      type: parsedDatasetType,
       tokenStudyCode,
       schemaOption,
       cdmSchemaValue,
       vocabSchemaValue,
-      cleansedSchemaOption,
-      dataModel:
-        dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel,
+      resultSchemaValue,
+      dataModel: parsedDataModel,
       plugin: dataModelDetails.plugin,
       databaseCode,
       dialect,
       paConfigId,
       fhirProjectId,
-      visibilityStatus,
-      attributes: studyMetadata.filter((info) => info.attributeId !== ""),
-      tags: studyTagsData?.map((tagName) => tagName),
+      visibilityStatus: dialect === "hana" ? "DEFAULT" : visibilityStatus,
+      attributes: [],
+      tags: [],
       dashboards: [],
+      cacheDatasetName,
+      cacheDatasetType,
     };
 
     try {
       setLoading(true);
-      const datasetId = await api.gateway.createDataset(input);
+      const dataset = await api.gateway.createDataset(input);
       if (createFhirProject) {
         try {
           const fhirProjectInput: NewFhirProjectInput = {
-            id: datasetId.id,
+            id: dataset.id,
             description: description,
           };
           await api.gateway.createFhirStaging(fhirProjectInput);
@@ -549,6 +546,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           //return;
         }
       }
+
       handleClose("success");
     } catch (err: any) {
       setFeedback({
@@ -559,17 +557,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     } finally {
       setLoading(false);
     }
-  }, [
-    formData,
-    tenant,
-    studyMetadata,
-    studyTagsData,
-    isFormError,
-    isFormMetadataError,
-    setLoading,
-    handleClose,
-    parseDatamodelOption,
-  ]);
+  }, [formData, tenant, isFormError, setLoading, handleClose, parseDatamodelOption]);
 
   return (
     <Dialog
@@ -584,10 +572,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     >
       <Divider />
       <div className="add-study-dialog__content">
-        <Box mt={4} fontWeight="bold">
-          {getText(i18nKeys.ADD_STUDY_DIALOG__INFO_CONFIG)}
-        </Box>
-        <Box mb={4}>
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.ADD_STUDY_DIALOG__INFO_CONFIG)}</div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -599,8 +585,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           {formError.name.required && (
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
           )}
-        </Box>
-        <Box mb={4}>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -608,16 +594,17 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             value={formData.summary}
             onChange={(event) => handleFormDataChange({ summary: event.target.value })}
           />
-        </Box>
+        </div>
         <div>{getText(i18nKeys.ADD_STUDY_DIALOG__DESCRIPTION)}</div>
         <SimpleMDE
+          data-testid="add-study-mde"
           value={formData.description}
           onChange={(value) => handleFormDataChange({ description: value })}
           options={mdeOptions}
           style={{ marginTop: "11px" }}
         />
         {/* Schema Options */}
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <FormControl
             sx={styles}
             className="select"
@@ -629,16 +616,22 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             <Select
               sx={styles}
               value={formData.schemaOption}
-              onChange={(event: SelectChangeEvent<string>) =>
+              onChange={(event: SelectChangeEvent<string>) => {
+                const schemaOption = event.target.value;
+                const newType = schemaOption === SchemaTypes.FHIR ? SourceDatasetType.FHIR : SourceDatasetType.SOURCE;
                 handleFormDataChange({
-                  schemaOption: event.target.value,
-                  cdmSchemaValue: event.target.value === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
-                  isSameCdmSchemaForVocab: false,
+                  schemaOption,
+                  cdmSchemaValue: schemaOption === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
+                  isSameCdmSchemaForVocab: true,
                   vocabSchemaValue: "",
-                  databaseCode: event.target.value === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
-                  dialect: "",
-                })
-              }
+                  resultSchemaValue: "",
+                  autoGenerateResultSchema: false,
+                  databaseCode: schemaOption === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
+                  dialect: schemaOption === SchemaTypes.FHIR ? FHIR_DIALECT : "",
+                  type: newType,
+                  cacheDatasetType: DatasetMap[newType][0],
+                });
+              }}
               inputProps={{
                 name: "schemaOption",
                 id: "schema-option",
@@ -657,11 +650,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
-        </Box>
-
+        </div>
         {/* DB Input */}
         {displayDatabases && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl
               sx={styles}
               className="select"
@@ -701,27 +693,77 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
             </FormControl>
-          </Box>
+          </div>
+        )}
+
+        {/*source dataset type */}
+        {formData.dialect !== "hana" ? (
+          <div style={{ marginBottom: "32px" }}>
+            <TextField
+              disabled
+              fullWidth
+              variant="standard"
+              label={getText(i18nKeys.ADD_STUDY_DIALOG__TYPE)}
+              value={formData.type}
+            />
+          </div>
+        ) : (
+          <div style={{ marginBottom: "32px" }}>
+            <FormControl
+              sx={styles}
+              className="select"
+              variant="standard"
+              disabled={formData.dialect !== "hana"}
+              fullWidth
+            >
+              <InputLabel htmlFor="type-option">Type</InputLabel>
+              <Select
+                sx={styles}
+                value={formData.type}
+                onChange={(event: SelectChangeEvent<string>) =>
+                  handleFormDataChange({ type: event.target.value as CacheDatasetType })
+                }
+                inputProps={{
+                  name: "type",
+                  id: "type-option",
+                }}
+              >
+                {cacheDatasetTypeOptions.map((option) => (
+                  <MenuItem sx={styles} key={option.type} value={option.type}>
+                    {option.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
         )}
 
         {/* Custom Schema Input */}
         {displaySchemaNameInput &&
           (formData.schemaOption === SchemaTypes.ExistingCDM ? (
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 fullWidth
                 variant="standard"
                 label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)}
                 value={formData.cdmSchemaValue}
-                onChange={(event) => handleFormDataChange({ cdmSchemaValue: event.target.value })}
+                onChange={(event) => {
+                  const cdmSchemaValue = event.target.value;
+                  const changes: any = { cdmSchemaValue };
+                  // Use default result schema if checkbox is checked
+                  if (formData.autoGenerateResultSchema) {
+                    changes.resultSchemaValue = cdmSchemaValue ? `${cdmSchemaValue}_results` : "";
+                  }
+                  handleFormDataChange(changes);
+                }}
                 error={formError.cdmSchemaValue.required}
               />
               {formError.cdmSchemaValue.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
-            </Box>
+            </div>
           ) : formData.schemaOption === SchemaTypes.CustomCDM ? (
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <Autocomplete
                 freeSolo
                 sx={styles}
@@ -731,9 +773,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   <TextField {...params} label={getText(i18nKeys.ADD_STUDY_DIALOG__SCHEMA_NAME)} variant="standard" />
                 )}
                 value={formData?.cdmSchemaValue}
-                onChange={(_: SyntheticEvent<Element, Event>, cdmSchemaValue: string | string[] | null) =>
-                  handleFormDataChange({ cdmSchemaValue })
-                }
+                onChange={(_: SyntheticEvent<Element, Event>, cdmSchemaValue: string | string[] | null) => {
+                  const changes: any = { cdmSchemaValue };
+                  // Use default result schema if checkbox is checked
+                  if (formData.autoGenerateResultSchema && cdmSchemaValue) {
+                    changes.resultSchemaValue = `${cdmSchemaValue}_results`;
+                  }
+                  handleFormDataChange(changes);
+                }}
                 disabled={schemas.length === 0}
               />
               {schemas.length === 0 && (
@@ -742,10 +789,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               {formError.cdmSchemaValue.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__INVALID_SCHEMA_NAME)}</FormHelperText>
               )}
-            </Box>
+            </div>
           ) : (
             formData.schemaOption === SchemaTypes.FHIR && (
-              <Box mb={4}>
+              <div style={{ marginBottom: "32px" }}>
                 <FormControl
                   sx={styles}
                   className="select"
@@ -779,12 +826,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
                   )}
                 </FormControl>
-              </Box>
+              </div>
             )
           ))}
-
         {displaySameCdmVocabSchemaCheckbox && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <Checkbox
               checked={formData.isSameCdmSchemaForVocab}
               checkbox-id="is-same-cdm-schema-for-vocab-checkbox"
@@ -798,12 +844,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 );
               }}
             />
-          </Box>
+          </div>
         )}
-
         {/* Vocab Schema Dropdown */}
         {displayVocabSchemaDropdown ? (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl
               sx={styles}
               className="select"
@@ -838,11 +883,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
             </FormControl>
-          </Box>
+          </div>
         ) : (
           // Custom Vocab Schema Input
           displayVocabSchemaInput && (
-            <Box mb={4}>
+            <div style={{ marginBottom: "32px" }}>
               <TextField
                 fullWidth
                 variant="standard"
@@ -854,13 +899,55 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               {formError.vocabSchemaValue.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
-            </Box>
+            </div>
           )
         )}
-
+        {displayResultSchemaInput && (
+          <>
+            <div style={{ marginBottom: "32px" }}>
+              <Checkbox
+                checked={formData.autoGenerateResultSchema}
+                checkbox-id="auto-generate-result-schema-checkbox"
+                label={getText(i18nKeys.ADD_STUDY_DIALOG__AUTO_GENERATE_RESULT_SCHEMA)}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                  const autoGenerateResultSchema = event.target.checked;
+                  const changes: any = { autoGenerateResultSchema };
+                  // If checked, use default result schema name
+                  if (autoGenerateResultSchema) {
+                    if (formData.schemaOption === SchemaTypes.CreateCDM) {
+                      // For CreateCDM, the value will be generated in the backend
+                      changes.resultSchemaValue = "";
+                    } else if (formData.cdmSchemaValue) {
+                      // For other types, generate it based on cdm schema value
+                      changes.resultSchemaValue = `${formData.cdmSchemaValue}_results`;
+                    }
+                  }
+                  handleFormDataChange(changes);
+                }}
+              />
+            </div>
+            {/* Hide textbox for CreateCDM when checkbox is checked */}
+            {!(formData.schemaOption === SchemaTypes.CreateCDM && formData.autoGenerateResultSchema) && (
+              <div style={{ marginBottom: "32px" }}>
+                <TextField
+                  fullWidth
+                  variant="standard"
+                  label={getText(i18nKeys.ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME)}
+                  value={formData.resultSchemaValue}
+                  onChange={(event) => handleFormDataChange({ resultSchemaValue: event.target.value })}
+                  error={formError.resultSchemaValue.required}
+                  disabled={formData.autoGenerateResultSchema}
+                />
+                {formError.resultSchemaValue.required && (
+                  <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                )}
+              </div>
+            )}
+          </>
+        )}
         {/* Data Model Options */}
         {displayDataModels && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <FormControl
               sx={styles}
               className="select"
@@ -894,12 +981,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
             </FormControl>
-          </Box>
+          </div>
         )}
-
         {/* Custom Data Model Options */}
         {displayCustomDataModelInput && (
-          <Box mb={4}>
+          <div style={{ marginBottom: "32px" }}>
             <TextField
               fullWidth
               variant="standard"
@@ -912,10 +998,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             {formError.dataModelCustom.required && (
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
-          </Box>
+          </div>
         )}
-
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <FormControl
             sx={styles}
             className="select"
@@ -946,27 +1031,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
             )}
           </FormControl>
-        </Box>
-        {/* <Box mb={4}>
-          <TextField
-            fullWidth
-            variant="standard"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__TYPE)}
-            value={formData.type}
-            onChange={(event) => handleFormDataChange({ type: event.target.value })}
-          />
-        </Box> */}
-        <div>
-          <Checkbox
-            checked={formData.showRequestAccess}
-            checkbox-id="request-access"
-            label={getText(i18nKeys.ADD_STUDY_DIALOG__SHOW_REQUEST_ACCESS)}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => {
-              handleFormDataChange({ showRequestAccess: event.target.checked });
-            }}
-          />
         </div>
-        <Box mb={4}>
+        <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
@@ -983,79 +1049,57 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__ENTER_VALID_DATASET_CODE)}</FormHelperText>
           )}
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
-        </Box>
-        {/* {formData?.schemaOption !== "" && formData?.schemaOption !== SchemaTypes.NoCDM && (
-          <div>
-            <Checkbox
-              checked={formData.cleansedSchemaOption}
-              checkbox-id="isCreateCleansedSchemaOptionSelected"
-              label={getText(i18nKeys.ADD_STUDY_DIALOG__CREATE_DATA_CLEANSING)}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleFormDataChange({ cleansedSchemaOption: event.target.checked });
-              }}
-            />
-          </div>
-        )} */}
+        </div>
+        {displayCacheConfiguration && (
+          <>
+            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>Cache dataset configuration</div>
 
-        <Box mb={4}>
-          <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__METADATA)}</Box>
-          {attributeConfigs.length !== 0 &&
-            studyMetadata.map((data, index) => (
-              <MetadataForm
-                key={index}
-                studyMetadata={data}
-                index={index}
-                attributeConfigs={attributeConfigs}
-                handleRemoveMetadata={() => handleRemoveLine(index, studyMetadata, setStudyMetadata)}
-                handleMetadataChange={handleMetadataChange}
-                error={formMetadataErrorIndex.includes(index)}
+            <div style={{ marginBottom: "32px" }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                label="Cache Dataset Name"
+                value={formData.cacheDatasetName}
+                onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
+                error={formError.cacheDatasetName.required}
               />
-            ))}
-          <IconButton
-            startIcon={<AddSquareIcon />}
-            title={getText(i18nKeys.ADD_STUDY_DIALOG__ADD_METADATA)}
-            onClick={handleAddMetadataForm}
-          />
-        </Box>
-
-        {/* <Box fontWeight="bold">{getText(i18nKeys.ADD_STUDY_DIALOG__TAGS)}</Box>
-        <Box mb={4}>
-          <Autocomplete
-            multiple
-            sx={styles}
-            id="autocomplete-tags"
-            options={tagConfigs}
-            renderTags={(value: string[], getTagProps) =>
-              value.map((option: string, index: number) => (
-                <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
-              ))
-            }
-            renderInput={(params) => <TextField {...params} variant="standard" />}
-            value={studyTagsData}
-            onChange={handleTagChange}
-          />
-        </Box> */}
-
-        {/* <Box mb={4}>
-          <FormControl component="fieldset">
-            <FormLabel component="legend">{getText(i18nKeys.ADD_STUDY_DIALOG__DATA_VISIBILITY)}</FormLabel>
-            <RadioGroup
-              name={getText(i18nKeys.ADD_STUDY_DIALOG__VISIBILITY_STATUS_GROUP)}
-              value={formData.visibilityStatus}
-              onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                handleFormDataChange({ visibilityStatus: event.target.value });
-              }}
-            >
-              <FormControlLabel value="PUBLIC" control={<Radio />} label={getText(i18nKeys.ADD_STUDY_DIALOG__PUBLIC)} />
-              <FormControlLabel
-                value="DEFAULT"
-                control={<Radio />}
-                label={getText(i18nKeys.ADD_STUDY_DIALOG__PRIVATE)}
-              />
-              <FormControlLabel value="HIDDEN" control={<Radio />} label={getText(i18nKeys.ADD_STUDY_DIALOG__HIDDEN)} />
-            </RadioGroup>
-          </FormControl>
-        </Box> */}
+              {formError.cacheDatasetName.required && (
+                <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
+            </div>
+            <div style={{ marginBottom: "32px" }}>
+              <FormControl
+                sx={styles}
+                className="select"
+                variant="standard"
+                fullWidth
+                {...(formError.vocabSchemaValue.required ? { error: true } : {})}
+              >
+                <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+                <Select
+                  sx={styles}
+                  value={formData.cacheDatasetType}
+                  onChange={(event: SelectChangeEvent<string>) =>
+                    handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
+                  }
+                  inputProps={{
+                    name: "cacheDatasetType",
+                    id: "cache-dataset-option",
+                  }}
+                >
+                  {cacheDatasetTypeOptions.map((option) => (
+                    <MenuItem sx={styles} key={option.type} value={option.type}>
+                      {option.title}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {formError.cacheDatasetType.required && (
+                  <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                )}
+              </FormControl>
+            </div>
+          </>
+        )}
       </div>
       <Divider />
       <div className="button-group-actions">

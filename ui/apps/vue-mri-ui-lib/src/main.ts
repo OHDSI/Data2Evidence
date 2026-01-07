@@ -21,18 +21,26 @@ import store from './store'
 import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
+import { applyTheme } from './utils/ThemeManager'
 
 let app: Component
 const portalAPI = getPortalAPI()
 const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
+import './styles/themes/_main.scss'
+
 if (isLocal) {
   app = createApp(RootLayout as unknown as Component)
+  applyTheme('atlas')
+
+  // For local development, uncomment to use D2E theme
+  // applyTheme('d2e')
 
   // Initialize registries
   initializeApps()
   initializeComponents()
 } else {
   app = createApp(App as unknown as Component)
+  applyTheme('d2e')
 }
 
 app.use(store)
@@ -51,9 +59,13 @@ app.directive('position-center', positionCenter)
 app.directive('mouse-scroll', mouseScroll)
 app.directive('resize-table', resizeTable)
 
-app.config.errorHandler = () => null
-app.config.warnHandler = () => null
-app.config.compilerOptions.isCustomElement = tag => tag.startsWith('d4l-')
+// Suppress errors and warnings in production unless VUE_APP_DEBUG is enabled
+// @ts-ignore - process.env is provided by webpack DefinePlugin
+// eslint-disable-next-line no-undef
+if (process.env.VUE_APP_DEBUG !== 'true') {
+  app.config.errorHandler = () => null
+  app.config.warnHandler = () => null
+}
 
 // Bind the custom elements to the window object
 applyPolyfills().then(() => {

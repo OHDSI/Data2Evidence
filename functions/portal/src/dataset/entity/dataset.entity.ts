@@ -28,6 +28,12 @@ export class Dataset extends Audit {
   @Column({ name: 'vocab_schema_name', nullable: true })
   vocabSchemaName: string
 
+  @Column({ name: 'result_schema_name' })
+  resultSchemaName: string
+
+  @Column({ name: 'flow_parameters', type: 'jsonb', nullable: true })
+  flowParameters: Record<string, unknown> | null
+
   @Column({ name: 'token_dataset_code', unique: true })
   tokenDatasetCode: string
 

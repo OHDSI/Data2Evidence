@@ -118,14 +118,13 @@ export default {
 
     this.setupCharts()
   },
-  beforeDestroy() {
+  beforeUnmount() {
     // window.removeEventListener('resize', this.renderChart);
   },
 }
 </script>
 
 <style lang="scss">
-@import '../styles/_mri-variables.scss';
 .error-placeholder {
   height: 100%;
   display: flex;
@@ -134,7 +133,7 @@ export default {
 }
 
 .error-wrapper {
-  background-color: $MriLightestText;
+  background-color: var(--color-mri-lightest-text);
   border-top: 1px solid #e5e5e5;
   box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3);
   padding: 6px;

@@ -20,6 +20,7 @@ export class FilterQueryBuilder {
     [DomainRequirement.MEASUREMENT]: 1800,
     [DomainRequirement.DEVICE_EXPOSURE]: 2100
   }
+  private readonly MAX_DOMAINS_LENGTH = 1000;
   private queryArr: string[] = []
   private dialect: string
   private schemas: string[]
@@ -71,6 +72,12 @@ export class FilterQueryBuilder {
         break
       case 'domains':
         const domains = this.filterParams.domains
+        if (!Array.isArray(domains)) {
+          throw new Error(`Invalid format for domains filter: should be an array`);
+        }
+        if (domains.length > this.MAX_DOMAINS_LENGTH) {
+          throw new Error(`Too many domains specified in filter (${domains.length}): maximum allowed is ${this.MAX_DOMAINS_LENGTH}`);
+        }
         for (let i = 0; i < domains.length; i++) {
           const domain = domains[i]
           this.addDomainSql(schema, domain)

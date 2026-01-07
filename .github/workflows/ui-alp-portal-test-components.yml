@@ -1,5 +1,8 @@
 name: d2e-ui/portal components tests
 
+permissions:
+  contents: read
+
 on:
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
@@ -9,34 +12,58 @@ on:
       - develop
 
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
   test-alp-portal-components:
+    needs: [pick_runner]
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     defaults:
       run:
         working-directory: ./ui
-    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
 
-    - uses: dorny/paths-filter@v3
-      id: check_file_changed
-      with:
-        filters: |
-          portal_components_changed:
-            - 'libs/portal-components/**'
-            - '.github/workflows/ui-alp-portal-test-components.yml'
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+      - uses: actions/checkout@v4
 
-    - name: Setup node if files have changed
-      uses: actions/setup-node@v4
-      if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_components_changed == 'true'
-      with:
-        node-version: '18.14.0'
+      - uses: dorny/paths-filter@v3
+        id: check_file_changed
+        with:
+          filters: |
+            portal_components_changed:
+              - 'libs/portal-components/**'
+              - '.github/workflows/ui-alp-portal-test-components.yml'
 
-    # Run the step only with "portal_components_changed" equals "True"
-    - name: Run unit tests if files have changed
-      if: github.ref_name == 'develop' || steps.check_file_changed.outputs.portal_components_changed == 'true'
-      run: |
-        cd libs/portal-components
-        yarn --prefer-offline
-        yarn svgr
-        yarn test
+      - name: Setup bun if files have changed
+        uses: oven-sh/setup-bun@v2
+        if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_file_changed.outputs.portal_components_changed == 'true'
+        with:
+          bun-version: 1.2.23
+
+      # Run the step only with "portal_components_changed" equals "True"
+      - name: Run unit tests if files have changed
+        if: github.ref_name == 'develop' || github.event_name == 'merge_group' || steps.check_file_changed.outputs.portal_components_changed == 'true'
+        run: |
+          bun install
+          cd libs/portal-components
+          bun svgr
+          bun run test

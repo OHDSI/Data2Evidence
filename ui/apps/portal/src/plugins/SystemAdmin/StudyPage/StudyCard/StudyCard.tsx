@@ -1,15 +1,17 @@
-import { ArrowBack, OpenInBrowser, PlayCircleFilled } from "@mui/icons-material";
+import { ArrowBack, OpenInBrowser, PlayCircleFilled, StopCircle } from "@mui/icons-material";
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
-import { Button, Card, RunStudyIcon, TrashIcon } from "@portal/components";
+import { Button, Card, RunStudyIcon, TrashIcon, EditIcon } from "@portal/components";
 import React, { FC, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
 import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
+import { i18nKeys } from "../../../../contexts/app-context/states";
 import env from "../../../../env";
-import { usePollingEffect } from "../../../../hooks";
+import { usePollingEffect, useDialogHelper } from "../../../../hooks";
 import { StrategusStudy, StrategusStudyType } from "../../../../types/strategusStudy";
+import StudyTemplateDialog from "../StudyTemplateDialog/StudyTemplateDialog";
 import "./StudyCard.scss";
 
 interface StudyCardProps {
@@ -19,22 +21,33 @@ interface StudyCardProps {
   setFeedback: (feedback: any) => void;
   onDownloadResults?: (study: StrategusStudy) => void;
   onShareResults?: (study: StrategusStudy) => void;
+  onUpdateStudyViewerCode?: (studyId: string, code: string) => void;
 }
 
-type ViewerStatus = "idle" | "starting" | "up" | "stopping" | "down";
+type ViewerStatus = "idle" | "starting" | "up" | "stopping" | "down" | "failed";
 
-export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDatasetId, setFeedback }) => {
-  const { getText, i18nKeys } = useTranslation();
+export const StudyCard: FC<StudyCardProps> = ({
+  study,
+  highlightText,
+  selectedDatasetId,
+  setFeedback,
+  onUpdateStudyViewerCode,
+}) => {
+  const { getText } = useTranslation();
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [bearerToken, setBearerToken] = useState<string>("");
   const [viewerStatus, setViewerStatus] = useState<ViewerStatus>("idle");
+  const [viewerCode, setViewerCode] = useState(study.viewerCode);
+
   const isViewerUp = viewerStatus === "up";
+  const isViewerFailed = viewerStatus === "failed";
   const isStartingViewer = viewerStatus === "starting";
   const isStoppingViewer = viewerStatus === "stopping";
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
   const [isIframeViewerOpen, setIsIframeViewerOpen] = useState<boolean>(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const VIEWER_BASE_URL = `${env.REACT_APP_DN_BASE_URL}strategus-results/${study.id}/`;
+  const [showStudyTemplateDialog, openStudyTemplateDialog, closeStudyTemplateDialog] = useDialogHelper(false);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -55,7 +68,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   useEffect(() => {
     if (isIframeViewerOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
       try {
-        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict;`;
       } catch (error) {
         console.error("Error setting cookie in iframe:", error);
       }
@@ -65,10 +78,10 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       const token = (e as CustomEvent)?.detail?.accessToken as string | undefined;
       if (!token) return;
       setBearerToken(token);
-      document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+      document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict;`;
       if (isIframeViewerOpen && iframeRef.current?.contentWindow) {
         try {
-          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict;`;
         } catch (err) {
           console.error("Error updating iframe cookie after OIDC refresh:", err);
         }
@@ -106,7 +119,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
   const handleOpenIframeViewer = useCallback(() => {
     if (bearerToken) {
       try {
-        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict; httpOnly;`;
+        document.cookie = `authtoken=${bearerToken}; path=/strategus-results; secure; SameSite=Strict;`;
       } catch (err) {
         console.error("Error setting parent cookie before opening iframe:", err);
       }
@@ -133,6 +146,8 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
         try {
           if (study.type == StrategusStudyType.NETWORK) {
             strategusJson = await api.systemPortal.getStudyStrategusJson(study.id!);
+            // backend returns object, convert to string
+            strategusJson = JSON.stringify(strategusJson);
           } else {
             const strategusAnalysis = await api.strategusAnalysis.getStrategusAnalysis(study.id);
             strategusJson = strategusAnalysis.analysisSpec;
@@ -150,12 +165,13 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
 
         const requestData = {
           json_graph: {
-            analysisSpecification: JSON.stringify(strategusJson),
+            analysisSpecification: strategusJson,
           },
           options: {
             mode: "kernel",
             datasetId: selectedDatasetId,
             studyId: study.id,
+            uploadResults: true,
           },
         };
         const response = await api.dataflow.createStudyAnalysisRun(requestData);
@@ -190,7 +206,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       }
       try {
         setViewerStatus("starting");
-        await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId);
+        await api.strategusResults.startStrategusResultViewer(study.id, selectedDatasetId, viewerCode);
         setFeedback({
           type: "success",
           message: getText(i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED, [study.name || study.id || "Unknown"]),
@@ -203,7 +219,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           message: getText(i18nKeys.STUDY_CARD__ERROR_START_VIEWER, [study.name || study.id || "Unknown"]),
           autoClose: 5000,
         });
-        setViewerStatus("idle");
+        setViewerStatus("failed");
       }
     },
     [
@@ -211,6 +227,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
       selectedDatasetId,
       setFeedback,
       study,
+      viewerCode,
       i18nKeys.STUDY_CARD__ERROR_START_VIEWER,
       i18nKeys.STUDY_CARD__SUCCESS_VIEWER_STARTED,
     ]
@@ -282,6 +299,15 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
     [selectedDatasetId, setFeedback, study]
   );
 
+  const handleCodeSave = useCallback(
+    async (newCode: string) => {
+      if (typeof onUpdateStudyViewerCode === "function" && study.id) {
+        onUpdateStudyViewerCode(study.id, newCode);
+      }
+    },
+    [onUpdateStudyViewerCode, study.id]
+  );
+
   return (
     <>
       <Card className="study-card" borderRadius={18}>
@@ -319,18 +345,31 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                 )
               }
               text={isRunning ? getText(i18nKeys.STUDY_CARD__RUNNING) : getText(i18nKeys.STUDY_CARD__RUN_STUDY)}
-              disabled={selectedDatasetId ? false : true}
+              disabled={!selectedDatasetId}
               variant="text"
             />
 
-            {isViewerUp ? (
+            <Button
+              onClick={openStudyTemplateDialog}
+              startIcon={<EditIcon className="study-card__action-icon" />}
+              text={getText(i18nKeys.STUDY_CARD__EDIT_VIEWER)}
+              disabled={!selectedDatasetId || isViewerUp || isViewerFailed}
+              variant="text"
+              sx={{
+                "&.Mui-disabled .MuiButton-startIcon path": {
+                  fill: "grey",
+                },
+              }}
+            />
+
+            {isViewerUp || isViewerFailed ? (
               <Button
                 onClick={handleStopViewer}
                 startIcon={
                   isStoppingViewer ? (
                     <CircularProgress size={16} className="study-card__action-icon study-card__loading-icon" />
                   ) : (
-                    <PlayCircleFilled className="study-card__action-icon" />
+                    <StopCircle className="study-card__action-icon" />
                   )
                 }
                 text={
@@ -338,7 +377,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                     ? getText(i18nKeys.STUDY_CARD__STOPPING_VIEWER)
                     : getText(i18nKeys.STUDY_CARD__STOP_VIEWER)
                 }
-                disabled={selectedDatasetId ? false : true}
+                disabled={!selectedDatasetId}
                 variant="text"
               />
             ) : (
@@ -356,7 +395,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
                     ? getText(i18nKeys.STUDY_CARD__STARTING_VIEWER)
                     : getText(i18nKeys.STUDY_CARD__START_VIEWER)
                 }
-                disabled={selectedDatasetId ? false : true}
+                disabled={!selectedDatasetId}
                 variant="text"
               />
             )}
@@ -381,7 +420,7 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
               text={
                 isCleaningUp ? getText(i18nKeys.STUDY_CARD__CLEANING_UP) : getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)
               }
-              disabled={selectedDatasetId ? false : true}
+              disabled={!selectedDatasetId}
               variant="text"
             />
           </div>
@@ -407,6 +446,15 @@ export const StudyCard: FC<StudyCardProps> = ({ study, highlightText, selectedDa
           />
         </div>
       )}
+
+      <StudyTemplateDialog
+        study={study}
+        open={showStudyTemplateDialog}
+        onClose={closeStudyTemplateDialog}
+        code={viewerCode}
+        onCodeChange={setViewerCode}
+        onSave={handleCodeSave}
+      />
     </>
   );
 };

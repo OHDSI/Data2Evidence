@@ -44,7 +44,7 @@ sap.ui.define([
 	BackendLinker.getDatasets = function (fCallback) {
 
 		return ConfigUtils.ajax({
-			url: "/system-portal/dataset/list?role=researcher",
+			url: "/d2e/system-portal/dataset/list?role=researcher",
 			type: "GET",
 			dataType: "json",
 			contentType: "application/json; charset=utf-8"
@@ -77,7 +77,7 @@ sap.ui.define([
 		fCallback) {
 
 		return ConfigUtils.ajax(jQuery.extend({
-			url: "/hc/hph/cdw/config/services/config.xsjs",
+			url: "/d2e/hc/hph/cdw/config/services/config.xsjs",
 			type: "POST",
 			dataType: "json",
 			contentType: "application/json; charset=utf-8"
@@ -264,7 +264,7 @@ sap.ui.define([
 		BackendLinker
 			._postJson(
 				{
-					url: "/hc/hph/cdw/services/cdw_services.xsjs?action=attribute_infos_service",
+					url: "/d2e/hc/hph/cdw/services/cdw_services.xsjs?action=attribute_infos_service",
 					data: JSON.stringify({
 						attributePath: path,
 						exprToUse: exprToUse,
@@ -276,7 +276,7 @@ sap.ui.define([
 		BackendLinker
 			._postJson(
 				{
-					url: "/hc/hph/cdw/services/cdw_services.xsjs?action=domain_values_service",
+					url: "/d2e/hc/hph/cdw/services/cdw_services.xsjs?action=domain_values_service",
 					data: JSON.stringify({
 						attributePath: path,
 						suggestionLimit: 10,
@@ -337,6 +337,9 @@ sap.ui.define([
 				from: {},
 				annotations: [],
 				domainFilter: "",
+				includeDescendants: false,
+				includeDescendantsExpression: "",
+				optionalFiltering: false,
 				standardConceptCodeFilter: "",
 				cohortDefinitionKey: "",
 				conceptIdentifierType: ""
@@ -599,6 +602,18 @@ sap.ui.define([
 
 		domainFilter: function (frontValue, originalContainer, destination) {
 			destination.domainFilter = frontValue.value;
+		},
+
+		includeDescendants: function (frontValue, originalContainer, destination) {
+			destination.includeDescendants = (frontValue.value === true);
+		},
+
+		includeDescendantsExpression: function (frontValue, originalContainer, destination) {
+			destination.includeDescendantsExpression = frontValue.value;
+		},
+
+		optionalFiltering: function (frontValue, originalContainer, destination) {
+			destination.optionalFiltering = (frontValue.value === true);
 		},
 
 		standardConceptCodeFilter: function (frontValue, originalContainer, destination) {
@@ -1206,6 +1221,39 @@ sap.ui.define([
 			destination.domainFilter = frontValue;
 		},
 
+		includeDescendants: function (backValue, destination) {
+			var frontValue = {
+				value: backValue === true,
+				validity: {
+					message: "",
+					status: "valid"
+				}
+			};
+			destination.includeDescendants = frontValue;
+		},
+
+		includeDescendantsExpression: function (backValue, destination) {
+			var frontValue = {
+				value: backValue,
+				validity: {
+					message: "",
+					status: "valid"
+				}
+			};
+			destination.includeDescendantsExpression = frontValue;
+		},
+
+		optionalFiltering: function (backValue, destination) {
+			var frontValue = {
+				value: backValue === true,
+				validity: {
+					message: "",
+					status: "valid"
+				}
+			};
+			destination.optionalFiltering = frontValue;
+		},
+
 		standardConceptCodeFilter: function (backValue, destination) {
 			var frontValue = {
 				value: backValue,
@@ -1427,7 +1475,7 @@ sap.ui.define([
 		return BackendLinker
 			._postJson(
 				{
-					url: "/hc/hph/cdw/services/cdw_services.xsjs?action=attributeType_service",
+					url: "/d2e/hc/hph/cdw/services/cdw_services.xsjs?action=attributeType_service",
 					data: JSON.stringify({})
 				}, callback);
 	};
@@ -1437,7 +1485,7 @@ sap.ui.define([
 		return BackendLinker
 			._postJson(
 				{
-					url: "/hc/hph/cdw/services/cdw_services.xsjs?action=table_suggestion_service",
+					url: "/d2e/hc/hph/cdw/services/cdw_services.xsjs?action=table_suggestion_service",
 					data: JSON.stringify({
 						expression: data.expression,
 						table: data.table,
@@ -1451,7 +1499,7 @@ sap.ui.define([
 		return BackendLinker
 			._postJson(
 				{
-					url: "/hc/hph/cdw/services/cdw_services.xsjs?action=column_suggestion_service",
+					url: "/d2e/hc/hph/cdw/services/cdw_services.xsjs?action=column_suggestion_service",
 					data: JSON.stringify({
 						table: data.table,
 						mapping: data.mapping

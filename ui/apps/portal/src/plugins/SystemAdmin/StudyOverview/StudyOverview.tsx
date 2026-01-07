@@ -1,16 +1,16 @@
-import React, { FC, useCallback, useState } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
 import TableContainer from "@mui/material/TableContainer";
+import IconButton from "@mui/material/IconButton";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import {
   Loader,
   TableCell,
   TableRow,
   Text,
-  VisibilityPublicIcon,
-  VisibilityOnIcon,
-  VisibilityOffIcon,
   Button,
   Tooltip,
 } from "@portal/components";
@@ -31,7 +31,10 @@ import { api } from "../../../axios/api";
 import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
+import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
 import "./StudyOverview.scss";
+import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
+import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
 
 const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
@@ -68,9 +71,25 @@ const StudyOverview: FC = () => {
   const [showCreateCacheDialog, openCreateCacheDialog, closeCreateCacheDialog] = useDialogHelper(false);
   const [showSetupSemanticSearchDialog, openSetupSemanticSearchDialog, closeSetupSemanticSearchDialog] =
     useDialogHelper(false);
+  const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
+    useDialogHelper(false);
+  const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
+  const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
+    useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [loading, setLoading] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [strategusStudies, setStrategusStudies] = useState<any[]>([]);
+  const [loadingStrategusStudies, setLoadingStrategusStudies] = useState(false);
+
+  const handleSourceInformation = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openSourceInformationDialog();
+    },
+    [openSourceInformationDialog]
+  );
 
   const handleUpdateStudy = useCallback(
     (dataset: Study) => {
@@ -164,25 +183,147 @@ const StudyOverview: FC = () => {
     [openSetupSemanticSearchDialog]
   );
 
-  const visibilityImgAlt = useCallback((value?: string) => {
-    if (!value) return;
-    return value === "DEFAULT" ? "Normal" : value.charAt(0).toUpperCase() + value.substring(1).toLowerCase();
+  const handleManageDashboard = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openManageDashboardDialog();
+    },
+    [openManageDashboardDialog]
+  );
+
+  const toggleRow = useCallback((datasetId: string) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [datasetId]: !prev[datasetId],
+    }));
   }, []);
 
-  const visibilityIcon = useCallback(
-    (visibilityStatus: string) => {
-      const alt = visibilityImgAlt(visibilityStatus);
-      switch (visibilityStatus) {
-        case "HIDDEN":
-          return <VisibilityOffIcon title={alt} />;
-        case "PUBLIC":
-          return <VisibilityPublicIcon title={alt} />;
-        default:
-          return <VisibilityOnIcon title={alt} />;
+  useEffect(() => {
+    const fetchStrategusStudies = async () => {
+      setLoadingStrategusStudies(true);
+      try {
+        const studies = await api.strategusAnalysis.getAllStrategusAnalysis();
+        setStrategusStudies(studies);
+      } catch (error) {
+        console.error("Error fetching strategus studies:", error);
+        setStrategusStudies([]);
+      } finally {
+        setLoadingStrategusStudies(false);
       }
-    },
-    [visibilityImgAlt]
-  );
+    };
+
+    fetchStrategusStudies();
+  }, [refetch]);
+
+  // Organize datasets into parent-child structure for source/omop/hana and fhir, and separate lists for studies
+  const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets } = useMemo(() => {
+    if (!datasets) return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [] };
+
+    const sourceOmopHana: Study[] = [];
+    const studies: Study[] = [];
+    const fhir: Study[] = [];
+    const cdmChildrenMap = new Map<string, Study[]>();
+    const fhirChildrenMap = new Map<string, Study[]>();
+
+    // First pass: separate datasets by type and build children maps
+    datasets.forEach((dataset: Study) => {
+      const type = dataset.type?.toLowerCase();
+      
+      if (type === "study") {
+        // Only study type datasets go to studies table
+        studies.push(dataset);
+      } else if (type === "fhir" || type === "non_omop") {
+        // FHIR and non_omop datasets go to FHIR table
+        // Check if this is a child dataset (has source_dataset_id attribute)
+        const sourceIdAttribute = dataset.attributes?.find(
+          (attr) => attr.attributeId === "source_dataset_id"
+        );
+        
+        if (sourceIdAttribute && sourceIdAttribute.value) {
+          // This is a child dataset
+          const parentId = sourceIdAttribute.value;
+          if (!fhirChildrenMap.has(parentId)) {
+            fhirChildrenMap.set(parentId, []);
+          }
+          fhirChildrenMap.get(parentId)!.push(dataset);
+        } else {
+          // This is a parent or standalone FHIR dataset
+          fhir.push(dataset);
+        }
+      } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop") {
+        // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
+        // Check if this is a child dataset (has source_dataset_id attribute)
+        const sourceIdAttribute = dataset.attributes?.find(
+          (attr) => attr.attributeId === "source_dataset_id"
+        );
+        
+        if (sourceIdAttribute && sourceIdAttribute.value) {
+          // This is a child dataset
+          const parentId = sourceIdAttribute.value;
+          if (!cdmChildrenMap.has(parentId)) {
+            cdmChildrenMap.set(parentId, []);
+          }
+          cdmChildrenMap.get(parentId)!.push(dataset);
+        } else {
+          // This is a parent or standalone dataset (hana datasets won't have children)
+          sourceOmopHana.push(dataset);
+        }
+      }
+    });
+
+    const cdmDatasetsWithChildren = sourceOmopHana.map((dataset) => ({
+      ...dataset,
+      children: cdmChildrenMap.get(dataset.id) || [],
+    }));
+
+    const fhirDatasetsWithChildren = fhir.map((dataset) => ({
+      ...dataset,
+      children: fhirChildrenMap.get(dataset.id) || [],
+    }));
+
+    return {
+      sourceOmopHanaDatasets: cdmDatasetsWithChildren,
+      studyDatasets: studies,
+      fhirDatasets: fhirDatasetsWithChildren,
+    };
+  }, [datasets]);
+
+  // Initialize expandedRows to have all parent datasets expanded by default
+  useEffect(() => {
+    const initialExpandedRows: Record<string, boolean> = {};
+    
+    // Add CDM datasets with children
+    if (sourceOmopHanaDatasets.length > 0) {
+      sourceOmopHanaDatasets.forEach((dataset) => {
+        if (dataset.children && dataset.children.length > 0) {
+          initialExpandedRows[dataset.id] = true;
+        }
+      });
+    }
+    
+    // Add FHIR datasets with children
+    if (fhirDatasets.length > 0) {
+      fhirDatasets.forEach((dataset) => {
+        if (dataset.children && dataset.children.length > 0) {
+          initialExpandedRows[dataset.id] = true;
+        }
+      });
+    }
+    
+    if (Object.keys(initialExpandedRows).length > 0) {
+      setExpandedRows((prev) => {
+        // Only update if there are new parent datasets to expand
+        // Preserve existing expanded state for datasets that are already in prev
+        const merged = { ...prev };
+        Object.keys(initialExpandedRows).forEach((id) => {
+          if (!(id in merged)) {
+            merged[id] = true;
+          }
+        });
+        return merged;
+      });
+    }
+  }, [sourceOmopHanaDatasets, fhirDatasets]);
 
   const handleCloseAddStudyDialog = useCallback(
     (type: CloseDialogType) => {
@@ -224,20 +365,47 @@ const StudyOverview: FC = () => {
     [closeDeleteStudyDialog]
   );
 
+  const handleCloseAddStrategusStudyDialog = useCallback(
+    (success?: boolean) => {
+      closeAddStrategusStudyDialog();
+      if (success) {
+        setRefetch((refetch) => refetch + 1);
+      }
+    },
+    [closeAddStrategusStudyDialog]
+  );
+
   const fetchDatamodelUpdates = useCallback(async () => {
     setFetchUpdatesLoading(true);
     const datasetsByFlow: Record<string, Study[]> = {};
     const apiRequests = [];
+
+    const sourceDatasets: Study[] = [];
+    const cacheDatasets: Study[] = [];
+
     datasets.forEach((item: Study) => {
       const flowName = item.plugin;
 
-      if (flowName === "custom-flow") return;
-      if (!datasetsByFlow[flowName]) {
-        datasetsByFlow[flowName] = [];
+      // Skip datasets with null plugin, custom-flow, or FHIR datasets
+      if (!flowName || flowName === "custom-flow" || item.type === "fhir" || item.type === "non_omop") return;
+
+      // Check if this is a cache/datamart dataset (has source_dataset_id attribute)
+      const hasSourceDatasetId = item.attributes?.some(
+        (attribute) => attribute.attributeId === "source_dataset_id"
+      );
+
+      if (hasSourceDatasetId) {
+        cacheDatasets.push(item);
+      } else if (item.type === "source" || item.type === "hana__omop" || item.type === "hana__non_omop") {
+        if (!datasetsByFlow[flowName]) {
+          datasetsByFlow[flowName] = [];
+        }
+        datasetsByFlow[flowName].push(item);
+        sourceDatasets.push(item);
       }
-      datasetsByFlow[flowName].push(item);
     });
 
+    // Create get_version_info flow runs for source datasets grouped by plugin
     for (const flow in datasetsByFlow) {
       apiRequests.push(
         api.dataflow.createGetVersionInfoFlowRun({
@@ -255,23 +423,25 @@ const StudyOverview: FC = () => {
         })
       );
     }
-    apiRequests.push(
-      api.dataflow.createGetVersionInfoFlowRun({
-        flowRunName: "datamart-get_version_info",
-        options: {
+
+    // Create get_version_info flow run for cache datasets
+    if (cacheDatasets.length > 0) {
+      apiRequests.push(
+        api.dataflow.createGetVersionInfoFlowRun({
+          flowRunName: "cache-get_version_info",
           options: {
-            flow_action_type: "get_version_info",
-            token: "",
-            database_code: "",
-            data_model: "",
-            plugin: "datamart_plugin",
-            datasets: datasets.filter(
-              (dataset) => dataset.attributes?.some((attribute) => attribute.attributeId === "source_dataset_id") // Filter out the datamart dataset
-            ),
+            options: {
+              flowActionType: "get_version_info",
+              token: "",
+              database_code: "",
+              data_model: "",
+              plugin: "create_cachedb_file_plugin",
+              datasets: cacheDatasets,
+            },
           },
-        },
-      })
-    );
+        })
+      );
+    }
 
     try {
       await Promise.all(apiRequests);
@@ -312,6 +482,82 @@ const StudyOverview: FC = () => {
     return currentSchemaVersion !== latestSchemaVersion;
   };
 
+  const renderDatasetRow = (dataset: Study, isChild = false, hasChildren = false) => {
+    const getCellClassName = () => {
+      if (isChild) return "icon-cell icon-cell--child";
+      if (hasChildren) return "icon-cell icon-cell--parent";
+      return "icon-cell icon-cell--no-children";
+    };
+
+    return (
+      <TableRow key={dataset.id}>
+        <TableCell className={getCellClassName()}>
+          {!isChild && hasChildren && (
+            <IconButton
+              aria-label="expand row"
+              size="small"
+              onClick={() => toggleRow(dataset.id)}
+              className="expand-icon-button"
+            >
+              {expandedRows[dataset.id] ? <KeyboardArrowDownIcon /> : <KeyboardArrowRightIcon />}
+            </IconButton>
+          )}
+        </TableCell>
+        <TableCell style={{ maxWidth: "120px" }}>
+          <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
+            {dataset.id}
+          </Text>
+        </TableCell>
+        <TableCell>
+          {dataset.studyDetail?.name ? dataset.studyDetail.name : getText(i18nKeys.STUDY_OVERVIEW__UNTITLED)}
+        </TableCell>
+        <TableCell style={{ maxWidth: "120px" }}>
+          <Text textFormat="wrap" {...(dataset.schemaName && { showCopy: true })} textStyle={{ paddingTop: "5px" }}>
+            {dataset.schemaName || "-"}
+          </Text>
+          {dataset.vocabSchemaName && dataset.schemaName !== dataset.vocabSchemaName && (
+            <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
+              {dataset.vocabSchemaName}
+            </Text>
+          )}
+        </TableCell>
+        <TableCell style={{ maxWidth: "120px" }}>
+          {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION)}
+        </TableCell>
+        <TableCell>{getAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION)}</TableCell>
+        <TableCell>
+          {dataset.dataModel
+            ? `${dataset.dataModel} [${dataset.plugin}]`
+            : dataset.fhir_project_id && (
+                <Tooltip placement="top" title={dataset.fhir_project_id}>
+                  <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
+                </Tooltip>
+              )}
+        </TableCell>
+        <TableCell>{dataset.type}</TableCell>
+        <TableCell className="col-action">
+          <ActionSelector
+            dataset={dataset}
+            isSchemaUpdatable={checkIfStudyIsUpdatable(dataset)}
+            handleSourceInformation={handleSourceInformation}
+            handleDeleteStudy={handleDeleteStudy}
+            handleCopyStudy={handleCopyStudy}
+            handleMetadata={handleUpdateStudy}
+            handleResources={handleResources}
+            handlePermissions={handlePermissions}
+            handleUpdate={handleUpdate}
+            handleRelease={handleRelease}
+            handleDataQuality={handleDataQuality}
+            handleDataCharacterization={handleDataCharacterization}
+            handleCreateCache={handleCreateCache}
+            handleSetupSemanticSearch={handleSetupSemanticSearch}
+            handleManageDashboard={handleManageDashboard}
+          />
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   if (error) console.error(error.message);
   if (loadingDatasets) return <Loader />;
 
@@ -339,103 +585,217 @@ const StudyOverview: FC = () => {
         </div>
 
         <div className="studyoverview__content">
-          <TableContainer className="studyoverview__list">
-            <Table>
-              <colgroup>
-                <col style={{ width: "1%" }} />
-                <col />
-                <col />
-                <col />
-                <col />
-                <col />
-                <col />
-                <col />
-              </colgroup>
-              <TableHead>
-                <TableRow>
-                  <TableCell></TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
-                  <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(!datasets || datasets.length === 0) && (
+          {sourceOmopHanaDatasets.length > 0 && (
+            <>
+              <h4 className="dataset-section-title">{getText(i18nKeys.STUDY_OVERVIEW__CDM_DATASETS)}</h4>
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <colgroup>
+                    <col style={{ width: "1%" }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__TYPE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sourceOmopHanaDatasets.map((dataset: Study & { children?: Study[] }, index: number) => (
+                      <React.Fragment key={dataset.id}>
+                        {renderDatasetRow(dataset, false, (dataset.children?.length || 0) > 0)}
+                        {dataset.children && dataset.children.length > 0 && expandedRows[dataset.id] && (
+                          <>
+                            <TableRow className="cache-datasets-header-row">
+                              <TableCell 
+                                colSpan={9}
+                                className="cache-datasets-header-cell"
+                              >
+                                Cache Datasets
+                              </TableCell>
+                            </TableRow>
+                            {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
+                            {index < sourceOmopHanaDatasets.length - 1 && (
+                              <TableRow className="dataset-separator-row">
+                                <TableCell colSpan={9} className="dataset-separator-cell" />
+                              </TableRow>
+                            )}
+                          </>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+
+          {/* FHIR Datasets Table */}
+          {fhirDatasets.length > 0 && (
+            <>
+              <h4 className="dataset-section-title dataset-section-title--secondary">{getText(i18nKeys.STUDY_OVERVIEW__FHIR_DATASETS)}</h4>
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <colgroup>
+                    <col style={{ width: "1%" }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATASET_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_VERSION)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__LATEST_AVAILABLE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__DATA_MODEL)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__TYPE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {fhirDatasets.map((dataset: Study & { children?: Study[] }, index: number) => (
+                      <React.Fragment key={dataset.id}>
+                        {renderDatasetRow(dataset, false, (dataset.children?.length || 0) > 0)}
+                        {dataset.children && dataset.children.length > 0 && expandedRows[dataset.id] && (
+                          <>
+                            <TableRow className="cache-datasets-header-row">
+                              <TableCell 
+                                colSpan={9}
+                                className="cache-datasets-header-cell"
+                              >
+                                Cache Datasets
+                              </TableCell>
+                            </TableRow>
+                            {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
+                            {index < fhirDatasets.length - 1 && (
+                              <TableRow className="dataset-separator-row">
+                                <TableCell colSpan={9} className="dataset-separator-cell" />
+                              </TableRow>
+                            )}
+                          </>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+
+          {/* Studies Table */}
+          <>
+            <div className="section-header-with-action" style={{ marginTop: "2em" }}>
+              <h4 className="dataset-section-title" style={{ margin: 0 }}>
+                {getText(i18nKeys.STUDY_OVERVIEW__STUDIES)}
+              </h4>
+              <Button text="Add Study" onClick={openAddStrategusStudyDialog} />
+            </div>
+            {loadingStrategusStudies ? (
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell colSpan={9} align="center">
+                        <Loader />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : strategusStudies.length > 0 ? (
+              <TableContainer className="studyoverview__list">
+                <Table>
+                  <colgroup>
+                    <col style={{ width: "1%" }} />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                    <col />
+                  </colgroup>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell></TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__STUDY_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ANALYSIS_ID)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__MODE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NOTEBOOK_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__CREATED_AT)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__UPDATED_AT)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__TYPE)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {strategusStudies.map((study: any) => (
+                      <TableRow key={study.analysisId || study.studyId}>
+                        <TableCell className="icon-cell icon-cell--no-children"></TableCell>
+                        <TableCell>
+                          <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
+                            {study.studyId}
+                          </Text>
+                        </TableCell>
+                        <TableCell>
+                          <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
+                            {study.analysisId || "-"}
+                          </Text>
+                        </TableCell>
+                        <TableCell>{study.mode || "-"}</TableCell>
+                        <TableCell>{study.notebookName || "-"}</TableCell>
+                        <TableCell>
+                          {study.createdAt ? new Date(study.createdAt).toLocaleDateString() : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}
+                        </TableCell>
+                        <TableCell>study</TableCell>
+                        <TableCell className="col-action">
+                          -
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : null}
+          </>
+
+          {/* No Data Message */}
+          {(!datasets || datasets.length === 0) && (
+            <TableContainer className="studyoverview__list">
+              <Table>
+                <TableBody>
                   <TableRow>
-                    <TableCell colSpan={8} align="center">
+                    <TableCell colSpan={9} align="center">
                       {getText(i18nKeys.STUDY_OVERVIEW__NO_DATA)}
                     </TableCell>
                   </TableRow>
-                )}
-                {datasets?.map((dataset: Study) => (
-                  <TableRow key={dataset.id}>
-                    <TableCell style={{ paddingLeft: "2.75em" }}>{visibilityIcon(dataset.visibilityStatus)}</TableCell>
-                    <TableCell style={{ maxWidth: "120px" }}>
-                      <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
-                        {dataset.id}
-                      </Text>
-                    </TableCell>
-                    <TableCell>
-                      {dataset.studyDetail?.name
-                        ? dataset.studyDetail.name
-                        : getText(i18nKeys.STUDY_OVERVIEW__UNTITLED)}
-                    </TableCell>
-                    <TableCell style={{ maxWidth: "120px" }}>
-                      <Text
-                        textFormat="wrap"
-                        {...(dataset.schemaName && { showCopy: true })}
-                        textStyle={{ paddingTop: "5px" }}
-                      >
-                        {dataset.schemaName || "-"}
-                      </Text>
-                      {dataset.vocabSchemaName && dataset.schemaName !== dataset.vocabSchemaName && (
-                        <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
-                          {dataset.vocabSchemaName}
-                        </Text>
-                      )}
-                    </TableCell>
-                    <TableCell style={{ maxWidth: "120px" }}>
-                      {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION)}
-                    </TableCell>
-                    <TableCell>
-                      {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION)}
-                    </TableCell>
-                    <TableCell>
-                      {dataset.dataModel
-                        ? `${dataset.dataModel} [${dataset.plugin}]`
-                        : dataset.fhir_project_id && (
-                            <Tooltip placement="top" title={dataset.fhir_project_id}>
-                              <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
-                            </Tooltip>
-                          )}
-                    </TableCell>
-
-                    <TableCell className="col-action">
-                      <ActionSelector
-                        dataset={dataset}
-                        isSchemaUpdatable={checkIfStudyIsUpdatable(dataset)}
-                        handleDeleteStudy={handleDeleteStudy}
-                        handleCopyStudy={handleCopyStudy}
-                        handleMetadata={handleUpdateStudy}
-                        handleResources={handleResources}
-                        handlePermissions={handlePermissions}
-                        handleUpdate={handleUpdate}
-                        handleRelease={handleRelease}
-                        handleDataQuality={handleDataQuality}
-                        handleDataCharacterization={handleDataCharacterization}
-                        handleCreateCache={handleCreateCache}
-                        handleSetupSemanticSearch={handleSetupSemanticSearch}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
 
           {activeDataset && (
             <UpdateStudyDialog
@@ -509,6 +869,26 @@ const StudyOverview: FC = () => {
               open={showSetupSemanticSearchDialog}
               onClose={closeSetupSemanticSearchDialog}
             />
+          )}
+
+          {showSourceInformationDialog && (
+            <SourceInformationDialog
+              dataset={activeDataset}
+              open={showSourceInformationDialog}
+              onClose={closeSourceInformationDialog}
+            />
+          )}
+
+          {showManageDashboardDialog && (
+            <ManageDashboardDialog
+              study={activeDataset}
+              open={showManageDashboardDialog}
+              onClose={closeManageDashboardDialog}
+            />
+          )}
+
+          {showAddStrategusStudyDialog && (
+            <AddStrategusStudyDialog open={showAddStrategusStudyDialog} onClose={handleCloseAddStrategusStudyDialog} />
           )}
         </div>
       </div>

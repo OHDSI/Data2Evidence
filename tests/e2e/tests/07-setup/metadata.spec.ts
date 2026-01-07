@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -35,9 +35,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('row', { name: 'test Testing DATASET STRING' }).getByRole('button').first().click()
   await page.getByRole('textbox', { name: 'Attribute Name' }).click()
   await page.getByRole('textbox', { name: 'Attribute Name' }).fill('Testing edited')
-  await page.getByRole('button', { name: 'Category DATASET' }).click()
+  await page.getByRole('combobox', { name: 'Category DATASET' }).click()
   await page.getByRole('option', { name: 'FILE' }).click()
-  await page.getByRole('button', { name: 'Datatype STRING' }).click()
+  await page.getByRole('combobox', { name: 'Datatype STRING' }).click()
   await page.getByRole('option', { name: 'NUMBER' }).click()
   await page.getByRole('button', { name: 'Save' }).click()
   await page.reload()

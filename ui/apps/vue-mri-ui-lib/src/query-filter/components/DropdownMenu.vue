@@ -1,9 +1,6 @@
 <script lang="ts">
 export default {
   name: 'DropdownMenu',
-  compatConfig: {
-    MODE: 3,
-  },
 }
 </script>
 
@@ -60,7 +57,9 @@ const emitOption = (option: string): void => {
   background: white;
   border-radius: 4px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   max-height: 200px;
   overflow-y: auto;
   margin-top: 4px;
@@ -70,7 +69,7 @@ const emitOption = (option: string): void => {
   padding: 4px;
   cursor: pointer;
   font-size: 14px;
-  color: #000080;
+  color: var(--color-primary, #000080);
   display: flex;
   align-items: center;
   justify-content: center;

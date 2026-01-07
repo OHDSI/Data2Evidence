@@ -1,11 +1,3 @@
-<script lang="ts">
-export default {
-  compatConfig: {
-    MODE: 3,
-  },
-}
-</script>
-
 <template>
   <div class="select-wrapper" ref="wrapper">
     <!-- Select trigger -->
@@ -108,7 +100,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 }
 .select-trigger:focus,
 .select-trigger:hover {
-  border-color: #1976d2;
+  border-color: var(--color-primary-light, #1976d2);
 }
 
 /* Placeholder */
@@ -164,4 +156,3 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
   opacity: 0;
 }
 </style>
-

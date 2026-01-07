@@ -11,9 +11,7 @@ export const env = {
   VARIABLES: {
     // Prefect Variables
     service_routes: JSON.parse(_env.SERVICE_ROUTES) || {},
-    r_libs_user: _env.R_LIBS_USER,
     duckdb_data_folder: _env.DUCKDB__DATA_FOLDER,
-    cdw_config_duckdb_data_folder: _env.CDW_CONFIG_DUCKDB__DATA_FOLDER,
     fhir_schema_file: _env.FHIR_SCHEMA_JSON_PATH,
     flows_results_s3_dir_path: _env.DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH,
     flows_results_sb_name: _env.DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME,
@@ -44,8 +42,9 @@ export const env = {
     trex_sql_port: _env.TREX__SQL__PORT,
     trex_sql_dbname: _env.TREX__SQL__DBNAME,
     trex_sql_user: _env.TREX__SQL__USER,
-    is_dev_env: (_env.PREFECT__LOCAL_DEBUG) === "true" || false, // Default to false if not set
-    logs_debug_enable: (_env.PREFECT__LOGS_DEBUG_ENABLED) === "true" || false, // Default to false if not set
+    is_dev_env: _env.PREFECT__LOCAL_DEBUG === "true" || false, // Default to false if not set
+    logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
+    fhir_database_code: _env.FHIR_DATABASE_CODE,
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
@@ -66,7 +65,8 @@ export const env = {
     "refresh-token-endpoint": _env.REFRESH_TOKEN__ENDPOINT,
     "refresh-token-client-id": _env.REFRESH_TOKEN__CLIENT_ID,
     "refresh-token-client-secret": _env.REFRESH_TOKEN__CLIENT_SECRET,
-    "google-service-account-json": _env.GOOGLE_APPLICATION_CREDENTIALS
+    "google-service-account-json": _env.GOOGLE_APPLICATION_CREDENTIALS,
+    "azure-openai-api-key": _env.AZURE_OPENAI_API_KEY,
   },
   PREFECT_API_URL: _env.PREFECT_API_URL,
   D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
@@ -80,25 +80,3 @@ export const D2E_SWAP_LIMIT = env.D2E_SWAP_LIMIT;
 export const INSTALL_SQLALCHEMY = env.INSTALL_SQLALCHEMY;
 export const CUSTOM_WORK_POOL_CONFIGURATION =
   env.CUSTOM_WORK_POOL_CONFIGURATION;
-
-
-export function getStudyResultsDbCredentials(): TransformedDBCredentials {
-  return {
-    readUser: _env.PG__STUDY_RESULTS_READ_USER || null,
-    readPassword: _env.PG__STUDY_RESULTS_READ_PASSWORD || null,
-    adminUser: _env.PG__STUDY_RESULTS_ADMIN_USER || null,
-    adminPassword: _env.PG__STUDY_RESULTS_ADMIN_PASSWORD || null,
-    dialect: DatabaseDialect.PG,
-    databaseCode: "study_results",
-    databaseName: _env.PG__STUDY_RESULTS_DB_NAME || "study_results",
-    host: _env.PG__HOST || "",
-    port: parseInt(_env.PG__PORT || "5432", 10),
-    encrypt: false,
-    validateCertificate: false,
-    sslTrustStore: "",
-    hostnameInCertificate: "",
-    enableAuditPolicies: false,
-    readRole: "",
-    authMode: AuthMode.PASSWORD,
-  };
-}

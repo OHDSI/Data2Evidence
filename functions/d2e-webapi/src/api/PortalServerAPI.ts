@@ -1,4 +1,3 @@
-import axios, { AxiosRequestConfig } from "axios";
 import { env } from "../env.ts";
 import { UserArtifactServiceNames } from "../types.ts";
 import { PortalUserArtifacts, IDataset } from "./types.ts";
@@ -7,6 +6,8 @@ import { IUserArtifactAtlasCohortDefinitionDto } from "../dto/cohortdefinition.t
 export class PortalServerAPI {
   private readonly baseURL: string;
   private readonly token: string;
+  // deno-lint-ignore no-explicit-any
+  private portalapi: any;
 
   constructor(token: string) {
     this.token = token;
@@ -20,19 +21,24 @@ export class PortalServerAPI {
       console.error("No url is set for PortalServerAPI");
       throw new Error("No url is set for PortalServerAPI");
     }
+    // @ts-ignore To ignore Cannot find name 'Trex'
+    this.portalapi = Trex.tokioChannel("d2e-functions/portal");
   }
 
   async getResearcherDatasets(): Promise<IDataset[]> {
     const options = await this.getRequestConfig();
     const params = new URLSearchParams();
     params.append("role", "researcher");
-    const result = await axios.get(`${this.baseURL}/dataset/list`, options);
+    const result = await this.portalapi.get(
+      `${this.baseURL}/dataset/list`,
+      options
+    );
     return result.data;
   }
 
   async getStudy(datasetId: string): Promise<IDataset> {
     const options = await this.getRequestConfig();
-    const result = await axios.get(
+    const result = await this.portalapi.get(
       `${this.baseURL}/dataset?datasetId=${datasetId}`,
       options
     );
@@ -46,7 +52,7 @@ export class PortalServerAPI {
     const options = await this.getRequestConfig();
     const params = new URLSearchParams();
     params.append("datasetId", datasetId);
-    const result = await axios.get(
+    const result = await this.portalapi.get(
       `${this.baseURL}/user-artifact/${serviceName}/sequence/nextval`,
       {
         params,
@@ -68,7 +74,10 @@ export class PortalServerAPI {
       const body = { serviceArtifact: atlasCohortDefinition };
 
       const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}`;
-      const result = await axios.post(url, body, { params, ...options });
+      const result = await this.portalapi.post(url, body, {
+        params,
+        ...options,
+      });
       return result.data;
     } catch (error) {
       console.error(error);
@@ -91,7 +100,10 @@ export class PortalServerAPI {
       };
 
       const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}`;
-      const result = await axios.put(url, body, { params, ...options });
+      const result = await this.portalapi.put(url, body, {
+        params,
+        ...options,
+      });
       return result.data;
     } catch (error) {
       console.error(error);
@@ -120,7 +132,7 @@ export class PortalServerAPI {
       const url = `${this.baseURL}/user-artifact/${
         UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS
       }/${encodeURIComponent(atlasCohortDefinitionId)}`;
-      const result = await axios.delete(url, { params, ...options });
+      const result = await this.portalapi.delete(url, { params, ...options });
       return result.data;
     } catch (error) {
       console.error(error);
@@ -138,7 +150,7 @@ export class PortalServerAPI {
       params.append("datasetId", datasetId);
 
       const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}/list`;
-      const result = await axios.get(url, { params, ...options });
+      const result = await this.portalapi.get(url, { params, ...options });
 
       return result.data;
     } catch (error) {
@@ -168,7 +180,7 @@ export class PortalServerAPI {
       const url = `${this.baseURL}/user-artifact/${
         UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS
       }/${encodeURIComponent(atlasCohortDefinitionId)}`;
-      const result = await axios.get(url, { params, ...options });
+      const result = await this.portalapi.get(url, { params, ...options });
 
       if (!result.data) {
         throw new Error(
@@ -183,18 +195,15 @@ export class PortalServerAPI {
     }
   }
 
-  private async getDataset(datasetId: string): Promise<{
-    dialect: string;
-    vocabSchemaName: string;
-    schemaName: string;
-  }> {
+  async getDataset(datasetId: string): Promise<IDataset> {
     console.info(`Portal request to get dataset info for id : ${datasetId}`);
     const errorMessage = `Error while getting dataset info for id : ${datasetId}`;
     try {
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/dataset`;
-      options.params = { datasetId: datasetId };
-      const result = await axios.get(url, options);
+      const url = `${this.baseURL}/dataset?datasetId=${encodeURIComponent(
+        datasetId
+      )}`;
+      const result = await this.portalapi.get(url, options);
       return result.data;
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
@@ -202,37 +211,8 @@ export class PortalServerAPI {
     }
   }
 
-  async getDatasetDetails(datasetId: string) {
-    const dataset = await this.getDataset(datasetId);
-    if (!dataset) {
-      throw new Error(`Could not find dataset with datasetId: ${datasetId}`);
-    }
-
-    if (!dataset.dialect) {
-      throw new Error(`Dialect does not exist for datasetId: ${datasetId}`);
-    }
-
-    if (!dataset.schemaName) {
-      throw new Error(`Schema Name does not exist for datasetId: ${datasetId}`);
-    }
-
-    if (!dataset.vocabSchemaName) {
-      throw new Error(
-        `vocabSchemaName does not exist for datasetId: ${datasetId}`
-      );
-    }
-
-    return {
-      dialect: dataset.dialect,
-      vocabSchemaName: dataset.vocabSchemaName,
-      schemaName: dataset.schemaName,
-    };
-  }
-
   private getRequestConfig() {
-    let options: AxiosRequestConfig = {};
-
-    options = {
+    const options = {
       headers: {
         Authorization: this.token,
       },

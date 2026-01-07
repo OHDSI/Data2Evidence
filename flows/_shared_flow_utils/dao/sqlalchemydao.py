@@ -1,16 +1,11 @@
 from functools import wraps
 from typing import Any, Callable
 from datetime import datetime
-import pandas as pd
-
 
 import sqlalchemy as sql
-from sqlalchemy.engine import Connection
-from sqlalchemy.sql.selectable import Select
-from sqlalchemy.types import Text, UnicodeText
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.schema import Table, Column
-from sqlalchemy.engine.cursor import CursorResult
-from sqlalchemy.schema import CreateSchema, DropSchema
+from sqlalchemy.schema import CreateSchema, DropSchema, DropTable
 
 from _shared_flow_utils.dao.daobase import DaoBase
 from _shared_flow_utils.types import SupportedDatabaseDialects, UserType
@@ -26,9 +21,8 @@ class SqlAlchemyDao(DaoBase):
         use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
-        is_study_results_db: bool = False,
     ):
-        super().__init__(use_cache_db, database_code, user_type, is_study_results_db)
+        super().__init__(use_cache_db, database_code, user_type)
 
     # --- Property methods ---
 
@@ -64,6 +58,7 @@ class SqlAlchemyDao(DaoBase):
             host=configs.host,
             port=configs.port,
             database_name=database_name,
+            db_credentials=configs
         )
         return sql.create_engine(connection_string, connect_args=connect_args)
 
@@ -74,9 +69,11 @@ class SqlAlchemyDao(DaoBase):
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(schema)
-        with self.engine.connect() as connection:
-            connection.execute(CreateSchema(schema))
-            connection.commit()
+        schema_exists = self.check_schema_exists(schema)
+        if not schema_exists:
+            with self.engine.connect() as connection:
+                connection.execute(CreateSchema(schema))
+                connection.commit()
 
     def create_table(self, schema: str, table: str, columns: dict):
         metadata_obj = sql.MetaData(schema=schema)
@@ -92,6 +89,8 @@ class SqlAlchemyDao(DaoBase):
     # --- Read methods ---
 
     def check_schema_exists(self, schema: str) -> bool:
+        if self.dialect == SupportedDatabaseDialects.HANA:
+            schema = schema.upper()
         return self.inspector.has_schema(schema)
 
     def check_empty_schema(self, schema: str) -> bool:
@@ -252,6 +251,23 @@ class SqlAlchemyDao(DaoBase):
             print(f"Updated data ingestion date for {schema}")
 
     # --- Delete methods ---
+
+    
+
+    def drop_table(self, schema: str, table: str, cascade: bool = False):
+        with self.engine.connect() as connection:
+            metadata_obj = sql.MetaData(schema=schema)
+            table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
+            
+            @compiles(DropTable, connection.dialect.name)
+            def _compile_drop_table(element, compiler, **kwargs):
+                sql_str = compiler.visit_drop_table(element)
+                if cascade:
+                    sql_str += " CASCADE"
+                return sql_str
+    
+            table_obj.drop(connection)
+            connection.commit()
 
     def drop_schema(self, schema: str, cascade: bool = False):
         with self.engine.connect() as connection:
@@ -475,184 +491,6 @@ class SqlAlchemyDao(DaoBase):
                     f"Granted cohort and cohort definition Write privileges Successfully"
                 )
 
-    def create_table_from_select(
-        self,
-        source_schema: str,
-        source_table: str,
-        target_schema: str,
-        target_table: str,
-        columns_to_copy: list[str],
-        filter_conditions: list,
-    ) -> int:
-        sanitized_source_schema = self.__sanitize_inputs(source_schema)
-        sanitized_source_table = self.__sanitize_inputs(source_table)
-        sanitized_target_table = self.__sanitize_inputs(target_table)
-        sanitized_target_schema = self.__sanitize_inputs(target_schema)
-
-        with self.engine.connect() as connection:
-            metadata_obj = sql.MetaData(schema=source_schema)
-            source_table = sql.Table(
-                sanitized_source_table, metadata_obj, autoload_with=connection
-            )
-
-            select_statement = self.create_select_statement(
-                source_schema, source_table, columns_to_copy, filter_conditions
-            )
-
-            compiled_sql_query = str(
-                select_statement.compile(compile_kwargs={"literal_binds": True})
-            )
-
-            create_from_select_statement = sql.text(
-                f"""CREATE TABLE {sanitized_target_schema}.{sanitized_target_table} AS ({compiled_sql_query});"""
-            )
-            row_count = connection.execute(create_from_select_statement).rowcount
-
-        return row_count
-
-    def copy_table_as_dataframe(
-        self,
-        source_schema_name: str,
-        source_table_name: str,
-        columns_to_copy: list[str],
-        filter_conditions: str,
-    ) -> pd.DataFrame:
-        # Construct select statements with filter conditions
-        select_statement = self.create_select_statement(
-            source_schema_name, source_table_name, columns_to_copy, filter_conditions
-        )
-        df = pd.read_sql_query(select_statement, self.engine)
-        return df
-
-    def create_select_statement(
-        self,
-        schema: str,
-        table: str,
-        columns_to_select: list[str],
-        filter_conditions: list,
-        source_table_obj=None,
-    ) -> Select:
-        select_from_conditions = sql.and_(*filter_conditions)
-
-        with self.engine.connect() as connection:
-            if source_table_obj is not None:
-                source_table = source_table_obj
-            else:
-                metadata_obj = sql.MetaData(schema=schema)
-                source_table = sql.Table(table, metadata_obj, autoload_with=connection)
-
-            match self.dialect:
-                case SupportedDatabaseDialects.HANA:
-                    # cast text columns to nclob
-                    select_statement = sql.select(
-                        *map(
-                            lambda x: sql.cast(getattr(source_table.c, x), UnicodeText)
-                            if isinstance(source_table.c[x].type, Text)
-                            else getattr(source_table.c, x),
-                            columns_to_select,
-                        )
-                    ).where(select_from_conditions)
-
-                case SupportedDatabaseDialects.POSTGRES:
-                    select_statement = sql.select(
-                        *map(lambda x: getattr(source_table.c, x), columns_to_select)
-                    ).where(select_from_conditions)
-
-        return select_statement
-
-    def copy_table(
-        self,
-        source_schema_name: str,
-        source_table_name: str,
-        target_table_name: str,
-        target_schema_name: str,
-        columns_to_copy: list[str],
-        filter_conditions: dict,
-    ) -> int:
-        # Only used for datamart copy snapshot
-        with self.engine.connect() as connection:
-            where_conditions = []
-
-            metadata_obj = sql.MetaData()
-            source_table = sql.Table(
-                source_table_name,
-                metadata_obj,
-                autoload_with=connection,
-                schema=source_schema_name,
-            )
-
-            if "patient_filter" in list(filter_conditions.keys()):
-                person_id_column_obj = source_table.c[
-                    filter_conditions["patient_filter"]["person_id_column"]
-                ]
-                where_conditions.append(
-                    person_id_column_obj.in_(
-                        filter_conditions["patient_filter"]["patients_to_filter"]
-                    )
-                )
-
-            if "date_filter" in list(filter_conditions.keys()):
-                timestamp_column_obj = source_table.c[
-                    filter_conditions["date_filter"]["timestamp_column"]
-                ]
-                where_conditions.append(
-                    filter_conditions["date_filter"]["dates_to_filter"]
-                    >= timestamp_column_obj
-                )
-
-            # Create table in target schema by copying columns from source_table including data type
-            target_columns = [source_table.c[col].copy() for col in columns_to_copy]
-            target_constraints = [
-                constraint.copy()
-                for constraint in source_table.constraints
-                if set(constraint.columns.keys()).issubset(columns_to_copy)
-            ]
-            target_table = sql.Table(
-                target_table_name,
-                metadata_obj,
-                *target_columns,
-                *target_constraints,
-                schema=target_schema_name,
-            )
-            target_table.create(bind=self.engine, checkfirst=True)
-
-            # Create indexes in target table manually
-            for index in source_table.indexes:
-                index_name = index.name
-                index_columns = [col.name for col in index.columns]
-
-                if set(index_columns).issubset(set(columns_to_copy)):
-                    column_objects = [
-                        target_table.c[column] for column in index_columns
-                    ]
-                    index = sql.Index(index_name, *column_objects)
-                    index.create(connection)
-
-            # Construct select statements with filter conditions
-            select_statement = self.create_select_statement(
-                source_schema_name,
-                source_table_name,
-                columns_to_copy,
-                where_conditions,
-                source_table,
-            )
-
-            # Insert into target table from source table
-            insert_statement = sql.insert(target_table).from_select(
-                columns_to_copy, select_statement
-            )
-
-            result = connection.execute(insert_statement)
-            connection.commit()
-
-            if self.dialect == SupportedDatabaseDialects.POSTGRES:
-                row_count = result.rowcount
-            elif self.dialect == SupportedDatabaseDialects.HANA:
-                select_count_stmt = sql.select(sql.func.count()).select_from(
-                    target_table
-                )
-                row_count = connection.execute(select_count_stmt).scalar()
-        return row_count
 
     def enable_auditing(self):
         with self.engine.connect() as connection:

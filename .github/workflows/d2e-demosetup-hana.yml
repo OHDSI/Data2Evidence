@@ -1,5 +1,8 @@
 name: d2e/demosetup-hana
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch: # Allow manual triggering
   pull_request:
@@ -12,17 +15,25 @@ on:
 env:
   VERSION: develop
 
-
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
   demosetup:
-    runs-on: ubuntu-24.04
+    needs: [pick_runner]
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
           # this might remove tools that are actually needed,
           # if set to "true" but frees about 6 GB
-          tool-cache: false
+          tool-cache: true
 
           # all of these default to true, but feel free to set to
           # "false" if necessary for your workflow
@@ -40,20 +51,22 @@ jobs:
       - name: npm install
         if: success() || failure()
         run: |
-          npm install 
+          npm install
 
       - name: Initialise d2e
         if: success() || failure()
         id: init
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env init
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
+        env:
+          init_choice: y
 
       - name: Initialise HANA
         if: success() || failure()
         id: inithana
         run: |
-          timeout 5m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
-      
+          timeout 5m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
       - uses: dorny/paths-filter@v3
         id: flow_file_changes
         with:
@@ -72,8 +85,14 @@ jobs:
         if: success() || failure()
         id: pull
         run: |
-          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v develop --hana -d ./functions build
+          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --hana -d ./functions build
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Prune images
+        if: always()
+        id: prune
+        run: |
+          docker buildx prune -af
 
       - name: Start services
         if: success() || failure()
@@ -85,13 +104,13 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions --hana start
+            DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions --hana start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
             echo "DOCKER_STATUS_FILE=$DOCKER_STATUS_FILE" >> $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-      
+
       - name: Log status
         if: success() || failure()
         run: |
@@ -101,13 +120,13 @@ jobs:
           echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
           DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true)
           echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
-      
-      - name: Logs 
+
+      - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
-      - name: Setupdemo
+      - name: Setupdemohana
         if: success() || failure()
         uses: nick-fields/retry@v3
         id: setupdemo
@@ -117,16 +136,16 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions setupdemo
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemohana
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-  
-      - name: Logs 
+
+      - name: Logs
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions logs
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
       - name: Checkflow
         if: success() || failure()
@@ -138,18 +157,18 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions checkflow
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-        
       - name: Stop d2e services
         if: success() || failure()
         id: stop
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions stop
-      - name: Clean d2e services
-        if: success() || failure()
-        id: clean
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+
+      - name: Prune system
+        if: always()
+        id: prune_system
         run: |
-          echo "y" | ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }} -d ./functions clean
+          docker system prune -af

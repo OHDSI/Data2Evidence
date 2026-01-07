@@ -1,13 +1,16 @@
-import https from 'https'
-import axios, { AxiosRequestConfig } from 'axios'
 import { IMaterializedCohort } from '../types'
 import { env } from '../env'
 
+interface IFilterValue {
+  datasetId?: string
+  bookmarkId?: string
+}
+
 export class AnalyticsSvcAPI {
   private readonly baseURL: string
-  // private readonly httpsAgent: any
   private readonly token: string
   private readonly endpoint: string = '/analytics-svc/api/services'
+  private analyticsapi
 
   constructor(token: string) {
     this.token = token
@@ -17,14 +20,12 @@ export class AnalyticsSvcAPI {
 
     if (env.SERVICE_ROUTES.analytics) {
       this.baseURL = env.SERVICE_ROUTES.analytics + this.endpoint
-      // this.httpsAgent = new https.Agent({
-      //   rejectUnauthorized: true,
-      //   ca: env.TLS__INTERNAL__CA_CRT,
-      // })
     } else {
       console.error('No url is set for AnalyticsSvcAPI')
       throw new Error('No url is set for AnalyticsAPI')
     }
+
+    this.analyticsapi = Trex.tokioChannel('d2e-functions/analytics-svc')
   }
 
   isAuthorized(): boolean {
@@ -35,14 +36,32 @@ export class AnalyticsSvcAPI {
 
   async getAllCohorts(datasetId: string): Promise<IMaterializedCohort[]> {
     try {
-      const url = `${this.baseURL}/cohort`
+      const url = new URL(`${this.baseURL}/cohort`)
       console.log(`Calling ${url} to get all cohorts`)
       const options = this.getRequestConfig()
-      const params = new URLSearchParams()
-      params.append('datasetId', datasetId)
-      params.append('excludePatientIds', 'true')
-      const result = await axios.get(url, { ...options, params })
+      url.searchParams.set('datasetId', datasetId)
+      url.searchParams.set('excludePatientIds', 'true')
+      const result = await this.analyticsapi.get(url.toString(), options)
       return result.data.data
+    } catch (error) {
+      console.error(`Error while getting all cohorts: ${error}`)
+      throw error
+    }
+  }
+
+  async getFilteredCohorts(datasetId: string, filterValue: IFilterValue): Promise<IMaterializedCohort[]> {
+    try {
+      const url = new URL(`${this.baseURL}/cohort/SYNTAX/${encodeURIComponent(JSON.stringify(filterValue))}`)
+      console.log(`Calling ${url} to get filtered cohorts`)
+      const options = this.getRequestConfig()
+      url.searchParams.set('datasetId', datasetId)
+      url.searchParams.set('excludePatientIds', 'true')
+      const result = await this.analyticsapi.get(url.toString(), options)
+      if (result.data) {
+        return result.data.data
+      } else {
+        return []
+      }
     } catch (error) {
       console.error(`Error while getting all cohorts: ${error}`)
       throw error
@@ -59,7 +78,7 @@ export class AnalyticsSvcAPI {
         cohortDefinitionId,
         name,
       }
-      await axios.put(url, data, options)
+      await this.analyticsapi.put(url, data, options)
     } catch (error) {
       console.error(`Error while renaming cohort definition: ${error}`)
       throw error
@@ -68,13 +87,12 @@ export class AnalyticsSvcAPI {
 
   async deleteCohort(datasetId: string, cohortDefinitionId: number) {
     try {
-      const url = `${this.baseURL}/cohort`
+      const url = new URL(`${this.baseURL}/cohort`)
       console.log(`Calling ${url} to delete cohort`)
       const options = this.getRequestConfig()
-      const params = new URLSearchParams()
-      params.append('datasetId', datasetId)
-      params.append('cohortId', cohortDefinitionId.toString())
-      await axios.delete(url, { ...options, params })
+      url.searchParams.set('datasetId', datasetId)
+      url.searchParams.set('cohortId', cohortDefinitionId.toString())
+      await this.analyticsapi.delete(url, options)
     } catch (error) {
       console.error(`Error while deleting cohort: ${error}`)
       throw error
@@ -82,13 +100,10 @@ export class AnalyticsSvcAPI {
   }
 
   private getRequestConfig() {
-    let options: AxiosRequestConfig = {}
-
-    options = {
+    let options = {
       headers: {
         Authorization: this.token,
       },
-      // httpsAgent: this.httpsAgent,
       timeout: 100000,
     }
 

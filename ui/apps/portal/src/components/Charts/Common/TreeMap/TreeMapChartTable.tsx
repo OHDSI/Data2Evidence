@@ -18,36 +18,74 @@ enum TreeMapChartTab {
   Table,
 }
 
+// Detect if data is in simple format (CONCEPTID, CONCEPTNAME, COUNTVALUE)
+const hasSimpleFormatData = (data: any[]) => {
+  if (data.length === 0) return false;
+  return "COUNTVALUE" in data[0] && "CONCEPTNAME" in data[0];
+};
+
 const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelectedConceptId }) => {
   const { getText, i18nKeys } = useTranslation();
   const [treeMapChartData, setTreeMapChartData] = useState<any[]>([]);
   const [treeMapTableData, setTreeMapTableData] = useState<any[]>([]);
   const [tabValue, setTabValue] = useState(TreeMapChartTab.TreeMap);
+  const [isSimple, setIsSimple] = useState(false);
 
   useEffect(() => {
-    // Parse data to be more readable
-    const parsedData = data.map((obj: any) => ({
-      ...obj,
-      RECORDSPERPERSON: Number(Number(obj["RECORDSPERPERSON"]).toPrecision(3)),
-      LENGTH_OF_ERA: Number(Number(obj["LENGTHOFERA"]).toPrecision(3)),
-      PERCENT_PERSONS: `${Number(Number(obj["PERCENTPERSONS"]) * 100).toPrecision(3)}%`,
-    }));
-    setTreeMapTableData(parsedData);
+    const simpleFormat = hasSimpleFormatData(data);
+    setIsSimple(simpleFormat);
+
+    if (simpleFormat) {
+      // Parse simple format (CONCEPTID, CONCEPTNAME, COUNTVALUE)
+      const total = data.reduce((sum: number, item: any) => sum + item.COUNTVALUE, 0);
+      const parsedData = data.map((obj: any) => ({
+        ...obj,
+        CONCEPTPATH: obj.CONCEPTNAME,
+        NUMPERSONS: obj.COUNTVALUE,
+        PERCENT_PERSONS: `${((obj.COUNTVALUE / total) * 100).toPrecision(3)}%`,
+      }));
+      setTreeMapTableData(parsedData);
+    } else {
+      // Parse existing format (with RECORDSPERPERSON, LENGTHOFERA, etc.)
+      const parsedData = data.map((obj: any) => ({
+        ...obj,
+        RECORDSPERPERSON: Number(Number(obj["RECORDSPERPERSON"]).toPrecision(3)),
+        LENGTH_OF_ERA: Number(Number(obj["LENGTHOFERA"]).toPrecision(3)),
+        PERCENT_PERSONS: `${Number(Number(obj["PERCENTPERSONS"]) * 100).toPrecision(3)}%`,
+      }));
+      setTreeMapTableData(parsedData);
+    }
   }, [data]);
 
   useEffect(() => {
-    // Parse and format treemap chart data
-    const mappedData = treeMapTableData.map((obj: any) => ({
-      name: obj["CONCEPTPATH"],
-      value: [
-        obj["NUMPERSONS"],
-        obj["RECORDSPERPERSON"] ? obj["RECORDSPERPERSON"] : obj["LENGTHOFERA"],
-        obj["PERCENTPERSONS"],
-        obj["CONCEPTID"],
-      ],
-    }));
-    setTreeMapChartData(mappedData);
-  }, [treeMapTableData]);
+    if (isSimple) {
+      // Parse simple format for treemap chart
+      const total = data.reduce((sum: number, item: any) => sum + item.COUNTVALUE, 0);
+      const mappedData = data.map((obj: any) => ({
+        name: obj.CONCEPTNAME,
+        value: [
+          obj.COUNTVALUE,
+          1, // placeholder for RECORDSPERPERSON
+          `${((obj.COUNTVALUE / total) * 100).toPrecision(3)}%`,
+          obj.CONCEPTID,
+        ],
+      }));
+      setTreeMapChartData(mappedData);
+    } else {
+      // Parse existing format for treemap chart
+      const mappedData = treeMapTableData.map((obj: any) => ({
+        name: obj["CONCEPTPATH"]?.split("||").pop()?.trim() || obj["CONCEPTPATH"],
+        value: [
+          obj["NUMPERSONS"],
+          obj["RECORDSPERPERSON"] ? obj["RECORDSPERPERSON"] : obj["LENGTHOFERA"],
+          obj["PERCENTPERSONS"],
+          obj["CONCEPTID"],
+          obj["CONCEPTPATH"],
+        ],
+      }));
+      setTreeMapChartData(mappedData);
+    }
+  }, [treeMapTableData, isSimple, data]);
 
   if (data.length === 0) {
     return (
@@ -71,7 +109,7 @@ const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelecte
         <TreeMapChart data={treeMapChartData} title={title} setSelectedConceptId={setSelectedConceptId} />
       )}
       {tabValue === TreeMapChartTab.Table && (
-        <TreeMapTable data={treeMapTableData} setSelectedConceptId={setSelectedConceptId} />
+        <TreeMapTable data={treeMapTableData} setSelectedConceptId={setSelectedConceptId} isSimpleFormat={isSimple} />
       )}
     </ChartContainer>
   );

@@ -10,8 +10,9 @@
 **/dist/
 **/*.log
 **/.python-version
-**/package.json
 .github
 .gitignore
 .npmignore
 flowinit.py
+**/Dockerfile
+**/Dockerfile.*

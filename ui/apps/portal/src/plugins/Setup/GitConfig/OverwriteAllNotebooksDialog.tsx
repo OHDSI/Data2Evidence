@@ -1,7 +1,6 @@
 import { Close, Warning } from "@mui/icons-material";
 import {
   Alert,
-  Box,
   Button,
   Dialog,
   DialogActions,
@@ -10,7 +9,7 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import React, { FC } from "react";
+import { FC } from "react";
 import { useTranslation } from "../../../contexts";
 import "./OverwriteAllConfirmDialog.scss";
 
@@ -29,14 +28,17 @@ export const OverwriteAllNotebooksDialog: FC<OverwriteAllNotebooksDialogProps> =
 }) => {
   const { getText, i18nKeys } = useTranslation();
 
+  const headerBoxStyle = { display: "flex", alignItems: "center", justifyContent: "space-between" };
+  const titleBoxStyle = { display: "flex", alignItems: "center", gap: 1 };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth className="overwrite-dialog">
       <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box display="flex" alignItems="center" gap={1}>
+        <div style={headerBoxStyle}>
+          <div style={titleBoxStyle}>
             <Warning color="warning" />
             {getText(i18nKeys.GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_TITLE)}
-          </Box>
+          </div>
           <IconButton
             onClick={onClose}
             disabled={loading}
@@ -49,14 +51,14 @@ export const OverwriteAllNotebooksDialog: FC<OverwriteAllNotebooksDialogProps> =
           >
             <Close />
           </IconButton>
-        </Box>
+        </div>
       </DialogTitle>
 
       <DialogContent>
         <Typography variant="body1" paragraph>
           {getText(i18nKeys.GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_DESCRIPTION)}
         </Typography>
-        <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+        <ul style={{ paddingLeft: "16px", marginBottom: "16px" }}>
           <Typography component="li" variant="body2">
             <strong>{getText(i18nKeys.GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_DELETE_NOTEBOOKS)}</strong>
           </Typography>
@@ -69,7 +71,7 @@ export const OverwriteAllNotebooksDialog: FC<OverwriteAllNotebooksDialogProps> =
           <Typography component="li" variant="body2">
             {getText(i18nKeys.GIT_CONFIG__OVERWRITE_NOTEBOOKS_DIALOG_CREATE_NEW)}
           </Typography>
-        </Box>
+        </ul>
 
         <Alert severity="error">
           <Typography variant="body2">

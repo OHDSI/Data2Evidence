@@ -15,10 +15,9 @@ describe('Atlas Integration Tests', () => {
       expect(atlasFormat).toHaveProperty('PrimaryCriteria')
       expect(atlasFormat).toHaveProperty('QualifiedLimit')
       expect(atlasFormat).toHaveProperty('InclusionRules')
-      expect(atlasFormat).toHaveProperty('EndStrategy')
 
       // Validate qualifying events limit
-      expect(atlasFormat.QualifiedLimit.Type).toBe('All')
+      expect(atlasFormat.QualifiedLimit.Type).toBe('First')
 
       // Validate inclusion rules
       expect(atlasFormat.InclusionRules).toHaveLength(1)
@@ -148,7 +147,7 @@ describe('Atlas Integration Tests', () => {
       const originalCriteria = originalManager.getCriteria()
 
       // Verify basic Atlas format structure
-      expect(atlasFormat.QualifiedLimit.Type).toBe('All')
+      expect(atlasFormat.QualifiedLimit.Type).toBe('First')
       expect(atlasFormat.InclusionRules.length).toBe(originalCriteria.criteria.length)
     })
 

@@ -78,13 +78,19 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId }) => {
       },
       {
         id: "7",
+        accessorKey: "conceptCode",
+        header: getText(i18nKeys.MAPPING_TABLE__CONCEPT_CODE),
+        size: 150,
+      },
+      {
+        id: "8",
         accessorKey: "domainId",
         header: getText(i18nKeys.MAPPING_TABLE__DOMAIN_ID),
         size: 150,
       },
       {
-        id: "8",
-        accessorKey: "system",
+        id: "9",
+        accessorKey: "vocabularyId",
         header: getText(i18nKeys.MAPPING_TABLE__VOCABULARY),
         size: 150,
       },

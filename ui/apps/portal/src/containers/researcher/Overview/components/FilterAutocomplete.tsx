@@ -8,8 +8,9 @@ export interface AutocompleteOption {
   label: string;
 }
 
-export interface FilterAutocompleteProps
-  extends Omit<AutocompleteProps<AutocompleteOption, true, false, false>, "renderInput"> {}
+export type FilterAutocompleteProps = Omit<AutocompleteProps<AutocompleteOption, true, false, false>, "renderInput"> & {
+  placeholder?: string;
+};
 
 const StyledChip = styled(Chip)(() => ({
   borderRadius: "0.5em",

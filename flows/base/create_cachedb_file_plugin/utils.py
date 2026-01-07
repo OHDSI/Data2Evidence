@@ -1,16 +1,55 @@
 import os
+
 from typing import Set
 from pathlib import Path
 from time import time
 
 from prefect.blocks.system import Secret
 
-from .config import DUCKDB_FULLTEXT_SEARCH_CONFIG
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 
 DUCKDB_EXTENSIONS_FILEPATH = "/app/duckdb_extensions"
 
+
+DUCKDB_FULLTEXT_SEARCH_CONFIG = {
+    "concept": {
+        "document_identifier": "concept_id",
+    },
+    "concept_relationship": {
+        # primary key does not exist in concept_relationship table
+        "document_identifier": "fts_document_identifier_id",
+    },
+    "relationship": {
+        "document_identifier": "relationship_id",
+    },
+    "vocabulary": {
+        "document_identifier": "vocabulary_id",
+    },
+    "concept_synonym": {
+        # primary key does not exist in concept_synonym table,
+        "document_identifier": "fts_document_identifier_id",
+    },
+    "concept_class": {
+        "document_identifier": "concept_class_id",
+    },
+    "domain": {
+        "document_identifier": "domain_id",
+    },
+    "concept_ancestor": {
+        # primary key does not exist in concept_ancestor table
+        "document_identifier": "fts_document_identifier_id",
+    },
+    "concept_recommended": {
+        # primary key does not exist in concept_ancestor table
+        "document_identifier": "fts_document_identifier_id",
+    },
+    "note": {
+        "document_identifier": "note_id",
+    },
+}
+
+VOCAB_TABLES = ["concept", "vocabulary", "concept_relationship", "concept_synonym", "concept_ancestor", "concept_class", "relationship", "domain", "drug_strength", "source_to_concept_map"]
 
 def check_supported_dialects(dialect: str):
     supported_dialects = [
@@ -30,6 +69,7 @@ def time_execution(func):
         time_end = time()
         time_duration = time_end - time_start
         return f"{time_duration:.3f}"
+
     return wrapper
 
 
@@ -62,8 +102,17 @@ def load_service_account_credentials():
     Load Google service account credentials for BigQuery access.
     """
     google_service_account_json_path = Secret.load("google-service-account-json").get()
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_service_account_json_path
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_service_account_json_path
 
+
+def set_bigquery_global_settings():
+    """
+    Set BigQuery specific settings for the DuckDB connection.
+    """
+    return """
+    SET bq_arrow_compression='ZSTD'; 
+    SET bq_experimental_use_incubating_scan=TRUE;
+    """
 
 def check_if_file_exists(file_path: str) -> bool:
     """

@@ -8,8 +8,7 @@ import { z } from 'zod'
 
 export const bookmarkIdSchema = z.object({
   query: z.object({
-    paConfigId: z.string(),
-    r: z.string(),
+    paConfigId: z.string().optional(),
   }),
 })
 
@@ -124,7 +123,6 @@ export interface BookmarkDto {
   cdm_config_version: number
   user_id: string
   shared: boolean
-  materializedCohortDefinitions?: IMaterializedBookmarkCohortDefinition[]
 }
 
 export interface IMaterializedCohort {
@@ -134,12 +132,6 @@ export interface IMaterializedCohort {
   creationTimestamp: string
   syntax: string
   patientCount: number
-}
-
-// Bookmark materialized cohort definitions are tagged to a datasetId
-export interface IMaterializedBookmarkCohortDefinition {
-  datasetId: string
-  cohortDefinitionId: number
 }
 
 export interface IFormattedBookmark {
@@ -152,6 +144,7 @@ export interface IFormattedBookmark {
   user_id: string
   shared: boolean
   cohortDefinitionId?: number | undefined
+  paConfigId?: string | undefined
 }
 export interface IFormattedMaterializedCohort {
   id: number
@@ -172,7 +165,6 @@ export interface IAtlasCohortDefinition {
   modifiedBy: string
   modifiedDate: number
   tags: string[]
-  materializedCohortDefinitions: IMaterializedBookmarkCohortDefinition[]
 }
 
 export interface IFormattedAtlasCohortDefinition {
@@ -188,5 +180,4 @@ export interface IFrontendBookmark {
   schemaName: string
   bookmarks: IFormattedBookmark[]
   materializedCohorts: IFormattedMaterializedCohort[]
-  atlasCohortDefinitions: IFormattedAtlasCohortDefinition[]
 }

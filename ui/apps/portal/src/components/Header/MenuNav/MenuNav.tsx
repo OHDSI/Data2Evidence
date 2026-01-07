@@ -5,7 +5,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { ChevronDownIcon } from "@portal/components";
 import { Roles, config } from "../../../config";
 import { Plugins } from "../../../types";
-import { useEnabledFeatures, useMenuAnchor } from "../../../hooks";
+import { useDataset, useEnabledFeatures, useMenuAnchor } from "../../../hooks";
 import { getPluginChildPath } from "../../../utils";
 import { useActiveDataset, useTranslation, useUser } from "../../../contexts";
 import "../Header.scss";
@@ -32,11 +32,13 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
   const [anchorEl, openMenu, closeMenu] = useMenuAnchor();
 
   const { activeDataset } = useActiveDataset();
+  const [dataset] = useDataset(activeDataset.id);
 
   const { user } = useUser();
-  const featureFlags = useEnabledFeatures();
+  const [featureFlags, featuresLoading] = useEnabledFeatures();
   const requiredRoles = useMemo(() => plugin?.requiredRoles || [], [plugin?.requiredRoles]);
   const featureFlag = useMemo(() => plugin?.featureFlag || "", [plugin?.featureFlag]);
+  const datasetTypes = useMemo(() => plugin?.datasetTypes || [], [plugin?.datasetTypes]);
 
   const clonedPlugin = useMemo(() => {
     const cloned = { ...plugin } as Plugins;
@@ -50,7 +52,13 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
 
   const isResearcherPluginAllowed = useCallback(() => {
     let allowed = (requiredRoles.length || 0) === 0;
-    if (type === MenuType.Dataset || isSysAdmin) return allowed;
+    if (isSysAdmin) {
+      if (featureFlag != "" && !featureFlags.includes(featureFlag)) {
+        allowed = false;
+      }
+      return allowed;
+    }
+    if (type === MenuType.Dataset) return allowed;
     if (!allowed && requiredRoles) {
       for (const role of requiredRoles) {
         if (role === Roles.STUDY_RESEARCHER) {
@@ -64,8 +72,25 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
     } else if (allowed) {
       allowed = featureFlags.includes(featureFlag);
     }
+
+    // Filter by dataset type if datasetTypes is specified
+    if (allowed && datasetTypes.length > 0 && dataset?.type) {
+      allowed = datasetTypes.includes(dataset.type);
+    }
+
     return allowed;
-  }, [activeDataset.id, featureFlag, featureFlags, isSysAdmin, clonedPlugin?.children, requiredRoles, type, user]);
+  }, [
+    activeDataset.id,
+    dataset?.type,
+    datasetTypes,
+    featureFlag,
+    featureFlags,
+    isSysAdmin,
+    clonedPlugin?.children,
+    requiredRoles,
+    type,
+    user,
+  ]);
 
   const portalTypePath = useMemo(() => {
     if (isSysAdmin) {
@@ -199,10 +224,14 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
     [anchorEl, closeMenu, handlePluginClick, isActivePlugin, getText]
   );
 
-  if (type === MenuType.Plugin && !isResearcherPluginAllowed()) {
+  if (type === MenuType.Plugin && !featuresLoading && !isResearcherPluginAllowed()) {
     if (isActiveTab()) {
       navigate(`${portalTypePath}/information`);
     }
+    return null;
+  }
+
+  if (type === MenuType.Plugin && featuresLoading) {
     return null;
   }
 

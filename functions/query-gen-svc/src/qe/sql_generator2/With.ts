@@ -108,7 +108,8 @@ export class With extends AstElement {
     public addTableAlias(
         tableObj: { baseEntity: string; table: string },
         basetable,
-        joinType = "LEFT JOIN"
+        joinType = "LEFT JOIN",
+        includeDescendants = false //Special case for @TEXT
     ) {
         if (!(tableObj.table in this.joinElements)) {
             let tablealiasArr = tableObj.table.split(".");
@@ -130,8 +131,10 @@ export class With extends AstElement {
                     this.node.joinUsingConditionId;
             }
             if (this.getBaseTableAlias()) {
-                if (tableObj.baseEntity === "@REF") {
-                    //This is a special case where there is no explicit base join condition between @REF and other base entity. Its usually 1=1. Because @REF is not a standard interaction entity rather a special entity for vocab lookup. The additional join condition between @REF & base entity would be configured in the attribute config as part of the defaultFilter / Filter expression in the UI.
+                if (tableObj.baseEntity.startsWith("@REF") || (includeDescendants && tableObj.baseEntity === "@TEXT")) {
+                    // For @REF - This is a special case where there is no explicit base join condition between @REF and other base entity. Its usually 1=1. Because @REF is not a standard interaction entity rather a special entity for vocab lookup. The additional join condition between @REF & base entity would be configured in the attribute config as part of the defaultFilter / Filter expression in the UI.
+
+                    // For @TEXT - Its for Including descendant concepts and the joining key is added in property.ts
                     this.addBaseTableJoinForRef(
                         tableObj,
                         this.getDefaultFilter()
@@ -285,6 +288,12 @@ export class With extends AstElement {
             }
         }
         return this.joinElements[table];
+    }
+
+    public getTableAliasByBaseEntity(baseEntity: string) {
+        const key = Object.keys(this.joinElements)
+                                .find(key => this.joinElements[key].baseEntity === baseEntity)
+        return this.joinElements[key].alias;
     }
 
     public getBaseTableAlias() {
