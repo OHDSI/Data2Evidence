@@ -226,6 +226,8 @@ function runSpecs(cmdLineArgs) {
   var environmentPath = getEnvironmentPath()
   var logger = utils.getLogger(mergedConfig.log, 'In run_specs: ')
   logger('Writing test suite config to file')
+  logger('defaultConfig:\n' + JSON.stringify(defaultConfig))
+  logger('mergedConfig:\n' + JSON.stringify(mergedConfig))
   writeJsonToFile(environmentPath, mergedConfig)
   var dbSetupManager = new DbSetupManager(environmentPath, 'test')
   logger('Running Mocha suite')
