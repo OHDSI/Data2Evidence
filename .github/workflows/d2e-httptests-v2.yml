@@ -246,6 +246,12 @@ jobs:
           sudo apt install -y postgresql-client
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn inittestdb
+          
       ###########
       # - name: UI Mounting build
       #   if: ${{ steps.file_changes.outputs.ui == 'true' }}
