@@ -1,6 +1,5 @@
 import React, { FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
-import FormHelperText from "@mui/material/FormHelperText";
 import { useDatasets } from "../../../../hooks";
 import { Button, Dialog, Loader, MenuItem, SelectChangeEvent, Select } from "@portal/components";
 import { api } from "../../../../axios/api";
@@ -35,25 +34,25 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
   );
 
   const handleCleanupStudy = useCallback(async () => {
-    if (isCleaningUp || !selectedDatasetId || !study?.id) {
+    if (isCleaningUp || !selectedDatasetId || !study?.studyId) {
       return;
     }
 
     setIsCleaningUp(true);
 
     try {
-      await api.dataflow.createCleanUpStudySchemaRun(study.id, selectedDatasetId);
+      await api.dataflow.createCleanUpStudySchemaRun(study.studyId, selectedDatasetId);
 
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.STUDY_CARD__SUCCESS_STUDY_CLEANUP, [study.id]),
+        message: getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__SUCCESS_STUDY_CLEANUP, [study.studyId]),
         autoClose: 5000,
       });
     } catch (error) {
       console.error(`[${study.id}] Error cleaning up study:`, error);
       setFeedback({
         type: "error",
-        message: getText(i18nKeys.STUDY_CARD__ERROR_CLEANUP_STUDY, [study.id]),
+        message: getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__ERROR_CLEANUP_STUDY, [study.studyId]),
         autoClose: 5000,
       });
     } finally {
@@ -66,7 +65,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
   return (
     <Dialog
       className="cleanup-strategus-study-dialog"
-      title={"Cleanup Strategus Study"}
+      title={getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__TITLE)}
       closable
       open={open}
       onClose={() => handleClose("cancelled")}
@@ -76,7 +75,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
       <div className="cleanup-strategus-study-dialog__content">
         <div className="cleanup-strategus-study-dialog-selector">
           <label htmlFor="dataset-select" className="study-page__dataset-label">
-            {getText(i18nKeys.STUDY_PAGE__SELECT_DATASET)}
+            {getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__SELECT_DATASET)}
           </label>
           <Select
             id="dataset-select"
@@ -93,7 +92,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
             }}
           >
             <MenuItem value="" disabled>
-              {getText(i18nKeys.STUDY_PAGE__CHOOSE_DATASET)}
+              {getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__CHOOSE_DATASET)}
             </MenuItem>
             {datasets.map((dataset) => (
               <MenuItem key={dataset.id} value={dataset.id}>

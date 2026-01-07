@@ -25,10 +25,13 @@ import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
-import "./StudyOverview.scss";
 import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
 import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
+import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
+import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
 import StudyActionSelector from "./ActionSelector/StudyActionSelector";
+
+import "./StudyOverview.scss";
 
 const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
@@ -889,6 +892,22 @@ const StudyOverview: FC = () => {
 
           {showAddStrategusStudyDialog && (
             <AddStrategusStudyDialog open={showAddStrategusStudyDialog} onClose={handleCloseAddStrategusStudyDialog} />
+          )}
+
+          {showRunStrategusStudyDialog && (
+            <RunStrategusStudyDialog
+              study={activeStrategusStudy}
+              open={showRunStrategusStudyDialog}
+              onClose={closeRunStrategusStudyDialog}
+            />
+          )}
+
+          {showCleanupStrategusStudyDialog && (
+            <CleanupStrategusStudyDialog
+              study={activeStrategusStudy}
+              open={showCleanupStrategusStudyDialog}
+              onClose={closeCleanupStrategusStudyDialog}
+            />
           )}
         </div>
       </div>
