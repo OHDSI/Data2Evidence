@@ -14,11 +14,123 @@ from _shared_flow_utils.dao.daobase import DaoBase
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
 from prefect import flow, task
+from prefect.tasks import exponential_backoff
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
 
 os.environ["plugin_name"] = "create_cachedb_file_plugin"
+
+
+def get_trex_connection(database_code: str):    
+    conn = connect(
+        host=Variable.get("trex_sql_host"),
+        port=Variable.get("trex_sql_port"),
+        user=Variable.get("trex_sql_user"),
+        password=Secret.load("trex-sql-password").get(),
+        dbname=database_code,
+    )
+    conn.autocommit = True
+    return conn
+
+
+@task(retries=3, 
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      log_prints=True, 
+      task_run_name="trex_create_schema_if_not_exists_{copy_params.target_schema}")
+def trex_create_schema_if_not_exists_task(database_code: str, copy_params: CopyParameters):
+    logger = get_run_logger()
+    trex_conn = None
+    pg_cursor = None
+    
+    try:
+        trex_conn = get_trex_connection(database_code)
+        pg_cursor = trex_conn.cursor()
+        pg_cursor.execute("CALL pg_clear_cache();")
+        
+        create_schema_if_not_exists(pg_cursor, copy_params)
+        logger.debug("Schema creation completed with independent connection")
+        
+    except Exception as e:
+        logger.error(f"Failed to create schema: {e}")
+        raise
+    finally:
+        if pg_cursor:
+            try:
+                pg_cursor.close()
+            except Exception as e:
+                logger.warning(f"Error closing cursor: {e}")
+        if trex_conn:
+            try:
+                trex_conn.close()
+            except Exception as e:
+                logger.warning(f"Error closing connection: {e}")
+
+
+@task(retries=3, 
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      log_prints=True, 
+      task_run_name="trex_create_schema_tables_{copy_params.source_schema}")
+def trex_create_schema_tables_task(database_code: str, dbdao: DBDao, copy_params: CopyParameters):
+    logger = get_run_logger()
+    trex_conn = None
+    pg_cursor = None
+    
+    try:
+        trex_conn = get_trex_connection(database_code)
+        pg_cursor = trex_conn.cursor()
+        pg_cursor.execute("CALL pg_clear_cache();")
+        
+        create_schema_tables(pg_cursor, dbdao, copy_params)
+        logger.debug("Table creation completed with independent connection")
+        
+    except Exception as e:
+        logger.error(f"Failed to create tables: {e}")
+        raise
+    finally:
+        if pg_cursor:
+            try:
+                pg_cursor.close()
+            except Exception as e:
+                logger.warning(f"Error closing cursor: {e}")
+        if trex_conn:
+            try:
+                trex_conn.close()
+            except Exception as e:
+                logger.warning(f"Error closing connection: {e}")
+
+
+@task(retries=3, 
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      log_prints=True, 
+      task_run_name="trex_create_fts_index_{copy_params.target_schema}")
+def trex_create_fts_index_task(database_code: str, copy_params: CopyParameters):
+    logger = get_run_logger()
+    trex_conn = None
+    pg_cursor = None
+    
+    try:
+        trex_conn = get_trex_connection(database_code)
+        pg_cursor = trex_conn.cursor()
+        pg_cursor.execute("CALL pg_clear_cache();")
+        
+        create_fts_index(pg_cursor, copy_params)
+        logger.debug("FTS index creation completed with independent connection")
+        
+    except Exception as e:
+        logger.error(f"Failed to create FTS index: {e}")
+        raise
+    finally:
+        if pg_cursor:
+            try:
+                pg_cursor.close()
+            except Exception as e:
+                logger.warning(f"Error closing cursor: {e}")
+        if trex_conn:
+            try:
+                trex_conn.close()
+            except Exception as e:
+                logger.warning(f"Error closing connection: {e}")
 
 
 @flow(log_prints=True)
@@ -66,63 +178,31 @@ def create_cache_flow(options: CreateCacheOptions):
         patient_filter=options.snapshot_copy_config.patients_to_be_copied if options.snapshot_copy_config else None,
         fts_tables=options.tables_to_create_duckdb_fts_index,
         limit_statement="",  # Limit 0 only applied to CDW config
-        vocab_schema=options.vocab_schema_name
+        vocab_schema=options.vocab_schema_name,
+        chunk_size=options.chunk_size
     )
 
 
     if options.use_trex_connection:
         # -------------------- Trex connection to cache --------------------
-        # Todo: Unify with trexdao
-        trex_conn = connect(
-            host=Variable.get("trex_sql_host"),
-            port=Variable.get("trex_sql_port"),
-            user=Variable.get("trex_sql_user"),
-            password=Secret.load("trex-sql-password").get(),
-            dbname=options.database_code,
+        logger.info(
+            f"Creating cache for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
         )
 
-        # Turn off transactions
-        trex_conn.autocommit = True
-        pg_cursor = None
+        # Each task manages its own connection lifecycle
+        trex_create_schema_if_not_exists_task(options.database_code, copy_params)
+        
+        trex_create_schema_tables_task(options.database_code, dbdao, copy_params)
 
-        try:
-            pg_cursor = trex_conn.cursor()
+        logger.info(
+            f"Creating FTS index for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
+        )
 
-            # Extensions should already be loaded in trex
-            # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
-
-            # Update cache information
-            pg_cursor.execute("CALL pg_clear_cache();")
-
-            logger.info(
-                f"Creating cache for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
-            )
-
-            create_schema_if_not_exists(pg_cursor, copy_params)
-
-            create_schema_tables(pg_cursor, dbdao, copy_params)
-
-            logger.info(
-                f"Creating FTS index for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
-            )
-
-            create_fts_index(pg_cursor, copy_params)
-
-        except Exception as e:
-            logger.error(
-                f"Error while creating cache for schema '{options.schema_name}' for '{options.database_code}': {e}"
-            )
-            # trex_conn.rollback()
-            raise
-        else:
-            trex_conn.commit()
-            logger.info(
-                f"Cached schema '{options.schema_name}' successfully created for '{options.database_code}'."
-            )
-        finally:
-            if pg_cursor:
-                pg_cursor.close()
-            trex_conn.close()
+        trex_create_fts_index_task(options.database_code, copy_params)
+        
+        logger.info(
+            f"Cached schema '{options.schema_name}' successfully created for '{options.database_code}'."
+        )
 
     else:
         # -------------------- Direct file connection to cache --------------------
@@ -196,46 +276,18 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
     if options.trex_connection:
         # Connect to cache through Trex Sql Interface assuming duckdb file already exists
-        trex_conn = connect(
-            host=Variable.get("trex_sql_host"),
-            port=Variable.get("trex_sql_port"),
-            user=Variable.get("trex_sql_user"),
-            password=Secret.load("trex-sql-password").get(),
-            dbname=cdw_db,
+        logger.info(
+            f"Creating cache for '{schema_to_copy}' schema in '{database_code}' through Trex SQL interface..."
         )
 
-        # Turn off transactions
-        trex_conn.autocommit = True
-        pg_cursor = None
-
-        try:
-            pg_cursor = trex_conn.cursor()
-
-            # Extensions should already be loaded in trex
-            # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
-
-            logger.info(
-                f"Creating cache for '{schema_to_copy}' schema in '{database_code}' through Trex SQL interface..."
-            )
-
-            create_schema_if_not_exists(pg_cursor, copy_params)
-
-            create_schema_tables(pg_cursor, dbdao, copy_params)
-        except Exception as e:
-            logger.error(
-                f"Error while creating cache for schema '{schema_to_copy}' for '{database_code}': {e}"
-            )
-            # trex_conn.rollback()
-            raise
-        else:
-            trex_conn.commit()
-            logger.info(
-                f"Cached schema '{schema_to_copy}' successfully updated from '{cdw_db}'."
-            )
-        finally:
-            if pg_cursor:
-                pg_cursor.close()
-            trex_conn.close()
+        # Each task manages its own connection lifecycle
+        trex_create_schema_if_not_exists_task(cdw_db, copy_params)
+        
+        trex_create_schema_tables_task(cdw_db, dbdao, copy_params)
+        
+        logger.info(
+            f"Cached schema '{schema_to_copy}' successfully updated from '{cdw_db}'."
+        )
 
     else:
         # Direct connection to cache

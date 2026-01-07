@@ -60,6 +60,58 @@ _CDM_COLUMN_FILTER_MAP = {
     },
 }
 
+_CHUNK_COLUMN_INFO_MAP = {
+    "care_site": {
+        "column_name": "care_site_id"
+    },
+    "cohort": {"column_name": "cohort_definition_id"},
+    "cohort_attribute": {"column_name": "cohort_definition_id"},
+    "cohort_definition": {"column_name": "cohort_definition_id"},
+    "concept": {"column_name": "concept_id"},
+    "concept_ancestor": {"column_name": "ancestor_concept_id"},
+    "concept_class": {"column_name": "concept_class_id"},
+    "concept_recommended": {"column_name": "concept_id_1"},
+    "concept_relationship": {"column_name": "concept_id_1"},
+    "concept_synonym": {"column_name": "concept_id"},
+    "condition_era": {"column_name": "condition_era_id"},
+    "condition_occurrence": {"column_name": "condition_occurrence_id"},
+    "cost": {"column_name": "cost_id"},
+    "death": {"column_name": "person_id"},
+    "device_exposure": {"column_name": "device_exposure_id"},
+    "domain": {"column_name": "domain_id"},
+    "dose_era": {"column_name": "dose_era_id"},
+    "drug_era": {"column_name": "drug_era_id"},
+    "drug_exposure": {"column_name": "drug_exposure_id"},
+    "drug_strength": {"column_name": "drug_concept_id"},
+    "episode": {"column_name": "episode_id"},
+    "episode_event": {"column_name": "episode_id"},
+    "fact_relationship": {"column_name": "domain_concept_id_1"},
+    "location": {"column_name": "location_id"},
+    "measurement": {"column_name": "measurement_id"},
+    "metadata": {"column_name": "metadata_id"},
+    "note": {"column_name": "note_id"},
+    "note_nlp": {"column_name": "note_nlp_id"},
+    "observation": {"column_name": "observation_id"},
+    "observation_period": {"column_name": "observation_period_id"},
+    "payer_plan_period": {"column_name": "payer_plan_period_id"},
+    "person": {"column_name": "person_id"},
+    "procedure_occurrence": {"column_name": "procedure_occurrence_id"},
+    "provider": {"column_name": "provider_id"},
+    "relationship": {"column_name": "relationship_id"},
+    "source_to_concept_map": {"column_name": "source_concept_id"},
+    "specimen": {"column_name": "specimen_id"},
+    "visit_detail": {"column_name": "visit_detail_id"},
+    "visit_occurrence": {"column_name": "visit_occurrence_id"},
+    "vocabulary": {"column_name": "vocabulary_id"}
+}
+
+# Columns to use for chunking tables
+_CHUNK_COLUMN_MAP = {
+    table: info.get("column_name")
+    for table, info in _CHUNK_COLUMN_INFO_MAP.items()
+        if info.get("column_name")
+}
+
 TABLES_TO_EXCLUDE = [
     r"\b\w+(\.\w+)*_history\b",
     # Liquibase tables
