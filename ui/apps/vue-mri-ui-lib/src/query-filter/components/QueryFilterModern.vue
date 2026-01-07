@@ -653,8 +653,8 @@ const handleConceptSetAction = ({
     const standardConceptCodeFilter = config?.standardConceptCodeFilter
 
     const defaultFilters = [
-      { id: 'domainId', value: domainFilter ? [domainFilter.trim()] : [] },
-      { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter.trim()] : [] },
+      { id: 'domainId', value: domainFilter ? [domainFilter] : [] },
+      { id: 'concept', value: standardConceptCodeFilter ? [standardConceptCodeFilter] : [] },
     ]
 
     const handleCloseCallback = async (
