@@ -39,7 +39,8 @@
   },
   "optionalDependencies": {
     "fast-csv": "5.0.2",
-    "hdb": "0.19.12"
+    "hdb": "0.19.12",
+    "pg": "8.16.3"
   },
   "devDependencies": {
     "@types/node": "^18",
