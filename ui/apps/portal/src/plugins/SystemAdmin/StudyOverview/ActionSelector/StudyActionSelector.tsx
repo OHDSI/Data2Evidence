@@ -11,6 +11,7 @@ interface ActionSelectorProps {
   study: NetworkStrategusStudy;
   handleRunStrategusStudy: (study: NetworkStrategusStudy) => void;
   handleCleanupStrategusStudy: (study: NetworkStrategusStudy) => void;
+  handleManageStrategusResultViewer: (study: NetworkStrategusStudy) => void;
 }
 
 interface Action {
@@ -44,14 +45,15 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
   study,
   handleRunStrategusStudy,
   handleCleanupStrategusStudy,
+  handleManageStrategusResultViewer,
 }) => {
   const { getText, i18nKeys } = useTranslation();
-  const { user } = useUser();
 
   const actionsList: Action[] = useMemo(
     () => [
       { name: "Run Study", value: "run" },
       { name: "Cleanup Study", value: "cleanup" },
+      { name: "Manage Result Viewer", value: "manage" },
     ],
     [getText, i18nKeys]
   );
@@ -64,6 +66,9 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
           break;
         case "cleanup":
           handleCleanupStrategusStudy(study);
+          break;
+        case "manage":
+          handleManageStrategusResultViewer(study);
           break;
         default:
           break;

@@ -29,6 +29,7 @@ import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog
 import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
 import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
 import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
+import ManageStrategusResultViewerDialog from "./ManageStrategusResultViewerDialog/ManageStrategusResultViewerDialog";
 import StudyActionSelector from "./ActionSelector/StudyActionSelector";
 
 import "./StudyOverview.scss";
@@ -77,6 +78,11 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showCleanupStrategusStudyDialog, openCleanupStrategusStudyDialog, closeCleanupStrategusStudyDialog] =
     useDialogHelper(false);
+  const [
+    showManageStrategusResultViewerDialog,
+    openManageStrategusResultViewerDialog,
+    closeManageStrategusResultViewerDialog,
+  ] = useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [activeStrategusStudy, setActiveStrategusStudy] = useState<NetworkStrategusStudy>();
@@ -201,6 +207,11 @@ const StudyOverview: FC = () => {
   const handleCleanupStrategusStudy = useCallback((study: NetworkStrategusStudy) => {
     setActiveStrategusStudy(study);
     openCleanupStrategusStudyDialog();
+  }, []);
+
+  const handleManageStrategusResultViewer = useCallback((study: NetworkStrategusStudy) => {
+    setActiveStrategusStudy(study);
+    openManageStrategusResultViewerDialog();
   }, []);
 
   const toggleRow = useCallback((datasetId: string) => {
@@ -775,6 +786,7 @@ const StudyOverview: FC = () => {
                             study={study}
                             handleRunStrategusStudy={handleRunStrategusStudy}
                             handleCleanupStrategusStudy={handleCleanupStrategusStudy}
+                            handleManageStrategusResultViewer={handleManageStrategusResultViewer}
                           />
                         </TableCell>
                       </TableRow>
@@ -907,6 +919,14 @@ const StudyOverview: FC = () => {
               study={activeStrategusStudy}
               open={showCleanupStrategusStudyDialog}
               onClose={closeCleanupStrategusStudyDialog}
+            />
+          )}
+
+          {showManageStrategusResultViewerDialog && activeStrategusStudy && (
+            <ManageStrategusResultViewerDialog
+              study={activeStrategusStudy}
+              open={showManageStrategusResultViewerDialog}
+              onClose={closeManageStrategusResultViewerDialog}
             />
           )}
         </div>
