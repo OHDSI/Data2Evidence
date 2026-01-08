@@ -110,6 +110,7 @@ export class DemoService {
     };
 
     const result = await datasetAPI.createDataset(dataset);
+    this.logger.info(`Dataset: ${JSON.stringify(dataset)}`);
     this.logger.info(`Dataset added: ${JSON.stringify(result)}`);
     return { ...dataset, ...result };
   }
