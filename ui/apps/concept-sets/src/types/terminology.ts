@@ -243,3 +243,5 @@ export interface IWebapiConceptSetExpression {
     includeMapped: boolean;
   }[];
 }
+
+export type IWebapiConceptRecordCount = Record<string, number[]>;

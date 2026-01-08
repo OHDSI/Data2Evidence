@@ -136,6 +136,8 @@ export class DatasetCommandService {
         sourceDatasetId,
         newDatasetName,
         schemaName,
+        vocabSchemaName: newVocabSchemaName,
+        resultSchemaName: newResultSchemaName,
         timestamp,
         type: newType,
         flowParameters
@@ -145,7 +147,7 @@ export class DatasetCommandService {
         throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
       }
 
-      const { tenantId, databaseCode, resultSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
+      const { tenantId, databaseCode, vocabSchemaName: sourceVocabSchemaName, resultSchemaName: sourceResultSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
       
       // Sanitize the new dataset name to create a valid token dataset code
       const sanitizedName = newDatasetName
@@ -158,7 +160,10 @@ export class DatasetCommandService {
       
       // Copy dataset with new schema name
 
-      // Cache dataset inherits the result schema name from source dataset
+      // Use provided schema names from request, or fall back to source dataset schema names
+      const finalVocabSchemaName = newVocabSchemaName || sourceVocabSchemaName;
+      const finalResultSchemaName = newResultSchemaName || sourceResultSchemaName;
+
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
         type: newType,
@@ -166,8 +171,8 @@ export class DatasetCommandService {
         databaseCode,
         dialect,
         schemaName,
-        vocabSchemaName: schemaName,
-        resultSchemaName: resultSchemaName,
+        vocabSchemaName: finalVocabSchemaName,
+        resultSchemaName: finalResultSchemaName,
         tokenDatasetCode: newTokenDatasetCode,
         paConfigId,
         dataModel,

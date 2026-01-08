@@ -127,7 +127,7 @@ export default {
     this.renderWidths()
     window.addEventListener('click', this.contextMenuCloseHandler)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('click', this.contextMenuCloseHandler)
   },
   data() {
