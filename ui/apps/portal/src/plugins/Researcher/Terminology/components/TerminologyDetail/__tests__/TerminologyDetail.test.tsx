@@ -1,13 +1,12 @@
-import React from "react";
-import { screen, render, fireEvent, waitFor } from "@testing-library/react";
+import { screen, render, fireEvent, cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import TerminologyDetail from "../TerminologyDetail";
 import { MemoryRouter } from "react-router-dom";
 
-// Mock the contexts
+// Mock contexts
 jest.mock("../../../../../../contexts", () => ({
   useTranslation: () => ({
-    getText: jest.fn().mockImplementation((key: string) => key),
+    getText: (key: string) => key,
     i18nKeys: {},
   }),
   useFeedback: () => ({
@@ -15,308 +14,210 @@ jest.mock("../../../../../../contexts", () => ({
   }),
 }));
 
-// Mock the terminology API
-jest.mock("../../../../../../axios/terminology", () => {
-  const mockGetRecommendedConcepts = jest.fn();
-  const mockGetTerminologyConnections = jest.fn();
+// Mock response - set in beforeEach for each test group
+let mockResponse: unknown = null;
 
-  return {
-    terminologyApi: {
-      getRecommendedConcepts: mockGetRecommendedConcepts,
-      getTerminologyConnections: mockGetTerminologyConnections,
-    },
-    mockGetRecommendedConcepts,
-    mockGetTerminologyConnections,
-  };
-});
+// Mock terminology API
+jest.mock("../../../../../../axios/terminology", () => ({
+  Terminology: function () {
+    return {
+      getRecommendedConcepts: () => Promise.resolve([]),
+      getTerminologyConnections: () => Promise.resolve(mockResponse),
+    };
+  },
+}));
 
-// Mock ConceptHierarchy component to simplify testing
+// Mock ConceptHierarchy
 jest.mock("../../ConceptHierarchy/ConceptHierarchy", () => {
   return function MockConceptHierarchy() {
     return <div data-testid="concept-hierarchy">Mocked Concept Hierarchy</div>;
   };
 });
 
-const renderWithRouter = (component: React.ReactElement) => {
-  return render(<MemoryRouter>{component}</MemoryRouter>);
-};
-
-// Get the mock functions from the mocked module
-const { mockGetRecommendedConcepts, mockGetTerminologyConnections } = jest.requireMock(
-  "../../../../../../axios/terminology"
-);
-
-describe("TerminologyDetail Component", () => {
+// Helper to render with router
+const renderComponent = (props = {}) => {
   const defaultProps = {
     setShowDetails: jest.fn(),
     conceptId: 123456,
     setConceptId: jest.fn(),
     userId: "test-user",
     datasetId: "test-dataset",
+    ...props,
   };
+  return {
+    ...render(
+      <MemoryRouter>
+        <TerminologyDetail {...defaultProps} />
+      </MemoryRouter>
+    ),
+    props: defaultProps,
+  };
+};
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-
-    // Set up default mock implementations
-    mockGetRecommendedConcepts.mockResolvedValue([]);
-    mockGetTerminologyConnections.mockResolvedValue({
-      group: [
+// Mock API responses
+const standardConcept = {
+  group: [
+    {
+      element: [
         {
-          element: [
-            {
-              valueSet: {
-                expansion: {
-                  contains: [
-                    {
-                      conceptId: 123456,
-                      display: "Test Concept",
-                      code: "TEST001",
-                      system: "TestSystem",
-                    },
-                  ],
+          valueSet: {
+            expansion: {
+              contains: [
+                {
+                  conceptId: 123456,
+                  display: "Test Concept",
+                  code: "TEST001",
+                  system: "TestSystem",
+                  concept: "Standard",
                 },
-              },
-              target: [],
+              ],
             },
-          ],
+          },
+          target: [],
         },
       ],
-    });
+    },
+  ],
+};
+
+const nonStandardConcept = {
+  group: [
+    {
+      element: [
+        {
+          valueSet: {
+            expansion: {
+              contains: [
+                {
+                  conceptId: 789012,
+                  display: "Non-standard Concept",
+                  code: "NS001",
+                  system: "TestSystem",
+                  concept: "Non-standard",
+                },
+              ],
+            },
+          },
+          target: [{ code: 111111, display: "Related Concept", equivalence: "Maps to", vocabularyId: "SNOMED" }],
+        },
+      ],
+    },
+  ],
+};
+
+const standardWithConnections = {
+  group: [
+    {
+      element: [
+        {
+          valueSet: {
+            expansion: {
+              contains: [
+                {
+                  conceptId: 123456,
+                  display: "Test Concept",
+                  code: "TEST001",
+                  system: "TestSystem",
+                  concept: "Standard",
+                },
+              ],
+            },
+          },
+          target: [{ code: 999999, display: "Related Concept Name", equivalence: "Maps to", vocabularyId: "ICD10" }],
+        },
+      ],
+    },
+  ],
+};
+
+describe("TerminologyDetail Component", () => {
+  beforeEach(() => {
+    mockResponse = null;
   });
 
-  describe("Basic Rendering", () => {
-    it("renders without crashing", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Should render tabs
-      expect(screen.getByRole("tablist")).toBeInTheDocument();
-    });
-
-    it("renders close button", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      const closeButton = screen.getByTestId("CloseIcon");
-      expect(closeButton).toBeInTheDocument();
-    });
-
-    it("calls setShowDetails when close button is clicked", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Find the button containing the CloseIcon
-      const closeButton = screen.getByTestId("CloseIcon").closest("button");
-      expect(closeButton).toBeInTheDocument();
-
-      fireEvent.click(closeButton!);
-
-      expect(defaultProps.setShowDetails).toHaveBeenCalledWith(false);
-    });
-
-    it("renders concept hierarchy when hierarchy tab is active", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Find and click hierarchy tab
-      const hierarchyTab = screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY");
-      fireEvent.click(hierarchyTab);
-
-      expect(screen.getByTestId("concept-hierarchy")).toBeInTheDocument();
-    });
+  afterEach(() => {
+    cleanup();
   });
 
-  // Phase 2 Tests: Component Behavior
-  describe("Tab Navigation Behavior", () => {
-    it("switches between tabs correctly", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
+  it("renders without API call when datasetId is missing", () => {
+    renderComponent({ datasetId: "" });
 
-      // Initially, the Related Concepts tab should be selected (based on test output)
-      const relatedTab = screen.getByText("TERMINOLOGY_DETAIL__RELATED_CONCEPTS");
-      const hierarchyTab = screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY");
-
-      expect(relatedTab).toHaveAttribute("aria-selected", "true");
-      expect(hierarchyTab).toHaveAttribute("aria-selected", "false");
-
-      // Click hierarchy tab
-      fireEvent.click(hierarchyTab);
-
-      expect(hierarchyTab).toHaveAttribute("aria-selected", "true");
-      expect(relatedTab).toHaveAttribute("aria-selected", "false");
-      expect(screen.getByTestId("concept-hierarchy")).toBeInTheDocument();
-    });
-
-    it("shows correct content for each tab", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Related Concepts tab should show connections table
-      expect(screen.getByText("TERMINOLOGY_DETAIL__RELATIONSHIP")).toBeInTheDocument();
-      expect(screen.getByText("TERMINOLOGY_DETAIL__RELATES_TO")).toBeInTheDocument();
-      expect(screen.getByText("TERMINOLOGY_DETAIL__CONCEPT_ID")).toBeInTheDocument();
-      expect(screen.getByText("TERMINOLOGY_DETAIL__VOCABULARY")).toBeInTheDocument();
-
-      // Switch to hierarchy tab
-      const hierarchyTab = screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY");
-      fireEvent.click(hierarchyTab);
-
-      // Hierarchy tab should show the mocked hierarchy component
-      expect(screen.getByTestId("concept-hierarchy")).toBeInTheDocument();
-    });
-
-    it("resets to default tab state on rerender", () => {
-      const { rerender } = renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Switch to hierarchy tab
-      const hierarchyTab = screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY");
-      fireEvent.click(hierarchyTab);
-      expect(hierarchyTab).toHaveAttribute("aria-selected", "true");
-
-      // Rerender with same props - this will reset component state
-      rerender(<TerminologyDetail {...defaultProps} />);
-
-      // Should reset to default tab (Related Concepts)
-      const relatedTab = screen.getByText("TERMINOLOGY_DETAIL__RELATED_CONCEPTS");
-      expect(relatedTab).toHaveAttribute("aria-selected", "true");
-    });
+    expect(screen.queryByTestId("loader")).not.toBeInTheDocument();
+    expect(screen.getByRole("tablist")).toBeInTheDocument();
+    expect(screen.getByText("No records to display")).toBeInTheDocument();
+    expect(screen.queryByText("TERMINOLOGY_DETAIL__HIERARCHY")).not.toBeInTheDocument();
   });
 
-  describe("Component Stability", () => {
-    it("renders without crashing with various prop combinations", () => {
-      // Test with different prop combinations
-      const testCases = [
-        { ...defaultProps },
-        { ...defaultProps, conceptId: 0 },
-        { ...defaultProps, datasetId: "" },
-        { ...defaultProps, conceptId: 999999, datasetId: "different-dataset" },
-      ];
+  it("renders standard concept with both tabs", async () => {
+    mockResponse = standardConcept;
+    renderComponent();
 
-      testCases.forEach((props, index) => {
-        expect(() => {
-          const { unmount } = renderWithRouter(<TerminologyDetail {...props} />);
-          expect(screen.getByRole("tablist")).toBeInTheDocument();
-          unmount();
-        }).not.toThrow();
-      });
-    });
+    await screen.findByRole("tablist");
 
-    it("handles component lifecycle correctly", () => {
-      const { unmount } = renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Component should render successfully
-      expect(screen.getByRole("tablist")).toBeInTheDocument();
-      // Table is present but hidden, so check by class instead
-      expect(document.querySelector(".MuiTable-root")).toBeInTheDocument();
-
-      // Should unmount without errors
-      expect(() => unmount()).not.toThrow();
-    });
+    expect(screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY")).toBeInTheDocument();
+    expect(screen.getByText("TERMINOLOGY_DETAIL__RELATED_CONCEPTS")).toBeInTheDocument();
+    expect(screen.getByText("TERMINOLOGY_DETAIL__RELATED_CONCEPTS")).toHaveAttribute("aria-selected", "true");
   });
 
-  describe("UI Structure and Content", () => {
-    it("displays table headers correctly", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
+  it("hides Hierarchy tab for non-standard concepts", async () => {
+    mockResponse = nonStandardConcept;
+    renderComponent();
 
-      // Should show the table with proper headers
-      expect(screen.getByText("TERMINOLOGY_DETAIL__RELATIONSHIP")).toBeInTheDocument();
-      expect(screen.getByText("TERMINOLOGY_DETAIL__RELATES_TO")).toBeInTheDocument();
-      expect(screen.getByText("TERMINOLOGY_DETAIL__CONCEPT_ID")).toBeInTheDocument();
-      expect(screen.getByText("TERMINOLOGY_DETAIL__VOCABULARY")).toBeInTheDocument();
-    });
+    await screen.findByRole("tablist");
 
-    it("shows table structure in related concepts tab", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Should show empty table structure by default (table is hidden but present)
-      const table = document.querySelector(".MuiTable-root");
-      expect(table).toBeInTheDocument();
-      const tableBody = table?.querySelector("tbody");
-      expect(tableBody).toBeInTheDocument();
-    });
-
-    it("displays concept hierarchy when hierarchy tab is selected", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Switch to hierarchy tab
-      const hierarchyTab = screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY");
-      fireEvent.click(hierarchyTab);
-
-      // Should show the mocked hierarchy component
-      expect(screen.getByTestId("concept-hierarchy")).toBeInTheDocument();
-    });
+    expect(screen.queryByText("TERMINOLOGY_DETAIL__HIERARCHY")).not.toBeInTheDocument();
+    expect(screen.getByText("Related Concept")).toBeInTheDocument();
+    expect(screen.getByText("Maps to")).toBeInTheDocument();
   });
 
-  describe("User Interaction Behavior", () => {
-    it("handles close button click correctly", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
+  it("displays connections and navigates on click", async () => {
+    mockResponse = standardWithConnections;
+    const { props } = renderComponent();
 
-      const closeButton = screen.getByTestId("CloseIcon").closest("button");
-      fireEvent.click(closeButton!);
+    await screen.findByRole("tablist");
 
-      expect(defaultProps.setShowDetails).toHaveBeenCalledWith(false);
-    });
+    expect(screen.getByText("Related Concept Name")).toBeInTheDocument();
+    expect(screen.getByText("999999")).toBeInTheDocument();
 
-    it("maintains component state during tab interactions", () => {
-      renderWithRouter(<TerminologyDetail {...defaultProps} />);
-
-      // Initially, Related Concepts tab should be selected
-      const relatedTab = screen.getByText("TERMINOLOGY_DETAIL__RELATED_CONCEPTS");
-      const hierarchyTab = screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY");
-
-      expect(relatedTab).toHaveAttribute("aria-selected", "true");
-      expect(document.querySelector(".MuiTable-root")).toBeInTheDocument();
-
-      // Switch to hierarchy tab
-      fireEvent.click(hierarchyTab);
-
-      expect(hierarchyTab).toHaveAttribute("aria-selected", "true");
-      expect(relatedTab).toHaveAttribute("aria-selected", "false");
-      expect(screen.getByTestId("concept-hierarchy")).toBeInTheDocument();
-
-      // Switch back to related concepts tab
-      fireEvent.click(relatedTab);
-
-      expect(relatedTab).toHaveAttribute("aria-selected", "true");
-      expect(hierarchyTab).toHaveAttribute("aria-selected", "false");
-      expect(document.querySelector(".MuiTable-root")).toBeInTheDocument();
-    });
+    const row = screen.getByText("Related Concept Name").closest("tr");
+    fireEvent.click(row!);
+    expect(props.setConceptId).toHaveBeenCalledWith(999999);
   });
 
-  describe("Error Handling and Edge Cases", () => {
-    it("handles missing or invalid conceptId gracefully", () => {
-      const invalidProps = { ...defaultProps, conceptId: 0 };
+  it("closes panel when close button clicked", async () => {
+    mockResponse = standardConcept;
+    const { props } = renderComponent();
 
-      expect(() => {
-        renderWithRouter(<TerminologyDetail {...invalidProps} />);
-      }).not.toThrow();
+    await screen.findByRole("tablist");
 
-      expect(screen.getByRole("tablist")).toBeInTheDocument();
-      expect(document.querySelector(".MuiTable-root")).toBeInTheDocument();
-    });
+    const closeButton = screen.getByTestId("CloseIcon").closest("button");
+    fireEvent.click(closeButton!);
 
-    it("handles missing datasetId gracefully", () => {
-      const invalidProps = { ...defaultProps, datasetId: "" };
+    expect(props.setShowDetails).toHaveBeenCalledWith(false);
+    expect(props.setConceptId).toHaveBeenCalledWith(null);
+  });
 
-      expect(() => {
-        renderWithRouter(<TerminologyDetail {...invalidProps} />);
-      }).not.toThrow();
+  it("switches tabs when clicked", async () => {
+    mockResponse = standardConcept;
+    renderComponent();
 
-      expect(screen.getByRole("tablist")).toBeInTheDocument();
-      expect(document.querySelector(".MuiTable-root")).toBeInTheDocument();
-    });
+    await screen.findByRole("tablist");
 
-    it("renders consistently with different prop values", () => {
-      const variations = [
-        { ...defaultProps, conceptId: 999999 },
-        { ...defaultProps, datasetId: "another-dataset" },
-        { ...defaultProps, userId: "different-user" },
-      ];
+    const hierarchyTab = screen.getByText("TERMINOLOGY_DETAIL__HIERARCHY");
+    expect(hierarchyTab).toHaveAttribute("aria-selected", "false");
 
-      variations.forEach((props) => {
-        const { unmount } = renderWithRouter(<TerminologyDetail {...props} />);
+    fireEvent.click(hierarchyTab);
 
-        expect(screen.getByRole("tablist")).toBeInTheDocument();
-        expect(document.querySelector(".MuiTable-root")).toBeInTheDocument();
-        expect(screen.getByTestId("CloseIcon")).toBeInTheDocument();
+    expect(hierarchyTab).toHaveAttribute("aria-selected", "true");
+  });
 
-        unmount();
-      });
-    });
+  it("displays details section and footer when connections exist", async () => {
+    mockResponse = standardWithConnections;
+    renderComponent();
+
+    await screen.findByRole("tablist");
+
+    expect(screen.getByText("TERMINOLOGY_DETAIL__DETAILS")).toBeInTheDocument();
+    expect(screen.getByText(/Currently viewing:/)).toBeInTheDocument();
   });
 });
