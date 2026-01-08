@@ -76,6 +76,11 @@ test('atlas-lite cohort creation', async ({ page }) => {
     .getByTitle(new RegExp('^Delete$'))
     .click()
   await page.waitForTimeout(10000)
+  await page
+    .locator('iframe[title="Atlas Lite"]')
+    .contentFrame()
+    .locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')
+    .waitFor({ state: 'visible', timeout: 30000 })
   await expect(
     page
       .locator('iframe[title="Atlas Lite"]')
