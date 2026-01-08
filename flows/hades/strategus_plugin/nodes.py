@@ -1373,7 +1373,7 @@ def drop_strategus_results_schema(dbSettings):
     if(dbdao.check_schema_exists(results_schema)):
         dbdao.drop_schema(results_schema, True)
     else:
-        raise Exception(f"Schema {results_schema} not found")
+        print(f"Schema {results_schema} does not exist")
 
 def getRCdmExecutionSettings(settings) -> str:
     with ro.default_converter.context():
