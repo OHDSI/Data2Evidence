@@ -24,7 +24,7 @@ const ManageStrategusResultViewerDialog: FC<ManageStrategusResultViewerDialogPro
   loader.config({ monaco });
   const { getText } = useTranslation();
   const [viewerCode, setViewerCode] = useState<string>("");
-  const [defaultViewerCode, setDefaultViewerCode] = useState<string>(study?.viewerCode || "");
+  const [defaultViewerCode, setDefaultViewerCode] = useState<string>("");
   const [templates, setTemplates] = useState<StudyDashboardTemplateData[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   const [loading, setLoading] = useState(false);
@@ -37,9 +37,20 @@ const ManageStrategusResultViewerDialog: FC<ManageStrategusResultViewerDialogPro
     setTemplates(templates);
   }, []);
 
+  const getDefaultStrategusViewerCode = useCallback(async () => {
+    try {
+      const latestStudy = await api.strategusAnalysis.getStrategusAnalysis(study?.studyId);
+      setViewerCode(latestStudy.viewerCode ? latestStudy.viewerCode : "");
+      setDefaultViewerCode(latestStudy.viewerCode ? latestStudy.viewerCode : "");
+    } catch (error) {
+      console.error("Failed to fetch default viewer code:", error);
+      setDefaultViewerCode("");
+    }
+  }, [study?.studyId]);
+
   useEffect(() => {
     getTemplates();
-    setViewerCode(defaultViewerCode);
+    getDefaultStrategusViewerCode();
   }, [getTemplates]);
 
   const handleStartViewer = useCallback(async () => {
