@@ -156,23 +156,8 @@ def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: 
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters, logger):
     source_schema = copy_params.source_schema
 
-    # Create status table
+    # Create status table if it doesn't exist
     create_cache_status_table(write_conn, copy_params)
-
-    # Check for already completed tables
-    completed_tables = set()
-    try:
-        write_conn.execute(f"""
-            SELECT table_name
-            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
-            WHERE status = 'COMPLETE'
-        """)
-        result = write_conn.fetchall()
-        completed_tables = {row[0] for row in result}
-        logger.info(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
-    except Exception:
-        logger.error("Could not fetch completed tables from status tracking table.")
-        raise Exception("Could not fetch completed tables from status tracking table.")
 
     # Determine tables to copy
     source_tables = copy_params.table_filter.keys() if copy_params.table_filter else read_conn.get_table_names(source_schema)
@@ -211,15 +196,30 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
         )
 
-    # Filter out already completed tables
     original_count = len(tables_to_copy)
+
+    # Check for already completed tables
+    completed_tables = set()
+    try:
+        write_conn.execute(f"""
+            SELECT table_name
+            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+            WHERE status = 'COMPLETE'
+        """)
+        result = write_conn.fetchall()
+        completed_tables = list({row[0] for row in result})
+        logger.info(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
+    except Exception:
+        logger.error("Could not fetch completed tables from status tracking table.")
+        raise
+
+
+    # Filter out already completed tables
     tables_left_to_copy = [t for t in tables_to_copy if t not in completed_tables]
     skipped_count = original_count - len(tables_left_to_copy)
-    logger.info(f"Found {len(tables_left_to_copy)} tables to copy from schema(s): {copy_params.source_schema}{', ' + copy_params.vocab_schema if has_separate_vocab_schema else ''} .")
-    logger.info(f"Total tables in source schemas: {original_count}")
-    logger.info(f"Tables left to copy: {tables_left_to_copy}")
+    logger.info(f"There are {len(tables_left_to_copy)}/{original_count} tables left to copy from schema(s): {copy_params.source_schema}{', ' + copy_params.vocab_schema if has_separate_vocab_schema else ''}: {tables_left_to_copy}")
     if skipped_count > 0:
-        logger.info(f"Skipping {skipped_count} already completed tables.")
+        logger.info(f"Skipping {skipped_count} already completed tables: {completed_tables}")
 
     # BigQuery-specific global settings
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
@@ -230,12 +230,12 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         msg += f" with separate vocab schema '{copy_params.vocab_schema}'"
     logger.info(msg)
 
-    for idx, table in enumerate(tables_to_copy, start=1):
+    for idx, table in enumerate(tables_left_to_copy, start=1):
         # Determine which schema this table should be copied from
         source_schema_for_table = copy_params.vocab_schema if (has_separate_vocab_schema and table in VOCAB_TABLES) else copy_params.source_schema
 
         logger.info(
-            f"[{idx}/{len(tables_to_copy)}] Copying table '{table}' from schema '{source_schema_for_table}'..."
+            f"[{idx}/{len(tables_left_to_copy)}] Copying table '{table}' from schema '{source_schema_for_table}'..."
         )
 
         # Determine columns to copy for the current table
