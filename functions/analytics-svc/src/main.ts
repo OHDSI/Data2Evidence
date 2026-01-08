@@ -190,10 +190,6 @@ const initRoutes = async (app: express.Application) => {
                         parseValueForPrototypePollutingAssignment(
                             req.query.databaseCode as string
                         );
-                    if (req.query.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
-                        // Skip as bigquery currently always returns hardcoded value from env
-                        next();
-                    }
                     credentials =
                         req.dbCredentials.analyticsCredentials[databaseCode];
                     if (!credentials) {
@@ -571,11 +567,10 @@ const initSwaggerRoutes = async (app: express.Application) => {
             trexFunctionPath.replace(/\/[^\/]*\/?$/, "")
         );
     log.info(`initSwaggerRoutes: srcBasePath = ${srcBasePath}`);
-    const swaggerFilePath = srcBasePath.slice(0, -3) + "api/swagger/swagger.yaml";
+    const swaggerFilePath =
+        srcBasePath.slice(0, -3) + "api/swagger/swagger.yaml";
     log.info(`initSwaggerRoutes: Loading swagger from ${swaggerFilePath}`);
-    const swaggerFile = yaml.parse(
-        await Deno.readTextFile(swaggerFilePath)
-    );
+    const swaggerFile = yaml.parse(await Deno.readTextFile(swaggerFilePath));
     const basePath = swaggerFile["basePath"];
     log.info(`initSwaggerRoutes: basePath = ${basePath}`);
     for (const [swaggerPath, value] of Object.entries(swaggerFile["paths"])) {
@@ -591,10 +586,14 @@ const initSwaggerRoutes = async (app: express.Application) => {
         try {
             const controller = controllers[controllerFile];
             if (!controller) {
-                log.error(`Controller not found in registry: ${controllerFile}`);
+                log.error(
+                    `Controller not found in registry: ${controllerFile}`
+                );
                 continue;
             }
-            log.info(`initSwaggerRoutes: Loaded ${controllerFile} from registry`);
+            log.info(
+                `initSwaggerRoutes: Loaded ${controllerFile} from registry`
+            );
             const url = `${basePath}${swaggerPath.slice(1)}`
                 .replace(/\{(.+?)\}/g, ":$1")
                 .replace(/\/$/, ""); // Remove trailing slash for consistent matching
@@ -602,19 +601,27 @@ const initSwaggerRoutes = async (app: express.Application) => {
                 switch (k) {
                     case "get":
                         app.get(url, controller[v["operationId"]]);
-                        log.info(`Registered GET ${url} -> ${v["operationId"]}`);
+                        log.info(
+                            `Registered GET ${url} -> ${v["operationId"]}`
+                        );
                         break;
                     case "post":
                         app.post(url, controller[v["operationId"]]);
-                        log.info(`Registered POST ${url} -> ${v["operationId"]}`);
+                        log.info(
+                            `Registered POST ${url} -> ${v["operationId"]}`
+                        );
                         break;
                     case "put":
                         app.put(url, controller[v["operationId"]]);
-                        log.info(`Registered PUT ${url} -> ${v["operationId"]}`);
+                        log.info(
+                            `Registered PUT ${url} -> ${v["operationId"]}`
+                        );
                         break;
                     case "delete":
                         app.delete(url, controller[v["operationId"]]);
-                        log.info(`Registered DELETE ${url} -> ${v["operationId"]}`);
+                        log.info(
+                            `Registered DELETE ${url} -> ${v["operationId"]}`
+                        );
                         break;
                     default:
                         if (k != "x-swagger-router-controller")

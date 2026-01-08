@@ -13,12 +13,6 @@ export async function getCDMVersion(req, res, next) {
         datasetId
     );
 
-    // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
-    // Always send hardcoded value from env if dialect is bigquery
-    if (dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
-        return res.status(200).send(env.BIGQUERY_CDM_VERSION);
-    }
-
     try {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
@@ -55,18 +49,13 @@ export async function checkIfSchemaExists(req, res, next) {
     const databaseCode: string = req.query.databaseCode;
     const schemaName: string = req.query.schemaName;
 
-    // TODO: Discuss how to handle bigquery connections for dbsvc code in analytics-svc
-    // Always send true if dialect is bigquery
-    if (dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
-        return res.status(200).send(true);
-    }
-
     try {
         const { analyticsConnection } = req.dbConnections;
         const dbDao = new DBDAO(analyticsConnection);
         const schemaExists = await dbDao.checkIfSchemaExists(
             databaseCode,
-            schemaName
+            schemaName,
+            dialect
         );
         res.status(200).send(schemaExists);
     } catch (err) {
