@@ -261,14 +261,14 @@ jobs:
           echo "PGUSER=${PGUSER}" >> $GITHUB_ENV
           echo "PGHOST=${PGHOST}" >> $GITHUB_ENV
           echo "TESTSCHEMA=${TESTSCHEMA}" >> $GITHUB_ENV
-          echo "HDIPORT: ${PGPORT}" >> $GITHUB_ENV
-          echo "HDIPW: ${PGPASSWORD}" >> $GITHUB_ENV
-          echo "HDIUSER: ${PGUSER}" >> $GITHUB_ENV
-          echo "HANASERVER: ${PGHOST}" >> $GITHUB_ENV
-          echo "PGDATABASE: ${PGDATABASE}" >> $GITHUB_ENV
-          echo "isHttpTestRun: ${isHttpTestRun}" >> $GITHUB_ENV
-          echo "isTestEnv: ${isTestEnv:-false}" >> $GITHUB_ENV
-          echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}" >> $GITHUB_ENV
+          echo "HDIPORT=${PGPORT}" >> $GITHUB_ENV
+          echo "HDIPW=${PGPASSWORD}" >> $GITHUB_ENV
+          echo "HDIUSER=${PGUSER}" >> $GITHUB_ENV
+          echo "HANASERVER=${PGHOST}" >> $GITHUB_ENV
+          echo "PGDATABASE=${PGDATABASE}" >> $GITHUB_ENV
+          echo "isHttpTestRun=${isHttpTestRun}" >> $GITHUB_ENV
+          echo "isTestEnv=${isTestEnv:-false}" >> $GITHUB_ENV
+          echo "USE_TREX_DB_CONN=${USE_TREX_DB_CONN}" >> $GITHUB_ENV
 
       - name: Run HTTP tests
         working-directory: ./tests/backend_integration_tests
