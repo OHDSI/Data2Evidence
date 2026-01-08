@@ -38,9 +38,59 @@ export class JobPluginsAPI {
     }
   }
 
+  async checkExistingCacheFlows(datasetId: string) {
+    try {
+      const prefectApiUrl = services.prefect;
+      this.logger.info(`Checking for existing cache flows for dataset ${datasetId}`);
+      
+      const response = await fetch(`${prefectApiUrl}/flow_runs/filter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          flow_runs: {
+            tags: { 
+              operator: "and_",
+              all_: [`dataset:${datasetId}`] 
+            },
+            state: { 
+              type: { 
+                any_: ['RUNNING', 'PENDING', 'SCHEDULED'] 
+              } 
+            }
+          },
+          limit: 10
+        })
+      });
+      
+      if (!response.ok) {
+        this.logger.error(`Failed to check existing flows: ${response.statusText}`);
+        return [];
+      }
+      
+      const flows = await response.json();
+      this.logger.info(`Found ${flows.length} existing cache flows for dataset ${datasetId}`);
+      return flows;
+    } catch (error) {
+      this.logger.error(`Error checking existing cache flows: ${error}`);
+      return [];
+    }
+  }
+
   async createCacheFlowRun(dto: ICacheCreateFlowRun) {
     try {
       this.logger.info(`Create cache flow run: ${JSON.stringify(dto)}`);
+      
+      // Check for existing flows first
+      const existingFlows = await this.checkExistingCacheFlows(dto.cacheDatasetId);
+      if (existingFlows.length > 0) {
+        this.logger.info(`Cache flow already running for dataset ${dto.cacheDatasetId}, returning existing flow: ${existingFlows[0].id}`);
+        return {
+          flowRunId: existingFlows[0].id,
+          alreadyRunning: true,
+          data: existingFlows[0]
+        };
+      }
+      
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cachedb/create-file`;
       this.logger.info(`POST ${url}`);
