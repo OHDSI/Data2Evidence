@@ -301,8 +301,7 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         if row_count < 500000:
             logger.info(f"Copying table '{table}' (small, {row_count} rows)")
             select_sql = create_select_query(copy_params, query_columns, source_schema)
-            execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{table}";')
-            execute_statement(write_conn, f'CREATE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" AS {select_sql}')
+            execute_statement(write_conn, f'CREATE OR REPLACE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" AS {select_sql}')
             mark_complete(write_conn, table, copy_params)
             return row_count
         else:
