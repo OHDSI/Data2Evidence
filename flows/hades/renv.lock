@@ -2462,8 +2462,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "ResultModelManager",
-      "RemoteRef": "79ec3d22b71387eb99bba9cf8ba2ecd63c060c7f",
-      "RemoteSha": "79ec3d22b71387eb99bba9cf8ba2ecd63c060c7f"
+      "RemoteRef": "989fa990ad4d84a74528275ffce84d0bdf128989",
+      "RemoteSha": "989fa990ad4d84a74528275ffce84d0bdf128989"
     },
     "S7": {
       "Package": "S7",
