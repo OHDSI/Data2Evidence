@@ -7,14 +7,16 @@
       </button>
     </div>
     <div class="boolfiltercontainer-content" :class="{ tinted: showBackground }">
-      <template v-for="id in nonBasicCards" :key="id">
-        <filtercard
-          :id="id"
-          :parentId="boolFilterContainerModel.id"
-          :showBooleanCondition="!isFirstFilterCard(id)"
-          @renameModalShown="renameModalShown"
-        ></filtercard>
-      </template>
+      <VueDraggable v-model="nonBasicCards" v-bind="dragOptions" @remove="onFilterCardRemoved">
+        <div v-for="(id, index) in nonBasicCards" :key="id" class="draggable-filtercard">
+          <filtercard
+            :id="id"
+            :parentId="boolFilterContainerModel.id"
+            :showBooleanCondition="index > 0"
+            @renameModalShown="renameModalShown"
+          />
+        </div>
+      </VueDraggable>
     </div>
   </div>
 </template>
@@ -23,6 +25,7 @@ import { mapActions, mapGetters } from 'vuex'
 import appIcon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import FilterCard from './FilterCard.vue'
+import { VueDraggable } from 'vue-draggable-plus'
 
 export default {
   name: 'boolfiltercontainer',
@@ -49,11 +52,26 @@ export default {
     boolFilterContainerModel() {
       return this.getBoolFilterContainer(this.id)
     },
-    nonBasicCards() {
-      const cards = this.boolFilterContainerModel.props.filterCards.filter(f => f !== 'patient')
-      return this.showExclusion
-        ? cards.filter(c => this.getFilterCard(c).props.excludeFilter)
-        : cards.filter(c => !this.getFilterCard(c).props.excludeFilter)
+    nonBasicCards: {
+      get() {
+        const cards = this.boolFilterContainerModel.props.filterCards.filter(f => f !== 'patient')
+        return this.showExclusion
+          ? cards.filter(c => {
+              const filterCard = this.getFilterCard(c)
+              return filterCard.props && filterCard.props.excludeFilter
+            })
+          : cards.filter(c => {
+              const filterCard = this.getFilterCard(c)
+              return filterCard.props && !filterCard.props.excludeFilter
+            })
+      },
+      set(newOrder) {
+        this.reorderFilterCards({
+          boolFilterContainerId: this.id,
+          newOrder,
+        })
+        this.resetAllFilterCardEntryExit({ key: null })
+      },
     },
     showBackground() {
       return this.nonBasicCards.length > 1
@@ -77,8 +95,9 @@ export default {
     dragOptions() {
       return {
         group: 'boolfiltercontainer',
+        animation: 150,
         dragClass: 'ghost',
-        disabled: !this.isDraggable,
+        disabled: !this.isDraggable || this.showExclusion,
       }
     },
   },
@@ -86,8 +105,9 @@ export default {
     ...mapActions([
       'addFilterCard',
       'toggleFilterContainerBooleanCondition',
-      'updateBoolFilterContainer',
+      'removeBoolFilterContainer',
       'resetAllFilterCardEntryExit',
+      'reorderFilterCards',
     ]),
     onAddFilterCardMenuItemSelected(configPath) {
       this.addFilterCard({
@@ -105,21 +125,13 @@ export default {
       })
       this.resetAllFilterCardEntryExit({ key: null })
     },
-    rearrangeFilterCard(e) {
-      if (e.added) {
-        this.updateBoolFilterContainer({
-          boolFilterContainerId: this.id,
-          filterCardId: e.added.element,
-          type: 'add',
-        })
-      }
-      if (e.removed) {
-        this.updateBoolFilterContainer({
-          boolFilterContainerId: this.id,
-          filterCardId: e.removed.element,
-          type: 'remove',
-        })
-      }
+    onFilterCardRemoved() {
+      this.$nextTick(() => {
+        // After v-model update, check if container is now empty
+        if (this.nonBasicCards.length === 0) {
+          this.removeBoolFilterContainer({ boolFilterContainerId: this.id })
+        }
+      })
     },
     renameModalShown(value) {
       this.isDraggable = !value
@@ -129,6 +141,7 @@ export default {
     appLabel,
     appIcon,
     filtercard: FilterCard,
+    VueDraggable,
   },
 }
 </script>
@@ -143,4 +156,3 @@ export default {
   font-weight: bold !important;
 }
 </style>
-
