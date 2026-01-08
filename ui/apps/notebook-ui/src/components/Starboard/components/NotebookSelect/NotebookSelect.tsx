@@ -74,7 +74,7 @@ const NotebookSelect: FC<NotebookSelectProps> = ({
         sx={styles}
       >
         {notebooks &&
-          notebooks.map((nb: StarboardNotebook) => (
+          notebooks.sort((a, b) => a.name.localeCompare(b.name)).map((nb: StarboardNotebook) => (
             <MenuItem value={nb.id} key={nb.id} sx={styles}>
               {`${nb.name} ${
                 nb.isShared ? getText(i18nKeys.NOTEBOOK_SELECT__SHARED) : ""
