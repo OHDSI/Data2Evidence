@@ -285,7 +285,7 @@ def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns
     insert_sql = f"""INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}"{select_sql};"""
     execute_statement(write_conn, insert_sql)
 
-@task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"])
+@task(log_prints=True, task_run_name="copy_table_{query_columns.table}")
 def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
     logger = get_run_logger()
     copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger)
