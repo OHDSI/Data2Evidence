@@ -612,7 +612,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "CohortMethod",
-      "RemoteRef": "fix-runtime-error-at-diagnostic-summary-export",
+      "RemoteRef": "879efc63277a6abfffd166bb255d93dfd4c4837d",
       "RemoteSha": "879efc63277a6abfffd166bb255d93dfd4c4837d"
     },
     "CommonDataModel": {
@@ -924,7 +924,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
-      "RemoteRef": "alp-dqd",
+      "RemoteRef": "497c24aaf80c1677c0f263e20014372305547d32",
       "RemoteSha": "497c24aaf80c1677c0f263e20014372305547d32"
     },
     "DeepPatientLevelPrediction": {
@@ -2640,7 +2640,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-SqlRender",
-      "RemoteRef": "alp-dqd",
+      "RemoteRef": "26ed300a81f474c8ae81f1f9294d8d83d00d8cbf",
       "RemoteSha": "26ed300a81f474c8ae81f1f9294d8d83d00d8cbf"
     },
     "Strategus": {
