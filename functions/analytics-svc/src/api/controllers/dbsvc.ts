@@ -10,7 +10,6 @@ const logger = Logger.CreateLogger("analytics-log");
 export async function getCDMVersion(req, res, next) {
     const datasetId = req.query.datasetId;
     const { dialect, schemaName } = await new PortalServerAPI().getStudy(
-        req.headers.authorization,
         datasetId
     );
 

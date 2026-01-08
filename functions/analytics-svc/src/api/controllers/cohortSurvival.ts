@@ -20,8 +20,7 @@ async function getStudyDetails(
 }> {
     try {
         const portalServerAPI = new PortalServerAPI();
-        const accessToken = "Bearer dummy"
-        const studies = await portalServerAPI.getStudies(accessToken);
+        const studies = await portalServerAPI.getStudies();
         // find the matching element and get the study schema name
         const studyMatch = studies.find((el) => el.id === datasetId);
         if (!studyMatch) {
