@@ -43,7 +43,6 @@ export interface Plugins {
   requiredRoles?: string[];
   featureFlag?: string;
   menus?: string[];
-  datasetTypes?: string[];
 }
 
 export interface PluginDropdown {
@@ -76,7 +75,6 @@ export interface IPluginItem {
   notes?: string;
   notesI18nKey?: keyof LanguageMappings;
   children?: IPluginItem[];
-  datasetTypes?: string[];
 }
 
 export interface IPlugin {
