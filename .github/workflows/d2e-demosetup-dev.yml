@@ -31,6 +31,11 @@ jobs:
           # "false" if necessary for your workflow
           android: true
           dotnet: true
+
+      - name: Clean Prefect cache
+        run: |
+          rm -rf /root/.prefect/storage/run_cache.db
+          rm -rf /root/.prefect/storage/events.db
           haskell: true
           large-packages: true
           docker-images: true
