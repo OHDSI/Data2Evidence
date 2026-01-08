@@ -26,8 +26,6 @@ export function registerCohortValidationTools(server: McpServer) {
     async ({ cohortDefinitionExpression }, { requestInfo }) => {
       // Validate the cohort definition via D2E WebAPI, authorization and datasetId are required
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
-      console.log("DatasetId:", datasetId);
-
       const validationResult = await d2eWebapi.checkAtlasCohortDefinition(
         cohortDefinitionExpression,
         authorization,
