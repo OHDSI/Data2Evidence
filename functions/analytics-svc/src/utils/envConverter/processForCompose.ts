@@ -1,5 +1,6 @@
 import _ from "lodash";
 import {
+    BigqueryConfig,
     CombinedEnv,
     HanaConfig,
     IntTestConfig,
@@ -11,9 +12,13 @@ export const serviceNames = {
 } as const;
 
 const cleanupOverwriteValues = (
-    value: HanaConfig | PostgresConfig | IntTestConfig
+    value: HanaConfig | PostgresConfig | BigqueryConfig | IntTestConfig
 ) => {
-    if (value.type === "HANA" || value.type === "POSTGRES") {
+    if (
+        value.type === "HANA" ||
+        value.type === "POSTGRES" ||
+        value.type === "BIGQUERY"
+    ) {
         delete value.analyticsSvcValues;
         delete value.dbSvcValues;
     }
@@ -21,10 +26,14 @@ const cleanupOverwriteValues = (
 
 export const processForComposeAnalytics = (
     databaseValues: CombinedEnv
-): (HanaConfig | PostgresConfig)[] => {
-    const values: (HanaConfig | PostgresConfig)[] = [];
+): (HanaConfig | PostgresConfig | BigqueryConfig)[] => {
+    const values: (HanaConfig | PostgresConfig | BigqueryConfig)[] = [];
     for (const value of databaseValues) {
-        if (value.type === "HANA" || value.type === "POSTGRES") {
+        if (
+            value.type === "HANA" ||
+            value.type === "POSTGRES" ||
+            value.type === "BIGQUERY"
+        ) {
             value.values = _.merge(value.values, value.analyticsSvcValues);
             cleanupOverwriteValues(value);
             values.push(value);
