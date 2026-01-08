@@ -40,6 +40,9 @@ test(TEST_NAME, async ({ page }) => {
 
   // Click AND to change into OR
   await page.waitForTimeout(5000)
+  // This first click closes the gender dropdown first as after adding MALE, it automatically goes to the next tag dropdown selection
+  await page.getByRole('button', { name: 'AND ' }).first().click()
+  // This one does the actual change to AND
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
