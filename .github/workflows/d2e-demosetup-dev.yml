@@ -82,24 +82,24 @@ jobs:
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
 
-      # - name: Build i2b2 docker image
-      #   if: steps.file_changes.outputs.flow_i2b2 == 'true'
-      #   id: build_i2b2_image
-      #   run: |
-      #     docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./flows
+      - name: Build i2b2 docker image
+        if: steps.file_changes.outputs.flow_i2b2 == 'true'
+        id: build_i2b2_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./flows
 
-      # - name: Build data management docker image
-      #   if: steps.file_changes.outputs.flow_data_management == 'true'
-      #   id: build_dm_image
-      #   run: |
-      #     docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
+      - name: Build data management docker image
+        if: steps.file_changes.outputs.flow_data_management == 'true'
+        id: build_dm_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
 
-      # - name: Build docker images
-      #   if: success() || failure()
-      #   id: pull
-      #   run: |
-      #     ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
-      #     docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+      - name: Build docker images
+        if: success() || failure()
+        id: pull
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Prune images
         if: always()
