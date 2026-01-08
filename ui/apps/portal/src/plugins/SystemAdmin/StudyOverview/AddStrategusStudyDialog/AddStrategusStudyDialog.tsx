@@ -14,6 +14,7 @@ interface AddStrategusStudyDialogProps {
 interface FormError {
   studyId: {
     required: boolean;
+    invalid: boolean;
   };
   analysisSpec: {
     invalid: boolean;
@@ -21,7 +22,7 @@ interface FormError {
 }
 
 const EMPTY_FORM_ERROR: FormError = {
-  studyId: { required: false },
+  studyId: { required: false, invalid: false },
   analysisSpec: { invalid: false },
 };
 
@@ -45,7 +46,13 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
     let hasError = false;
 
     if (!studyId.trim()) {
-      error = { ...error, studyId: { required: true } };
+      error = { ...error, studyId: { required: true, invalid: false } };
+      hasError = true;
+    }
+
+    const studyIdPattern = /^[a-zA-Z0-9_-]+$/;
+    if (studyId && !studyIdPattern.test(studyId)) {
+      error = { ...error, studyId: { required: false, invalid: true } };
       hasError = true;
     }
 
@@ -119,6 +126,11 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
             disabled={loading}
           />
           {formError.studyId.required && <FormHelperText error={true}>Study ID is required</FormHelperText>}
+          {formError.studyId.invalid && (
+            <FormHelperText error={true}>
+              Study ID can only contain letters, numbers, underscores, and hyphens
+            </FormHelperText>
+          )}
           <FormHelperText>Enter a unique identifier for your study</FormHelperText>
         </div>
         <div style={{ marginBottom: "32px" }}>
@@ -149,4 +161,3 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
 };
 
 export default AddStrategusStudyDialog;
-

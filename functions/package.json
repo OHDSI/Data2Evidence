@@ -350,8 +350,7 @@
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
           "TESTSCHEMA": "${TESTSCHEMA}",
-          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}",
-          "BIGQUERY_CDM_VERSION": "${BIGQUERY_CDM_VERSION}"
+          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}"
         },
         "mri-pg-config": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
