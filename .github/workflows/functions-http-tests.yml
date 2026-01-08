@@ -310,25 +310,27 @@ jobs:
               --header "authorization: Bearer $BEARER_TOKEN" \
               --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
 
-      # Restart is required for alp-trex container after seeding database credentials into the db table
-      - name: Restart alp-trex service
-        run: |
-          docker container restart alp-trex
-          echo "Waiting 60 secs for alp-trex to restart..."
-          sleep 60
-          # Health check
-          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
 
       - name: Seed dummy dataset
         run: |
-
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
           ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
 
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
           ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
 
-          curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
+      # Restart is required for alp-trex container after seeding database credentials into the db table
+      - name: Restart alp-trex service
+        run: |
+          docker container restart alp-trex
+          echo "Waiting 120 secs for alp-trex to restart..."
+          sleep 120
+          # Health check
+          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
+
+      - name: Assign and verify researcher assigned to user
+        run: |
+          curl --max-time 100 --fail -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
               -H 'accept: application/json, text/plain, */*' \
               -H "authorization: Bearer $BEARER_TOKEN" \
               -H 'content-type: application/json' \
@@ -336,7 +338,7 @@ jobs:
               -H 'referer: https://localhost:41100/d2e/portal/systemadmin/dataset-overview' \
               --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
 
-          curl -k 'https://localhost:41100/d2e/usermgmt/api/me/roles' \
+          curl --max-time 100 --fail -k 'https://localhost:41100/d2e/usermgmt/api/me/roles' \
           -H 'accept: application/json, text/plain, */*' \
           -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
           -H 'content-type: application/json' \
