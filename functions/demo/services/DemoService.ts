@@ -207,6 +207,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
+    this.logger.info("Dataset", dataset);
     const { id: datasetId, cacheId: cacheDatasetId } = dataset;
     const result = await jobPluginsAPI.createCacheFlowRun({
       datasetId,
