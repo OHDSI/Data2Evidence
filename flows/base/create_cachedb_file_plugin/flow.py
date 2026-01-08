@@ -58,8 +58,7 @@ def create_cache_flow_with_limit(options: CreateCacheOptions):
     """
     logger = get_run_logger()
     
-    # Use database_code as the concurrency limit tag to serialize copies per database
-    concurrency_tag = f"cache-schema-copy-{options.database_code}"
+    concurrency_tag = f"flow-level-concurrency"
     
     logger.info(f"Acquiring concurrency limit: {concurrency_tag}")
     with concurrency(concurrency_tag, occupy=1):
