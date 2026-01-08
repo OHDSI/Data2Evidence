@@ -82,13 +82,14 @@ test('atlas-lite cohort creation', async ({ page }) => {
       .contentFrame()
       .locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')
   ).toBeVisible()
+  await page.waitForTimeout(1000)
   await expect(
     page
       .locator('iframe[title="Atlas Lite"]')
       .contentFrame()
       .locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')
   ).toContainText('No data available in table')
-
+  await page.waitForTimeout(1000)
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
