@@ -10,15 +10,17 @@ interface DrilldownTrellisChartProps {
   data: any;
   trellisXAxisKey?: string;
   maxPlotsPerRow?: number;
+  title?: string;
 }
 
 const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
   data,
   trellisXAxisKey = "YPREVALENCE1000PP",
   maxPlotsPerRow = 5,
+  title: propsTitle,
 }) => {
   const { getText, i18nKeys } = useTranslation();
-  const title = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TITLE);
+  const title = propsTitle ?? getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TITLE);
   const trellisTopLabel = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TRELLIS_TOP_LABEL);
   const trellisBottomLabel = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TRELLIS_BOTTOM_LABEL);
 
@@ -56,8 +58,8 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
 
   // Calculate global y-axis range for harmonization across all plots
   const allYValues = data.map((obj: any) => Number(obj[trellisXAxisKey])).filter((v: number) => !isNaN(v));
-  const globalYMin = Math.min(...allYValues);
-  const globalYMax = Math.max(...allYValues);
+  const globalYMin = Math.floor(Math.min(...allYValues));
+  const globalYMax = Math.ceil(Math.max(...allYValues));
 
   for (const [index, trellisName] of sortedTrellisNames.entries()) {
     let seriesData = trellisData[trellisName];
@@ -126,7 +128,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
           focus: "series",
         },
         label: {
-          show: true,
+          show: false,
           position: "top",
         },
         xAxisIndex: index,
