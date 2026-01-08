@@ -138,6 +138,13 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
+      - name: Wait and cleanup before setupdemo
+        run: |
+          echo "Waiting 30 seconds for services to stabilize..."
+          sleep 30
+          echo "Clearing any pending Prefect flows..."
+          docker exec d2e-dataflow-gen-1 sh -c "curl -s -X POST http://localhost:41120/api/flow_runs/filter -H 'Content-Type: application/json' -d '{\"flow_runs\": {\"state\": {\"type\": {\"any_\": [\"PENDING\", \"SCHEDULED\"]}}}}' | jq -r '.[] | .id' | xargs -I {} curl -s -X PATCH http://localhost:41120/api/flow_runs/{} -H 'Content-Type: application/json' -d '{\"state\": \"CANCELLED\"}' 2>/dev/null || true"
+
       - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
