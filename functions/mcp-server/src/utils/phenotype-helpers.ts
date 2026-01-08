@@ -4,27 +4,29 @@
  */
 
 import Papa from "papaparse";
-import { EXTERNAL_APIS } from "../config/server.config";
+import { readFileSync } from "node:fs";
+import {
+  PHENOTYPE_LIBRARY_COHORT_TEMPLATE,
+  PHENOTYPE_LIBRARY_COHORTS,
+} from "../env";
 import type { PhenotypeData } from "../types/tool-schemas";
 
 /**
  * Fetch all phenotypes from OHDSI Phenotype Library
  */
 export async function fetchPhenotypeData(): Promise<PhenotypeData[]> {
-  const response = await fetch(EXTERNAL_APIS.PHENOTYPE_LIBRARY_COHORTS);
-  const csvText = await response.text();
-
-  const { data } = Papa.parse(csvText, {
+  const file = readFileSync(PHENOTYPE_LIBRARY_COHORTS, "utf-8");
+  const parsed = Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
   });
 
-  return (data as any[]).map((row) => ({
+  return (parsed.data as any[]).map((row) => ({
     cohortId: String(row.cohortId || ""),
     cohortName: String(row.cohortName || ""),
-    cohortNameFormatted: String(row.cohortNameFormatted || ""),
-    cohortNameLong: String(row.cohortNameLong || ""),
-    logicDescription: String(row.logicDescription || ""),
+    // cohortNameFormatted: String(row.cohortNameFormatted || ""),
+    // cohortNameLong: String(row.cohortNameLong || ""),
+    // logicDescription: String(row.logicDescription || ""),
   }));
 }
 
@@ -34,7 +36,7 @@ export async function fetchPhenotypeData(): Promise<PhenotypeData[]> {
 export async function fetchCohortDefinitionTemplate(
   phenotypeId: number
 ): Promise<any> {
-  const url = EXTERNAL_APIS.PHENOTYPE_LIBRARY_COHORT_TEMPLATE(phenotypeId);
+  const url = `${PHENOTYPE_LIBRARY_COHORT_TEMPLATE}/${phenotypeId}.json`;
   const response = await fetch(url);
 
   try {
