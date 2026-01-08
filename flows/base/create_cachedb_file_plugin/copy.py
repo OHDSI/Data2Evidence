@@ -95,7 +95,7 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters):
     execute_statement(write_conn, sql)
     logger.info(f"Schema '{copy_params.target_schema}' ensured.")
 
-@task(log_prints=True, task_run_name="create_schema_tables_from_{copy_params.source_schema}")
+@task(log_prints=True, task_run_name="create_schema_tables_from_{copy_params.source_schema}", tags=["flow-level-concurrency"])
 def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
     logger.info(f"Starting creation of schema '{copy_params.target_schema}' in database '{copy_params.target_database}' if it doesn't exist...")

@@ -125,10 +125,15 @@
           "name": "create_cachedb_file_plugin",
           "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
           "concurrencyLimitOptions": [
-          {
-            "tag": "table-level-concurrency",
-            "limit": "CACHE_TABLE_LEVEL_CONCURRENCY"
-          }],
+            {
+              "tag": "table-level-concurrency",
+              "limit": "CACHE_TABLE_LEVEL_CONCURRENCY"
+            },
+            {
+                "tag": "flow-level-concurrency",
+                "limit": "CACHE_FLOW_LEVEL_CONCURRENCY"
+            }
+          ],
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
