@@ -9,6 +9,9 @@
       background-color: var(--color-tab-bar-header-bg);
     }
   }
+  .btn-boolean-toggle:hover {
+      color: var(--color-mri-lightest-text);
+  }
 }
 
 .boolfiltercontainer.exclusion {

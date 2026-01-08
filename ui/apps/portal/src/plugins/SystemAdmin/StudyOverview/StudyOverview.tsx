@@ -6,15 +6,8 @@ import TableContainer from "@mui/material/TableContainer";
 import IconButton from "@mui/material/IconButton";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import {
-  Loader,
-  TableCell,
-  TableRow,
-  Text,
-  Button,
-  Tooltip,
-} from "@portal/components";
-import { CloseDialogType, Study, StudyAttribute } from "../../../types";
+import { Loader, TableCell, TableRow, Text, Button, Tooltip } from "@portal/components";
+import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
 import { useDialogHelper, useDatasets, useDatabases } from "../../../hooks";
 import { useTranslation } from "../../../contexts";
 import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
@@ -32,9 +25,14 @@ import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
-import "./StudyOverview.scss";
 import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
 import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
+import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
+import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
+import ManageStrategusResultViewerDialog from "./ManageStrategusResultViewerDialog/ManageStrategusResultViewerDialog";
+import StudyActionSelector from "./ActionSelector/StudyActionSelector";
+
+import "./StudyOverview.scss";
 
 const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
@@ -76,11 +74,21 @@ const StudyOverview: FC = () => {
   const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
     useDialogHelper(false);
+  const [showRunStrategusStudyDialog, openRunStrategusStudyDialog, closeRunStrategusStudyDialog] =
+    useDialogHelper(false);
+  const [showCleanupStrategusStudyDialog, openCleanupStrategusStudyDialog, closeCleanupStrategusStudyDialog] =
+    useDialogHelper(false);
+  const [
+    showManageStrategusResultViewerDialog,
+    openManageStrategusResultViewerDialog,
+    closeManageStrategusResultViewerDialog,
+  ] = useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
+  const [activeStrategusStudy, setActiveStrategusStudy] = useState<NetworkStrategusStudy>();
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const [strategusStudies, setStrategusStudies] = useState<any[]>([]);
+  const [strategusStudies, setStrategusStudies] = useState<NetworkStrategusStudy[]>([]);
   const [loadingStrategusStudies, setLoadingStrategusStudies] = useState(false);
 
   const handleSourceInformation = useCallback(
@@ -191,6 +199,30 @@ const StudyOverview: FC = () => {
     [openManageDashboardDialog]
   );
 
+  const handleRunStrategusStudy = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openRunStrategusStudyDialog();
+    },
+    [openRunStrategusStudyDialog]
+  );
+
+  const handleCleanupStrategusStudy = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openCleanupStrategusStudyDialog();
+    },
+    [openCleanupStrategusStudyDialog]
+  );
+
+  const handleManageStrategusResultViewer = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openManageStrategusResultViewerDialog();
+    },
+    [openManageStrategusResultViewerDialog]
+  );
+
   const toggleRow = useCallback((datasetId: string) => {
     setExpandedRows((prev) => ({
       ...prev,
@@ -228,17 +260,15 @@ const StudyOverview: FC = () => {
     // First pass: separate datasets by type and build children maps
     datasets.forEach((dataset: Study) => {
       const type = dataset.type?.toLowerCase();
-      
+
       if (type === "study") {
         // Only study type datasets go to studies table
         studies.push(dataset);
       } else if (type === "fhir" || type === "non_omop") {
         // FHIR and non_omop datasets go to FHIR table
         // Check if this is a child dataset (has source_dataset_id attribute)
-        const sourceIdAttribute = dataset.attributes?.find(
-          (attr) => attr.attributeId === "source_dataset_id"
-        );
-        
+        const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
+
         if (sourceIdAttribute && sourceIdAttribute.value) {
           // This is a child dataset
           const parentId = sourceIdAttribute.value;
@@ -253,10 +283,8 @@ const StudyOverview: FC = () => {
       } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop") {
         // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
         // Check if this is a child dataset (has source_dataset_id attribute)
-        const sourceIdAttribute = dataset.attributes?.find(
-          (attr) => attr.attributeId === "source_dataset_id"
-        );
-        
+        const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
+
         if (sourceIdAttribute && sourceIdAttribute.value) {
           // This is a child dataset
           const parentId = sourceIdAttribute.value;
@@ -291,7 +319,7 @@ const StudyOverview: FC = () => {
   // Initialize expandedRows to have all parent datasets expanded by default
   useEffect(() => {
     const initialExpandedRows: Record<string, boolean> = {};
-    
+
     // Add CDM datasets with children
     if (sourceOmopHanaDatasets.length > 0) {
       sourceOmopHanaDatasets.forEach((dataset) => {
@@ -300,7 +328,7 @@ const StudyOverview: FC = () => {
         }
       });
     }
-    
+
     // Add FHIR datasets with children
     if (fhirDatasets.length > 0) {
       fhirDatasets.forEach((dataset) => {
@@ -309,7 +337,7 @@ const StudyOverview: FC = () => {
         }
       });
     }
-    
+
     if (Object.keys(initialExpandedRows).length > 0) {
       setExpandedRows((prev) => {
         // Only update if there are new parent datasets to expand
@@ -390,9 +418,7 @@ const StudyOverview: FC = () => {
       if (!flowName || flowName === "custom-flow" || item.type === "fhir" || item.type === "non_omop") return;
 
       // Check if this is a cache/datamart dataset (has source_dataset_id attribute)
-      const hasSourceDatasetId = item.attributes?.some(
-        (attribute) => attribute.attributeId === "source_dataset_id"
-      );
+      const hasSourceDatasetId = item.attributes?.some((attribute) => attribute.attributeId === "source_dataset_id");
 
       if (hasSourceDatasetId) {
         cacheDatasets.push(item);
@@ -620,10 +646,7 @@ const StudyOverview: FC = () => {
                         {dataset.children && dataset.children.length > 0 && expandedRows[dataset.id] && (
                           <>
                             <TableRow className="cache-datasets-header-row">
-                              <TableCell 
-                                colSpan={9}
-                                className="cache-datasets-header-cell"
-                              >
+                              <TableCell colSpan={9} className="cache-datasets-header-cell">
                                 Cache Datasets
                               </TableCell>
                             </TableRow>
@@ -646,7 +669,9 @@ const StudyOverview: FC = () => {
           {/* FHIR Datasets Table */}
           {fhirDatasets.length > 0 && (
             <>
-              <h4 className="dataset-section-title dataset-section-title--secondary">{getText(i18nKeys.STUDY_OVERVIEW__FHIR_DATASETS)}</h4>
+              <h4 className="dataset-section-title dataset-section-title--secondary">
+                {getText(i18nKeys.STUDY_OVERVIEW__FHIR_DATASETS)}
+              </h4>
               <TableContainer className="studyoverview__list">
                 <Table>
                   <colgroup>
@@ -679,10 +704,7 @@ const StudyOverview: FC = () => {
                         {dataset.children && dataset.children.length > 0 && expandedRows[dataset.id] && (
                           <>
                             <TableRow className="cache-datasets-header-row">
-                              <TableCell 
-                                colSpan={9}
-                                className="cache-datasets-header-cell"
-                              >
+                              <TableCell colSpan={9} className="cache-datasets-header-cell">
                                 Cache Datasets
                               </TableCell>
                             </TableRow>
@@ -749,7 +771,7 @@ const StudyOverview: FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {strategusStudies.map((study: any) => (
+                    {strategusStudies.map((study: NetworkStrategusStudy) => (
                       <TableRow key={study.analysisId || study.studyId}>
                         <TableCell className="icon-cell icon-cell--no-children"></TableCell>
                         <TableCell>
@@ -764,15 +786,16 @@ const StudyOverview: FC = () => {
                         </TableCell>
                         <TableCell>{study.mode || "-"}</TableCell>
                         <TableCell>{study.notebookName || "-"}</TableCell>
-                        <TableCell>
-                          {study.createdAt ? new Date(study.createdAt).toLocaleDateString() : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}
-                        </TableCell>
+                        <TableCell>{study.createdAt ? new Date(study.createdAt).toLocaleDateString() : "-"}</TableCell>
+                        <TableCell>{study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}</TableCell>
                         <TableCell>study</TableCell>
                         <TableCell className="col-action">
-                          -
+                          <StudyActionSelector
+                            study={study}
+                            handleRunStrategusStudy={handleRunStrategusStudy}
+                            handleCleanupStrategusStudy={handleCleanupStrategusStudy}
+                            handleManageStrategusResultViewer={handleManageStrategusResultViewer}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -889,6 +912,30 @@ const StudyOverview: FC = () => {
 
           {showAddStrategusStudyDialog && (
             <AddStrategusStudyDialog open={showAddStrategusStudyDialog} onClose={handleCloseAddStrategusStudyDialog} />
+          )}
+
+          {showRunStrategusStudyDialog && (
+            <RunStrategusStudyDialog
+              study={activeStrategusStudy}
+              open={showRunStrategusStudyDialog}
+              onClose={closeRunStrategusStudyDialog}
+            />
+          )}
+
+          {showCleanupStrategusStudyDialog && (
+            <CleanupStrategusStudyDialog
+              study={activeStrategusStudy}
+              open={showCleanupStrategusStudyDialog}
+              onClose={closeCleanupStrategusStudyDialog}
+            />
+          )}
+
+          {showManageStrategusResultViewerDialog && activeStrategusStudy && (
+            <ManageStrategusResultViewerDialog
+              study={activeStrategusStudy}
+              open={showManageStrategusResultViewerDialog}
+              onClose={closeManageStrategusResultViewerDialog}
+            />
           )}
         </div>
       </div>
