@@ -307,7 +307,17 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
         }}
       >
         {data && data.details && (
-          <Typography>
+          <Typography
+            sx={{
+              textAlign: "center",
+              wordBreak: "break-word",
+              padding: "0 10px",
+              overflow: "hidden",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+            }}
+          >
             Currently viewing: {data?.details.conceptId} |{" "}
             {data?.details.display}
           </Typography>
