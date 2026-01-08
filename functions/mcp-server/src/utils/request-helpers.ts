@@ -1,3 +1,5 @@
+import { env } from "../env";
+
 /**
  * Request helper utilities for MCP tools
  * Provides common patterns for authorization, validation, and response formatting
@@ -73,4 +75,19 @@ export function createStructuredResponse<T>(text: string, data: T) {
     ],
     structuredContent: data,
   };
+}
+
+/**
+ * Get username from usermgmt API based on authorization token
+ */
+export async function getUserName(authorization: string): Promise<string> {
+  const options = {
+    headers: {
+      Authorization: authorization,
+    },
+  };
+  const channel = Trex.tokioChannel("d2e-functions/alp-usermgmt");
+  const url = `${env.SERVICE_ROUTES.usermgmt}/me`;
+  const res = await channel.get(url, options);
+  return res.data.username;
 }
