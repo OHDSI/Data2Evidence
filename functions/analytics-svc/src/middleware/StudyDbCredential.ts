@@ -131,8 +131,7 @@ export default async (req: IMRIRequest, res, next) => {
                 log.info(`Selected study ID ${studyTokenCode}`);
 
                 const portalServerAPI = new PortalServerAPI();
-                const accessToken =
-                    await portalServerAPI.getClientCredentialsToken();
+                const accessToken = "Bearer dummy";
                 const studies = await portalServerAPI.getStudies(accessToken);
 
                 const studyMetadata: StudyDbMetadata = studies.find(

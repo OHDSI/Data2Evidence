@@ -131,8 +131,7 @@ const initRoutes = async (app: express.Application) => {
                             `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
                         );
                         const portalServerAPI = new PortalServerAPI();
-                        const accessToken =
-                            await portalServerAPI.getClientCredentialsToken();
+                        const accessToken = "Bearer dummy"
                         studies = await portalServerAPI.getStudies(accessToken);
                         console.timeEnd(
                             `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`

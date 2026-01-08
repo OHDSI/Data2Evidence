@@ -12,7 +12,7 @@ let logger = CreateLogger("mri-log: conhortCompare");
 async function getSchemaName(datasetId: string, language: string, res) {
     try {
         const portalServerAPI = new PortalServerAPI();
-        const accessToken = await portalServerAPI.getClientCredentialsToken();
+        const accessToken = "Bearer dummy"
         const studies = await portalServerAPI.getStudies(accessToken);
 
         // find the matching element and get the study schema name
