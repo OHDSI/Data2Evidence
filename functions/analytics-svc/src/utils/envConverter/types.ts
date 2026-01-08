@@ -22,11 +22,17 @@ export interface IDatabaseCredential {
 type ConfigTypes = {
     HANA: "HANA";
     POSTGRES: "POSTGRES";
+    BIGQUERY: "BIGQUERY";
     AUDIT: "AUDIT";
     INT_TEST: "INT_TEST";
 };
 
-export type CombinedEnv = (HanaConfig | PostgresConfig | IntTestConfig)[];
+export type CombinedEnv = (
+    | HanaConfig
+    | PostgresConfig
+    | BigqueryConfig
+    | IntTestConfig
+)[];
 
 export type HanaValues = {
     credentials: {
@@ -115,6 +121,42 @@ export type PostgresConfig = {
     dbSvcValues?: Partial<PostgresValues>;
 };
 
+export type BigqueryValues = {
+    code: string;
+    id: string;
+    host: string;
+    vocab_schemas: string[];
+    publications: string[];
+    authentication_mode: string;
+    database: string;
+    databaseName: string;
+    dialect: string;
+    port: string;
+    type: string;
+    auth_uri: string;
+    client_id: string;
+    token_uri: string;
+    project_id: string;
+    private_key: string;
+    client_email: string;
+    private_key_id: string;
+    universe_domain: string;
+    client_x509_cert_url: string;
+    auth_provider_x509_cert_url: string;
+    credentials: {};
+};
+
+export type BigqueryConfig = {
+    type: ConfigTypes["BIGQUERY"];
+    tags: string[];
+    name: string;
+    key: string;
+    description: string;
+    values: BigqueryValues;
+    analyticsSvcValues?: Partial<PostgresValues>;
+    dbSvcValues?: Partial<PostgresValues>;
+};
+
 export type IntTestValues = {
     HANASERVER: string;
     TESTPORT: number;
@@ -138,6 +180,7 @@ export type VcapMridb = {
     mridb: (
         | VcapAlpHana
         | VcapAlpPostgres
+        | VcapAlpBigquery
         | VcapAlpHanaHttpTest
         | VcapAlpHanaTest
     )[];
@@ -230,6 +273,21 @@ export type VcapAlpPostgres = {
         dialect: string;
         idleTimeoutMillis: number;
         max: number;
+    };
+    tags: string[];
+};
+
+export type VcapAlpBigquery = {
+    name: string;
+    credentials: {
+        host: string;
+        port: number;
+        code: string;
+        schema: string;
+        vocabSchema: string;
+        database: string;
+        databaseName: string;
+        dialect: string;
     };
     tags: string[];
 };
