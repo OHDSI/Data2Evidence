@@ -600,6 +600,11 @@ services:
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
       PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
+      PREFECT_TASKS_CACHE_ENABLED: false
+      PREFECT_FLOW_RUN_CACHE_ENABLED: false
+      PREFECT_RESULTS_PERSIST_BY_DEFAULT: false
+      PREFECT_EVENTS_ENABLED: false
+
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
