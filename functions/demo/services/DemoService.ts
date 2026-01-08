@@ -110,7 +110,6 @@ export class DemoService {
     };
 
     const result = await datasetAPI.createDataset(dataset);
-    this.logger.info(`Dataset: ${JSON.stringify(dataset)}`);
     this.logger.info(`Dataset added: ${JSON.stringify(result)}`);
     return { ...dataset, ...result };
   }
@@ -208,7 +207,6 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    this.logger.info("Dataset", dataset);
     const { id: datasetId, cacheId: cacheDatasetId } = dataset;
     const result = await jobPluginsAPI.createCacheFlowRun({
       datasetId,

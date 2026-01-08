@@ -21,7 +21,7 @@ export class CachedbService {
     const parameters = { options: createCachedbFileFlowRunDto };
     console.log(`Parameters: ${JSON.stringify(parameters)}`);
     const flowRunId = await prefectApi.createFlowRun(
-      `Run cachedb file creation - ${createCachedbFileFlowRunDto.databaseCode}.${createCachedbFileFlowRunDto.schemaName} as ${createCachedbFileFlowRunDto.snapshotSchemaName}`,
+      "Run cachedb file creation",
       deploymentName,
       flowName,
       parameters
