@@ -11,10 +11,13 @@ export interface StrategusStudy {
 export interface NetworkStrategusStudy {
   id: string;
   studyId: string;
+  analysisId?: string;
   analysisSpec: string;
   notebookName: string;
   mode: string;
   viewerCode?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export enum StrategusStudyType {
