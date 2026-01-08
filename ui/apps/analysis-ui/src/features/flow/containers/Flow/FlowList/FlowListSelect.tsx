@@ -70,7 +70,7 @@ export const FlowListSelect: FC<FlowListSelectProps> = () => {
           value={dataflowId}
           onChange={handleDataflowChange}
         >
-          {dataflows.sort((a, b) => a.name.localeCompare(b.name)).map((d) => (
+          {dataflows.map((d) => (
             <MenuItem key={d.id} value={d.id}>
               {d.name}
               {d.id == dataflowId && (
