@@ -313,31 +313,36 @@ export default {
           }
         }
 
-        if (isNewBookmark || this.isNotUserSharedBookmark) {
-          const params = {
-            cmd: 'insert',
-            bookmarkname: bookmarkName,
-            shareBookmark: this.shareBookmark,
-            bookmark: JSON.stringify(bookmark),
+        try {
+          if (isNewBookmark || this.isNotUserSharedBookmark) {
+            const params = {
+              cmd: 'insert',
+              bookmarkname: bookmarkName,
+              shareBookmark: this.shareBookmark,
+              bookmark: JSON.stringify(bookmark),
+            }
+            await this.fireBookmarkQuery({ params, method: 'post' })
+          } else {
+            const request = {
+              cmd: 'update',
+              bookmark: JSON.stringify(bookmark),
+              shareBookmark: this.shareBookmark,
+            }
+            await this.fireBookmarkQuery({
+              method: 'put',
+              params: request,
+              bookmarkId: activeBookmark.bmkId,
+            })
           }
-          await this.fireBookmarkQuery({ params, method: 'post' })
-        } else {
-          const request = {
-            cmd: 'update',
-            bookmark: JSON.stringify(bookmark),
-            shareBookmark: this.shareBookmark,
-          }
-          await this.fireBookmarkQuery({
-            method: 'put',
-            params: request,
-            bookmarkId: activeBookmark.bmkId,
-          })
+          await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+          const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
+          this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+        } catch (error) {
+          console.error('Error during bookmark save or reload:', error)
+        } finally {
+          this.cohortName = ''
+          this.closeSaveBookmark()
         }
-        await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
-        const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
-        this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
-        this.cohortName = ''
-        this.closeSaveBookmark()
       }
     },
     reset() {
