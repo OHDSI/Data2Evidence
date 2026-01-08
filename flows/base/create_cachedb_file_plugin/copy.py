@@ -53,7 +53,7 @@ def cleanup(con, table: str, copy_params):
 
 @task(log_prints=True, task_run_name="drop_cache_status_table")
 def drop_cache_status_table(con, copy_params):
-    execute_statement(con, f'DROP TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}";') 
+    execute_statement(con, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}";') 
 
 @task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
 def copy_all_schemas(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
