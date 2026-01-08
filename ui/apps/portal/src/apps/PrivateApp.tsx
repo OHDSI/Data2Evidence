@@ -7,7 +7,6 @@ import { Logout } from "../containers/auth/Logout";
 import { LoginSilent } from "../containers/auth/LoginSilent";
 import { config } from "../config";
 import { usePostLoginRedirectUri, useUser } from "../contexts";
-import { TerminologyWithEventListener } from "../plugins/Researcher/Terminology/TerminologyWithEventListener";
 import { ResultsDialogWithEventLister } from "../plugins/SystemAdmin/DQD/ResultsDialog/ResultsDialogWithEventListener";
 import { DisclaimerDialog } from "../containers/shared/Legal/DisclaimerDialog";
 
@@ -34,7 +33,6 @@ export const PrivateApp: FC = () => {
 
   return (
     <div className="App">
-      {/* <TerminologyWithEventListener /> */}
       <ResultsDialogWithEventLister />
       <DisclaimerDialog />
       <LoginSilent />
