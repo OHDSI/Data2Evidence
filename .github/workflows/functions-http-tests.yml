@@ -317,7 +317,7 @@ jobs:
           echo "Waiting 60 secs for alp-trex to restart..."
           sleep 60
           # Health check
-          curl --max-time 60 --fail -k https://localhost:41100/d2e/_internal/health
+          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
 
       - name: Seed dummy dataset
         run: |
