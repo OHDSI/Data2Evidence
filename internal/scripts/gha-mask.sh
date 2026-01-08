@@ -9,7 +9,7 @@ GIT_BASE_DIR="$(git rev-parse --show-toplevel)"
 DC_YMLS=($(ls $GIT_BASE_DIR/docker-compose*.yml))
 
 # allow level-1 FQDN yml keys as non-sensitive
-export KEYS_ALLOW="CADDY__ALP__PUBLIC_FQDN"
+export KEYS_ALLOW="CADDY__D2E__PUBLIC_FQDN"
 # mask secrets as sensitive
 STRINGS_MASK="password|host|secret|http|PRIVATE"
 # allow container names as non-sensitive

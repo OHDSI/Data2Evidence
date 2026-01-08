@@ -579,7 +579,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "CohortMethod",
-      "RemoteRef": "fix-runtime-error-at-diagnostic-summary-export",
+      "RemoteRef": "879efc63277a6abfffd166bb255d93dfd4c4837d",
       "RemoteSha": "879efc63277a6abfffd166bb255d93dfd4c4837d"
     },
     "RPostgres": {
@@ -943,7 +943,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
-      "RemoteRef": "alp-dqd",
+      "RemoteRef": "497c24aaf80c1677c0f263e20014372305547d32",
       "RemoteSha": "497c24aaf80c1677c0f263e20014372305547d32"
     },
     "DeepPatientLevelPrediction": {
@@ -1678,8 +1678,8 @@
     },
     "OhdsiReportGenerator": {
       "Package": "OhdsiReportGenerator",
-      "Version": "1.1.1",
-      "Source": "Repository",
+      "Version": "2.0.2",
+      "Source": "GitHub",
       "Type": "Package",
       "Title": "Observational Health Data Sciences and Informatics Report Generator",
       "Date": "2025-5-08",
@@ -1722,7 +1722,12 @@
       "Encoding": "UTF-8",
       "NeedsCompilation": "no",
       "Author": "Jenna Reps [aut, cre], Anthony Sena [aut]",
-      "Repository": "CRAN"
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ohdsi",
+      "RemoteRepo": "OhdsiReportGenerator",
+      "RemoteRef": "0d8107d5e156a92ee700b62b511fef649042151c",
+      "RemoteSha": "0d8107d5e156a92ee700b62b511fef649042151c"
     },
     "OhdsiSharing": {
       "Package": "OhdsiSharing",
@@ -1797,7 +1802,7 @@
     },
     "OhdsiShinyModules": {
       "Package": "OhdsiShinyModules",
-      "Version": "3.3.0",
+      "Version": "3.4.0",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "Repository of Shiny Modules for OHDSI Result Viewers",
@@ -1861,8 +1866,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "OhdsiShinyModules",
-      "RemoteRef": "main",
-      "RemoteSha": "046a8a27d1156246590c179e1240ab6dacbee374"
+      "RemoteRef": "db03f2a2216e564abda5ff3713477999e8d8e941",
+      "RemoteSha": "db03f2a2216e564abda5ff3713477999e8d8e941"
     },
     "PRROC": {
       "Package": "PRROC",
@@ -2455,10 +2460,10 @@
       "Maintainer": "Jamie Gilbert <gilbert@ohdsi.org>",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
-      "RemoteUsername": "ohdsi",
+      "RemoteUsername": "data2evidence",
       "RemoteRepo": "ResultModelManager",
-      "RemoteRef": "main",
-      "RemoteSha": "fad4247cd5707e245d1bef806ace94dda9cb39f0"
+      "RemoteRef": "989fa990ad4d84a74528275ffce84d0bdf128989",
+      "RemoteSha": "989fa990ad4d84a74528275ffce84d0bdf128989"
     },
     "S7": {
       "Package": "S7",
@@ -2713,7 +2718,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-SqlRender",
-      "RemoteRef": "alp-dqd",
+      "RemoteRef": "26ed300a81f474c8ae81f1f9294d8d83d00d8cbf",
       "RemoteSha": "26ed300a81f474c8ae81f1f9294d8d83d00d8cbf"
     },
     "TTR": {
@@ -11014,8 +11019,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "Strategus_d2e",
-      "RemoteRef": "develop",
-      "RemoteSha": "2c9b1111def6942dcbed41e549e091b1795f8c13",
+      "RemoteRef": "0bfd8e6537040493c084dc0b735ef3f6823573a9",
+      "RemoteSha": "0bfd8e6537040493c084dc0b735ef3f6823573a9",
       "Remotes": "darwin-eu/CohortSurvival, darwin-eu/PatientProfiles, darwin-eu/omopgenerics, darwin-eu/visOmopResults, darwin-eu/CDMConnector, ohdsi/Characterization, ohdsi/CohortDiagnostics, ohdsi/CohortGenerator, ohdsi/CohortIncidence, ohdsi/CohortMethod, ohdsi/PatientLevelPrediction, ohdsi/ResultModelManager, ohdsi/SelfControlledCaseSeries"
     }
   }

@@ -246,7 +246,7 @@ EOF
 
         case "$init_choice" in
           y|Y)
-            CADDY__ALP__PUBLIC_FQDN=${CADDY__ALP__PUBLIC_FQDN:-localhost}
+            CADDY__D2E__PUBLIC_FQDN=${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}
             ENV_TYPE=${ENV_TYPE:-local}
             TLS__CADDY_DIRECTIVE=${TLS__CADDY_DIRECTIVE:-tls internal}
             PROJECT_NAME=${PROJECT_NAME:-d2e}
@@ -274,17 +274,17 @@ EOF
 
             # action
             echo -n '' > $DOTENV_FILE
-            echo CADDY__ALP__PUBLIC_FQDN=$CADDY__ALP__PUBLIC_FQDN >> $DOTENV_FILE
+            echo CADDY__D2E__PUBLIC_FQDN=$CADDY__D2E__PUBLIC_FQDN >> $DOTENV_FILE
             echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
             echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
             echo FHIR__CLIENT_ID=$(generate_uuid) >> $DOTENV_FILE
             echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
-            echo LOGTO__ALP_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-            echo LOGTO__ALP_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-            echo LOGTO__ALP_DATA__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-            echo LOGTO__ALP_DATA__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
-            echo LOGTO__ALP_SVC__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
-            echo LOGTO__ALP_SVC__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
+            echo LOGTO__D2E_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo LOGTO__D2E_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
+            echo LOGTO__D2E_DATA__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo LOGTO__D2E_DATA__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
+            echo LOGTO__D2E_SVC__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
+            echo LOGTO__D2E_SVC__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
             echo LOGTO_API_M2M_CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
             echo LOGTO_API_M2M_CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
             echo MINIO__SECRET_KEY=$(random-password $DEFAULT_PASSWORD_LENGTH) >> $DOTENV_FILE
