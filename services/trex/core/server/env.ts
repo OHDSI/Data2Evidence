@@ -87,7 +87,7 @@ export const env = {
     PREFECT_POOL: "docker-pool",
     PROJECT_NAME: _env.PROJECT_NAME,
     SERVICE_ENV: _env.SERVICE_ENV ? JSON.parse(_env.SERVICE_ENV) : {},
-    CADDY__ALP__PUBLIC_FQDN: _env.CADDY__ALP__PUBLIC_FQDN || 'localhost',
+    CADDY__ALP__PUBLIC_FQDN: _env.CADDY__D2E__PUBLIC_FQDN || 'localhost',
     PREFECT_HEALTH_CHECK: `${_env.PREFECT_API_URL}/health`,
   
     PG__DB_NAME: _env.PG__DB_NAME,
