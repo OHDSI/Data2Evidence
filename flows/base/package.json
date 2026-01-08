@@ -695,18 +695,6 @@
                     "default": null,
                     "title": "Cache Schema Name"
                   },
-                  "result_schema": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Result Schema"
-                  },
                   "datasets": {
                     "anyOf": [
                       {
