@@ -83,11 +83,11 @@ export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
 export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeatures)[number][]> = {
   source: [],
   fhir: [],
-  non_omop: ["Cohorts", "Notebooks", "Concepts"],
+  non_omop: ["Cohorts", "Notebooks"],
   omop: ["Cohorts", "Notebooks", "Analysis", "Concepts"],
   study: ["Cohorts", "Notebooks", "Results"],
   hana__omop: ["Cohorts", "Concepts"],
-  hana__non_omop: ["Cohorts", "Concepts"],
+  hana__non_omop: ["Cohorts"],
 };
 
 export enum LogResponseType {
