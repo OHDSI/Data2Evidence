@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test'
+import { takeScreenshot } from './screenshot-capture'
 
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+test(TEST_NAME, async ({ page }, testInfo) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
   }
@@ -99,6 +100,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('Concept Set Test 1 -')).toBeVisible()
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
+  await takeScreenshot(page, testInfo)
   await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
   await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
   await page.getByText('✎').click()
@@ -108,11 +110,13 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('cell', { name: '81893' })).toBeVisible({ timeout: 10000 })
   // Only add "81893 64766004 Ulcerative" when it is not already selected, in the scenario of re-running the test
   if (await assertCount('1')) {
+    await takeScreenshot(page, testInfo)
     await page
       .getByRole('row', { name: /81893.*64766004.*Ulcerative/ })
       .locator('td')
       .first()
       .click()
+    await takeScreenshot(page, testInfo)
     await expect(await assertCount('2')).toBeTruthy()
   }
   await page.waitForTimeout(1000)
@@ -120,9 +124,9 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
-
+  await takeScreenshot(page, testInfo)
   await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
-
+  await takeScreenshot(page, testInfo)
   // Dismiss popover if present
   try {
     await page.mouse.move(0, 0)
@@ -130,7 +134,7 @@ test(TEST_NAME, async ({ page }) => {
   } catch {
     // Modal not present, continue
   }
-
+  await takeScreenshot(page, testInfo)
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
 })
