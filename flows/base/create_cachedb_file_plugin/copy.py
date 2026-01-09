@@ -9,10 +9,10 @@ from prefect.context import TaskRunContext
 from prefect.logging import get_run_logger
 from prefect.tasks import exponential_backoff
 
-from .types import CopyParameters, QueryColumns, _COPY_STATUS_TABLE_NAME
-from .filter import filter_tables, _CDM_COLUMN_FILTER_MAP, _CHUNK_COLUMN_MAP
+from .types import CopyParameters, QueryColumns
+from .filter import filter_tables, CDM_COLUMN_FILTER_MAP, CHUNK_COLUMN_MAP
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
-from .chunk_utils import determine_chunk_size, plan_chunks, find_column_case_insensitive
+from .chunk_utils import determine_chunk_size, plan_chunks, find_column_case_insensitive, COPY_STATUS_TABLE_NAME
 
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
@@ -33,7 +33,7 @@ def get_trex_connection(database_code: str):
 def create_cache_status_table(con, copy_params):
     # Create status table
     execute_statement(con, f'''
-        CREATE TABLE IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}" (
+        CREATE TABLE IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}" (
           table_name TEXT PRIMARY KEY,
           status TEXT,
           started_at TIMESTAMP,
@@ -41,9 +41,10 @@ def create_cache_status_table(con, copy_params):
         );
     ''')
 
+
 def mark_in_progress(con, table: str, copy_params):
     execute_statement(con, f"""
-        INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+        INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
         (table_name, status, started_at)
         VALUES ('{table}', 'IN_PROGRESS', CAST(NOW() AS TIMESTAMP))
         ON CONFLICT(table_name) DO UPDATE
@@ -53,8 +54,9 @@ def mark_in_progress(con, table: str, copy_params):
         """
     )
 
+
 def mark_complete(con, table: str, copy_params):
-    execute_statement(con, f""" UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+    execute_statement(con, f""" UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
         SET status = 'COMPLETE', completed_at = CAST(NOW() AS TIMESTAMP)
         WHERE table_name = '{table}'
         """
@@ -64,7 +66,7 @@ def mark_complete(con, table: str, copy_params):
 def cleanup(con, table: str, copy_params):
     execute_statement(con, f"DROP TABLE IF EXISTS \"{copy_params.target_database}\".\"{copy_params.target_schema}\".\"{table}\"")
     execute_statement(con, f"""
-        UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+        UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
         SET status = 'FAILED'
         WHERE table_name = '{table}'
         """
@@ -73,8 +75,7 @@ def cleanup(con, table: str, copy_params):
 
 @task(log_prints=True, task_run_name="drop_cache_status_table")
 def drop_cache_status_table(con, copy_params):
-    execute_statement(con, f'DROP TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}";') 
-
+    execute_statement(con, f'DROP TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}";') 
 
 
 @task(retries=3, 
@@ -121,6 +122,7 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, lo
 
 @task(retries=3, 
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      tags=["flow-level-concurrency"],
       log_prints=True, 
       task_run_name="create_schema_tables_from_{copy_params.source_schema}")
 def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
@@ -203,7 +205,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     try:
         write_conn.execute(f"""
             SELECT table_name
-            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
             WHERE status = 'COMPLETE'
         """)
         result = write_conn.fetchall()
@@ -242,8 +244,8 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         source_columns = copy_params.table_filter.get(table) if copy_params.table_filter else None
         columns_to_copy = source_columns if source_columns else ["*"]
 
-        patient_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
-        timestamp_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
+        patient_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
+        timestamp_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
 
         query_columns = QueryColumns(
             table=table,
@@ -304,8 +306,8 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
             if query_columns.columns_to_copy == ["*"]:
                 actual_columns = read_conn.get_columns(source_schema, table)
                 # Update filter columns based on actual columns (case-insensitive match)
-                patient_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
-                timestamp_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
+                patient_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
+                timestamp_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
                 
                 updated_patient_filter_col = find_column_case_insensitive(actual_columns, patient_col) or query_columns.patient_filter_col
                 updated_timestamp_filter_col = find_column_case_insensitive(actual_columns, timestamp_col) or query_columns.timestamp_filter_col
@@ -317,8 +319,8 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
                     timestamp_filter_col=updated_timestamp_filter_col
                 )
 
-            # Determine chunk column from _CHUNK_COLUMN_MAP
-            chunk_col_name = _CHUNK_COLUMN_MAP.get(table)
+            # Determine chunk column from CHUNK_COLUMN_MAP
+            chunk_col_name = CHUNK_COLUMN_MAP.get(table)
             if chunk_col_name:
                 chunk_col = find_column_case_insensitive(query_columns.columns_to_copy, chunk_col_name)
             else:

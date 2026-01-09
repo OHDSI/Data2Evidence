@@ -3,6 +3,9 @@ import sqlalchemy as sql
 from typing import Any
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
+COPY_STATUS_TABLE_NAME = "table_copy_status"
+
+
 def determine_chunk_size(dialect: str, row_count: int | None, chunk_size: int | None = None) -> int:
     if chunk_size is not None:
         return chunk_size
