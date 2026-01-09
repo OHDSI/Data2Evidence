@@ -27,12 +27,9 @@ def create_cachedb_file_plugin(options: CreateCacheOptions):
     logger = get_run_logger()
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
-            logger.info(f"Creating cache flow - schema_name: {options.schema_name}, results_schema_name: {options.results_schema_name}")
+            create_cache_flow(options)
             if options.results_schema_name and options.schema_name != options.results_schema_name:
-                logger.info(f"Creating results cache flow with schema: {options.results_schema_name}")
                 create_results_cache_flow(options)
-            else:
-                logger.info(f"Skipping results cache flow - conditions not met. results_schema_name={options.results_schema_name}, same_schema={options.schema_name == options.results_schema_name}")
 
         case CacheFlowAction.GET_VERSION_INFO:
             update_dataset_metadata(options)
