@@ -42,6 +42,7 @@ export class DBDAO {
                 let sql;
                 switch (dialect) {
                     case ANALYTICS_DB_DIALECTS.POSTGRES:
+                    case "postgres":
                         sql = "CALL pg_clear_cache();";
                         break;
                     case ANALYTICS_DB_DIALECTS.BIGQUERY:
