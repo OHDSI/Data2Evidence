@@ -1,21 +1,39 @@
-import traceback
+import duckdb
 from typing import Any
+from psycopg2 import connect
 
 from prefect import task
+from prefect.variables import Variable
+from prefect.blocks.system import Secret
+from prefect.context import TaskRunContext
 from prefect.logging import get_run_logger
+from prefect.tasks import exponential_backoff
 
-from .fts import create_fts_index
-from .types import CopyParameters, QueryColumns, _COPY_STATUS_TABLE_NAME
+from .types import CopyParameters, QueryColumns
+from .filter import filter_tables, CDM_COLUMN_FILTER_MAP, CHUNK_COLUMN_MAP
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
-from .filter import filter_tables, _CDM_COLUMN_FILTER_MAP, _CHUNK_COLUMN_MAP
+from .chunk_utils import determine_chunk_size, plan_chunks, find_column_case_insensitive, COPY_STATUS_TABLE_NAME
+
 from _shared_flow_utils.types import SupportedDatabaseDialects
-import sqlalchemy as sql
+
+
+def get_trex_connection(database_code: str):    
+    conn = connect(
+        host=Variable.get("trex_sql_host"),
+        port=Variable.get("trex_sql_port"),
+        user=Variable.get("trex_sql_user"),
+        password=Secret.load("trex-sql-password").get(),
+        dbname=database_code,
+    )
+    conn.autocommit = True
+    return conn
+
 
 @task(log_prints=True, task_run_name="create_cache_status_table")
 def create_cache_status_table(con, copy_params):
     # Create status table
     execute_statement(con, f'''
-        CREATE TABLE IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}" (
+        CREATE TABLE IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}" (
           table_name TEXT PRIMARY KEY,
           status TEXT,
           started_at TIMESTAMP,
@@ -23,9 +41,10 @@ def create_cache_status_table(con, copy_params):
         );
     ''')
 
+
 def mark_in_progress(con, table: str, copy_params):
     execute_statement(con, f"""
-        INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+        INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
         (table_name, status, started_at)
         VALUES ('{table}', 'IN_PROGRESS', CAST(NOW() AS TIMESTAMP))
         ON CONFLICT(table_name) DO UPDATE
@@ -35,90 +54,112 @@ def mark_in_progress(con, table: str, copy_params):
         """
     )
 
+
 def mark_complete(con, table: str, copy_params):
-    execute_statement(con, f""" UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+    execute_statement(con, f""" UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
         SET status = 'COMPLETE', completed_at = CAST(NOW() AS TIMESTAMP)
         WHERE table_name = '{table}'
         """
     )
 
+
 def cleanup(con, table: str, copy_params):
     execute_statement(con, f"DROP TABLE IF EXISTS \"{copy_params.target_database}\".\"{copy_params.target_schema}\".\"{table}\"")
     execute_statement(con, f"""
-        UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
+        UPDATE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
         SET status = 'FAILED'
         WHERE table_name = '{table}'
         """
     )
 
+
 @task(log_prints=True, task_run_name="drop_cache_status_table")
 def drop_cache_status_table(con, copy_params):
-    execute_statement(con, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}";') 
+    execute_statement(con, f'DROP TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}";') 
 
-@task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
-def copy_all_schemas(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
+
+@task(retries=3, 
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      log_prints=True, 
+      task_run_name="create_schema_if_not_exists_{copy_params.target_schema}")
+def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
-    logger.info(f"Starting schema copy for database '{read_conn.database_code}'...")
-    schemas_to_copy = sorted(read_conn.get_schema_names())
-    logger.info(f"Found {len(schemas_to_copy)} schemas: {schemas_to_copy}")
 
-    failed_schemas = []
+    task_run_ctx = TaskRunContext.get()
+    logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
 
-    for idx, schema in enumerate(schemas_to_copy, start=1):
-        logger.info(f"[{idx}/{len(schemas_to_copy)}] Copying schema '{schema}'...")
+    if use_trex_conn:
+        trex_conn = None
+        pg_cursor = None
+    
         try:
-            create_schema_if_not_exists(write_conn, copy_params)
-            create_schema_tables(write_conn, read_conn, copy_params)
+            trex_conn = get_trex_connection(copy_params.target_database)
+            pg_cursor = trex_conn.cursor()
+            pg_cursor.execute("CALL pg_clear_cache();")
+
+            create_schema_if_not_exists(pg_cursor, copy_params, logger)
+
         except Exception as e:
-            logger.error(f"Failed to copy schema '{schema}': {e}")
-            logger.error(traceback.format_exc())
-            failed_schemas.append(schema)
-            continue
+            logger.error(f"Failed to create schema through Trex SQL interface: {e}")
+            raise
+        finally:
+            if pg_cursor:
+                pg_cursor.close()
+            if trex_conn:
+                trex_conn.close()
 
-        try:
-            create_fts_index(write_conn, read_conn, copy_params)
-        except Exception as e:
-            logger.error(f"Failed to create FTS index for schema '{schema}': {e}")
-            logger.error(traceback.format_exc())
-            failed_schemas.append(schema)
+    else:
+        with duckdb.connect(duckdb_file_path) as file_conn:
+            create_schema_if_not_exists(file_conn, copy_params, logger)
 
-    total = len(schemas_to_copy)
-    success = total - len(failed_schemas)
-    logger.info(f"Finished copying schemas: Total={total}, Successful={success}, Failed={len(failed_schemas)}")
-    if failed_schemas:
-        logger.error(f"Schemas failed: {', '.join(failed_schemas)}")
 
-@task(log_prints=True, task_run_name="create_schema_if_not_exists_{copy_params.target_schema}")
-def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters):
-    logger = get_run_logger()
+def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, logger):
+    logger.info(f"Starting creation of schema '{copy_params.target_schema}' in database '{copy_params.target_database}' if it doesn't exist...")
     sql = f'CREATE SCHEMA IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}";'
     execute_statement(write_conn, sql)
-    logger.info(f"Schema '{copy_params.target_schema}' ensured.")
+    logger.info(f"Schema '{copy_params.target_schema}' created.")
 
-@task(log_prints=True, task_run_name="create_schema_tables_from_{copy_params.source_schema}", tags=["flow-level-concurrency"])
-def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters):
+
+@task(retries=3, 
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      tags=["flow-level-concurrency"],
+      log_prints=True, 
+      task_run_name="create_schema_tables_from_{copy_params.source_schema}")
+def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
-    logger.info(f"Starting creation of schema '{copy_params.target_schema}' in database '{copy_params.target_database}' if it doesn't exist...")
 
+    task_run_ctx = TaskRunContext.get()
+    logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
+
+    if use_trex_conn:
+        trex_conn = None
+        pg_cursor = None
+    
+        try:
+            trex_conn = get_trex_connection(copy_params.target_database)
+            pg_cursor = trex_conn.cursor()
+
+            create_schema_tables(pg_cursor, read_conn, copy_params, logger)
+
+        except Exception as e:
+            logger.error(f"Failed to copy schema tables through Trex SQL interface: {e}")
+            raise
+        finally:
+            if pg_cursor:
+                pg_cursor.close()
+            if trex_conn:
+                trex_conn.close()
+
+    else:
+        with duckdb.connect(duckdb_file_path) as file_conn:
+            create_schema_tables(file_conn, read_conn, copy_params, logger)
+
+
+def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParameters, logger):
     source_schema = copy_params.source_schema
 
-    # Create status table
+    # Create status table if it doesn't exist
     create_cache_status_table(write_conn, copy_params)
-
-    # Check for already completed tables
-    completed_tables = set()
-    try:
-        write_conn.execute(f"""
-            SELECT table_name
-            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."{_COPY_STATUS_TABLE_NAME}"
-            WHERE status = 'COMPLETE'
-        """)
-        result = write_conn.fetchall()
-        completed_tables = {row[0] for row in result}
-        logger.info(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
-    except Exception:
-        logger.error("Could not fetch completed tables from status tracking table.")
-        raise Exception("Could not fetch completed tables from status tracking table.")
 
     # Determine tables to copy
     source_tables = copy_params.table_filter.keys() if copy_params.table_filter else read_conn.get_table_names(source_schema)
@@ -157,15 +198,30 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
             f"Found {len(tables_to_copy)} tables/views to copy from schema '{copy_params.source_schema}': {tables_to_copy}"
         )
 
-    # Filter out already completed tables
     original_count = len(tables_to_copy)
-    tables_to_copy = [t for t in tables_to_copy if t not in completed_tables]
-    skipped_count = original_count - len(tables_to_copy)
-    logger.info(f"Found {len(tables_to_copy)} tables to copy in schema '{source_schema}'.")
-    logger.info(f"Total tables in source schema: {original_count}")
-    logger.info(f"Tables to copy: {tables_to_copy}")
+
+    # Check for already completed tables
+    completed_tables = set()
+    try:
+        write_conn.execute(f"""
+            SELECT table_name
+            FROM "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}"
+            WHERE status = 'COMPLETE'
+        """)
+        result = write_conn.fetchall()
+        completed_tables = list({row[0] for row in result})
+        logger.info(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
+    except Exception:
+        logger.error("Could not fetch completed tables from status tracking table.")
+        raise
+
+
+    # Filter out already completed tables
+    tables_left_to_copy = [t for t in tables_to_copy if t not in completed_tables]
+    skipped_count = original_count - len(tables_left_to_copy)
+    logger.info(f"There are {len(tables_left_to_copy)}/{original_count} tables left to copy from schema(s): {copy_params.source_schema}{', ' + copy_params.vocab_schema if has_separate_vocab_schema else ''}: {tables_left_to_copy}")
     if skipped_count > 0:
-        logger.info(f"Skipping {skipped_count} already completed tables.")
+        logger.info(f"Skipping {skipped_count} already completed tables: {completed_tables}")
 
     # BigQuery-specific global settings
     if read_conn.tenant_configs.dialect == SupportedDatabaseDialects.BIGQUERY.value:
@@ -176,20 +232,20 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         msg += f" with separate vocab schema '{copy_params.vocab_schema}'"
     logger.info(msg)
 
-    for idx, table in enumerate(tables_to_copy, start=1):
+    for idx, table in enumerate(tables_left_to_copy, start=1):
         # Determine which schema this table should be copied from
         source_schema_for_table = copy_params.vocab_schema if (has_separate_vocab_schema and table in VOCAB_TABLES) else copy_params.source_schema
 
         logger.info(
-            f"[{idx}/{len(tables_to_copy)}] Copying table '{table}' from schema '{source_schema_for_table}'..."
+            f"[{idx}/{len(tables_left_to_copy)}] Copying table '{table}' from schema '{source_schema_for_table}'..."
         )
 
         # Determine columns to copy for the current table
         source_columns = copy_params.table_filter.get(table) if copy_params.table_filter else None
         columns_to_copy = source_columns if source_columns else ["*"]
 
-        patient_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
-        timestamp_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
+        patient_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
+        timestamp_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
 
         query_columns = QueryColumns(
             table=table,
@@ -207,6 +263,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     # All tables copied successfully, drop the status tracking table
     drop_cache_status_table(write_conn, copy_params)
 
+
 def create_empty_target_table(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
     select_sql = create_select_query(copy_params, query_columns, source_schema, None)
     execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}";')
@@ -216,68 +273,6 @@ def create_empty_target_table(write_conn: Any, copy_params: CopyParameters, quer
     """
     execute_statement(write_conn, sql)
 
-def determine_chunk_size(dialect: str, row_count: int | None, chunk_size: int | None = None) -> int:
-    if chunk_size is not None:
-        return chunk_size
-    if dialect == SupportedDatabaseDialects.BIGQUERY.value:
-        return 5_000_000
-    if row_count and row_count > 100_000_000:
-        return 1_000_000
-    return 1_000_000
-
-def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_col: str, chunk_size: int, row_count: int | None, logger=None):
-    min_val = None
-    max_val = None
-
-    try:
-        # Determine table path and column quoting based on dialect
-        dialect = read_conn.tenant_configs.dialect
-        if dialect == SupportedDatabaseDialects.BIGQUERY.value:
-            table_path = f'`{schema}.{table}`'
-            col_quote = ''
-        else:
-            table_path = f'"{schema}"."{table}"'
-            col_quote = '"'
-        with read_conn.engine.connect() as connection:
-            query = sql.text(f'SELECT MIN({col_quote}{chunk_col}{col_quote}), MAX({col_quote}{chunk_col}{col_quote}) FROM {table_path}')
-            result = connection.execute(query).fetchone()
-            if result:
-                min_val, max_val = result
-        
-    except Exception as e:
-        logger.warning(f"Failed to get min/max for '{table}' from source: {e}")
-        min_val = None
-
-    if min_val is None or max_val is None:
-        logger.info(f"Chunk column '{chunk_col}' has no valid values. Cannot chunk.")
-        return None
-
-    # Try to convert to int; if fails (e.g., for dates), don't chunk
-    try:
-        min_val = int(min_val)
-        max_val = int(max_val)
-    except (ValueError, TypeError):
-        logger.info(f"Chunk column '{chunk_col}' is not numeric. Cannot chunk.")
-        return None
-
-    chunks = []
-    current = min_val
-    while current <= max_val:
-        end = min(current + chunk_size - 1, max_val)
-        chunks.append(f'"{chunk_col}" BETWEEN {current} AND {end}')
-        current = end + 1
-    
-    if row_count and len(chunks) > 0:
-        avg_rows_per_chunk = row_count / len(chunks)
-        if avg_rows_per_chunk > (chunk_size * 2):
-            logger.info(f"Data is too dense for range chunking (avg {int(avg_rows_per_chunk)} rows/chunk vs target {chunk_size}). Cannot chunk efficiently.")
-            return None
-        else:
-            logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
-            return chunks
-    else:
-         logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
-         return chunks
 
 def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple, chunk_id: int, total_chunks: int, logger=None):
     logger.info(f"Copying chunk {chunk_id + 1}/{total_chunks} for table '{query_columns.table}'")
@@ -285,7 +280,7 @@ def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns
     insert_sql = f"""INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}"{select_sql};"""
     execute_statement(write_conn, insert_sql)
 
-@task(log_prints=True, task_run_name="copy_table_{query_columns.table}")
+@task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"])
 def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
     logger = get_run_logger()
     copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger)
@@ -301,7 +296,8 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
         if row_count < 500000:
             logger.info(f"Copying table '{table}' (small, {row_count} rows)")
             select_sql = create_select_query(copy_params, query_columns, source_schema)
-            execute_statement(write_conn, f'CREATE OR REPLACE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" AS {select_sql}')
+            execute_statement(write_conn, f'DROP TABLE IF EXISTS "{copy_params.target_database}"."{copy_params.target_schema}"."{table}";')
+            execute_statement(write_conn, f'CREATE TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{table}" AS {select_sql}')
             mark_complete(write_conn, table, copy_params)
             return row_count
         else:
@@ -310,8 +306,8 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
             if query_columns.columns_to_copy == ["*"]:
                 actual_columns = read_conn.get_columns(source_schema, table)
                 # Update filter columns based on actual columns (case-insensitive match)
-                patient_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
-                timestamp_col = _CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
+                patient_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("person_id_column")
+                timestamp_col = CDM_COLUMN_FILTER_MAP.get(table, {}).get("timestamp_column")
                 
                 updated_patient_filter_col = find_column_case_insensitive(actual_columns, patient_col) or query_columns.patient_filter_col
                 updated_timestamp_filter_col = find_column_case_insensitive(actual_columns, timestamp_col) or query_columns.timestamp_filter_col
@@ -323,8 +319,8 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
                     timestamp_filter_col=updated_timestamp_filter_col
                 )
 
-            # Determine chunk column from _CHUNK_COLUMN_MAP
-            chunk_col_name = _CHUNK_COLUMN_MAP.get(table)
+            # Determine chunk column from CHUNK_COLUMN_MAP
+            chunk_col_name = CHUNK_COLUMN_MAP.get(table)
             if chunk_col_name:
                 chunk_col = find_column_case_insensitive(query_columns.columns_to_copy, chunk_col_name)
             else:
@@ -501,10 +497,3 @@ def copy_indexes(write_conn: Any, read_conn: Any, copy_params: CopyParameters, q
                 f"Primary Key Index '{pk_index_name}' copied for table '{table}' in schema '{target_database}'.'{target_schema}'."
             )
 
-def find_column_case_insensitive(columns: list[str], target: str) -> str | None:
-    if not target:
-        return None
-    for col in columns:
-        if col.lower() == target.lower():
-            return col
-    return None

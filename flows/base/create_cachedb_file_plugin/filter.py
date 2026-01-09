@@ -2,7 +2,7 @@ from typing import Set, List
 from re import match as regex_match
 
 # Base tables in CDM Schema and the timestamp and person_id columns to filter on
-_CDM_COLUMN_FILTER_MAP = {
+CDM_COLUMN_FILTER_MAP = {
     "cohort": {"timestamp_column": "cohort_start_date"},
     "cohort_attribute": {"timestamp_column": "cohort_start_date"},
     "cohort_definition": {"timestamp_column": "cohort_initiation_date"},
@@ -60,7 +60,7 @@ _CDM_COLUMN_FILTER_MAP = {
     },
 }
 
-_CHUNK_COLUMN_INFO_MAP = {
+CHUNK_COLUMN_INFO_MAP = {
     "care_site": {
         "column_name": "care_site_id"
     },
@@ -106,9 +106,9 @@ _CHUNK_COLUMN_INFO_MAP = {
 }
 
 # Columns to use for chunking tables
-_CHUNK_COLUMN_MAP = {
+CHUNK_COLUMN_MAP = {
     table: info.get("column_name")
-    for table, info in _CHUNK_COLUMN_INFO_MAP.items()
+    for table, info in CHUNK_COLUMN_INFO_MAP.items()
         if info.get("column_name")
 }
 

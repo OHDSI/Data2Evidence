@@ -1,30 +1,28 @@
 import os
 import duckdb
-from psycopg2 import connect
+import traceback
+from typing import Any
+
+from prefect import flow, task
+from prefect.variables import Variable
+from prefect.logging import get_run_logger
 
 from .utils import *
-from .fts import create_fts_index
+from .fts import create_fts_index_task
 from .versioninfo import update_dataset_metadata
-
-from .copy import copy_all_schemas, create_schema_tables, create_schema_if_not_exists
+from .copy import create_schema_tables_task, create_schema_if_not_exists_task
 from .types import CreateCacheOptions, CreateCDWValidationConfig, CacheFlowAction, CopyParameters
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.dao.daobase import DaoBase
 from _shared_flow_utils.types import SupportedDatabaseDialects
 
-from prefect import flow, task
-from prefect.variables import Variable
-from prefect.blocks.system import Secret
-from prefect.logging import get_run_logger
- 
 
 os.environ["plugin_name"] = "create_cachedb_file_plugin"
 
 
 @flow(log_prints=True)
 def create_cachedb_file_plugin(options: CreateCacheOptions):
-    logger = get_run_logger()
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
             create_cache_flow(options)
@@ -72,68 +70,11 @@ def create_cache_flow(options: CreateCacheOptions):
         chunk_size=options.chunk_size
     )
 
-
-    if options.use_trex_connection:
-        # -------------------- Trex connection to cache --------------------
-        # Todo: Unify with trexdao
-        trex_conn = connect(
-            host=Variable.get("trex_sql_host"),
-            port=Variable.get("trex_sql_port"),
-            user=Variable.get("trex_sql_user"),
-            password=Secret.load("trex-sql-password").get(),
-            dbname=options.database_code,
-        )
-
-        # Turn off transactions
-        trex_conn.autocommit = True
-        pg_cursor = None
-
-        try:
-            pg_cursor = trex_conn.cursor()
-
-            # Extensions should already be loaded in trex
-            # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
-
-            # Update cache information
-            pg_cursor.execute("CALL pg_clear_cache();")
-
-            logger.info(
-                f"Creating cache for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
-            )
-
-            create_schema_if_not_exists(pg_cursor, copy_params)
-
-            create_schema_tables(pg_cursor, dbdao, copy_params)
-
-            logger.info(
-                f"Creating FTS index for '{options.schema_name}' schema in '{options.database_code}' through Trex SQL interface..."
-            )
-
-            create_fts_index(pg_cursor, copy_params)
-
-        except Exception as e:
-            logger.error(
-                f"Error while creating cache for schema '{options.schema_name}' for '{options.database_code}': {e}"
-            )
-            raise
-        else:
-            trex_conn.commit()
-            logger.info(
-                f"Cached schema '{options.schema_name}' successfully created for '{options.database_code}'."
-            )
-        finally:
-            if pg_cursor:
-                pg_cursor.close()
-            trex_conn.close()
-
-    else:
-        # -------------------- Direct file connection to cache --------------------
-        duckdb_file_path = resolve_duckdb_file_path(
-            options.database_code, Variable.get("duckdb_data_folder")
-        )
-
-        duckdb_file_exists = check_if_file_exists(duckdb_file_path)
-
+    duckdb_file_path = resolve_duckdb_file_path(
+        options.database_code, Variable.get("duckdb_data_folder")
+    )
+    
+    if not options.use_trex_connection:
         logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
 
         # Creates file if it does not exist
@@ -142,28 +83,60 @@ def create_cache_flow(options: CreateCacheOptions):
 
             attach_to_source_db(dbdao, file_conn, copy_params.source_database)
 
+            duckdb_file_exists = check_if_file_exists(duckdb_file_path)
+    
             if not duckdb_file_exists:
                 # If the file doesn't exist do a one time copy of all schemas in database
                 logger.info(
                     f"Cache file does not exist. Copying all schemas from '{options.database_code}' to cache through direct file connection."
                 )
-                copy_all_schemas(file_conn, dbdao, copy_params)
+                copy_all_schemas(duckdb_file_path, dbdao, copy_params)
 
-            else:
-                # If the file exists, only update the schema passed into flow params
-                logger.info(
-                    f"Cache file exists. Updating tables from '{options.database_code}'.'{options.schema_name}' schema to cache through direct file connection."
-                )
 
-                create_schema_if_not_exists(file_conn, copy_params)
+    logger.info(
+        f"Creating cache for '{options.schema_name}' schema in '{options.database_code}'"
+    )
 
-                create_schema_tables(file_conn, dbdao, copy_params)
 
-                logger.info(
-                    f"Creating FTS index for '{options.schema_name}' schema in '{options.database_code}' through direct file connection.."
-                )
+    create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
-                create_fts_index(file_conn, copy_params)
+    create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
+
+    create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
+
+
+@task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
+def copy_all_schemas(duckdb_file_path: str, read_conn: Any, copy_params: CopyParameters):
+    logger = get_run_logger()
+    logger.info(f"Starting schema copy for database '{read_conn.database_code}'...")
+    schemas_to_copy = sorted(read_conn.get_schema_names())
+    logger.info(f"Found {len(schemas_to_copy)} schemas: {schemas_to_copy}")
+
+    failed_schemas = []
+
+    for idx, schema in enumerate(schemas_to_copy, start=1):
+        logger.info(f"[{idx}/{len(schemas_to_copy)}] Copying schema '{schema}'...")
+        try:
+            create_schema_if_not_exists_task(False, copy_params, duckdb_file_path)
+            create_schema_tables_task(False, read_conn, copy_params, duckdb_file_path)
+        except Exception as e:
+            logger.error(f"Failed to copy schema '{schema}': {e}")
+            logger.error(traceback.format_exc())
+            failed_schemas.append(schema)
+            continue
+
+        try:
+            create_fts_index_task(False, copy_params, duckdb_file_path)
+        except Exception as e:
+            logger.error(f"Failed to create FTS index for schema '{schema}': {e}")
+            logger.error(traceback.format_exc())
+            failed_schemas.append(schema)
+
+    total = len(schemas_to_copy)
+    success = total - len(failed_schemas)
+    logger.info(f"Finished copying schemas: Total={total}, Successful={success}, Failed={len(failed_schemas)}")
+    if failed_schemas:
+        logger.error(f"Schemas failed: {', '.join(failed_schemas)}")
 
 
 @flow(log_prints=True)
@@ -196,70 +169,26 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
         limit_statement="LIMIT 0"  # Limit 0 only applied to CDW config
     )
 
-    if options.trex_connection:
-        # Connect to cache through Trex Sql Interface assuming duckdb file already exists
-        trex_conn = connect(
-            host=Variable.get("trex_sql_host"),
-            port=Variable.get("trex_sql_port"),
-            user=Variable.get("trex_sql_user"),
-            password=Secret.load("trex-sql-password").get(),
-            dbname=cdw_db,
-        )
+    duckdb_file_path = resolve_duckdb_file_path(
+        options.database_code, Variable.get("duckdb_data_folder")
+    )
 
-        # Turn off transactions
-        trex_conn.autocommit = True
-        pg_cursor = None
-
-        try:
-            pg_cursor = trex_conn.cursor()
-
-            # Extensions should already be loaded in trex
-            # load_extensions(write_conn=pg_cursor, dialect=dbdao.dialect, trex_sql=True)
-
-            logger.info(
-                f"Creating cache for '{schema_to_copy}' schema in '{database_code}' through Trex SQL interface..."
-            )
-
-            create_schema_if_not_exists(pg_cursor, copy_params)
-
-            create_schema_tables(pg_cursor, dbdao, copy_params)
-        except Exception as e:
-            logger.error(
-                f"Error while creating cache for schema '{schema_to_copy}' for '{database_code}': {e}"
-            )
-            # trex_conn.rollback()
-            raise
-        else:
-            trex_conn.commit()
-            logger.info(
-                f"Cached schema '{schema_to_copy}' successfully updated from '{cdw_db}'."
-            )
-        finally:
-            if pg_cursor:
-                pg_cursor.close()
-            trex_conn.close()
-
-    else:
-        # Direct connection to cache
-        duckdb_file_path = resolve_duckdb_file_path(
-            cdw_db, Variable.get("duckdb_data_folder")
-        )
-
-        # Creates file at duckdb_file_path if the file does not exist
+    if not options.use_trex_connection:
+         # Creates file if it does not exist
         with duckdb.connect(duckdb_file_path) as file_conn:
             load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
 
             attach_to_source_db(dbdao, file_conn, copy_params.source_database)
 
-            create_schema_if_not_exists(file_conn, copy_params)
+    logger.info(
+        f"Creating cdw cache for '{schema_to_copy}' schema in '{database_code}'"
+    )
 
-            create_schema_tables(file_conn, dbdao, copy_params)
+    create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
-            logger.info(
-                f"Creating FTS index for '{schema_to_copy}' schema in '{cdw_db}' through direct file connection.."
-            )
+    create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
 
-            create_fts_index(file_conn, copy_params)
+    create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 
 @task(log_prints=True, task_run_name="attach_to_source_db_{read_conn.database_code}")
