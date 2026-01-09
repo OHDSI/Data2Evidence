@@ -17,7 +17,7 @@ from prefect import flow, task
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
-from prefect.concurrency.sync import concurrency
+ 
 
 os.environ["plugin_name"] = "create_cachedb_file_plugin"
 
@@ -28,7 +28,6 @@ def create_cachedb_file_plugin(options: CreateCacheOptions):
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
             logger.info(f"Creating cache flow - schema_name: {options.schema_name}, results_schema_name: {options.results_schema_name}")
-            create_cache_flow_with_limit(options)
             if options.results_schema_name and options.schema_name != options.results_schema_name:
                 logger.info(f"Creating results cache flow with schema: {options.results_schema_name}")
                 create_results_cache_flow(options)
@@ -48,27 +47,6 @@ def update_parameters(options: CreateCacheOptions,
 def create_results_cache_flow(options: CreateCacheOptions):
     new_options = update_parameters(options, 'schema_name', options.results_schema_name)
     create_cache_flow(new_options)
-
-
-@task(log_prints=True, task_run_name="create_cache_with_concurrency_limit_{options.database_code}")
-def create_cache_flow_with_limit(options: CreateCacheOptions):
-    """
-    Wraps cache flow creation with concurrency limit to prevent multiple
-    schema copy operations from running simultaneously on the same database.
-    """
-    logger = get_run_logger()
-    
-    concurrency_tag = f"flow-level-concurrency"
-    
-    logger.info(f"Acquiring concurrency limit: {concurrency_tag}")
-    with concurrency(concurrency_tag, occupy=1):
-        logger.info(f"Concurrency limit acquired. Starting cache flow for {options.schema_name}")
-        create_cache_flow(options)
-
-
-def create_results_cache_flow(options: CreateCacheOptions):
-    new_options = update_parameters(options, 'schema_name', options.results_schema_name)
-    create_cache_flow_with_limit(new_options)
 
 
 def create_cache_flow(options: CreateCacheOptions):
