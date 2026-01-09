@@ -33,6 +33,8 @@ def copy_schema_to_cache(con, dbdao: any, options: CreateDuckdbDatabaseFileType)
                 total_rows = con.fetchone()[0]
                 offset = 0
                 first_chunk = True
+                # Drop table if exists to ensure fresh copy
+                con.execute(f'DROP TABLE IF EXISTS "{options.databaseCode}"."{options.cacheSchemaName}"."{table}"')
                 while offset < total_rows:
                     limit_clause = f"LIMIT {chunk_size} OFFSET {offset}"
                     if first_chunk:
