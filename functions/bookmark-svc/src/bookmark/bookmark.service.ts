@@ -112,17 +112,24 @@ export async function _loadAllBookmarks(
     const bookmarks = await portalAPI.getBookmarks(datasetId)
     let formattedBookmarks = formatUserArtifactData(paConfigId, bookmarks, userName)
 
-    // Get and format materialized cohorts
+    // Get and format materialized cohorts, but continue with empty list if it fails
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
-    const materializedCohorts = await analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId })
-
+    let materializedCohorts: IMaterializedCohort[] = []
+    try {
+      const result = await analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId })
+      materializedCohorts = Array.isArray(result) ? result : []
+    } catch (error) {
+      console.error('Failed to fetch materialized cohorts in _loadAllBookmarks, continuing with empty list:', error)
+    }
     // Add cohortDefinitionId to bookmarks if there is a respective materialized cohort
     formattedBookmarks = formattedBookmarks.map(bookmark => ({
       ...bookmark,
       cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(bookmark.bmkId, materializedCohorts),
     }))
 
-    let formattedMaterializedCohorts = materializedCohorts.map(cohort => _formatMaterializedCohort(cohort))
+    let formattedMaterializedCohorts = Array.isArray(materializedCohorts)
+      ? materializedCohorts.map(cohort => _formatMaterializedCohort(cohort))
+      : []
     // Filter out materialized cohorts which do not belong to a formatted bookmark
     formattedMaterializedCohorts = _filterUntaggedMaterializedCohorts(formattedBookmarks, formattedMaterializedCohorts)
 
@@ -252,7 +259,14 @@ export async function _deleteBookmark(bookmarkId, userId, datasetId, token, call
 
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
     // TODO: Delete materialized cohorts for other datasets as well?
-    const materializedCohorts = await analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId, bookmarkId })
+    let materializedCohorts: IMaterializedCohort[] = []
+    try {
+      const result = await analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId, bookmarkId })
+      // Handle undefined or non-array results
+      materializedCohorts = Array.isArray(result) ? result : []
+    } catch (error) {
+      console.error('Failed to fetch materialized cohorts in _deleteBookmark, continuing without deletion:', error)
+    }
 
     for (const materializedCohort of materializedCohorts) {
       // If bookmark has a materialized cohort, delete cohort before deleting bookmark
@@ -321,7 +335,14 @@ export async function _renameBookmark(
     // Additionally update corresponding cohort definition name if bookmark has a cohortDefinitionId
     const analyticsSvcAPI = new AnalyticsSvcAPI(token)
     // TODO: Update materialized cohorts for other datasets as well?
-    const materializedCohorts = await analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId, bookmarkId })
+    let materializedCohorts: IMaterializedCohort[] = []
+    try {
+      const result = await analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId, bookmarkId })
+      // Handle undefined or non-array results
+      materializedCohorts = Array.isArray(result) ? result : []
+    } catch (error) {
+      console.error('Failed to fetch materialized cohorts in _renameBookmark, continuing without renaming:', error)
+    }
 
     for (const materializedCohort of materializedCohorts) {
       // If bookmark has a materialized cohort, delete cohort before deleting bookmark
@@ -614,6 +635,9 @@ const _getBookmarkMaterializedCohortDefinitionId = (
   bookmarkId: string,
   materializedCohorts: IMaterializedCohort[]
 ): number | undefined => {
+  if (!Array.isArray(materializedCohorts)) {
+    return undefined
+  }
   for (const cohort of materializedCohorts) {
     const cohortSyntax = JSON.parse(cohort.syntax)
     if (cohortSyntax['bookmarkId'] === bookmarkId) {
