@@ -17,12 +17,14 @@ from prefect import flow, task
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
+ 
 
 os.environ["plugin_name"] = "create_cachedb_file_plugin"
 
 
 @flow(log_prints=True)
 def create_cachedb_file_plugin(options: CreateCacheOptions):
+    logger = get_run_logger()
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
             create_cache_flow(options)
@@ -66,7 +68,8 @@ def create_cache_flow(options: CreateCacheOptions):
         patient_filter=options.snapshot_copy_config.patients_to_be_copied if options.snapshot_copy_config else None,
         fts_tables=options.tables_to_create_duckdb_fts_index,
         limit_statement="",  # Limit 0 only applied to CDW config
-        vocab_schema=options.vocab_schema_name
+        vocab_schema=options.vocab_schema_name,
+        chunk_size=options.chunk_size
     )
 
 
@@ -112,7 +115,6 @@ def create_cache_flow(options: CreateCacheOptions):
             logger.error(
                 f"Error while creating cache for schema '{options.schema_name}' for '{options.database_code}': {e}"
             )
-            # trex_conn.rollback()
             raise
         else:
             trex_conn.commit()

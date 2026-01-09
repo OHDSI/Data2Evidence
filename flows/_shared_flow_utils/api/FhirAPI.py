@@ -31,8 +31,8 @@ class FhirAPI(BaseAPI):
         else:
             return True
 
-    def get(self, study_token: str, resource_type: str, query: str):
-        url = f"{self.url}project/{study_token}/{resource_type}{query}"
+    def get(self, resource_type: str, query: str):
+        url = f"{self.url}superadmin/{resource_type}{query}"
         result = requests.get(
             url,
             headers=self.get_headers(),

@@ -348,7 +348,7 @@ class TransformFhirDataNode(Node):
     def get_fhir_structure_definition(self, url: str) -> dict:
         fhir_api = FhirAPI()
         query = f"?url={url}"
-        response = fhir_api.get(study_token="fds1", resource_type="StructureDefinition", query=query)
+        response = fhir_api.get(resource_type="StructureDefinition", query=query)
         if(response):
             response_json = response.get("entry", [])[0].get("resource", {})
         else:
