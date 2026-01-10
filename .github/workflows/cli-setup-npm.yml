@@ -30,6 +30,14 @@ on:
         type: boolean
         default: true
         required: true
+      environment:
+        description: Select deployment environment
+        required: false
+        type: choice
+        default: npm
+        options:
+          - npm
+          - github
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   merge_group:
@@ -44,7 +52,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    environment: ${{github.event_name == 'workflow_dispatch' && 'npm' || 'github'}}
+    environment: ${{github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'github'}}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,14 +60,14 @@ jobs:
           repository: ${{ env.GIT_REPO_FULL_NAME }}
       - name: Use Node.js
         uses: actions/setup-node@v4
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.environment == 'github'
         with:
           node-version: "18.x"
           registry-url: "https://npm.pkg.github.com"
           scope: "@ohdsi"
       - name: Use Node.js (prod)
         uses: actions/setup-node@v2
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'npm'
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
@@ -75,7 +83,7 @@ jobs:
         run: npm install
       - name: Publish
         run: |
-          if [[ ${{ env.GIT_BRANCH_NAME }} == 'develop' && ${{ github.event_name }} != 'workflow_dispatch' ]]; then
+          if [[ (${{ env.GIT_BRANCH_NAME }} == 'develop' && ${{ github.event_name }} != 'workflow_dispatch') || (${{ github.event_name }} == 'workflow_dispatch' && "${{ github.event.inputs.environment }}" == 'github') ]]; then
             npm publish
           else
             npm publish --dry-run
@@ -83,12 +91,12 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish production
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'npm'
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
       - uses: actions/delete-package-versions@v5
-        if: github.ref_name == 'develop' 
+        if: github.ref_name == 'develop'
         with:
           package-name: "d2e"
           package-type: "npm"
