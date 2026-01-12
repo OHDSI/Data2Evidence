@@ -13,12 +13,15 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.9.5",
+    "classnames": "^2.5.1",
     "dayjs": "^1.11.7",
     "jsonata": "^2.0.3",
+    "monaco-editor": "0.37.1",
     "papaparse": "^5.4.1",
     "react-monaco-editor": "^0.52.0",
     "react-redux": "^8.0.5",
     "reactflow": "^11.11.4",
+    "reselect": "^4.1.8",
     "systemjs": "0.21.6",
     "uuid": "^9.0.0",
     "pako": "^2.1.0",
@@ -26,6 +29,7 @@
   },
   "peerDependencies": {
     "@d4l/web-components-library": "^3.20.2",
+    "@mui/icons-material": "^5.8.3",
     "@mui/material": "^5.8.3",
     "@portal/components": "^1.0.0",
     "@portal/plugin": "^1.0.0",
