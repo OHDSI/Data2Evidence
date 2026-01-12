@@ -1039,6 +1039,8 @@ class D2ECli {
         "Load d2e services. Requires d2e init and d2e setup to be run."
       )
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
         this.setupdemo();
       });
 
