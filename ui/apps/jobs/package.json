@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.0.18",
+    "@prefecthq/graphs": "^2.3.2",
     "@prefecthq/prefect-design": "^2.12.1",
     "@prefecthq/vue-compositions": "^1.11.4",
     "@prefecthq/prefect-ui-library": "3.10.1",

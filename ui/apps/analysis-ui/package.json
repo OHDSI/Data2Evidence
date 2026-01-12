@@ -30,6 +30,7 @@
     "react-monaco-editor": "^0.52.0",
     "react-redux": "^8.0.5",
     "reactflow": "^11.11.4",
+    "reselect": "^4.1.8",
     "single-spa": "^6.0.0",
     "single-spa-react": "^6.0.2",
     "uuid": "^9.0.0"
