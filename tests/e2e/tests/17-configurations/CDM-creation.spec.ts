@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test('test', async ({ page }) => {
   test.setTimeout(300 * 1000) // Set timeout to 5 minutes
-  await page.goto('https://localhost:41100/d2e/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -39,264 +39,276 @@ test('test', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Create', exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Create', exact: true }).dblclick()
     await page.waitForTimeout(1000)
-    await expect(page.locator('[id="__item3-img"]')).toBeVisible({timeout: 1000})
+    await expect(page.locator('[id="__item3-img"]')).toBeVisible({ timeout: 1000 })
   })
 
-  await test.step('Placeholder mapping', async () => {
-    await page.locator('[id="__item3-img"]').click()
-    await expect(page.locator('[id="__input8-__list23-0-inner"]')).toBeVisible()
-    await page.locator('[id="__input8-__list23-0-inner"]').click()
-    await page.locator('[id="__input8-__list23-0-inner"]').fill('$$SCHEMA$$."person"')
-    await expect(page.locator('[id="__input9-__list17-__list23-0-0-inner"]')).toBeVisible()
-    await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').click()
-    await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').fill('$$SCHEMA$$."person"')
-    await expect(
-      page
+  await test.step(
+    'Placeholder mapping',
+    async () => {
+      await page.locator('[id="__item3-img"]').click()
+      await expect(page.locator('[id="__input8-__list23-0-inner"]')).toBeVisible()
+      await page.locator('[id="__input8-__list23-0-inner"]').click()
+      await page.locator('[id="__input8-__list23-0-inner"]').fill('$$SCHEMA$$."person"')
+      await expect(page.locator('[id="__input9-__list17-__list23-0-0-inner"]')).toBeVisible()
+      await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').click()
+      await page.locator('[id="__input9-__list17-__list23-0-0-inner"]').fill('$$SCHEMA$$."person"')
+      await expect(
+        page
+          .locator('[id*="__data"]:has-text("Base Entity Table")')
+          .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
+          .locator('[class="sapMSltArrow"]')
+          .first()
+      ).toBeEnabled({ timeout: 3000 })
+      await page
         .locator('[id*="__data"]:has-text("Base Entity Table")')
         .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
         .locator('[class="sapMSltArrow"]')
         .first()
-    ).toBeEnabled({ timeout: 3000 })
-    await page
-      .locator('[id*="__data"]:has-text("Base Entity Table")')
-      .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
-      .locator('[class="sapMSltArrow"]')
-      .first()
-      .click()
-    await page.getByRole('option', { name: '"person_id"' }).click()
-    await page.getByTitle('Add a Join Entity Table').click()
-    await page.locator('[id="__input12-__list35-0-inner"]').click()
-    await page.locator('[id="__input12-__list35-0-inner"]').fill('@COND')
-    await page.locator('[id="__input13-__list35-0-inner"]').click()
-    await page.locator('[id="__input13-__list35-0-inner"]').fill('$$SCHEMA$$."condition_occurrence"')
-    await page
-      .locator('[id*="__data"]:has-text("Join Entity Tables")')
-      .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
-      .locator('[class="sapMSltArrow"]')
-      .first()
-      .click()
-    await page.getByRole('option', { name: '"person_id"' }).click()
-    await expect(page.locator('[id*="__data"]:has-text("Join Entity Tables")')).toBeVisible()
-    await page
-      .locator('[id*="__data"]:has-text("Join Entity Tables")')
-      .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Type")')
-      .locator('[class="sapMSltArrow"]')
-      .first()
-      .click()
-    await expect(page.getByRole('option', { name: '"condition_type_concept_id"' }).last()).toBeVisible()
-    await page.getByRole('option', { name: '"condition_type_concept_id"' }).last().click()
-    // Delete unused join entity
-    if (
+        .click()
+      await page.getByRole('option', { name: '"person_id"' }).click()
+      await page.getByTitle('Add a Join Entity Table').click()
+      await page.locator('[id="__input12-__list35-0-inner"]').click()
+      await page.locator('[id="__input12-__list35-0-inner"]').fill('@COND')
+      await page.locator('[id="__input13-__list35-0-inner"]').click()
+      await page.locator('[id="__input13-__list35-0-inner"]').fill('$$SCHEMA$$."condition_occurrence"')
       await page
-        .locator('[id="__button32-__list34-__list35-0-0"]')
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
-      await page.locator('[id="__button32-__list34-__list35-0-0"]').click()
-      await page.getByTitle('Delete a Join Entity').click()
-      await page.locator('[id="__button30-__list35-1"]').click()
-      await page.locator('[id="__button28-__list22-__list23-0-0"]').click()
-    }
-    // Terminology Services View Used for Catalog Attributes
-    await page.locator('[id="__input16-__list39-0-inner"]').click()
-    await page.locator('[id="__select18-__list39-0-label"]').click()
-    await page.locator('[id="__select18-__list39-0-arrow"]').click()
-    await page.locator('[id="__input16-__list39-0-inner"]').click()
-    await page.locator('[id="__input16-__list39-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
-    await page.locator('[id="__input16-__list39-0-inner"]').press('Enter')
-    await expect(page.locator('[id="__select18-__list39-0-arrow"]')).toBeEnabled()
-    await page.waitForTimeout(100)
-    await page.locator('[id="__select18-__list39-0-arrow"]').click()
-    await page.getByRole('option', { name: '"vocabulary_id"' }).click()
-    await page.locator('[id="__select19-__list39-0-arrow"]').click()
-    await page.getByRole('option', { name: '"concept_code"' }).last().click()
-    await expect(page.locator('[id="__select19-__list39-0-3"]')).not.toBeVisible()
-    await page.locator('[id="__select20-__list39-0-arrow"]').click()
-    await page.getByRole('option', { name: '"concept_name"' }).last().click()
-    await page.locator('[id="__input17-__list43-0-inner"]').click()
-    await page.locator('[id="__input17-__list43-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
-    await page.locator('[id="__input16-__list39-0-inner"]').press('Enter')
-    await expect(page.locator('[id="__select21-__list43-0-arrow"]')).toBeEnabled()
-    await page.waitForTimeout(200)
-    await page.locator('[id="__select21-__list43-0-arrow"]').click()
-    await page.getByRole('option', { name: '"concept_id"' }).last().click()
-    await page.locator('[id="__select22-__list43-0-arrow"]').click()
-    await page.getByRole('option', { name: '"concept_id"' }).last().click()
-    await page.locator('[id="__select23-__list43-0-arrow"]').click()
-    await page.getByRole('option', { name: '"concept_name"' }).last().click()
-    await page.locator('[id="__input18-__list44-0-inner"]').click()
-    await page.locator('[id="__input18-__list44-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
+        .locator('[id*="__data"]:has-text("Join Entity Tables")')
+        .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Base Entity ID")')
+        .locator('[class="sapMSltArrow"]')
+        .first()
+        .click()
+      await page.getByRole('option', { name: '"person_id"' }).click()
+      await expect(page.locator('[id*="__data"]:has-text("Join Entity Tables")')).toBeVisible()
+      await page
+        .locator('[id*="__data"]:has-text("Join Entity Tables")')
+        .locator('[class="sapUiRFLCompleteRow sapUiRFLRow"]:has-text("Type")')
+        .locator('[class="sapMSltArrow"]')
+        .first()
+        .click()
+      await expect(page.getByRole('option', { name: '"condition_type_concept_id"' }).last()).toBeVisible()
+      await page.getByRole('option', { name: '"condition_type_concept_id"' }).last().click()
+      // Delete unused join entity
+      if (
+        await page
+          .locator('[id="__button32-__list34-__list35-0-0"]')
+          .isVisible({ timeout: 2000 })
+          .catch(() => false)
+      ) {
+        await page.locator('[id="__button32-__list34-__list35-0-0"]').click()
+        await page.getByTitle('Delete a Join Entity').click()
+        await page.locator('[id="__button30-__list35-1"]').click()
+        await page.locator('[id="__button28-__list22-__list23-0-0"]').click()
+      }
+      // Terminology Services View Used for Catalog Attributes
+      await page.locator('[id="__input16-__list39-0-inner"]').click()
+      await page.locator('[id="__select18-__list39-0-label"]').click()
+      await page.locator('[id="__select18-__list39-0-arrow"]').click()
+      await page.locator('[id="__input16-__list39-0-inner"]').click()
+      await page.locator('[id="__input16-__list39-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
+      await page.locator('[id="__input16-__list39-0-inner"]').press('Enter')
+      await expect(page.locator('[id="__select18-__list39-0-arrow"]')).toBeEnabled()
+      await page.waitForTimeout(100)
+      await page.locator('[id="__select18-__list39-0-arrow"]').click()
+      await page.getByRole('option', { name: '"vocabulary_id"' }).click()
+      await page.locator('[id="__select19-__list39-0-arrow"]').click()
+      await page.getByRole('option', { name: '"concept_code"' }).last().click()
+      await expect(page.locator('[id="__select19-__list39-0-3"]')).not.toBeVisible()
+      await page.locator('[id="__select20-__list39-0-arrow"]').click()
+      await page.getByRole('option', { name: '"concept_name"' }).last().click()
+      await page.locator('[id="__input17-__list43-0-inner"]').click()
+      await page.locator('[id="__input17-__list43-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
+      await page.locator('[id="__input16-__list39-0-inner"]').press('Enter')
+      await expect(page.locator('[id="__select21-__list43-0-arrow"]')).toBeEnabled()
+      await page.waitForTimeout(200)
+      await page.locator('[id="__select21-__list43-0-arrow"]').click()
+      await page.getByRole('option', { name: '"concept_id"' }).last().click()
+      await page.locator('[id="__select22-__list43-0-arrow"]').click()
+      await page.getByRole('option', { name: '"concept_id"' }).last().click()
+      await page.locator('[id="__select23-__list43-0-arrow"]').click()
+      await page.getByRole('option', { name: '"concept_name"' }).last().click()
+      await page.locator('[id="__input18-__list44-0-inner"]').click()
+      await page.locator('[id="__input18-__list44-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
 
-    await page.getByRole('button', { name: 'Save', exact: true }).click()
-    await page.getByRole('button', { name: 'OK' }).click()
-  }, { timeout: 60000 })
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      await page.getByRole('button', { name: 'OK' }).click()
+    },
+    { timeout: 60000 }
+  )
 
-  await test.step('Data Model Setting: Basic Data', async () => {
-    await page.locator('[id="__xmlview1--configSectionPage--cdmMenu-img"]').click()
-    await page.getByText('Basic Data').dblclick()
-    // Person Id
-    await expect(page.getByRole('button', { name: 'Add Attribute' })).toBeVisible()
-    await page.getByText('Basic Data').dblclick()
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('New Attribute - 1').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Person Id')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('pid')
-    await page.getByRole('radio', { name: 'ADVANCED' }).click()
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED' }).click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('CAST (@PATIENT."person_id" AS VARCHAR)')
-    await page.locator('[id="__xmlview11--annotationsInput-inner"]').click()
-    await page.locator('[id="__xmlview11--annotationsInput-inner"]').fill('person_id')
-    // Patient Count
-    await page.getByText('Basic Data').dblclick()
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('Basic Data').dblclick()
-    await page.getByText('New Attribute - 1').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Patient count')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('pcount')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED' }).click()
-    await page.getByRole('radio', { name: 'Aggregate Attribute' }).click()
-    await page.locator('[id="__xmlview11--AttributeAggregationFilter-inner"]').click()
-    await page
-      .locator('[id="__xmlview11--AttributeAggregationFilter-inner"]')
-      .fill('COUNT(DISTINCT(@PATIENT."person_id"))')
-    await page.locator('[id="__xmlview11--AttributeType-label"]').click()
-    await page.getByRole('option', { name: 'Number' }).click()
-    // Gender
-    await page.getByText('Basic Data').dblclick()
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('Basic Data').dblclick()
-    await page.getByText('New Attribute - 1').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Gender ')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('Gender_concept_name')
-    await page.getByRole('radio', { name: 'ADVANCED' }).click()
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED' }).click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
-    await page
-      .locator('[id="__xmlview11--AttributeDataSource-inner"]')
-      .fill("CASE WHEN @PATIENT.\"GENDER_CONCEPT_ID\" = 8532 THEN 'FEMALE' ELSE 'MALE' END")
-    await page.getByRole('checkbox', { name: 'Off' }).click()
-    await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').click()
-    await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').fill('@REF.CONCEPT_NAME')
-    await page.locator('[id="__xmlview11--AttributeReferenceFilter-inner"]').click()
-    await page
-      .locator('[id="__xmlview11--AttributeReferenceFilter-inner"]')
-      .fill(
-        "@REF.DOMAIN_ID = 'Gender' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65"
-      )
-    // Age
-    await page.getByText('Basic Data').dblclick()
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('Basic Data').dblclick()
-    await page.getByText('New Attribute - 1').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Age ')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('age')
-    await page.getByRole('radio', { name: 'ADVANCED' }).click()
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED' }).click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
-    await page
-      .locator('[id="__xmlview11--AttributeDataSource-inner"]')
-      .fill('YEAR(CURRENT_DATE) - @PATIENT."YEAR_OF_BIRTH"')
-    await page.locator('[id="__xmlview11--AttributeType-label"]').click()
-    await page.getByRole('option', { name: 'Number' }).click()
-  }, { timeout: 60000 })
+  await test.step(
+    'Data Model Setting: Basic Data',
+    async () => {
+      await page.locator('[id="__xmlview1--configSectionPage--cdmMenu-img"]').click()
+      await page.getByText('Basic Data').dblclick()
+      // Person Id
+      await expect(page.getByRole('button', { name: 'Add Attribute' })).toBeVisible()
+      await page.getByText('Basic Data').dblclick()
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('New Attribute - 1').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Person Id')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('pid')
+      await page.getByRole('radio', { name: 'ADVANCED' }).click()
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED' }).click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('CAST (@PATIENT."person_id" AS VARCHAR)')
+      await page.locator('[id="__xmlview11--annotationsInput-inner"]').click()
+      await page.locator('[id="__xmlview11--annotationsInput-inner"]').fill('person_id')
+      // Patient Count
+      await page.getByText('Basic Data').dblclick()
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('Basic Data').dblclick()
+      await page.getByText('New Attribute - 1').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Patient count')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('pcount')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED' }).click()
+      await page.getByRole('radio', { name: 'Aggregate Attribute' }).click()
+      await page.locator('[id="__xmlview11--AttributeAggregationFilter-inner"]').click()
+      await page
+        .locator('[id="__xmlview11--AttributeAggregationFilter-inner"]')
+        .fill('COUNT(DISTINCT(@PATIENT."person_id"))')
+      await page.locator('[id="__xmlview11--AttributeType-label"]').click()
+      await page.getByRole('option', { name: 'Number' }).click()
+      // Gender
+      await page.getByText('Basic Data').dblclick()
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('Basic Data').dblclick()
+      await page.getByText('New Attribute - 1').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Gender ')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('Gender_concept_name')
+      await page.getByRole('radio', { name: 'ADVANCED' }).click()
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED' }).click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+      await page
+        .locator('[id="__xmlview11--AttributeDataSource-inner"]')
+        .fill("CASE WHEN @PATIENT.\"GENDER_CONCEPT_ID\" = 8532 THEN 'FEMALE' ELSE 'MALE' END")
+      await page.getByRole('checkbox', { name: 'Off' }).click()
+      await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').click()
+      await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').fill('@REF.CONCEPT_NAME')
+      await page.locator('[id="__xmlview11--AttributeReferenceFilter-inner"]').click()
+      await page
+        .locator('[id="__xmlview11--AttributeReferenceFilter-inner"]')
+        .fill(
+          "@REF.DOMAIN_ID = 'Gender' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65"
+        )
+      // Age
+      await page.getByText('Basic Data').dblclick()
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('Basic Data').dblclick()
+      await page.getByText('New Attribute - 1').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Age ')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('age')
+      await page.getByRole('radio', { name: 'ADVANCED' }).click()
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED' }).click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+      await page
+        .locator('[id="__xmlview11--AttributeDataSource-inner"]')
+        .fill('YEAR(CURRENT_DATE) - @PATIENT."YEAR_OF_BIRTH"')
+      await page.locator('[id="__xmlview11--AttributeType-label"]').click()
+      await page.getByRole('option', { name: 'Number' }).click()
+    },
+    { timeout: 60000 }
+  )
 
-  await test.step('Data Model Setting: Defined Interactions', async () => {
-    await page.getByRole('link', { name: 'Defined Interactions (0)' }).click()
-    await page.getByRole('button', { name: 'Add Interaction' }).click()
-    await page.getByText('New Interaction - 1').click()
-    await page.locator('[id="__xmlview5--interactionName-inner"]').click()
-    await page.locator('[id="__xmlview5--interactionName-inner"]').fill('Condition Occurrence')
-    await page.locator('[id="__xmlview5--interactionIDName-inner"]').click()
-    await page.locator('[id="__xmlview5--interactionIDName-inner"]').fill('conditionoccurrence')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.locator('[id="__box6-inner"]').click()
-    await page.locator('[id="__box6-inner"]').fill('@COND')
-    // Person Id
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('New Attribute - 1').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Person Id')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('pid')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('CAST (@COND.person_id AS VARCHAR)')
-    // Condition concept id
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('New Attribute - 1').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Condition concept id')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('conditionconceptid')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('@COND."CONDITION_CONCEPT_ID"')
-    await page.locator('[id="__switch0"]').click()
-    await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').click()
-    await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').fill('@REF.CONCEPT_ID')
-    await page.locator('[id="__xmlview11--AttributeReferenceFilter-inner"]').click()
-    await page
-      .locator('[id="__xmlview11--AttributeReferenceFilter-inner"]')
-      .fill(
-        "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_ID AS VARCHAR), '@SEARCH_QUERY') >= 0.85"
-      )
-    // Condition concept name
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('New Attribute - 1').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Condition concept name')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('condition_occ_concept_name')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('@TEXT.concept_name')
-    await page.locator('[id="__switch0"]').click()
-    await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').click()
-    await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').fill('@REF.CONCEPT_NAME')
-    await page.locator('[id="__xmlview11--AttributeReferenceFilter-inner"]').click()
-    await page
-      .locator('[id="__xmlview11--AttributeReferenceFilter-inner"]')
-      .fill(
-        "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65"
-      )
-    // Condition concept set
-    await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.getByText('New Attribute -').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrName-inner"]').fill('Condition concept set')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('conditionconceptset')
-    await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
-    await page.getByRole('button', { name: 'Yes' }).click()
-    await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
-    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
-    await page
-      .locator('[id="__xmlview11--AttributeDataSource-inner"]')
-      .fill('CAST (@COND."CONDITION_CONCEPT_ID" AS VARCHAR)')
-    await page.locator('[id="__xmlview11--AttributeType-label"]').click()
-    await page.getByRole('option', { name: 'Concept Set' }).click()
-  }, { timeout: 60000 })
+  await test.step(
+    'Data Model Setting: Defined Interactions',
+    async () => {
+      await page.getByRole('link', { name: 'Defined Interactions (0)' }).click()
+      await page.getByRole('button', { name: 'Add Interaction' }).click()
+      await page.getByText('New Interaction - 1').click()
+      await page.locator('[id="__xmlview5--interactionName-inner"]').click()
+      await page.locator('[id="__xmlview5--interactionName-inner"]').fill('Condition Occurrence')
+      await page.locator('[id="__xmlview5--interactionIDName-inner"]').click()
+      await page.locator('[id="__xmlview5--interactionIDName-inner"]').fill('conditionoccurrence')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.locator('[id="__box6-inner"]').click()
+      await page.locator('[id="__box6-inner"]').fill('@COND')
+      // Person Id
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('New Attribute - 1').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Person Id')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('pid')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('CAST (@COND.person_id AS VARCHAR)')
+      // Condition concept id
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('New Attribute - 1').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Condition concept id')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('conditionconceptid')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('@COND."CONDITION_CONCEPT_ID"')
+      await page.locator('[id="__switch0"]').click()
+      await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').click()
+      await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').fill('@REF.CONCEPT_ID')
+      await page.locator('[id="__xmlview11--AttributeReferenceFilter-inner"]').click()
+      await page
+        .locator('[id="__xmlview11--AttributeReferenceFilter-inner"]')
+        .fill(
+          "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(CAST(@REF.CONCEPT_ID AS VARCHAR), '@SEARCH_QUERY') >= 0.85"
+        )
+      // Condition concept name
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('New Attribute - 1').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Condition concept name')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('condition_occ_concept_name')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('@TEXT.concept_name')
+      await page.locator('[id="__switch0"]').click()
+      await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').click()
+      await page.locator('[id="__xmlview11--AttributeReferenceExpression-inner"]').fill('@REF.CONCEPT_NAME')
+      await page.locator('[id="__xmlview11--AttributeReferenceFilter-inner"]').click()
+      await page
+        .locator('[id="__xmlview11--AttributeReferenceFilter-inner"]')
+        .fill(
+          "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65"
+        )
+      // Condition concept set
+      await page.getByRole('button', { name: 'Add Attribute' }).click()
+      await page.getByText('New Attribute -').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrName-inner"]').fill('Condition concept set')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('conditionconceptset')
+      await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
+      await page.getByRole('button', { name: 'Yes' }).click()
+      await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
+      await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+      await page
+        .locator('[id="__xmlview11--AttributeDataSource-inner"]')
+        .fill('CAST (@COND."CONDITION_CONCEPT_ID" AS VARCHAR)')
+      await page.locator('[id="__xmlview11--AttributeType-label"]').click()
+      await page.getByRole('option', { name: 'Concept Set' }).click()
+    },
+    { timeout: 60000 }
+  )
 
   await test.step('Validate the CDM configuration', async () => {
     await page.getByRole('button', { name: 'Validate' }).click()
@@ -328,7 +340,11 @@ test('test', async ({ page }) => {
     await page.locator('.sapMRIPAConfigLargeText').filter({ hasText: 'CDM-Test101-PA' }).click()
     // filter cards
     await page.locator('[id="__filter2-icon"]').click()
-    await expect(page.locator('[class*="sapMCLI sapMLIB sapMLIB-CTX sapMLIBActionable sapMLIBFocusable"]').filter({ hasText: 'Basic Data' })).toBeVisible()
+    await expect(
+      page
+        .locator('[class*="sapMCLI sapMLIB sapMLIB-CTX sapMLIBActionable sapMLIBFocusable"]')
+        .filter({ hasText: 'Basic Data' })
+    ).toBeVisible()
     await page
       .locator('[class*="sapMCLI sapMLIB sapMLIB-CTX sapMLIBActionable sapMLIBFocusable"]')
       .filter({ hasText: 'Basic Data' })
@@ -370,11 +386,7 @@ test('test', async ({ page }) => {
 
   await test.step('Update dataset', async () => {
     await page.getByRole('link', { name: 'Datasets' }).click()
-    await page
-      .getByRole('row')
-      .filter({ hasText: 'Demo dataset' })
-      .getByRole('combobox')
-      .click()
+    await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('combobox').click()
     await page.getByRole('option', { name: 'Update dataset' }).click()
     await page.locator('#mui-component-select-paConfigOption').click()
     await page.getByRole('option', { name: 'CDM-Test101-PA' }).click()
@@ -388,7 +400,7 @@ test('test', async ({ page }) => {
       .filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ })
       .getByTestId('button')
       .click()
-    if ( await page.getByRole('button', { name: 'Back' }).isVisible()) {
+    if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
       await page.getByRole('button', { name: 'Back' }).click()
     }
     // Click on TestConfig101 at center of the configuration name text, otherwise it misclicks on the first Configuration in the list
@@ -430,29 +442,29 @@ test('test', async ({ page }) => {
 
     await page.locator('[id="__filter0-icon"]').click()
     await page.waitForTimeout(500)
-    await page.locator('[id*="dataModelVersionCombo-arrow"]' ).click({force: true})
+    await page.locator('[id*="dataModelVersionCombo-arrow"]').click({ force: true })
     await page.getByRole('option', { name: '- Active Version' }).click()
     await page.getByRole('button', { name: 'Keep Current Settings' }).click()
     await page.locator('[id="__filter2-icon"]').click()
     await expect(page.locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')).toBeVisible()
-    console.log('Enabling Duplication Condition Occurrence filter card', await page
-        .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
-        .getByRole('checkbox')
-        .isChecked())
+    console.log(
+      'Enabling Duplication Condition Occurrence filter card',
+      await page.locator('[role="toolbar"]:has-text("Dups Condition Occurrence")').getByRole('checkbox').isChecked()
+    )
     if (
-      await page
+      (await page
         .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
         .getByRole('checkbox')
-        .isChecked() === false
+        .isChecked()) === false
     ) {
       await page
         .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
-        .getByRole('checkbox').setChecked(true)
+        .getByRole('checkbox')
+        .setChecked(true)
       // await page
       //   .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
       //   .getByRole('checkbox').click()
       await page.waitForTimeout(500)
-      
     }
     await page.getByRole('button', { name: 'Validate' }).click()
     await expect(page.getByText('Configuration valid.')).toBeVisible()
@@ -512,9 +524,9 @@ test('test', async ({ page }) => {
     await page.getByText('CDM-Test101-PA', { exact: true }).click()
     await page.locator('[id="__filter0-icon"]').click()
     await page.waitForTimeout(500)
-    await page.locator('[id*="dataModelVersionCombo-arrow"]').dblclick({force: true})
+    await page.locator('[id*="dataModelVersionCombo-arrow"]').dblclick({ force: true })
     await expect(page.getByRole('option', { name: '- Active Version' })).toBeVisible()
-    await page.getByRole('option', { name: '- Active Version' }).click({force: true})
+    await page.getByRole('option', { name: '- Active Version' }).click({ force: true })
     await page.getByRole('button', { name: 'Keep Current Settings' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
   })
@@ -549,11 +561,12 @@ test('test', async ({ page }) => {
     await page.getByRole('button', { name: 'Back' }).click()
     const testConfig102Item = page
       .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
-      .filter({ hasText: 'TestConfig102' }).first()
+      .filter({ hasText: 'TestConfig102' })
+      .first()
     let retries = 0
-    while ( !(await testConfig102Item.getByText('Autosave').isVisible()) && retries < 5) {
-      await testConfig102Item.click({ position: { x: 100, y: 20 } , force: true})
-      console.log('Waiting for Autosave to appear', await testConfig102Item.getByText('Autosave').isVisible())  
+    while (!(await testConfig102Item.getByText('Autosave').isVisible()) && retries < 5) {
+      await testConfig102Item.click({ position: { x: 100, y: 20 }, force: true })
+      console.log('Waiting for Autosave to appear', await testConfig102Item.getByText('Autosave').isVisible())
       retries++
     }
     // await expect(page.getByText('Autosave')).toBeVisible()
