@@ -7,7 +7,6 @@ from typing import Optional, List, Dict, Set
 
 from pydantic import BaseModel, Field, model_validator
 
-_COPY_STATUS_TABLE_NAME = "table_copy_status"
 
 @dataclass
 class QueryColumns:
