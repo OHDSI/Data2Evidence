@@ -204,8 +204,7 @@ class Result(_EncodeQueryStringMixin, _AuthApi):
         }
 
         response = self._get('/analytics-svc/api/services/recontact/patient', params)
-        g = open(f"{filename}.enc", "wb")
-        g.write(bytes.fromhex(response.text))
-        g.close()
+        with open(f"{filename}.enc", "wb") as g:
+            g.write(bytes.fromhex(response.text))
 
         return f"{filename}.enc created"
