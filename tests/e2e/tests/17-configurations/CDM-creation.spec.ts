@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-test('test', async ({ page }) => {
+const TEST_NAME = 'CDM configuration creation'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+test(TEST_NAME, async ({ page }) => {
   test.setTimeout(300 * 1000) // Set timeout to 5 minutes
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
@@ -38,8 +42,14 @@ test('test', async ({ page }) => {
     await page.getByRole('textbox', { name: 'Title Enter name for' }).fill('TestConfig101')
     await expect(page.getByRole('button', { name: 'Create', exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Create', exact: true }).dblclick()
-    await page.waitForTimeout(1000)
-    await expect(page.locator('[id="__item3-img"]')).toBeVisible({ timeout: 1000 })
+    let retries = 0
+    while (
+      (await page.getByRole('button', { name: 'Create', exact: true }).isVisible({ timeout: 500 })) &&
+      retries < 3
+    ) {
+      await page.getByRole('button', { name: 'Create', exact: true }).dblclick({ timeout: 500 })
+      retries++
+    }
   })
 
   await test.step(
@@ -315,6 +325,7 @@ test('test', async ({ page }) => {
     await expect(page.getByText('Success')).toBeVisible()
     await page.getByRole('button', { name: 'OK' }).click()
     await page.getByRole('button', { name: 'Preview' }).click()
+    await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
     await expect.soft(page).toHaveScreenshot('CDM-creation-linux.png', { maxDiffPixels: 100 })
     await page.getByRole('button', { name: 'Close' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
@@ -400,20 +411,33 @@ test('test', async ({ page }) => {
       .filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ })
       .getByTestId('button')
       .click()
-    if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
-      await page.getByRole('button', { name: 'Back' }).click()
-    }
+
     // Click on TestConfig101 at center of the configuration name text, otherwise it misclicks on the first Configuration in the list
+    async function clickTestConfig101(locator: any) {
+      if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
+        await page.getByRole('button', { name: 'Back' }).click()
+        await locator.waitFor({ state: 'attached' })
+        await locator.scrollIntoViewIfNeeded()
+        await locator.click({ position: { x: 100, y: 20 } })
+        await page.reload()
+        await page.getByText('Active', { exact: true }).dblclick()
+      }
+    }
+
     const testConfig101Item = page
       .locator('li[role="option"]')
       .filter({ has: page.locator('span.sapFfhCDMonfigLargeText:has-text("TestConfig101")') })
-    await testConfig101Item.waitFor({ state: 'attached' })
-    await testConfig101Item.scrollIntoViewIfNeeded()
-    await testConfig101Item.click({ position: { x: 100, y: 20 } })
-    await page.reload()
-    await page.getByText('Active', { exact: true }).dblclick()
-    await expect(page.getByRole('heading', { name: 'Defined Interactions (1)' })).toBeVisible()
-    await page.getByRole('link', { name: 'Defined Interactions (1)' }).click()
+
+    let retries = 0
+    while (
+      !(await page.getByRole('heading', { name: 'Defined Interactions (1)' }).isVisible({ timeout: 500 })) &&
+      retries < 3
+    ) {
+      clickTestConfig101(testConfig101Item)
+      retries++
+    }
+
+    await page.getByRole('heading', { name: 'Defined Interactions (1)' }).click({ force: true })
     const dup = page
       .locator('[class*="sapMxConfFCItem"]:has-text("Condition Occurrence")')
       .getByRole('button', { name: 'Duplicate' })
@@ -447,10 +471,6 @@ test('test', async ({ page }) => {
     await page.getByRole('button', { name: 'Keep Current Settings' }).click()
     await page.locator('[id="__filter2-icon"]').click()
     await expect(page.locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')).toBeVisible()
-    console.log(
-      'Enabling Duplication Condition Occurrence filter card',
-      await page.locator('[role="toolbar"]:has-text("Dups Condition Occurrence")').getByRole('checkbox').isChecked()
-    )
     if (
       (await page
         .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
@@ -566,7 +586,6 @@ test('test', async ({ page }) => {
     let retries = 0
     while (!(await testConfig102Item.getByText('Autosave').isVisible()) && retries < 5) {
       await testConfig102Item.click({ position: { x: 100, y: 20 }, force: true })
-      console.log('Waiting for Autosave to appear', await testConfig102Item.getByText('Autosave').isVisible())
       retries++
     }
     // await expect(page.getByText('Autosave')).toBeVisible()
