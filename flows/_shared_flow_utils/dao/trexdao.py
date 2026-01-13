@@ -158,7 +158,7 @@ class TrexDao(DaoBase):
 
     def get_temp_table_names(self, schema):
         sql = pg_sql.SQL("""
-            SELECT database_name, schema_name, table_name 
+            SELECT table_name 
             FROM duckdb_tables() 
             WHERE temporary = true;
         """)
