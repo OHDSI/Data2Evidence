@@ -22,8 +22,8 @@ x-envs:
   env_converter: &x-converter
     URL__DATABASE_LIST__GET: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db/database-creds/
     DB_CREDENTIALS__PRIVATE_KEY: ${DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY}
-    IDP__ALP_SVC__CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
-    IDP__ALP_SVC__CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
+    IDP__ALP_SVC__CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
+    IDP__ALP_SVC__CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
     IDP__SCOPE: https://alp-default
     IDP_SUBJECT_PROP: sub
   pg: &x-pg
@@ -68,7 +68,7 @@ x-envs:
     EG_BASE_URL: /jupyter
     EG_DEFAULT_KERNEL_NAME: "r_ohdsi_docker"
     EG_DOCKER_MODE: docker
-    EG_ALLOW_ORIGIN: "https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+    EG_ALLOW_ORIGIN: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}"
     TREX__ENDPOINT_URL: "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001"
     EG_ENV_WHITELIST: "KERNEL_USERNAME"
     EG_MAX_KERNELS_PER_USER: 1
@@ -170,24 +170,24 @@ services:
       DB_CREDENTIALS__PRIVATE_KEY: ${DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY}
       GATEWAY__IDP_AUTH_TYPE: logto
       GATEWAY__IDP_SUBJECT_PROP: sub
-      GATEWAY__WO_PROTOCOL_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
+      GATEWAY__WO_PROTOCOL_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
       HANA__DRIVER_CLASS_PATH: ${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}
-      CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
-      IDP__ALP_DATA_CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
-      IDP__ALP_SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
+      CADDY__D2E__PUBLIC_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
+      IDP__ALP_DATA_CLIENT_ID: ${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}
+      IDP__ALP_SVC_CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
       IDP__RELYING_PARTY: ${IDP__RELYING_PARTY}
       LOGTO__AUDIENCES: https://alp-default
-      LOGTO__CLIENT_ID: ${LOGTO__ALP_APP__CLIENT_ID}
-      LOGTO__ALP_SVC__CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
-      LOGTO__ALP_SVC__CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
-      LOGTO__ALP_DATA__CLIENT_ID: ${LOGTO__ALP_DATA__CLIENT_ID}
-      LOGTO__ALP_DATA__CLIENT_SECRET: ${LOGTO__ALP_DATA__CLIENT_SECRET}
-      LOGTO__CLIENT_SECRET: ${LOGTO__ALP_APP__CLIENT_SECRET}
+      LOGTO__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
+      LOGTO__D2E_SVC__CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
+      LOGTO__D2E_SVC__CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
+      LOGTO__D2E_DATA__CLIENT_ID: ${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}
+      LOGTO__D2E_DATA__CLIENT_SECRET: ${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}
+      LOGTO__CLIENT_SECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
       LOGTO__ISSUER: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc
       LOGTO__RESOURCE_API: https://alp-default
       LOGTO__SCOPE: ${LOGTO__SCOPE:-openid offline_access profile email}
-      LOGTO__SVC_CLIENT_ID: ${LOGTO__ALP_SVC__CLIENT_ID}
-      LOGTO__SVC_CLIENT_SECRET: ${LOGTO__ALP_SVC__CLIENT_SECRET}
+      LOGTO__SVC_CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
+      LOGTO__SVC_CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
       LOGTO__TOKEN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc/token
       LOGTO__ADMIN_SERVER__FQDN_URL: http://${PROJECT_NAME:-d2e}-logto-1:3002
       LOGTO__DEFAULT_TENANT__FQDN_URL: ${LOGTO__DEFAULT_TENANT__FQDN_URL:-https://default.logto.app/api}
@@ -250,6 +250,7 @@ services:
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
+      CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -367,15 +368,15 @@ services:
         }
 
         (publicurlredirect) {
-          $CADDY__ALP__ALIAS_PUBLIC_FQDN {
+          ${CADDY__D2E__ALIAS_PUBLIC_FQDN:-${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}} {
             $TLS__CADDY_DIRECTIVE
-            redir https://$CADDY__ALP__PUBLIC_FQDN{uri} permanent
+            redir https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}{uri} permanent
           }
         }
 
         (proxy_headers_codespaces) {
           header_up Host {upstream_hostport}
-          header_up X-Forwarded-Host ${CADDY__ALP__PUBLIC_FQDN}
+          header_up X-Forwarded-Host ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}
           header_up X-Forwarded-Proto {scheme}
           header_up X-Forwarded-For {remote}
         }
@@ -479,7 +480,7 @@ services:
         #   }
         # }
 
-        https://$CADDY__ALP__PUBLIC_FQDN${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
+        https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${CADDY__ADDITIONAL_HOSTS:+, ${CADDY__ADDITIONAL_HOSTS}} {
           $TLS__CADDY_DIRECTIVE
 
           @aliasbasepaths {
@@ -498,10 +499,10 @@ services:
     volumes:
       - caddy:/data
     environment:
-      CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}:443
+      CADDY__D2E__PUBLIC_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}
       TLS__CADDY_DIRECTIVE: ${TLS__CADDY_DIRECTIVE:-tls internal}
       INSTANCE_SPECIFIC_CONFIG: ${INSTANCE_SPECIFIC_CONFIG:-}
-      CADDY__ALP__ALIAS_PUBLIC_FQDN: ${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}
+      CADDY__D2E__ALIAS_PUBLIC_FQDN: ${CADDY__D2E__ALIAS_PUBLIC_FQDN:-${CADDY__ALP__ALIAS_PUBLIC_FQDN:-}}
       PROJECT_NAME: ${PROJECT_NAME:-d2e}
 
   alp-dataflow-gen:
@@ -560,7 +561,7 @@ services:
     command:
       - sh
       - -c
-      - "pip install prefect[docker]==3.0.3 && prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
+      - "rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db; prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
@@ -581,7 +582,7 @@ services:
         ]
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
-    image: prefecthq/prefect:3.0.3-python3.11
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-dataflow-gen-worker:${DOCKER_TAG_NAME:-develop}
     logging:
       options:
         tag: *c83
@@ -598,6 +599,11 @@ services:
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
       PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
+      PREFECT_TASKS_CACHE_ENABLED: false
+      PREFECT_FLOW_RUN_CACHE_ENABLED: false
+      PREFECT_RESULTS_PERSIST_BY_DEFAULT: false
+      PREFECT_EVENTS_ENABLED: false
+
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
@@ -634,7 +640,7 @@ services:
       # LOGTO__CONNECTOR_CONFIG: '{ "id": "y9nq6f91yeg19kwt1x6xz","connectorId": "azuread-alp", "config": { "clientId": "${ENTRA__CLIENT_ID}", "tenantId": "${ENTRA__TENANT_ID}", "clientSecret": "${ENTRA__CLIENT_SECRET}", "cloudInstance": "https://login.microsoftonline.com"}, "syncProfile": true}'
       # LOGTO__DISABLE_BASIC_AUTH: ${LOGTO__DISABLE_BASIC_AUTH:-true}
       # LOGTO__CUSTOM_JWT: '{"environmentVariables": {"clientId": "${ENTRA__CLIENT_ID}", "tenantId": "${ENTRA__TENANT_ID}", "clientSecret": "${ENTRA__CLIENT_SECRET}"}, "script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  const clientId = environmentVariables?.clientId || \"\";\n  const clientSecret = environmentVariables?.clientSecret || \"\";\n  const tenantId = environmentVariables?.tenantId || \"\";\n  const refreshToken = extra.thirdPartyRefreshToken || \"\";\n\n  const tokenEndpoint = `https://login.microsoftonline.com/$${tenantId}/oauth2/v2.0/token`;\n\n  const params =\n    `client_id=$${encodeURIComponent(clientId)}` +\n    `&client_secret=$${encodeURIComponent(clientSecret)}` +\n    `&refresh_token=$${encodeURIComponent(refreshToken)}` +\n    `&grant_type=refresh_token` +\n    `&scope=openid`;\n\n  let thirdPartyToken = extra.thirdPartyToken;\n  let thirdPartyRefreshToken = refreshToken;\n  try {\n    const response = await fetch(tokenEndpoint, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/x-www-form-urlencoded\" },\n      body: params,\n    });\n\n    if (!response.ok) {\n      const responseBody = await response.text();\n      throw new Error(`Error refreshing token: $${response.statusText}: $${responseBody}: $${params}`);\n    }\n\n    const data = await response.json();\n    thirdPartyToken = data.id_token;\n    thirdPartyRefreshToken = data.refresh_token;\n  } catch (error) {\n    throw error;\n  }\n\n  return { thirdPartyToken, thirdPartyRefreshToken };\n};\n", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}}'
-      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__ALP_SVC__CLIENT_ID}", "secret": "${LOGTO__ALP_SVC__CLIENT_SECRET}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__ALP_DATA__CLIENT_ID}", "secret": "${LOGTO__ALP_DATA__CLIENT_SECRET}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__ALP_APP__CLIENT_ID}", "secret": "${LOGTO__ALP_APP__CLIENT_SECRET}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/d2e/portal/login-callback","https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/d2e/ui/gateway/dashboard","https://localhost:4000/d2e/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}/d2e/portal","https://localhost:4000/d2e/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
+      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}", "secret": "${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}", "secret": "${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}", "secret": "${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal/login-callback","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/ui/gateway/dashboard","https://localhost:4000/d2e/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal","https://localhost:4000/d2e/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
       LOGTO__RESOURCE: '{"name":"alp-default","indicator":"https://alp-default","accessTokenTtl":3600}'
       LOGTO__USER: '{"username":"admin","initialPassword":"Updatepassword12345"}'
       LOGTO__ROLES: '[{"name":"role.systemadmin","description":"ALP System admin","type":"User"},{"name":"role.useradmin","description":"ALP User admin","type":"User"},{"name":"role.dashboardviewer","description":"ALP Dashboard viewer","type":"User"}]'
@@ -645,7 +651,7 @@ services:
       LOGTO__TERM_OF_USE_URL: ${LOGTO__TERM_OF_USE_URL:-}
       LOGTO__PRIVACY_POLICY_URL: ${LOGTO__PRIVACY_POLICY_URL:-}
       LOGTO__CUSTOM_CSS: ${LOGTO__CUSTOM_CSS:-}
-      CADDY__ALP__PUBLIC_FQDN: ${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
+      CADDY__D2E__PUBLIC_FQDN: ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
 
   alp-logto:
     container_name: &c8 ${PROJECT_NAME:-d2e}-logto-1
@@ -684,10 +690,10 @@ services:
       <<:
         - *x-tls
       ADMIN_DISABLE_LOCALHOST: ${LOGTO__DISABLE_ADMIN_CONSOLE:-false}
-      # ADMIN_ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3002 # Enable if need to access admin console
-      # ENDPOINT: http://${CADDY__ALP__PUBLIC_FQDN:-localhost}:3001 # Enable if need to access admin console
+      # ADMIN_ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3002 # Enable if need to access admin console
+      # ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3001 # Enable if need to access admin console
       DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}?options=-c%20search_path%3Dlogto
-      ENDPOINT: https://${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}
+      ENDPOINT: https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       LOGTO_ROLES_AZ_GROUPS_MAPPING: ${LOGTO_ROLES_AZ_GROUPS_MAPPING:-{"role.systemadmin":"37b5364a-348c-494f-b67f-a59a40e52ab7","role.useradmin":"90597adc-92af-4649-8151-68c3b7feb66c","role.dashboardviewer":"50a3b140-21eb-46dd-9d81-61a77cbc81f5"}}

@@ -177,6 +177,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "duckdb" },
     { name = "google-cloud-bigquery" },
+    { name = "google-cloud-bigquery-storage" },
     { name = "httpx" },
     { name = "ibis-framework", extra = ["duckdb", "postgres"] },
     { name = "numpy" },
@@ -207,6 +208,7 @@ dev = [
 requires-dist = [
     { name = "duckdb", specifier = "==1.4.0" },
     { name = "google-cloud-bigquery", specifier = "==3.6.0" },
+    { name = "google-cloud-bigquery-storage", specifier = "==2.25.0" },
     { name = "httpx", specifier = "==0.27.2" },
     { name = "ibis-framework", extras = ["duckdb", "postgres"], specifier = "==10.0.0" },
     { name = "numpy", specifier = "==2.0.0" },
@@ -537,6 +539,21 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/56/96/d4978c15034a0f51bd33c37e0e9742476d977cdbbe3b27cb80cc91c18428/google-cloud-bigquery-3.6.0.tar.gz", hash = "sha256:5886c14f29097158d59afa74a6732dbdd583e6ef30dc9934a56ad532906de356", size = 401104, upload-time = "2023-02-22T21:43:30.217Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f5/50/9bf320ca5782ed48178a0a8cb7ad520dea00640a4ca6bf7cbe22951cdb25/google_cloud_bigquery-3.6.0-py2.py3-none-any.whl", hash = "sha256:ed875c3a52050d140660850f04aaa59c1ec03b420a31fa7cc643a1726fc784d1", size = 215145, upload-time = "2023-02-22T21:43:27.725Z" },
+]
+
+[[package]]
+name = "google-cloud-bigquery-storage"
+version = "2.25.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fd/32/f1a76c3587a160acda8580bdb275acc8376e20226b206c9ef92626b75313/google-cloud-bigquery-storage-2.25.0.tar.gz", hash = "sha256:195ffd2b180e9eaa22beab3e40a0b61ecd146ecb32667cf42269a8d7111b4d48", size = 196608, upload-time = "2024-05-03T16:15:41.007Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/56/e4162ca337f4012a41eb04db80560c9424024e1c15b98176ca6922a097d0/google_cloud_bigquery_storage-2.25.0-py2.py3-none-any.whl", hash = "sha256:01109a66d1d23745d8d9c30852a0a137e8238faac1b3b02dec0d8e319ca231cb", size = 199841, upload-time = "2024-05-03T16:15:38.672Z" },
 ]
 
 [[package]]
