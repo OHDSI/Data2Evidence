@@ -131,7 +131,7 @@ jobs:
         run: |
           sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
           sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
-          grep LOGTO__ALP_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+          grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
           echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
           echo "USE_DUCKDB=false" >> $DOTENV_FILE
           echo "USE_CACHEDB=false" >> $DOTENV_FILE
@@ -169,7 +169,7 @@ jobs:
       - name: Login to logto and get Bearer token and sub
         run: |
           # Get sign in page
-          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__ALP_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
+          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
           printf "%s\n" "$response"
 
           # Extract cookies
@@ -183,7 +183,7 @@ jobs:
           response=$(curl -ik --request PUT 'https://localhost:41100/api/interaction' \
               --header 'content-type: application/json' \
               --header 'Referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}" \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
               --data '{
               "event": "SignIn",
               "identifier": {
@@ -198,13 +198,13 @@ jobs:
               --header 'accept: application/json' \
               --header 'origin: https://localhost:41100' \
               --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
           # Get session
           response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
               --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
           interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
@@ -219,14 +219,14 @@ jobs:
           response=$(curl -ik 'https://localhost:41100/consent' \
               --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
               --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
           # Get authorization code
           response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
               --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
               --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
           authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
@@ -235,18 +235,18 @@ jobs:
           response=$(curl -ik "https://localhost:41100/d2e/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
               --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
               --header 'referer: https://localhost:41100/sign-in' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}")
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
           # Get Bearer token
           response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
               --header 'accept: application/json, text/javascript, */*; q=0.01' \
               --header 'content-type: application/x-www-form-urlencoded' \
-              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__ALP_APP__CLIENT_ID\"}" \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
               --header 'origin: https://localhost:41100' \
               --header 'referer: https://localhost:41100/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
               --data-urlencode 'grant_type=authorization_code' \
-              --data-urlencode "client_id=$LOGTO__ALP_APP__CLIENT_ID" \
+              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
               --data-urlencode 'redirect_uri=https://localhost:41100/d2e/portal/login-callback' \
               --data-urlencode "code=$authorization_code" \
               --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I')
@@ -310,12 +310,6 @@ jobs:
               --header "authorization: Bearer $BEARER_TOKEN" \
               --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
 
-      # Restart is required for alp-trex container after seeding database credentials into the db table
-      - name: Restart alp-trex service
-        run: |
-          docker container restart alp-trex
-          echo "Waiting 10 secs for alp-trex to restart..."
-          sleep 10
 
       - name: Seed dummy dataset
         run: |
@@ -325,13 +319,31 @@ jobs:
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
           ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
 
-          curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
+      # Restart is required for alp-trex container after seeding database credentials into the db table
+      - name: Restart alp-trex service
+        run: |
+          docker container restart alp-trex
+          echo "Waiting 120 secs for alp-trex to restart..."
+          sleep 120
+          # Health check
+          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
+
+      - name: Assign and verify researcher assigned to user
+        run: |
+          curl --max-time 100 --fail -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
               -H 'accept: application/json, text/plain, */*' \
               -H "authorization: Bearer $BEARER_TOKEN" \
               -H 'content-type: application/json' \
               -H 'origin: https://localhost:41100' \
               -H 'referer: https://localhost:41100/d2e/portal/systemadmin/dataset-overview' \
               --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
+
+          curl --max-time 100 --fail -k 'https://localhost:41100/d2e/usermgmt/api/me/roles' \
+          -H 'accept: application/json, text/plain, */*' \
+          -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
+          -H 'content-type: application/json' \
+          -H 'origin: https://localhost:41100' \
+          -H "authorization: Bearer $BEARER_TOKEN"
 
       - name: Install dependencies in backend integration tests
         run: |

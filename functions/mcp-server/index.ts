@@ -1,3 +1,5 @@
+import "./setup.ts";
+
 import express, { Application } from "express";
 import { mcpServerRouter } from "./src/routes/routes";
 
