@@ -42,9 +42,9 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
   useEffect(() => {
     setFormData({
       ...EMPTY_FORM_DATA,
-      age: { from: filterScopes?.age?.min || 0, to: filterScopes?.age?.max || 0 },
-      observationYear: { from: filterScopes?.observationYear?.min || 0, to: filterScopes?.observationYear?.max || 0 },
-      cumulativeObservationMonths: filterScopes?.cumulativeObservationMonths?.min || 0,
+      age: { from: filterScopes?.age.min || 0, to: filterScopes?.age.max || 0 },
+      observationYear: { from: filterScopes?.observationYear.min || 0, to: filterScopes?.observationYear.max || 0 },
+      cumulativeObservationMonths: filterScopes?.cumulativeObservationMonths.min || 0,
     });
   }, [filterScopes]);
 
@@ -126,10 +126,10 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
             />
             <FilterNumberRange
               label={getText(i18nKeys.DATASET_FILTERS__ENTER_RANGE)}
-              min={filterScopes?.age?.min}
-              max={filterScopes?.age?.max}
-              from={formData.age?.from || 0}
-              to={formData.age?.to || 0}
+              min={filterScopes?.age.min}
+              max={filterScopes?.age.max}
+              from={formData.age.from || 0}
+              to={formData.age.to || 0}
               onChange={(from: number, to: number) => {
                 setFilterByAge(true);
                 handleFormDataChange({ age: { from, to } });
@@ -144,10 +144,10 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
             />
             <FilterNumberRange
               label={getText(i18nKeys.DATASET_FILTERS__YEAR_RANGE)}
-              min={filterScopes?.observationYear?.min}
-              max={filterScopes?.observationYear?.max}
-              from={formData.observationYear?.from || 0}
-              to={formData.observationYear?.to || 0}
+              min={filterScopes?.observationYear.min}
+              max={filterScopes?.observationYear.max}
+              from={formData.observationYear.from || 0}
+              to={formData.observationYear.to || 0}
               onChange={(from: number, to: number) => {
                 setFilterByObsYear(true);
                 handleFormDataChange({ observationYear: { from, to } });
@@ -162,8 +162,8 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
             />
             <FilterNumberSlider
               label={`${getText(i18nKeys.DATASET_FILTERS__MIN_CUMULATIVE_OBSERVATION)}:`}
-              min={filterScopes?.cumulativeObservationMonths?.min}
-              max={filterScopes?.cumulativeObservationMonths?.max}
+              min={filterScopes?.cumulativeObservationMonths.min}
+              max={filterScopes?.cumulativeObservationMonths.max}
               value={formData.cumulativeObservationMonths || 0}
               onChange={(cumulativeObservationMonths: number) => {
                 setFilterByCumulativeObsMths(true);
