@@ -197,7 +197,7 @@ def runStrategus(json_graph, options):
     logger = Logger()
     try:
         root_flow_run_context = FlowRunContext.get().flow_run.dict()
-    except:
+    except Exception:
         root_flow_run_context = {"id":uuid4()}
     flow_run_id = str(root_flow_run_context.get("id"))
     

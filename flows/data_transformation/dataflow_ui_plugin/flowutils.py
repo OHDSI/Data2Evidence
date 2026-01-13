@@ -104,7 +104,7 @@ def serialize_to_json(data: any) -> dict:
             # For primitive types, tuple, list
             json_value = json.dumps(data)
             return json_value
-        except:
+        except (TypeError, ValueError):
             # Assume custom object
             return serialize_to_json(data.__dict__)
 
