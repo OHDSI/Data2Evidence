@@ -326,7 +326,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'OK' }).click()
     await page.getByRole('button', { name: 'Preview' }).click()
     await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
-    await expect.soft(page).toHaveScreenshot('CDM-creation-linux.png', { maxDiffPixels: 100 })
+    await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
     await page.getByRole('button', { name: 'Close' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
     await page.getByRole('button', { name: 'OK' }).click()
@@ -347,8 +347,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('.sapMRIPAConfigLargeText').first().click()
     // configuration name
     await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).fill('CDM-Test101-PA')
-    await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).press('Enter')
-    await expect(page.locator('.sapMRIPAConfigLargeText').filter({ hasText: 'CDM-Test101-PA' })).toBeVisible()
+    await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).press('Enter', { delay: 100 })
+    await page.getByText('CDM-Test101-PA').waitFor({ state: 'visible', timeout: 5000 })
     await page.locator('.sapMRIPAConfigLargeText').filter({ hasText: 'CDM-Test101-PA' }).click()
     // filter cards
     await page.locator('[id="__filter2-icon"]').click()
