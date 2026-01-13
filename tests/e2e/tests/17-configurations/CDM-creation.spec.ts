@@ -17,6 +17,16 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
 
+  async function clickTestConfig(locator: any) {
+    if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
+      await page.getByRole('button', { name: 'Back' }).click()
+    }
+    await locator.waitFor({ state: 'attached' })
+    await locator.scrollIntoViewIfNeeded()
+    await locator.click({ position: { x: 100, y: 20 } })
+    await page.getByText('Active', { exact: true }).dblclick()
+  }
+
   async function clearTestConfigIfExists(testConfigname: string) {
     const TestConfig = page.locator('ul > li').filter({ hasText: testConfigname })
     try {
@@ -414,17 +424,6 @@ test(TEST_NAME, async ({ page }) => {
       .click()
 
     // Click on TestConfig101 at center of the configuration name text, otherwise it misclicks on the first Configuration in the list
-    async function clickTestConfig101(locator: any) {
-      if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
-        await page.getByRole('button', { name: 'Back' }).click()
-        await locator.waitFor({ state: 'attached' })
-        await locator.scrollIntoViewIfNeeded()
-        await locator.click({ position: { x: 100, y: 20 } })
-        await page.reload()
-        await page.getByText('Active', { exact: true }).dblclick()
-      }
-    }
-
     const testConfig101Item = page
       .locator('li[role="option"]')
       .filter({ has: page.locator('span.sapFfhCDMonfigLargeText:has-text("TestConfig101")') })
@@ -434,7 +433,7 @@ test(TEST_NAME, async ({ page }) => {
       !(await page.getByRole('heading', { name: 'Defined Interactions (1)' }).isVisible({ timeout: 500 })) &&
       retries < 3
     ) {
-      clickTestConfig101(testConfig101Item)
+      clickTestConfig(testConfig101Item)
       retries++
     }
 
@@ -516,10 +515,14 @@ test(TEST_NAME, async ({ page }) => {
     const testConfig101Item = page
       .locator('li[role="option"]')
       .filter({ has: page.locator('span.sapFfhCDMonfigLargeText:has-text("TestConfig101")') })
-    await testConfig101Item.scrollIntoViewIfNeeded()
-    await testConfig101Item.click({ position: { x: 100, y: 20 } })
-
-    await page.getByText('Active', { exact: true }).click()
+    let retries = 0
+    while (
+      !(await page.getByRole('link', { name: 'Defined Interactions (2)' }).isVisible({ timeout: 500 })) &&
+      retries < 3
+    ) {
+      clickTestConfig(testConfig101Item)
+      retries++
+    }
     await page.getByRole('link', { name: 'Defined Interactions (2)' }).click()
     await page
       .locator('[class*="sapMxConfFCItem"]:has-text("Dups Condition Occurrence")')
@@ -577,6 +580,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Condition Occurrence_copy')).toBeVisible()
     await page.getByText('Condition Occurrence_copy').first().dblclick()
 
+    // Auto-save test
     await page.locator('[id*="--interactionName-inner"]').click()
     await page.locator('[id*="--interactionName-inner"]').fill('Condition Occurrence Autosaving Test')
     await page.getByRole('button', { name: 'Back' }).click()
@@ -585,16 +589,17 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: 'TestConfig102' })
       .first()
     let retries = 0
-    while (!(await testConfig102Item.getByText('Autosave').isVisible()) && retries < 5) {
-      await testConfig102Item.click({ position: { x: 100, y: 20 }, force: true })
+    while (!(await testConfig102Item.getByText('Autosave').isVisible()) && retries < 3) {
+      clickTestConfig(testConfig102Item)
       retries++
     }
-    // await expect(page.getByText('Autosave')).toBeVisible()
-    await page
+
+    // Export test
+    const testConfig101Item = page
       .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
       .filter({ hasText: 'TestConfig101' })
       .locator('[class*="sapFfhCDMonfigLargeText"]')
-      .dblclick({ position: { x: 100, y: 20 } })
+    await clickTestConfig(testConfig101Item)
     const exp = page
       .locator('[id*="__vbox2-__xmlview1--configOverview--configVersionListing-"]')
       .last()
@@ -604,6 +609,8 @@ test(TEST_NAME, async ({ page }) => {
     const download2Promise = page.waitForEvent('download', { timeout: 10000 })
     await exp.click()
     const download2 = await download2Promise
+
+    // Import test
     await page.getByRole('button', { name: 'Import Configuration' }).click()
     await page.getByRole('textbox', { name: 'Configuration Content to' }).click()
     await page

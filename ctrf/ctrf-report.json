@@ -1,0 +1,125 @@
+{
+  "results": {
+    "tool": {
+      "name": "playwright"
+    },
+    "summary": {
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "pending": 0,
+      "skipped": 0,
+      "other": 0,
+      "start": 1768299959552,
+      "stop": 1768300045896,
+      "suites": 0
+    },
+    "tests": [
+      {
+        "name": "CDM configuration creation",
+        "status": "failed",
+        "duration": 85952,
+        "start": 1768299959,
+        "stop": 1768300045,
+        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveScreenshot\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n  61267 pixels (ratio 0.07 of all image pixels) are different.\n\nExpected: \u001b[33m/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/tests/17-configurations/CDM-creation.spec.ts-snapshots/CDM-configuration-creation-1-darwin.png\u001b[39m\nReceived: \u001b[33m/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/test-results/17-configurations-CDM-creation-CDM-configuration-creation/CDM-configuration-creation-1-actual.png\u001b[39m\n    Diff: \u001b[33m/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/test-results/17-configurations-CDM-creation-CDM-configuration-creation/CDM-configuration-creation-1-diff.png\u001b[39m\n\nCall log:\n\u001b[2m  - expect.soft.toHaveScreenshot with timeout 120000ms\u001b[22m\n\u001b[2m    - verifying given screenshot expectation\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - 63238 pixels (ratio 0.07 of all image pixels) are different.\u001b[22m\n\u001b[2m  - waiting 100ms before taking screenshot\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - 1989 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\u001b[2m  - waiting 250ms before taking screenshot\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - captured a stable screenshot\u001b[22m\n\u001b[2m  - 61267 pixels (ratio 0.07 of all image pixels) are different.\u001b[22m\n",
+        "trace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveScreenshot\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n  61267 pixels (ratio 0.07 of all image pixels) are different.\n\nExpected: \u001b[33m/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/tests/17-configurations/CDM-creation.spec.ts-snapshots/CDM-configuration-creation-1-darwin.png\u001b[39m\nReceived: \u001b[33m/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/test-results/17-configurations-CDM-creation-CDM-configuration-creation/CDM-configuration-creation-1-actual.png\u001b[39m\n    Diff: \u001b[33m/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/test-results/17-configurations-CDM-creation-CDM-configuration-creation/CDM-configuration-creation-1-diff.png\u001b[39m\n\nCall log:\n\u001b[2m  - expect.soft.toHaveScreenshot with timeout 120000ms\u001b[22m\n\u001b[2m    - verifying given screenshot expectation\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - 63238 pixels (ratio 0.07 of all image pixels) are different.\u001b[22m\n\u001b[2m  - waiting 100ms before taking screenshot\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - 1989 pixels (ratio 0.01 of all image pixels) are different.\u001b[22m\n\u001b[2m  - waiting 250ms before taking screenshot\u001b[22m\n\u001b[2m  - taking page screenshot\u001b[22m\n\u001b[2m    - disabled all CSS animations\u001b[22m\n\u001b[2m  - waiting for fonts to load...\u001b[22m\n\u001b[2m  - fonts loaded\u001b[22m\n\u001b[2m  - captured a stable screenshot\u001b[22m\n\u001b[2m  - 61267 pixels (ratio 0.07 of all image pixels) are different.\u001b[22m\n\n    at /Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/tests/17-configurations/CDM-creation.spec.ts:339:29\n    at /Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/tests/17-configurations/CDM-creation.spec.ts:333:3",
+        "snippet": "\u001b[0m \u001b[90m 337 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'Preview'\u001b[39m })\u001b[33m.\u001b[39mclick()\n \u001b[90m 338 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m'JSON Configuration Preview'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 339 |\u001b[39m     \u001b[36mawait\u001b[39m expect\u001b[33m.\u001b[39msoft(page)\u001b[33m.\u001b[39mtoHaveScreenshot({ maxDiffPixels\u001b[33m:\u001b[39m \u001b[35m100\u001b[39m })\n \u001b[90m     |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 340 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'Close'\u001b[39m })\u001b[33m.\u001b[39mclick()\n \u001b[90m 341 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'Save & Activate'\u001b[39m })\u001b[33m.\u001b[39mclick()\n \u001b[90m 342 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'button'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[32m'OK'\u001b[39m })\u001b[33m.\u001b[39mclick()\u001b[0m",
+        "rawStatus": "failed",
+        "tags": [],
+        "type": "e2e",
+        "filePath": "/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/tests/17-configurations/CDM-creation.spec.ts",
+        "retries": 0,
+        "flaky": false,
+        "steps": [
+          {
+            "name": "Create a new CDM configuration",
+            "status": "passed"
+          },
+          {
+            "name": "Placeholder mapping",
+            "status": "passed"
+          },
+          {
+            "name": "Data Model Setting: Basic Data",
+            "status": "passed"
+          },
+          {
+            "name": "Data Model Setting: Defined Interactions",
+            "status": "passed"
+          },
+          {
+            "name": "Validate the CDM configuration",
+            "status": "failed"
+          },
+          {
+            "name": "Create PA Config",
+            "status": "passed"
+          },
+          {
+            "name": "Update dataset",
+            "status": "passed"
+          },
+          {
+            "name": "Create duplication of interaction",
+            "status": "passed"
+          },
+          {
+            "name": "Display Duplication in PA Config",
+            "status": "passed"
+          },
+          {
+            "name": "Verify Duplication in Cohort",
+            "status": "passed"
+          },
+          {
+            "name": "Removide Duplice Definitions",
+            "status": "passed"
+          },
+          {
+            "name": "Update PA Configuration",
+            "status": "passed"
+          },
+          {
+            "name": "CDM configure ducplication",
+            "status": "failed"
+          }
+        ],
+        "suite": "17-configurations/CDM-creation.spec.ts",
+        "attachments": [
+          {
+            "name": "CDM-configuration-creation-1-expected.png",
+            "contentType": "image/png",
+            "path": "/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/tests/17-configurations/CDM-creation.spec.ts-snapshots/CDM-configuration-creation-1-darwin.png"
+          },
+          {
+            "name": "CDM-configuration-creation-1-actual.png",
+            "contentType": "image/png",
+            "path": "/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/test-results/17-configurations-CDM-creation-CDM-configuration-creation/CDM-configuration-creation-1-actual.png"
+          },
+          {
+            "name": "CDM-configuration-creation-1-diff.png",
+            "contentType": "image/png",
+            "path": "/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/test-results/17-configurations-CDM-creation-CDM-configuration-creation/CDM-configuration-creation-1-diff.png"
+          },
+          {
+            "name": "screenshot",
+            "contentType": "image/png",
+            "path": "/Users/zhi.mindata4life-asia.care/Documents/Projects/d2e/tests/e2e/test-results/17-configurations-CDM-creation-CDM-configuration-creation/test-failed-1.png"
+          }
+        ],
+        "stdout": [
+          "Proceeding to create new configuration\n",
+          "Retrying to click TestConfig101... \u001b[33mfalse\u001b[39m\n",
+          "Retrying to click TestConfig101... \u001b[33mfalse\u001b[39m\n",
+          "Retrying to click TestConfig101... \u001b[33mfalse\u001b[39m\n",
+          "Proceeding to create new configuration\n",
+          "Proceeding to create new configuration\n"
+        ],
+        "stderr": [],
+        "extra": {
+          "annotations": []
+        }
+      }
+    ]
+  }
+}
