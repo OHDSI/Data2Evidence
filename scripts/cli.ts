@@ -31,8 +31,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.11.0-beta"; // Update this as needed
-  default_version: string = "0.11.0"; // Update this as needed default/base version
+  LATEST_DOCKER_TAG_NAME: string = "0.12.0-beta"; // Update this as needed
+  default_version: string = "0.12.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
