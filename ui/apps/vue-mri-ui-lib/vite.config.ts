@@ -2,8 +2,8 @@
 import { defineConfig, loadEnv } from 'vite'
 import type { PluginOption, UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import inject from '@rollup/plugin-inject'
 import path from 'path'
 
 // https://vitejs.dev/config/
@@ -41,12 +41,9 @@ export default defineConfig(({ command, mode }): UserConfig => {
           },
         },
       }),
-      nodePolyfills({
-        // Enable polyfills for stream-browserify and process (matching webpack fallback config)
-        globals: {
-          process: true,
-        },
-        protocolImports: true,
+      // Lightweight polyfill injection (matches webpack ProvidePlugin behavior)
+      inject({
+        process: 'process/browser',
       }),
       basicSsl({
         name: 'vue-mri-ui-lib-localhost',
@@ -76,6 +73,8 @@ export default defineConfig(({ command, mode }): UserConfig => {
         vue: path.resolve(__dirname, 'node_modules/vue'),
         // Use wrapper for D3 to avoid CommonJS issues with D3 v3
         d3: path.resolve(__dirname, './src/lib/d3.ts'),
+        // Stream polyfill for streamsaver (matching webpack fallback config)
+        stream: 'stream-browserify',
       },
     },
 
