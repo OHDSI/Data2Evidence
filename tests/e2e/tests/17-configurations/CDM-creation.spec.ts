@@ -348,6 +348,7 @@ test(TEST_NAME, async ({ page }) => {
     // configuration name
     await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).fill('CDM-Test101-PA')
     await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).press('Enter')
+    await expect(page.locator('.sapMRIPAConfigLargeText').filter({ hasText: 'CDM-Test101-PA' })).toBeVisible()
     await page.locator('.sapMRIPAConfigLargeText').filter({ hasText: 'CDM-Test101-PA' }).click()
     // filter cards
     await page.locator('[id="__filter2-icon"]').click()
