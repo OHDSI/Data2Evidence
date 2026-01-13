@@ -71,7 +71,7 @@ def test_get_config_list(setup):
 
 def test_get_frontend_config(setup):
     # When
-    frontend_config = PAConfig()._get_frontend_config('some_config_id', 'A')
+    frontend_config = PAConfig()._get_frontend_config('some_config_id', 'A', None)
 
     # Then
     assert frontend_config == mock_frontend_config
