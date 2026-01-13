@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from 'vite'
 import type { PluginOption, UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -201,6 +202,19 @@ export default defineConfig(({ command, mode }): UserConfig => {
     optimizeDeps: {
       include: ['vue', 'vuex', 'single-spa', 'axios', 'lodash', 'echarts', 'vue-multiselect'],
       exclude: ['d3'],
+    },
+
+    // Vitest configuration
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./vitest.setup.ts'],
+      include: ['src/**/__tests__/*.test.ts'],
+      coverage: {
+        reporter: ['text', 'html', 'cobertura'],
+        include: ['src/**/*.ts', 'src/**/*.vue'],
+        exclude: ['src/**/*.d.ts', 'src/**/__tests__/*.ts'],
+      },
     },
   }
 })

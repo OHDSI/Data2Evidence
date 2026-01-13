@@ -9,7 +9,7 @@
     <meta name="importmap-type" content="systemjs-importmap" />
     <link rel="icon" type="image/x-icon" href="/favicon-atlas.ico" />
     <script nonce="__NONCE__">
-      window.ENV_DATA = __ENV_DATA__
+      window.ENV_DATA = typeof __ENV_DATA__ !== 'undefined' ? __ENV_DATA__ : {}
     </script>
     <!--
       AUTH_CONFIG must be a regular script (not type="module") so it runs synchronously

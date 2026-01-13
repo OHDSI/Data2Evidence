@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import CohortUrlCodec from '../CohortUrlCodec'
 
 describe('CohortUrlCodec', () => {
@@ -241,18 +242,18 @@ describe('CohortUrlCodec', () => {
       // Mock clipboard API
       Object.assign(navigator, {
         clipboard: {
-          writeText: jest.fn().mockResolvedValue(undefined),
+          writeText: vi.fn().mockResolvedValue(undefined),
         },
       })
 
       // Mock console methods
-      jest.spyOn(console, 'log').mockImplementation(() => {})
-      jest.spyOn(console, 'warn').mockImplementation(() => {})
-      jest.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'log').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
     })
 
     afterEach(() => {
-      jest.restoreAllMocks()
+      vi.restoreAllMocks()
     })
 
     it('returns null when no bookmark data exists', () => {
