@@ -225,7 +225,7 @@ export class QueryGenSvc {
         switch (this.queryType) {
             case "patientdetail":
                 let interactionId: string = "_interaction_id";
-                for (const Key of Object.keys(
+                for (const [Key] of Object.entries(
                     this.config.patient.interactions
                 )) {
                     let attributeKeys = Object.keys(
