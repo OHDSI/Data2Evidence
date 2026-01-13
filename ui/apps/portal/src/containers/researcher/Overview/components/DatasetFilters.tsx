@@ -128,8 +128,8 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
               label={getText(i18nKeys.DATASET_FILTERS__ENTER_RANGE)}
               min={filterScopes?.age.min}
               max={filterScopes?.age.max}
-              from={formData.age.from || 0}
-              to={formData.age.to || 0}
+              from={formData.age?.from || 0}
+              to={formData.age?.to || 0}
               onChange={(from: number, to: number) => {
                 setFilterByAge(true);
                 handleFormDataChange({ age: { from, to } });
@@ -146,8 +146,8 @@ export const DatasetFilters: FC<DatasetFiltersProps> = ({ onChange }) => {
               label={getText(i18nKeys.DATASET_FILTERS__YEAR_RANGE)}
               min={filterScopes?.observationYear.min}
               max={filterScopes?.observationYear.max}
-              from={formData.observationYear.from || 0}
-              to={formData.observationYear.to || 0}
+              from={formData.observationYear?.from || 0}
+              to={formData.observationYear?.to || 0}
               onChange={(from: number, to: number) => {
                 setFilterByObsYear(true);
                 handleFormDataChange({ observationYear: { from, to } });
