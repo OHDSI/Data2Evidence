@@ -124,7 +124,7 @@ survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
         sql_query <- paste0(
             "SELECT * FROM ", resultsDatabaseSchema, ".cs_survival_results WHERE cdm_name = '", input$dataset, "' OR cdm_name IS NULL"
         )
-        #print(paste("Executing SQL query:\n", sql_query))
+        
         cs_data <- DatabaseConnector::querySql(
             conn,
             sql_query
@@ -154,10 +154,10 @@ survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
 
         # Plot based on detected strata
         if (!is.null(facet_var)) {
-            #print(paste("Plotting with facet:", facet_var, "\n"))
+            
             CohortSurvival::plotSurvival(cs_data, facet = facet_var)
         } else {
-            #cat("\nPlotting without stratification\n")
+            
             surv_plot <- CohortSurvival::plotSurvival(cs_data)
         }
     })
