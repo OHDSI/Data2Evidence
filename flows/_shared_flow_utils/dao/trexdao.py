@@ -156,6 +156,14 @@ class TrexDao(DaoBase):
     def get_table_names(self, schema: str, include_views=False) -> list[str]:
         pass
 
+    def get_temp_table_names(self, schema):
+        sql = pg_sql.SQL("""
+            SELECT database_name, schema_name, table_name 
+            FROM duckdb_tables() 
+            WHERE temporary = true;
+        """)
+        result = self.execute_sql(sql, fetch=True)
+        return [row[0] for row in result]
 
     def get_columns(self, schema: str, table: str) -> list[str]:
         sql = pg_sql.SQL("""
