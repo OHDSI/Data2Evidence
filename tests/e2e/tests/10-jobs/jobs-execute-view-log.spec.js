@@ -7,7 +7,8 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(300000) // Set timeout to 5 minutes
   // Jobs: Execute Job - Create DQD job with name dqd_demo
-  await page.goto('https://localhost:443/d2e/portal')
+  
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
