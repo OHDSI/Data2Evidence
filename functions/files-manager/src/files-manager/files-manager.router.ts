@@ -31,7 +31,7 @@ export class FilesManagerRouter {
         this.logger.info(`Download file by userDataId: ${userDataId}`);
 
         try {
-          const user = this.filesManagerService.getUserById(userDataId);
+          const user = await this.filesManagerService.getUserById(userDataId);
 
           if (!user) {
             return res
@@ -89,7 +89,7 @@ export class FilesManagerRouter {
         this.logger.info(`Delete file by userDataId: ${userDataId}`);
 
         try {
-          const user = this.filesManagerService.getUserById(userDataId);
+          const user = await this.filesManagerService.getUserById(userDataId);
 
           if (!user) {
             return res
