@@ -57,14 +57,14 @@ class _StarboardApi():
         response = await pyfetch(url=url, method="POST", body=json.dumps(data), headers=headers, **kwargs)
         return response
 
-    async def _put(self, path: str, json=None, data=None) -> FetchResponse:
+    async def _put(self, path: str, data=None) -> FetchResponse:
         """Request HTTP PUT method"""
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'PUT {url}')
         headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
         response = await pyfetch(
-            url=url, method="PUT", body=json, headers=headers)
+            url=url, method="PUT", body=json.dumps(data), headers=headers)
         return response
 
     async def _delete(self, path: str, **kwargs) -> FetchResponse:
@@ -181,9 +181,9 @@ class _AuthApi(_StarboardApi):
         except Exception as e:
             print(e)
 
-    def _post(self, path: str, json=None, **kwargs):
+    async def _post(self, path: str, data=None, **kwargs):
         try:
-            response = super()._post(path, json, **kwargs)
+            response = await super()._post(path, data=data, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
@@ -191,9 +191,9 @@ class _AuthApi(_StarboardApi):
         except Exception as e:
             print(e)
 
-    def _put(self, path: str, json=None, data=None):
+    async def _put(self, path: str, data=None):
         try:
-            response = super()._put(path, json=json, data=data)
+            response = await super()._put(path, data=data)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
@@ -201,9 +201,9 @@ class _AuthApi(_StarboardApi):
         except Exception as e:
             print(e)
 
-    def _delete(self, path: str, **kwargs):
+    async def _delete(self, path: str, **kwargs):
         try:
-            response = super()._delete(path, **kwargs)
+            response = await super()._delete(path, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
