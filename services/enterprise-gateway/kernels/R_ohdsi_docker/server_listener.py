@@ -224,7 +224,6 @@ def get_server_request(sock):
             hasattr(e, 'errno') and e.errno == errno.EWOULDBLOCK
         ):
             print("[DEBUG] get_server_request: timeout or would block")
-            pass
         else:
             print(f"[ERROR] get_server_request: exception - {e}")
             raise e
