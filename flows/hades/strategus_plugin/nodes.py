@@ -1433,8 +1433,11 @@ def getRCdmExecutionSettings(settings) -> str:
 def remove_tmp_tables(dbdao: DBDao, schema_name: str):
     logger = Logger()
     logger.info(f'Cleaning TEMP tables')
-    tmp_tables = dbdao.get_temp_table_names(schema_name)
-    logger.info(f'Found {len(tmp_tables)} TEMP tables to clean')
-    for table in tmp_tables:
-        logger.info(f'Dropping TEMP table: {schema_name}.{table}')
-        dbdao.execute_sql(f'DROP TABLE {schema_name}.{table}')
+    try:
+        tmp_tables = dbdao.get_temp_table_names(schema_name)
+        logger.info(f'Found {len(tmp_tables)} TEMP tables to clean')
+        for table in tmp_tables:
+            logger.info(f'Dropping TEMP table: {schema_name}.{table}')
+            dbdao.execute_sql(f'DROP TABLE {schema_name}.{table}')
+    except Exception as e:
+        logger.error(f'Error cleaning TEMP tables: {str(e)}')
