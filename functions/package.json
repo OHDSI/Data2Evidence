@@ -339,7 +339,7 @@
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 60,
+          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": "${ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS:-20}",
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
           "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
           "LOCAL_DEBUG": "false",
@@ -511,7 +511,7 @@
         "demo": {
           "DEMO__DB_CODE": "demo_database",
           "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-          "DEMO__DB_RESULT_SCHEMA": "demo_cdm",
+          "DEMO__DB_RESULT_SCHEMA": "demo_cdm_results",
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",

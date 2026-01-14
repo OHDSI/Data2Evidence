@@ -31,8 +31,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.10.0-beta";
-  default_version: string = "0.10.0";
+  LATEST_DOCKER_TAG_NAME: string = "0.11.0-beta"; // Update this as needed
+  default_version: string = "0.11.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
@@ -90,6 +90,7 @@ class D2ECli {
     process.env.PLUGINS_IMAGE_TAG = this.PLUGINS_IMAGE_TAG;
     process.env.DOCKER_TAG_NAME = this.DOCKER_TAG_NAME;
     process.env.PLUGINS_API_VERSION = this.PLUGINS_API_VERSION;
+    this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
   }
 
   async write_env_file_variable(options: CliOptions): Promise<void> {
@@ -647,6 +648,30 @@ class D2ECli {
       });
     });
   }
+  updateTag() {
+    dotenvConfig({ path: this.ENVFILE });
+    this.load_env_variables();
+    const kernelPath = path.join(
+      this.node_modules_path,
+      "services/enterprise-gateway/kernels/R_ohdsi_docker/kernel.json"
+    );
+    console.log(`Updating tag of R Jupyter Kernel at ${kernelPath}`);
+    if (!fs.existsSync(kernelPath)) {
+      console.error(`Error: kernel.json not found at ${kernelPath}`);
+      process.exit(1);
+    }
+    const rawData = fs.readFileSync(kernelPath, "utf-8");
+    const data = JSON.parse(rawData);
+    const imageName = data.metadata.process_proxy.config.image_name;
+    console.log(`Original image name: ${imageName}`);
+    let DOCKER_IMAGE_PREFIX =
+      process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
+    const newImage = `${DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
+    console.log(`Updating image name to: ${newImage}`);
+    data.metadata.process_proxy.config.image_name = newImage;
+    fs.writeFileSync(kernelPath, JSON.stringify(data, null, 2));
+    console.log(`Completed successfully.`);
+  }
 
   // Commands
   setup_commands(): void {
@@ -715,6 +740,14 @@ class D2ECli {
         console.log(
           "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
         );
+        console.log("\nNote that SAP HANA JDBC driver is required. Please:");
+        console.log(
+          "  1. Download ngdbc-latest.jar from https://tools.hana.ondemand.com/additional/ngdbc-latest.jar"
+        );
+        console.log(
+          "  2. Create a tmp/drivers/ directory in your current working directory"
+        );
+        console.log("  3. Place the downloaded .jar file in tmp/drivers/");
         let license_agreement: string;
         if (process.env.ACCEPT_SAP_LICENSE) {
           console.log(
@@ -737,6 +770,7 @@ class D2ECli {
           console.log("License not accepted. Aborting HANA initialization.");
           return;
         }
+        const cwd = process.cwd();
         const hanapw =
           process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
@@ -744,6 +778,9 @@ class D2ECli {
           HANA_SYSTEM_PASSWORD: this.hanapw,
           INSTALL_SQLALCHEMY:
             "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${
+            this.PROJECT_NAME || "d2e"
+          }_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
@@ -1029,6 +1066,14 @@ class D2ECli {
         this.getnoproxy();
       });
     (getnoproxy_cmd as any)._hidden = true;
+    const update_tag = this.program
+      .command("updatetag")
+      .description("Update image tags for d2e services")
+      .action(async () => {
+        console.log("Updating image tags for patch/release...");
+        this.updateTag();
+      });
+    (update_tag as any)._hidden = true;
   }
 
   run(): void {
@@ -1037,10 +1082,11 @@ class D2ECli {
     const options = this.program.opts();
     this.ENVFILE = options.envFile ?? ".env";
     this.DEFAULT_PASSWORD_LENGTH = 30;
-    this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
     this.CADDY__D2E__PUBLIC_FQDN =
-      process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
+      process.env.CADDY__D2E__PUBLIC_FQDN ||
+      process.env.CADDY__ALP__PUBLIC_FQDN ||
+      "localhost";
     this.TLS__CADDY_DIRECTIVE =
       process.env.TLS__CADDY_DIRECTIVE || "tls internal";
     this.version = options?.version ?? this.default_version;

@@ -386,6 +386,58 @@ function getStandardJoin(
     return sQuery;
 }
 
+const EMPTY_SEARCH_PLACEHOLDER = "__EMPTY_SEARCH__";
+const AND_SEPARATOR = " AND ";
+
+/**
+ * Removes empty search query conditions from SQL string.
+ * Finds the EMPTY_SEARCH_PLACEHOLDER and removes the entire AND clause containing it.
+ *
+ * Examples of patterns removed:
+ * - AND (@REF.CONCEPT_NAME) LIKE_REGEXPR '__EMPTY_SEARCH__' FLAG 'i'
+ * - AND JARO_SIMILARITY(lower(R.CONCEPT_NAME), lower('__EMPTY_SEARCH__')) >= 0.65
+ */
+function removeEmptySearchCondition(sql: string): string {
+    const placeholderIndex = sql.indexOf(EMPTY_SEARCH_PLACEHOLDER);
+
+    if (placeholderIndex === -1) {
+        return sql;
+    }
+
+    // Find the preceding "AND" (case-insensitive)
+    const beforePlaceholder = sql.substring(0, placeholderIndex);
+    const andIndex = beforePlaceholder.toUpperCase().lastIndexOf(AND_SEPARATOR);
+
+    if (andIndex === -1) {
+        return sql;
+    }
+
+    // Find the end of the condition: next " AND " or end of WHERE clause
+    const afterAnd = sql.substring(andIndex + AND_SEPARATOR.length);
+    const upperAfterAnd = afterAnd.toUpperCase();
+
+    // Look for next AND, ORDER BY, GROUP BY, or end of string
+    const nextAndIndex = upperAfterAnd.indexOf(AND_SEPARATOR);
+    const orderByIndex = upperAfterAnd.indexOf(" ORDER BY");
+    const groupByIndex = upperAfterAnd.indexOf(" GROUP BY");
+
+    // Find the earliest terminator
+    const terminators = [nextAndIndex, orderByIndex, groupByIndex]
+        .filter(i => i !== -1);
+
+    let endOffset: number;
+    if (terminators.length === 0) {
+        // No terminator found, remove to end
+        endOffset = afterAnd.length;
+    } else {
+        endOffset = Math.min(...terminators);
+    }
+
+    // Remove from "AND" to the end of the condition
+    const endIndex = andIndex + AND_SEPARATOR.length + endOffset;
+    return sql.substring(0, andIndex) + sql.substring(endIndex);
+}
+
 function getDistinctValuesFromReference(
     configAttrObj,
     suggestionsLimit: number,
@@ -402,7 +454,7 @@ function getDistinctValuesFromReference(
 
     let placeholderAliasMap = <PholderTableMapType>{
         "@REF": "R",
-        "@SEARCH_QUERY": searchQuery,
+        "@SEARCH_QUERY": searchQuery || EMPTY_SEARCH_PLACEHOLDER,
         "@RESULT_COHORT_DEF": "RCD",
         "@CDM_COHORT_DEF": "CCD"
     };
@@ -434,6 +486,13 @@ function getDistinctValuesFromReference(
         aliasedRefExpression,
         aliasedRefFilter
     );
+
+    // Remove empty search query conditions when searchQuery is empty
+    // The placeholder __EMPTY_SEARCH__ is used to identify the AND clause to remove
+    if (!searchQuery) {
+        sQuery.queryString = removeEmptySearchCondition(sQuery.queryString);
+    }
+
     return sQuery;
 }
 
