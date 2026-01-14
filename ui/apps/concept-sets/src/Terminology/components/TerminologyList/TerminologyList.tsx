@@ -942,11 +942,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
           page={page}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-            onConceptClick(null);
             handleChangeRowsPerPage(event);
           }}
           onPageChange={(event, page) => {
-            onConceptClick(null);
             handleChangePage(event, page);
           }}
           ActionsComponent={TablePaginationActions}
