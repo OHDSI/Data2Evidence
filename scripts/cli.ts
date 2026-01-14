@@ -1039,6 +1039,8 @@ class D2ECli {
         "Load d2e services. Requires d2e init and d2e setup to be run."
       )
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
         this.setupdemo();
       });
 
@@ -1048,12 +1050,16 @@ class D2ECli {
         "Load d2e services for hana. Requires d2e init and d2e setup to be run."
       )
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
         this.setupdemohana();
       });
     const checkflow_cmd = this.program
       .command("checkflow")
       .description("Check setupdemo flow")
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
         console.log("Checking setupdemo flow...");
         this.checkflow();
       });
