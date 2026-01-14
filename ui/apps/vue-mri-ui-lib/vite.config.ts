@@ -104,7 +104,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
     build: {
       outDir: isProduction ? path.resolve(__dirname, '../../resources/mri') : path.resolve(__dirname, 'dist'),
       emptyOutDir: true,
-      sourcemap: true,
+      sourcemap: !isProduction, // Disable source maps in production to reduce memory usage
       minify: isProduction,
       // Copy public folder contents to outDir
       copyPublicDir: true,
