@@ -3,7 +3,6 @@ import { defineConfig, loadEnv } from 'vite'
 import type { PluginOption, UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import basicSsl from '@vitejs/plugin-basic-ssl'
-import inject from '@rollup/plugin-inject'
 import path from 'path'
 
 // https://vitejs.dev/config/
@@ -41,10 +40,6 @@ export default defineConfig(({ command, mode }): UserConfig => {
           },
         },
       }),
-      // Lightweight polyfill injection (matches webpack ProvidePlugin behavior)
-      inject({
-        process: 'process/browser',
-      }),
       basicSsl({
         name: 'vue-mri-ui-lib-localhost',
         domains: ['localhost'],
@@ -64,6 +59,11 @@ export default defineConfig(({ command, mode }): UserConfig => {
       __VUE_OPTIONS_API__: JSON.stringify(true),
       __VUE_PROD_DEVTOOLS__: JSON.stringify(false),
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+      // Process env replacements (lightweight alternative to vite-plugin-node-polyfills)
+      'process.env.NODE_ENV': JSON.stringify(mode),
+      'process.env.VUE_APP_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL || ''),
+      // Global process object shim for libraries that check process.env
+      'process.env': JSON.stringify({}),
     },
 
     resolve: {
