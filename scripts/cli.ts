@@ -1057,10 +1057,11 @@ class D2ECli {
     this.program.parseOptions(process.argv);
     const options = this.program.opts();
     this.ENVFILE = options.envFile ?? ".env";
+    this.version = options?.version ?? this.default_version;
     if (fs.existsSync(this.ENVFILE)) {
       dotenvConfig({ path: this.ENVFILE });
-      this.load_env_variables();
     }
+    this.load_env_variables();
     this.DEFAULT_PASSWORD_LENGTH = 30;
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
     this.CADDY__D2E__PUBLIC_FQDN =
@@ -1069,7 +1070,6 @@ class D2ECli {
       "localhost";
     this.TLS__CADDY_DIRECTIVE =
       process.env.TLS__CADDY_DIRECTIVE || "tls internal";
-    this.version = options?.version ?? this.default_version;
     this.CADDY__CONFIG = process.env.CADDY__CONFIG || "./deploy/caddy-config";
     this.port = options.port || process.env.PORT || "";
     this.program.parse(process.argv);
