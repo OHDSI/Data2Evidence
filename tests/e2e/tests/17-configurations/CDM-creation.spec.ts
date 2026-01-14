@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { Locator, test, expect } from '@playwright/test'
 
 const TEST_NAME = 'CDM configuration creation'
 const SHOULD_SKIP = false
@@ -17,6 +17,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
 
+  // This function is used to click on a test configuration by its name
   async function clickTestConfig(testConfigname: string) {
     await page.reload()
     await expect(page.getByText('Clinical Data Model')).toBeVisible({ timeout: 2000 })
@@ -28,30 +29,45 @@ test(TEST_NAME, async ({ page }) => {
       await expect(testConfig).toBeVisible({ timeout: 500 })
       await testConfig.click({ position: { x: 100, y: 20 } })
       await expect(page.getByText(`${testConfigname} - Version`)).toBeVisible({ timeout: 500 })
-      await page.getByText('Active', { exact: true }).dblclick()
     } catch (error) {
       throw new Error(`Failed to click on test config ${testConfigname}: ${error}`)
     }
   }
 
+  // This function is used to scroll an element into view, playwright's version of this scrollIntoViewIfNeeded() results in flaky tests
+  async function scrollElementIntoView(locator: Locator, timeout: number = 3000): Promise<void> {
+    await locator.waitFor({ state: 'attached', timeout })
+    await locator.evaluate(
+      element => {
+        element.scrollIntoView({ block: 'center' })
+      },
+      { timeout }
+    )
+  }
+
+  // This function is used to delete existing test configuration if exists
   async function clearTestConfigIfExists(testConfigname: string) {
-    if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
-      await page.getByRole('button', { name: 'Back' }).click()
-    }
-    const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
     try {
-      await expect(testConfig).toBeVisible({ timeout: 2000 })
+      if (await page.getByRole('button', { name: 'Back' }).isVisible({ timeout: 500 })) {
+        await page.getByRole('button', { name: 'Back' }).click()
+      }
+      const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
+      await scrollElementIntoView(testConfig)
+      await expect(testConfig).toBeVisible({ timeout: 1000 })
       console.log(`Deleting existing ${testConfigname}`, await testConfig.isVisible())
       await testConfig.getByText('Delete').click()
+      await expect(page.getByLabel('Are you sure you want to')).toBeVisible({ timeout: 1000 })
       await page.getByLabel('Are you sure you want to').getByRole('button', { name: 'Delete' }).click()
       await page.getByRole('button', { name: 'OK' }).click()
+      await expect(testConfig).not.toBeVisible({ timeout: 1000 })
     } catch (error) {
+      console.log(`Error when deleting ${testConfigname} found: ${error}`)
     } finally {
       console.log(`${testConfigname} does not exist, continue creating new one`)
     }
   }
 
-  await test.step('Create a new CDM configuration', async () => {
+  await test.step('Pre Cleanup', async () => {
     await page
       .locator('div')
       .filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ })
@@ -59,7 +75,11 @@ test(TEST_NAME, async ({ page }) => {
       .click()
     await expect(page.getByText('Clinical Data Model')).toBeVisible()
     await clearTestConfigIfExists('TestConfig101')
-    await expect(page.getByText('TestConfig101')).not.toBeVisible({ timeout: 1000 })
+    await clearTestConfigIfExists('TestConfig102')
+    await clearTestConfigIfExists('TestConfig103')
+  })
+
+  await test.step('Create a new CDM configuration', async () => {
     await page.getByRole('button', { name: 'Create Configuration' }).click()
     await page.getByRole('textbox', { name: 'Title Enter name for' }).fill('TestConfig101')
     await expect(page.getByRole('button', { name: 'Create', exact: true })).toBeVisible()
@@ -379,8 +399,10 @@ test(TEST_NAME, async ({ page }) => {
     ) {
       await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).fill('CDM-Test101-PA')
       await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).press('Enter', { delay: 100 })
+      await page.locator('ul > li').filter({ hasText: 'Creator' }).click()
+      retries++
     }
-    await expect(page.getByText('CDM-Test101-PA')).toBeVisible({ timeout: 1000 })
+    await expect(page.getByText('CDM-Test101-PA').last()).toBeVisible({ timeout: 1000 })
     // filter cards
     await page.locator('[id="__filter2-icon"]').click()
     await expect(
@@ -452,6 +474,7 @@ test(TEST_NAME, async ({ page }) => {
       retries < 3
     ) {
       clickTestConfig('TestConfig101')
+      await page.getByText('Active', { exact: true }).dblclick()
       retries++
     }
 
@@ -532,7 +555,8 @@ test(TEST_NAME, async ({ page }) => {
       !(await page.getByRole('link', { name: 'Defined Interactions (2)' }).isVisible({ timeout: 500 })) &&
       retries < 3
     ) {
-      clickTestConfig('TestConfig101')
+      await clickTestConfig('TestConfig101')
+      await page.getByText('Active', { exact: true }).dblclick()
       retries++
     }
     await page.getByRole('link', { name: 'Defined Interactions (2)' }).click()
@@ -543,7 +567,9 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByLabel('Delete').getByRole('button', { name: 'Delete' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
     await page.getByRole('button', { name: 'OK' }).click()
-    await page.reload()
+    await clickTestConfig('TestConfig101')
+    await page.getByText('Active', { exact: true }).dblclick()
+    await expect(page.getByRole('link', { name: 'Defined Interactions (1)' })).toBeVisible()
   })
 
   await test.step('Update PA Configuration', async () => {
@@ -575,8 +601,8 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ })
       .getByTestId('button')
       .click()
-    await clearTestConfigIfExists('TestConfig102')
-    await clearTestConfigIfExists('TestConfig103')
+    await expect(page.getByText('TestConfig102').first()).not.toBeVisible({ timeout: 1000 })
+    await expect(page.getByText('TestConfig103').first()).not.toBeVisible({ timeout: 1000 })
     await page.reload()
     await page
       .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
@@ -614,7 +640,7 @@ test(TEST_NAME, async ({ page }) => {
       .last()
       .filter({ hasText: 'Active' })
       .getByText('Export')
-    await exp.scrollIntoViewIfNeeded()
+    await scrollElementIntoView(exp)
     const download2Promise = page.waitForEvent('download', { timeout: 10000 })
     await exp.click()
     const download2 = await download2Promise
@@ -636,27 +662,10 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Back' }).click()
   })
 
-  await test.step('Cleanup', async () => {
-    await page
-      .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
-      .filter({ hasText: 'TestConfig101' })
-      .getByText('Delete')
-      .click()
-    await page.getByLabel('Are you sure you want to').getByRole('button', { name: 'Delete' }).click()
-    await page.getByRole('button', { name: 'OK' }).click()
-    await page
-      .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
-      .filter({ hasText: 'TestConfig102' })
-      .getByText('Delete')
-      .click()
-    await page.getByLabel('Are you sure you want to').getByRole('button', { name: 'Delete' }).click()
-    await page.getByRole('button', { name: 'OK' }).click()
-    await page
-      .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
-      .filter({ hasText: 'TestConfig103' })
-      .getByText('Delete')
-      .click()
-    await page.getByLabel('Are you sure you want to').getByRole('button', { name: 'Delete' }).click()
-    await page.getByRole('button', { name: 'OK' }).click()
+  await test.step('Post Cleanup', async () => {
+    await page.reload()
+    await clearTestConfigIfExists('TestConfig101')
+    await clearTestConfigIfExists('TestConfig102')
+    await clearTestConfigIfExists('TestConfig103')
   })
 })
