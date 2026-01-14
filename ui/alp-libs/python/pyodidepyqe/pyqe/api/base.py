@@ -180,6 +180,7 @@ class _AuthApi(_StarboardApi):
             return e.response
         except Exception as e:
             print(e)
+            raise
 
     async def _post(self, path: str, data=None, **kwargs):
         try:
@@ -190,6 +191,7 @@ class _AuthApi(_StarboardApi):
             return e.response
         except Exception as e:
             print(e)
+            raise
 
     async def _put(self, path: str, data=None):
         try:
@@ -200,6 +202,7 @@ class _AuthApi(_StarboardApi):
             return e.response
         except Exception as e:
             print(e)
+            raise
 
     async def _delete(self, path: str, **kwargs):
         try:
@@ -210,6 +213,7 @@ class _AuthApi(_StarboardApi):
             return e.response
         except Exception as e:
             print(e)
+            raise
 
     def _validate_response(self, response: requests.Response) -> None:
         url = response.request.url
