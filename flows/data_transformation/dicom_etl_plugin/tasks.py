@@ -61,7 +61,6 @@ def ingest_eav(mapped_concepts_df: pd.DataFrame, image_occurrence_df: pd.DataFra
                image_feature_df: pd.DataFrame, schema_name: str, dbdao: DBDao):
     table_name = "dicom_file_metadata"
     logger = get_run_logger()
-    eav_table_id = dbdao.get_next_record_id(schema_name, table_name, "metadata_id")
 
     logger.info(
         f"{len(mapped_concepts_df)} records to be ingested into '{schema_name}.{table_name}' table..")
