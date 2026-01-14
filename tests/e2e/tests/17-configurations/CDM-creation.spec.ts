@@ -17,26 +17,37 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
 
-  async function clickTestConfig(locator: any) {
+  async function clickTestConfig(testConfigname: string) {
+    await page.reload()
+    await expect(page.getByText('Clinical Data Model')).toBeVisible({ timeout: 2000 })
     if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
       await page.getByRole('button', { name: 'Back' }).click()
     }
-    await locator.waitFor({ state: 'attached' })
-    await locator.scrollIntoViewIfNeeded()
-    await locator.click({ position: { x: 100, y: 20 } })
-    await page.getByText('Active', { exact: true }).dblclick()
+    const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
+    try {
+      await expect(testConfig).toBeVisible({ timeout: 500 })
+      await testConfig.click({ position: { x: 100, y: 20 } })
+      await expect(page.getByText(`${testConfigname} - Version`)).toBeVisible({ timeout: 500 })
+      await page.getByText('Active', { exact: true }).dblclick()
+    } catch (error) {
+      throw new Error(`Failed to click on test config ${testConfigname}: ${error}`)
+    }
   }
 
   async function clearTestConfigIfExists(testConfigname: string) {
-    const TestConfig = page.locator('ul > li').filter({ hasText: testConfigname })
+    if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
+      await page.getByRole('button', { name: 'Back' }).click()
+    }
+    const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
     try {
-      await expect(TestConfig).toBeVisible({ timeout: 2000 })
-      await TestConfig.getByText('Delete').click()
+      await expect(testConfig).toBeVisible({ timeout: 2000 })
+      console.log(`Deleting existing ${testConfigname}`, await testConfig.isVisible())
+      await testConfig.getByText('Delete').click()
       await page.getByLabel('Are you sure you want to').getByRole('button', { name: 'Delete' }).click()
       await page.getByRole('button', { name: 'OK' }).click()
     } catch (error) {
     } finally {
-      console.log('Proceeding to create new configuration')
+      console.log(`${testConfigname} does not exist, continue creating new one`)
     }
   }
 
@@ -48,17 +59,13 @@ test(TEST_NAME, async ({ page }) => {
       .click()
     await expect(page.getByText('Clinical Data Model')).toBeVisible()
     await clearTestConfigIfExists('TestConfig101')
+    await expect(page.getByText('TestConfig101')).not.toBeVisible({ timeout: 1000 })
     await page.getByRole('button', { name: 'Create Configuration' }).click()
     await page.getByRole('textbox', { name: 'Title Enter name for' }).fill('TestConfig101')
     await expect(page.getByRole('button', { name: 'Create', exact: true })).toBeVisible()
     await page.getByRole('button', { name: 'Create', exact: true }).dblclick()
-    let retries = 0
-    while (
-      (await page.getByRole('button', { name: 'Create', exact: true }).isVisible({ timeout: 500 })) &&
-      retries < 3
-    ) {
+    while (await page.getByRole('button', { name: 'Create', exact: true }).isVisible({ timeout: 500 })) {
       await page.getByRole('button', { name: 'Create', exact: true }).dblclick({ timeout: 500 })
-      retries++
     }
   })
 
@@ -127,8 +134,14 @@ test(TEST_NAME, async ({ page }) => {
       await page.locator('[id="__input16-__list39-0-inner"]').fill('$$VOCAB_SCHEMA$$."concept"')
       await page.locator('[id="__input16-__list39-0-inner"]').press('Enter')
       await expect(page.locator('[id="__select18-__list39-0-arrow"]')).toBeEnabled()
-      await page.waitForTimeout(100)
-      await page.locator('[id="__select18-__list39-0-arrow"]').click()
+      while (
+        !(await page
+          .getByRole('option', { name: '"vocabulary_id"' })
+          .isVisible({ timeout: 100 })
+          .catch(() => false))
+      ) {
+        await page.locator('[id="__select18-__list39-0-arrow"]').click()
+      }
       await page.getByRole('option', { name: '"vocabulary_id"' }).click()
       await page.locator('[id="__select19-__list39-0-arrow"]').click()
       await page.getByRole('option', { name: '"concept_code"' }).last().click()
@@ -356,10 +369,18 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Add Configuration' }).click()
     await page.locator('.sapMRIPAConfigLargeText').first().click()
     // configuration name
-    await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).fill('CDM-Test101-PA')
-    await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).press('Enter', { delay: 100 })
-    await page.getByText('CDM-Test101-PA').waitFor({ state: 'visible', timeout: 5000 })
-    await page.locator('.sapMRIPAConfigLargeText').filter({ hasText: 'CDM-Test101-PA' }).click()
+    let retries = 0
+    while (
+      !(await page
+        .getByText('CDM-Test101-PA')
+        .isVisible({ timeout: 500 })
+        .catch(() => false)) &&
+      retries < 3
+    ) {
+      await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).fill('CDM-Test101-PA')
+      await page.getByRole('textbox', { name: 'Name : Enter Configuration' }).press('Enter', { delay: 100 })
+    }
+    await expect(page.getByText('CDM-Test101-PA')).toBeVisible({ timeout: 1000 })
     // filter cards
     await page.locator('[id="__filter2-icon"]').click()
     await expect(
@@ -407,6 +428,7 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Update dataset', async () => {
+    await page.reload()
     await page.getByRole('link', { name: 'Datasets' }).click()
     await page.getByRole('row').filter({ hasText: 'Demo dataset' }).getByRole('combobox').click()
     await page.getByRole('option', { name: 'Update dataset' }).click()
@@ -424,16 +446,12 @@ test(TEST_NAME, async ({ page }) => {
       .click()
 
     // Click on TestConfig101 at center of the configuration name text, otherwise it misclicks on the first Configuration in the list
-    const testConfig101Item = page
-      .locator('li[role="option"]')
-      .filter({ has: page.locator('span.sapFfhCDMonfigLargeText:has-text("TestConfig101")') })
-
     let retries = 0
     while (
-      !(await page.getByRole('heading', { name: 'Defined Interactions (1)' }).isVisible({ timeout: 500 })) &&
+      !(await page.getByRole('link', { name: 'Defined Interactions (1)' }).isVisible({ timeout: 500 })) &&
       retries < 3
     ) {
-      clickTestConfig(testConfig101Item)
+      clickTestConfig('TestConfig101')
       retries++
     }
 
@@ -481,9 +499,6 @@ test(TEST_NAME, async ({ page }) => {
         .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
         .getByRole('checkbox')
         .setChecked(true)
-      // await page
-      //   .locator('[role="toolbar"]:has-text("Dups Condition Occurrence")')
-      //   .getByRole('checkbox').click()
       await page.waitForTimeout(500)
     }
     await page.getByRole('button', { name: 'Validate' }).click()
@@ -512,15 +527,12 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ })
       .getByTestId('button')
       .click()
-    const testConfig101Item = page
-      .locator('li[role="option"]')
-      .filter({ has: page.locator('span.sapFfhCDMonfigLargeText:has-text("TestConfig101")') })
     let retries = 0
     while (
       !(await page.getByRole('link', { name: 'Defined Interactions (2)' }).isVisible({ timeout: 500 })) &&
       retries < 3
     ) {
-      clickTestConfig(testConfig101Item)
+      clickTestConfig('TestConfig101')
       retries++
     }
     await page.getByRole('link', { name: 'Defined Interactions (2)' }).click()
@@ -531,6 +543,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByLabel('Delete').getByRole('button', { name: 'Delete' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
     await page.getByRole('button', { name: 'OK' }).click()
+    await page.reload()
   })
 
   await test.step('Update PA Configuration', async () => {
@@ -542,9 +555,9 @@ test(TEST_NAME, async ({ page }) => {
       .click()
     await page.reload()
     await page.locator('[id*="dataModelConfigurationsCombo-arrow"]').click()
-    const TestCf = page.getByText('TestConfig101')
-    await expect(TestCf).toBeVisible()
-    await TestCf.click()
+    const testConfig101Item = page.getByText('TestConfig101')
+    await expect(testConfig101Item).toBeVisible()
+    await testConfig101Item.click()
     await page.getByText('CDM-Test101-PA', { exact: true }).click()
     await page.locator('[id="__filter0-icon"]').click()
     await page.waitForTimeout(500)
@@ -590,16 +603,12 @@ test(TEST_NAME, async ({ page }) => {
       .first()
     let retries = 0
     while (!(await testConfig102Item.getByText('Autosave').isVisible()) && retries < 3) {
-      clickTestConfig(testConfig102Item)
+      clickTestConfig('TestConfig102')
       retries++
     }
 
     // Export test
-    const testConfig101Item = page
-      .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
-      .filter({ hasText: 'TestConfig101' })
-      .locator('[class*="sapFfhCDMonfigLargeText"]')
-    await clickTestConfig(testConfig101Item)
+    await clickTestConfig('TestConfig101')
     const exp = page
       .locator('[id*="__vbox2-__xmlview1--configOverview--configVersionListing-"]')
       .last()
