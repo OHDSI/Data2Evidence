@@ -227,7 +227,7 @@ export const createDemographicCriteriaList = async (
     return []
   }
   const demographicCriteriaList: { [key: string]: Criteria } = {}
-  for (let i = 0; i <= content.length; i += 1) {
+  for (let i = 0; i < content.length; i += 1) {
     const filterCard = content[i]
     if (!filterCard) {
       continue
