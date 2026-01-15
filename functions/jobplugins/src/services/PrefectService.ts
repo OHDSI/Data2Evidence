@@ -82,7 +82,9 @@ export class PrefectService {
         },
       }
     );
-    console.log(`creating auth token for flowrun (PrefectService): ${flowRunId}`);
+    console.log(
+      `creating auth token for flowrun (PrefectService): ${flowRunId}`
+    );
     await this.prefectApi.createInputAuthToken(flowRunId);
     Promise.any([
       new Promise(() => {
@@ -114,12 +116,19 @@ export class PrefectService {
       options["datasetId"]
     );
 
-    this.strategusAnalysisApi = new StrategusAnalysisApi(token);
-    await this.strategusAnalysisApi.saveAnalysis(
-      options["studyId"],
-      options["notebookName"],
-      json_graph["analysisSpecification"]
-    );
+    // Skip saving analysis for certain modes that don't require it
+    const skipAnalysisSave =
+      options["mode"] === "upload-results-from-storage" ||
+      options["mode"] === "drop-results";
+
+    if (!skipAnalysisSave) {
+      this.strategusAnalysisApi = new StrategusAnalysisApi(token);
+      await this.strategusAnalysisApi.saveAnalysis(
+        options["studyId"],
+        options["notebookName"],
+        json_graph["analysisSpecification"]
+      );
+    }
 
     const flowRunId = await this.prefectApi.createFlowRun(
       "jupyter-kernel-dataset-analysis",
@@ -137,6 +146,27 @@ export class PrefectService {
         ),
       }
     );
+
+    console.log(
+      `creating auth token for flowrun (PrefectService): ${flowRunId}`
+    );
+    await this.prefectApi.createInputAuthToken(flowRunId);
+    Promise.any([
+      new Promise(() => {
+        setTimeout(async () => {
+          const msg = "Prefect input authtoken deletion";
+          try {
+            (await this.prefectApi.deleteInputAuthToken(flowRunId))
+              ? console.log(`${msg} successful`)
+              : console.log(`${msg} failed`);
+          } catch (error) {
+            console.log(`${msg} failed`);
+            console.error(error);
+          }
+        }, 1000 * 60 * 5);
+      }),
+    ]);
+
     return flowRunId;
   }
 

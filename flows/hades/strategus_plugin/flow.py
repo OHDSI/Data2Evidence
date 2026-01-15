@@ -12,7 +12,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings
+from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
 
@@ -25,11 +25,21 @@ def strategus_plugin(json_graph, options):
     # lockfile_location = "/app/renv.lock"
     # install_r_packages_from_lockfile(lockfile_location)
 
+    # Get parent flow run ID for auth token
+    from prefect.context import FlowRunContext
+    parent_flow_run_context = FlowRunContext.get()
+    parent_flow_run_id = str(parent_flow_run_context.flow_run.dict().get("id")) if parent_flow_run_context else None
+
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
         return
     if(options.get('mode', None) == 'drop-results'):
         drop_strategus_results(options)
+        return
+    if(options.get('mode', None) == 'upload-results-from-storage'):
+        # Pass parent flow run ID for auth
+        options['parentFlowRunId'] = parent_flow_run_id
+        upload_results_from_storage(options)
         return
 
     _options = options
