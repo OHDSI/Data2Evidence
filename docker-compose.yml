@@ -102,9 +102,9 @@ services:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated # Volume for dynamically generated cdw-config duckdb file
     healthcheck:
-      interval: 60s
-      retries: 30
-      start_period: 180s
+      interval: 10s
+      retries: 8
+      start_period: 300s
       test:
         - CMD
         - npm
