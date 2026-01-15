@@ -14,6 +14,7 @@ import { PhenotypeController } from "./src/controllers/PhenotypeController.ts";
 import { PrefectController } from "./src/controllers/PrefectController.ts";
 import { ResearcherController } from "./src/controllers/ResearcherController.ts";
 import { SearchEmbeddingController } from "./src/controllers/SearchEmbeddingController.ts";
+import { StrategusResultsController } from "./src/controllers/StrategusResultsController.ts";
 import { WhiteRabbitController } from "./src/controllers/WhiteRabbitController.ts";
 import { initialiseDataSource } from "./src/db/data-migration.ts";
 import extractUsernameFromJwt from "./src/middlewares/extractUsernameFromJwt.ts";
@@ -43,6 +44,10 @@ app.use("/jobplugins/white-rabbit", new WhiteRabbitController().router);
 app.use("/jobplugins/perseus", new PerseusController().router);
 app.use("/jobplugins/researcher", new ResearcherController().router);
 app.use("/jobplugins/phenotype", new PhenotypeController().router);
+app.use(
+  "/jobplugins/strategus-results",
+  new StrategusResultsController().router
+);
 
 let ssl = JSON.parse(env.PG__SSL.toLowerCase());
 if (env.PG__CA_ROOT_CERT) {
