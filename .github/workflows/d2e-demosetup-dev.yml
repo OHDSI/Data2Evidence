@@ -223,6 +223,7 @@ jobs:
         run: |
           cd ./tests/e2e
           npm test
+          
       - name: Upload Error Context
         if: always() # Always run, even if the previous step fails
         uses: actions/upload-artifact@v4
