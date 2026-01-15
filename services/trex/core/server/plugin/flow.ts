@@ -57,7 +57,7 @@ export async function addPlugin(value: any) {
 						work_pool_name: env.PREFECT_POOL,
 						work_queue_name: "default",
 						entrypoint: f.entrypoint,
-						enforce_parameter_schema: false,
+						enforce_parameter_schema: true,
 						job_variables: {
 							image: getFinalImageName(value.image, f.image),
 							image_pull_policy: env.PLUGINS_PULL_POLICY,
