@@ -72,6 +72,8 @@ services:
     build:
       context: ./services/alp-logto
       dockerfile: Dockerfile
+    # volumes:
+    #   - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
 
   alp-minerva-pg-mgmt-init:
     ports:

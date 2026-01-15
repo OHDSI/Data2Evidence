@@ -46,9 +46,35 @@ export const exchangeToken = async (params: URLSearchParams) => {
     return
   }
 
+  const sensitiveParamKeys = ['client_id', 'client_secret']
+  const redactedParams = Array.from(params.entries())
+    .map(([key, value]) => {
+      if (sensitiveParamKeys.includes(key) && value != null) {
+        return `${key}=[${String(value).length} chars]`
+      }
+      return `${key}=${value}`
+    })
+    .join('&')
+  logger.info(`Exchanging token via ${tokenUrl} with params: ${redactedParams}`)
+
   const response = await post(tokenUrl, params, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   })
+
+  const sensitiveKeys = ['access_token', 'id_token', 'refresh_token']
+  const redactedResponse = response.data
+    ? typeof response.data === 'object'
+      ? Object.entries(response.data)
+          .map(([key, value]) => {
+            if (sensitiveKeys.includes(key) && value != null) {
+              return `${key}=[${String(value).length} chars]`
+            }
+            return `${key}=${JSON.stringify(value)}`
+          })
+          .join(', ')
+      : String(response.data)
+    : '[no data]'
+  logger.info(`Exchanged token via ${tokenUrl}, response status: ${response.status}: ${redactedResponse}`)
 
   if (response.data?.error) {
     logger.error(`Error while exchanging token: ${JSON.stringify(response.data)}`)
