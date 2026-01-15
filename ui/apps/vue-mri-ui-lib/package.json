@@ -52,9 +52,9 @@
     "@types/pako": "^1.0.0",
     "@types/plotly.js": "^2.12.18",
     "@types/underscore": "^1.10.0",
-    "@vitejs/plugin-basic-ssl": "^2.1.0",
-    "@vitejs/plugin-vue": "^6.0.3",
-    "@vitest/coverage-v8": "^4.0.17",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "@vitest/coverage-v8": "^1.2.2",
     "@vue/test-utils": "2",
     "@vue/vue3-jest": "27",
     "eslint-config-prettier": "^10.1.8",
@@ -73,8 +73,8 @@
     "ts-jest": "27",
     "tslib": "^2.6.2",
     "typescript": "5.9.3",
-    "vite": "^7.3.0",
-    "vitest": "^4.0.17"
+    "vite": "^5.4.0",
+    "vitest": "^1.2.2"
   },
   "postcss": {
     "plugins": {
