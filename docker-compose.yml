@@ -582,7 +582,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/d2e/health', timeout=5).getcode() < 300 else 1)",
+          "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)",
         ]
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
