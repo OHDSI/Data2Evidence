@@ -578,16 +578,7 @@ export class SupabaseStorageClient {
 
       const result = await client.query(query, [bucket, `${prefix}%`]);
 
-      interface DbRow {
-        name: string;
-        id: string;
-        metadata: Record<string, unknown>;
-        created_at: Date;
-        updated_at: Date;
-        last_accessed_at?: Date;
-      }
-
-      const files = result.rows.map((row: DbRow) => ({
+      const files = result.rows.map((row: any) => ({
         name: row.name,
         id: row.id,
         updated_at: row.updated_at,
