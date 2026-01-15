@@ -6,7 +6,7 @@ export type UseWorkspaceApiConfig = {
 export async function useApiConfig(): Promise<UseWorkspaceApiConfig> {
   const { getAuthToken } = getPortalAPI()
 
-  const baseURL = 'prefect/api'
+  const baseURL = 'prefect/d2e/api'
   const token = await getAuthToken()
 
   if (!token) {

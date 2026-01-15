@@ -1,3 +1,3 @@
-FROM prefecthq/prefect:3.0.3-python3.11
+FROM prefecthq/prefect:3.6.10-python3.12
 
-RUN pip install prefect[docker]==3.0.3
+RUN pip install prefect[docker]==3.6.10

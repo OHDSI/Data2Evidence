@@ -165,5 +165,5 @@ The pipeline triggers the flow job first and subsequently sends the bearer token
     prefect profile create test
     prefect profile use test
     ```
-3. Run `prefect config set PREFECT_API_URL='http://localhost:41120/api'` to point to Prefect server 
+3. Run `prefect config set PREFECT_API_URL='http://localhost:41120/d2e/api'` to point to Prefect server 
 4. Run `prefect --help` to see all commands

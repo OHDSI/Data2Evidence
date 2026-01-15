@@ -161,7 +161,7 @@ services:
       PG_PASSWORD: ${PG_WRITE_PASSWORD}
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
-      PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}
+      PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
@@ -525,11 +525,11 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:41120/api/health', timeout=5).getcode() < 300 else 1)",
+          "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:41120/d2e/api/health', timeout=5).getcode() < 300 else 1)",
         ]
       timeout: 30s
     hostname: dataflow-gen-1
-    image: prefecthq/prefect:3.0.3-python3.11
+    image: prefecthq/prefect:3.6.10-python3.12
     platform: linux/amd64
     logging:
       options:
@@ -548,7 +548,11 @@ services:
       LOCAL_DEBUG: "false"
       PREFECT_API_DATABASE_CONNECTION_URL: postgresql+asyncpg://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PREFECT_API_DEFAULT_LIMIT: 5000
-      PREFECT_API_URL: http://0.0.0.0:41120/api
+      PREFECT_SERVER_API_BASE_PATH: /d2e/api
+      PREFECT_UI_SERVE_BASE: /d2e
+      PREFECT_UI_API_URL: http://0.0.0.0:41120/d2e/api
+      PREFECT_UI_URL: http://0.0.0.0:41120/d2e
+      PREFECT_API_URL: http://0.0.0.0:41120/d2e/api
       PREFECT_LOGGING_LEVEL: DEBUG
       PREFECT_LOGGING_SERVER_LEVEL: WARNING
       PREFECT_SERVER_ANALYTICS_ENABLED: "false"
@@ -578,7 +582,7 @@ services:
           "CMD",
           "python",
           "-c",
-          "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)",
+          "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/d2e/health', timeout=5).getcode() < 300 else 1)",
         ]
       timeout: 30s
     hostname: ${PROJECT_NAME:-d2e}-dataflow-gen-worker.${TLS__INTERNAL__DOMAIN:-alp.local}
@@ -592,7 +596,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api
+      PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api
       PREFECT_API_ENABLE_HTTP2: False
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}

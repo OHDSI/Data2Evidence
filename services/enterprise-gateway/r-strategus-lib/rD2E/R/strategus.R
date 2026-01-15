@@ -58,7 +58,7 @@ run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, 
 get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "strategus_plugin") {
   error_message <- "Error while getting prefect deployment"
   host <- Sys.getenv("TREX__ENDPOINT_URL")
-  url <- paste0(host, "/prefect/api/deployments/name/", flow_name, "/", deployment_name)
+  url <- paste0(host, "/prefect/d2e/api/deployments/name/", flow_name, "/", deployment_name)
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   
   response <- tryCatch(
