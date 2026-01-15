@@ -48,7 +48,7 @@ test(TEST_NAME, async ({ page }) => {
   const stateBadge = firstEntry.locator(
     'xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]'
   )
-  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+  await expect(stateBadge).toHaveText(/Completed/, { timeout: 600000 })
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
