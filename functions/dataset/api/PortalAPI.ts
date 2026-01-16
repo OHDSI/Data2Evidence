@@ -13,7 +13,7 @@ interface CreateDatasetInput {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
   dataModel: string;
   visibilityStatus: string;
   detail: {
@@ -39,7 +39,7 @@ interface CopyDatasetInput {
   newDatasetName: string;
   schemaName?: string;
   vocabSchemaName?: string;
-  resultSchemaName?: string;
+  resultsSchemaName?: string;
   timestamp: Date;
   type: string;
   flowParameters?: Record<string, unknown>;

@@ -78,7 +78,7 @@ export default async (req: IMRIRequest, res, next) => {
         const studyDatabaseName: string = studyMetadata.databaseName;
         const studySchemaName: string = studyMetadata.schemaName;
         const studyVocabSchemaName: string = studyMetadata.vocabSchemaName;
-        const studyResultSchemaName: string = studyMetadata.resultSchemaName;
+        const studyResultsSchemaName: string = studyMetadata.resultsSchemaName;
 
         log.info(`studyDatabaseName ${studyDatabaseName}`);
 
@@ -92,8 +92,8 @@ export default async (req: IMRIRequest, res, next) => {
         studyAnalyticsCredential.vocabSchema = studyVocabSchemaName
             ? studyVocabSchemaName
             : null;
-        studyAnalyticsCredential.resultSchema = studyResultSchemaName
-            ? studyResultSchemaName
+        studyAnalyticsCredential.resultsSchemaName = studyResultsSchemaName
+            ? studyResultsSchemaName
             : studyAnalyticsCredential.schema;
 
         if (studyAnalyticsCredential.dialect === ANALYTICS_DB_DIALECTS.HANA) {

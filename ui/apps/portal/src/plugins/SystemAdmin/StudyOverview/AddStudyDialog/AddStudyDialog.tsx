@@ -57,8 +57,8 @@ interface FormData {
   cdmSchemaValue: string;
   isSameCdmSchemaForVocab: boolean;
   vocabSchemaValue: string;
-  resultSchemaValue: string;
-  autoGenerateResultSchema: boolean;
+  resultsSchemaValue: string;
+  autoGenerateResultsSchema: boolean;
   name: string;
   summary: string;
   showRequestAccess: boolean;
@@ -88,7 +88,7 @@ interface FormError {
   vocabSchemaValue: {
     required: boolean;
   };
-  resultSchemaValue: {
+  resultsSchemaValue: {
     required: boolean;
   };
   tokenStudyCode: {
@@ -125,7 +125,7 @@ const EMPTY_FORM_ERROR: FormError = {
   schemaOption: { required: false },
   cdmSchemaValue: { required: false },
   vocabSchemaValue: { required: false },
-  resultSchemaValue: { required: false },
+  resultsSchemaValue: { required: false },
   dataModel: { required: false },
   dataModelCustom: { required: false },
   databaseCode: { required: false },
@@ -142,8 +142,8 @@ const EMPTY_FORM_DATA: FormData = {
   cdmSchemaValue: "", //Optional
   isSameCdmSchemaForVocab: true,
   vocabSchemaValue: "", //Optional
-  resultSchemaValue: "",
-  autoGenerateResultSchema: false,
+  resultsSchemaValue: "",
+  autoGenerateResultsSchema: false,
   name: "",
   summary: "",
   showRequestAccess: false,
@@ -284,7 +284,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     [formData.schemaOption]
   );
 
-  const displayResultSchemaInput = useMemo(() => formData.schemaOption !== SchemaTypes.FHIR, [formData.schemaOption]);
+  const displayResultsSchemaInput = useMemo(() => formData.schemaOption !== SchemaTypes.FHIR, [formData.schemaOption]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
@@ -364,7 +364,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cdmSchemaValue,
       isSameCdmSchemaForVocab,
       vocabSchemaValue,
-      resultSchemaValue,
+      resultsSchemaValue,
       dataModel,
       dataModelCustom,
       databaseCode,
@@ -421,11 +421,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     // 1. Not FHIR
     // 2. Either not CreateCDM, OR CreateCDM but use default result schema is unchecked
     if (
-      !resultSchemaValue &&
+      !resultsSchemaValue &&
       schemaOption !== SchemaTypes.FHIR &&
-      !(schemaOption === SchemaTypes.CreateCDM && formData.autoGenerateResultSchema)
+      !(schemaOption === SchemaTypes.CreateCDM && formData.autoGenerateResultsSchema)
     ) {
-      formError = { ...formError, resultSchemaValue: { required: true } };
+      formError = { ...formError, resultsSchemaValue: { required: true } };
     }
 
     if (!paConfigId) {
@@ -475,7 +475,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       schemaOption,
       cdmSchemaValue,
       vocabSchemaValue,
-      resultSchemaValue,
+      resultsSchemaValue,
       name,
       summary,
       showRequestAccess,
@@ -512,7 +512,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       schemaOption,
       cdmSchemaValue,
       vocabSchemaValue,
-      resultSchemaValue,
+      resultsSchemaValue,
       dataModel: parsedDataModel,
       plugin: dataModelDetails.plugin,
       databaseCode,
@@ -624,8 +624,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   cdmSchemaValue: schemaOption === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
                   isSameCdmSchemaForVocab: true,
                   vocabSchemaValue: "",
-                  resultSchemaValue: "",
-                  autoGenerateResultSchema: false,
+                  resultsSchemaValue: "",
+                  autoGenerateResultsSchema: false,
                   databaseCode: schemaOption === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
                   dialect: schemaOption === SchemaTypes.FHIR ? FHIR_DIALECT : "",
                   type: newType,
@@ -751,8 +751,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   const cdmSchemaValue = event.target.value;
                   const changes: any = { cdmSchemaValue };
                   // Use default result schema if checkbox is checked
-                  if (formData.autoGenerateResultSchema) {
-                    changes.resultSchemaValue = cdmSchemaValue ? `${cdmSchemaValue}_results` : "";
+                  if (formData.autoGenerateResultsSchema) {
+                    changes.resultsSchemaValue = cdmSchemaValue ? `${cdmSchemaValue}_results` : "";
                   }
                   handleFormDataChange(changes);
                 }}
@@ -776,8 +776,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 onChange={(_: SyntheticEvent<Element, Event>, cdmSchemaValue: string | string[] | null) => {
                   const changes: any = { cdmSchemaValue };
                   // Use default result schema if checkbox is checked
-                  if (formData.autoGenerateResultSchema && cdmSchemaValue) {
-                    changes.resultSchemaValue = `${cdmSchemaValue}_results`;
+                  if (formData.autoGenerateResultsSchema && cdmSchemaValue) {
+                    changes.resultsSchemaValue = `${cdmSchemaValue}_results`;
                   }
                   handleFormDataChange(changes);
                 }}
@@ -902,24 +902,24 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             </div>
           )
         )}
-        {displayResultSchemaInput && (
+        {displayResultsSchemaInput && (
           <>
             <div style={{ marginBottom: "32px" }}>
               <Checkbox
-                checked={formData.autoGenerateResultSchema}
+                checked={formData.autoGenerateResultsSchema}
                 checkbox-id="auto-generate-result-schema-checkbox"
                 label={getText(i18nKeys.ADD_STUDY_DIALOG__AUTO_GENERATE_RESULT_SCHEMA)}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                  const autoGenerateResultSchema = event.target.checked;
-                  const changes: any = { autoGenerateResultSchema };
+                  const autoGenerateResultsSchema = event.target.checked;
+                  const changes: any = { autoGenerateResultsSchema };
                   // If checked, use default result schema name
-                  if (autoGenerateResultSchema) {
+                  if (autoGenerateResultsSchema) {
                     if (formData.schemaOption === SchemaTypes.CreateCDM) {
                       // For CreateCDM, the value will be generated in the backend
-                      changes.resultSchemaValue = "";
+                      changes.resultsSchemaValue = "";
                     } else if (formData.cdmSchemaValue) {
                       // For other types, generate it based on cdm schema value
-                      changes.resultSchemaValue = `${formData.cdmSchemaValue}_results`;
+                      changes.resultsSchemaValue = `${formData.cdmSchemaValue}_results`;
                     }
                   }
                   handleFormDataChange(changes);
@@ -927,18 +927,18 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               />
             </div>
             {/* Hide textbox for CreateCDM when checkbox is checked */}
-            {!(formData.schemaOption === SchemaTypes.CreateCDM && formData.autoGenerateResultSchema) && (
+            {!(formData.schemaOption === SchemaTypes.CreateCDM && formData.autoGenerateResultsSchema) && (
               <div style={{ marginBottom: "32px" }}>
                 <TextField
                   fullWidth
                   variant="standard"
                   label={getText(i18nKeys.ADD_STUDY_DIALOG__RESULT_SCHEMA_NAME)}
-                  value={formData.resultSchemaValue}
-                  onChange={(event) => handleFormDataChange({ resultSchemaValue: event.target.value })}
-                  error={formError.resultSchemaValue.required}
-                  disabled={formData.autoGenerateResultSchema}
+                  value={formData.resultsSchemaValue}
+                  onChange={(event) => handleFormDataChange({ resultsSchemaValue: event.target.value })}
+                  error={formError.resultsSchemaValue.required}
+                  disabled={formData.autoGenerateResultsSchema}
                 />
-                {formError.resultSchemaValue.required && (
+                {formError.resultsSchemaValue.required && (
                   <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
                 )}
               </div>

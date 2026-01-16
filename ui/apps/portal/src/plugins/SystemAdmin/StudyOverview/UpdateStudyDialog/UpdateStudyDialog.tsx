@@ -51,7 +51,7 @@ interface FormData {
   paConfigId: string;
   visibilityStatus: string;
   vocabSchemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
 }
 
 interface FormError {
@@ -68,7 +68,7 @@ interface FormError {
   vocabSchemaName: {
     required: boolean;
   };
-  resultSchemaName: {
+  resultsSchemaName: {
     required: boolean;
   };
 }
@@ -78,7 +78,7 @@ const EMPTY_FORM_ERROR: FormError = {
   paConfigId: { required: false },
   name: { required: false },
   vocabSchemaName: { required: false },
-  resultSchemaName: { required: false },
+  resultsSchemaName: { required: false },
 };
 
 const EMPTY_FORM_DATA: FormData = {
@@ -92,7 +92,7 @@ const EMPTY_FORM_DATA: FormData = {
   paConfigId: "",
   visibilityStatus: "DEFAULT",
   vocabSchemaName: "",
-  resultSchemaName: "",
+  resultsSchemaName: "",
 };
 
 const styles: SxProps = {
@@ -146,7 +146,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
         description: dataset.studyDetail?.description || "",
         visibilityStatus: dataset.visibilityStatus,
         vocabSchemaName: dataset.vocabSchemaName || "",
-        resultSchemaName: dataset.resultSchemaName || "",
+        resultsSchemaName: dataset.resultsSchemaName || "",
       });
     } else {
       setFormData(EMPTY_FORM_DATA);
@@ -188,7 +188,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
   }, []);
 
   const isFormError = useCallback(() => {
-    const { tokenStudyCode, paConfigId, name, vocabSchemaName, resultSchemaName } = formData;
+    const { tokenStudyCode, paConfigId, name, vocabSchemaName, resultsSchemaName } = formData;
 
     let formError: FormError | {} = {};
     if (!tokenStudyCode) {
@@ -208,12 +208,12 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
     }
 
     if (!DATASET_SOURCE_TYPES.has(dataset.type)) {
-        if (!vocabSchemaName) {
-          formError = { ...formError, vocabSchemaName: { required: true } };
-        }
-        if (!resultSchemaName) {
-          formError = { ...formError, resultSchemaName: { required: true } };
-        }
+      if (!vocabSchemaName) {
+        formError = { ...formError, vocabSchemaName: { required: true } };
+      }
+      if (!resultsSchemaName) {
+        formError = { ...formError, resultsSchemaName: { required: true } };
+      }
     }
 
     if (Object.keys(formError).length > 0) {
@@ -243,8 +243,18 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
     setFeedback({});
     setFormError(EMPTY_FORM_ERROR);
 
-    const { type, tokenStudyCode, name, summary, showRequestAccess, description, paConfigId, visibilityStatus, vocabSchemaName, resultSchemaName } =
-      formData;
+    const {
+      type,
+      tokenStudyCode,
+      name,
+      summary,
+      showRequestAccess,
+      description,
+      paConfigId,
+      visibilityStatus,
+      vocabSchemaName,
+      resultsSchemaName,
+    } = formData;
 
     try {
       const data: UpdateStudyMetadataInput = {
@@ -258,7 +268,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
         type,
         tokenDatasetCode: tokenStudyCode,
         vocabSchemaName,
-        resultSchemaName,
+        resultsSchemaName,
         paConfigId,
         visibilityStatus,
         attributes: studyMetadata.filter((info) => info.attributeId !== ""),
@@ -390,11 +400,11 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
                 fullWidth
                 variant="standard"
                 label={getText(i18nKeys.UPDATE_STUDY_DIALOG__RESULT_SCHEMA_NAME)}
-                value={formData.resultSchemaName}
-                onChange={(event) => handleFormDataChange({ resultSchemaName: event.target.value })}
-                error={formError.resultSchemaName.required}
+                value={formData.resultsSchemaName}
+                onChange={(event) => handleFormDataChange({ resultsSchemaName: event.target.value })}
+                error={formError.resultsSchemaName.required}
               />
-              {formError.resultSchemaName.required && (
+              {formError.resultsSchemaName.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
             </div>

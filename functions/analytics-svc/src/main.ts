@@ -682,7 +682,7 @@ const getTrexDbConnection = ({
             temp: string,
             schemaName: string,
             vocabSchemaName: string,
-            resultSchemaName: string,
+            resultsSchemaName: string,
             parameters: any
         ): string => {
             // Specifically for trex db connection, direct connection alias is different from cachedb.
@@ -695,7 +695,7 @@ const getTrexDbConnection = ({
                 temp,
                 schemaName,
                 vocabSchemaName,
-                resultSchemaName,
+                resultsSchemaName,
                 parameters
             );
         };
@@ -703,7 +703,7 @@ const getTrexDbConnection = ({
             analyticsCredentials.code,
             analyticsCredentials.schema,
             analyticsCredentials.vocabSchema,
-            analyticsCredentials.resultSchema,
+            analyticsCredentials.resultsSchemaName,
             { duckdb: parseSql }
         );
 
@@ -814,7 +814,7 @@ const getDBConnections = async ({
                 credentials: analyticsCredentials,
                 schemaName: analyticsCredentials.schema,
                 vocabSchemaName: analyticsCredentials.vocabSchema,
-                resultSchemaName: analyticsCredentials.resultSchema,
+                resultsSchemaName: analyticsCredentials.resultsSchemaName,
                 userObj,
             });
     }

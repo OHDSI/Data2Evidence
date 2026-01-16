@@ -296,7 +296,7 @@ let encryptionKeysObjDataset = {
     schemaOption: "create_cdm",
     cdmSchemaValue: "",
     vocabSchemaValue: "",
-    resultSchemaValue: "cdmdemohana",
+    resultsSchemaValue: "cdmdemohana",
     dataModel: "omop5-3",
     plugin: "hana_load_plugin",
     databaseCode: "demo_database_hana",
