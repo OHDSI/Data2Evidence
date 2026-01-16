@@ -76,7 +76,7 @@ class D2ECli {
         "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/";
     } else {
       this.PLUGINS_API_VERSION =
-        process.env.PLUGINS_API_VERSION ?? `${this.version}`;
+        process.env.PLUGINS_API_VERSION ?? `~${this.version}`;
       this.DOCKER_TAG_NAME =
         process.env.DOCKER_TAG_NAME ?? `${this.LATEST_DOCKER_TAG_NAME}`;
       this.PLUGINS_IMAGE_TAG =
