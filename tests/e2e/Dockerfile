@@ -7,16 +7,15 @@ RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists
 
 WORKDIR /work
 
-# Copy package files first (for caching)
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies (cached unless package.json changes)
-RUN npm install
-
-# Install Playwright and browser dependencies (cached)
+# Install Playwright browser and dependencies
 RUN npx playwright install chromium --with-deps
 
-# Copy the rest of the code (tests, config, etc.)
-COPY . .
+# Copy test files and config
+COPY playwright.config.ts ./
+COPY tests ./tests
 
-CMD ["npx", "playwright", "test"]
+CMD ["npm", "test"]

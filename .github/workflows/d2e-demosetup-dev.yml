@@ -222,10 +222,11 @@ jobs:
           cd ./tests/e2e
           docker run --rm \
             --network=host \
-            -v "$(pwd):/work" \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
-            d2e-e2e npx playwright test
+            d2e-e2e npm test
 
       - name: Upload Error Context
         if: always() # Always run, even if the previous step fails

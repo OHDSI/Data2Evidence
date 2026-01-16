@@ -525,9 +525,9 @@ cmd_test() {
     fi
 
     # Build test command with optional filter
-    local test_cmd="npx playwright test"
+    local test_cmd="npm test"
     if [ -n "$TEST_FILTER" ]; then
-        test_cmd="$test_cmd $TEST_FILTER"
+        test_cmd="$test_cmd -- $TEST_FILTER"
         log_info "Running e2e tests matching: $TEST_FILTER"
     else
         log_info "Running all e2e tests..."
@@ -535,7 +535,10 @@ cmd_test() {
 
     docker run --rm -it \
         --network=host \
-        -v "$(pwd):/work" \
+        -v "$(pwd)/tests:/work/tests" \
+        -v "$(pwd)/test-results:/work/test-results" \
+        -v "$(pwd)/ctrf:/work/ctrf" \
+        -v "$(pwd)/playwright.config.ts:/work/playwright.config.ts" \
         -e D2E_BASE_URL=https://localhost:41100 \
         -e CI=true \
         d2e-e2e $test_cmd
