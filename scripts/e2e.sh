@@ -518,11 +518,9 @@ cmd_test() {
     check_project_name
     cd "$E2E_DIR"
 
-    # Build e2e image if it doesn't exist
-    if ! docker image inspect d2e-e2e >/dev/null 2>&1; then
-        log_info "Building e2e Docker image..."
-        docker build -t d2e-e2e .
-    fi
+    # Build e2e image (uses cache if nothing changed)
+    log_info "Building e2e Docker image..."
+    docker build -t d2e-e2e .
 
     # Build test command with optional filter
     local test_cmd="npm test"
