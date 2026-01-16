@@ -13,6 +13,7 @@ SKIP_UI=false
 NO_SNAPSHOT=false
 BRANCH=""
 TEST_FILTER=""
+UPDATE_SCREENSHOTS=false
 
 # Colors for output
 RED='\033[0;31m'
@@ -203,6 +204,10 @@ cmd_wizard() {
             printf "  Test filter (e.g., filtering-bar, leave empty for all): "
             read -r TEST_FILTER
 
+            if ask_yes_no "  Update screenshots (regenerate baselines)?" "n"; then
+                UPDATE_SCREENSHOTS=true
+            fi
+
             echo ""
             cmd_init
             # Run tests after init completes
@@ -222,6 +227,10 @@ cmd_wizard() {
 
             printf "  Test filter (e.g., filtering-bar, leave empty for all): "
             read -r TEST_FILTER
+
+            if ask_yes_no "  Update screenshots (regenerate baselines)?" "n"; then
+                UPDATE_SCREENSHOTS=true
+            fi
 
             echo ""
             cmd_retest
@@ -294,6 +303,7 @@ Options:
   -p, --project-name NAME   Set PROJECT_NAME (default: e2e-<branch>-YYYYMMDD-HHMMSS)
   -b, --branch BRANCH       Checkout specific branch before running
   -f, --filter PATTERN      Run only tests matching pattern (e.g., filtering-bar)
+  -u, --update-snapshots    Update screenshot baselines instead of comparing
   --skip-ui                 Skip UI build and mount
   --no-snapshot             Skip creating snapshots after setup
   -h, --help                Show this help message
@@ -304,6 +314,8 @@ Examples:
   ./scripts/e2e.sh init -b feature/my-pr     # Setup and checkout branch
   ./scripts/e2e.sh test                      # Run all tests
   ./scripts/e2e.sh test -f filtering-bar     # Run tests matching "filtering-bar"
+  ./scripts/e2e.sh test -u                   # Update all screenshot baselines
+  ./scripts/e2e.sh test -f filtering -u      # Update screenshots for specific tests
   ./scripts/e2e.sh retest                    # Restore snapshot and run tests
   ./scripts/e2e.sh retest -f 09-patient      # Restore and run patient analytics tests
 EOF
@@ -522,13 +534,17 @@ cmd_test() {
     log_info "Building e2e Docker image..."
     docker build -t d2e-e2e .
 
-    # Build test command with optional filter
-    local test_cmd="npm test"
+    # Build test command with optional filter and update snapshots
+    local test_cmd="npm test --"
     if [ -n "$TEST_FILTER" ]; then
-        test_cmd="$test_cmd -- $TEST_FILTER"
+        test_cmd="$test_cmd $TEST_FILTER"
         log_info "Running e2e tests matching: $TEST_FILTER"
     else
         log_info "Running all e2e tests..."
+    fi
+    if [ "$UPDATE_SCREENSHOTS" = true ]; then
+        test_cmd="$test_cmd --update-snapshots"
+        log_info "Updating screenshots (baselines will be overwritten)"
     fi
 
     docker run --rm -it \
@@ -652,6 +668,10 @@ while [[ $# -gt 0 ]]; do
         -f|--filter)
             TEST_FILTER="$2"
             shift 2
+            ;;
+        -u|--update-snapshots)
+            UPDATE_SCREENSHOTS=true
+            shift
             ;;
         -h|--help)
             usage

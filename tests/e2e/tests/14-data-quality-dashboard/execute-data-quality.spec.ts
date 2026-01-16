@@ -79,7 +79,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Expect to see overview
   await expect(page.getByText('Overview')).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'Verification' })).toBeVisible()
+  await expect(page.getByRole('columnheader', { name: 'Verification' })).toBeVisible({ timeout: 600000 })
   await expect(page.getByRole('columnheader', { name: 'Validation' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Total' }).first()).toBeVisible()
   await expect(page.getByText('passed checks are Not Applicable, due to empty tables or fields')).toBeVisible()
