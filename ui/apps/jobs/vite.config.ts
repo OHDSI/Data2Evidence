@@ -61,7 +61,7 @@ export default defineConfig({
       '^/portal/systemadmin/jobs/.*prefect': {
         target: 'https://localhost:41100',
         secure: false,
-        rewrite: (path) => path.replace(/.*\/prefect/, '/prefect')
+        rewrite: (path) => path.replace(/.*\/prefect/, '/prefect/d2e')
       }
     }
   }
