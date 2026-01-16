@@ -62,8 +62,10 @@ export default defineConfig(({ command, mode }): UserConfig => {
       // Process env replacements (lightweight alternative to vite-plugin-node-polyfills)
       'process.env.NODE_ENV': JSON.stringify(mode),
       'process.env.VUE_APP_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL || ''),
-      // Global process object shim for libraries that check process.env
+      // Global process object shim for libraries that check process.env or process directly
       'process.env': JSON.stringify({}),
+      // Some libraries check `process` directly (not just process.env)
+      process: JSON.stringify({ env: { NODE_ENV: mode } }),
     },
 
     resolve: {
@@ -109,24 +111,20 @@ export default defineConfig(({ command, mode }): UserConfig => {
       // Copy public folder contents to outDir
       copyPublicDir: true,
       rollupOptions: {
-        // D3 v3 is loaded from CDN, exclude from bundle
-        external: ['d3'],
+        // import-map-overrides is provided by portal, don't bundle it
+        external: ['import-map-overrides'],
+        // Use main.ts as entry point instead of index.html
+        // This prevents Vite from inlining scripts from index.html that assume DOM elements exist
+        // index.html is only used for local development, portal provides its own container
         input: {
-          main: path.resolve(__dirname, 'index.html'),
-          preload: path.resolve(__dirname, 'src/preload.ts'),
+          main: path.resolve(__dirname, 'src/main.ts'),
         },
         output: {
-          // Map d3 to global window.d3 for external usage
+          // Map externals to global variables
           globals: {
-            d3: 'd3',
+            'import-map-overrides': 'importMapOverrides',
           },
-          entryFileNames: chunkInfo => {
-            // Keep preload as a separate entry without hash for predictable loading
-            if (chunkInfo.name === 'preload') {
-              return 'js/[name].js'
-            }
-            return 'js/[name]-[hash].js'
-          },
+          entryFileNames: 'js/[name]-[hash].js',
           chunkFileNames: 'js/[name]-[hash].js',
           assetFileNames: assetInfo => {
             const name = assetInfo.names?.[0] || assetInfo.name || ''
@@ -258,7 +256,11 @@ function generateAssetsJsonPlugin(hostUrl: string): PluginOption {
         if (file.type === 'asset' && /\.css$/.test(filename)) {
           assets.css.push(`${basePath}${filename}`)
         } else if (file.type === 'chunk' && /\.js$/.test(filename)) {
-          assets.js.push(`${basePath}${filename}`)
+          // For ES modules, only include entry points - dependencies are loaded via import
+          // This prevents loading chunks that have side effects before DOM is ready
+          if (file.isEntry) {
+            assets.js.push(`${basePath}${filename}`)
+          }
         }
       }
 
