@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { MINUTE_1, MINUTE_2 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-data-management-plugin-omop'
 const SHOULD_SKIP = false
@@ -39,10 +40,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // With parent-child structure, there are multiple tbody elements, so search for rows instead
-  await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: 120000 })
+  await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
   // Test Cache is a child dataset, so it appears in a nested table within the expanded parent row
   // Search for it in any table (main or nested)
-  await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: 120000 })
+  await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
   const firstEntry = page
@@ -51,20 +52,20 @@ test(TEST_NAME, async ({ page }) => {
     .first()
   // Find the closest state badge to this entry
   const stateBadge = firstEntry.locator('.state-badge')
-  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+  await expect(stateBadge).toHaveText(/Completed/, { timeout: MINUTE_2 })
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Find and delete the child dataset first (Test Cache)
   const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
-  await expect(testCacheRow).toBeVisible({ timeout: 60000 })
+  await expect(testCacheRow).toBeVisible({ timeout: MINUTE_1 })
   await testCacheRow.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
-  await expect(testStudyDataset).toBeVisible({ timeout: 60000 })
+  await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_1 })
   await testStudyDataset.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion

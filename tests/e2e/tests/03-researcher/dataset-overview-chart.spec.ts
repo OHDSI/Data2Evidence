@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test'
+import { MINUTE_10, MINUTE_5 } from '../const'
 
 const TEST_NAME = 'dataset-overview-chart'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  test.setTimeout(5 * 60 * 1000)
+  test.setTimeout(MINUTE_10)
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -36,11 +37,11 @@ test(TEST_NAME, async ({ page }) => {
       .first()
     // Find the closest state badge to this entry (adjust the selector as needed)
     const dqd_state = dqd_entry.locator('.state-badge')
-    await expect(dqd_state).toHaveText('Completed', { timeout: 120000 })
+    await expect(dqd_state).toHaveText('Completed', { timeout: MINUTE_5 })
     const dc_state = dc_entry.locator('.state-badge')
-    await expect(dc_state).toHaveText('Completed', { timeout: 120000 })
+    await expect(dc_state).toHaveText('Completed', { timeout: MINUTE_5 })
     const omop_state = omop_entry.locator('.state-badge')
-    await expect(omop_state).toHaveText('Completed', { timeout: 120000 })
+    await expect(omop_state).toHaveText('Completed', { timeout: MINUTE_5 })
   })
 
   await test.step('overview-chart', async () => {

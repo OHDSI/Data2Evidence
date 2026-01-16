@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { MINUTE_2 } from '../const'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
 const SHOULD_SKIP = false
@@ -79,14 +80,14 @@ test(TEST_NAME, async ({ page }) => {
   // Wait for table to load first
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Wait for parent dataset to appear in the table (with parent-child structure, use row locators)
-  await expect(page.locator('tr', { hasText: datasetNewSchema }).first()).toBeVisible({ timeout: 120000 })
+  await expect(page.locator('tr', { hasText: datasetNewSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
 
   // Wait for schema to be created in the database (this also creates the cache dataset)
   await createComplete()
 
   // After the job completes, the cache dataset should be visible
   // Parent rows are automatically expanded by default, so child rows should be visible
-  await expect(page.locator('tr', { hasText: datasetNewCacheSchema }).first()).toBeVisible({ timeout: 120000 })
+  await expect(page.locator('tr', { hasText: datasetNewCacheSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
 
   // Copy the schema name for later use
   // const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).first().textContent()

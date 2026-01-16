@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { MINUTE_2 } from '../const'
 
 const TEST_NAME = 'dataset-update'
 const SHOULD_SKIP = true
@@ -48,7 +49,7 @@ test(TEST_NAME, async ({ page }) => {
     .first()
   // Find the closest state badge to this entry (adjust the selector as needed)
   const stateBadge = firstEntry.locator('.state-badge')
-  await expect(stateBadge).toHaveText('Completed', { timeout: 120000 })
+  await expect(stateBadge).toHaveText('Completed', { timeout: MINUTE_2 })
 
   await test.step('Update dataset summary and description', async () => {
     await page.getByRole('link', { name: 'Datasets' }).click()
@@ -99,7 +100,7 @@ test(TEST_NAME, async ({ page }) => {
       .first()
     // Find the closest state badge to this entry (adjust the selector as needed)
     const stateBadge = firstEntry.locator('.state-badge')
-    await expect(stateBadge).toHaveText('Completed', { timeout: 120000 })
+    await expect(stateBadge).toHaveText('Completed', { timeout: MINUTE_2 })
   })
 
   await test.step('Switch to Researcher portal', async () => {

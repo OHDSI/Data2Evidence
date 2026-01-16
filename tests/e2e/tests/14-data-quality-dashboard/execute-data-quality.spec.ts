@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test'
+import { MINUTE_10 } from '../const'
 
 const TEST_NAME = 'execute-data-quality'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
-  //Increase timeout longer than the configured 30s
-  test.setTimeout(360000)
+  //Increase timeout longer than default
+  test.setTimeout(MINUTE_10)
 
   // Sign in
   await page.goto('/')
@@ -79,7 +80,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Expect to see overview
   await expect(page.getByText('Overview')).toBeVisible()
-  await expect(page.getByRole('columnheader', { name: 'Verification' })).toBeVisible({ timeout: 600000 })
+  await expect(page.getByRole('columnheader', { name: 'Verification' })).toBeVisible({ timeout: MINUTE_10 })
   await expect(page.getByRole('columnheader', { name: 'Validation' })).toBeVisible()
   await expect(page.getByRole('columnheader', { name: 'Total' }).first()).toBeVisible()
   await expect(page.getByText('passed checks are Not Applicable, due to empty tables or fields')).toBeVisible()
