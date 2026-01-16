@@ -250,7 +250,8 @@ function generateAssetsJsonPlugin(hostUrl: string): PluginOption {
         css: [],
       }
 
-      const basePath = hostUrl ? `${hostUrl}/d2e/mri/` : ''
+      // Always include /d2e/mri/ prefix so assets resolve correctly when loaded from portal
+      const basePath = hostUrl ? `${hostUrl}/d2e/mri/` : '/d2e/mri/'
 
       // Iterate over the bundle to find JS and CSS assets
       for (const [filename, file] of Object.entries(bundle)) {
