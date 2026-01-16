@@ -122,41 +122,41 @@ jobs:
           init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./functions init
           cat .env.local
 
-      # - name: Initialise HANA
-      #   if: success() || failure()
-      #   id: inithana
-      #   run: |
-      #     timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+      - name: Initialise HANA
+        if: success() || failure()
+        id: inithana
+        run: |
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
-      # - name: Remove empty lines, replace ; within the query with a place holder
-      #   run: |
-      #     sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
-      #     sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
-      #     grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
-      #     echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
-      #     echo "USE_DUCKDB=false" >> $DOTENV_FILE
-      #     echo "USE_CACHEDB=false" >> $DOTENV_FILE
-      #     echo "NODE_ENV=production" >> $DOTENV_FILE
+      - name: Remove empty lines, replace ; within the query with a place holder
+        run: |
+          sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
+          grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+          echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
+          echo "USE_DUCKDB=false" >> $DOTENV_FILE
+          echo "USE_CACHEDB=false" >> $DOTENV_FILE
+          echo "NODE_ENV=production" >> $DOTENV_FILE
 
-      # - name: Build system services
-      #   run: |
-      #     node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
+      - name: Build system services
+        run: |
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
 
-      # - name: Manipulate configuration
-      #   run: |
-      #     yq -i '.networks.alp.external=true' docker-compose.yml
-      #     # as not required for http tests omit cachedb to limit memory requirements
-      #     yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
+      - name: Manipulate configuration
+        run: |
+          yq -i '.networks.alp.external=true' docker-compose.yml
+          # as not required for http tests omit cachedb to limit memory requirements
+          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
 
-      # - name: Create network for external to use
-      #   run: |
-      #     docker network inspect alp > /dev/null || docker network create alp
+      - name: Create network for external to use
+        run: |
+          docker network inspect alp > /dev/null || docker network create alp
 
-      # - name: Start system services
-      #   run: |
-      #     node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
-      #     echo "Waiting 120 secs for services to start..."
-      #     sleep 120
+      - name: Start system services
+        run: |
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
+          echo "Waiting 120 secs for services to start..."
+          sleep 120
 
       # - name: Check status of docker containers
       #   run: |
