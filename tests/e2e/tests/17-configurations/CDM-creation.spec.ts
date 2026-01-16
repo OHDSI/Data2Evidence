@@ -369,7 +369,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'OK' }).click()
     await page.getByRole('button', { name: 'Preview' }).click()
     await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
-    await expect.soft(page).toHaveScreenshot({ maxDiffPixels: 100 })
+    await expect(page).toHaveScreenshot()
     await page.getByRole('button', { name: 'Close' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
     await page.getByRole('button', { name: 'OK' }).click()

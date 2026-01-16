@@ -7,11 +7,7 @@ export default defineConfig({
   testDir: 'tests',
   timeout: 180000, // 3 minutes per test
   expect: {
-    timeout: 120000, // 20 seconds for expect conditions
-    toHaveScreenshot: {
-      // maxDiffPixelRatio: 0.001 // Allow 0.1% pixel difference
-      maxDiffPixels: 100
-    }
+    timeout: 20000 // 20 seconds for expect conditions
   },
   use: {
     baseURL: process.env.D2E_BASE_URL ?? 'https://localhost:443',

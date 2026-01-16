@@ -43,7 +43,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Edit' }).first()).toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
 
   // Delete the user
   await page.getByRole('button', { name: 'Delete' }).nth(1).click()
