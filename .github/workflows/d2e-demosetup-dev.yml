@@ -217,11 +217,17 @@ jobs:
           cd ./tests/e2e
           docker build -t d2e-e2e .
 
+      - name: Verify app is reachable
+        run: |
+          curl -k -s -o /dev/null -w "%{http_code}" https://localhost:443/d2e/portal || echo "App not reachable"
+          curl -k -I https://localhost:443/d2e/portal || true
+
       - name: e2e tests
         run: |
           cd ./tests/e2e
           docker run --rm \
             --network=host \
+            --ipc=host \
             -v "$(pwd)/test-results:/work/test-results" \
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \

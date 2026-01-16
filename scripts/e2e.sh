@@ -533,6 +533,7 @@ cmd_test() {
 
     docker run --rm -it \
         --network=host \
+        --ipc=host \
         -v "$(pwd)/tests:/work/tests" \
         -v "$(pwd)/test-results:/work/test-results" \
         -v "$(pwd)/ctrf:/work/ctrf" \
