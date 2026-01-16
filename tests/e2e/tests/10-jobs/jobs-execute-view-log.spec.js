@@ -7,7 +7,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(300000) // Set timeout to 5 minutes
   // Jobs: Execute Job - Create DQD job with name dqd_demo
-  
+
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -90,7 +90,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText("Worker 'prefect-docker-worker")).toBeVisible()
 
   // Jobs: View Results - View results for job dqd_demo
-  await page.getByText('Job RunsJobsBlocksVariables', { timeout: 1000 }).scrollIntoViewIfNeeded()
+  await page.getByText('Job RunsJobsBlocksVariables').scrollIntoViewIfNeeded()
   await page.getByText('Completed', { exact: true }).waitFor({ state: 'visible', timeout: 300000 })
   await page.getByRole('button', { name: 'View Results' }).waitFor({ state: 'visible', timeout: 300000 })
   await page.getByRole('button', { name: 'View Results' }).click()

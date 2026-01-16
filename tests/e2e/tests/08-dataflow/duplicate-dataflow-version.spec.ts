@@ -19,7 +19,7 @@ test('duplicate-dataflow-version', async ({ page }) => {
   // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
   try {
     // First try to find "Create your first dataflow" button (when no flows exist)
-    await page.waitForSelector('button:has-text("Create your first dataflow")', { timeout: 5000 })
+    await page.waitForSelector('button:has-text("Create your first dataflow")')
     await page.getByRole('button', { name: 'Create your first dataflow' }).click()
   } catch {
     // If that fails, look for "Create new dataflow" button (when flows already exist)
@@ -41,7 +41,7 @@ test('duplicate-dataflow-version', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Describe your changes' }).fill('Added Python node')
   await page.getByRole('button', { name: 'Save' }).click()
 
-  await expect(page.getByText('Up to Date')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('Up to Date')).toBeVisible()
 
   // Verify version history shows 2 versions
   await page.getByLabel('Show version history').getByRole('button').click()
@@ -63,7 +63,7 @@ test('duplicate-dataflow-version', async ({ page }) => {
   await page.getByRole('button', { name: 'Duplicate' }).click()
 
   // Verify duplicated dataflow has only 1 version
-  await expect(page.getByText(`Version history of "${duplicateName}"`)).toBeVisible({ timeout: 15000 })
+  await expect(page.getByText(`Version history of "${duplicateName}"`)).toBeVisible()
   await expect(page.getByText('Version #1')).toBeVisible()
   await expect(page.getByText('Version #2')).not.toBeVisible()
 

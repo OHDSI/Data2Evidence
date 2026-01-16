@@ -78,7 +78,7 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: /^Latest Available Schema VersionValue$/ })
       .getByPlaceholder(' ')
       .fill('2')
-    await page.getByRole('button', { name: 'Save' }).click({ timeout: 30000 })
+    await page.getByRole('button', { name: 'Save' }).click()
     await page.waitForTimeout(3000)
     await page.reload()
     await expect(
@@ -88,9 +88,9 @@ test(TEST_NAME, async ({ page }) => {
       .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
       .nth(2)
-      .click({ timeout: 30000 })
+      .click()
     await page.getByRole('option', { name: 'Update schema' }).click()
-    await page.getByRole('button', { name: 'Yes, update' }).click({ timeout: 30000 })
+    await page.getByRole('button', { name: 'Yes, update' }).click()
     await page.getByRole('link', { name: 'Jobs' }).click()
     // Get the first (top) entry link
     const firstEntry = page
@@ -123,13 +123,13 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Username' }).fill('testuser1')
     await page.getByRole('textbox', { name: 'Password' }).click()
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
-    await page.getByRole('button', { name: 'Add' }).click({ timeout: 30000 })
+    await page.getByRole('button', { name: 'Add' }).click()
     // Wait for the user to appear after clicking Add
     await page.waitForTimeout(2000)
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
     await expect(page.getByRole('cell', { name: 'testuser1' })).toBeVisible()
-    // await expect(page.getByText('testuser1')).toBeVisible({ timeout: 30000 });
+    // await expect(page.getByText('testuser1')).toBeVisible();
   })
 
   await test.step('Hide dataset', async () => {
@@ -175,10 +175,10 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete test user', async () => {
     const userRow = page.getByRole('row', { name: /testuser1/ })
     await userRow.getByRole('button', { name: 'Delete' }).click()
-    // await page.getByRole('button', { name: 'Delete' }).nth(2).click({ timeout: 30000 });
-    await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+    // await page.getByRole('button', { name: 'Delete' }).nth(2).click();
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
     // Wait for the user row to be removed from the table, not just any text
-    await expect(page.getByRole('row', { name: /testuser1/ })).not.toBeVisible({ timeout: 20000 }) // Verify user is deleted
+    await expect(page.getByRole('row', { name: /testuser1/ })).not.toBeVisible() // Verify user is deleted
   })
 
   // Cleanup: Delete the datasets created for testing
@@ -189,12 +189,12 @@ test(TEST_NAME, async ({ page }) => {
       .getByRole('row', { name: /Test_dataset_update/ })
       .getByRole('button')
       .nth(2)
-      .click({ timeout: 30000 })
-    await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+      .click()
+    await page.getByRole('option', { name: 'Delete dataset' }).click()
     // Enter dataset name to confirm deletion
     await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test_dataset_update')
-    await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
     // Wait for the deletion to complete before proceeding
-    await expect(page.getByRole('row', { name: /Test_dataset_update/ })).not.toBeVisible({ timeout: 20000 })
+    await expect(page.getByRole('row', { name: /Test_dataset_update/ })).not.toBeVisible()
   })
 })

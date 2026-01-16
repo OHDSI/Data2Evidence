@@ -16,27 +16,30 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
 
   // Select the demo dataset and update it to show request access button
-  await page.getByRole('link', { name: 'Datasets' }).click();
-  const datasetTable = page.locator('.studyoverview__list').first();
-  await expect(datasetTable).toBeVisible({ timeout: 30000 });
-  await expect(datasetTable.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
-  const demoRow = datasetTable.locator('tr', { hasText: /Demo dataset/i }).first();
-  await expect(demoRow).toBeVisible({ timeout: 30000 });
-  
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  const datasetTable = page.locator('.studyoverview__list').first()
+  await expect(datasetTable).toBeVisible()
+  await expect(datasetTable.locator('tbody tr').first()).toBeVisible()
+  const demoRow = datasetTable.locator('tr', { hasText: /Demo dataset/i }).first()
+  await expect(demoRow).toBeVisible()
+
   // Child rows are now expanded by default, so we can directly access them in the main table
-  const childRow = datasetTable.locator('tbody tr').filter({ has: page.locator('.icon-cell--child') }).first();
-  await expect(childRow).toBeVisible({ timeout: 10000 });
-  
+  const childRow = datasetTable
+    .locator('tbody tr')
+    .filter({ has: page.locator('.icon-cell--child') })
+    .first()
+  await expect(childRow).toBeVisible()
+
   // Get the cache dataset name from the Name column (index 2: icon, dataset_id, name)
   // The table structure is: [icon] [Dataset ID] [Name] [Schema name] [Schema version] ...
-  const cacheDatasetNameCell = childRow.locator('td').nth(2);
-  const cacheDatasetName = (await cacheDatasetNameCell.textContent()).trim();
-  
+  const cacheDatasetNameCell = childRow.locator('td').nth(2)
+  const cacheDatasetName = (await cacheDatasetNameCell.textContent())?.trim()
+
   // Click "Select action" on the child dataset row
-  await childRow.getByText('Select action').click();
-  await page.getByRole('option', { name: 'Update dataset' }).click();
-  await page.getByText('Show request access button').click();
-  await page.getByRole('button', { name: 'Save' }).click();
+  await childRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Update dataset' }).click()
+  await page.getByText('Show request access button').click()
+  await page.getByRole('button', { name: 'Save' }).click()
 
   // Create a new researcher `test_researcher`
   await page.getByRole('link', { name: 'Users' }).click()
@@ -56,8 +59,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await expect(page.getByTestId('card').first()).toBeVisible({ timeout: 30000 })
-  
+  await expect(page.getByTestId('card').first()).toBeVisible()
+
   // Find and click on the cache dataset card by looking for a card with the dataset name
   await page.waitForTimeout(2000)
   const allCards = await page.getByTestId('card').all()
@@ -73,39 +76,42 @@ test(TEST_NAME, async ({ page }) => {
   if (!clicked) {
     throw new Error(`Could not find card with cache dataset name: ${cacheDatasetName}`)
   }
-  
+
   // Check that the request access button is visible and click it
   await expect(page.getByTestId('card').locator('div').filter({ hasText: 'Dataset Info' }).first()).toBeVisible()
   await expect(page.getByTestId('card-content')).toContainText('Request access')
   await page.getByTestId('button').click()
 
   // Login as admin and approve the request to dataset access
-  await page.getByRole('link', { name: 'Account' }).click();
-  await page.getByRole('button', { name: 'Logout' }).click();
-  await page.locator('input[name="identifier"]').click();
-  await page.locator('input[name="identifier"]').fill('admin');
-  await page.locator('input[name="password"]').click();
-  await page.locator('input[name="password"]').fill('Updatepassword12345');
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.getByTestId('button').nth(1).click();
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click();
-  await page.getByRole('link', { name: 'Datasets' }).click();
-  const datasetTableAgain = page.locator('.studyoverview__list').first();
-  await expect(datasetTableAgain).toBeVisible({ timeout: 30000 });
-  await expect(datasetTableAgain.locator('tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Logout' }).click()
+  await page.locator('input[name="identifier"]').click()
+  await page.locator('input[name="identifier"]').fill('admin')
+  await page.locator('input[name="password"]').click()
+  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await page.getByTestId('button').nth(1).click()
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  const datasetTableAgain = page.locator('.studyoverview__list').first()
+  await expect(datasetTableAgain).toBeVisible()
+  await expect(datasetTableAgain.locator('tbody tr').first()).toBeVisible()
   // Find the demo row again (can't reuse locator after navigation)
-  const demoRowAgain = datasetTableAgain.locator('tr', { hasText: /Demo dataset/i }).first();
-  await expect(demoRowAgain).toBeVisible({ timeout: 30000 });
+  const demoRowAgain = datasetTableAgain.locator('tr', { hasText: /Demo dataset/i }).first()
+  await expect(demoRowAgain).toBeVisible()
   // Child rows are expanded by default, find child row directly
-  const childRowAgain = datasetTableAgain.locator('tbody tr').filter({ has: page.locator('.icon-cell--child') }).first();
-  await expect(childRowAgain).toBeVisible({ timeout: 10000 });
-  await childRowAgain.getByText('Select action').click();
-  await page.getByRole('option', { name: 'Permissions' }).click();
-  await page.getByTestId('dialog').getByText('Select action').click();
-  await page.getByRole('option', { name: 'Approve' }).click();
-  await page.getByRole('button', { name: 'Save' }).click();
-  await page.getByRole('button', { name: 'Close', exact: true }).click();
-  
+  const childRowAgain = datasetTableAgain
+    .locator('tbody tr')
+    .filter({ has: page.locator('.icon-cell--child') })
+    .first()
+  await expect(childRowAgain).toBeVisible()
+  await childRowAgain.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Permissions' }).click()
+  await page.getByTestId('dialog').getByText('Select action').click()
+  await page.getByRole('option', { name: 'Approve' }).click()
+  await page.getByRole('button', { name: 'Save' }).click()
+  await page.getByRole('button', { name: 'Close', exact: true }).click()
+
   // Login as researcher user test_researcher and check that the dataset can be accessed
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Logout' }).click()
@@ -115,8 +121,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await expect(page.getByTestId('card').first()).toBeVisible({ timeout: 30000 })
-  
+  await expect(page.getByTestId('card').first()).toBeVisible()
+
   // Find and click on the cache dataset card after approval
   await page.waitForTimeout(2000)
   const allCardsAfterApproval = await page.getByTestId('card').all()
@@ -139,5 +145,7 @@ test(TEST_NAME, async ({ page }) => {
     page.getByTestId('card').locator('div').filter({ hasText: 'Dataset InfoData QualityData' }).first()
   ).toBeVisible()
   // Check that the nav bar contains the cache dataset name (not the parent dataset)
-  await expect(page.getByTestId('nav')).toContainText(`${cacheDatasetName}DatasetConceptsCohortsNotebooksAnalysisAccount`)
+  await expect(page.getByTestId('nav')).toContainText(
+    `${cacheDatasetName}DatasetConceptsCohortsNotebooksAnalysisAccount`
+  )
 })

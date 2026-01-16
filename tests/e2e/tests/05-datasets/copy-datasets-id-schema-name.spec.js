@@ -23,12 +23,12 @@ test(TEST_NAME, async ({ page, context }) => {
   const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
 
   // Get the schema name
-  await page.locator('div.alp-text__copy-button-container').nth(1).locator('button.alp-icon-button--icon-only').click();
-  const schema_name = await page.evaluate(async () => await navigator.clipboard.readText());
-  
+  await page.locator('div.alp-text__copy-button-container').nth(1).locator('button.alp-icon-button--icon-only').click()
+  const schema_name = await page.evaluate(async () => await navigator.clipboard.readText())
+
   // Check if the cell contains the dataset ID and schema name
   // With parent-child structure, the dataset ID might appear in multiple rows (parent + children with error messages)
   // Use .first() to avoid strict mode violation, or search in the dataset ID column specifically
-  await expect(page.locator('tr', { hasText: dataset_id }).first()).toBeVisible({ timeout: 30000 });
-  await expect(page.locator('tr', { hasText: schema_name }).first()).toBeVisible({ timeout: 30000 });
-});
+  await expect(page.locator('tr', { hasText: dataset_id }).first()).toBeVisible()
+  await expect(page.locator('tr', { hasText: schema_name }).first()).toBeVisible()
+})

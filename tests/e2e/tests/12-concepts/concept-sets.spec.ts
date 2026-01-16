@@ -7,7 +7,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }, testInfo) => {
   async function assertCount(count: string) {
-    return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
+    return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible()
   }
 
   await page.goto('/d2e/portal')
@@ -100,13 +100,13 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await expect(page.getByText('Concept Set Test 1 -')).toBeVisible()
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
-  await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('1,677 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot()
   await page.getByText('✎').click()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
-  await expect(page.getByRole('cell', { name: '81893' })).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('cell', { name: '81893' })).toBeVisible()
   // Only add "81893 64766004 Ulcerative" when it is not already selected, in the scenario of re-running the test
   if (await assertCount('1')) {
     await page

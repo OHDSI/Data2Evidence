@@ -35,7 +35,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Chronic sinusitis')
     try {
-      await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText('Chronic sinusitis')).toBeVisible()
       await page.getByText('Chronic sinusitis').click()
     } catch (e) {
       // If not visible in 2 seconds, continue without failing
@@ -64,10 +64,10 @@ test(TEST_NAME, async ({ page }) => {
         .getByTitle('Condition Occurrence A - Condition concept set')
         .getByPlaceholder('Enter search term')
         .fill('Chronic sinusitis')
-      await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText('Chronic sinusitis')).toBeVisible()
       await page.getByText('Chronic sinusitis').click()
     }
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page.getByText('682 / 2,694')).toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByText('Reset Selection').click()
@@ -86,7 +86,7 @@ test(TEST_NAME, async ({ page }) => {
   //Check if the cohort is saved
   await test.step('Check if the cohort is saved', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
@@ -149,10 +149,10 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Delete cohort', async () => {
     // await page.getByRole('button', { name: '' }).click();
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
     await page.locator('div:nth-child(5) > svg').first().click()
     // await page.getByRole('row', { name: 'Cohort Test' }).getByRole('button').nth(2).click();
-    await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
-    await expect(page.getByText('Cohort Test0. Icons/')).not.toBeVisible({ timeout: 20000 })
+    await page.getByRole('button', { name: 'Delete' }).click()
+    await expect(page.getByText('Cohort Test0. Icons/')).not.toBeVisible()
   })
 })

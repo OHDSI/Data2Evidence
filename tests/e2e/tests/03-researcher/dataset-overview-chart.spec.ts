@@ -21,7 +21,7 @@ test(TEST_NAME, async ({ page }) => {
 
     // Make sure the dqd and dc jobs are completed before switching to Researcher portal
     await page.getByRole('link', { name: 'Jobs' }).click()
-    await expect(page.locator('a:has-text("Job Runs")')).toBeVisible({ timeout: 3000 })
+    await expect(page.locator('a:has-text("Job Runs")')).toBeVisible()
     const dqd_entry = page
       .locator('.flow-run-list-item')
       .filter({ has: page.locator('a:has-text("dqd_plugin")') })
@@ -56,7 +56,7 @@ test(TEST_NAME, async ({ page }) => {
       .first()
       .locator('canvas')
       .hover({ position: { x: (1 / 2) * bb.width, y: (3 / 4) * bb.height } })
-    await expect(page.locator('div:has-text("Entity distribution")').last()).toBeVisible({ timeout: 3000 })
+    await expect(page.locator('div:has-text("Entity distribution")').last()).toBeVisible()
     await page.getByText('Data2Evidence').click()
     await expect(page.getByText('Entity distribution')).not.toBeVisible()
     await expect(page).toHaveScreenshot('dataset-overview-chart.png')

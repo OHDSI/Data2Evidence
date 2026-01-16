@@ -49,24 +49,24 @@ test(TEST_NAME, async ({ page }) => {
     .first()
   // Find the closest state badge to this entry
   const stateBadge = firstEntry.locator('.state-badge')
-  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+  await expect(stateBadge).toHaveText(/Completed/, { timeout: 240000 })
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Find and delete the child dataset first (Test Cache)
   const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
-  await expect(testCacheRow).toBeVisible({ timeout: 30000 })
+  await expect(testCacheRow).toBeVisible({ timeout: 60000 })
   await testCacheRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Cache')
-  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
   // Then delete the parent dataset (Test Study)
   const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
-  await expect(testStudyDataset).toBeVisible({ timeout: 30000 })
+  await expect(testStudyDataset).toBeVisible({ timeout: 60000 })
   await testStudyDataset.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Study')
-  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
 })

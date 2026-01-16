@@ -19,7 +19,7 @@ test('concept-mapping', async ({ page }) => {
   // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
   try {
     // First try to find "Create your first dataflow" button (when no flows exist)
-    await page.waitForSelector('button:has-text("Create your first dataflow")', { timeout: 5000 })
+    await page.waitForSelector('button:has-text("Create your first dataflow")')
     await page.getByRole('button', { name: 'Create your first dataflow' }).click()
   } catch {
     // If that fails, look for "Create new dataflow" button (when flows already exist)
@@ -102,10 +102,10 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(3000)
 
   // Check if there's a table or any data visible
-  await expect(page.locator('table')).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('table')).toBeVisible()
 
   // Verify import was successful by checking for table presence
-  await expect(page.locator('table')).toBeVisible({ timeout: 15000 })
+  await expect(page.locator('table')).toBeVisible()
 
   // Verify we have column headers (any headers indicate successful import)
   await expect(page.getByRole('columnheader').first()).toBeVisible()
@@ -114,7 +114,7 @@ test('concept-mapping', async ({ page }) => {
   await expect(page.getByRole('cell').first()).toBeVisible()
 
   // Click download CSV with timeout handling
-  const downloadPromise = page.waitForEvent('download', { timeout: 30000 })
+  const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download CSV' }).click()
   const download = await downloadPromise
 
@@ -138,5 +138,5 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(2000)
 
   // Verify the table is cleared - check that we're back to the file upload state
-  await expect(page.getByText('Click here to choose a file, or drop a file')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('Click here to choose a file, or drop a file')).toBeVisible()
 })

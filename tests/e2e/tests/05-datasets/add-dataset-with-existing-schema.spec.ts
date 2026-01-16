@@ -27,18 +27,18 @@ test(TEST_NAME, async ({ page }) => {
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
-  await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible()
   for (const dataset of [datasetNewSchema, datasetNewCacheSchema, datasetExistingSchema, datasetExistingCacheSchema]) {
     const datasetRow = page.locator('tr', { hasText: `${dataset}` }).first()
-    if (await datasetRow.isVisible({ timeout: 1000 })) {
+    if (await datasetRow.isVisible()) {
       await datasetRow.getByText('Select action').click()
       await page.getByRole('option', { name: 'Delete dataset' }).click()
       // Enter dataset name to confirm deletion
       await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(dataset)
       await page.getByRole('button', { name: 'Yes, delete' }).click()
       await page.reload()
-      await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+      await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
     }
   }
 
@@ -53,7 +53,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(stateBadge).toHaveText('Completed', { timeout: 720000 })
     await page.getByRole('link', { name: 'Datasets' }).click()
     // Wait for table to load
-    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   }
 
   // Add new dataset
@@ -77,7 +77,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetNewCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Wait for table to load first
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Wait for parent dataset to appear in the table (with parent-child structure, use row locators)
   await expect(page.locator('tr', { hasText: datasetNewSchema }).first()).toBeVisible({ timeout: 120000 })
 
@@ -93,23 +93,23 @@ test(TEST_NAME, async ({ page }) => {
   // const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
 
   // Delete the newly created dataset
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Find and delete the child dataset first (datasetNewCacheSchema)
   const newCacheRow = page.locator('tr', { hasText: datasetNewCacheSchema }).first()
-  await expect(newCacheRow).toBeVisible({ timeout: 30000 })
+  await expect(newCacheRow).toBeVisible()
   await newCacheRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetNewCacheSchema)
-  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
   // Then delete the parent dataset (datasetNewSchema)
   const newSchemaRow = page.locator('tr', { hasText: datasetNewSchema }).first()
-  await expect(newSchemaRow).toBeVisible({ timeout: 30000 })
+  await expect(newSchemaRow).toBeVisible()
   await newSchemaRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetNewSchema)
-  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
 
   // Add dataset with existing schema
   await page.getByRole('button', { name: 'Add dataset' }).click()
@@ -124,7 +124,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
   await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.locator('#mui-component-select-dataModelOption').click()
-  await expect(page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' })).toBeVisible({ timeout: 1000 })
+  await expect(page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' })).toBeVisible()
   await page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
@@ -133,26 +133,26 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetExistingCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Wait for table to load and datasets to appear
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
-  await expect(page.locator('tr', { hasText: datasetExistingSchema }).first()).toBeVisible({ timeout: 30000 })
-  await expect(page.locator('tr', { hasText: datasetExistingCacheSchema }).first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  await expect(page.locator('tr', { hasText: datasetExistingSchema }).first()).toBeVisible()
+  await expect(page.locator('tr', { hasText: datasetExistingCacheSchema }).first()).toBeVisible()
 
   // Clean up
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Find and delete the child dataset first (datasetExistingCacheSchema)
   const existingCacheRow = page.locator('tr', { hasText: datasetExistingCacheSchema }).first()
-  await expect(existingCacheRow).toBeVisible({ timeout: 30000 })
+  await expect(existingCacheRow).toBeVisible()
   await existingCacheRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetExistingCacheSchema)
-  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
   // Then delete the parent dataset (datasetExistingSchema)
   const existingSchemaRow = page.locator('tr', { hasText: datasetExistingSchema }).first()
-  await expect(existingSchemaRow).toBeVisible({ timeout: 30000 })
+  await expect(existingSchemaRow).toBeVisible()
   await existingSchemaRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetExistingSchema)
-  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
 })

@@ -23,7 +23,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Username' }).fill('testuserC')
   await page.getByRole('textbox', { name: 'Password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
-  await page.getByRole('button', { name: 'Add' }).click({ timeout: 30000 })
+  await page.getByRole('button', { name: 'Add' }).click()
   // Wait for the user to appear after clicking Add
   await page.waitForTimeout(2000)
   await page.reload()
@@ -32,7 +32,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Go to Datasets
   await page.getByRole('link', { name: 'Datasets' }).click()
-  const demoRow = await page.locator('tr', { hasText: 'Demo dataset' }).first()
+  const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first()
   await demoRow.getByText('Select action').click()
 
   // Manage dataset permissions
@@ -43,12 +43,12 @@ test(TEST_NAME, async ({ page }) => {
   const addButton = page.getByTestId('dialog').getByTestId('button')
   await expect(addButton).toBeVisible()
   await addButton.click()
-  await expect(page.getByRole('menu')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('menu')).toBeVisible()
   // Wait for 10 seconds to ensure the menu items are visible
   await page.waitForTimeout(10000)
-  await expect(page.getByRole('menuitem', { name: 'testuserC' })).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('menuitem', { name: 'testuserC' })).toBeVisible()
   await page.getByRole('menuitem', { name: 'testuserC' }).click()
-  await expect(page.getByRole('cell', { name: 'testuserC' })).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('cell', { name: 'testuserC' })).toBeVisible()
 
   // Revoke access to testuserC user
   const testuserCRow = page.getByRole('row', { name: /testuserC/ })
@@ -66,9 +66,9 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Users' }).click()
     const userRow = page.getByRole('row', { name: /testuserC/ })
     await userRow.getByRole('button', { name: 'Delete' }).click()
-    // await page.getByRole('button', { name: 'Delete' }).nth(2).click({ timeout: 30000 });
-    await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+    // await page.getByRole('button', { name: 'Delete' }).nth(2).click();
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
     // Wait for the user row to be removed from the table, not just any text
-    await expect(page.getByRole('row', { name: /testuserC/ })).not.toBeVisible({ timeout: 20000 }) // Verify user is deleted
+    await expect(page.getByRole('row', { name: /testuserC/ })).not.toBeVisible() // Verify user is deleted
   })
 })

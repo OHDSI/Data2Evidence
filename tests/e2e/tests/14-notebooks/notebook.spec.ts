@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'New Notebook' }).click()
   await page.getByRole('textbox', { name: 'Name' }).click()
   await page.getByRole('textbox', { name: 'Name' }).fill('Test Notebook')
-  await page.getByRole('button', { name: 'Create' }).click({ timeout: 2000 })
+  await page.getByRole('button', { name: 'Create' }).click()
   await expect(page.getByText('Created notebook "Test Notebook"')).toBeVisible()
   await page.getByTestId('snackbar-close').locator('svg').click()
   await page.reload()
@@ -39,7 +39,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Import notebook - Cannot interact with macOS to close the file dialog
   await page.getByRole('button', { name: 'Import Notebook' }).click()
-  const fileInput = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 2000 })
+  const fileInput = await page.waitForSelector('input[type="file"]', { state: 'attached' })
   await fileInput.setInputFiles(require('path').join(__dirname, 'Test_Notebook.ipynb'))
   // Close the file selector if a close button exists
   const closeFileDialog = await page.$('button[aria-label="Cancel"]')

@@ -43,7 +43,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
     await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Chronic sinusitis')
     try {
-      await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText('Chronic sinusitis')).toBeVisible()
       await page.getByText('Chronic sinusitis').click()
     } catch (e) {
       // If not visible in 2 seconds, continue without failing
@@ -137,7 +137,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Basic Data - Gender').locator('i').click()
     await page.getByText('Enter search term').click()
     await page.getByPlaceholder('Enter search term').fill('Female')
-    await page.getByText('FEMALE - FEMALE').click({ timeout: 40000 })
+    await page.getByText('FEMALE - FEMALE').click()
     await expect(page.getByText('357 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
@@ -151,7 +151,7 @@ test(TEST_NAME, async ({ page }) => {
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Saved Filters0. Icons/')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Test Saved Filters0. Icons/')).toBeVisible()
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
@@ -173,7 +173,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox').fill('Other saved filters')
     await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText('Other saved filters0. Icons/')).toBeVisible({ timeout: 30000 })
+    await expect(page.getByText('Other saved filters0. Icons/')).toBeVisible()
     await page
       .locator('div')
       .filter({ hasText: /^Other saved filters$/ })
@@ -181,23 +181,23 @@ test(TEST_NAME, async ({ page }) => {
       .click()
     await page.getByRole('button', { name: 'Discard' }).click()
     //Verify filters are loaded
-    await expect(page.getByText('>2')).toBeVisible({ timeout: 20000 })
-    await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible({ timeout: 20000 })
-    // await expect(page.getByText('Viral sinusitis')).toBeVisible({timeout: 20000});
+    await expect(page.getByText('>2')).toBeVisible()
+    await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
+    // await expect(page.getByText('Viral sinusitis')).toBeVisible();
     await expect(page.getByText('357 / 2,694')).toBeVisible()
   })
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Other saved filters0. Icons/')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Other saved filters0. Icons/')).toBeVisible()
     await page.getByTitle('Delete Saved Filter').first().click()
-    await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
-    await expect(page.getByText('Other saved filters0. Icons/')).not.toBeVisible({ timeout: 20000 })
+    await page.getByRole('button', { name: 'Delete' }).click()
+    await expect(page.getByText('Other saved filters0. Icons/')).not.toBeVisible()
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
     await page.getByRole('button', { name: 'D2E' }).click()
-    await expect(page.getByText('New cohort')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('New cohort')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
@@ -225,9 +225,9 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Viral sinusitis')
       try {
         // If the concept is already created, it will be visible
-        await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 10000 })
+        await expect(page.getByText('Viral sinusitis')).toBeVisible()
         await page.getByText('Viral sinusitis').click()
-        await expect(page.locator('.loading-animation-component')).not.toBeVisible({ timeout: 20000 })
+        await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       } catch (e) {
         await page.getByRole('button', { name: '+' }).click()
         await page.getByRole('textbox', { name: 'Concept set name' }).click()
@@ -236,7 +236,7 @@ test(TEST_NAME, async ({ page }) => {
         await page.getByRole('textbox', { name: 'search terms' }).click()
         await page.getByRole('textbox', { name: 'search terms' }).fill('Viral sinusitis')
         await page.getByRole('button', { name: 'Search' }).click()
-        await expect(page.getByRole('row', { name: /444814009.*Viral sinusitis/ })).toBeVisible({ timeout: 30000 })
+        await expect(page.getByRole('row', { name: /444814009.*Viral sinusitis/ })).toBeVisible()
         await page
           .getByRole('row', { name: /444814009.*Viral sinusitis/ })
           .locator('td')
@@ -267,34 +267,34 @@ test(TEST_NAME, async ({ page }) => {
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Another Patient List Saved Filters0. Icons/')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Test Another Patient List Saved Filters0. Icons/')).toBeVisible()
     //Click on the saved cohort
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByText('Test Another Patient List').nth(1).click()
-    await expect(page.getByText('FEMALE')).toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('Viral sinusitis')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('FEMALE')).toBeVisible()
+    await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await page.getByRole('link', { name: 'Exclusion (1)' }).click()
-    await expect(page.getByText('Death A')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Death A')).toBeVisible()
 
     //Verify the patient list
     await expect(page.locator('thead')).toContainText('Measurement')
-    await expect(page.getByText('Ethnicity concept id')).not.toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Ethnicity concept id')).not.toBeVisible()
   })
   await test.step('Filter Summary', async () => {
     await page.getByRole('button', { name: '' }).click()
-    await expect(page.getByText('Filter Summary')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Filter Summary')).toBeVisible()
     await page.locator('#pane-right div').filter({ hasText: 'Showing patients with:Basic' }).nth(2)
-    await expect(page.getByText('Showing patients with:')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Showing patients with:')).toBeVisible()
     await expect(
       page
         .locator('div')
         .filter({ hasText: /^Basic DataGender:FEMALE$/ })
         .first()
-    ).toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('ANDCondition Occurrence')).toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('ANDDeath A(Excluded)')).toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('Create ATLAS cohort definition')).toBeVisible({ timeout: 20000 })
-    await expect(page.getByText('Download SQL')).toBeVisible({ timeout: 20000 })
+    ).toBeVisible()
+    await expect(page.getByText('ANDCondition Occurrence')).toBeVisible()
+    await expect(page.getByText('ANDDeath A(Excluded)')).toBeVisible()
+    await expect(page.getByText('Create ATLAS cohort definition')).toBeVisible()
+    await expect(page.getByText('Download SQL')).toBeVisible()
   })
   //Download SQL
   await test.step('Download SQL', async () => {
@@ -316,15 +316,11 @@ test(TEST_NAME, async ({ page }) => {
       page.getByText(
         'Note that conversion to cohort definition is an approximation, and currently does not support "datetime" and "text" types and advanced time filtering. Your cohort definition will be available as an "Atlas Cohort Definition" in the Cohorts overview screen.'
       )
-    ).toBeVisible({ timeout: 20000 })
-    await page.getByRole('button', { name: 'Create', exact: true }).click({ timeout: 20000 })
-    await expect(page.getByText('ATLAS cohort definition created successfully and added to Cohorts.')).toBeVisible({
-      timeout: 40000
-    })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Create', exact: true }).click()
+    await expect(page.getByText('ATLAS cohort definition created successfully and added to Cohorts.')).toBeVisible()
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Another Patient List Saved FiltersAtlas Cohort DefinitionID')).toBeVisible({
-      timeout: 20000
-    })
+    await expect(page.getByText('Test Another Patient List Saved FiltersAtlas Cohort DefinitionID')).toBeVisible()
   })
   //Create another user to verify bookmark visibility
   await test.step('Switch to admin portal', async () => {
@@ -338,7 +334,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Username' }).fill('testuserB')
     await page.getByRole('textbox', { name: 'Password' }).click()
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
-    await page.getByRole('button', { name: 'Add' }).click({ timeout: 30000 })
+    await page.getByRole('button', { name: 'Add' }).click()
     // Wait for the user to appear after clicking Add
     await page.waitForTimeout(2000)
     await page.reload()
@@ -350,7 +346,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
-    await page.getByRole('menuitem', { name: 'testuserB' }).click({ timeout: 30000 })
+    await page.getByRole('menuitem', { name: 'testuserB' }).click()
     await page.getByTestId('dialog-close').click()
   })
 
@@ -366,7 +362,7 @@ test(TEST_NAME, async ({ page }) => {
     //Verify that the bookmark is visible
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Another Patient List Saved Filters')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Test Another Patient List Saved Filters')).toBeVisible()
     //Login as admin again
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -396,7 +392,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.locator('#pane-left label div').click()
-    await expect(page.getByText('Shared saved filter')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('Shared saved filter')).toBeVisible()
     //Delete the bookmark as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -410,23 +406,23 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     //Delete the Shared saved filter
     await test.step('Delete Shared saved filter', async () => {
-      await expect(page.getByText('Shared saved filter')).toBeVisible({ timeout: 20000 })
+      await expect(page.getByText('Shared saved filter')).toBeVisible()
       await page
         .locator('.item-card', { hasText: 'D2E Cohort Definition' })
         .locator('.footer .icon-button[title="Delete Saved Filter"]')
         .click()
-      await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
-      await expect(page.getByText('Shared saved filter')).not.toBeVisible({ timeout: 20000 })
+      await page.getByRole('button', { name: 'Delete' }).click()
+      await expect(page.getByText('Shared saved filter')).not.toBeVisible()
     })
     //Delete the Atlas Cohort Definition
     await test.step('Delete Atlas Cohort Definition', async () => {
-      await expect(page.getByText('Test Another Patient List')).toBeVisible({ timeout: 20000 })
+      await expect(page.getByText('Test Another Patient List')).toBeVisible()
       await page
         .locator('.item-card', { hasText: 'Atlas Cohort Definition' })
         .locator('.footer .icon-button[title="Delete Saved Filter"]')
         .click()
-      await page.getByRole('button', { name: 'Delete' }).click({ timeout: 40000 })
-      await expect(page.getByText('Test Another Patient List')).not.toBeVisible({ timeout: 20000 })
+      await page.getByRole('button', { name: 'Delete' }).click()
+      await expect(page.getByText('Test Another Patient List')).not.toBeVisible()
     })
     await expect(page.getByText('You have not yet saved any filters')).toBeVisible()
   })
