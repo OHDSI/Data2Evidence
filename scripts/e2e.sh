@@ -508,6 +508,9 @@ cmd_clean_all() {
     log_info "Removing all volumes for ${PROJECT_NAME}..."
     docker volume rm $(docker volume ls -q | grep "^${PROJECT_NAME}_") 2>/dev/null || true
 
+    log_info "Removing networks for ${PROJECT_NAME}..."
+    docker network rm $(docker network ls -q --filter "name=^${PROJECT_NAME}_") 2>/dev/null || true
+
     log_info "Session ${PROJECT_NAME} removed"
 }
 

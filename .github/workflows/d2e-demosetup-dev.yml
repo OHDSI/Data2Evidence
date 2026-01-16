@@ -212,17 +212,20 @@ jobs:
           docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
-      - name: e2e tests setup
+      - name: Build e2e Docker image
         run: |
           cd ./tests/e2e
-          npm install
-          npm run init
+          docker build -t d2e-e2e .
 
       - name: e2e tests
-        # continue-on-error: true
         run: |
           cd ./tests/e2e
-          npm test
+          docker run --rm \
+            --network=host \
+            -v "$(pwd):/work" \
+            -e D2E_BASE_URL=https://localhost:443 \
+            -e CI=true \
+            d2e-e2e npx playwright test
 
       - name: Upload Error Context
         if: always() # Always run, even if the previous step fails

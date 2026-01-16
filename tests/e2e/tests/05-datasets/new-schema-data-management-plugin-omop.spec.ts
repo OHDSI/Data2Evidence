@@ -43,10 +43,13 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: 120000 })
     await page.getByRole('link', { name: 'Jobs' }).click();
     // Get the first (top) entry link
-    const firstEntry = page.locator('a:has(span:text("datamodel-create-cdm_tsdmomop54_"))').first();
-    // Find the closest state badge to this entry (adjust the selector as needed)
-    const stateBadge = firstEntry.locator('xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]');
-    await expect(stateBadge).toHaveText(/Completed/, { timeout: 600000 });
+    const firstEntry = page
+        .locator('.state-list-item__content')
+        .filter({ has: page.locator('a:has-text("datamodel-create-cdm_tsdmomop54_")') })
+        .first()
+    // Find the closest state badge to this entry
+    const stateBadge = firstEntry.locator('.state-badge')
+    await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
     // Clean up - delete the created dataset
     await page.getByRole('link', { name: 'Datasets' }).click()
     await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
