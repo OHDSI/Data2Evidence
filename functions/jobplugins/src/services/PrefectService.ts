@@ -142,7 +142,10 @@ export class PrefectService {
             schemaName,
             databaseCode,
           },
-          {}
+          // Pass through resultsFolderPath if provided
+          options["resultsFolderPath"]
+            ? { resultsFolderPath: options["resultsFolderPath"] }
+            : {}
         ),
       }
     );

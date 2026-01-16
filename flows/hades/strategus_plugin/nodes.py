@@ -21,7 +21,7 @@ from genson.schema.node import SchemaGenerationError
 
 from prefect import task, flow
 from prefect.runtime import flow_run
-from prefect.context import TaskRunContext
+from prefect.context import TaskRunContext, FlowRunContext
 from prefect.artifacts import create_markdown_artifact
 
 from .custom_types import CohortNodeType, USE_TREX_CONNECTION
@@ -1316,27 +1316,10 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 pathToDriver = databaseConnectorJarFolder
             )
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
-            # create results datamodel settings
             resultsDataModelSettings = rStrategus.createResultsDataModelSettings(
                 resultsDatabaseSchema = results_schema,
                 resultsFolder = path_to_results,
             )
-            
-            print(f"Results folder path: {path_to_results}")
-            print(f"Results schema: {results_schema}")
-            
-            # List contents of results folder for debugging
-            if os.path.exists(path_to_results):
-                print("Contents of results folder:")
-                for root, dirs, files in os.walk(path_to_results):
-                    level = root.replace(path_to_results, '').count(os.sep)
-                    indent = ' ' * 2 * level
-                    print(f'{indent}{os.path.basename(root)}/')
-                    subindent = ' ' * 2 * (level + 1)
-                    for file in files[:5]:  # Show first 5 files
-                        print(f'{subindent}{file}')
-                    if len(files) > 5:
-                        print(f'{subindent}... and {len(files) - 5} more files')
 
             # if schema does not exist, create one (including the data model)
             if(not dbdao.check_schema_exists(results_schema)):
@@ -1484,39 +1467,6 @@ def extract_zip(zip_path: str, extract_to: str) -> str:
     return extract_to
 
 
-def validate_strategus_results_structure(results_path: str) -> tuple[bool, str]:
-    """
-    Validate that the extracted results folder has the expected Strategus structure.
-    
-    Args:
-        results_path: Path to the results folder
-        
-    Returns:
-        Tuple of (is_valid, error_message)
-    """
-    results_dir = Path(results_path)
-    
-    # Check if results directory exists
-    if not results_dir.exists():
-        return False, f"Results directory does not exist: {results_path}"
-    
-    if not results_dir.is_dir():
-        return False, f"Results path is not a directory: {results_path}"
-    
-    # Check for at least one module folder or data file
-    has_content = False
-    
-    for item in results_dir.iterdir():
-        if item.is_dir() or item.suffix == '.csv':
-            has_content = True
-            break
-    
-    if not has_content:
-        return False, "Results folder appears to be empty (no module folders or CSV files found)"
-    
-    return True, ""
-
-
 # ============================================================================
 # Upload Results from Storage
 # ============================================================================
@@ -1536,14 +1486,13 @@ def upload_results_from_storage(options):
             - analysisSpec: Analysis specification JSON (optional)
             - parentFlowRunId: Parent flow run ID for auth (optional)
     """
-    from prefect.context import FlowRunContext
-    
     study_id = options.get('studyId')
     dataset_id = options.get('datasetId')
     database_code = options.get('databaseCode')
     schema_name = options.get('schemaName')
     storage_file_name = options.get('storageFileName', 'results.zip')
-    parent_flow_run_id = options.get('parentFlowRunId')  # Get parent flow run ID
+    results_folder_path = options.get('resultsFolderPath')
+    parent_flow_run_id = options.get('parentFlowRunId')
     analysis_spec = options.get('analysisSpec')
     
     # Validate required parameters
@@ -1600,49 +1549,67 @@ def upload_results_from_storage(options):
         extract_dir = os.path.join(work_dir, 'extracted')
         extract_zip(zip_path, extract_dir)
         
-        # Step 3: Find results folder (could be at root or nested)
+        # Step 3: Locate results folder
+        print("Step 3: Locating results folder...")
         results_path = None
         
-        # Helper function to check if a directory looks like results folder
-        def looks_like_results_folder(path):
-            """Check if path contains module folders or CSV files"""
-            if not os.path.isdir(path):
-                return False
-            for item in os.listdir(path):
-                item_path = os.path.join(path, item)
-                if os.path.isdir(item_path) or item.endswith('.csv'):
-                    return True
-            return False
-        
-        # Check if extracted_dir itself is the results folder
-        if looks_like_results_folder(extract_dir):
-            results_path = extract_dir
+        if results_folder_path:
+            # User specified the path within the zip
+            results_path = os.path.join(extract_dir, results_folder_path)
+            print(f"Using user-specified results path: {results_folder_path}")
+            
+            if not os.path.exists(results_path):
+                raise ValueError(f"Specified results folder path does not exist: {results_folder_path}")
+            
+            if not os.path.isdir(results_path):
+                raise ValueError(f"Specified results folder path is not a directory: {results_folder_path}")
         else:
-            # Look for a 'results' subfolder
+            print("No resultsFolderPath specified, attempting auto-detection...")
+            
+            # Helper function to check if a directory looks like Strategus results folder
+            def looks_like_results_folder(path):
+                """Check if path contains CSV files"""
+                if not os.path.isdir(path):
+                    return False
+                
+                for item in os.listdir(path):
+                    if item.endswith('.csv') and not item.startswith('.'):
+                        return True
+                
+                # Check subdirectories for CSV files
+                for item in os.listdir(path):
+                    item_path = os.path.join(path, item)
+                    if os.path.isdir(item_path):
+                        for subitem in os.listdir(item_path):
+                            if subitem.endswith('.csv') and not subitem.startswith('.'):
+                                return True
+                
+                return False
+            
             results_subdir = os.path.join(extract_dir, 'results')
             if os.path.exists(results_subdir) and looks_like_results_folder(results_subdir):
                 results_path = results_subdir
+                print(f"Found 'results' subfolder")
+            elif looks_like_results_folder(extract_dir):
+                results_path = extract_dir
+                print(f"Extracted directory is the results folder")
             else:
                 # Look for any folder that looks like results
+                print("Searching for results folder...")
                 for root, dirs, files in os.walk(extract_dir):
                     if looks_like_results_folder(root):
                         results_path = root
+                        print(f"Found results folder via deep search: {root}")
                         break
         
         if not results_path:
-            raise ValueError("Could not find results folder in the extracted zip (no module folders or CSV files found)")
+            raise ValueError("Could not find results folder. Please specify 'resultsFolderPath' parameter (e.g., 'results')")
         
         print(f"Found results folder at: {results_path}")
         
-        # Step 4: Validate results structure
-        print("Step 3: Validating results structure...")
-        is_valid, error_msg = validate_strategus_results_structure(results_path)
-        if not is_valid:
-            raise ValueError(f"Invalid results structure: {error_msg}")
-        print("Results structure validated successfully")
-        
-        # Step 5: Upload results to database
+        # Step 4: Upload results to database
         print("Step 4: Uploading results to database...")
+        print(f"Passing results_path to upload function: {results_path}")
         
         # Check if analysis spec is provided
         if not analysis_spec:
@@ -1651,7 +1618,6 @@ def upload_results_from_storage(options):
             print(f"Results extracted to: {results_path}")
             return
         
-        # Convert dict to JSON string if needed
         if isinstance(analysis_spec, dict):
             analysis_spec = json.dumps(analysis_spec)
         

@@ -26,7 +26,6 @@ def strategus_plugin(json_graph, options):
     # install_r_packages_from_lockfile(lockfile_location)
 
     # Get parent flow run ID for auth token
-    from prefect.context import FlowRunContext
     parent_flow_run_context = FlowRunContext.get()
     parent_flow_run_id = str(parent_flow_run_context.flow_run.dict().get("id")) if parent_flow_run_context else None
 
