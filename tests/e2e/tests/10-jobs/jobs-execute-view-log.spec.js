@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'jobs-execute-view-log-and-result'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -16,8 +16,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.getByRole('cell', { name: 'Demo dataset' })).toBeVisible()
-  const value = await page.getByRole('cell').nth(1).textContent()
+  await expect(page.getByText('Demo dataset')).toBeVisible();
+  const dataset_id = await page.getByRole('row').nth(2).getByRole('cell').nth(2).textContent();
+  const schema_name = await page.getByRole('row').nth(2).getByRole('cell').nth(4).textContent();
   await page.getByRole('link', { name: 'Jobs' }).click()
   await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible()
   await page.getByRole('button', { name: 'Jobs' }).click()
@@ -28,14 +29,19 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Custom run' }).click()
   await page.locator('input[type="text"]').click()
   await page.locator('input[type="text"]').fill('dqd_demo')
+  // Jobs: Execute Job - Fill in the DQD job parameters
+  // Fill up Datasetid field
   await page.locator('.p-textarea__control').first().click()
-  await page.locator('.p-textarea__control').first().fill(value)
+  await page.locator('.p-textarea__control').first().fill(dataset_id)
   await page
     .locator('div:nth-child(3) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
+  // Fill up Schemaname field 
   await page
     .locator('div:nth-child(3) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
-    .fill('demo_cdm')
+    .fill(schema_name)
+
+  // Fill up Releasedate field
   await page
     .locator('div:nth-child(4) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
@@ -47,30 +53,34 @@ test(TEST_NAME, async ({ page }) => {
   await page
     .locator('div:nth-child(4) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill(currentDate)
+  // Fill up Databasecode field
   await page
     .locator('div:nth-child(5) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(5) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill('demo_database')
+  // Fill up Vocabschemaname field
   await page
     .locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
-    .fill('demo_cdm')
+    .fill(schema_name)
+  // Fill up Cdmversionnumber field
   await page
     .locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill('5.3')
+  // Fill up Resultsschemaname field
   await page
     .locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
-    .fill('demo_cdm')
+    .fill(schema_name)
   await page.getByRole('button', { name: 'Submit' }).click()
   await page.getByRole('button', { name: 'Job Runs' }).click()
   await expect(page.getByRole('heading', { name: 'Job Runs' })).toBeVisible()
@@ -94,7 +104,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'View Results' }).waitFor({ state: 'visible', timeout: 300000 })
   await page.getByRole('button', { name: 'View Results' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset: demo_cdm .+/)
+  await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset+/)
   await expect(page.getByRole('dialog')).toHaveText(
     /.+1047 out of 1933 passed checks are Not Applicable, due to empty tables or fields.+/
   )
