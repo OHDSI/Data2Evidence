@@ -34,6 +34,9 @@ const _loadScript = (
 
 export const loadScript = (src: string): Callback => _loadScript(src);
 
+// Load script with onLoad callback (for external libraries like D3)
+export const loadScriptWithCallback = (src: string, onLoad: () => void): Callback => _loadScript(src, onLoad);
+
 export const loadEsModuleScript = (src: string, onLoad: () => void): Callback =>
   _loadScript(src, onLoad, { type: "module" });
 

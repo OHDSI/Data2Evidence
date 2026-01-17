@@ -1,8 +1,11 @@
 /**
  * D3 v3 wrapper module
  *
- * D3 v3.5.17 is loaded from CDN as a global script in index.html
- * This wrapper provides a typed export for use in Vue components
+ * D3 v3.5.17 is loaded from CDN as a global script.
+ * - In standalone mode: loaded via script tag in index.html
+ * - In portal mode: loaded via PAPlugin.tsx before vue-mri-ui-lib scripts
+ *
+ * This wrapper provides a typed export for use in Vue components.
  */
 
 // Extend Window interface for d3
@@ -17,7 +20,7 @@ const getD3 = (): any => {
   if (typeof window !== 'undefined' && window.d3) {
     return window.d3
   }
-  throw new Error('D3 is not loaded. Make sure the D3 script is included in index.html')
+  throw new Error('D3 is not loaded. Make sure the D3 script is included before this module.')
 }
 
 // Export a proxy that lazily accesses window.d3

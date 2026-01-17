@@ -73,7 +73,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
         '@': path.resolve(__dirname, './src'),
         // Dedupe Vue to prevent multiple instances (matching webpack alias)
         vue: path.resolve(__dirname, 'node_modules/vue'),
-        // Use wrapper for D3 to avoid CommonJS issues with D3 v3
+        // D3 v3 wrapper - loads from window.d3 (CDN)
         d3: path.resolve(__dirname, './src/lib/d3.ts'),
         // Stream polyfill for streamsaver (matching webpack fallback config)
         stream: 'stream-browserify',
@@ -198,6 +198,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
 
     optimizeDeps: {
       include: ['vue', 'vuex', 'single-spa', 'axios', 'lodash', 'echarts', 'vue-multiselect'],
+      // D3 v3 is loaded from CDN, exclude from optimization
       exclude: ['d3'],
     },
 
