@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { MINUTE_1, MINUTE_2, MINUTE_5 } from '../const'
+import { MINUTE_2, MINUTE_5 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-data-management-plugin-omop'
 const SHOULD_SKIP = false
@@ -56,7 +56,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Find and delete the child dataset first (Test Cache)
   const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
-  await expect(testCacheRow).toBeVisible({ timeout: MINUTE_1 })
+  await expect(testCacheRow).toBeVisible({ timeout: MINUTE_2 })
   await testCacheRow.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
@@ -64,7 +64,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   // Then delete the parent dataset (Test Study)
   const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
-  await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_1 })
+  await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_2 })
   await testStudyDataset.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion

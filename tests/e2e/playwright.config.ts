@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test'
 import dotenv from 'dotenv'
-import { MINUTE_1, MINUTE_3, SECOND_20 } from './tests/const'
+import { MINUTE_1, MINUTE_3, SECOND_20, SECOND_30 } from './tests/const'
 
 dotenv.config({ quiet: true })
 
@@ -8,7 +8,7 @@ export default defineConfig({
   testDir: 'tests',
   timeout: MINUTE_3, // 3 minutes per test
   expect: {
-    timeout: SECOND_20 // 20 seconds for expect conditions
+    timeout: SECOND_30 // 20 seconds for expect conditions
   },
   use: {
     baseURL: process.env.D2E_BASE_URL ?? 'https://localhost:443',

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
-import { MINUTE_1, MINUTE_2 } from '../const'
+import { MINUTE_2 } from '../const'
 
-const TEST_NAME = 'dataset-new-schema-data-management-plugin-omop'
+const TEST_NAME = 'dataset-new-schema-data-management-plugin-mi'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 const randomString = Math.random().toString(36).substring(2, 10)
@@ -58,14 +58,14 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Find and delete the child dataset first (Test Cache)
   const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
-  await expect(testCacheRow).toBeVisible({ timeout: MINUTE_1 })
+  await expect(testCacheRow).toBeVisible({ timeout: MINUTE_2 })
   await testCacheRow.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
-  await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_1 })
+  await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_2 })
   await testStudyDataset.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion

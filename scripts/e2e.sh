@@ -43,6 +43,37 @@ read_choice() {
     echo "$choice"
 }
 
+# Print wizard configuration summary
+print_wizard_config() {
+    local action="$1"
+    echo ""
+    echo -e "${BOLD}  Configuration${NC}"
+    echo -e "  ─────────────────────────────────"
+    echo -e "  Action:             ${CYAN}$action${NC}"
+    if [ -n "$PROJECT_NAME" ]; then
+        echo -e "  Session:            ${CYAN}$PROJECT_NAME${NC}"
+    fi
+    if [ -n "$BRANCH" ]; then
+        echo -e "  Branch:             ${CYAN}$BRANCH${NC}"
+    fi
+    if [ "$SKIP_UI" = true ]; then
+        echo -e "  Build/mount UI:     ${CYAN}no${NC}"
+    else
+        echo -e "  Build/mount UI:     ${CYAN}yes${NC}"
+    fi
+    if [ -n "$TEST_FILTER" ]; then
+        echo -e "  Test filter:        ${CYAN}$TEST_FILTER${NC}"
+    else
+        echo -e "  Test filter:        ${CYAN}all tests${NC}"
+    fi
+    if [ "$UPDATE_SCREENSHOTS" = true ]; then
+        echo -e "  Update screenshots: ${CYAN}yes${NC}"
+    else
+        echo -e "  Update screenshots: ${CYAN}no${NC}"
+    fi
+    echo ""
+}
+
 # Yes/No prompt, returns 0 for yes, 1 for no
 ask_yes_no() {
     local prompt="$1"
@@ -128,10 +159,11 @@ select_session() {
     done <<< "$sessions"
 
     echo ""
-    printf "  Enter choice (1-$((i-1))): "
+    printf "  Enter choice (1-$((i-1))) [1]: "
 
     local choice
     read -r choice
+    choice="${choice:-1}"
 
     if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -lt "$i" ]; then
         SELECTED_SESSION="${session_array[$((choice-1))]}"
@@ -191,7 +223,7 @@ cmd_wizard() {
     case $choice in
         1)
             echo ""
-            # Ask for options
+            # Ask for options first
             if ask_yes_no "  Build and mount UI?" "y"; then
                 SKIP_UI=false
             else
@@ -208,7 +240,25 @@ cmd_wizard() {
                 UPDATE_SCREENSHOTS=true
             fi
 
-            echo ""
+            print_wizard_config "Fresh Setup & Test"
+
+            # Clean up any existing e2e sessions after user confirms options
+            local existing_sessions
+            existing_sessions=$(list_sessions)
+            if [ -n "$existing_sessions" ]; then
+                log_warn "Existing e2e sessions found. Cleaning up..."
+                while IFS= read -r session; do
+                    export PROJECT_NAME="$session"
+                    log_info "Removing session: $session"
+                    cmd_clean_all
+                done <<< "$existing_sessions"
+                unset PROJECT_NAME
+            fi
+
+            # Pull latest trex image
+            log_info "Pulling latest trex image..."
+            docker pull ghcr.io/ohdsi/d2e-trex:develop
+
             cmd_init
             # Run tests after init completes
             log_info "Running tests..."
@@ -232,7 +282,7 @@ cmd_wizard() {
                 UPDATE_SCREENSHOTS=true
             fi
 
-            echo ""
+            print_wizard_config "Restore & Retest"
             cmd_retest
             ;;
         3)
