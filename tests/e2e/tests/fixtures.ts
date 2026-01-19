@@ -16,11 +16,6 @@ export const test = base.extend<{
       const timestamp = new Date().toISOString()
       const logEntry = `[${timestamp}] [${type.toUpperCase()}] ${text}`
       logs.push(logEntry)
-
-      // Also log errors and warnings to stderr for visibility
-      if (type === 'error' || type === 'warning') {
-        console.error(logEntry)
-      }
     })
 
     // Capture uncaught page errors
@@ -28,7 +23,6 @@ export const test = base.extend<{
       const timestamp = new Date().toISOString()
       const logEntry = `[${timestamp}] [PAGE ERROR] ${error.message}\n${error.stack}`
       logs.push(logEntry)
-      console.error(logEntry)
     })
 
     // Capture request failures
@@ -37,7 +31,6 @@ export const test = base.extend<{
       const failure = request.failure()
       const logEntry = `[${timestamp}] [REQUEST FAILED] ${request.method()} ${request.url()} - ${failure?.errorText || 'Unknown error'}`
       logs.push(logEntry)
-      console.error(logEntry)
     })
 
     await use(page)
