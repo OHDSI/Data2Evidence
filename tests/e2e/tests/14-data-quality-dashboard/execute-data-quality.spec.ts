@@ -53,6 +53,8 @@ test(TEST_NAME, async ({ page }) => {
   }
   await page.getByTestId('dialog-close').click()
 
+  // Wait for job container to stabilize before navigating to Jobs page
+  await page.waitForTimeout(5000)
   // Open jobs page
   await page.getByRole('link', { name: 'Jobs' }).click()
   await page.getByRole('button', { name: 'Job Runs' }).click()

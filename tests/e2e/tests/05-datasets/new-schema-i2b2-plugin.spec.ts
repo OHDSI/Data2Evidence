@@ -4,7 +4,7 @@ import { MINUTE_2, MINUTE_5 } from '../const'
 const TEST_NAME = 'dataset-new-schema-i2b2-plugin'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-const randomString = Math.random().toString(36).substring(2, 10)
+const randomString = 'tsi2b2' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e')
@@ -35,18 +35,20 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).click()
-  await page.getByRole('textbox', { name: 'Token dataset code' }).fill('tsi2b2')
+  await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomString)
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Wait for datasets to appear in the table (with parent-child structure, use row locators)
   await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
   await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
+  // Wait for job container to stabilize before navigating to Jobs page
+  await page.waitForTimeout(5000)
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
   const firstEntry = page
     .locator('.state-list-item__content')
-    .filter({ has: page.locator('a:has-text("datamodel-create-cdm_tsi2b2_")') })
+    .filter({ has: page.locator(`a:has-text("datamodel-create-cdm_${randomString}")`) })
     .first()
   // Find the closest state badge to this entry
   const stateBadge = firstEntry.locator('.state-badge')

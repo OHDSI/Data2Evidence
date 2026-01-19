@@ -424,7 +424,41 @@ cmd_setup_env() {
     echo "  export PROJECT_NAME=$PROJECT_NAME"
 }
 
+# Check if bun is installed and has a compatible version
+# Bun 1.2.23 or 1.3.2+ are compatible. Bun 1.3.0 and 1.3.1 break builds.
+check_bun_version() {
+    if ! command -v bun &> /dev/null; then
+        log_error "Bun is not installed!"
+        echo ""
+        echo "  Install bun with:"
+        echo "    curl -fsSL https://bun.sh/install | bash -s \"bun-v1.2.23\""
+        echo ""
+        exit 1
+    fi
+
+    local version
+    version=$(bun --version)
+
+    # Check for problematic versions (1.3.0 and 1.3.1)
+    if [[ "$version" == "1.3.0" || "$version" == "1.3.1" ]]; then
+        log_error "Bun version $version is not compatible!"
+        echo ""
+        echo "  Bun 1.3.0 and 1.3.1 use isolated installs by default,"
+        echo "  which breaks builds because dependencies aren't hoisted."
+        echo ""
+        echo "  Use Bun 1.2.23 (CI version) or 1.3.2+:"
+        echo "    curl -fsSL https://bun.sh/install | bash -s \"bun-v1.2.23\""
+        echo ""
+        echo "  See: https://bun.com/blog/bun-v1.3.2#hoisted-installs-restored-as-default"
+        echo ""
+        exit 1
+    fi
+
+    log_info "Bun version: $version"
+}
+
 cmd_build_ui() {
+    check_bun_version
     cd "$ROOT_DIR/ui"
     log_info "Building UI..."
     bun install
@@ -597,6 +631,7 @@ cmd_test() {
         log_info "Updating screenshots (baselines will be overwritten)"
     fi
 
+    set +e
     docker run --rm -it \
         --network=host \
         --ipc=host \
@@ -607,6 +642,17 @@ cmd_test() {
         -e D2E_BASE_URL=https://localhost:41100 \
         -e CI=true \
         d2e-e2e $test_cmd
+    local test_exit_code=$?
+    set -e
+
+    if [ $test_exit_code -ne 0 ]; then
+        log_error "Tests failed! Dumping trex logs..."
+        local log_file="$E2E_DIR/test-results/trex-logs-$(date +%Y%m%d-%H%M%S).log"
+        mkdir -p "$E2E_DIR/test-results"
+        docker logs ${PROJECT_NAME}-trex > "$log_file" 2>&1
+        log_info "Trex logs saved to: $log_file"
+        return $test_exit_code
+    fi
 }
 
 cmd_retest() {

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../fixtures'
 import { MINUTE_2 } from '../const'
 
 const TEST_NAME = 'add-dataset-with-existing-schema'
@@ -44,7 +44,8 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   async function createComplete() {
-    // Wait for schema to be created in the database
+    // Wait for job container to stabilize before navigating to Jobs page
+    await page.waitForTimeout(5000)
     await page.getByRole('link', { name: 'Jobs' }).click()
     const entry = page
       .locator('.flow-run-list-item')
@@ -73,7 +74,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Token dataset code' }).fill('new_test_dataset')
+  await page.getByRole('textbox', { name: 'Token dataset code' }).fill(`${randomString}1`)
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetNewCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
@@ -129,7 +130,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'omop5-3 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Token dataset code' }).fill('new_test_dataset_2')
+  await page.getByRole('textbox', { name: 'Token dataset code' }).fill(`${randomString}2`)
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetExistingCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()

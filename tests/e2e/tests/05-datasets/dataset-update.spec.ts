@@ -39,8 +39,9 @@ test(TEST_NAME, async ({ page }) => {
   const randomToken = Math.random().toString(36).substring(2, 6)
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomToken)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await page.waitForTimeout(3000)
   await expect(page.getByText('Test_dataset_update').first()).toBeVisible()
+  // Wait for job container to stabilize before navigating to Jobs page
+  await page.waitForTimeout(5000)
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
   const firstEntry = page
@@ -92,6 +93,8 @@ test(TEST_NAME, async ({ page }) => {
       .click()
     await page.getByRole('option', { name: 'Update schema' }).click()
     await page.getByRole('button', { name: 'Yes, update' }).click()
+    // Wait for job container to stabilize before navigating to Jobs page
+    await page.waitForTimeout(5000)
     await page.getByRole('link', { name: 'Jobs' }).click()
     // Get the first (top) entry link
     const firstEntry = page

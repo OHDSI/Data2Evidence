@@ -4,7 +4,7 @@ import { MINUTE_2 } from '../const'
 const TEST_NAME = 'dataset-new-schema-data-management-plugin-mi'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-const randomString = Math.random().toString(36).substring(2, 10)
+const randomString = 'tsdmmi' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -35,7 +35,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).click()
-  await page.getByRole('textbox', { name: 'Token dataset code' }).fill('tsdmmi')
+  await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomString)
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
@@ -44,11 +44,13 @@ test(TEST_NAME, async ({ page }) => {
   // Test Cache is a child dataset, so it appears in a nested table within the expanded parent row
   // Search for it in any table (main or nested)
   await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
+  // Wait for job container to stabilize before navigating to Jobs page
+  await page.waitForTimeout(5000)
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
   const firstEntry = page
     .locator('.state-list-item__content')
-    .filter({ has: page.locator('a:has-text("datamodel-create-cdm_tsdmmi_")') })
+    .filter({ has: page.locator(`a:has-text("datamodel-create-cdm_${randomString}")`) })
     .first()
   // Find the closest state badge to this entry
   const stateBadge = firstEntry.locator('.state-badge')
