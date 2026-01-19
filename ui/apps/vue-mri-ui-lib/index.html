@@ -15,7 +15,7 @@
       AUTH_CONFIG must be a regular script (not type="module") so it runs synchronously
       before authenticate.js. Vite replaces %VITE_*% placeholders during serve/build.
     -->
-    <script>
+    <script nonce="__NONCE__">
       window.AUTH_CONFIG = {
         useMockServer: '%VITE_STANDALONE_ATLAS%' === 'true',
         redirectUrl: '%VITE_REDIRECT_URL%' || 'https://localhost:8081',
@@ -29,8 +29,6 @@
       }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
-    <!-- D3 v3 loaded from CDN (required for chart components) -->
-    <script src="https://d3js.org/d3.v3.min.js"></script>
     <script type="text/javascript" src="/authenticate.js"></script>
     <script type="text/javascript" src="/system.min.js"></script>
   </head>

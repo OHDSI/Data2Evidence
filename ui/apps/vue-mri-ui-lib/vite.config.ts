@@ -19,12 +19,14 @@ export default defineConfig(({ command, mode }): UserConfig => {
     .filter((route: string | undefined): route is string => !!route && route.startsWith('/'))
     .concat('/cohorts')
 
-  console.log('Mode       :', mode)
-  console.log('Production :', isProduction)
-  console.log('Build      :', isBuild)
-  console.log('Client Routes:', clientRoutes)
-  console.log('VITE_CLIENT_ID:', env.VITE_CLIENT_ID)
-  console.log('VITE_REDIRECT_URL:', env.VITE_REDIRECT_URL)
+  if (!isProduction) {
+    console.log('Mode       :', mode)
+    console.log('Production :', isProduction)
+    console.log('Build      :', isBuild)
+    console.log('Client Routes:', clientRoutes)
+    console.log('VITE_CLIENT_ID:', env.VITE_CLIENT_ID)
+    console.log('VITE_REDIRECT_URL:', env.VITE_REDIRECT_URL)
+  }
 
   return {
     // Base path for assets (empty string matches webpack publicPath: '')
@@ -73,7 +75,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
         '@': path.resolve(__dirname, './src'),
         // Dedupe Vue to prevent multiple instances (matching webpack alias)
         vue: path.resolve(__dirname, 'node_modules/vue'),
-        // D3 v3 wrapper - loads from window.d3 (CDN)
+        // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)
         d3: path.resolve(__dirname, './src/lib/d3.ts'),
         // Stream polyfill for streamsaver (matching webpack fallback config)
         stream: 'stream-browserify',
@@ -198,8 +200,6 @@ export default defineConfig(({ command, mode }): UserConfig => {
 
     optimizeDeps: {
       include: ['vue', 'vuex', 'single-spa', 'axios', 'lodash', 'echarts', 'vue-multiselect'],
-      // D3 v3 is loaded from CDN, exclude from optimization
-      exclude: ['d3'],
     },
 
     // Vitest configuration

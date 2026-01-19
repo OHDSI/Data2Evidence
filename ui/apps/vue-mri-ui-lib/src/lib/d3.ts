@@ -1,40 +1,19 @@
 /**
  * D3 v3 wrapper module
  *
- * D3 v3.5.17 is loaded from CDN as a global script.
- * - In standalone mode: loaded via script tag in index.html
- * - In portal mode: loaded via PAPlugin.tsx before vue-mri-ui-lib scripts
+ * D3 v3.5.17 is patched to replace `this` with `window` for ESM compatibility.
+ * The original IIFE uses `this.document` which becomes undefined when bundled.
  *
- * This wrapper provides a typed export for use in Vue components.
+ * The patched version in ./vendor/d3.v3.patched.js:
+ * - Replaces `this.document` → `window.document`
+ * - Replaces `this.Element.prototype` → `window.Element.prototype`
+ * - Replaces `this.CSSStyleDeclaration.prototype` → `window.CSSStyleDeclaration.prototype`
+ * - Uses `module.exports = d3` for CommonJS compatibility
+ *
+ * This allows proper bundling and tree-shaking by Vite.
  */
 
-// Extend Window interface for d3
-declare global {
-  interface Window {
-    d3: any
-  }
-}
-
-// Lazy getter that waits for d3 to be available
-const getD3 = (): any => {
-  if (typeof window !== 'undefined' && window.d3) {
-    return window.d3
-  }
-  throw new Error('D3 is not loaded. Make sure the D3 script is included before this module.')
-}
-
-// Export a proxy that lazily accesses window.d3
-const d3: any = new Proxy(
-  {},
-  {
-    get(_target, prop) {
-      return getD3()[prop]
-    },
-    has(_target, prop) {
-      return prop in getD3()
-    },
-  }
-)
+// @ts-ignore - d3 v3 doesn't have TypeScript types
+import d3 from './vendor/d3.v3.patched.js'
 
 export default d3
-

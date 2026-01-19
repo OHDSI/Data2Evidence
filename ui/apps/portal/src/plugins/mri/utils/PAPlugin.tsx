@@ -1,6 +1,6 @@
-import React, { FC, useEffect, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import env from "../../../env";
-import { loadModuleScript, loadStyleSheet, loadSapScript, loadScriptWithCallback } from "../../../utils/loadScript";
+import { loadModuleScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
 import PluginContainer from "./PluginContainer";
 import { Loader } from "@portal/components";
 
@@ -13,7 +13,6 @@ interface PAPluginProps {
 }
 
 const PA_ASSETS_URL = "mri/assets.json";
-const D3_CDN_URL = "https://d3js.org/d3.v3.min.js";
 const VUE_APP_HOST = env.REACT_APP_DN_BASE_URL.endsWith("/")
   ? `${env.REACT_APP_DN_BASE_URL}d2e`
   : `${env.REACT_APP_DN_BASE_URL}/d2e`;
@@ -33,21 +32,18 @@ const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas
     let callbacks: (() => void)[] = [];
     setIsLoading(true);
 
-    // Load D3 v3 from CDN first, then load vue-mri-ui-lib scripts
-    // D3 must be available as window.d3 before the Vue app initializes
-    const d3Callback = loadScriptWithCallback(D3_CDN_URL, () => {
-      fetch(PA_ASSETS_URL)
-        .then((response) => response.json())
-        .then(({ css, js }) => {
-          loadSapScript(() => {
-            const styleSheetCallbacks = css.map(loadStyleSheet);
-            // Use loadModuleScript to load Vite-built ES modules with type="module"
-            const scriptCallbacks = js.map(loadModuleScript);
-            hideLogoutButton();
-            callbacks = [d3Callback, ...scriptCallbacks, ...styleSheetCallbacks];
-          });
+    // Load vue-mri-ui-lib scripts (D3 v3 is bundled with the app)
+    fetch(PA_ASSETS_URL)
+      .then((response) => response.json())
+      .then(({ css, js }) => {
+        loadSapScript(() => {
+          const styleSheetCallbacks = css.map(loadStyleSheet);
+          // Use loadModuleScript to load Vite-built ES modules with type="module"
+          const scriptCallbacks = js.map(loadModuleScript);
+          hideLogoutButton();
+          callbacks = [...scriptCallbacks, ...styleSheetCallbacks];
         });
-    });
+      });
 
     //Remove scripts and links upon component unmounting
     return () => {
