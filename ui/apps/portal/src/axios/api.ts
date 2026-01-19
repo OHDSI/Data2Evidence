@@ -2,7 +2,6 @@ import { UserMgmt } from "./user-mgmt";
 import { StudyNotebook } from "./study-notebook";
 import { SystemPortal } from "./system-portal";
 import { Dataflow } from "./dataflow";
-import { Terminology } from "./terminology";
 import { DbCredentialsMgr } from "./db-credentials-mgr";
 import { Gateway } from "./gateway";
 import { Translation } from "./translation";
@@ -11,14 +10,12 @@ import { Demo } from "./demo";
 import { StrategusResults } from "./strategus-results";
 import { StrategusAnalysis } from "./strategus-analysis";
 import { PublicWebapiProxyAPI } from "./public-webapi-proxy";
-import { D2eWebapi } from "./d2e-webapi";
 
 export const api = {
   userMgmt: new UserMgmt(),
   studyNotebook: new StudyNotebook(),
   systemPortal: new SystemPortal(),
   dataflow: new Dataflow(),
-  terminology: new Terminology(),
   dbCredentialsMgr: new DbCredentialsMgr(),
   gateway: new Gateway(),
   translation: new Translation(),
@@ -27,5 +24,4 @@ export const api = {
   strategusResults: new StrategusResults(),
   strategusAnalysis: new StrategusAnalysis(),
   publicWebapiProxyAPI: new PublicWebapiProxyAPI(),
-  d2eWebapi: new D2eWebapi(),
 };

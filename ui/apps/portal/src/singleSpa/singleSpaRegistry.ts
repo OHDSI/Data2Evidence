@@ -5,6 +5,7 @@ import { resolveModuleUrl } from "./overrideUtils";
 
 const registeredApps: Map<string, RegisteredApp> = new Map();
 const moduleCache: Map<string, Promise<any>> = new Map();
+const propsStore: Map<string, Record<string, any>> = new Map();
 
 export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promise<void> {
   if (registeredApps.has(config.id)) {
@@ -16,6 +17,8 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
 
   const initialProps = config.customProps || {};
   const activeWhen = createActivityFunction(config.basePath, config.customProps?.autoMount);
+
+  propsStore.set(config.id, initialProps);
 
   const registration = {
     name: config.id,
@@ -37,7 +40,7 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
     },
     activeWhen,
     customProps: () => ({
-      ...initialProps,
+      ...propsStore.get(config.id),
       containerId: generateContainerId(config.id),
     }),
   };
@@ -58,6 +61,9 @@ export function updateCustomProps(appId: string, customProps: Record<string, any
   }
 
   console.debug(`[singleSpaRegistry] ${appId} - updating custom props`, customProps);
+
+  const currentProps = propsStore.get(appId) || {};
+  propsStore.set(appId, { ...currentProps, ...customProps });
 
   window.dispatchEvent(
     new CustomEvent("custom-props-changed", {

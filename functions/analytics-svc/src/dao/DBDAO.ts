@@ -6,6 +6,7 @@ import {
     SnapshotColumnMetadata,
     SnapshotSchemaMetadata,
 } from "../utils/DBSvcTypes";
+import { ANALYTICS_DB_DIALECTS } from "../types";
 
 const logger = CreateLogger("analytics-log");
 
@@ -33,10 +34,25 @@ export class DBDAO {
         });
     };
 
-    private _clearTrexPgCache = async (): Promise<boolean> => {
+    private _clearTrexSchemaCache = async (
+        dialect: string
+    ): Promise<boolean> => {
         return new Promise((resolve, reject) => {
             if (this.connection.constructor.name === "TrexConnection") {
-                const sql = "CALL pg_clear_cache();";
+                let sql;
+                switch (dialect) {
+                    case ANALYTICS_DB_DIALECTS.POSTGRES:
+                    case "postgres":
+                        sql = "CALL pg_clear_cache();";
+                        break;
+                    case ANALYTICS_DB_DIALECTS.BIGQUERY:
+                        sql = "CALL bigquery_clear_cache();";
+                        break;
+                    default:
+                        // do nothing
+                        resolve(true);
+                }
+
                 this.connection.executeQuery(
                     sql,
                     [],
@@ -45,28 +61,24 @@ export class DBDAO {
                             logger.info(err);
                             return reject(err);
                         } else {
-                            if (result.length > 0) {
-                                resolve(true);
-                            } else {
-                                resolve(true);
-                            }
+                            resolve(true);
                         }
                     }
                 );
             } else {
                 // do nothing
+                resolve(true);
             }
         });
     };
 
     public checkIfSchemaExists = async (
         databaseName: string,
-        schemaName: string
+        schemaName: string,
+        dialect: string
     ): Promise<boolean> => {
-        // TODO: Remove this._clearTrexPgCache(). Currently this hotfix works for postgres but not bigquery
-        // https://github.com/OHDSI/Data2Evidence/issues/1149
         // This is currently required as __srcdb connections in trex sql is not aware of schemas created after its ATTACH
-        await this._clearTrexPgCache();
+        await this._clearTrexSchemaCache(dialect);
         return new Promise((resolve, reject) => {
             let sql, sqlParams;
             if (this.connection.constructor.name === "TrexConnection") {

@@ -84,7 +84,7 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
     return (
       <>
         {drilldownData.prevalenceByGenderAgeYear && (
-          <DrilldownTrellisChart data={drilldownData.prevalenceByGenderAgeYear} />
+          <DrilldownTrellisChart data={drilldownData.prevalenceByGenderAgeYear} title={title ?? sourceKey} />
         )}
         {drilldownData.prevalenceByMonth && <DrilldownPrevalenceByMonthChart data={drilldownData.prevalenceByMonth} />}
         <div className="chart__container">

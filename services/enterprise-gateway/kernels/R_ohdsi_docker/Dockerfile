@@ -41,6 +41,7 @@ RUN apt-get update && \
     libglpk-dev \
     libnode-dev \
     liblapack-dev  \
+    libpq-dev \
     gfortran \
     libmagick++-dev \
     software-properties-common \

@@ -93,7 +93,7 @@ RUN apt-get update && \
 
 # Set environment variables
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-ENV LD_LIBRARY_PATH=/usr/lib/jvm/java-17-openjdk-amd64/lib/server:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/usr/lib/jvm/java-17-openjdk-amd64/lib/server
 
 
 ENV APP_VERSION=0.0.0

@@ -1,8 +1,7 @@
 //import { Service } from 'typedi'
 import { AxiosRequestConfig } from "npm:axios";
 //import { createLogger } from '../Logger'
-import https from "node:https";
-import { env, services } from "../env.ts";
+import { services } from "../env.ts";
 import type { Dataset } from "../types.d.ts";
 
 interface CreateDatasetInput {
@@ -39,6 +38,8 @@ interface CopyDatasetInput {
   sourceDatasetId: string;
   newDatasetName: string;
   schemaName?: string;
+  vocabSchemaName?: string;
+  resultSchemaName?: string;
   timestamp: Date;
   type: string;
   flowParameters?: Record<string, unknown>;

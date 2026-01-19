@@ -153,11 +153,7 @@
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "route": "concepts",
-            "datasetTypes": [
-              "omop",
-              "hana__omop"
-            ]
+            "route": "concepts"
           },
           {
             "enabled": true,

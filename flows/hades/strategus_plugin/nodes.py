@@ -1,3 +1,4 @@
+import io
 import os
 import logging
 import json
@@ -12,6 +13,7 @@ from pandas.api.types import is_list_like, is_dict_like
 
 from rpy2 import robjects as ro
 from rpy2.robjects.packages import importr
+from rpy2.rinterface_lib import callbacks
 import traceback as tb
 from functools import partial
 from typing import List, Dict
@@ -26,10 +28,11 @@ from prefect.artifacts import create_markdown_artifact
 
 from .custom_types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
-from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file
+from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, is_strategus_upload_successful, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file
 
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.WebAPI import WebAPI
 from _shared_flow_utils.api.StrategusResultsStorageAPI import StrategusResultsStorageAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects
@@ -1211,6 +1214,7 @@ class StrategusNode(Node):
                 rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
                 analysisSpecJson = convert_R_to_py(rParallelLogger.convertSettingsToJson(rSpec))
 
+                remove_tmp_tables(dbdao, 'main' if USE_TREX_CONNECTION else None)
                 execute(rSpec, rExecutionSettings, rConnectionDetails)
 
                 print('Saving strategus log file as an artifact...')
@@ -1218,10 +1222,20 @@ class StrategusNode(Node):
                 save_strategus_log_file(execution_log_file_path)
                 success, errorMsg = is_strategus_execution_successful(execution_log_file_path)
                 if not success:
-                    return Result(True, errorMsg, self, task_run_context)
+                    raise RuntimeError(errorMsg)
+
                 return Result(False, analysisSpecJson, self, task_run_context)
             except Exception as e:
                 print('Error: ', tb.format_exc())
+                log_file_path = f"/app/errorReportSql.txt"
+                # if file exists, create an artifact to store the error logs
+                if os.path.exists(log_file_path):
+                    with open(log_file_path, "r") as f:
+                        file_contents = f.read()
+                        create_markdown_artifact(
+                            key="strategus-analysis-error-logs",
+                            markdown=file_contents
+                        )
                 return Result(True, tb.format_exc(), self, task_run_context)
 
 def get_strategus_node(options):
@@ -1256,6 +1270,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
 
             print('Strategus execution started...')
+            remove_tmp_tables(dbdao, 'main' if USE_TREX_CONNECTION else None)
             execute(rAnalysisSpec, rExecutionSettings, rConnectionDetails)
 
             print('Saving strategus log file as an artifact...')
@@ -1268,16 +1283,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
                 raise RuntimeError(errorMsg)
 
         except Exception as e:
-            print('Error: ', tb.format_exc())
-            raise RuntimeError('Execution of strategus has failed')
-
-def execute(rSpec, rExecutionSettings, rConnectionDetails):
-    with ro.default_converter.context():
-        ro.r(set_trex_env_var(USE_TREX_CONNECTION))
-        rStrategus = importr('Strategus')
-        try:
-            rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
-        except Exception as e:
             log_file_path = f"/app/errorReportSql.txt"
             # if file exists, create an artifact to store the error logs
             if os.path.exists(log_file_path):
@@ -1287,7 +1292,13 @@ def execute(rSpec, rExecutionSettings, rConnectionDetails):
                         key="strategus-analysis-error-logs",
                         markdown=file_contents
                     )
-            raise RuntimeError('Execution of strategus has failed')
+            raise RuntimeError(e)
+
+def execute(rSpec, rExecutionSettings, rConnectionDetails):
+    with ro.default_converter.context():
+        ro.r(set_trex_env_var(USE_TREX_CONNECTION))
+        rStrategus = importr('Strategus')
+        rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
 
 @flow(name="upload-strategus-results",
       log_prints=True)
@@ -1335,6 +1346,15 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             else:
                 print(f"Schema {results_schema} already exists")
 
+            # uploadResults logs are not captured by default
+            # so we override the consolewrite_print callback to capture the logs
+            log_buffer = io.StringIO()
+            def add_to_buffer(x):
+                log_buffer.write(x)
+                print(x, end="") 
+            original_write_console_out = callbacks.consolewrite_print
+            callbacks.consolewrite_print = add_to_buffer
+
             # upload results to the database
             print("Starting uploadResults()...")
             rStrategus.uploadResults(
@@ -1342,6 +1362,14 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 analysisSpecifications = rAnalysisSpec,
                 resultsDataModelSettings = resultsDataModelSettings
             )
+
+            # check the captured logs for success or failure
+            captured_logs = log_buffer.getvalue()
+            success, errorMsg = is_strategus_upload_successful(captured_logs)
+            if not success:
+                raise RuntimeError(errorMsg)
+            print('Strategus results uploaded successfully.')
+
             print("uploadResults() completed")
         except Exception as e:
             log_file_path = f"/app/errorReportSql.txt"
@@ -1354,6 +1382,11 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                         markdown=file_contents
                     )
             raise RuntimeError('Uploading results of strategus has failed')
+        finally:
+            if(original_write_console_out):
+                callbacks.consolewrite_print = original_write_console_out
+            if log_buffer:
+                log_buffer.close()
 
 def get_results_by_class_type(results: Dict[str, Result], nodeType: Node):
     result = [results[o].data for o in results if not results[o].error and isinstance(results[o].node, nodeType)]
@@ -1382,7 +1415,7 @@ def drop_strategus_results_schema(dbSettings):
     if(dbdao.check_schema_exists(results_schema)):
         dbdao.drop_schema(results_schema, True)
     else:
-        raise Exception(f"Schema {results_schema} not found")
+        print(f"Schema {results_schema} does not exist")
 
 def getRCdmExecutionSettings(settings) -> str:
     with ro.default_converter.context():
@@ -1644,3 +1677,15 @@ def upload_results_from_storage(options):
         except Exception as cleanup_error:
             print(f"Warning: Failed to cleanup temporary directory: {cleanup_error}")
 
+
+def remove_tmp_tables(dbdao: DBDao, schema_name: str):
+    logger = Logger()
+    logger.info(f'Cleaning TEMP tables')
+    try:
+        tmp_tables = dbdao.get_temp_table_names(schema_name)
+        logger.info(f'Found {len(tmp_tables)} TEMP tables to clean')
+        for table in tmp_tables:
+            logger.info(f'Dropping TEMP table: {schema_name}.{table}')
+            dbdao.execute_sql(f'DROP TABLE {schema_name}.{table}')
+    except Exception as e:
+        logger.error(f'Error cleaning TEMP tables: {str(e)}')

@@ -64,39 +64,41 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
                         cdm_schema=schema_name,
                         vocab_schema=options.vocab_schema)
 
-    # Create results schema
-    logger.info(f"Creating results schema '{results_schema}' in source database '{database_code}'..")
-    create_schema_task(dbdao, results_schema)
+    
+    if schema_name != options.vocab_schema:
+        # Create results schema
+        logger.info(f"Creating results schema '{results_schema}' in source database '{database_code}'..")
+        create_schema_task(dbdao, results_schema)
 
-    # Parent task with hook to drop results schema on failure
-    create_results_tables = create_results_tables_parent_task.with_options(
-        on_failure=[partial(
-            drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema)
-        )]
-    )
-
-    create_results_tables(dbdao, results_schema)
-
-    if options.cache_schema_name:
-        logger.info(f"Creating OMOP CDM schema '{options.cache_schema_name}' in cache database '{database_code}'..")
-
-        createCacheOptions = CreateCacheOptions(
-            flowActionType=CacheFlowAction.CREATE_DATAMART_CACHE,
-            databaseCode=options.database_code,
-            schemaName=options.schema_name,
-            snapshotSchemaName=options.cache_schema_name
-        )
-        create_cache_flow(createCacheOptions)
-        
-        resultsCacheOptions = CreateCacheOptions(
-            flowActionType=CacheFlowAction.CREATE_DATAMART_CACHE,
-            databaseCode=options.database_code,
-            schemaName=options.results_schema,
-            snapshotSchemaName=options.results_schema
+        # Parent task with hook to drop results schema on failure
+        create_results_tables = create_results_tables_parent_task.with_options(
+            on_failure=[partial(
+                drop_schema_hook, **dict(dbdao=dbdao, schema=results_schema)
+            )]
         )
 
-        logger.info(f"Creating results schema {options.results_schema} in cache database '{database_code}'..")
-        create_cache_flow(resultsCacheOptions)
+        create_results_tables(dbdao, results_schema)
+
+        if options.cache_schema_name:
+            logger.info(f"Creating OMOP CDM schema '{options.cache_schema_name}' in cache database '{database_code}'..")
+
+            createCacheOptions = CreateCacheOptions(
+                flowActionType=CacheFlowAction.CREATE_DATAMART_CACHE,
+                databaseCode=options.database_code,
+                schemaName=options.schema_name,
+                snapshotSchemaName=options.cache_schema_name
+            )
+            create_cache_flow(createCacheOptions)
+            
+            resultsCacheOptions = CreateCacheOptions(
+                flowActionType=CacheFlowAction.CREATE_DATAMART_CACHE,
+                databaseCode=options.database_code,
+                schemaName=options.results_schema,
+                snapshotSchemaName=options.results_schema
+            )
+
+            logger.info(f"Creating results schema {options.results_schema} in cache database '{database_code}'..")
+            create_cache_flow(resultsCacheOptions)
 
 
 def create_seed_schemas_flow(options: OmopCDMPluginOptions):
@@ -112,7 +114,7 @@ def create_vocab_schema(options: OmopCDMPluginOptions):
 
 def create_dataset_schema(options: OmopCDMPluginOptions):
     new_options = update_parameters(
-        options, "vocab_schema", options.schema_name)
+        options, "schema_name", options.schema_name)
     create_omop_cdm_dataset_flow(options=new_options)
 
 

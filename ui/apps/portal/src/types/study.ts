@@ -91,13 +91,16 @@ export interface NewStudyInput {
 export interface CopyStudyInput {
   newStudyName: string;
   sourceStudyId: string;
-  sourceType: SourceDatasetType
+  sourceType: SourceDatasetType;
   snapshotLocation: string;
   dataModel: string;
   snapshotCopyConfig?: SnapshotCopyConfig;
   type: CacheDatasetType;
   detail: DatasetDetail;
   paConfigId: string;
+  cdmSchemaValue?: string;
+  vocabSchemaValue?: string;
+  resultSchemaValue?: string;
 }
 
 export interface NewFhirProjectInput {

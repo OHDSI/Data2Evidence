@@ -85,6 +85,16 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
             for (const item of fhirResponse.group) {
               response.connections.push(...item.element[0].target);
             }
+
+            // If response details is undefined or details.concept is non-standard, focus tab on TerminologyDetailsTab.RelatedConcepts
+            // This is needed because TerminologyDetailsTab.Hierarchy is disabled for Non-standard concepts
+            if (
+              response?.details === undefined ||
+              response?.details?.concept === "Non-standard"
+            ) {
+              setTabValue(TerminologyDetailsTab.RelatedConcepts);
+            }
+
             setData(response);
           } catch (e) {
             console.error(e);
@@ -119,11 +129,14 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
       <div className="terminology_detail__tabs">
         <div className="terminology_detail__tabs_container">
           <Tabs value={tabValue} onChange={handleTabSelectionChange}>
-            <Tab
-              disableRipple
-              label={getText(i18nKeys.TERMINOLOGY_DETAIL__HIERARCHY)}
-              value={TerminologyDetailsTab.Hierarchy}
-            />
+            {/* Dont show Hierarchy Tab if concept.details is undefined or concept is Non-standard */}
+            {data?.details && data?.details?.concept !== "Non-standard" && (
+              <Tab
+                disableRipple
+                label={getText(i18nKeys.TERMINOLOGY_DETAIL__HIERARCHY)}
+                value={TerminologyDetailsTab.Hierarchy}
+              />
+            )}
             <Tab
               disableRipple
               label={getText(i18nKeys.TERMINOLOGY_DETAIL__RELATED_CONCEPTS)}
@@ -197,8 +210,7 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
                       },
                     }}
                   >
-                    {data &&
-                      data?.connections.length > 0 &&
+                    {data && data?.connections.length > 0 ? (
                       data.connections.map((conn, index) => (
                         <TableRow
                           key={conn.code + index}
@@ -215,7 +227,14 @@ const TerminologyDetail: FC<TerminologyDetailProps> = ({
                           <TableCell>{conn.code}</TableCell>
                           <TableCell>{conn.vocabularyId}</TableCell>
                         </TableRow>
-                      ))}
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center">
+                          No records to display
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>

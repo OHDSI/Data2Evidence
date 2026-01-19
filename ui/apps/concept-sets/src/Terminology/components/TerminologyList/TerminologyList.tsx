@@ -380,19 +380,39 @@ const TerminologyList: FC<TerminologyListProps> = ({
   }, [columnFilters.length, defaultFilters]);
 
   useEffect(() => {
-    if (useDefaultFilters && defaultFilters) {
+    if (useDefaultFilters && defaultFilters && filterOptions) {
       // Trust defaultFilters from parent component (PA-Atlas)
       // Apply them immediately without waiting for filterOptions to load
+      // Validate default filters against loaded filter options to prevent empty pills
       const filters = JSON.parse(
         JSON.stringify(defaultFilters)
       ) as typeof defaultFilters;
 
-      // Only keep filters with non-empty values
-      const validFilters = filters.filter((f) => f.value.length > 0);
+      // Filter out values that don't exist in filterOptions
+      const validFilters = filters
+        .map((filter) => {
+          const availableOptions =
+            filterOptions[filter.id as keyof FilterOptions];
+          if (!availableOptions) return filter;
 
+          // Only keep values that exist in the filter options (case-insensitive match)
+          const validValues = filter.value
+            .map((val) => {
+              // Find matching key in availableOptions (case-insensitive)
+              const matchingKey = Object.keys(availableOptions).find(
+                (key) => key.toLowerCase() === val.toLowerCase()
+              );
+              // Return the properly capitalized value from availableOptions
+              return matchingKey;
+            })
+            .filter((val): val is string => val !== undefined);
+
+          return { ...filter, value: validValues };
+        })
+        .filter((f) => f.value.length > 0);
       setColumnFilters(validFilters);
     }
-  }, [defaultFilters, useDefaultFilters]);
+  }, [defaultFilters, useDefaultFilters, filterOptions]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {

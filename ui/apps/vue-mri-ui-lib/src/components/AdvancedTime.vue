@@ -32,6 +32,7 @@
                   :placeholder="getText('MRI_PA_FILTERCARD_SELECTION_NONE')"
                   :searchable="false"
                   :options="originSelectionOptions"
+                  :allow-empty="false"
                   track-by="key"
                   label="text"
                   @update:modelValue="e => updateOriginSelection(e, index)"
@@ -70,6 +71,7 @@
                     :placeholder="getText('MRI_PA_FILTERCARD_SELECTION_NONE')"
                     :searchable="false"
                     :options="targetSelectionOptions"
+                    :allow-empty="false"
                     track-by="key"
                     label="text"
                     @update:modelValue="e => updateTargetSelection(e, index)"
@@ -93,6 +95,7 @@
                   :placeholder="getText('MRI_PA_FILTERCARD_SELECTION_NONE')"
                   :searchable="false"
                   :options="getList"
+                  :allow-empty="false"
                   @update:modelValue="e => updateTargetInteraction(e, index)"
                   track-by="key"
                   label="text"
@@ -278,7 +281,9 @@ export default {
       })
     },
     updateDays(e, index) {
-      this.advancedTimeLayout.props.timeFilterModel.timeFilters[index].days = e.target.value
+      const days = String(parseFloat(e.target.value) || 0)
+      this.advancedTimeLayout.props.timeFilterModel.timeFilters[index].days = days
+      this.model.props.timeFilterModel.timeFilters[index].days = days
       this.updateFilterCardTimeFilter({
         filterCardId: this.filterCardId,
         timeFilters: this.advancedTimeLayout.props.timeFilterModel.timeFilters,

@@ -76,6 +76,8 @@ export interface IDatasetSnapshotDto {
   sourceDatasetId: string;
   newDatasetName: string;
   schemaName: string;
+  vocabSchemaName?: string;
+  resultSchemaName?: string;
   timestamp: Date;
   type: string;
   flowParameters?: DatasetFlowParameters | null;

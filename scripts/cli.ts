@@ -31,8 +31,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.10.0-beta";
-  default_version: string = "0.10.0";
+  LATEST_DOCKER_TAG_NAME: string = "0.11.0-beta"; // Update this as needed
+  default_version: string = "0.11.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
@@ -41,7 +41,7 @@ class D2ECli {
   program: Command;
   port: string;
   ENVFILE: string;
-  CADDY__ALP__PUBLIC_FQDN: string;
+  CADDY__D2E__PUBLIC_FQDN: string;
   TLS__CADDY_DIRECTIVE: string;
   PROJECT_NAME: string;
   DOCKER_TAG_NAME: string;
@@ -90,6 +90,7 @@ class D2ECli {
     process.env.PLUGINS_IMAGE_TAG = this.PLUGINS_IMAGE_TAG;
     process.env.DOCKER_TAG_NAME = this.DOCKER_TAG_NAME;
     process.env.PLUGINS_API_VERSION = this.PLUGINS_API_VERSION;
+    this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
   }
 
   async write_env_file_variable(options: CliOptions): Promise<void> {
@@ -138,17 +139,17 @@ class D2ECli {
       ISSUER
     );
     const envVariables = {
-      CADDY__ALP__PUBLIC_FQDN: `${this.CADDY__ALP__PUBLIC_FQDN}`,
+      CADDY__D2E__PUBLIC_FQDN: `${this.CADDY__D2E__PUBLIC_FQDN}`,
       DOCKER_TAG_NAME: `${this.DOCKER_TAG_NAME}`,
       ENV_TYPE: `${this.ENV_TYPE}`,
       FHIR__CLIENT_ID: `${this.generate_uuid()}`,
       FHIR__CLIENT_SECRET: `${this.generate_random_password(64)}`,
-      LOGTO__ALP_APP__CLIENT_ID: `${this.generate_random_password(21)}`,
-      LOGTO__ALP_APP__CLIENT_SECRET: `${this.generate_random_password(30)}`,
-      LOGTO__ALP_DATA__CLIENT_ID: `${this.generate_random_password(21)}`,
-      LOGTO__ALP_DATA__CLIENT_SECRET: `${this.generate_random_password(30)}`,
-      LOGTO__ALP_SVC__CLIENT_ID: `${this.generate_random_password(21)}`,
-      LOGTO__ALP_SVC__CLIENT_SECRET: `${this.generate_random_password(30)}`,
+      LOGTO__D2E_APP__CLIENT_ID: `${this.generate_random_password(21)}`,
+      LOGTO__D2E_APP__CLIENT_SECRET: `${this.generate_random_password(30)}`,
+      LOGTO__D2E_DATA__CLIENT_ID: `${this.generate_random_password(21)}`,
+      LOGTO__D2E_DATA__CLIENT_SECRET: `${this.generate_random_password(30)}`,
+      LOGTO__D2E_SVC__CLIENT_ID: `${this.generate_random_password(21)}`,
+      LOGTO__D2E_SVC__CLIENT_SECRET: `${this.generate_random_password(30)}`,
       LOGTO_API_M2M_CLIENT_ID: `${LOGTO_API_M2M_CLIENT_ID}`,
       LOGTO_API_M2M_CLIENT_SECRET: `${LOGTO_API_M2M_CLIENT_SECRET}`,
       MINIO__SECRET_KEY: `${this.generate_random_password(
@@ -647,6 +648,28 @@ class D2ECli {
       });
     });
   }
+  updateTag() {
+    const kernelPath = path.join(
+      this.node_modules_path,
+      "services/enterprise-gateway/kernels/R_ohdsi_docker/kernel.json"
+    );
+    console.log(`Updating tag of R Jupyter Kernel at ${kernelPath}`);
+    if (!fs.existsSync(kernelPath)) {
+      console.error(`Error: kernel.json not found at ${kernelPath}`);
+      process.exit(1);
+    }
+    const rawData = fs.readFileSync(kernelPath, "utf-8");
+    const data = JSON.parse(rawData);
+    const imageName = data.metadata.process_proxy.config.image_name;
+    console.log(`Original image name: ${imageName}`);
+    let DOCKER_IMAGE_PREFIX =
+      process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
+    const newImage = `${DOCKER_IMAGE_PREFIX}d2e-r-ohdsi-kernel:${this.DOCKER_TAG_NAME}`;
+    console.log(`Updating image name to: ${newImage}`);
+    data.metadata.process_proxy.config.image_name = newImage;
+    fs.writeFileSync(kernelPath, JSON.stringify(data, null, 2));
+    console.log(`Completed successfully.`);
+  }
 
   // Commands
   setup_commands(): void {
@@ -682,8 +705,6 @@ class D2ECli {
       )
       .action(async () => {
         console.log("Starting services...");
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "start"
@@ -707,14 +728,20 @@ class D2ECli {
       .command("inithana")
       .description("Initialise hana services")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         console.log("Starting services...");
         console.log("This will initialize SAP HANA Express Edition.");
         console.log("By proceeding, you agree to the SAP License Agreement.");
         console.log(
           "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
         );
+        console.log("\nNote that SAP HANA JDBC driver is required. Please:");
+        console.log(
+          "  1. Download ngdbc-latest.jar from https://tools.hana.ondemand.com/additional/ngdbc-latest.jar"
+        );
+        console.log(
+          "  2. Create a tmp/drivers/ directory in your current working directory"
+        );
+        console.log("  3. Place the downloaded .jar file in tmp/drivers/");
         let license_agreement: string;
         if (process.env.ACCEPT_SAP_LICENSE) {
           console.log(
@@ -737,6 +764,7 @@ class D2ECli {
           console.log("License not accepted. Aborting HANA initialization.");
           return;
         }
+        const cwd = process.cwd();
         const hanapw =
           process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
@@ -744,6 +772,9 @@ class D2ECli {
           HANA_SYSTEM_PASSWORD: this.hanapw,
           INSTALL_SQLALCHEMY:
             "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${
+            this.PROJECT_NAME || "d2e"
+          }_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
@@ -774,8 +805,6 @@ class D2ECli {
       .description("Stop d2e services")
       .action(async () => {
         console.log("Stopping services...");
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "stop"
@@ -798,9 +827,7 @@ class D2ECli {
       .command("build")
       .description("Build d2e services")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
         console.log("Building services...");
-        this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "build"
@@ -824,8 +851,6 @@ class D2ECli {
       .command("status")
       .description("Status of d2e services")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "status"
@@ -849,8 +874,6 @@ class D2ECli {
       .command("logs")
       .description("View logs of d2e services")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "logs"
@@ -875,8 +898,6 @@ class D2ECli {
       .command("config")
       .description("View configuration of d2e services")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "config"
@@ -901,8 +922,6 @@ class D2ECli {
       .command("clean")
       .description("Removes d2e docker containers and volumes")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const user_input_init = await this.user_input(
           "This action will delete all docker containers and volumes. Continue (y/n)? "
         );
@@ -932,8 +951,6 @@ class D2ECli {
       .command("cleanci")
       .description("Clean up d2e services")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
           "cleanci"
@@ -958,8 +975,6 @@ class D2ECli {
       .command("patchdemodb")
       .description("Patch demo database")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         this.patch_demodb();
       });
     (patchdemodb_cmd as any)._hidden = true;
@@ -967,8 +982,6 @@ class D2ECli {
       .command("pull")
       .description("Pull images for d2e services")
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         const options = this.program.opts();
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
@@ -1029,6 +1042,14 @@ class D2ECli {
         this.getnoproxy();
       });
     (getnoproxy_cmd as any)._hidden = true;
+    const update_tag = this.program
+      .command("updatetag")
+      .description("Update image tags for d2e services")
+      .action(async () => {
+        console.log("Updating image tags for patch/release...");
+        this.updateTag();
+      });
+    (update_tag as any)._hidden = true;
   }
 
   run(): void {
@@ -1036,14 +1057,19 @@ class D2ECli {
     this.program.parseOptions(process.argv);
     const options = this.program.opts();
     this.ENVFILE = options.envFile ?? ".env";
+    this.version = options?.version ?? this.default_version;
+    if (fs.existsSync(this.ENVFILE)) {
+      dotenvConfig({ path: this.ENVFILE });
+    }
+    this.load_env_variables();
     this.DEFAULT_PASSWORD_LENGTH = 30;
-    this.PROJECT_NAME = process.env.PROJECT_NAME || "d2e";
     this.ENV_TYPE = process.env.ENV_TYPE || "remote";
-    this.CADDY__ALP__PUBLIC_FQDN =
-      process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
+    this.CADDY__D2E__PUBLIC_FQDN =
+      process.env.CADDY__D2E__PUBLIC_FQDN ||
+      process.env.CADDY__ALP__PUBLIC_FQDN ||
+      "localhost";
     this.TLS__CADDY_DIRECTIVE =
       process.env.TLS__CADDY_DIRECTIVE || "tls internal";
-    this.version = options?.version ?? this.default_version;
     this.CADDY__CONFIG = process.env.CADDY__CONFIG || "./deploy/caddy-config";
     this.port = options.port || process.env.PORT || "";
     this.program.parse(process.argv);

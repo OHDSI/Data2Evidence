@@ -31,7 +31,6 @@ class OmopCDMPluginOptions(BaseModel):
     results_schema: Optional[str] = None
     vocab_schema: Optional[str] = None
     cache_schema_name: Optional[str] = None
-    result_schema: Optional[str] = None
     datasets: Optional[List] = None
 
     @property

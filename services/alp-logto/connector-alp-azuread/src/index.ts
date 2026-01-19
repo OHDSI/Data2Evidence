@@ -113,7 +113,7 @@ const assignLogtoRolesByAzureGroups = async (
   const decodedAccessToken: any = jwtDecode(accessToken);
 
   // check groups and compare with env
-  const azureGroups = decodedIdToken["groups"];
+  const azureGroups = decodedIdToken["groups"] || [];
   const rolesGroupMap = JSON.parse(process.env.LOGTO_ROLES_AZ_GROUPS_MAPPING!);
   const eligibleLogtoRoles = Object.keys(rolesGroupMap || {}).filter(
     (role) => azureGroups?.indexOf(rolesGroupMap[role]) > -1

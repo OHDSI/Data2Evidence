@@ -13,11 +13,12 @@
           <div class="div-bookmark-dialog">
             <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span>
             <div class="input-container">
+              <!-- maxLength for input is this.maxLength+1 to allow invalid-feedback to be shown -->
               <input
                 class="form-control"
                 v-focus
                 required
-                maxlength="255"
+                :maxlength="this.maxLength+1"
                 v-model="renamedBookmark"
                 @keydown.enter="confirmRenameBookmark"
               />
@@ -296,7 +297,7 @@ export default {
       return this.aSelBookmarkList.length > 1
     },
     hasExceededLength() {
-      return this.renamedBookmark.length == this.maxLength
+      return this.renamedBookmark.length > this.maxLength
     },
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
