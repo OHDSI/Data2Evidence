@@ -579,8 +579,8 @@ cmd_restore() {
 cmd_clean() {
     cd "$E2E_DIR"
     log_info "Cleaning test artifacts..."
-    # Use Docker to remove files created by Docker (may be owned by root)
-    docker run --rm -v "$(pwd):/work" alpine sh -c "rm -rf /work/test-results /work/ctrf"
+    # Remove contents but keep .gitkeep files (they ensure directories exist with correct ownership)
+    find test-results ctrf -mindepth 1 ! -name '.gitkeep' -delete 2>/dev/null || true
     log_info "Test artifacts cleaned"
 }
 
