@@ -1,3 +1,5 @@
-test-results
-ctrf/
+test-results/*
+!test-results/.gitkeep
+ctrf/*
+!ctrf/.gitkeep
 !.env.example
