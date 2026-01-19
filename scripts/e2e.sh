@@ -579,7 +579,8 @@ cmd_restore() {
 cmd_clean() {
     cd "$E2E_DIR"
     log_info "Cleaning test artifacts..."
-    rm -rf test-results ctrf
+    # Use Docker to remove files created by Docker (may be owned by root)
+    docker run --rm -v "$(pwd):/work" alpine sh -c "rm -rf /work/test-results /work/ctrf"
     log_info "Test artifacts cleaned"
 }
 
