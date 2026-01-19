@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import { MINUTE_10 } from '../const'
 
 const TEST_NAME = 'execute-data-quality'

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 test('atlas-lite cohort creation', async ({ page }) => {
   await page.goto('/d2e/portal')

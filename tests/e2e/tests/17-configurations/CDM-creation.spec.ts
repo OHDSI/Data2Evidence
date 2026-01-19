@@ -1,4 +1,4 @@
-import { Locator, test, expect } from '@playwright/test'
+import { Locator, test, expect } from '../fixtures'
 
 const TEST_NAME = 'CDM configuration creation'
 const SHOULD_SKIP = false

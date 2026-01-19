@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false

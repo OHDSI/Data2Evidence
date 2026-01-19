@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import { MINUTE_2 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-data-management-plugin-mi'

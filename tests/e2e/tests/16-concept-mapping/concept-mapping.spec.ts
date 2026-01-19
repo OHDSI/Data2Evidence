@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import path from 'path'
 
 test('concept-mapping', async ({ page }) => {

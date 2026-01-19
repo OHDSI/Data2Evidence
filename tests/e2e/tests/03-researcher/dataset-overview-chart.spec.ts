@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import { MINUTE_10, MINUTE_5 } from '../const'
 
 const TEST_NAME = 'dataset-overview-chart'

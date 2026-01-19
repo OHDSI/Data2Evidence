@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import { takeScreenshot } from '../screenshot-capture'
 
 const TEST_NAME = 'concept-sets'
