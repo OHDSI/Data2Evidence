@@ -207,11 +207,12 @@ cmd_wizard() {
     echo -e "${BOLD}  Actions${NC}"
     echo "  1) Fresh Setup & Test       - Build, start, and run tests"
     echo "  2) Restore & Retest         - Reset to snapshot and run tests"
+    echo "  3) Restore Only             - Reset to snapshot without running tests"
     echo ""
     echo -e "${BOLD}  Session Management${NC}"
-    echo "  3) List sessions"
-    echo "  4) Remove session           - Stop and delete all volumes"
-    echo "  5) Clean test artifacts     - Remove test-results and ctrf"
+    echo "  4) List sessions"
+    echo "  5) Remove session           - Stop and delete all volumes"
+    echo "  6) Clean test artifacts     - Remove test-results and ctrf"
     echo ""
     echo "  q) Quit"
     echo ""
@@ -287,9 +288,24 @@ cmd_wizard() {
             ;;
         3)
             echo ""
-            cmd_list_sessions
+            # Select session to restore
+            if ! select_session "Select session to restore"; then
+                exit 1
+            fi
+            export PROJECT_NAME="$SELECTED_SESSION"
+            log_info "Selected session: $PROJECT_NAME"
+
+            print_wizard_config "Restore Only"
+            cmd_restore
+            cmd_start
+            log_info "System restored and running. You can now create or run tests manually."
+            log_info "To run tests: cd tests/e2e && npm test"
             ;;
         4)
+            echo ""
+            cmd_list_sessions
+            ;;
+        5)
             echo ""
             # Select session to remove
             if ! select_session "Select session to remove"; then
@@ -302,7 +318,7 @@ cmd_wizard() {
                 log_info "Cancelled"
             fi
             ;;
-        5)
+        6)
             echo ""
             cmd_clean
             ;;
