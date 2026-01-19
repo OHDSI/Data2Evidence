@@ -13,10 +13,14 @@ import { setTokenGetter } from "./axios/request";
 import { theme_d2e, theme_atlas } from "./theme/theme";
 import "./webcomponents/registerWebComponents";
 
+const CONCEPTS_ROUTE = "/concepts";
+
 function AppContent(props: PortalProps) {
   const dispatch = useContext(ConceptSetsDispatchContext);
   const [userId, setUserId] = useState<string | undefined>();
-  const [isActiveRoute, setIsActiveRoute] = useState(false);
+  const [isActiveRoute, setIsActiveRoute] = useState(
+    location.pathname.endsWith(CONCEPTS_ROUTE)
+  );
 
   const initializeUserId = useCallback(async () => {
     if (!userId && props.getToken) {
@@ -75,7 +79,7 @@ function AppContent(props: PortalProps) {
   useEffect(() => {
     const handleRouteChange: EventListener = (event: Event) => {
       const evt = event as CustomEvent<{ activeRoute: string }>;
-      setIsActiveRoute(evt.detail.activeRoute === "/concepts");
+      setIsActiveRoute(evt.detail.activeRoute === CONCEPTS_ROUTE);
     };
 
     window.addEventListener("route-change", handleRouteChange);
