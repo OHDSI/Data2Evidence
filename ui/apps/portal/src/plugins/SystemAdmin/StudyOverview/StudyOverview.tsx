@@ -1,36 +1,37 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableHead from "@mui/material/TableHead";
-import TableContainer from "@mui/material/TableContainer";
-import IconButton from "@mui/material/IconButton";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import { Loader, TableCell, TableRow, Text, Button, Tooltip } from "@portal/components";
-import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
-import { useDialogHelper, useDatasets, useDatabases } from "../../../hooks";
-import { useTranslation } from "../../../contexts";
-import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
-import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
-import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
-import CopyStudyDialog from "./CopyStudyDialog/CopyStudyDialog";
-import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
-import ActionSelector from "./ActionSelector/ActionSelector";
-import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
-import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
-import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
-import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
+import IconButton from "@mui/material/IconButton";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import { Button, Loader, TableCell, TableRow, Text, Tooltip } from "@portal/components";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../axios/api";
+import { useTranslation } from "../../../contexts";
+import { useDatabases, useDatasets, useDialogHelper } from "../../../hooks";
+import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
 import { JobRunTypes } from "../DQD/types";
+import ActionSelector from "./ActionSelector/ActionSelector";
+import StudyActionSelector from "./ActionSelector/StudyActionSelector";
+import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
+import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
+import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
+import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
+import CopyStudyDialog from "./CopyStudyDialog/CopyStudyDialog";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
+import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
+import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
+import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
+import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
+import ManageStrategusResultViewerDialog from "./ManageStrategusResultViewerDialog/ManageStrategusResultViewerDialog";
+import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
+import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
-import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
-import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
-import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
-import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
-import ManageStrategusResultViewerDialog from "./ManageStrategusResultViewerDialog/ManageStrategusResultViewerDialog";
-import StudyActionSelector from "./ActionSelector/StudyActionSelector";
+import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
+import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
+import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
 
 import "./StudyOverview.scss";
 
@@ -83,6 +84,8 @@ const StudyOverview: FC = () => {
     openManageStrategusResultViewerDialog,
     closeManageStrategusResultViewerDialog,
   ] = useDialogHelper(false);
+  const [showUploadStrategusResultsDialog, openUploadStrategusResultsDialog, closeUploadStrategusResultsDialog] =
+    useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [activeStrategusStudy, setActiveStrategusStudy] = useState<NetworkStrategusStudy>();
@@ -222,6 +225,43 @@ const StudyOverview: FC = () => {
     },
     [openManageStrategusResultViewerDialog]
   );
+
+  const handleUploadStrategusResults = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openUploadStrategusResultsDialog();
+    },
+    [openUploadStrategusResultsDialog]
+  );
+
+  const handleDownloadStrategusResults = useCallback(async (study: NetworkStrategusStudy) => {
+    try {
+      const response = await api.strategusResults.downloadStrategusResultsFile(study.studyId, "results.zip");
+
+      if (response.signedUrl) {
+        window.open(response.signedUrl, "_blank");
+      } else if (response.data) {
+        const byteCharacters = atob(response.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "application/zip" });
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${study.studyId}_results.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error: any) {
+      console.error("Download error:", error);
+    }
+  }, []);
 
   const toggleRow = useCallback((datasetId: string) => {
     setExpandedRows((prev) => ({
@@ -795,6 +835,8 @@ const StudyOverview: FC = () => {
                             handleRunStrategusStudy={handleRunStrategusStudy}
                             handleCleanupStrategusStudy={handleCleanupStrategusStudy}
                             handleManageStrategusResultViewer={handleManageStrategusResultViewer}
+                            handleUploadStrategusResults={handleUploadStrategusResults}
+                            handleDownloadStrategusResults={handleDownloadStrategusResults}
                           />
                         </TableCell>
                       </TableRow>
@@ -935,6 +977,14 @@ const StudyOverview: FC = () => {
               study={activeStrategusStudy}
               open={showManageStrategusResultViewerDialog}
               onClose={closeManageStrategusResultViewerDialog}
+            />
+          )}
+
+          {showUploadStrategusResultsDialog && activeStrategusStudy && (
+            <UploadStrategusResultsDialog
+              study={activeStrategusStudy}
+              open={showUploadStrategusResultsDialog}
+              onClose={closeUploadStrategusResultsDialog}
             />
           )}
         </div>
