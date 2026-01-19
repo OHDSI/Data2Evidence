@@ -640,10 +640,10 @@ cmd_test() {
 
     if [ $test_exit_code -ne 0 ]; then
         log_error "Tests failed! Dumping trex logs..."
-        local log_file="$E2E_DIR/test-results/trex-logs-$(date +%Y%m%d-%H%M%S).log"
-        mkdir -p "$E2E_DIR/test-results"
-        docker logs ${PROJECT_NAME}-trex > "$log_file" 2>&1
-        log_info "Trex logs saved to: $log_file"
+        local log_filename="trex-logs-$(date +%Y%m%d-%H%M%S).log"
+        # Use Docker to write log file (test-results may be owned by root)
+        docker logs ${PROJECT_NAME}-trex 2>&1 | docker run --rm -i -v "$(pwd)/test-results:/work" alpine sh -c "cat > /work/$log_filename"
+        log_info "Trex logs saved to: test-results/$log_filename"
         return $test_exit_code
     fi
 }
