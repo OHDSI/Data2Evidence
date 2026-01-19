@@ -29,7 +29,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
   return {
     // Base path for assets (empty string matches webpack publicPath: '')
     base: '',
-    logLevel: 'info', // Show more build output for debugging
+    logLevel: 'error', // Change to info after deprecation warnings are resolved
 
     plugins: [
       vue({
