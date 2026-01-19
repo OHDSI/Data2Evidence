@@ -119,11 +119,9 @@ class StrategusResultsStorageAPI(BaseAPI):
             dict: File data (base64 encoded)
         """
         request_url = f"{self.url}/download?studyId={study_id}&fileName={filename}"
-        print(f"Making request to: {request_url}")
         
         headers = self.get_options(flow_run_id)
         
-        print("Sending GET request...")
         response = requests.get(
             request_url,
             headers=headers,
@@ -131,7 +129,6 @@ class StrategusResultsStorageAPI(BaseAPI):
             timeout=30  # Add timeout to prevent hanging forever
         )
         
-        print(f"Response status: {response.status_code}")
         response.raise_for_status()
         return response.json()
 
