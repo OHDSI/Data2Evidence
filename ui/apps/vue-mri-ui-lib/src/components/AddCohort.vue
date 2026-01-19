@@ -1,7 +1,7 @@
 <template>
   <messageBox v-if="showAddCohortDialog" dim="true" :busy="cohortBusy" messageType="custom" @close="closeWindow">
     <template v-slot:header>
-      <div style="maxWidth: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+      <div style="maxwidth: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
         {{ getText('MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION') + ` (${this.bookmarkName})` }}
       </div>
     </template>
@@ -142,7 +142,6 @@ export default {
       'fireCreateAtlasMaterializedCohortQuery',
       'loadOldCollections',
       'fireQuery',
-      'getPLRequest',
       'fireBookmarkQuery',
     ]),
     ...mapMutations([types.SET_COHORT_TYPE, types.SET_COLLECTION_TYPE, types.COLLECTIONS_SET_HASEXISTINGCOLLECTION]),
