@@ -1335,16 +1335,12 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             # if schema does not exist, create one (including the data model)
             if(not dbdao.check_schema_exists(results_schema)):
                 dbdao.create_schema(results_schema)
-                print(f"Created schema: {results_schema}")
                 # create results datamodel 
                 rStrategus.createResultDataModel(
                     analysisSpecifications = rAnalysisSpec,
                     resultsDataModelSettings = resultsDataModelSettings,
                     resultsConnectionDetails = rConnectionDetails
                 )
-                print("Created results data model (empty tables)")
-            else:
-                print(f"Schema {results_schema} already exists")
 
             # uploadResults logs are not captured by default
             # so we override the consolewrite_print callback to capture the logs
@@ -1356,7 +1352,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
             callbacks.consolewrite_print = add_to_buffer
 
             # upload results to the database
-            print("Starting uploadResults()...")
             rStrategus.uploadResults(
                 resultsConnectionDetails = rConnectionDetails,
                 analysisSpecifications = rAnalysisSpec,
@@ -1370,7 +1365,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 raise RuntimeError(errorMsg)
             print('Strategus results uploaded successfully.')
 
-            print("uploadResults() completed")
         except Exception as e:
             log_file_path = f"/app/errorReportSql.txt"
             # if file exists, create an artifact to store the error logs
@@ -1526,7 +1520,6 @@ def upload_results_from_storage(options):
     parent_flow_run_id = options.get('parentFlowRunId')
     analysis_spec = options.get('analysisSpec')
     
-    # Validate required parameters
     if not study_id:
         raise ValueError("Missing required parameter: studyId")
     if not dataset_id:
@@ -1535,12 +1528,8 @@ def upload_results_from_storage(options):
         raise ValueError("Missing required parameter: databaseCode")
     
     print(f"Starting upload of Strategus results from storage")
-    print(f"Study ID: {study_id}")
-    print(f"Dataset ID: {dataset_id}")
-    print(f"Database Code: {database_code}")
     print(f"Storage File Name: {storage_file_name}")
     
-    # Create working directory
     work_dir = f'/tmp/strategus_upload_{study_id}_{uuid.uuid4()}'
     os.makedirs(work_dir, exist_ok=True)
     
@@ -1594,7 +1583,6 @@ def upload_results_from_storage(options):
         else:
             print("No resultsFolderPath specified, attempting auto-detection...")
             
-            # Helper function to check if a directory looks like Strategus results folder
             def looks_like_results_folder(path):
                 """Check if path contains CSV files"""
                 if not os.path.isdir(path):
@@ -1637,13 +1625,11 @@ def upload_results_from_storage(options):
         
         # Step 4: Upload results to database
         print("Uploading results to database...")
-        print(f"Passing results_path to upload function: {results_path}")
         
         # Check if analysis spec is provided
         if not analysis_spec:
             print("WARNING: No analysis specification provided.")
             print("Skipping database upload. Results are extracted but not uploaded to database.")
-            print(f"Results extracted to: {results_path}")
             return
         
         if isinstance(analysis_spec, dict):
@@ -1662,7 +1648,6 @@ def upload_results_from_storage(options):
         )
         
         print("Successfully uploaded results to database")
-        print(f"Results schema: results_{study_id}")
         
     except Exception as e:
         print(f"Error uploading results from storage: {str(e)}")

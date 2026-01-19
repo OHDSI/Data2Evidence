@@ -411,7 +411,6 @@ export class SupabaseStorageClient {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   }
 
-  // Direct methods for Strategus Results (no path transformation)
   async uploadDirect(bucket: string, path: string, file: UploadFile) {
     try {
       console.log(`Uploading file directly: ${path} to bucket: ${bucket}`);
@@ -548,7 +547,6 @@ export class SupabaseStorageClient {
       );
       console.error(`Failed to delete from path: ${path}`);
 
-      // Re-throw HttpException as is
       if (e instanceof HttpException) {
         throw e;
       }
