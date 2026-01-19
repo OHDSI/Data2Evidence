@@ -353,7 +353,7 @@ Commands:
 
   build             Build everything (docker + UI)
   build-docker      Build Docker images only
-  build-ui          Build UI only
+  build-ui          Build UI using Docker
   build-e2e         Build e2e Docker image
 
   start             Start services
@@ -440,45 +440,21 @@ cmd_setup_env() {
     echo "  export PROJECT_NAME=$PROJECT_NAME"
 }
 
-# Check if bun is installed and has a compatible version
-# Bun 1.2.23 or 1.3.2+ are compatible. Bun 1.3.0 and 1.3.1 break builds.
-check_bun_version() {
-    if ! command -v bun &> /dev/null; then
-        log_error "Bun is not installed!"
-        echo ""
-        echo "  Install bun with:"
-        echo "    curl -fsSL https://bun.sh/install | bash -s \"bun-v1.2.23\""
-        echo ""
-        exit 1
-    fi
-
-    local version
-    version=$(bun --version)
-
-    # Check for problematic versions (1.3.0 and 1.3.1)
-    if [[ "$version" == "1.3.0" || "$version" == "1.3.1" ]]; then
-        log_error "Bun version $version is not compatible!"
-        echo ""
-        echo "  Bun 1.3.0 and 1.3.1 use isolated installs by default,"
-        echo "  which breaks builds because dependencies aren't hoisted."
-        echo ""
-        echo "  Use Bun 1.2.23 (CI version) or 1.3.2+:"
-        echo "    curl -fsSL https://bun.sh/install | bash -s \"bun-v1.2.23\""
-        echo ""
-        echo "  See: https://bun.com/blog/bun-v1.3.2#hoisted-installs-restored-as-default"
-        echo ""
-        exit 1
-    fi
-
-    log_info "Bun version: $version"
-}
-
 cmd_build_ui() {
-    check_bun_version
     cd "$ROOT_DIR/ui"
-    log_info "Building UI..."
-    bun install
-    bun build-all
+    log_info "Building UI using Docker..."
+
+    local image_name="d2e-ui-builder"
+
+    # Build the Docker image (just sets up bun environment)
+    log_info "Building Docker image (first run only)..."
+    docker build -f Dockerfile.build -t "$image_name" .
+
+    # Run the build with ui folder mounted - output goes directly to host
+    log_info "Running bun install and build-all..."
+    docker run --rm -v "$(pwd):/app" "$image_name"
+
+    log_info "UI build complete. Resources are in ui/resources/"
     cd "$ROOT_DIR"
 }
 
