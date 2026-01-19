@@ -1,6 +1,6 @@
 // tslint:disable:no-shadowed-variable
 import axios, { AxiosRequestConfig } from 'axios'
-import jwt from 'jsonwebtoken'
+import { jwtDecode } from 'jwt-decode'
 import { AUTHENTICATE, AUTHENTICATE_FAILURE, SET_JWT_TOKEN_VALUE } from '../mutation-types'
 import { getPortalAPI } from '../../utils/PortalUtils'
 
@@ -80,7 +80,7 @@ const actions = {
         headers = { ...headers, ...overwriteHeaders }
       }
       if (getters.getJwtTokenValue === null && bearerToken) {
-        commit(SET_JWT_TOKEN_VALUE, jwt.decode(bearerToken))
+        commit(SET_JWT_TOKEN_VALUE, jwtDecode(bearerToken))
       }
       try {
         const response = await Ajax.request({
@@ -118,7 +118,7 @@ const actions = {
         options.headers.Authorization = `Bearer ${bearerToken}`
       }
       if (getters.getJwtTokenValue === null && bearerToken) {
-        commit(SET_JWT_TOKEN_VALUE, jwt.decode(bearerToken))
+        commit(SET_JWT_TOKEN_VALUE, jwtDecode(bearerToken))
       }
       try {
         const response = await fetch(url, options)
