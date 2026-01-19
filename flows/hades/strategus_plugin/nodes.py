@@ -1515,18 +1515,15 @@ def upload_results_from_storage(options):
     
     try:
         # Step 1: Download zip from Supabase Storage
-        print("Step 1: Downloading zip file from Strategus Results Storage...")
-        print("Initializing StrategusResultsStorageAPI...")
+        print("Downloading zip file from Strategus Results Storage...")
         try:
             # Use parent flow run ID if provided, otherwise get current flow run ID
             flow_run_id = parent_flow_run_id
             if not flow_run_id:
                 flow_run_context = FlowRunContext.get()
                 flow_run_id = str(flow_run_context.flow_run.dict().get("id")) if flow_run_context else None
-            print(f"Using flow run ID for auth: {flow_run_id}")
             
             storage_api = StrategusResultsStorageAPI()
-            print(f"API initialized. URL: {storage_api.url}")
         except Exception as init_error:
             print(f"Error initializing storage API: {str(init_error)}")
             raise
@@ -1545,12 +1542,12 @@ def upload_results_from_storage(options):
             raise
         
         # Step 2: Extract zip file
-        print("Step 2: Extracting zip file...")
+        print("Extracting zip file...")
         extract_dir = os.path.join(work_dir, 'extracted')
         extract_zip(zip_path, extract_dir)
         
         # Step 3: Locate results folder
-        print("Step 3: Locating results folder...")
+        print("Locating results folder...")
         results_path = None
         
         if results_folder_path:
@@ -1608,7 +1605,7 @@ def upload_results_from_storage(options):
         print(f"Found results folder at: {results_path}")
         
         # Step 4: Upload results to database
-        print("Step 4: Uploading results to database...")
+        print("Uploading results to database...")
         print(f"Passing results_path to upload function: {results_path}")
         
         # Check if analysis spec is provided
@@ -1641,7 +1638,6 @@ def upload_results_from_storage(options):
         print(tb.format_exc())
         raise
     finally:
-        # Cleanup temporary files
         print("Cleaning up temporary files...")
         try:
             if os.path.exists(work_dir):
