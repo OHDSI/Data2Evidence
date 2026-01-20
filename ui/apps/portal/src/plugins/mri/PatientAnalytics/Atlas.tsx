@@ -27,20 +27,22 @@ export const Atlas: FC<Props> = ({ datasetId, getToken, username, toggleAtlas, a
     };
   }, []);
 
+  const sendToken = async () => {
+    if (iframeRef?.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        {
+          type: "SETUP_ATLAS",
+          token: await getToken(),
+          datasetId,
+          username,
+        },
+        `${window.location.protocol}//${window.location.hostname}:${window.location.port}`
+      );
+    }
+  };
+
   useEffect(() => {
-    const sendToken = async () => {
-      if (iframeRef?.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage(
-          {
-            type: "SETUP_ATLAS",
-            token: await getToken(),
-            datasetId,
-            username,
-          },
-          `${window.location.protocol}//${window.location.hostname}:${window.location.port}`
-        );
-      }
-    };
+    // Send on interval to handle token refresh
     const interval = setInterval(sendToken, 1000);
     setTokenInterval(interval);
 
@@ -49,13 +51,13 @@ export const Atlas: FC<Props> = ({ datasetId, getToken, username, toggleAtlas, a
         clearInterval(tokenInterval);
       }
     };
-    // No need to do anything when metadata changes since interval will already update the iframe
   }, []);
 
   return (
     <iframe
       ref={iframeRef}
       src={`/atlas${atlasPath}`}
+      onLoad={sendToken}
       style={{ width: "100%", height: "calc(100% - 6px)", border: "none" }}
       title="Atlas Lite"
     />
