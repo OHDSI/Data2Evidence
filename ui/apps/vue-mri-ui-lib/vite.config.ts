@@ -205,7 +205,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
     // Vitest configuration
     test: {
       globals: true,
-      environment: 'jsdom',
+      environment: 'happy-dom',
       setupFiles: ['./vitest.setup.ts'],
       include: ['src/**/__tests__/*.test.ts'],
       coverage: {

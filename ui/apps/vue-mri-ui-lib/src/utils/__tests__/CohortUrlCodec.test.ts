@@ -240,10 +240,12 @@ describe('CohortUrlCodec', () => {
       }
 
       // Mock clipboard API
-      Object.assign(navigator, {
-        clipboard: {
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
           writeText: vi.fn().mockResolvedValue(undefined),
         },
+        writable: true,
+        configurable: true,
       })
 
       // Mock console methods
