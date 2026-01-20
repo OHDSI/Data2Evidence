@@ -54,6 +54,8 @@ export const publicURLs = [
   ])
 
 console.log(`PREFECT DOCKER VOLUMES TREX: ${_env.PREFECT_DOCKER_VOLUMES}`);
+console.log(`PREFECT DOCKER VOLUMES TREX STRINGIFY: ${JSON.stringify(_env.PREFECT_DOCKER_VOLUMES)}`);
+
 
 export const env = {
     PREFECT_API_URL: _env.PREFECT_API_URL,
