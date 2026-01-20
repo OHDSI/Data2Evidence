@@ -9,11 +9,12 @@ type AttritionStat = {
 }
 
 /**
- * Count matches in treemap data based on a binary mask pattern
- * Recursively traverses the tree and counts leaf nodes whose names start with the mask
+ * Count matches in treemap data based on rule IDs
+ * Recursively traverses the tree and counts leaf nodes where all specified rules pass
  * Adapted from Ohdsi Atlas codebase
  * @param node - The treemap node to search (can have children or be a leaf)
- * @param mask - Binary string pattern to match (e.g., "11" matches nodes starting with "11")
+ * @param ruleIds - Array of rule IDs to check (positions in the binary string that must be '1')
+ * @param totalRuleCount - Total number of rules (unused but kept for API consistency)
  * @returns Total count of matching leaf nodes
  */
 const countMatch = (node: any, ruleIds: number[], totalRuleCount: number): number => {
@@ -68,4 +69,3 @@ export function computeAttritionStats(report: InclusionReportResponse, order?: n
 
   return stats as AttritionStat[]
 }
-

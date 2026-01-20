@@ -88,11 +88,12 @@ h4 {
   }
 
   &.reorder-buttons {
-    display:flex;
+    display: flex;
     flex-direction: column;
     align-items: center;
     padding: 0.1rem;
   }
+  cursor:inherit
 }
 
 .summary-table,

@@ -431,7 +431,7 @@ const fetchInclusionReport = async (cohortDefinitionId: string, sourceKey: strin
   }
 }
 
-function handleDragEnd(event: any) {
+function handleDragEnd() {
   const newOrder = draggableAttritionStats.value.map(stat => stat.id)
   draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
 }
@@ -665,7 +665,6 @@ watch(
                 v-for="stat in inclusionReportResponse.inclusionRuleStats"
                 :key="stat.id"
                 :class="{ 'grayed-out': !isRuleChecked(stat.id) }"
-                class="cursor-move"
               >
                 <td>
                   <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />

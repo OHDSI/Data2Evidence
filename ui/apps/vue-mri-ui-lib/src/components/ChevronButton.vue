@@ -1,9 +1,3 @@
-<template>
-  <button @click="handleClick" class="btn-chevron" :disabled="disabled">
-    <ChevronIcon class="chevron-icon" :direction="direction" />
-  </button>
-</template>
-
 <script setup lang="ts">
 import ChevronIcon from './icons/ChevronIcon.vue'
 
@@ -28,6 +22,12 @@ const handleClick = () => {
 }
 </script>
 
+<template>
+  <button @click="handleClick" class="btn-chevron" :disabled="disabled" :title="title">
+    <ChevronIcon class="chevron-icon" :direction="direction" />
+  </button>
+</template>
+
 <style scoped>
 .btn-chevron {
   display: flex;
@@ -41,8 +41,8 @@ const handleClick = () => {
 }
 
 .btn-chevron:focus {
-  outline: none;
-  border-color: var(--color-focus, #005483);
+  outline: 2px solid var(--color-focus, #005483);
+  outline-offset: 2px;
 }
 .btn-chevron:hover {
   color: var(--color-background-button-primary-hover);
@@ -58,4 +58,3 @@ const handleClick = () => {
   height: 24px;
 }
 </style>
-
