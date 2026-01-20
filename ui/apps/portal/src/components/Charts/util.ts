@@ -63,7 +63,11 @@ export const parseBarChartData = (
   };
 };
 
-export const getAxisNameGap = (series: any[], formatter?: string, baseGap: number = 16): number => {
+export const getAxisNameGap = (
+  series: any[],
+  formatter?: string | ((value: number) => string),
+  baseGap: number = 16
+): number => {
   const charWidth = 8; // approximate width per character
 
   // Find max value or max string length
@@ -97,7 +101,11 @@ export const getAxisNameGap = (series: any[], formatter?: string, baseGap: numbe
     const interval = estimatedMax / 5;
 
     if (formatter) {
-      formattedLabel = formatter.replace("{value}", String(Math.ceil(estimatedMax)));
+      if (typeof formatter === "function") {
+        formattedLabel = formatter(Math.ceil(estimatedMax));
+      } else {
+        formattedLabel = formatter.replace("{value}", String(Math.ceil(estimatedMax)));
+      }
     } else {
       // Determine decimal places based on the interval (not the max)
       // This ensures we account for labels like 1.25, 2.5, 3.75 when max is 5
@@ -131,4 +139,28 @@ export const generateAllMonths = (start: string, end: string): string[] => {
     }
   }
   return result;
+};
+
+/**
+ * Formats large numbers into abbreviated form (K, M, B)
+ * Numbers > 9999 are converted to thousands (K), millions (M), or billions (B)
+ * @param value - The number to format
+ * @returns Formatted string (e.g., "10K", "1.5M", "2B") or the original number as string
+ */
+export const formatLargeNumber = (value: number): string => {
+  if (value <= 999) {
+    return value.toLocaleString();
+  }
+
+  if (value >= 1_000_000_000) {
+    const formatted = value / 1_000_000_000;
+    return formatted % 1 === 0 ? `${formatted}B` : `${formatted.toFixed(1)}B`;
+  }
+  if (value >= 1_000_000) {
+    const formatted = value / 1_000_000;
+    return formatted % 1 === 0 ? `${formatted}M` : `${formatted.toFixed(1)}M`;
+  }
+
+  const formatted = value / 1_000;
+  return formatted % 1 === 0 ? `${formatted}K` : `${formatted.toFixed(1)}K`;
 };
