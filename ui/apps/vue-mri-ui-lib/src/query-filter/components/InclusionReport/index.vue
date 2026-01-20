@@ -19,7 +19,7 @@ import * as echarts from 'echarts'
 import { VueDraggable } from 'vue-draggable-plus'
 
 const props = defineProps<{
-  cohortDefinitionId: number
+  cohortDefinitionId: string
   sourceKey: string
   patientCount: number | null
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
@@ -406,7 +406,7 @@ function toggleAllRules() {
   }
 }
 
-const fetchInclusionReport = async (cohortDefinitionId: number, sourceKey: string) => {
+const fetchInclusionReport = async (cohortDefinitionId: string, sourceKey: string) => {
   isLoadingInclusionReport.value = true
 
   const modeId = selectedPersonEventView.value === 'PERSON' ? 1 : 0
@@ -706,4 +706,3 @@ watch(
 <style scoped>
 @import '../../styles/InclusionReport.scss';
 </style>
-

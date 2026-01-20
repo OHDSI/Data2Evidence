@@ -14,7 +14,7 @@ import InclusionReport from './InclusionReport/index.vue'
 import Samples from './Samples.vue'
 
 const props = defineProps<{
-  cohortDefinitionId: number
+  cohortDefinitionId: string
   availableSources: any[]
   patientCounts?: Record<string, number | null>
   isGeneratingCohort?: boolean
@@ -178,4 +178,3 @@ const hasCohortGenerated = computed(() => {
 <style lang="scss" scoped>
 @import '../styles/ExecuteSidePanel.scss';
 </style>
-

@@ -198,7 +198,7 @@ export class D2eWebapiService {
   }
 
   public async getInclusionReport(
-    cohortDefinitionId: number,
+    cohortDefinitionId: string | number,
     sourceKey: string,
     modeId: number
   ): Promise<InclusionReportResponse> {
@@ -213,4 +213,3 @@ export class D2eWebapiService {
 }
 
 export const d2eWebapiService = new D2eWebapiService()
-
