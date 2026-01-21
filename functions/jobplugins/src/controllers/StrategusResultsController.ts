@@ -61,13 +61,53 @@ export class StrategusResultsController {
         });
       }
 
+      const portalAPI = new PortalServerAPI(authHeader);
+
+      // Delete all existing files for this study before uploading new one
+      try {
+        console.log(`Checking for existing files for study: ${studyId}`);
+        const existingFiles = await portalAPI.listFilesFromStrategusResults(
+          this.STRATEGUS_RESULTS_BUCKET,
+          studyId as string
+        );
+
+        if (existingFiles && existingFiles.length > 0) {
+          console.log(
+            `Found ${existingFiles.length} existing file(s) for study ${studyId}. Deleting...`
+          );
+
+          for (const existingFile of existingFiles) {
+            const fileName = existingFile.name.split("/").pop();
+            console.log(`Deleting existing file: ${fileName}`);
+            try {
+              await portalAPI.deleteFileFromStrategusResults(
+                this.STRATEGUS_RESULTS_BUCKET,
+                studyId as string,
+                fileName
+              );
+            } catch (deleteError) {
+              console.error(`Error deleting file ${fileName}:`, deleteError);
+            }
+          }
+          console.log(
+            `Successfully deleted all existing files for study ${studyId}`
+          );
+        } else {
+          console.log(`No existing files found for study ${studyId}`);
+        }
+      } catch (listError) {
+        console.error(
+          `Error listing/deleting existing files for study ${studyId}:`,
+          listError
+        );
+      }
+
       const file = new File([req.file.buffer], req.file.originalname, {
         type: req.file.mimetype || "application/zip",
       });
 
       const storagePath = `${studyId}/${req.file.originalname}`;
 
-      const portalAPI = new PortalServerAPI(authHeader);
       const result = await portalAPI.uploadFileToStrategusResults(
         this.STRATEGUS_RESULTS_BUCKET,
         storagePath,

@@ -236,7 +236,17 @@ const StudyOverview: FC = () => {
 
   const handleDownloadStrategusResults = useCallback(async (study: NetworkStrategusStudy) => {
     try {
-      const response = await api.strategusResults.downloadStrategusResultsFile(study.studyId, "results.zip");
+      const filesList = await api.strategusResults.listStrategusResultsFiles(study.studyId);
+      
+      if (!filesList || filesList.length === 0) {
+        console.error(`No results file found for study ${study.studyId}`);
+        return;
+      }
+
+      const latestFile = filesList[0];
+      const fileName = latestFile.name.split('/').pop(); 
+
+      const response = await api.strategusResults.downloadStrategusResultsFile(study.studyId, fileName);
 
       if (response.signedUrl) {
         window.open(response.signedUrl, "_blank");
@@ -252,7 +262,7 @@ const StudyOverview: FC = () => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${study.studyId}_results.zip`;
+        link.download = fileName || `${study.studyId}_results.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
