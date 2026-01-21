@@ -202,14 +202,31 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
 
-      - name: Wait for services to be ready to avoid mounting race condition
+      - name: Wait for d2e-ui plugin to be installed
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
-        run: sleep 10
+        run: |
+          echo "Waiting for d2e-ui plugin to be installed..."
+          max_attempts=60
+          attempt=0
+          while [ $attempt -lt $max_attempts ]; do
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" -k https://localhost:443/d2e/portal 2>/dev/null)
+            if [ "$http_code" = "200" ]; then
+              echo "d2e-ui plugin is ready (HTTP $http_code)"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "  Attempt $attempt/$max_attempts: HTTP $http_code, waiting..."
+            sleep 2
+          done
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Timeout waiting for d2e-ui plugin to be installed"
+            exit 1
+          fi
 
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
-          docker exec d2e-trex sh -c "rm -r /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
       - name: Build e2e Docker image

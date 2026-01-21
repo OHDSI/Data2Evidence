@@ -544,6 +544,28 @@ cmd_setup_data() {
 
 cmd_mount_ui() {
     check_project_name
+
+    # Wait for d2e-ui plugin to be fully installed before mounting
+    # This prevents a race condition where the plugin download overwrites our local files
+    log_info "Waiting for d2e-ui plugin to be installed..."
+    local max_attempts=60
+    local attempt=0
+    while [ $attempt -lt $max_attempts ]; do
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" -k https://localhost:${TREX_PORT:-41100}/d2e/portal 2>/dev/null)
+        if [ "$http_code" = "200" ]; then
+            log_info "d2e-ui plugin is ready (HTTP $http_code)"
+            break
+        fi
+        attempt=$((attempt + 1))
+        log_info "  Attempt $attempt/$max_attempts: HTTP $http_code, waiting..."
+        sleep 2
+    done
+
+    if [ $attempt -eq $max_attempts ]; then
+        log_error "Timeout waiting for d2e-ui plugin to be installed"
+        exit 1
+    fi
+
     log_info "Mounting local UI into container..."
     docker exec ${PROJECT_NAME}-trex sh -c "rm -rf /usr/src/data/plugins/@data2evidence/d2e-ui/resources"
     docker exec ${PROJECT_NAME}-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/@data2evidence/d2e-ui/resources"
