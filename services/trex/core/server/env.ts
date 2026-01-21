@@ -54,8 +54,8 @@ export const publicURLs = [
   ])
 
   console.log(`PREFECT_DOCKER_VOLUMES ${JSON.stringify(_env.PREFECT_DOCKER_VOLUMES)}`)
-  console.log(`DB_CREDENTIALS__PRIVATE_KEY ${JSON.stringify(_env.DB_CREDENTIALS__PRIVATE_KEY)}`)
-  console.log(`GIT_COMMIT ${JSON.stringify(_env.GIT_COMMIT)}`)
+  console.log(`DB_CREDENTIALS__PRIVATE_KEY ${_env.DB_CREDENTIALS__PRIVATE_KEY}`)
+  console.log(`GIT_COMMIT ${_env.GIT_COMMIT}`)
 
 
 export const env = {
