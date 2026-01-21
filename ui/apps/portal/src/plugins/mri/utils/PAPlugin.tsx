@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import React, { FC, useEffect, useState } from "react";
 import env from "../../../env";
 import { loadModuleScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
 import PluginContainer from "./PluginContainer";
