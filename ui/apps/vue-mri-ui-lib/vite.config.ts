@@ -77,8 +77,6 @@ export default defineConfig(({ command, mode }): UserConfig => {
         vue: path.resolve(__dirname, 'node_modules/vue'),
         // D3 v3 wrapper - provides access to window.d3 (loaded from public/vendor)
         d3: path.resolve(__dirname, './src/lib/d3.ts'),
-        // Stream polyfill for streamsaver (matching webpack fallback config)
-        stream: 'stream-browserify',
       },
     },
 
