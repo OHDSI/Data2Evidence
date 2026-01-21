@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from "react";
 import env from "../../../env";
-import { loadModuleScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
+import { loadEsModuleScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
 import PluginContainer from "./PluginContainer";
 import { Loader } from "@portal/components";
 
@@ -38,8 +38,8 @@ const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas
       .then(({ css, js }) => {
         loadSapScript(() => {
           const styleSheetCallbacks = css.map(loadStyleSheet);
-          // Use loadModuleScript to load Vite-built ES modules with type="module"
-          const scriptCallbacks = js.map(loadModuleScript);
+          // Use loadEsModuleScript with empty onLoad callback to load Vite-built ES modules with type="module"
+          const scriptCallbacks = js.map((src: string) => loadEsModuleScript(src, () => {}));
           hideLogoutButton();
           callbacks = [...scriptCallbacks, ...styleSheetCallbacks];
         });

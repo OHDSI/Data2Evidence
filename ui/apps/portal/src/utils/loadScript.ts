@@ -40,9 +40,6 @@ export const loadScriptWithCallback = (src: string, onLoad: () => void): Callbac
 export const loadEsModuleScript = (src: string, onLoad: () => void): Callback =>
   _loadScript(src, onLoad, { type: "module" });
 
-// Load script as ES module (simple version without onLoad callback)
-export const loadModuleScript = (src: string): Callback => _loadScript(src, () => void 0, { type: "module" });
-
 export const loadSapScript = (onloadCallback: Callback): Callback => {
   return _loadScript(PA_SAP_CORE_UI_URL, onloadCallback, {
     id: "sap-ui-bootstrap",
