@@ -8,8 +8,8 @@ import BoxPlotChart from "../../Common/BoxPlotChart";
 import BarChart from "../../Common/BarChart";
 import ObservationPeriodCumulativeDurationChart from "../../SourceKeys/ObservationPeriod/ObservationPeriodCumulativeDurationChart/ObservationPeriodCumulativeDurationChart";
 import ObservationPeriodObservedByMonthChart from "../../SourceKeys/ObservationPeriod/ObservationPeriodObservedByMonthChart/ObservationPeriodObservedByMonthChart";
-
-import { parsePieChartData, parseDaysToYears, parseBarChartData } from "../../util";
+import AgeAtFirstObservationChart from "../../SourceKeys/ObservationPeriod/AgeAtFirstObservationChart/AgeAtFirstObservationChart";
+import { parsePieChartData, parseDaysToYears, parseBarChartData, formatBigPositiveNumber } from "../../util";
 
 import { OBSERVATIONPERIOD_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
 import "./ObservationPeriod.scss";
@@ -60,7 +60,9 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
     // Fetch data for charts
     getObservationPeriodData();
   }, [getObservationPeriodData]);
-
+  console.log(observationPeriodData.observationLength);
+  console.log(observationPeriodData.observationLengthStats[0]);
+  console.log(observationPeriodData.durationByGender);
   return (
     <>
       {isloadingObservationPeriodData ? (
@@ -70,14 +72,7 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
       ) : (
         <>
           <div className="imbalanced__container">
-            <BarChart
-              barChartData={parseBarChartData(observationPeriodData.ageAtFirst)}
-              title={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_TITLE)}
-              xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_X_AXIS_NAME)}
-              yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_Y_AXIS_NAME)}
-              tooltipFormat={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_1_TOOLTIP_FORMAT)}
-              axisBaseGap={12}
-            />
+            <AgeAtFirstObservationChart data={observationPeriodData.ageAtFirst} axisBaseGap={12} />
             <BoxPlotChart
               data={observationPeriodData.ageByGender}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BOX_PLOT_CHART_1_TITLE)}
@@ -88,11 +83,7 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
           </div>
           <div className="imbalanced__container">
             <BarChart
-              barChartData={parseBarChartData(
-                observationPeriodData.observationLength,
-                observationPeriodData.observationLengthStats[0].MINVALUE,
-                true
-              )}
+              barChartData={parseBarChartData(observationPeriodData.observationLength, 0, true)}
               title={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_TITLE)}
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_2_Y_AXIS_NAME)}

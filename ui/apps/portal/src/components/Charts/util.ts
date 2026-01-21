@@ -142,12 +142,15 @@ export const generateAllMonths = (start: string, end: string): string[] => {
 };
 
 /**
- * Formats large numbers into abbreviated form (K, M, B)
- * Numbers > 9999 are converted to thousands (K), millions (M), or billions (B)
+ * Formats positive large numbers into abbreviated form (K, M, B)
+ * Numbers > 999 are converted to thousands (K), millions (M), or billions (B)
  * @param value - The number to format
  * @returns Formatted string (e.g., "10K", "1.5M", "2B") or the original number as string
  */
-export const formatLargeNumber = (value: number): string => {
+export const formatBigPositiveNumber = (value: number): string => {
+  if (value < 0) {
+    throw new Error("formatLargeNumber only accepts positive numbers");
+  }
   if (value <= 999) {
     return value.toLocaleString();
   }
