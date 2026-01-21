@@ -18,14 +18,12 @@ import {
   HybridSearchConfig,
 } from "../types.ts";
 import { CachedbDAO } from "./cachedb-dao.ts";
-import { CachedbHanaDAO } from "./cachedb-hana-dao.ts";
 import { HanaHDBDao } from "./hana-hdb-dao.ts";
 import { SystemPortalAPI } from "../api/portal-api.ts";
 import { groupBy } from "../utils/helperUtil.ts";
 
 export class CachedbService {
   private readonly token: string;
-  private readonly systemPortalApi: SystemPortalAPI;
   private readonly datasetDB: DatasetDB;
   private readonly hybridSearchConfig: HybridSearchConfig;
 
@@ -34,7 +32,6 @@ export class CachedbService {
     datasetDB: DatasetDB,
     hybridSearchConfig: HybridSearchConfig
   ) {
-    this.systemPortalApi = new SystemPortalAPI(request);
     this.token = request.headers["authorization"]!;
     this.datasetDB = datasetDB;
     this.hybridSearchConfig = hybridSearchConfig;
@@ -46,7 +43,7 @@ export class CachedbService {
   public static async createCacheDBService(
     request: Request,
     datasetId: string
-  ): CachedbService {
+  ): Promise<CachedbService> {
     const systemPortalApi = new SystemPortalAPI(request);
     const getDatasetDetails = async () => {
       const datasetDB = {
@@ -70,9 +67,7 @@ export class CachedbService {
   /*
   Get cachedbDao depending on dialect
   */
-  private async getCachedbDaoFromDatasetId(
-    datasetId: string
-  ): Promise<CachedbDAO | CachedbHanaDAO | HanaHDBDao> {
+  private async getCachedbDaoFromDialect(): Promise<CachedbDAO | HanaHDBDao> {
     const {
       dialect,
       vocabSchemaName,
@@ -93,8 +88,6 @@ export class CachedbService {
 
     // By default return CachedbDAO
     return new CachedbDAO(
-      this.token,
-      datasetId,
       vocabSchemaName,
       semanticRatio,
       databaseCode,
@@ -106,12 +99,11 @@ export class CachedbService {
   async getConcepts(
     pageNumber = 0,
     rowsPerPage: number,
-    datasetId: string,
     searchText = "",
     filters: Filters
   ) {
     try {
-      const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+      const cachedbDao = await this.getCachedbDaoFromDialect();
       const result = await cachedbDao.getConcepts(
         pageNumber,
         Number(rowsPerPage),
@@ -125,13 +117,9 @@ export class CachedbService {
     }
   }
 
-  async getConceptsCount(
-    datasetId: string,
-    searchText = "",
-    filters: Filters
-  ): Promise<number> {
+  async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
     try {
-      const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+      const cachedbDao = await this.getCachedbDaoFromDialect();
       const result = await cachedbDao.getConceptsCount(searchText, filters);
       return result;
     } catch (err) {
@@ -142,11 +130,10 @@ export class CachedbService {
 
   async getExactConcept(
     conceptName: string | number,
-    datasetId: string,
     conceptColumnName: "concept_name" | "concept_id" | "concept_code"
   ) {
     try {
-      const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+      const cachedbDao = await this.getCachedbDaoFromDialect();
       const result = await cachedbDao.getExactConcept(
         conceptName,
         conceptColumnName
@@ -159,18 +146,14 @@ export class CachedbService {
   }
 
   async getConceptFilterOptionsFaceted(
-    datasetId: string,
     searchText: string,
     filters: Filters
   ): Promise<IDuckdbFacet> {
-    const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+    const cachedbDao = await this.getCachedbDaoFromDialect();
     return cachedbDao.getConceptFilterOptionsFaceted(searchText, filters);
   }
 
-  async getTerminologyDetailsWithRelationships(
-    conceptId: number,
-    datasetId: string
-  ) {
+  async getTerminologyDetailsWithRelationships(conceptId: number) {
     console.info("Get list of concept details and connections");
     const defaultValue: FhirConceptMap = {
       resourceType: FhirResourceType.conceptmap,
@@ -179,7 +162,7 @@ export class CachedbService {
     try {
       const searchConcepts1: number[] = [conceptId];
 
-      const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+      const cachedbDao = await this.getCachedbDaoFromDialect();
       const DuckdbResultConcept1 = await cachedbDao.getMultipleExactConcepts(
         searchConcepts1,
         true
@@ -288,9 +271,9 @@ export class CachedbService {
     }
   }
 
-  async getRecommendedConcepts(conceptIds: number[], datasetId: string) {
+  async getRecommendedConcepts(conceptIds: number[]) {
     try {
-      const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+      const cachedbDao = await this.getCachedbDaoFromDialect();
       const recommendedConcepts = await cachedbDao.getExactConceptRecommended(
         conceptIds
       );
@@ -329,29 +312,27 @@ export class CachedbService {
   }
 
   async getHierarchyDescendants(
-    conceptId: number,
-    datasetId: string
+    conceptId: number
   ): Promise<IConceptHierarchy[]> {
-    const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+    const cachedbDao = await this.getCachedbDaoFromDialect();
     const result = await cachedbDao.getHierarchyDescendants(conceptId);
     return result;
   }
 
   async getHierarchyAncestors(
     conceptId: number,
-    datasetId: string,
     depth: number
   ): Promise<IConceptHierarchy[]> {
-    const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+    const cachedbDao = await this.getCachedbDaoFromDialect();
     const result = await cachedbDao.getHierarchyAncestors(conceptId, depth);
     return result;
   }
 
-  async getConceptsByIds(conceptIds: number[], datasetId: string) {
+  async getConceptsByIds(conceptIds: number[]) {
     if (conceptIds.length === 0) {
       return [];
     }
-    const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+    const cachedbDao = await this.getCachedbDaoFromDialect();
     const result = await cachedbDao.getMultipleExactConcepts(conceptIds);
     if (!result) {
       return [];
@@ -363,11 +344,11 @@ export class CachedbService {
     return duckdbResultMap.expansion.contains;
   }
 
-  async getConceptRelationshipMapsTo(conceptIds: number[], datasetId: string) {
+  async getConceptRelationshipMapsTo(conceptIds: number[]) {
     if (conceptIds.length === 0) {
       return [];
     }
-    const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+    const cachedbDao = await this.getCachedbDaoFromDialect();
     const result = await cachedbDao.getConceptRelationship(
       conceptIds,
       "Maps to"
@@ -377,15 +358,14 @@ export class CachedbService {
 
   async getConceptsAndDescendantIds(
     conceptIds: number[],
-    descendantIds: number[],
-    datasetId: string
+    descendantIds: number[]
   ): Promise<number[]> {
     if (!conceptIds.length) {
       return [];
     }
     const conceptsAndDescendantIds: number[] = [];
 
-    const cachedbDao = await this.getCachedbDaoFromDatasetId(datasetId);
+    const cachedbDao = await this.getCachedbDaoFromDialect();
 
     // Ensures included concept IDs are present in vocab schema and valid
     const validConcepts = await cachedbDao.getMultipleExactConcepts(

@@ -17,7 +17,6 @@ import express from "express";
 import helmet from "helmet";
 import path from "path";
 import yaml from "npm:yaml";
-import { access, constants } from "node:fs/promises";
 import * as mri2 from "./mri/endpoint/analytics";
 import * as xsenv from "@sap/xsenv";
 import { Settings } from "./qe/settings/Settings";
@@ -35,8 +34,6 @@ import {
     ANALYTICS_DB_DIALECTS,
 } from "./types";
 import PortalServerAPI from "./api/PortalServerAPI";
-import { getDuckdbDBConnection } from "./utils/DuckdbConnection";
-import { getCachedbDbConnections } from "./utils/cachedb/cachedb.ts";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
 import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
@@ -201,25 +198,12 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-                // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
                     env.USE_TREX_DB_CONN === "true" &&
                     credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
                 ) {
                     req.dbConnections = getTrexDbConnection({
                         analyticsCredentials: credentials,
-                    });
-                }
-                // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
-                else if (
-                    env.USE_CACHEDB === "true" &&
-                    credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
-                ) {
-                    req.dbConnections = await getCachedbDbConnections({
-                        analyticsCredentials: credentials,
-                        userObj: userObj,
-                        token: req.headers.authorization,
-                        datasetId: req.selectedstudyDbMetadata.id,
                     });
                 } else {
                     req.dbConnections = await getDBConnections({
@@ -685,7 +669,6 @@ const getTrexDbConnection = ({
             resultSchemaName: string,
             parameters: any
         ): string => {
-            // Specifically for trex db connection, direct connection alias is different from cachedb.
             // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
             temp = temp.replace(
                 /\$\$SCHEMA_DIRECT_CONN\$\$./g,
@@ -720,108 +703,43 @@ const getDBConnections = async ({
 }): Promise<{
     analyticsConnection: Connection.ConnectionInterface;
 }> => {
-    // Define defaults for both analytics & Vocab connections
-    let analyticsConnectionPromise;
-    if (
-        env.USE_DUCKDB === "true" &&
-        analyticsCredentials.dialect !== ANALYTICS_DB_DIALECTS.HANA
-    ) {
-        // Use duckdb as analyticsConnection if USE_DUCKDB flag is set to true
-        const duckdbSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.schema}`;
-        const duckdbVocabSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.vocabSchema}`;
-
-        try {
-            // Check duckdb dataset access
-            await access(
-                path.join(env.DUCKDB__DATA_FOLDER, duckdbSchemaFileName),
-                constants.R_OK
-            );
-            await access(
-                path.join(env.DUCKDB__DATA_FOLDER, duckdbVocabSchemaFileName),
-                constants.R_OK
-            );
-            log.debug(
-                `Duckdb accessible at paths ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbSchemaFileName
-                )} AND ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbVocabSchemaFileName
-                )}`
-            );
-
-            // resolve error from getDuckdbDBConnection so that PA screen continues to load and user is able to select other datasets.
-            analyticsConnectionPromise = new Promise(
-                async (resolve, _reject) => {
-                    try {
-                        const conn = await getDuckdbDBConnection(
-                            duckdbSchemaFileName,
-                            duckdbVocabSchemaFileName
-                        );
-                        resolve(conn);
-                    } catch (err) {
-                        resolve(err);
-                    }
-                }
-            );
-        } catch (e) {
-            log.error(e);
-            log.warn(
-                `Duckdb Inaccessible at following paths ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbSchemaFileName
-                )} OR ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbVocabSchemaFileName
-                )}. Hence fallback to Postgres dialect connection`
-            );
-        }
+    // node hdb library checks for these to use TLS
+    // TLS does not work with deno for self signed certs
+    if (!analyticsCredentials.useTLS) {
+        delete analyticsCredentials.key;
+        delete analyticsCredentials.cert;
+        delete analyticsCredentials.ca;
+        delete analyticsCredentials.pfx;
     }
 
-    if (!analyticsConnectionPromise) {
-        //Initialize if not yet until this point
-        // node hdb library checks for these to use TLS
-        // TLS does not work with deno for self signed certs
-        if (!analyticsCredentials.useTLS) {
-            delete analyticsCredentials.key;
-            delete analyticsCredentials.cert;
-            delete analyticsCredentials.ca;
-            delete analyticsCredentials.pfx;
-        }
+    if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
+        analyticsCredentials[
+            "SESSIONVARIABLE:APPLICATION"
+        ] = `${env.PROJECT_NAME}-cohorts`;
+        analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
+            userObj.getUser();
 
-        if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
-            analyticsCredentials[
-                "SESSIONVARIABLE:APPLICATION"
-            ] = `${env.PROJECT_NAME}-cohorts`;
-            analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
-                userObj.getUser();
-
-            if (analyticsCredentials.authentication_mode === "JWT") {
-                delete analyticsCredentials.user;
-                delete analyticsCredentials.password;
-                if (userObj.thirdPartyToken) {
-                    analyticsCredentials["token"] = userObj.thirdPartyToken;
-                } else {
-                    throw new Error(
-                        "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
-                    );
-                }
+        if (analyticsCredentials.authentication_mode === "JWT") {
+            delete analyticsCredentials.user;
+            delete analyticsCredentials.password;
+            if (userObj.thirdPartyToken) {
+                analyticsCredentials["token"] = userObj.thirdPartyToken;
+            } else {
+                throw new Error(
+                    "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+                );
             }
         }
-
-        analyticsConnectionPromise =
-            dbConnectionUtil.DBConnectionUtil.getDBConnection({
-                credentials: analyticsCredentials,
-                schemaName: analyticsCredentials.schema,
-                vocabSchemaName: analyticsCredentials.vocabSchema,
-                resultSchemaName: analyticsCredentials.resultSchema,
-                userObj,
-            });
     }
 
-    const [analyticsConnection] = await Promise.all([
-        analyticsConnectionPromise,
-    ]);
+    const [analyticsConnection] =
+        await dbConnectionUtil.DBConnectionUtil.getDBConnection({
+            credentials: analyticsCredentials,
+            schemaName: analyticsCredentials.schema,
+            vocabSchemaName: analyticsCredentials.vocabSchema,
+            resultSchemaName: analyticsCredentials.resultSchema,
+            userObj,
+        });
 
     return {
         analyticsConnection,

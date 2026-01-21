@@ -843,39 +843,3 @@ export const setupGlobalErrorHandling = (app: any, log: ILogger | Logger) => {
     res.status(500).json(err.message);
   });
 };
-
-export enum CachedbConnectionType {
-  READ = "read",
-  WRITE = "write",
-}
-
-/*
-Helepr function to get cachedb database format for protocol A
-*/
-export const getCachedbDatabaseFormatProtocolA = (
-  dialect: string,
-  datasetId,
-  connectionType: CachedbConnectionType = CachedbConnectionType.READ,
-) => {
-  return `A|${dialect}|${connectionType}|${datasetId}`;
-};
-
-/*
-Helepr function to get cachedb database format for protocol B
-*/
-export const getCachedbDatabaseFormatProtocolB = (
-  dialect: string,
-  databaseCode: string,
-  connectionType: CachedbConnectionType = CachedbConnectionType.READ,
-  schemaName: string = "",
-  vocabSchemaName: string = "",
-) => {
-  let cachedbDatabaseFormat = `B|${dialect}|${connectionType}|${databaseCode}`;
-  if (schemaName) {
-    cachedbDatabaseFormat += `|${schemaName}`;
-  }
-  if (vocabSchemaName) {
-    cachedbDatabaseFormat += `|${vocabSchemaName}`;
-  }
-  return cachedbDatabaseFormat;
-};

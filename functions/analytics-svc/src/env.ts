@@ -15,13 +15,10 @@ function initEnv(__env) {
             .string()
             .refine((val) => !isNaN(parseInt(val)))
             .transform(Number),
-        DUCKDB__DATA_FOLDER: z.string(),
         IDP__ALP_SVC__CLIENT_ID: z.string(),
         IDP__ALP_SVC__CLIENT_SECRET: z.string(),
         USE_EXTENSION_FOR_COHORT_CREATION: z.string(),
 
-        USE_DUCKDB: z.string(),
-        USE_CACHEDB: z.string(),
         USE_TREX_DB_CONN: z.string(),
 
         PG__IDLE_TIMEOUT_IN_MS: z
@@ -38,12 +35,6 @@ function initEnv(__env) {
             .transform(Number),
             
         PROJECT_NAME: z.string(),
-
-        CACHEDB__HOST: z.string(),
-        CACHEDB__PORT: z
-            .string()
-            .refine((val) => !isNaN(parseInt(val)))
-            .transform(Number),
 
         LOCAL_DEBUG: z.string(),
         SQL_RETURN_ON: z.string(),
