@@ -769,11 +769,11 @@ class D2ECli {
         this.hanapw = hanapw;
         const envVariables = {
           HANA_SYSTEM_PASSWORD: this.hanapw,
-          INSTALL_SQLALCHEMY: `bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'`,
-          PREFECT_DOCKER_VOLUMES_CUSTOM: JSON.stringify([`${this.PROJECT_NAME}_trex:/app/duckdb_data`, `${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar`])
+          INSTALL_SQLALCHEMY: `"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"`,
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`
         };
         const envContent = Object.entries(envVariables)
-          .map(([key, value]) => `${key}="${value}"`)
+          .map(([key, value]) => `${key}=${value}`)
           .join("\n");
         fs.writeFileSync(this.ENVFILE, envContent, { flag: "a" });
         const { cmd, env } = this.build_docker_command(
