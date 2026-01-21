@@ -97,7 +97,8 @@ export class StrategusResultsController {
         }
       } catch (listError) {
         console.error(
-          `Error listing/deleting existing files for study ${studyId}:`,
+          "Error listing/deleting existing files for study %s:",
+          studyId,
           listError
         );
       }
