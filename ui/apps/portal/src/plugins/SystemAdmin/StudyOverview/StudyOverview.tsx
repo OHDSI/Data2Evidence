@@ -237,14 +237,14 @@ const StudyOverview: FC = () => {
   const handleDownloadStrategusResults = useCallback(async (study: NetworkStrategusStudy) => {
     try {
       const filesList = await api.strategusResults.listStrategusResultsFiles(study.studyId);
-      
+
       if (!filesList || filesList.length === 0) {
         console.error(`No results file found for study ${study.studyId}`);
         return;
       }
 
       const latestFile = filesList[0];
-      const fileName = latestFile.name.split('/').pop(); 
+      const fileName = latestFile.name.split("/").pop();
 
       const response = await api.strategusResults.downloadStrategusResultsFile(study.studyId, fileName);
 
