@@ -1,24 +1,32 @@
 import { TrexDAO } from "../dao/trex.dao.ts";
 import { ICdmresultsConceptRecordCountResponseDto } from "../dto/cdmresults.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
+import { IConceptRecordCount } from "../dao/types.ts";
 
 export const getConceptRecordCount = async (
   token: string,
   datasetId: string,
   conceptIds: number[]
 ): Promise<ICdmresultsConceptRecordCountResponseDto> => {
-  const trexDao = await TrexDAO.getTrexDao(token, datasetId);
-
   const jobPluginsApi = new JobPluginsAPI(token);
   const dcResultSchemaName =
-    await jobPluginsApi.getLatestSuccessfulDataCharacterizationResultsSchemaName(
-      datasetId
-    );
+    await jobPluginsApi.getConceptRecordsCountResultsSchemaName(datasetId);
 
-  const results = await trexDao.getConceptRecordCount(
-    conceptIds,
-    dcResultSchemaName
-  );
+  let results: IConceptRecordCount[] = [];
+  try {
+    const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+    results = await trexDao.getConceptRecordCount(
+      conceptIds,
+      dcResultSchemaName
+    );
+  } catch (error) {
+    // HOTFIX:
+    // If there is an issue with db connection or query to get concept count,
+    // dont throw error, instead log error message and set results to empty array
+    console.error(`Error querying for concept record count: ${error}`);
+    results = [];
+  }
+
   const mappedResults: ICdmresultsConceptRecordCountResponseDto = results.map(
     (e) => ({
       [e.CONCEPT_ID.toString()]: [

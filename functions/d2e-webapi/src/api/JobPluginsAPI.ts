@@ -48,7 +48,7 @@ export class JobPluginsAPI {
     }
   }
 
-  async getLatestSuccessfulDataCharacterizationResultsSchemaName(
+  async getConceptRecordsCountResultsSchemaName(
     datasetId: string
   ): Promise<string> {
     try {
@@ -64,7 +64,10 @@ export class JobPluginsAPI {
         return "";
       }
 
-      if (result.data.state_type === "COMPLETED") {
+      if (
+        result.data.state_type === "COMPLETED" &&
+        result.data.parameters.options.executeConceptRecordCount !== false
+      ) {
         return result.data.parameters.options.resultsSchema;
       } else {
         return "";
