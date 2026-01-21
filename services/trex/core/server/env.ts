@@ -54,6 +54,9 @@ export const publicURLs = [
   ])
 
   console.log(`PREFECT_DOCKER_VOLUMES ${JSON.stringify(_env.PREFECT_DOCKER_VOLUMES)}`)
+  console.log(`DB_CREDENTIALS__PRIVATE_KEY ${JSON.stringify(_env.DB_CREDENTIALS__PRIVATE_KEY)}`)
+  console.log(`GIT_COMMIT ${JSON.stringify(_env.GIT_COMMIT)}`)
+
 
 export const env = {
     PREFECT_API_URL: _env.PREFECT_API_URL,
@@ -101,7 +104,7 @@ export const env = {
     PG__CA_ROOT_CERT: _env.PG__CA_ROOT_CERT,
     IDP_ALP_SVC_CLIENT_ID: _env.IDP__ALP_SVC_CLIENT_ID,
     IDP_DATA_SVC_CLIENT_ID: _env.IDP__ALP_DATA_CLIENT_ID,
-    PREFECT_DOCKER_VOLUMES: _env.PREFECT_DOCKER_VOLUMES ? JSON.parse(_env.PREFECT_DOCKER_VOLUMES) : [],
+    PREFECT_DOCKER_VOLUMES: ['alp_trex:/app/duckdb_data', '/home/runner/work/Data2Evidence/Data2Evidence/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar'],
     DB_CREDENTIALS__PRIVATE_KEY: _env.DB_CREDENTIALS__PRIVATE_KEY,
     GIT_COMMIT: _env.GIT_COMMIT,
     GH_TOKEN: _env.GH_TOKEN,
