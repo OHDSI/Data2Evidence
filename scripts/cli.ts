@@ -774,8 +774,6 @@ class D2ECli {
             "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
           PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`
         };
-        console.log(`Print CWD ${cwd}`);
-        console.log(`Print Env Variables ${JSON.stringify(envVariables)}`);
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
           .join("\n");
