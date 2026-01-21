@@ -732,7 +732,7 @@ const getDBConnections = async ({
         }
     }
 
-    const [analyticsConnection] =
+    const analyticsConnection =
         await dbConnectionUtil.DBConnectionUtil.getDBConnection({
             credentials: analyticsCredentials,
             schemaName: analyticsCredentials.schema,
