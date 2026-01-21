@@ -38,11 +38,13 @@ test(TEST_NAME, async ({ page }) => {
       await expect(page.getByText('Chronic sinusitis')).toBeVisible()
       await page.getByText('Chronic sinusitis').click()
     } catch (e) {
-      // If not visible in 2 seconds, continue without failing
+      // If not visible, create a new concept set with random suffix to avoid collisions
+      const randomSuffix = Math.random().toString(36).substring(2, 5)
+      const conceptSetName = `Chronic sinusitis ${randomSuffix}`
+
       await page.getByTitle('Condition Occurrence A -').getByRole('button').click()
       await page.getByRole('textbox', { name: 'Concept set name' }).click()
-      await page.getByRole('textbox', { name: 'Concept set name' }).fill('Chronic sinusitis')
-      await page.getByRole('textbox', { name: 'search terms' }).click()
+      await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
@@ -52,20 +54,10 @@ test(TEST_NAME, async ({ page }) => {
         .first()
         .click()
       await page.getByRole('button', { name: 'Create' }).click()
+      // Wait for Create button to change to Update (confirms concept set was created)
+      await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-      // Click modal backdrop to dismiss it
-      await page.locator('.modal-wrapper').click()
-      await page
-        .getByTitle('Condition Occurrence A - Condition concept set')
-        .getByPlaceholder('Enter search term')
-        .fill('')
-      await page
-        .getByTitle('Condition Occurrence A - Condition concept set')
-        .getByPlaceholder('Enter search term')
-        .fill('Chronic sinusitis')
-      await expect(page.getByText('Chronic sinusitis')).toBeVisible()
-      await page.getByText('Chronic sinusitis').click()
     }
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await expect(page.getByText('682 / 2,694')).toBeVisible()

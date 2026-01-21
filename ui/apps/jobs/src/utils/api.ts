@@ -24,7 +24,11 @@ const setupNetworkErrorHandler: AxiosInstanceSetupHook = (instance) => {
         return Promise.reject(error)
       }
 
-      if (error.code === 'ERR_NETWORK_CHANGED') {
+      // Check for network change errors (Axios reports as ERR_NETWORK, browser shows ERR_NETWORK_CHANGED)
+      const isNetworkChanged =
+        error.code === 'ERR_NETWORK' || error.message?.includes('ERR_NETWORK_CHANGED')
+
+      if (isNetworkChanged) {
         config.__retryCount = config.__retryCount || 0
 
         if (config.__retryCount < maxRetries) {
