@@ -39,7 +39,8 @@ def shiny_live_plugin(options: ShinyLivePluginType):
     )
     zip_file_path = zip_shiny_live_assets(
         docs_dir=docs_dir,
-        dataset_id=options.dataset_id
+        dataset_id=options.dataset_id,
+        language=options.language
     )
     upload_result = upload_shiny_live_assets(
         dataset_id=options.dataset_id,
@@ -134,7 +135,7 @@ def build_shiny_live_assets(language: str, app_dir: str) -> str:
 
 
 @task(log_prints=True)
-def zip_shiny_live_assets(docs_dir: str, dataset_id: str) -> str:
+def zip_shiny_live_assets(docs_dir: str, dataset_id: str, language: str) -> str:
     """
     Zip the built Shiny Live assets directory.
 
@@ -149,9 +150,9 @@ def zip_shiny_live_assets(docs_dir: str, dataset_id: str) -> str:
     logger = get_run_logger()
     logger.info(f"Zipping Shiny Live assets from {docs_dir}...")
 
-    # Create zip file path
+    normalized_language = language.lower().replace('.', '_')
     zip_base_path = os.path.join(os.path.dirname(
-        docs_dir), f"shiny_live_app_{dataset_id}")
+        docs_dir), f"shiny_live_app_{dataset_id}_{normalized_language}")
 
     try:
         zip_file_path = shutil.make_archive(
