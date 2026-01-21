@@ -101,6 +101,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('1,677 / 2,694')).toBeVisible()
+  await page.waitForTimeout(1000)
   await expect(page).toHaveScreenshot()
   await page.getByText('✎').click()
   await page.getByRole('textbox', { name: 'search terms' }).click()

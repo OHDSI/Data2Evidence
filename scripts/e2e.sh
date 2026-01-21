@@ -206,13 +206,14 @@ cmd_wizard() {
 
     echo -e "${BOLD}  Actions${NC}"
     echo "  1) Fresh Setup & Test       - Build, start, and run tests"
-    echo "  2) Restore & Retest         - Reset to snapshot and run tests"
-    echo "  3) Restore Only             - Reset to snapshot without running tests"
+    echo "  2) Fresh Setup Only         - Build and start without running tests"
+    echo "  3) Restore & Retest         - Reset to snapshot and run tests"
+    echo "  4) Restore Only             - Reset to snapshot without running tests"
     echo ""
     echo -e "${BOLD}  Session Management${NC}"
-    echo "  4) List sessions"
-    echo "  5) Remove session           - Stop and delete all volumes"
-    echo "  6) Clean test artifacts     - Remove test-results and ctrf"
+    echo "  5) List sessions"
+    echo "  6) Remove session           - Stop and delete all volumes"
+    echo "  7) Clean test artifacts     - Remove test-results and ctrf"
     echo ""
     echo "  q) Quit"
     echo ""
@@ -267,6 +268,41 @@ cmd_wizard() {
             ;;
         2)
             echo ""
+            # Ask for options first
+            if ask_yes_no "  Build and mount UI?" "y"; then
+                SKIP_UI=false
+            else
+                SKIP_UI=true
+            fi
+
+            printf "  Branch to checkout (leave empty for current): "
+            read -r BRANCH
+
+            print_wizard_config "Fresh Setup Only"
+
+            # Clean up any existing e2e sessions after user confirms options
+            local existing_sessions
+            existing_sessions=$(list_sessions)
+            if [ -n "$existing_sessions" ]; then
+                log_warn "Existing e2e sessions found. Cleaning up..."
+                while IFS= read -r session; do
+                    export PROJECT_NAME="$session"
+                    log_info "Removing session: $session"
+                    cmd_clean_all
+                done <<< "$existing_sessions"
+                unset PROJECT_NAME
+            fi
+
+            # Pull latest trex image
+            log_info "Pulling latest trex image..."
+            docker pull ghcr.io/ohdsi/d2e-trex:develop
+
+            cmd_init
+            log_info "Setup complete. You can now create or run tests manually."
+            log_info "To run tests: ./scripts/e2e.sh test"
+            ;;
+        3)
+            echo ""
             # Select session to restore
             if ! select_session "Select session to restore and test"; then
                 exit 1
@@ -286,7 +322,7 @@ cmd_wizard() {
             print_wizard_config "Restore & Retest"
             cmd_retest
             ;;
-        3)
+        4)
             echo ""
             # Select session to restore
             if ! select_session "Select session to restore"; then
@@ -301,11 +337,11 @@ cmd_wizard() {
             log_info "System restored and running. You can now create or run tests manually."
             log_info "To run tests: cd tests/e2e && npm test"
             ;;
-        4)
+        5)
             echo ""
             cmd_list_sessions
             ;;
-        5)
+        6)
             echo ""
             # Select session to remove
             if ! select_session "Select session to remove"; then
@@ -318,7 +354,7 @@ cmd_wizard() {
                 log_info "Cancelled"
             fi
             ;;
-        6)
+        7)
             echo ""
             cmd_clean
             ;;
