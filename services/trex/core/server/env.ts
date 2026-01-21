@@ -53,10 +53,6 @@ export const publicURLs = [
     '^/usermgmt/api/user-group/list$'
   ])
 
-console.log(`PREFECT DOCKER VOLUMES TREX: ${_env.PREFECT_DOCKER_VOLUMES}`);
-console.log(`PREFECT DOCKER VOLUMES TREX STRINGIFY: ${JSON.stringify(_env.PREFECT_DOCKER_VOLUMES)}`);
-
-
 export const env = {
     PREFECT_API_URL: _env.PREFECT_API_URL,
     TLS__INTERNAL__CRT: _env.TLS__INTERNAL__CRT?.replace(/\\n/g, '\n'),
