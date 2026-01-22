@@ -234,14 +234,10 @@ cmd_wizard() {
             # Ask for options first
             if ask_yes_no "  Build and mount UI?" "y"; then
                 SKIP_UI=false
+                PLUGINS_UPDATE=false  # Don't reinstall plugins on restart (would overwrite local UI)
             else
                 SKIP_UI=true
-            fi
-
-            if ask_yes_no "  Reinstall plugins on restart? (for backend devs)" "n"; then
-                PLUGINS_UPDATE=true
-            else
-                PLUGINS_UPDATE=false
+                PLUGINS_UPDATE=true   # Backend devs get latest plugins on restart
             fi
 
             printf "  Branch to checkout (leave empty for current): "
@@ -283,14 +279,10 @@ cmd_wizard() {
             # Ask for options first
             if ask_yes_no "  Build and mount UI?" "y"; then
                 SKIP_UI=false
+                PLUGINS_UPDATE=false  # Don't reinstall plugins on restart (would overwrite local UI)
             else
                 SKIP_UI=true
-            fi
-
-            if ask_yes_no "  Reinstall plugins on restart? (for backend devs)" "n"; then
-                PLUGINS_UPDATE=true
-            else
-                PLUGINS_UPDATE=false
+                PLUGINS_UPDATE=true   # Backend devs get latest plugins on restart
             fi
 
             printf "  Branch to checkout (leave empty for current): "
@@ -327,8 +319,12 @@ cmd_wizard() {
             fi
             export PROJECT_NAME="$SELECTED_SESSION"
             log_info "Selected session: $PROJECT_NAME"
-            # Always skip UI mount on retest - use UI from snapshot
-            SKIP_UI=true
+
+            if ask_yes_no "  Rebuild and mount local UI?" "n"; then
+                SKIP_UI=false
+            else
+                SKIP_UI=true  # Use UI from snapshot
+            fi
 
             printf "  Test filter (e.g., filtering-bar, leave empty for all): "
             read -r TEST_FILTER
@@ -781,10 +777,12 @@ cmd_retest() {
     cmd_start
 
     if [ "$SKIP_UI" = false ]; then
+        log_info "Building UI..."
+        cmd_build_ui
         log_info "Mounting UI..."
         cmd_mount_ui
     else
-        log_info "Skipping UI mount (--skip-ui)"
+        log_info "Skipping UI build/mount (--skip-ui)"
     fi
 
     log_info "Cleaning test artifacts..."
