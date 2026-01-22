@@ -60,9 +60,7 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
     // Fetch data for charts
     getObservationPeriodData();
   }, [getObservationPeriodData]);
-  console.log(observationPeriodData.observationLength);
-  console.log(observationPeriodData.observationLengthStats[0]);
-  console.log(observationPeriodData.durationByGender);
+
   return (
     <>
       {isloadingObservationPeriodData ? (
