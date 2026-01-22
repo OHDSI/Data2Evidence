@@ -7,13 +7,13 @@ import { Feedback, Snackbar } from "@portal/components";
 import { PublicApp } from "../../../apps/PublicApp";
 import { PrivateApp } from "../../../apps/PrivateApp";
 import { AppProvider, usePostLoginRedirectUri, useTranslation } from "../../../contexts";
-import { i18nKeys } from "../../../contexts/app-context/states";
+// import { i18nKeys } from "../../../contexts/app-context/states";
 import { isValidRedirectUrl } from "../../../utils";
 import { OidcAuthenticating } from "./OidcAuthenticating";
 import { OidcError } from "./OidcError";
 import { OidcCallbackSuccess } from "./OidcCallbackSuccess";
 import { OidcSessionLost } from "./OidcSessionLost";
-import { getOidcTokenPayload } from "./oidc";
+// import { getOidcTokenPayload } from "./oidc";
 import { getOidcToken } from "./oidc";
 import env from "../../../env";
 
@@ -49,28 +49,28 @@ const OidcAppInternal: FC = () => {
   return <PrivateApp />;
 };
 
-const idpRelyingParty = env.REACT_APP_IDP_RELYING_PARTY;
+// const idpRelyingParty = env.REACT_APP_IDP_RELYING_PARTY;
 const TOKEN_EVENTS = ["token_aquired", "token_renewed"];
 
 export const OidcApp: FC = () => {
-  const { getText } = useTranslation();
+  // const { getText } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>({});
 
   const handleOidcEvent = useCallback(
     async (_configuration: string, name: string, _data: any) => {
-      if (TOKEN_EVENTS.includes(name) && idpRelyingParty === "azure") {
-        try {
-          const decoded = await getOidcTokenPayload();
-          if (decoded && !("thirdPartyToken" in decoded)) {
-            setFeedback({
-              type: "error",
-              message: getText(i18nKeys.OIDC_TOKEN__THIRD_PARTY_TOKEN_MISSING),
-            });
-          }
-        } catch {
-          console.error("Unable to get decoded token");
-        }
-      }
+      // if (TOKEN_EVENTS.includes(name) && idpRelyingParty === "azure") {
+      //   try {
+      //     const decoded = await getOidcTokenPayload();
+      //     if (decoded && !("thirdPartyToken" in decoded)) {
+      //       setFeedback({
+      //         type: "error",
+      //         message: getText(i18nKeys.OIDC_TOKEN__THIRD_PARTY_TOKEN_MISSING),
+      //       });
+      //     }
+      //   } catch {
+      //     console.error("Unable to get decoded token");
+      //   }
+      // }
 
       if (TOKEN_EVENTS.includes(name)) {
         try {
