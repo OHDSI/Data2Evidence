@@ -1,4 +1,4 @@
-import express, { Request, Response } from "npm:express";
+import express, { NextFunction, Request, Response } from "npm:express";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
@@ -12,6 +12,7 @@ import {
 } from "./const.ts";
 import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
+import { ShinyLiveService } from "./services/shinylive.service.ts";
 
 const GATEWAY_WO_PROTOCOL_FQDN = env.GATEWAY_WO_PROTOCOL_FQDN!;
 const app = express();
@@ -19,8 +20,10 @@ const app = express();
 export class DatasetRouter {
   public router = express.Router();
   private readonly logger = console;
+  private readonly shinyLiveService: ShinyLiveService;
 
   constructor() {
+    this.shinyLiveService = new ShinyLiveService();
     this.registerRoutes();
   }
 
@@ -461,6 +464,42 @@ export class DatasetRouter {
         res.status(500).send("Error when getting dashboards");
       }
     });
+
+    this.router.use(
+      "/shiny-live",
+      async (req: Request, res: Response, next: NextFunction) => {
+        const { datasetId, language } = req.query || {};
+
+        if (!datasetId) {
+          return res.status(400).send(`datasetId is required`);
+        } else if (typeof datasetId !== "string") {
+          return res.status(400).send(`datasetId query param is invalid`);
+        }
+        if (!language) {
+          return res.status(400).send(`language is required`);
+        } else if (typeof language !== "string") {
+          return res.status(400).send(`language query param is invalid`);
+        }
+
+        try {
+          // Get the static files directory (downloads and unzips if needed)
+          const staticDir = await this.shinyLiveService.getStaticFilesDir(
+            datasetId,
+            language
+          );
+
+          // Serve static files from the unzipped directory
+          const staticMiddleware = express.static(staticDir);
+
+          staticMiddleware(req, res, next);
+        } catch (error) {
+          this.logger.error(
+            `Error in shiny-live endpoint: ${JSON.stringify(error)}`
+          );
+          res.status(500).send("Error loading shiny-live application");
+        }
+      }
+    );
   }
 }
 app.use(express.json({ limit: "50mb" }));
