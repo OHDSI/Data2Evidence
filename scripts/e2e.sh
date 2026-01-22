@@ -579,7 +579,17 @@ cmd_setup_data() {
     cd "$ROOT_DIR"
     check_project_name
     log_info "Setting up demo data..."
-    npm run setup
+    if ! npm run setup; then
+        # Check trex logs for d2e-ui download failure
+        local trex_container=$(docker ps -a --format "{{.Names}}" | grep trex | head -1)
+        if [ -n "$trex_container" ]; then
+            local logs=$(docker logs "$trex_container" --tail 50 2>&1)
+            if echo "$logs" | grep -q "Failed to install" && echo "$logs" | grep -q "d2e-ui"; then
+                log_error "d2e-ui plugin failed to download. Check network connectivity to Azure DevOps."
+            fi
+        fi
+        exit 1
+    fi
 }
 
 cmd_mount_ui() {
