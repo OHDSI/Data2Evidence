@@ -486,9 +486,13 @@ cmd_build_ui() {
     log_info "Building Docker image (first run only)..."
     docker build -f Dockerfile.build -t "$image_name" .
 
-    # Run the build with ui folder mounted - output goes directly to host
+    # Run the build with ui folder mounted (existing resources visible for cache)
     log_info "Running bun install and build-all..."
     docker run --rm -v "$(pwd):/app" "$image_name"
+
+    # Fix ownership of resources folder (Docker creates files as root)
+    log_info "Fixing resources ownership..."
+    docker run --rm -v "$(pwd):/work" alpine chown -R $(id -u):$(id -g) /work/resources
 
     log_info "UI build complete. Resources are in ui/resources/"
     cd "$ROOT_DIR"
@@ -685,13 +689,19 @@ cmd_test() {
         log_info "Updating screenshots (baselines will be overwritten)"
     fi
 
+    # Use temp directories for Docker output to avoid permission issues
+    # Docker writes as root, then we copy to final dirs with host user ownership
+    local temp_results="test-results-temp"
+    local temp_ctrf="ctrf-temp"
+    mkdir -p "$temp_results" "$temp_ctrf"
+
     set +e
     docker run --rm -it \
         --network=host \
         --ipc=host \
         -v "$(pwd)/tests:/work/tests" \
-        -v "$(pwd)/test-results:/work/test-results" \
-        -v "$(pwd)/ctrf:/work/ctrf" \
+        -v "$(pwd)/$temp_results:/work/test-results" \
+        -v "$(pwd)/$temp_ctrf:/work/ctrf" \
         -v "$(pwd)/playwright.config.ts:/work/playwright.config.ts" \
         -e D2E_BASE_URL=https://localhost:41100 \
         -e CI=true \
@@ -702,9 +712,25 @@ cmd_test() {
     if [ $test_exit_code -ne 0 ]; then
         log_error "Tests failed! Dumping trex logs..."
         local log_filename="trex-logs-$(date +%Y%m%d-%H%M%S).log"
-        # Use Docker to write log file (test-results may be owned by root)
-        docker logs ${PROJECT_NAME}-trex 2>&1 | docker run --rm -i -v "$(pwd)/test-results:/work" alpine sh -c "cat > /work/$log_filename"
+        # Write trex logs to temp directory (owned by root)
+        docker logs ${PROJECT_NAME}-trex 2>&1 | docker run --rm -i -v "$(pwd)/$temp_results:/work" alpine sh -c "cat > /work/$log_filename"
         log_info "Trex logs saved to: test-results/$log_filename"
+    fi
+
+    # Copy from temp to final directories (makes files owned by current user)
+    log_info "Copying test artifacts with host user ownership..."
+    mkdir -p test-results ctrf
+    if [ -d "$temp_results" ] && [ "$(ls -A "$temp_results" 2>/dev/null)" ]; then
+        cp -r "$temp_results"/* test-results/ 2>/dev/null || true
+    fi
+    if [ -d "$temp_ctrf" ] && [ "$(ls -A "$temp_ctrf" 2>/dev/null)" ]; then
+        cp -r "$temp_ctrf"/* ctrf/ 2>/dev/null || true
+    fi
+
+    # Clean up temp directories (need Docker since they're owned by root)
+    docker run --rm -v "$(pwd):/work" alpine rm -rf "/work/$temp_results" "/work/$temp_ctrf"
+
+    if [ $test_exit_code -ne 0 ]; then
         return $test_exit_code
     fi
 }

@@ -101,9 +101,8 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('1,677 / 2,694')).toBeVisible()
-  await page.waitForTimeout(1000)
-  await expect(page).toHaveScreenshot()
   await page.getByText('✎').click()
+  await expect(page).toHaveScreenshot()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
@@ -122,6 +121,10 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await expect(page.getByRole('button', { name: 'Update' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
+
+  // Blur any focused element to prevent focus shadow on multiselect tags
+  // (focus can return to the tag when modal closes, especially on fast systems)
+  await page.evaluate(() => (document.activeElement as HTMLElement)?.blur())
 
   // Dismiss popover if present
   try {
