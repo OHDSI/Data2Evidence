@@ -121,6 +121,7 @@ const ObservationPeriod: FC<ObservationPeriodProps> = ({ flowRunId, datasetId })
               xAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_3_X_AXIS_NAME)}
               yAxisName={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_3_Y_AXIS_NAME)}
               tooltipFormat={getText(i18nKeys.OBSERVATION_PERIOD__BAR_CHART_3_TOOLTIP_FORMAT)}
+              yAxisFormat={formatBigPositiveNumber}
             />
             <PieChart
               data={parsePieChartData(observationPeriodData.observationPeriodsPerPerson)}
