@@ -138,7 +138,6 @@ jobs:
           echo "USE_DUCKDB=false" >> $DOTENV_FILE
           echo "USE_CACHEDB=false" >> $DOTENV_FILE
           echo "NODE_ENV=production" >> $DOTENV_FILE
-          cat $DOTENV_FILE
 
       - name: Build system services
         run: |
