@@ -347,6 +347,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
     await page.getByRole('menuitem', { name: 'testuserB' }).click()
+    // Wait for permission to be saved and propagated
+    await page.waitForTimeout(2000)
     await page.getByTestId('dialog-close').click()
   })
 

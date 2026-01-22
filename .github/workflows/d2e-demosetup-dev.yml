@@ -208,14 +208,17 @@ jobs:
           echo "Waiting for d2e-ui plugin to be installed..."
           max_attempts=60
           attempt=0
+          start_time=$(date +%s)
           while [ $attempt -lt $max_attempts ]; do
-            http_code=$(curl -s -o /dev/null -w "%{http_code}" -k https://localhost:443/d2e/portal 2>/dev/null)
-            if [ "$http_code" = "200" ]; then
-              echo "d2e-ui plugin is ready (HTTP $http_code)"
+            # Check if plugin resources directory exists and has files
+            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
+              end_time=$(date +%s)
+              elapsed=$((end_time - start_time))
+              echo "d2e-ui plugin is ready (took ${elapsed}s)"
               break
             fi
             attempt=$((attempt + 1))
-            echo "  Attempt $attempt/$max_attempts: HTTP $http_code, waiting..."
+            echo "  Attempt $attempt/$max_attempts: waiting..."
             sleep 2
           done
           if [ $attempt -eq $max_attempts ]; then

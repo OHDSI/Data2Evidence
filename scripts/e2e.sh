@@ -14,6 +14,7 @@ NO_SNAPSHOT=false
 BRANCH=""
 TEST_FILTER=""
 UPDATE_SCREENSHOTS=false
+PLUGINS_UPDATE=false  # Set to true for backend devs who want latest plugins from registry
 
 # Colors for output
 RED='\033[0;31m'
@@ -60,6 +61,11 @@ print_wizard_config() {
         echo -e "  Build/mount UI:     ${CYAN}no${NC}"
     else
         echo -e "  Build/mount UI:     ${CYAN}yes${NC}"
+    fi
+    if [ "$PLUGINS_UPDATE" = true ]; then
+        echo -e "  Plugins update:     ${CYAN}yes (reinstall on restart)${NC}"
+    else
+        echo -e "  Plugins update:     ${CYAN}no (keep installed)${NC}"
     fi
     if [ -n "$TEST_FILTER" ]; then
         echo -e "  Test filter:        ${CYAN}$TEST_FILTER${NC}"
@@ -232,6 +238,12 @@ cmd_wizard() {
                 SKIP_UI=true
             fi
 
+            if ask_yes_no "  Reinstall plugins on restart? (for backend devs)" "n"; then
+                PLUGINS_UPDATE=true
+            else
+                PLUGINS_UPDATE=false
+            fi
+
             printf "  Branch to checkout (leave empty for current): "
             read -r BRANCH
 
@@ -273,6 +285,12 @@ cmd_wizard() {
                 SKIP_UI=false
             else
                 SKIP_UI=true
+            fi
+
+            if ask_yes_no "  Reinstall plugins on restart? (for backend devs)" "n"; then
+                PLUGINS_UPDATE=true
+            else
+                PLUGINS_UPDATE=false
             fi
 
             printf "  Branch to checkout (leave empty for current): "
@@ -408,6 +426,7 @@ Options:
   -u, --update-snapshots    Update screenshot baselines instead of comparing
   --skip-ui                 Skip UI build and mount
   --no-snapshot             Skip creating snapshots after setup
+  --plugins-update          Reinstall plugins on restart (for backend devs)
   -h, --help                Show this help message
 
 Examples:
@@ -466,6 +485,8 @@ cmd_setup_env() {
     echo '' >> .env.local
     echo '# E2E: Match CI plugin seed configuration' >> .env.local
     echo 'PLUGINS_SEED='\''["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'\''' >> .env.local
+    echo '# Plugin reinstall on restart (false prevents race condition with UI mounting)' >> .env.local
+    echo "PLUGINS_SEED_UPDATE=$PLUGINS_UPDATE" >> .env.local
 
     # Save .env.local with session name
     cp .env.local ".env.local-$PROJECT_NAME"
@@ -729,6 +750,8 @@ cmd_test() {
 
     # Copy from temp to final directories (makes files owned by current user)
     log_info "Copying test artifacts with host user ownership..."
+    # Remove old folders first (may be root-owned from previous Docker runs)
+    rm -rf test-results ctrf 2>/dev/null || docker run --rm -v "$(pwd):/work" alpine rm -rf /work/test-results /work/ctrf
     mkdir -p test-results ctrf
     if [ -d "$temp_results" ] && [ "$(ls -A "$temp_results" 2>/dev/null)" ]; then
         cp -r "$temp_results"/* test-results/ 2>/dev/null || true
@@ -849,6 +872,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --no-snapshot)
             NO_SNAPSHOT=true
+            shift
+            ;;
+        --plugins-update)
+            PLUGINS_UPDATE=true
             shift
             ;;
         -f|--filter)
