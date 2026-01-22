@@ -58,6 +58,8 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   // This function is used to delete existing test configuration if exists
   async function clearTestConfigIfExists(testConfigname: string) {
     try {
+      await page.reload()
+      await expect(page.getByText('Clinical Data Model')).toBeVisible()
       if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
         await page.getByRole('button', { name: 'Back' }).click()
       }
