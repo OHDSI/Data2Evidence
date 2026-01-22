@@ -29,6 +29,7 @@ from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, is_strat
 
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.WebAPI import WebAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.rutils import set_trex_env_var
@@ -1209,6 +1210,7 @@ class StrategusNode(Node):
                 rExecutionSettings = rParallelLogger.convertJsonToSettings(executionSettings)
                 analysisSpecJson = convert_R_to_py(rParallelLogger.convertSettingsToJson(rSpec))
 
+                remove_tmp_tables(dbdao, 'main' if USE_TREX_CONNECTION else None)
                 execute(rSpec, rExecutionSettings, rConnectionDetails)
 
                 print('Saving strategus log file as an artifact...')
@@ -1264,6 +1266,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
 
             print('Strategus execution started...')
+            remove_tmp_tables(dbdao, 'main' if USE_TREX_CONNECTION else None)
             execute(rAnalysisSpec, rExecutionSettings, rConnectionDetails)
 
             print('Saving strategus log file as an artifact...')
@@ -1426,3 +1429,15 @@ def getRCdmExecutionSettings(settings) -> str:
         except Exception as e:
             print('Error: ', e)
             raise RuntimeError('Execution of strategus has failed')
+
+def remove_tmp_tables(dbdao: DBDao, schema_name: str):
+    logger = Logger()
+    logger.info(f'Cleaning TEMP tables')
+    try:
+        tmp_tables = dbdao.get_temp_table_names(schema_name)
+        logger.info(f'Found {len(tmp_tables)} TEMP tables to clean')
+        for table in tmp_tables:
+            logger.info(f'Dropping TEMP table: {schema_name}.{table}')
+            dbdao.execute_sql(f'DROP TABLE {schema_name}.{table}')
+    except Exception as e:
+        logger.error(f'Error cleaning TEMP tables: {str(e)}')
