@@ -371,6 +371,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page
       .locator('[id="__xmlview11--AttributeDataSource-inner"]')
       .fill('CAST (@COND."CONDITION_CONCEPT_ID" AS VARCHAR)')
+    await page.waitForTimeout(3000) // Wait for backend validation to complete
     await page.locator('[id="__xmlview11--AttributeType-label"]').click()
     await page.getByRole('option', { name: 'Concept Set' }).click()
   })
