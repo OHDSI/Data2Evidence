@@ -53,11 +53,6 @@ export const publicURLs = [
     '^/usermgmt/api/user-group/list$'
   ])
 
-  console.log(`PREFECT_DOCKER_VOLUMES ${_env.PREFECT_DOCKER_VOLUMES}`)
-  console.log(`DB_CREDENTIALS__PRIVATE_KEY ${_env.DB_CREDENTIALS__PRIVATE_KEY}`)
-  console.log(`GIT_COMMIT ${_env.GIT_COMMIT}`)
-
-
 export const env = {
     PREFECT_API_URL: _env.PREFECT_API_URL,
     TLS__INTERNAL__CRT: _env.TLS__INTERNAL__CRT?.replace(/\\n/g, '\n'),
