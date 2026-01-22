@@ -5,10 +5,11 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
-test(TEST_NAME, async ({ page }) => {
+test(TEST_NAME, async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   test.setTimeout(300000) // Set timeout to 5 minutes
   // Jobs: Execute Job - Create DQD job with name dqd_demo
-  await page.goto('/d2e/portal')
+  await page.goto('https://localhost:41100/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -18,8 +19,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.getByText('Demo dataset')).toBeVisible();
-  const dataset_id = await page.getByRole('row').nth(2).getByRole('cell').nth(2).textContent();
-  const schema_name = await page.getByRole('row').nth(2).getByRole('cell').nth(4).textContent();
+  // Get the dataset ID
+  await page.locator('div.alp-text__copy-button-container').nth(2).locator('button.alp-icon-button--icon-only').click()
+  const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
+  // Get the dataset ID
+  await page.locator('div.alp-text__copy-button-container').nth(3).locator('button.alp-icon-button--icon-only').click()
+  const schema_name = await page.evaluate(async () => await navigator.clipboard.readText())
   await page.getByRole('link', { name: 'Jobs' }).click()
   await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible()
   await page.getByRole('button', { name: 'Jobs' }).click()
