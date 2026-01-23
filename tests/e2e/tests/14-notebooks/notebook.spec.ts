@@ -5,6 +5,10 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
+  const timestamp = Date.now()
+  const notebookName = `Test Notebook ${timestamp}`
+  const notebookNameRenamed = `Test Notebook 2 ${timestamp}`
+
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -17,16 +21,16 @@ test(TEST_NAME, async ({ page }) => {
   //Create notebook
   await page.getByRole('button', { name: 'New Notebook' }).click()
   await page.getByRole('textbox', { name: 'Name' }).click()
-  await page.getByRole('textbox', { name: 'Name' }).fill('Test Notebook')
+  await page.getByRole('textbox', { name: 'Name' }).fill(notebookName)
   await page.getByRole('button', { name: 'Create' }).click({ timeout: 2000 })
-  await expect(page.getByText('Created notebook "Test Notebook"')).toBeVisible()
+  await expect(page.getByText(`Created notebook "${notebookName}"`)).toBeVisible()
   await page.getByTestId('snackbar-close').locator('svg').click()
   await page.reload()
   await page.getByRole('link', { name: 'Notebooks' }).click()
   //Rename notebook
   await page.locator('.notebook-header__content_title button').click()
   await page.getByRole('textbox', { name: 'Notebook Title' }).click()
-  await page.getByRole('textbox', { name: 'Notebook Title' }).fill('Test Notebook 2')
+  await page.getByRole('textbox', { name: 'Notebook Title' }).fill(notebookNameRenamed)
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByText('Changes saved')).toBeVisible()
   await page.getByTestId('snackbar-close').locator('svg').click()
