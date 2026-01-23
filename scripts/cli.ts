@@ -245,7 +245,7 @@ class D2ECli {
       .option("-h, --hana", "")
       .option("--hades", "")
       .option(
-        "-c, --compose-file",
+        "-c, --composeFile <path>",
         "[PATH] is path to an additional docker compose file"
       )
       .option("-t, --docker-context <context>", "[CONTEXT] Use docker context")
