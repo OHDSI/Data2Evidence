@@ -20,6 +20,7 @@ test(TEST_NAME, async ({ page }) => {
 
   //Create notebook
   await page.getByRole('button', { name: 'New Notebook' }).click()
+  await expect(page.getByText('New notebookNameTemplate (')).toBeVisible()
   await page.getByRole('textbox', { name: 'Name' }).click()
   await page.getByRole('textbox', { name: 'Name' }).fill(notebookName)
   await page.getByRole('button', { name: 'Create' }).click({ timeout: 2000 })
@@ -27,6 +28,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('snackbar-close').locator('svg').click()
   await page.reload()
   await page.getByRole('link', { name: 'Notebooks' }).click()
+  await page.getByText('ADHD Phenotype (Shared)').click()
+  await page.getByRole('option', { name: notebookName, exact: true }).click()
   //Rename notebook
   await page.locator('.notebook-header__content_title button').click()
   await page.getByRole('textbox', { name: 'Notebook Title' }).click()
@@ -56,12 +59,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Share notebook').click()
   await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.getByText('Changes saved')).toBeVisible()
-  await page.getByTestId('snackbar-close').locator('svg').click()
-
-  //Delete notebook
-  await page.getByRole('button', { name: 'Delete' }).click()
-  await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.getByText('File Deleted')).toBeVisible()
   await page.getByTestId('snackbar-close').locator('svg').click()
 
   //Delete notebook
