@@ -23,8 +23,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('snackbar-close').locator('svg').click()
   await page.reload()
   await page.getByRole('link', { name: 'Notebooks' }).click()
-  await page.getByRole('combobox', { name: 'ADHD Phenotype (Shared)' }).click()
-  await page.getByRole('option', { name: 'Test Notebook' }).click()
+
+  await page.getByText('ADHD Phenotype (Shared)').click();
+  await page.getByRole('option', { name: 'Test Notebook' }).click();
+
   //Rename notebook
   await page.locator('.notebook-header__content_title button').click()
   await page.getByRole('textbox', { name: 'Notebook Title' }).click()
