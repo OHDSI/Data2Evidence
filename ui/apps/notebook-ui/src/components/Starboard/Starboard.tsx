@@ -29,7 +29,6 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const [loading, setLoading] = useState(true);
-  const [jwtToken, setJWTToken] = useState("");
   const [unsaved, setUnsaved] = useState(false);
 
   const [runtime, setRuntime] = useState<StarboardEmbed>();
@@ -56,6 +55,7 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
         if (!runInBackground) setLoading(true);
         const notebooks = await api.studyNotebook.getNotebookList(activeDatasetId);
         if (notebooks.length === 0) updateActiveNotebook(undefined);
+        notebooks.sort((a, b) => a.name.localeCompare(b.name));
         if (!runInBackground) updateActiveNotebook(notebooks[0]);
         setNotebooks(notebooks);
       } catch (err) {
@@ -73,10 +73,7 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
 
   const loadNotebookContent = useCallback(
     async (notebookContent: string) => {
-      if (jwtToken === "") {
-        const findJwtToken = (await getToken?.()) || "";
-        setJWTToken(findJwtToken);
-      }
+      const jwtToken = (await getToken?.()) || "";
       const mount = document.querySelector("#starboard-root");
       while (mount?.firstChild) {
         mount.removeChild(mount.firstChild);
@@ -97,7 +94,7 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
       setRuntime(embedEl);
       setUnsaved(false);
     },
-    [jwtToken, getToken, userId, activeDatasetId]
+    [getToken, userId, activeDatasetId, uiFilesUrl]
   );
 
   const handleReadContent = useCallback(() => {
