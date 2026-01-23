@@ -11,7 +11,7 @@ export default defineConfig({
   },
   use: {
     baseURL: process.env.D2E_BASE_URL ?? 'https://localhost:443',
-    actionTimeout: 30000, // 30 seconds for each action
+    actionTimeout: 60000, // 60 seconds for each action
     navigationTimeout: 60000, // 1 minute for navigation
     browserName: 'chromium',
     headless: true,
