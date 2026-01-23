@@ -39,14 +39,9 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Back' }).click()
     }
     const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
-    try {
-      await expect(testConfig).toBeVisible()
-      await testConfig.click({ position: { x: 100, y: 20 } })
-      await page.waitForTimeout(1000) // Wait for UI to navigate after click
-      await expect(page.getByText(`${testConfigname} - Version`)).toBeVisible()
-    } catch (error) {
-      throw new Error(`Failed to click on test config ${testConfigname}: ${error}`)
-    }
+    await expect(testConfig).toBeVisible()
+    await testConfig.click({ position: { x: 100, y: 20 } })
+    await expect(page.getByText(`${testConfigname} - Version`)).toBeVisible()
   }
 
   // This function is used to scroll an element into view, playwright's version of this scrollIntoViewIfNeeded() results in flaky tests
@@ -482,7 +477,7 @@ test(TEST_NAME, async ({ page }) => {
     // Click on TestConfig101 at center of the configuration name text, otherwise it misclicks on the first Configuration in the list
     let retries = 0
     while (!(await page.getByRole('link', { name: 'Defined Interactions (1)' }).isVisible()) && retries < 3) {
-      clickTestConfig('TestConfig101')
+      await clickTestConfig('TestConfig101')
       await page.getByText('Active', { exact: true }).dblclick()
       retries++
     }
@@ -635,7 +630,7 @@ test(TEST_NAME, async ({ page }) => {
       .first()
     let retries = 0
     while (!(await testConfig102Item.getByText('Autosave').isVisible()) && retries < 3) {
-      clickTestConfig('TestConfig102')
+      await clickTestConfig('TestConfig102')
       retries++
     }
 

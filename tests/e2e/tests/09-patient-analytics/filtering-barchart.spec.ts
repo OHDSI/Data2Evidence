@@ -100,11 +100,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#pane-right').getByRole('list').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  // Take 10 screenshots at 500ms intervals to capture the jerky motion
-  for (let i = 0; i < 10; i++) {
-    await page.screenshot({ path: `test-results/filtering-barchart-motion-${i}.png` })
-    await page.waitForTimeout(500)
-  }
   // TODO: requires debugging of screenshot hence using maxDiffPixelRatio
   await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
 

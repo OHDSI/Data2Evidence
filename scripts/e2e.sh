@@ -240,10 +240,10 @@ cmd_wizard() {
                 PLUGINS_UPDATE=true   # Backend devs get latest plugins on restart
             fi
 
-            printf "  Branch to checkout (leave empty for current): "
+            printf "  Branch to checkout [current]: "
             read -r BRANCH
 
-            printf "  Test filter (e.g., filtering-bar, leave empty for all): "
+            printf "  Test filter (e.g., filtering-bar) [all]: "
             read -r TEST_FILTER
 
             if ask_yes_no "  Update screenshots (regenerate baselines)?" "n"; then
@@ -285,7 +285,7 @@ cmd_wizard() {
                 PLUGINS_UPDATE=true   # Backend devs get latest plugins on restart
             fi
 
-            printf "  Branch to checkout (leave empty for current): "
+            printf "  Branch to checkout [current]: "
             read -r BRANCH
 
             print_wizard_config "Fresh Setup Only"
@@ -320,13 +320,19 @@ cmd_wizard() {
             export PROJECT_NAME="$SELECTED_SESSION"
             log_info "Selected session: $PROJECT_NAME"
 
-            if ask_yes_no "  Rebuild and mount local UI?" "n"; then
+            if ask_yes_no "  Build local UI and replace snapshot's UI?" "n"; then
                 SKIP_UI=false
+                PLUGINS_UPDATE=false  # No need to update plugins if mounting local UI
             else
                 SKIP_UI=true  # Use UI from snapshot
+                if ask_yes_no "  Update plugins on restart?" "n"; then
+                    PLUGINS_UPDATE=true
+                else
+                    PLUGINS_UPDATE=false
+                fi
             fi
 
-            printf "  Test filter (e.g., filtering-bar, leave empty for all): "
+            printf "  Test filter (e.g., filtering-bar) [all]: "
             read -r TEST_FILTER
 
             if ask_yes_no "  Update screenshots (regenerate baselines)?" "n"; then
@@ -345,9 +351,29 @@ cmd_wizard() {
             export PROJECT_NAME="$SELECTED_SESSION"
             log_info "Selected session: $PROJECT_NAME"
 
+            if ask_yes_no "  Build local UI and replace snapshot's UI?" "n"; then
+                SKIP_UI=false
+                PLUGINS_UPDATE=false  # No need to update plugins if mounting local UI
+            else
+                SKIP_UI=true  # Use UI from snapshot
+                if ask_yes_no "  Update plugins on restart?" "n"; then
+                    PLUGINS_UPDATE=true
+                else
+                    PLUGINS_UPDATE=false
+                fi
+            fi
+
             print_wizard_config "Restore Only"
             cmd_restore
             cmd_start
+
+            if [ "$SKIP_UI" = false ]; then
+                log_info "Building UI..."
+                cmd_build_ui
+                log_info "Mounting UI..."
+                cmd_mount_ui
+            fi
+
             log_info "System restored and running. You can now create or run tests manually."
             log_info "To run tests: cd tests/e2e && npm test"
             ;;
