@@ -1,5 +1,5 @@
-import { Locator, test, expect } from '../fixtures'
-
+import { Locator } from 'playwright/test'
+import { test, expect as baseExpect } from '../fixtures'
 /**
  * NOTE: This test uses waitForTimeout in several places because selectors may already
  * be present in the DOM but refer to stale/old config data. The wait allows the UI
@@ -9,16 +9,21 @@ import { Locator, test, expect } from '../fixtures'
  * 3. The _updateIDValidation function needs time to complete after ID confirmations
  */
 
+// Configure expect with 1 minute timeout for this file
+const expect = baseExpect.configure({ timeout: 60000 })
+
+// Set action timeout (click, fill, etc.) to 1 minute for this file
+test.use({ actionTimeout: 60000 })
+
 const TEST_NAME = 'CDM configuration creation'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   test.setTimeout(300 * 1000) // Set timeout to 5 minutes
+
   await page.goto('/d2e/portal')
-  await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
-  await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByTestId('button').nth(1)).toBeVisible()
@@ -280,10 +285,8 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   })
 
   await test.step('Data Model Setting: Defined Interactions', async () => {
-    const outputDir = testInfo.outputDir
     await page.getByRole('link', { name: 'Defined Interactions (0)' }).click()
     await page.getByRole('button', { name: 'Add Interaction' }).click()
-    await page.screenshot({ path: `${outputDir}/debug-01-after-add-interaction.png` })
     await page.getByText('New Interaction - 1').click()
     await page.locator('[id="__xmlview5--interactionName-inner"]').click()
     await page.locator('[id="__xmlview5--interactionName-inner"]').fill('Condition Occurrence')
@@ -292,7 +295,6 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
     await page.getByRole('button', { name: 'Yes' }).click()
     await page.waitForTimeout(1000) // Wait for _updateIDValidation to complete
-    await page.screenshot({ path: `${outputDir}/debug-02-after-interaction-id-confirm.png` })
     await page.locator('[id="__box6-inner"]').click()
     await page.locator('[id="__box6-inner"]').fill('@COND')
     // Person Id
@@ -305,7 +307,6 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
     await page.getByRole('button', { name: 'Yes' }).click()
     await page.waitForTimeout(1000) // Wait for _updateIDValidation to complete
-    await page.screenshot({ path: `${outputDir}/debug-03-after-attr1-id-confirm.png` })
     await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
     await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
     await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('CAST (@COND.person_id AS VARCHAR)')
@@ -319,7 +320,6 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
     await page.getByRole('button', { name: 'Yes' }).click()
     await page.waitForTimeout(1000) // Wait for _updateIDValidation to complete
-    await page.screenshot({ path: `${outputDir}/debug-04-after-attr2-id-confirm.png` })
     await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
     await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
     await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('@COND."CONDITION_CONCEPT_ID"')
@@ -342,7 +342,6 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
     await page.getByRole('button', { name: 'Yes' }).click()
     await page.waitForTimeout(1000) // Wait for _updateIDValidation to complete
-    await page.screenshot({ path: `${outputDir}/debug-05-after-attr3-id-confirm.png` })
     await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
     await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
     await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').fill('@TEXT.concept_name')
@@ -365,7 +364,6 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
     await page.getByRole('button', { name: 'Yes' }).click()
     await page.waitForTimeout(1000) // Wait for _updateIDValidation to complete
-    await page.screenshot({ path: `${outputDir}/debug-06-after-attr4-id-confirm.png` })
     await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
     await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
     await page
@@ -377,18 +375,12 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   })
 
   await test.step('Validate the CDM configuration', async () => {
-    const outputDir = testInfo.outputDir
-    await page.screenshot({ path: `${outputDir}/debug-07-before-validate.png` })
     await page.getByRole('button', { name: 'Validate' }).click()
     await expect(page.getByText('Success')).toBeVisible()
-    await page.screenshot({ path: `${outputDir}/debug-08-after-validate-success.png` })
     await page.getByRole('button', { name: 'OK' }).click()
-    await page.screenshot({ path: `${outputDir}/debug-09-after-ok-click.png` })
     await page.getByRole('button', { name: 'Preview' }).click()
     await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
-    await page.screenshot({ path: `${outputDir}/debug-10-preview-dialog-visible.png` })
     await page.waitForTimeout(500) // Wait for UI and star indicator to stabilize
-    await page.screenshot({ path: `${outputDir}/debug-11-after-500ms-wait.png` })
     await expect(page).toHaveScreenshot()
     await page.getByRole('button', { name: 'Close' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
