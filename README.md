@@ -6,7 +6,7 @@
 <!--- [![D2E Release](https://img.shields.io/github/v/release/ohdsi/d2e?color=blue&label=latest%20release&logo=github)](https://github.com/ohdsi/d2e/releases/latest) --->
 
 <!--- [![GitHub Release](https://img.shields.io/github/v/release/ohdsi/d2e?label=notes&logo=github)](https://github.com/ohdsi/d2e/releases) --->
-
+ 
 :construction: **Data2Evidence is beta software. There might be breaking changes.** :construction:
 
 
