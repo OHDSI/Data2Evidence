@@ -106,12 +106,18 @@ test('pa-compare-cohorts', async ({ page }) => {
   // await page.locator('.footer > div:nth-child(5)').first().click()
   // await page.getByRole('button', { name: 'Delete' }).click()
 
-  await page.getByTitle('Delete Saved Filter').first().click()
-  await page.getByRole('button', { name: 'Delete' }).click()
-  await page.waitForTimeout(25000)
-  await page.getByTitle('Delete Saved Filter').first().click()
-  await page.getByRole('button', { name: 'Delete' }).click()
-  await page.waitForTimeout(25000)
+  // Delete all saved cohorts until none remain
+  while (
+    await page
+      .getByTitle('Delete Saved Filter')
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await page.getByTitle('Delete Saved Filter').first().click()
+    await page.getByRole('button', { name: 'Delete' }).click()
+    await page.waitForTimeout(10000)
+  }
 
   await expect(page.getByText('You have not yet saved any')).toBeVisible()
 })
