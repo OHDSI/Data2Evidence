@@ -545,6 +545,8 @@ cmd_build_ui() {
 cmd_build_docker() {
     cd "$ROOT_DIR"
     check_project_name
+    log_info "Building TypeScript..."
+    npm run build:ts
     log_info "Building Docker images..."
     npm run build
 }
