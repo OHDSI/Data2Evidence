@@ -265,10 +265,6 @@ cmd_wizard() {
                 unset PROJECT_NAME
             fi
 
-            # Pull latest trex image
-            log_info "Pulling latest trex image..."
-            docker pull ghcr.io/ohdsi/d2e-trex:develop
-
             cmd_init
             # Run tests after init completes
             log_info "Running tests..."
@@ -302,10 +298,6 @@ cmd_wizard() {
                 done <<< "$existing_sessions"
                 unset PROJECT_NAME
             fi
-
-            # Pull latest trex image
-            log_info "Pulling latest trex image..."
-            docker pull ghcr.io/ohdsi/d2e-trex:develop
 
             cmd_init
             log_info "Setup complete. You can now create or run tests manually."
@@ -365,6 +357,15 @@ cmd_wizard() {
 
             print_wizard_config "Restore Only"
             cmd_restore
+
+            # Update PLUGINS_SEED_UPDATE in .env.local based on user's choice
+            cd "$ROOT_DIR"
+            if grep -q "PLUGINS_SEED_UPDATE=" .env.local 2>/dev/null; then
+                sed -i.bak "s/PLUGINS_SEED_UPDATE=.*/PLUGINS_SEED_UPDATE=$PLUGINS_UPDATE/" .env.local
+                rm -f .env.local.bak
+                log_info "Set PLUGINS_SEED_UPDATE=$PLUGINS_UPDATE in .env.local"
+            fi
+
             cmd_start
 
             if [ "$SKIP_UI" = false ]; then
@@ -798,6 +799,14 @@ cmd_retest() {
 
     log_info "Restoring from snapshot..."
     cmd_restore
+
+    # Update PLUGINS_SEED_UPDATE in .env.local based on user's choice
+    cd "$ROOT_DIR"
+    if grep -q "PLUGINS_SEED_UPDATE=" .env.local 2>/dev/null; then
+        sed -i.bak "s/PLUGINS_SEED_UPDATE=.*/PLUGINS_SEED_UPDATE=$PLUGINS_UPDATE/" .env.local
+        rm -f .env.local.bak
+        log_info "Set PLUGINS_SEED_UPDATE=$PLUGINS_UPDATE in .env.local"
+    fi
 
     log_info "Starting services..."
     cmd_start
