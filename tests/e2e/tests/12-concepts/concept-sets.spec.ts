@@ -1,11 +1,10 @@
 import { test, expect } from '../fixtures'
-import { takeScreenshot } from '../screenshot-capture'
 
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible()
   }

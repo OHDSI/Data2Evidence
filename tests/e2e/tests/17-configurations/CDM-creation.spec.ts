@@ -1,13 +1,5 @@
 import { Locator } from 'playwright/test'
 import { test, expect as baseExpect } from '../fixtures'
-/**
- * NOTE: This test uses waitForTimeout in several places because selectors may already
- * be present in the DOM but refer to stale/old config data. The wait allows the UI
- * to fully update with new data before proceeding. This is necessary because:
- * 1. SAP UI5 components persist in the DOM and update their content asynchronously
- * 2. Without waits, tests may interact with elements showing outdated information
- * 3. The _updateIDValidation function needs time to complete after ID confirmations
- */
 
 // Configure expect with 1 minute timeout for this file
 const expect = baseExpect.configure({ timeout: 60000 })
@@ -354,16 +346,12 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByText('New Attribute -').click()
     await page.locator('[id="__xmlview11--attrName-inner"]').click()
     await page.locator('[id="__xmlview11--attrName-inner"]').fill('Condition concept set')
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-01-attr-name-filled.png` })
     await page.locator('[id="__xmlview11--attrIDName-inner"]').click()
     await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('conditionconceptset')
     await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-02-attr-id-filled.png` })
     await page.getByRole('button', { name: 'Yes' }).click()
     await page.waitForTimeout(1000) // Wait for _updateIDValidation to complete
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-03-after-yes-click.png` })
     await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-04-advanced-selected.png` })
     // Get reference to the visible validation error before filling the input
     const validationError = page.getByText('Please provide either a data source or a measure expression.').first()
     await expect(validationError).toBeVisible()
@@ -371,34 +359,22 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await dataSourceInput.click()
     await dataSourceInput.clear()
     await dataSourceInput.pressSequentially('CAST (@COND."CONDITION_CONCEPT_ID" AS VARCHAR)')
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-05-datasource-filled.png` })
     // Re-select the attribute from the list to refresh validation bindings
     // (validation binding gets stale when attribute ID is renamed)
     await page.getByText('Condition concept set').first().click()
-    // Debug: capture 60 screenshots at 1 second intervals to see validation state
-    for (let i = 0; i < 60; i++) {
-      await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-validation-${i.toString().padStart(2, '0')}.png` })
-      await page.waitForTimeout(1000)
-    }
     // Wait for backend validation to complete - the specific error message should disappear
     await expect(validationError).not.toBeVisible({ timeout: 30000 })
     await page.locator('[id="__xmlview11--AttributeType-label"]').click()
     await page.getByRole('option', { name: 'Concept Set' }).click()
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-06-concept-set-selected.png` })
   })
 
   await test.step('Validate the CDM configuration', async () => {
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-07-before-validate.png` })
     await page.getByRole('button', { name: 'Validate' }).click()
     await expect(page.getByText('Success')).toBeVisible()
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-08-success-visible.png` })
     await page.getByRole('button', { name: 'OK' }).click()
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-09-after-ok.png` })
     await page.getByRole('button', { name: 'Preview' }).click()
     await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-10-preview-visible.png` })
     await page.waitForTimeout(500) // Wait for UI and star indicator to stabilize
-    await page.screenshot({ path: `test-results/retry-${testInfo.retry}/debug-11-before-screenshot-assert.png` })
     await expect(page).toHaveScreenshot()
     await page.getByRole('button', { name: 'Close' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
