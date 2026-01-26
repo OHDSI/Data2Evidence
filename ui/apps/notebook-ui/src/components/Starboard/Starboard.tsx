@@ -55,6 +55,7 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
         if (!runInBackground) setLoading(true);
         const notebooks = await api.studyNotebook.getNotebookList(activeDatasetId);
         if (notebooks.length === 0) updateActiveNotebook(undefined);
+        notebooks.sort((a, b) => a.name.localeCompare(b.name));
         if (!runInBackground) updateActiveNotebook(notebooks[0]);
         setNotebooks(notebooks);
       } catch (err) {
