@@ -132,20 +132,11 @@ const UploadStrategusResultsDialog: FC<UploadStrategusResultsDialogProps> = ({ s
 
       console.log("Upload response:", uploadResponse);
 
-      // Trigger flow to process the uploaded file
-      const flowPayload = {
-        options: {
-          mode: "upload-results-from-storage",
-          studyId: study.studyId,
-          datasetId: selectedDatasetId,
-          databaseCode: selectedDataset.databaseCode,
-          storageFileName: file.name,
-          analysisSpec: cleanedSpec,
-        },
-        json_graph: {},
-      };
-
-      const flowResponse = await api.strategusResults.triggerStrategusResultsFlow(flowPayload);
+      const flowResponse = await api.strategusResults.uploadResultsFromStorage(
+        study.studyId,
+        selectedDatasetId,
+        analysisSpec || undefined
+      );
 
       console.log("Flow triggered:", flowResponse);
 

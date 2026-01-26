@@ -82,4 +82,21 @@ export class StrategusResults {
       data: payload,
     });
   }
+
+  public uploadResultsFromStorage(studyId: string, datasetId: string, analysisSpec?: string) {
+    return request({
+      baseURL: "jobplugins",
+      url: "/prefect/strategus-results/upload",
+      method: "POST",
+      data: { studyId, datasetId, analysisSpec },
+    });
+  }
+
+  public dropResultsFromStorage(studyId: string, datasetId: string) {
+    return request({
+      baseURL: "jobplugins",
+      url: `/prefect/strategus-results/drop/${studyId}/${datasetId}`,
+      method: "DELETE",
+    });
+  }
 }
