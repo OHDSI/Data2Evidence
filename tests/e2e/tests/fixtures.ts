@@ -1,12 +1,44 @@
-import { test as base, Page } from '@playwright/test'
+import { test as base, Page, BrowserContext } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
-// Extend the base test to capture console logs and errors
+// Extend the base test to capture console logs, errors, and HAR
 export const test = base.extend<{
+  context: BrowserContext
   page: Page
 }>({
-  page: async ({ page }, use, testInfo) => {
+  context: async ({ browser }, use, testInfo) => {
+    // Create context with HAR recording enabled
+    const harPath = path.join(testInfo.outputDir, 'network.har')
+    const context = await browser.newContext({
+      recordHar: { path: harPath, mode: 'minimal' },
+      ignoreHTTPSErrors: true
+    })
+
+    await use(context)
+
+    // Close context to finalize HAR file
+    await context.close()
+
+    // Only keep HAR file if test failed
+    if (testInfo.status === 'passed') {
+      if (fs.existsSync(harPath)) {
+        fs.unlinkSync(harPath)
+      }
+    } else {
+      // Attach HAR to test report
+      if (fs.existsSync(harPath)) {
+        testInfo.attachments.push({
+          name: 'network-har',
+          path: harPath,
+          contentType: 'application/json'
+        })
+      }
+    }
+  },
+
+  page: async ({ context }, use, testInfo) => {
+    const page = await context.newPage()
     const logs: string[] = []
 
     // Capture all console messages

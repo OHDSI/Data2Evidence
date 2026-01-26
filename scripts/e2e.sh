@@ -27,7 +27,8 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # Volumes to snapshot/restore
-VOLUMES="pg-minerva-data-1 trex demodb-data"
+# All volumes from docker-compose.yml that should be snapshotted/restored
+VOLUMES="caddy cachedb-data-1 cdw-config-cachedb-data-1 minio-data-1 pg-minerva-data-1 r-libs trex demodb-data dicom-sqlite-storage hana-data supabase-storage-data"
 
 # Environment settings to match CI
 export ENV_TYPE=remote
@@ -578,6 +579,7 @@ cmd_stop() {
     check_project_name
     log_info "Stopping services..."
     npm run stop
+    log_info "Services stopped"
 }
 
 cmd_logs() {
@@ -686,6 +688,16 @@ cmd_snapshot() {
 
 cmd_restore() {
     check_project_name
+
+    # Remove any existing containers for this session (even if stopped)
+    # This prevents issues with docker compose --wait not detecting state properly
+    local containers
+    containers=$(docker ps -aq --filter "name=^${PROJECT_NAME}-" 2>/dev/null)
+    if [ -n "$containers" ]; then
+        log_info "Removing existing containers for ${PROJECT_NAME}..."
+        docker rm -f $containers 2>/dev/null || true
+    fi
+
     log_info "Restoring volumes from snapshot..."
     for vol in $VOLUMES; do
         log_info "  Restoring ${PROJECT_NAME}_${vol}..."
