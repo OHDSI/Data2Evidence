@@ -9,6 +9,12 @@
       align-items: center;
       gap: 8px;
     }
+
+    &__selection {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+    }
   }
 
   &__content {
