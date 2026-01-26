@@ -1,16 +1,18 @@
+import { vi } from 'vitest'
 import QueryString from '../../../utils/QueryString'
 import * as types from '../../mutation-types'
 import patientList from '../patientList'
-jest.mock('axios')
-jest.mock('../../../utils/QueryString')
+
+vi.mock('axios')
+vi.mock('../../../utils/QueryString')
 
 describe('store - patientList', () => {
   describe('actions', () => {
     describe('getPatientCount', () => {
       it('calls a backendservice', () => {
-        QueryString.prototype = jest.fn().mockImplementationOnce(() => '')
+        QueryString.prototype = vi.fn().mockImplementationOnce(() => '') as any
 
-        const dispatch = jest.fn((actionName, actionParam) =>
+        const dispatch = vi.fn((actionName, actionParam) =>
           Promise.resolve({
             data: {
               data: 'mock data',

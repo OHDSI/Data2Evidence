@@ -13,7 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
 const props = defineProps<{ text: string; disabled?: boolean; onClick: () => void }>()
 </script>
 
@@ -47,4 +46,3 @@ const props = defineProps<{ text: string; disabled?: boolean; onClick: () => voi
   color: var(--color-text-button-primary-disabled);
 }
 </style>
-

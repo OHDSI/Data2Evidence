@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, defineProps } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import messageBox from './MessageBox.vue'
