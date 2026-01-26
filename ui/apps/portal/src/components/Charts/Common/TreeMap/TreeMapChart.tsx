@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useRef, useState, useEffect } from "react";
 
 import ReactECharts from "echarts-for-react";
 import "./TreeMapChart.scss";
@@ -7,12 +7,39 @@ import { useTranslation } from "../../../../contexts";
 interface TreeMapChartProps {
   data: any[];
   title: string;
-  setSelectedConceptId: (value: string) => void;
+  setSelectedConcept: (value: { id: string; name: string } | null) => void;
   extraChartConfigs?: any;
 }
 
-const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId, extraChartConfigs }) => {
+const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, extraChartConfigs }) => {
   const { getText, i18nKeys } = useTranslation();
+  const chartRef = useRef<any>(null);
+  const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  // Create a unique key for each item
+  const getItemKey = (item: any) => {
+    return item.value?.[4] || "";
+  };
+
+  // Initialize chart data with itemStyle for each item
+  useEffect(() => {
+    const dataWithStyles = data.map((item) => {
+      const itemKey = getItemKey(item);
+      if (itemKey && itemKey === selectedItemKey) {
+        return {
+          ...item,
+          itemStyle: {
+            borderColor: "#FDA2A2",
+            borderWidth: 3,
+          },
+        };
+      }
+      return item;
+    });
+    setChartData(dataWithStyles);
+  }, [data, selectedItemKey]);
+
   const option = {
     tooltip: {
       formatter: function (info: any) {
@@ -52,7 +79,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
       {
         name: title,
         type: "treemap",
-        data: data,
+        data: chartData,
         breadcrumb: {
           show: false,
         },
@@ -76,17 +103,24 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 
-  const handleNodeClick = (conceptId: string) => {
-    setSelectedConceptId(conceptId);
+  const handleNodeClick = (conceptId: string, conceptName: string, conceptPath: string, itemName: string) => {
+    setSelectedConcept({ id: conceptId, name: conceptName });
+    // Use conceptPath (value[4]) or name as the unique key
+    const itemKey = conceptPath || itemName;
+    setSelectedItemKey(itemKey);
   };
 
   const onEvents = {
-    click: (e: any) => handleNodeClick(e.value[3]),
+    click: (e: any) => {
+      // e.value[3] = conceptId, e.value[4] = conceptPath, e.name = display name
+      return handleNodeClick(e.value[3], e.value[4], e.value[4], e.name);
+    },
   };
 
   return (
     <>
       <ReactECharts
+        ref={chartRef}
         style={{
           height: "100%",
           minHeight: 500,
@@ -94,6 +128,8 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
         }}
         option={option}
         onEvents={onEvents}
+        notMerge={false}
+        lazyUpdate={true}
       />
       <div>{getText(i18nKeys.TREE_MAP_CHART__CHART_LEGEND)}</div>
     </>
