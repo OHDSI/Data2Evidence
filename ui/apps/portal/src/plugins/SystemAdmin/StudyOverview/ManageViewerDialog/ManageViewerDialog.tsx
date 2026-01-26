@@ -14,8 +14,8 @@ import { i18nKeys } from "../../../../contexts/app-context/states";
 
 interface ViewerConfig {
   type: "dashboard" | "strategus";
-  studyId: string;
-  studyName: string;
+  id: string; // datasetId or studyId
+  name: string;
 }
 
 interface ManageViewerDialogProps {
@@ -26,8 +26,8 @@ interface ManageViewerDialogProps {
 
 interface ViewerOperations {
   fetchTemplates: () => Promise<StudyDashboardTemplateData[]>;
-  fetchCode: (studyId: string) => Promise<string>;
-  saveCode: (studyId: string, code: string) => Promise<void>;
+  fetchCode: (id: string) => Promise<string>;
+  saveCode: (id: string, code: string) => Promise<void>;
 }
 
 const SafeEditor = Editor as any;
@@ -42,19 +42,19 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
 
-  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.studyId, config.studyId);
+  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.id);
 
   const operations = useMemo((): ViewerOperations => {
     if (config.type === "dashboard") {
       return {
         fetchTemplates: () => api.systemPortal.getDashboardTemplatesFromRepo(),
-        fetchCode: async (studyId: string) => {
-          const result = await api.systemPortal.getDashboardCode(studyId, "dashboard");
+        fetchCode: async (id: string) => {
+          const result = await api.systemPortal.getDashboardCode(id, "dashboard");
           return result.code;
         },
-        saveCode: async (studyId: string, code: string) => {
+        saveCode: async (id: string, code: string) => {
           await api.systemPortal.upsertDashboardCode({
-            datasetId: studyId,
+            datasetId: id,
             code,
             type: "dashboard",
           });
@@ -64,21 +64,18 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
       // strategus
       return {
         fetchTemplates: () => api.strategusAnalysis.getStudyViewerTemplates(),
-        fetchCode: async (studyId: string) => {
-          const study = await api.strategusAnalysis.getStrategusAnalysis(studyId);
+        fetchCode: async (id: string) => {
+          const study = await api.strategusAnalysis.getStrategusAnalysis(id);
           return study.viewerCode || "";
         },
-        saveCode: (studyId: string, code: string) => 
-          api.strategusAnalysis.saveStategusAnalysisViewerCode(studyId, code),
+        saveCode: (id: string, code: string) => api.strategusAnalysis.saveStategusAnalysisViewerCode(id, code),
       };
     }
   }, [config.type]);
 
   const getI18nKeys = useCallback(() => {
-    const prefix = config.type === "dashboard" 
-      ? "MANAGE_DASHBOARD_DIALOG" 
-      : "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG";
-    
+    const prefix = config.type === "dashboard" ? "MANAGE_DASHBOARD_DIALOG" : "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG";
+
     return {
       title: `${prefix}__TITLE` as keyof typeof i18nKeys,
       startViewer: `${prefix}__START_VIEWER` as keyof typeof i18nKeys,
@@ -108,7 +105,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
       }
 
       try {
-        const code = await operations.fetchCode(config.studyId);
+        const code = await operations.fetchCode(config.id);
         setViewerCode(code);
         setDefaultViewerCode(code);
       } catch (error) {
@@ -119,7 +116,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     };
 
     fetchData();
-  }, [open, config.studyId, config.type, operations]);
+  }, [open, config.id, config.type, operations]);
 
   const handleStartViewer = useCallback(async () => {
     try {
@@ -149,7 +146,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     setFeedback({});
     try {
       setLoading(true);
-      await operations.saveCode(config.studyId, viewerCode);
+      await operations.saveCode(config.id, viewerCode);
       setFeedback({
         type: "success",
         message: getText(i18n.saveSuccess),
@@ -160,12 +157,12 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
       console.error("Failed to save code:", error);
       setFeedback({
         type: "error",
-        message: getText(i18n.saveError, [config.studyName]),
+        message: getText(i18n.saveError, [config.name]),
       });
     } finally {
       setLoading(false);
     }
-  }, [viewerCode, config.studyId, config.studyName, getText, operations, i18n]);
+  }, [viewerCode, config.id, config.name, getText, operations, i18n]);
 
   const handleTemplateChange = useCallback(
     (filename: string) => {
@@ -191,7 +188,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   return (
     <Dialog
       className={dialogClassName}
-      title={getText(i18n.title, [config.studyName])}
+      title={getText(i18n.title, [config.name])}
       closable
       fullWidth
       maxWidth="lg"
@@ -231,11 +228,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
                 <PlayCircleFilled className="manage-viewer-dialog__action-icon" />
               )
             }
-            text={
-              viewerStatus === "starting"
-                ? getText(i18n.startingViewer)
-                : getText(i18n.startViewer)
-            }
+            text={viewerStatus === "starting" ? getText(i18n.startingViewer) : getText(i18n.startViewer)}
             disabled={viewerStatus !== "down" && viewerStatus !== "failed"}
             variant="text"
           />
@@ -248,19 +241,13 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
                 <StopCircle className="manage-viewer-dialog__action-icon" />
               )
             }
-            text={
-              viewerStatus === "stopping"
-                ? getText(i18n.stoppingViewer)
-                : getText(i18n.stopViewer)
-            }
+            text={viewerStatus === "stopping" ? getText(i18n.stoppingViewer) : getText(i18n.stopViewer)}
             disabled={viewerStatus !== "up"}
             variant="text"
             onClick={handleStopViewer}
           />
         </div>
-        <div className="manage-viewer-dialog__header__content">
-          {getText(i18n.viewerStatus, [viewerStatus])}
-        </div>
+        <div className="manage-viewer-dialog__header__content">{getText(i18n.viewerStatus, [viewerStatus])}</div>
       </div>
       <Divider />
 
@@ -279,18 +266,8 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
       <Divider />
 
       <div className="button-group-actions">
-        <Button
-          text={getText(i18n.cancel)}
-          onClick={() => handleClose("cancelled")}
-          variant="outlined"
-          block
-        />
-        <Button
-          text={getText(i18n.save)}
-          onClick={handleSave}
-          block
-          loading={loading}
-        />
+        <Button text={getText(i18n.cancel)} onClick={() => handleClose("cancelled")} variant="outlined" block />
+        <Button text={getText(i18n.save)} onClick={handleSave} block loading={loading} />
       </div>
     </Dialog>
   );
