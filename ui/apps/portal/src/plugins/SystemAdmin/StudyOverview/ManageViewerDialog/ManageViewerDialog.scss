@@ -1,8 +1,8 @@
-.manage-dashboard-dialog {
+.manage-viewer-dialog {
   &__header {
     display: flex;
     justify-content: space-between;
-    margin: 10px 25px; 
+    margin: 10px 25px;
 
     &__content {
       display: flex;
@@ -16,9 +16,18 @@
     margin: 10px 25px;
     overflow: auto;
     scrollbar-color: #c7c7c7 transparent;
+    
     .u-padding-vertical--small {
       padding-right: 20px;
     }
+  }
+
+  &__action-icon {
+    font-size: 20px;
+  }
+
+  &__loading-icon {
+    color: inherit;
   }
 
   .button-group-actions {
@@ -31,4 +40,12 @@
       width: 247px;
     }
   }
+}
+
+.manage-dashboard-dialog {
+  @extend .manage-viewer-dialog;
+}
+
+.manage-strategus-result-viewer-dialog {
+  @extend .manage-viewer-dialog;
 }
