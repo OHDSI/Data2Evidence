@@ -180,7 +180,7 @@ export async function seed(knex: Knex): Promise<void> {
         Modified: "2025-10-06 20:56:54",
       },
       {
-        Id: "e714a6d1-3cee-419d-8129-d67bfea4a56e ",
+        Id: "e714a6d1-3cee-419d-8129-d67bfea4a56e",
         Version: "1",
         Status: "A",
         Name: "OMOP_DICOM_DM",
