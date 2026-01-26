@@ -23,8 +23,6 @@ import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
 import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
 import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
-import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
-import ManageStrategusResultViewerDialog from "./ManageStrategusResultViewerDialog/ManageStrategusResultViewerDialog";
 import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
 import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
@@ -32,6 +30,7 @@ import SourceInformationDialog from "./SourceInformationDialog/SourceInformation
 import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
 import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
 import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
+import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
 
 import "./StudyOverview.scss";
 
@@ -72,18 +71,14 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
     useDialogHelper(false);
-  const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
+  const [showManageViewerDialog, openManageViewerDialog, closeManageViewerDialog] = useDialogHelper(false);
+  const [viewerDialogType, setViewerDialogType] = useState<"dashboard" | "strategus">("dashboard");
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
     useDialogHelper(false);
   const [showRunStrategusStudyDialog, openRunStrategusStudyDialog, closeRunStrategusStudyDialog] =
     useDialogHelper(false);
   const [showCleanupStrategusStudyDialog, openCleanupStrategusStudyDialog, closeCleanupStrategusStudyDialog] =
     useDialogHelper(false);
-  const [
-    showManageStrategusResultViewerDialog,
-    openManageStrategusResultViewerDialog,
-    closeManageStrategusResultViewerDialog,
-  ] = useDialogHelper(false);
   const [showUploadStrategusResultsDialog, openUploadStrategusResultsDialog, closeUploadStrategusResultsDialog] =
     useDialogHelper(false);
 
@@ -197,9 +192,10 @@ const StudyOverview: FC = () => {
   const handleManageDashboard = useCallback(
     (dataset: Study) => {
       setActiveDataset(dataset);
-      openManageDashboardDialog();
+      setViewerDialogType("dashboard");
+      openManageViewerDialog();
     },
-    [openManageDashboardDialog]
+    [openManageViewerDialog]
   );
 
   const handleRunStrategusStudy = useCallback(
@@ -221,9 +217,10 @@ const StudyOverview: FC = () => {
   const handleManageStrategusResultViewer = useCallback(
     (study: NetworkStrategusStudy) => {
       setActiveStrategusStudy(study);
-      openManageStrategusResultViewerDialog();
+      setViewerDialogType("strategus");
+      openManageViewerDialog();
     },
-    [openManageStrategusResultViewerDialog]
+    [openManageViewerDialog]
   );
 
   const handleUploadStrategusResults = useCallback(
@@ -954,11 +951,15 @@ const StudyOverview: FC = () => {
             />
           )}
 
-          {showManageDashboardDialog && (
-            <ManageDashboardDialog
-              study={activeDataset}
-              open={showManageDashboardDialog}
-              onClose={closeManageDashboardDialog}
+          {showManageViewerDialog && (
+            <ManageViewerDialog
+              config={{
+                type: viewerDialogType,
+                studyId: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+                studyName: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+              }}
+              open={showManageViewerDialog}
+              onClose={closeManageViewerDialog}
             />
           )}
 
@@ -981,15 +982,6 @@ const StudyOverview: FC = () => {
               onClose={closeCleanupStrategusStudyDialog}
             />
           )}
-
-          {showManageStrategusResultViewerDialog && activeStrategusStudy && (
-            <ManageStrategusResultViewerDialog
-              study={activeStrategusStudy}
-              open={showManageStrategusResultViewerDialog}
-              onClose={closeManageStrategusResultViewerDialog}
-            />
-          )}
-
           {showUploadStrategusResultsDialog && activeStrategusStudy && (
             <UploadStrategusResultsDialog
               study={activeStrategusStudy}
