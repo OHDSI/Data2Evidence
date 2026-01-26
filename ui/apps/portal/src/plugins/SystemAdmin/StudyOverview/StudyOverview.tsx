@@ -25,11 +25,10 @@ import { JobRunTypes } from "../DQD/types";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
-import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
+import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
 import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
 import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
 import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
-import ManageStrategusResultViewerDialog from "./ManageStrategusResultViewerDialog/ManageStrategusResultViewerDialog";
 import StudyActionSelector from "./ActionSelector/StudyActionSelector";
 
 import "./StudyOverview.scss";
@@ -71,18 +70,14 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
     useDialogHelper(false);
-  const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
+  const [showManageViewerDialog, openManageViewerDialog, closeManageViewerDialog] = useDialogHelper(false);
+  const [viewerDialogType, setViewerDialogType] = useState<"dashboard" | "strategus">("dashboard");
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
     useDialogHelper(false);
   const [showRunStrategusStudyDialog, openRunStrategusStudyDialog, closeRunStrategusStudyDialog] =
     useDialogHelper(false);
   const [showCleanupStrategusStudyDialog, openCleanupStrategusStudyDialog, closeCleanupStrategusStudyDialog] =
     useDialogHelper(false);
-  const [
-    showManageStrategusResultViewerDialog,
-    openManageStrategusResultViewerDialog,
-    closeManageStrategusResultViewerDialog,
-  ] = useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [activeStrategusStudy, setActiveStrategusStudy] = useState<NetworkStrategusStudy>();
@@ -194,9 +189,10 @@ const StudyOverview: FC = () => {
   const handleManageDashboard = useCallback(
     (dataset: Study) => {
       setActiveDataset(dataset);
-      openManageDashboardDialog();
+      setViewerDialogType("dashboard");
+      openManageViewerDialog();
     },
-    [openManageDashboardDialog]
+    [openManageViewerDialog]
   );
 
   const handleRunStrategusStudy = useCallback(
@@ -218,9 +214,10 @@ const StudyOverview: FC = () => {
   const handleManageStrategusResultViewer = useCallback(
     (study: NetworkStrategusStudy) => {
       setActiveStrategusStudy(study);
-      openManageStrategusResultViewerDialog();
+      setViewerDialogType("strategus");
+      openManageViewerDialog();
     },
-    [openManageStrategusResultViewerDialog]
+    [openManageViewerDialog]
   );
 
   const toggleRow = useCallback((datasetId: string) => {
@@ -902,11 +899,15 @@ const StudyOverview: FC = () => {
             />
           )}
 
-          {showManageDashboardDialog && (
-            <ManageDashboardDialog
-              study={activeDataset}
-              open={showManageDashboardDialog}
-              onClose={closeManageDashboardDialog}
+          {showManageViewerDialog && (
+            <ManageViewerDialog
+              config={{
+                type: viewerDialogType,
+                studyId: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+                studyName: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+              }}
+              open={showManageViewerDialog}
+              onClose={closeManageViewerDialog}
             />
           )}
 
@@ -927,14 +928,6 @@ const StudyOverview: FC = () => {
               study={activeStrategusStudy}
               open={showCleanupStrategusStudyDialog}
               onClose={closeCleanupStrategusStudyDialog}
-            />
-          )}
-
-          {showManageStrategusResultViewerDialog && activeStrategusStudy && (
-            <ManageStrategusResultViewerDialog
-              study={activeStrategusStudy}
-              open={showManageStrategusResultViewerDialog}
-              onClose={closeManageStrategusResultViewerDialog}
             />
           )}
         </div>
