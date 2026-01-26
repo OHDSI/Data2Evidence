@@ -8,11 +8,11 @@ export default defineConfig({
   testDir: 'tests',
   timeout: MINUTE_3, // 3 minutes per test
   expect: {
-    timeout: SECOND_30 // 20 seconds for expect conditions
+    timeout: SECOND_30 // 30 seconds for expect conditions
   },
   use: {
     baseURL: process.env.D2E_BASE_URL ?? 'https://localhost:443',
-    actionTimeout: SECOND_20, // 30 seconds for each action
+    actionTimeout: SECOND_20, // 20 seconds for each action
     navigationTimeout: MINUTE_1, // 1 minute for navigation
     browserName: 'chromium',
     headless: true,
