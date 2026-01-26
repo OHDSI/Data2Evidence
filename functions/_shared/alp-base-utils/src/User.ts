@@ -116,4 +116,8 @@ export class User {
     }
     return false;
   }
+
+  public getEmail(): string | undefined {
+    return this.user.email;
+  }
 }
