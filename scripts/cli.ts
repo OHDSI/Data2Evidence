@@ -31,8 +31,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.11.0-beta"; // Update this as needed
-  default_version: string = "0.11.0"; // Update this as needed default/base version
+  LATEST_DOCKER_TAG_NAME: string = "0.12.2-beta"; // Update this as needed
+  default_version: string = "0.12.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
@@ -76,7 +76,7 @@ class D2ECli {
         "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/";
     } else {
       this.PLUGINS_API_VERSION =
-        process.env.PLUGINS_API_VERSION ?? `${this.version}`;
+        process.env.PLUGINS_API_VERSION ?? `~${this.version}`;
       this.DOCKER_TAG_NAME =
         process.env.DOCKER_TAG_NAME ?? `${this.LATEST_DOCKER_TAG_NAME}`;
       this.PLUGINS_IMAGE_TAG =
