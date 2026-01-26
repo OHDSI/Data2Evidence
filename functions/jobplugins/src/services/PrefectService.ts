@@ -200,7 +200,7 @@ export class PrefectService {
         );
       }
     } catch (error) {
-      console.error(`Error querying storage for study ${studyId}:`, error);
+      console.error("Error querying storage for study %s:", studyId, error);
       throw new Error(
         `Failed to find results file in storage for study ${studyId}: ${error.message}`,
       );
