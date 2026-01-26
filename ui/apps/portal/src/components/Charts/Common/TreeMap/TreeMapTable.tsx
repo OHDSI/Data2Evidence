@@ -6,10 +6,10 @@ import { useTranslation } from "../../../../contexts";
 
 interface TreeMapTableProps {
   data: any;
-  setSelectedConceptId: (value: string) => void;
+  setSelectedConcept: (value: { id: string; name: string } | null) => void;
   isSimpleFormat?: boolean;
 }
-const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId, isSimpleFormat = false }) => {
+const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConcept, isSimpleFormat = false }) => {
   const { getText, i18nKeys } = useTranslation();
   // column properties
   const columns = useMemo<MRT_ColumnDef<any>[]>(() => {
@@ -21,7 +21,12 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId, isSim
           ? {}
           : {
               Cell: ({ cell }) => (
-                <div className="concept_id_text" onClick={() => setSelectedConceptId(cell.getValue<string>())}>
+                <div
+                  className="concept_id_text"
+                  onClick={() =>
+                    setSelectedConcept({ id: cell.getValue<string>(), name: cell.row.original.CONCEPTPATH })
+                  }
+                >
                   {cell.getValue<string>()}
                 </div>
               ),
@@ -68,7 +73,7 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConceptId, isSim
     }
 
     return baseColumns;
-  }, [setSelectedConceptId, isSimpleFormat, getText, i18nKeys]);
+  }, [setSelectedConcept, isSimpleFormat, getText, i18nKeys]);
 
   return (
     <MaterialReactTable
