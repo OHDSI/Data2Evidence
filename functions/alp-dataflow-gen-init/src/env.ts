@@ -45,6 +45,7 @@ export const env = {
     is_dev_env: _env.PREFECT__LOCAL_DEBUG === "true" || false, // Default to false if not set
     logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
     fhir_database_code: _env.FHIR_DATABASE_CODE,
+    cache_task_timeout: _env.CACHE_TASK_TIMEOUT || "10800", // Default to 3 hours
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,

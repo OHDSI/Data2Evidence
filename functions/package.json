@@ -519,6 +519,7 @@
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
+          "CACHE_TASK_TIMEOUT": "${CACHE_TASK_TIMEOUT:-10800}",
           "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
           "CUSTOM_WORK_POOL_CONFIGURATION": "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
