@@ -8,10 +8,12 @@ export const test = base.extend<{
   page: Page
 }>({
   context: async ({ browser }, use, testInfo) => {
-    // Create context with HAR recording enabled
+    const isGitHubActions = process.env.GITHUB_ACTIONS === 'true'
     const harPath = path.join(testInfo.outputDir, 'network.har')
+
+    // Only record HAR when running locally (not in GitHub Actions)
     const context = await browser.newContext({
-      recordHar: { path: harPath, mode: 'minimal' },
+      ...(isGitHubActions ? {} : { recordHar: { path: harPath, mode: 'minimal' } }),
       ignoreHTTPSErrors: true
     })
 
@@ -20,19 +22,22 @@ export const test = base.extend<{
     // Close context to finalize HAR file
     await context.close()
 
-    // Only keep HAR file if test failed
-    if (testInfo.status === 'passed') {
-      if (fs.existsSync(harPath)) {
-        fs.unlinkSync(harPath)
-      }
-    } else {
-      // Attach HAR to test report
-      if (fs.existsSync(harPath)) {
-        testInfo.attachments.push({
-          name: 'network-har',
-          path: harPath,
-          contentType: 'application/json'
-        })
+    // Only process HAR file if we recorded it (local runs only)
+    if (!isGitHubActions) {
+      // Only keep HAR file if test failed
+      if (testInfo.status === 'passed') {
+        if (fs.existsSync(harPath)) {
+          fs.unlinkSync(harPath)
+        }
+      } else {
+        // Attach HAR to test report
+        if (fs.existsSync(harPath)) {
+          testInfo.attachments.push({
+            name: 'network-har',
+            path: harPath,
+            contentType: 'application/json'
+          })
+        }
       }
     }
   },
