@@ -4,6 +4,9 @@ import logging
 import json
 import uuid
 import pandas as pd
+import zipfile
+import shutil
+from pathlib import Path
 
 from typing import Any
 from pandas.api.types import is_list_like, is_dict_like
@@ -20,7 +23,7 @@ from genson.schema.node import SchemaGenerationError
 
 from prefect import task, flow
 from prefect.runtime import flow_run
-from prefect.context import TaskRunContext
+from prefect.context import TaskRunContext, FlowRunContext
 from prefect.artifacts import create_markdown_artifact
 
 from .custom_types import CohortNodeType, USE_TREX_CONNECTION
@@ -31,6 +34,7 @@ from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.WebAPI import WebAPI
+from _shared_flow_utils.api.StrategusResultsStorageAPI import StrategusResultsStorageAPI
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.rutils import set_trex_env_var
 
@@ -1323,7 +1327,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 pathToDriver = databaseConnectorJarFolder
             )
             rAnalysisSpec = rParallelLogger.convertJsonToSettings(analysisSpec)
-            # create results datamodel settings
             resultsDataModelSettings = rStrategus.createResultsDataModelSettings(
                 resultsDatabaseSchema = results_schema,
                 resultsFolder = path_to_results,
@@ -1429,6 +1432,236 @@ def getRCdmExecutionSettings(settings) -> str:
         except Exception as e:
             print('Error: ', e)
             raise RuntimeError('Execution of strategus has failed')
+
+# ============================================================================
+# Utility Functions for Zip Operations
+# ============================================================================
+
+def zip_directory(source_dir: str, output_zip_path: str) -> str:
+    """
+    Zip a directory and return the path to the zip file.
+    
+    Args:
+        source_dir: Path to the directory to zip
+        output_zip_path: Path where the zip file should be created
+        
+    Returns:
+        Path to the created zip file
+    """
+    source_path = Path(source_dir)
+    if not source_path.exists():
+        raise FileNotFoundError(f"Source directory does not exist: {source_dir}")
+    
+    if not source_path.is_dir():
+        raise ValueError(f"Source path is not a directory: {source_dir}")
+    
+    # Create parent directory if it doesn't exist
+    Path(output_zip_path).parent.mkdir(parents=True, exist_ok=True)
+    
+    with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                # Create relative path for the archive
+                arcname = os.path.relpath(file_path, os.path.dirname(source_dir))
+                zipf.write(file_path, arcname)
+    
+    print(f"Created zip file: {output_zip_path}")
+    return output_zip_path
+
+
+def extract_zip(zip_path: str, extract_to: str) -> str:
+    """
+    Extract a zip file to a specified directory.
+    
+    Args:
+        zip_path: Path to the zip file
+        extract_to: Directory where files should be extracted
+        
+    Returns:
+        Path to the extraction directory
+    """
+    if not os.path.exists(zip_path):
+        raise FileNotFoundError(f"Zip file does not exist: {zip_path}")
+    
+    # Create extraction directory if it doesn't exist
+    os.makedirs(extract_to, exist_ok=True)
+    
+    with zipfile.ZipFile(zip_path, 'r') as zipf:
+        zipf.extractall(extract_to)
+    
+    print(f"Extracted zip to: {extract_to}")
+    return extract_to
+
+
+# ============================================================================
+# Upload Results from Storage
+# ============================================================================
+
+@flow(name="upload-results-from-storage", log_prints=True)
+def upload_results_from_storage(options):
+    """
+    Download Strategus results zip from Supabase Storage, extract, validate, and upload to database.
+    
+    Args:
+        options: Dictionary containing:
+            - studyId: Study identifier (required)
+            - datasetId: Dataset identifier (required)
+            - databaseCode: Database code (required)
+            - storageFileName: Filename in storage (required, e.g., "results.zip")
+            - analysisSpec: Analysis specification JSON (optional)
+            - parentFlowRunId: Parent flow run ID for auth (optional)
+    """
+    study_id = options.get('studyId')
+    dataset_id = options.get('datasetId')
+    database_code = options.get('databaseCode')
+    storage_file_name = options.get('storageFileName', 'results.zip')
+    results_folder_path = options.get('resultsFolderPath')
+    parent_flow_run_id = options.get('parentFlowRunId')
+    analysis_spec = options.get('analysisSpec')
+    
+    if not study_id:
+        raise ValueError("Missing required parameter: studyId")
+    if not dataset_id:
+        raise ValueError("Missing required parameter: datasetId")
+    if not database_code:
+        raise ValueError("Missing required parameter: databaseCode")
+    
+    print(f"Starting upload of Strategus results from storage")
+    print(f"Storage File Name: {storage_file_name}")
+    
+    work_dir = f'/tmp/strategus_upload_{study_id}_{uuid.uuid4()}'
+    os.makedirs(work_dir, exist_ok=True)
+    
+    try:
+        # Step 1: Download zip from Supabase Storage
+        print("Downloading zip file from Strategus Results Storage...")
+        try:
+            # Use parent flow run ID if provided, otherwise get current flow run ID
+            flow_run_id = parent_flow_run_id
+            if not flow_run_id:
+                flow_run_context = FlowRunContext.get()
+                flow_run_id = str(flow_run_context.flow_run.dict().get("id")) if flow_run_context else None
+            
+            storage_api = StrategusResultsStorageAPI()
+        except Exception as init_error:
+            print(f"Error initializing storage API: {str(init_error)}")
+            raise
+        
+        print(f"Downloading file: {storage_file_name} from study: {study_id}")
+        try:
+            zip_path = storage_api.download_file_to_path(
+                study_id=study_id,
+                filename=storage_file_name,
+                filepath=work_dir,
+                flow_run_id=flow_run_id
+            )
+            print(f"Downloaded zip file to: {zip_path}")
+        except Exception as download_error:
+            print(f"Error downloading file: {str(download_error)}")
+            raise
+        
+        # Step 2: Extract zip file
+        print("Extracting zip file...")
+        extract_dir = os.path.join(work_dir, 'extracted')
+        extract_zip(zip_path, extract_dir)
+        
+        # Step 3: Locate results folder
+        print("Locating results folder...")
+        results_path = None
+        
+        if results_folder_path:
+            # User specified the path within the zip
+            results_path = os.path.join(extract_dir, results_folder_path)
+            print(f"Using user-specified results path: {results_folder_path}")
+            
+            if not os.path.exists(results_path):
+                raise ValueError(f"Specified results folder path does not exist: {results_folder_path}")
+            
+            if not os.path.isdir(results_path):
+                raise ValueError(f"Specified results folder path is not a directory: {results_folder_path}")
+        else:
+            print("No resultsFolderPath specified, attempting auto-detection...")
+            
+            def looks_like_results_folder(path):
+                """Check if path contains CSV files"""
+                if not os.path.isdir(path):
+                    return False
+                
+                for item in os.listdir(path):
+                    if item.endswith('.csv') and not item.startswith('.'):
+                        return True
+                
+                # Check subdirectories for CSV files
+                for item in os.listdir(path):
+                    item_path = os.path.join(path, item)
+                    if os.path.isdir(item_path):
+                        for subitem in os.listdir(item_path):
+                            if subitem.endswith('.csv') and not subitem.startswith('.'):
+                                return True
+                
+                return False
+            
+            results_subdir = os.path.join(extract_dir, 'results')
+            if os.path.exists(results_subdir) and looks_like_results_folder(results_subdir):
+                results_path = results_subdir
+                print(f"Found 'results' subfolder")
+            elif looks_like_results_folder(extract_dir):
+                results_path = extract_dir
+                print(f"Extracted directory is the results folder")
+            else:
+                # Look for any folder that looks like results
+                print("Searching for results folder...")
+                for root, dirs, files in os.walk(extract_dir):
+                    if looks_like_results_folder(root):
+                        results_path = root
+                        print(f"Found results folder via deep search: {root}")
+                        break
+        
+        if not results_path:
+            raise ValueError("Could not find results folder. Please specify 'resultsFolderPath' parameter (e.g., 'results')")
+        
+        print(f"Found results folder at: {results_path}")
+        
+        # Step 4: Upload results to database
+        print("Uploading results to database...")
+        
+        # Check if analysis spec is provided
+        if not analysis_spec:
+            print("WARNING: No analysis specification provided.")
+            print("Skipping database upload. Results are extracted but not uploaded to database.")
+            return
+        
+        if isinstance(analysis_spec, dict):
+            analysis_spec = json.dumps(analysis_spec)
+        
+        result_db_settings = {
+            'database_code': database_code,
+            'dataset_id': dataset_id,
+            'study_id': study_id
+        }
+        
+        upload_strategus_results(
+            analysisSpec=analysis_spec,
+            path_to_results=results_path,
+            dbSettings=result_db_settings
+        )
+        
+        print("Successfully uploaded results to database")
+        
+    except Exception as e:
+        print(f"Error uploading results from storage: {str(e)}")
+        print(tb.format_exc())
+        raise
+    finally:
+        print("Cleaning up temporary files...")
+        try:
+            if os.path.exists(work_dir):
+                shutil.rmtree(work_dir)
+                print(f"Removed temporary directory: {work_dir}")
+        except Exception as cleanup_error:
+            print(f"Warning: Failed to cleanup temporary directory: {cleanup_error}")
+
 
 def remove_tmp_tables(dbdao: DBDao, schema_name: str):
     logger = Logger()
