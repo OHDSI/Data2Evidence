@@ -1,3 +1,5 @@
+// Must be first import to set up sap mock before any component uses it
+import './globals'
 import { createApp, Component } from 'vue'
 import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
@@ -59,10 +61,8 @@ app.directive('position-center', positionCenter)
 app.directive('mouse-scroll', mouseScroll)
 app.directive('resize-table', resizeTable)
 
-// Suppress errors and warnings in production unless VUE_APP_DEBUG is enabled
-// @ts-ignore - process.env is provided by webpack DefinePlugin
-// eslint-disable-next-line no-undef
-if (process.env.VUE_APP_DEBUG !== 'true') {
+// Suppress errors and warnings in production unless VITE_DEBUG is enabled
+if (import.meta.env.VITE_DEBUG !== 'true') {
   app.config.errorHandler = () => null
   app.config.warnHandler = () => null
 }

@@ -92,6 +92,7 @@ export default {
       hideIcon: '',
       hideIconToolTip: '',
       toggleFilterCardSummary: false,
+      patientCountPopoverPosition: {},
     }
   },
   watch: {
