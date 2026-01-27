@@ -1,5 +1,23 @@
 import { createTheme } from "@mui/material";
 
+// Extend the MUI theme to include custom palette colors
+declare module "@mui/material/styles" {
+  interface Palette {
+    custom: {
+      selectedRowBorder: string;
+      tableHeaderBg: string;
+      alternateRowBg: string;
+    };
+  }
+  interface PaletteOptions {
+    custom?: {
+      selectedRowBorder?: string;
+      tableHeaderBg?: string;
+      alternateRowBg?: string;
+    };
+  }
+}
+
 export const theme = createTheme({
   typography: {
     fontFamily:
@@ -14,6 +32,11 @@ export const theme = createTheme({
     },
     primary: {
       main: "#000080",
+    },
+    custom: {
+      selectedRowBorder: "#FDA2A2",
+      tableHeaderBg: "#edf2f7",
+      alternateRowBg: "#fafafa",
     },
   },
   components: {
