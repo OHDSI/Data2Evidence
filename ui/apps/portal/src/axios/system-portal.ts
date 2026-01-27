@@ -317,12 +317,12 @@ export class SystemPortal {
     });
   }
 
-  public getDashboardCode(datasetId: string, type: string): Promise<ViewerCode> {
+  public getDashboardCode(datasetId: string, type: string, name: string): Promise<ViewerCode> {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
       url: "dataset/dashboard-code",
       method: "GET",
-      params: { datasetId, type },
+      params: { datasetId, type, name },
     });
   }
 

@@ -11,7 +11,6 @@ import { useTranslation } from "../../../../contexts";
 import { api } from "../../../../axios/api";
 import "./ManageViewerDialog.scss";
 import { i18nKeys } from "../../../../contexts/app-context/states";
-import { set } from "lodash";
 
 interface ViewerConfig {
   type: "dashboard" | "strategus";
