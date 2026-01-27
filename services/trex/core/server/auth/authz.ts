@@ -276,11 +276,11 @@ export async function authz(c: Context, next: any) {
 
     let bearerToken = c.req.raw.headers.get("authorization");
     // Check for cookie if no token in authorization header
-    // And for req with /fhir-server path, token is part of cookie
+    // And for req with /d2e/fhir-server path, token is part of cookie
     if (
       !bearerToken ||
       bearerToken === "" ||
-      (bearerToken && originalUrl.startsWith("/fhir-server/"))
+      (bearerToken && originalUrl.startsWith("/d2e/fhir-server/"))
     ) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
