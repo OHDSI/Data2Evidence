@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from 'axios'
 import { getPortalAPI } from '@/utils/PortalUtils'
 
 const portalAPI = getPortalAPI()
-const BASE_URL = portalAPI?.qeSvcUrl || process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000'
+const BASE_URL = portalAPI?.qeSvcUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 const client = axios.create({ baseURL: BASE_URL })
 
@@ -45,4 +45,3 @@ const request = <T = any>(options: AxiosRequestConfig): Promise<T> => {
 }
 
 export default request
-
