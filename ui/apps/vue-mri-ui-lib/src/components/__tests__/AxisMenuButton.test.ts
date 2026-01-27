@@ -1,23 +1,25 @@
+import { vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createStore } from 'vuex'
 import axisMenuButton from '@/components/AxisMenuButton.vue'
 import clickFocus from '@/directives/clickFocus'
-jest.mock('popper.js', () => {
-  const PopperJS = jest.requireActual('popper.js')
+import * as PopperJS from 'popper.js'
 
-  return class {
-    public static placements = PopperJS.placements
+vi.mock('popper.js', async importOriginal => {
+  const actual = await importOriginal<typeof PopperJS>()
 
-    constructor() {
-      return {
-        // tslint:disable-next-line:no-empty
-        destroy: () => {},
-        // tslint:disable-next-line:no-empty
-        scheduleUpdate: () => {},
-        // tslint:disable-next-line:no-empty
-        update: () => {},
+  return {
+    default: class {
+      public static placements = actual.default?.placements || []
+
+      constructor() {
+        return {
+          destroy: () => {},
+          scheduleUpdate: () => {},
+          update: () => {},
+        }
       }
-    }
+    },
   }
 })
 
