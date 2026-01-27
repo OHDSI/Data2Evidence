@@ -61,7 +61,7 @@ const hanaCommonTranslation = (
 
   // Get snapshot schema table metadata
   const regex4 =
-    /SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON \(tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME\) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON \(tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME\) WHERE tc.SCHEMA_NAME = \? AND tc.TABLE_NAME = \?/;
+    /SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON \(tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME\) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON \(tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME\) WHERE tc.SCHEMA_NAME = \? AND tc.TABLE_NAME IN \(\?\)/;
   if (temp.match(regex4)) {
     const regexResult = regex4.exec(temp);
     if (regexResult) {
@@ -100,7 +100,7 @@ const hanaCommonTranslation = (
             )
         where
             c.table_schema = $1
-            and c.table_name = $2`;
+            and c.table_name IN ($2)`;
     }
   }
 
