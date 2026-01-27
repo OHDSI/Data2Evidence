@@ -19,7 +19,9 @@ function ChartContainer({ title, children, className, ...props }: ChartContainer
 
   const titleElement = isTruncated ? (
     <Tooltip title={title}>
-      <span>{displayTitle}</span>
+      <span aria-label={title} tabIndex={0}>
+        {displayTitle}
+      </span>
     </Tooltip>
   ) : (
     displayTitle
