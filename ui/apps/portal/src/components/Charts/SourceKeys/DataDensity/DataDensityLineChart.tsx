@@ -11,6 +11,7 @@ interface DataDensityLineChartProps {
   xAxisNameKey: string;
   yAxisNameKey: string;
   noDataKey: string;
+  yAxisFormat?: string | ((value: number) => string);
   valueFormatter?: (value: number) => number | string;
 }
 
@@ -20,6 +21,7 @@ const DataDensityLineChart: FC<DataDensityLineChartProps> = ({
   xAxisNameKey,
   yAxisNameKey,
   noDataKey,
+  yAxisFormat,
   valueFormatter = (v) => v,
 }) => {
   const { getText, i18nKeys } = useTranslation();
@@ -88,7 +90,7 @@ const DataDensityLineChart: FC<DataDensityLineChartProps> = ({
         title={title}
         xAxisName={xAxisName}
         yAxisName={yAxisName}
-        lineChartFormatConfig={{}}
+        lineChartFormatConfig={{ yAxisFormat: yAxisFormat }}
         extraChartConfigs={extraChartConfigs}
       />
     </div>

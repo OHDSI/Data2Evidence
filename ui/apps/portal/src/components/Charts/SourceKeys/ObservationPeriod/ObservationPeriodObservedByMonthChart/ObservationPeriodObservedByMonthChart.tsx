@@ -5,6 +5,7 @@ import ChartContainer from "../../../Common/ChartContainer";
 
 import "./ObservationPeriodObservedByMonthChart.scss";
 import { useTranslation } from "../../../../../contexts";
+import { formatBigPositiveNumber } from "../../../util";
 
 interface ObservationPeriodObservedByMonthChartProps {
   data: any;
@@ -51,7 +52,7 @@ const ObservationPeriodObservedByMonthChart: FC<ObservationPeriodObservedByMonth
         title={title}
         xAxisName={xAxisName}
         yAxisName={yAxisName}
-        lineChartFormatConfig={{ tooltipFormat }}
+        lineChartFormatConfig={{ tooltipFormat, yAxisFormat: formatBigPositiveNumber }}
         axisBaseGap={axisBaseGap}
       />
     </div>
