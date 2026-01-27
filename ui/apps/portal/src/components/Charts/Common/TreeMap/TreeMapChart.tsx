@@ -42,6 +42,11 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
     setChartData(dataWithStyles);
   }, [data, selectedItemKey]);
 
+  // Calculate min and max records per person from data
+  const recordsPerPersonValues = data.length > 0 ? data.map((item) => item.value?.[1] || 0) : [0, 100];
+  const minRecordsPerPerson = Math.min(...recordsPerPersonValues);
+  const maxRecordsPerPerson = Math.max(...recordsPerPersonValues);
+
   const option = {
     tooltip: {
       formatter: function (info: any) {
@@ -77,6 +82,27 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         restore: {},
       },
     },
+    visualMap: {
+      type: "continuous",
+      min: minRecordsPerPerson,
+      max: maxRecordsPerPerson,
+      text: ["", getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)],
+      calculable: true,
+      hoverLink: false,
+      orient: "horizontal",
+      left: "center",
+      bottom: "0%",
+      dimension: 1,
+      inRange: {
+        color: ["#aaa", "#000E7E"],
+      },
+      textStyle: {
+        color: theme.palette.text.primary,
+      },
+      formatter: (value: number) => {
+        return `${value.toFixed(2)}`;
+      },
+    },
     series: [
       {
         name: title,
@@ -89,17 +115,18 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         visibleMin: 1000,
         itemStyle: {
           borderColor: "black",
+          gapWidth: 1,
         },
         visualDimension: 1,
-        levels: [
-          {
-            color: ["#aaa", "#000E7E"],
-            colorMappingBy: "value",
-            itemStyle: {
-              gapWidth: 1,
-            },
-          },
-        ],
+        // levels: [
+        //   {
+        //     color: ["#aaa", "#000E7E"],
+        //     colorMappingBy: "value",
+        //     itemStyle: {
+        //       gapWidth: 1,
+        //     },
+        //   },
+        // ],
       },
     ],
     ...(extraChartConfigs && { ...extraChartConfigs }),
