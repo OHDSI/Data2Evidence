@@ -105,7 +105,6 @@ def retrain_algo(options:RetrainConfig):
         
         if len(y_test_unique) < 2:
             logger.warning(f"Only one class in test set. Cannot calculate ROC AUC. Skipping AUC calculation.")
-            auc_roc = None
             summary_table = pd.DataFrame({'Metric':['auc_roc_retrain', 'warning'], 'value': [None, 'Single class in test set']})
         else:
             auc_roc = round(roc_auc_score(y_test, y_pred), 3)
