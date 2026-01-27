@@ -43,7 +43,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
   await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
   // Wait for job container to stabilize before navigating to Jobs page
-  await page.waitForTimeout(5000)
+  await page.waitForTimeout(8000)
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
   const firstEntry = page
