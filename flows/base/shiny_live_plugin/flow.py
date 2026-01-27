@@ -113,11 +113,6 @@ def build_shiny_live_assets(language: str, app_dir: str) -> str:
             os.path.dirname(__file__), "build_shiny_live.R")
 
         # TODO: Consider using rpy2 for better integration once this issuse is resolved:  https://github.com/rpy2/rpy2/issues/1121
-        # with robjects.conversion.localconverter(robjects.default_converter):
-        #     robjects.r(f"source('{r_script_path}')")
-        #     build_shiny_live = robjects.r['build_shiny_live']
-        #     build_shiny_live(appDir=app_dir, destDir=os.path.join(app_dir, "docs"))
-
         logger.info(
             f"Running R script to build Shiny Live assets: {r_script_path}")
         logger.info(f"App directory: {app_dir}")
