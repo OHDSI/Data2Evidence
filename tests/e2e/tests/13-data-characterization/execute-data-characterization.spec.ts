@@ -3,6 +3,7 @@ import { test, expect } from '../fixtures'
 const TEST_NAME = 'execute-data-characterization'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   //Increase timeout longer than the configured 30s

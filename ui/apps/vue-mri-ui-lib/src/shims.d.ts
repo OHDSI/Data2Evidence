@@ -5,7 +5,7 @@ declare module '*.vue' {
 }
 
 declare module 'd3' {
-  let d3: any
+  const d3: any
   export default d3
 }
 

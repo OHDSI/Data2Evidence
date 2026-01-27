@@ -79,10 +79,10 @@ export class DbMeta {
           tasks.push((cb) => {
             this.getColumns(table, (err, results) => {
               if (err) {
-                cb(err, null);
+                return cb(err, null);
               }
               columnsMap[key] = results;
-              cb(null);
+              return cb(null);
             });
           });
         })(i, key, table);
@@ -90,14 +90,14 @@ export class DbMeta {
 
       _async.series(tasks, (err, data) => {
         if (err) {
-          throw err;
+          return cb(err, null);
         }
-        cb(null, {
+        return cb(null, {
           result: columnsMap,
         });
       });
     } catch (err) {
-      cb(err, null);
+      return cb(err, null);
     }
   }
 }

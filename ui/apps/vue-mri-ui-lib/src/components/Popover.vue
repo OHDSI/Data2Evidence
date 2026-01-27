@@ -19,7 +19,7 @@ export default {
   name: 'popover',
   props: {
     headerText: String,
-    target: HTMLElement,
+    target: [String, Object, HTMLElement, Function],
     placement: { type: String, default: 'top' },
   },
   components: {
