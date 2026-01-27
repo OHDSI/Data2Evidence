@@ -62,6 +62,9 @@ print_wizard_config() {
         echo -e "  Build/mount UI:     ${CYAN}no${NC}"
     else
         echo -e "  Build/mount UI:     ${CYAN}yes${NC}"
+        if [[ "$action" == *"Restore"* ]]; then
+            echo -e "                      ${YELLOW}(not saved to snapshot)${NC}"
+        fi
     fi
     if [ "$PLUGINS_UPDATE" = true ]; then
         echo -e "  Plugins update:     ${CYAN}yes (reinstall on restart)${NC}"
@@ -220,7 +223,6 @@ cmd_wizard() {
     echo -e "${BOLD}  Session Management${NC}"
     echo "  5) List sessions"
     echo "  6) Remove session           - Stop and delete all volumes"
-    echo "  7) Clean test artifacts     - Remove test-results and ctrf"
     echo ""
     echo "  q) Quit"
     echo ""
@@ -253,11 +255,26 @@ cmd_wizard() {
 
             print_wizard_config "Fresh Setup & Test"
 
-            # Clean up any existing e2e sessions after user confirms options
+            # Check for existing e2e sessions - block if any are running
             local existing_sessions
             existing_sessions=$(list_sessions)
             if [ -n "$existing_sessions" ]; then
-                log_warn "Existing e2e sessions found. Cleaning up..."
+                local running_sessions=""
+                while IFS= read -r session; do
+                    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${session}-"; then
+                        running_sessions="${running_sessions}  - ${session}\n"
+                    fi
+                done <<< "$existing_sessions"
+
+                if [ -n "$running_sessions" ]; then
+                    echo ""
+                    log_error "Cannot start fresh setup while sessions are running:"
+                    echo -e "$running_sessions"
+                    exit 1
+                fi
+
+                # Clean stopped sessions
+                log_warn "Cleaning up stopped sessions..."
                 while IFS= read -r session; do
                     export PROJECT_NAME="$session"
                     log_info "Removing session: $session"
@@ -287,11 +304,28 @@ cmd_wizard() {
 
             print_wizard_config "Fresh Setup Only"
 
-            # Clean up any existing e2e sessions after user confirms options
+            # Check for existing e2e sessions - block if any are running
             local existing_sessions
             existing_sessions=$(list_sessions)
             if [ -n "$existing_sessions" ]; then
-                log_warn "Existing e2e sessions found. Cleaning up..."
+                local running_sessions=""
+                while IFS= read -r session; do
+                    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${session}-"; then
+                        running_sessions="${running_sessions}  - ${session}\n"
+                    fi
+                done <<< "$existing_sessions"
+
+                if [ -n "$running_sessions" ]; then
+                    echo ""
+                    log_error "Cannot start fresh setup while sessions are running:"
+                    echo -e "$running_sessions"
+                    log_info "Stop running sessions first with: ./scripts/e2e.sh stop -p <session-name>"
+                    log_info "Or remove them with: ./scripts/e2e.sh clean-all -p <session-name>"
+                    exit 1
+                fi
+
+                # Clean stopped sessions
+                log_warn "Cleaning up stopped sessions..."
                 while IFS= read -r session; do
                     export PROJECT_NAME="$session"
                     log_info "Removing session: $session"
@@ -316,9 +350,21 @@ cmd_wizard() {
             if ask_yes_no "  Build local UI and replace snapshot's UI?" "n"; then
                 SKIP_UI=false
                 PLUGINS_UPDATE=false  # No need to update plugins if mounting local UI
+                echo ""
+                log_warn "════════════════════════════════════════════════════════════════"
+                log_warn "UI REBUILD WARNING"
+                log_warn "════════════════════════════════════════════════════════════════"
+                log_warn "The UI you build will NOT be saved to the snapshot."
+                log_warn "Subsequent restores will revert to the original snapshot UI."
+                log_warn ""
+                log_warn "If you need to test updated UI repeatedly, either:"
+                log_warn "  1. Rebuild UI each time after restore, OR"
+                log_warn "  2. Create a fresh setup with the new UI code"
+                log_warn "════════════════════════════════════════════════════════════════"
+                echo ""
             else
                 SKIP_UI=true  # Use UI from snapshot
-                if ask_yes_no "  Update plugins on restart?" "n"; then
+                if ask_yes_no "  Update UI plugins on restart?" "n"; then
                     PLUGINS_UPDATE=true
                 else
                     PLUGINS_UPDATE=false
@@ -347,9 +393,21 @@ cmd_wizard() {
             if ask_yes_no "  Build local UI and replace snapshot's UI?" "n"; then
                 SKIP_UI=false
                 PLUGINS_UPDATE=false  # No need to update plugins if mounting local UI
+                echo ""
+                log_warn "════════════════════════════════════════════════════════════════"
+                log_warn "UI REBUILD WARNING"
+                log_warn "════════════════════════════════════════════════════════════════"
+                log_warn "The UI you build will NOT be saved to the snapshot."
+                log_warn "Subsequent restores will revert to the original snapshot UI."
+                log_warn ""
+                log_warn "If you need to test updated UI repeatedly, either:"
+                log_warn "  1. Rebuild UI each time after restore, OR"
+                log_warn "  2. Create a fresh setup with the new UI code"
+                log_warn "════════════════════════════════════════════════════════════════"
+                echo ""
             else
                 SKIP_UI=true  # Use UI from snapshot
-                if ask_yes_no "  Update plugins on restart?" "n"; then
+                if ask_yes_no "  Update UI plugins on restart?" "n"; then
                     PLUGINS_UPDATE=true
                 else
                     PLUGINS_UPDATE=false
@@ -396,10 +454,6 @@ cmd_wizard() {
                 log_info "Cancelled"
             fi
             ;;
-        7)
-            echo ""
-            cmd_clean
-            ;;
         q|Q)
             echo ""
             exit 0
@@ -439,7 +493,6 @@ Commands:
   logs              View logs
   status            Show running containers
 
-  clean             Remove test artifacts (test-results, ctrf)
   clean-all         Remove all volumes and snapshots
   list              List all e2e sessions
 
@@ -709,14 +762,6 @@ cmd_restore() {
     log_info "Volumes restored successfully"
 }
 
-cmd_clean() {
-    cd "$E2E_DIR"
-    log_info "Cleaning test artifacts..."
-    # Remove contents but keep .gitkeep files (they ensure directories exist with correct ownership)
-    find test-results ctrf -mindepth 1 ! -name '.gitkeep' -delete 2>/dev/null || true
-    log_info "Test artifacts cleaned"
-}
-
 cmd_clean_all() {
     check_project_name
     cd "$ROOT_DIR"
@@ -833,9 +878,6 @@ cmd_retest() {
     else
         log_info "Skipping UI build/mount (--skip-ui)"
     fi
-
-    log_info "Cleaning test artifacts..."
-    cmd_clean
 
     log_info "Running tests..."
     cmd_test
@@ -972,7 +1014,6 @@ case $COMMAND in
     stop)       cmd_stop ;;
     logs)       cmd_logs ;;
     status)     cmd_status ;;
-    clean)      cmd_clean ;;
     clean-all)  cmd_clean_all ;;
     list)       cmd_list_sessions ;;
     wizard)     cmd_wizard ;;
