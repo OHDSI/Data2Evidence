@@ -95,7 +95,7 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConcept, isSimpl
           border:
             row.id === selectedRowId ? `2px solid ${theme.palette.custom.selectedRowBorder}` : "2px solid transparent",
           boxSizing: "border-box",
-          backgroundColor: staticRowIndex % 2 ? `${theme.palette.custom.alternateRowBg}` : "white",
+          backgroundColor: staticRowIndex % 2 ? theme.palette.custom.alternateRowBg : "white",
           "& td": {
             borderBottom: "none",
           },

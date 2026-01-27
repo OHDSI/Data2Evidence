@@ -3,6 +3,7 @@ import React, { FC, useRef, useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import "./TreeMapChart.scss";
 import { useTranslation } from "../../../../contexts";
+import { useTheme } from "@mui/material";
 
 interface TreeMapChartProps {
   data: any[];
@@ -16,6 +17,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const chartRef = useRef<any>(null);
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
+  const theme = useTheme();
 
   // Create a unique key for each item
   const getItemKey = (item: any) => {
@@ -30,7 +32,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         return {
           ...item,
           itemStyle: {
-            borderColor: "#FDA2A2",
+            borderColor: theme.palette.custom.selectedRowBorder,
             borderWidth: 3,
           },
         };
