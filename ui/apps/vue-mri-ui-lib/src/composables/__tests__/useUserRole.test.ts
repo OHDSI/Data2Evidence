@@ -1,26 +1,27 @@
+import { vi, MockedFunction } from 'vitest'
 import { useUserRole } from '../useUserRole'
 
 // Mock PortalUtils
-jest.mock('../../utils/PortalUtils', () => ({
-  getPortalAPI: jest.fn(),
+vi.mock('../../utils/PortalUtils', () => ({
+  getPortalAPI: vi.fn(),
 }))
 
 import { getPortalAPI } from '../../utils/PortalUtils'
-const mockGetPortalAPI = getPortalAPI as jest.MockedFunction<typeof getPortalAPI>
+const mockGetPortalAPI = getPortalAPI as MockedFunction<typeof getPortalAPI>
 
 describe('useUserRole', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('canShare', () => {
     it('returns true when adminOnlySharing is disabled', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [
           { feature: 'adminOnlySharing', isEnabled: false },
           { feature: 'datasetFilter', isEnabled: true },
@@ -34,7 +35,7 @@ describe('useUserRole', () => {
 
     it('returns false when adminOnlySharing is enabled', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [
           { feature: 'adminOnlySharing', isEnabled: true },
           { feature: 'datasetFilter', isEnabled: true },
@@ -48,7 +49,7 @@ describe('useUserRole', () => {
 
     it('returns false when features are loading (prevents flash)', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [],
         featuresLoading: true,
       })
@@ -68,7 +69,7 @@ describe('useUserRole', () => {
   describe('adminOnlySharingEnabled', () => {
     it('returns true when feature is enabled', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [{ feature: 'adminOnlySharing', isEnabled: true }],
         featuresLoading: false,
       })
@@ -79,7 +80,7 @@ describe('useUserRole', () => {
 
     it('returns false when feature is disabled', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [{ feature: 'adminOnlySharing', isEnabled: false }],
         featuresLoading: false,
       })
@@ -90,7 +91,7 @@ describe('useUserRole', () => {
 
     it('returns false when feature is not in list', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [{ feature: 'otherFeature', isEnabled: true }],
         featuresLoading: false,
       })
@@ -103,7 +104,7 @@ describe('useUserRole', () => {
   describe('featuresLoading', () => {
     it('returns true when features are loading', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [],
         featuresLoading: true,
       })
@@ -114,7 +115,7 @@ describe('useUserRole', () => {
 
     it('returns false when features are loaded', () => {
       mockGetPortalAPI.mockReturnValue({
-        getToken: jest.fn(),
+        getToken: vi.fn(),
         features: [],
         featuresLoading: false,
       })

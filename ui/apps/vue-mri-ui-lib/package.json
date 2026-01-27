@@ -2,16 +2,17 @@
   "name": "vue-mri",
   "version": "2.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "serve": "__VUE_PROD_DEVTOOLS__=true vue-cli-service serve --port 8081",
-    "upgrade": "vue-cli-service upgrade",
-    "build": "vue-cli-service build",
-    "build:local": "VUE_APP_HOST=https://localhost:41000 vue-cli-service build",
+    "serve": "vite --port 8081",
+    "build": "vite build",
+    "build:local": "VITE_HOST=https://localhost:41000 vite build",
     "build:mock": "bash build-mock.sh",
     "start:mock": "cd src/query-filter/mock-server && SERVER_URL=${SERVER_URL:-http://localhost:3131} USE_CACHE=${USE_CACHE:-true} npm start",
-    "lint": "vue-cli-service lint",
-    "test:unit": "vue-cli-service test:unit",
-    "test:ci": "vue-cli-service test:unit --maxWorkers=4 --coverage --reporters=\"jest-junit\""
+    "preview": "vite preview --port 8081",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx --fix",
+    "test:unit": "vitest run",
+    "test:ci": "vitest run --coverage"
   },
   "dependencies": {
     "@d4l/web-components-library": "3.15.1",
@@ -22,66 +23,55 @@
     "core-js": "^3.8.2",
     "d3": "3.5.17",
     "echarts": "5.6.0",
+    "expect-type": "^1.3.0",
     "file-saver": "1.3.3",
     "fuse.js": "^6.6.2",
-    "html-webpack-plugin": "^5.5.0",
     "import-map-overrides": "^6.1.0",
     "jquery": "^3.5.1",
-    "jsonwebtoken": "^9.0.0",
     "jspdf": "2.3.1",
     "jszip": "3.10.1",
+    "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
     "normalizr": "3.2.4",
     "pako": "1.0.11",
     "plotly.js": "^2.14.0",
     "popper.js": "1.16.1",
-    "process": "^0.11.10",
     "single-spa": "^6.0.0",
     "splitpanes": "^4.0.4",
-    "stream-browserify": "^3.0.0",
     "underscore": "^1.12.1",
     "vue": "3.5.17",
     "vue-draggable-plus": "^0.6.0",
     "vue-multiselect": "^3.4.0",
     "vuex": "4.1.0",
-    "webpack": "^5.76.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.0",
     "@types/jspdf": "^1.1.31",
     "@types/node": "^14",
     "@types/pako": "^1.0.0",
     "@types/plotly.js": "^2.12.18",
     "@types/underscore": "^1.10.0",
-    "@vue/babel-preset-app": "5.0.8",
-    "@vue/cli-plugin-babel": "5.0.8",
-    "@vue/cli-plugin-typescript": "5.0.8",
-    "@vue/cli-plugin-unit-jest": "5.0.8",
-    "@vue/cli-service": "5.0.8",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "@vitest/coverage-v8": "^1.2.2",
+    "@vitest/mocker": "^4.0.17",
+    "@vitest/pretty-format": "^4.0.17",
     "@vue/test-utils": "2",
-    "@vue/vue3-jest": "27",
-    "babel-core": "7.0.0-bridge.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "fflate": "0.7.4",
-    "jest": "27.1.0",
-    "jest-environment-jsdom": "27.1.0",
-    "jest-junit": "^5.1.0",
-    "jest-serializer-vue": "^2.0.2",
-    "jest-transform-stub": "^2.0.0",
+    "happy-dom": "^20.3.4",
+    "obug": "^2.1.1",
     "prettier": "3.6.2",
-    "process": "^0.11.10",
     "sass": "^1.32.8",
-    "sass-loader": "^13.0.0",
-    "stream-browserify": "^3.0.0",
     "streamsaver": "2.0.6",
-    "ts-jest": "27",
+    "tinyexec": "^1.0.2",
+    "tinyrainbow": "^3.0.3",
     "tslib": "^2.6.2",
-    "tslint-config-prettier": "^1.15.0",
     "typescript": "5.9.3",
-    "vue-server-renderer": "2.6.14"
+    "vite": "^5.4.0",
+    "vitest": "^1.2.2"
   },
   "postcss": {
     "plugins": {
@@ -93,51 +83,5 @@
     "last 2 versions",
     "not ie <= 8",
     "not op_mob >= 1"
-  ],
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "json",
-      "vue",
-      "ts",
-      "tsx"
-    ],
-    "transform": {
-      "^.+\\.vue$": "@vue/vue3-jest",
-      ".+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2)$": "jest-transform-stub",
-      "^.+\\.jsx?$": "ts-jest",
-      "^.+\\.(ts|tsx)$": "ts-jest"
-    },
-    "globals": {
-      "ts-jest": {
-        "isolatedModules": true
-      }
-    },
-    "moduleNameMapper": {
-      "^@/(.*)$": "<rootDir>/src/$1",
-      "^axios$": "axios/dist/node/axios.cjs"
-    },
-    "snapshotSerializers": [
-      "jest-serializer-vue"
-    ],
-    "testURL": "http://localhost/",
-    "testMatch": [
-      "**/__tests__/*.ts"
-    ],
-    "setupFiles": [
-      "./jest.setup.js"
-    ],
-    "collectCoverageFrom": [
-      "src/**/*.ts",
-      "src/**/*.vue",
-      "!src/**/*.d.ts"
-    ],
-    "coverageReporters": [
-      "cobertura",
-      "html",
-      "text"
-    ],
-    "testEnvironment": "jsdom"
-  }
+  ]
 }

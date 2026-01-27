@@ -16,8 +16,8 @@ export const getNavigationItems = (): NavigationItem[] => {
   }
 
   try {
-    const envItems: NavigationItem[] = process.env.VUE_APP_NAVIGATION_ITEMS
-      ? JSON.parse(process.env.VUE_APP_NAVIGATION_ITEMS)
+    const envItems: NavigationItem[] = import.meta.env.VITE_NAVIGATION_ITEMS
+      ? JSON.parse(import.meta.env.VITE_NAVIGATION_ITEMS)
       : []
 
     const items: NavigationItem[] = [...envItems, MAIN_NAV_ITEM]
@@ -41,7 +41,7 @@ export const getNavigationItems = (): NavigationItem[] => {
     cachedNavigationItems = validItems
     return cachedNavigationItems
   } catch (error) {
-    console.warn('Failed to parse VUE_APP_NAVIGATION_ITEMS, using defaults:', error)
+    console.warn('Failed to parse VITE_NAVIGATION_ITEMS, using defaults:', error)
     cachedNavigationItems = [MAIN_NAV_ITEM]
     return cachedNavigationItems
   }

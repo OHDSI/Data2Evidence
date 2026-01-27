@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineProps } from 'vue'
+import { computed } from 'vue'
 import TrashIcon from '../icons/TrashIcon.vue'
 import { QueryFilterAttribute } from '@/query-filter/types/QueryFilterTypes'
 import DateInput from './DateInput.vue'
