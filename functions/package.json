@@ -2559,7 +2559,7 @@
           ]
         },
         {
-          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/tag/[0-9a-zA-z]+(.*)",
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/tag/[0-9a-zA-Z]+(.*)",
           "scopes": [
             "dbSvc.schema.delete.rollbackTag"
           ],
