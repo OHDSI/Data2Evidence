@@ -5,7 +5,14 @@ import { PlayCircleFilled, StopCircle } from "@mui/icons-material";
 import { Button, Dialog, Select, MenuItem, InputLabel, TextField } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
-import { Study, CloseDialogType, StudyDashboardTemplateData, Feedback, NetworkStrategusStudy, ViewerCodeWithQueries } from "../../../../types";
+import {
+  Study,
+  CloseDialogType,
+  StudyDashboardTemplateData,
+  Feedback,
+  NetworkStrategusStudy,
+  ViewerCodeWithQueries,
+} from "../../../../types";
 import { useKernelViewer } from "../../../../hooks";
 import { useTranslation } from "../../../../contexts";
 import { api } from "../../../../axios/api";
@@ -54,7 +61,9 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   const [feedback, setFeedback] = useState<Feedback>({});
   const [name, setName] = useState<string>("");
   const [queries, setQueries] = useState<QueryEntry[]>([]);
-  const [configType, setConfigType] = useState<"dashboard" | "cohort">(config.type === "cohort" ? "cohort" : "dashboard");
+  const [configType, setConfigType] = useState<"dashboard" | "cohort">(
+    config.type === "cohort" ? "cohort" : "dashboard"
+  );
   const [savedCodes, setSavedCodes] = useState<ViewerCodeWithQueries[]>([]);
   const [isNewName, setIsNewName] = useState(false);
   const [newNameInput, setNewNameInput] = useState("");
@@ -99,7 +108,8 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           const study = await api.strategusAnalysis.getStrategusAnalysis(id);
           return study.viewerCode || "";
         },
-        saveCode: (id: string, code: string, _codeName: string) => api.strategusAnalysis.saveStategusAnalysisViewerCode(id, code),
+        saveCode: (id: string, code: string, _codeName: string) =>
+          api.strategusAnalysis.saveStategusAnalysisViewerCode(id, code),
       };
     }
   }, [config.type]);
@@ -521,7 +531,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
               onChange={(e) => handleQueryChange(index, "sql", e.target.value)}
               sx={{ flex: 2 }}
               multiline
-              rows={2}
+              rows={1}
             />
             <Button text="Remove" onClick={() => handleRemoveQuery(index)} variant="text" size="small" />
           </div>

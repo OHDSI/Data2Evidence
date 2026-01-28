@@ -38,6 +38,8 @@
 
   &__queries {
     margin: 10px 25px;
+    max-height: 200px;
+    overflow: auto;
 
     &__header {
       display: flex;
