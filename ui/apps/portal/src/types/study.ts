@@ -44,7 +44,7 @@ export interface Study {
   tokenStudyCode: string;
   schemaName: string;
   vocabSchemaName?: string;
-  resultSchemaName?: string;
+  resultsSchemaName?: string;
   type: DatasetType;
   visibilityStatus: string;
   publicKey: string;
@@ -68,7 +68,7 @@ export interface NewStudyInput {
   schemaOption: string;
   cdmSchemaValue: string;
   vocabSchemaValue?: string;
-  resultSchemaValue: string;
+  resultsSchemaValue: string;
   tenantName?: string;
   dataModel?: string;
   plugin: string;
@@ -100,7 +100,7 @@ export interface CopyStudyInput {
   paConfigId: string;
   cdmSchemaValue?: string;
   vocabSchemaValue?: string;
-  resultSchemaValue?: string;
+  resultsSchemaValue?: string;
 }
 
 export interface NewFhirProjectInput {
@@ -224,7 +224,7 @@ export interface UpdateStudyMetadataInput {
   tags: string[];
   dashboards: DatasetDashboard[];
   vocabSchemaName?: string;
-  resultSchemaName?: string;
+  resultsSchemaName?: string;
 }
 
 // remove once backend is deprecated
