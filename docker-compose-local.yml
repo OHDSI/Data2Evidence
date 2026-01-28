@@ -27,6 +27,10 @@ services:
       PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage", "fhir"]}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
       PLUGINS_DEV_PATH: "./plugins"
+      SQL_QUERY_TEMPLATES: >-
+        ${SQL_QUERY_TEMPLATES:-{
+          "cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at"
+        }}
       WATCH: |-
         {
           "analytics-svc": false,
