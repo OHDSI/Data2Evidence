@@ -1,6 +1,5 @@
 services:
   trex:
-    # command removed - using CMD from Dockerfile.v2 (runs WebAPI with trexas internally)
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
