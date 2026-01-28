@@ -14,6 +14,7 @@ async function exchangeToken(logtoToken: string): Promise<string | null> {
   const webApiUrl = "http://localhost:8080/WebAPI/user/login/openidDirect";
 
   try {
+    logger.info(`Token exchange: calling ${webApiUrl}`);
     const response = await fetch(webApiUrl, {
       method: "GET",
       headers: {
@@ -21,17 +22,24 @@ async function exchangeToken(logtoToken: string): Promise<string | null> {
       },
     });
 
+    logger.info(`Token exchange response: status=${response.status}`);
+
     if (!response.ok) {
-      logger.error(`Token exchange failed: ${response.status}`);
+      const body = await response.text();
+      logger.error(`Token exchange failed: ${response.status} ${body}`);
       return null;
     }
 
     const webApiToken = response.headers.get("Bearer");
     if (!webApiToken) {
-      logger.error("Token exchange: no Bearer header in response");
+      // Log all headers for debugging
+      const headers: string[] = [];
+      response.headers.forEach((v, k) => headers.push(`${k}: ${v}`));
+      logger.error(`Token exchange: no Bearer header in response. Headers: ${headers.join(", ")}`);
       return null;
     }
 
+    logger.info("Token exchange: success");
     return webApiToken;
   } catch (err) {
     logger.error(`Token exchange error: ${err}`);

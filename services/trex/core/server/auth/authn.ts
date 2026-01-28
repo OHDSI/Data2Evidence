@@ -18,14 +18,15 @@ export async function authn(c: Context, next: Function) {
     const token = extractToken(c);
 
     if (!token) {
+      logger.info(`authn: WebAPI request without token, path=${c.req.path}`);
       await next();
       return;
     }
 
     try {
       await jwtVerify(token, JWKS);
-    } catch {
-      logger.error("authn: invalid Logto token");
+    } catch (err) {
+      logger.error(`authn: invalid Logto token: ${err}`);
       return new Response("Authentication Token not valid", { status: 401 });
     }
 
@@ -38,6 +39,7 @@ export async function authn(c: Context, next: Function) {
       });
     }
 
+    logger.info(`authn: token exchange successful for ${c.req.path}`);
     c.set("webApiToken", webApiToken);
     c.set("logtoSubject", getTokenSubject(token));
     await next();
@@ -66,7 +68,13 @@ export async function authn(c: Context, next: Function) {
 function extractToken(c: Context): string | null {
   const regex = /\b(Bearer|bearer|token)\b/;
 
-  const authHeader = c.req.header("authorization");
+  // Try both Hono's method and raw request headers
+  let authHeader = c.req.header("authorization");
+  if (!authHeader) {
+    // Fallback: try getting from raw request headers
+    authHeader = c.req.raw.headers.get("authorization");
+  }
+
   if (authHeader && authHeader.split(" ")[0].match(regex)) {
     return authHeader.split(" ")[1] || null;
   }
