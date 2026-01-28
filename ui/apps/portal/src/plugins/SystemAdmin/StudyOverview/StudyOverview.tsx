@@ -1,40 +1,38 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableHead from "@mui/material/TableHead";
-import TableContainer from "@mui/material/TableContainer";
-import IconButton from "@mui/material/IconButton";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import {
-  Loader,
-  TableCell,
-  TableRow,
-  Text,
-  Button,
-  Tooltip,
-} from "@portal/components";
-import { CloseDialogType, Study, StudyAttribute } from "../../../types";
-import { useDialogHelper, useDatasets, useDatabases } from "../../../hooks";
-import { useTranslation } from "../../../contexts";
-import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
-import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
-import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
-import CopyStudyDialog from "./CopyStudyDialog/CopyStudyDialog";
-import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
-import ActionSelector from "./ActionSelector/ActionSelector";
-import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
-import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
-import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
-import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
+import IconButton from "@mui/material/IconButton";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import { Button, Loader, TableCell, TableRow, Text, Tooltip } from "@portal/components";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../axios/api";
+import { useTranslation } from "../../../contexts";
+import { useDatabases, useDatasets, useDialogHelper } from "../../../hooks";
+import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
 import { JobRunTypes } from "../DQD/types";
+import ActionSelector from "./ActionSelector/ActionSelector";
+import StudyActionSelector from "./ActionSelector/StudyActionSelector";
+import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
+import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
+import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
+import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
+import CopyStudyDialog from "./CopyStudyDialog/CopyStudyDialog";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
+import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
+import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
+import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
+import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
+import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
+import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
+import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
+import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
+import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
+
 import "./StudyOverview.scss";
-import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
-import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
 
 const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
@@ -73,14 +71,22 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
     useDialogHelper(false);
-  const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
+  const [showManageViewerDialog, openManageViewerDialog, closeManageViewerDialog] = useDialogHelper(false);
+  const [viewerDialogType, setViewerDialogType] = useState<"dashboard" | "strategus">("dashboard");
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
+    useDialogHelper(false);
+  const [showRunStrategusStudyDialog, openRunStrategusStudyDialog, closeRunStrategusStudyDialog] =
+    useDialogHelper(false);
+  const [showCleanupStrategusStudyDialog, openCleanupStrategusStudyDialog, closeCleanupStrategusStudyDialog] =
+    useDialogHelper(false);
+  const [showUploadStrategusResultsDialog, openUploadStrategusResultsDialog, closeUploadStrategusResultsDialog] =
     useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
+  const [activeStrategusStudy, setActiveStrategusStudy] = useState<NetworkStrategusStudy>();
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const [strategusStudies, setStrategusStudies] = useState<any[]>([]);
+  const [strategusStudies, setStrategusStudies] = useState<NetworkStrategusStudy[]>([]);
   const [loadingStrategusStudies, setLoadingStrategusStudies] = useState(false);
 
   const handleSourceInformation = useCallback(
@@ -186,10 +192,83 @@ const StudyOverview: FC = () => {
   const handleManageDashboard = useCallback(
     (dataset: Study) => {
       setActiveDataset(dataset);
-      openManageDashboardDialog();
+      setViewerDialogType("dashboard");
+      openManageViewerDialog();
     },
-    [openManageDashboardDialog]
+    [openManageViewerDialog]
   );
+
+  const handleRunStrategusStudy = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openRunStrategusStudyDialog();
+    },
+    [openRunStrategusStudyDialog]
+  );
+
+  const handleCleanupStrategusStudy = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openCleanupStrategusStudyDialog();
+    },
+    [openCleanupStrategusStudyDialog]
+  );
+
+  const handleManageStrategusResultViewer = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      setViewerDialogType("strategus");
+      openManageViewerDialog();
+    },
+    [openManageViewerDialog]
+  );
+
+  const handleUploadStrategusResults = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openUploadStrategusResultsDialog();
+    },
+    [openUploadStrategusResultsDialog]
+  );
+
+  const handleDownloadStrategusResults = useCallback(async (study: NetworkStrategusStudy) => {
+    try {
+      const filesList = await api.strategusResults.listStrategusResultsFiles(study.studyId);
+
+      if (!filesList || filesList.length === 0) {
+        console.error(`No results file found for study ${study.studyId}`);
+        return;
+      }
+
+      const latestFile = filesList[0];
+      const fileName = latestFile.name.split("/").pop();
+
+      const response = await api.strategusResults.downloadStrategusResultsFile(study.studyId, fileName);
+
+      if (response.signedUrl) {
+        window.open(response.signedUrl, "_blank");
+      } else if (response.data) {
+        const byteCharacters = atob(response.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "application/zip" });
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName || `${study.studyId}_results.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error: any) {
+      console.error("Download error:", error);
+    }
+  }, []);
 
   const toggleRow = useCallback((datasetId: string) => {
     setExpandedRows((prev) => ({
@@ -228,17 +307,15 @@ const StudyOverview: FC = () => {
     // First pass: separate datasets by type and build children maps
     datasets.forEach((dataset: Study) => {
       const type = dataset.type?.toLowerCase();
-      
+
       if (type === "study") {
         // Only study type datasets go to studies table
         studies.push(dataset);
       } else if (type === "fhir" || type === "non_omop") {
         // FHIR and non_omop datasets go to FHIR table
         // Check if this is a child dataset (has source_dataset_id attribute)
-        const sourceIdAttribute = dataset.attributes?.find(
-          (attr) => attr.attributeId === "source_dataset_id"
-        );
-        
+        const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
+
         if (sourceIdAttribute && sourceIdAttribute.value) {
           // This is a child dataset
           const parentId = sourceIdAttribute.value;
@@ -253,10 +330,8 @@ const StudyOverview: FC = () => {
       } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop") {
         // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
         // Check if this is a child dataset (has source_dataset_id attribute)
-        const sourceIdAttribute = dataset.attributes?.find(
-          (attr) => attr.attributeId === "source_dataset_id"
-        );
-        
+        const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
+
         if (sourceIdAttribute && sourceIdAttribute.value) {
           // This is a child dataset
           const parentId = sourceIdAttribute.value;
@@ -291,7 +366,7 @@ const StudyOverview: FC = () => {
   // Initialize expandedRows to have all parent datasets expanded by default
   useEffect(() => {
     const initialExpandedRows: Record<string, boolean> = {};
-    
+
     // Add CDM datasets with children
     if (sourceOmopHanaDatasets.length > 0) {
       sourceOmopHanaDatasets.forEach((dataset) => {
@@ -300,7 +375,7 @@ const StudyOverview: FC = () => {
         }
       });
     }
-    
+
     // Add FHIR datasets with children
     if (fhirDatasets.length > 0) {
       fhirDatasets.forEach((dataset) => {
@@ -309,7 +384,7 @@ const StudyOverview: FC = () => {
         }
       });
     }
-    
+
     if (Object.keys(initialExpandedRows).length > 0) {
       setExpandedRows((prev) => {
         // Only update if there are new parent datasets to expand
@@ -390,9 +465,7 @@ const StudyOverview: FC = () => {
       if (!flowName || flowName === "custom-flow" || item.type === "fhir" || item.type === "non_omop") return;
 
       // Check if this is a cache/datamart dataset (has source_dataset_id attribute)
-      const hasSourceDatasetId = item.attributes?.some(
-        (attribute) => attribute.attributeId === "source_dataset_id"
-      );
+      const hasSourceDatasetId = item.attributes?.some((attribute) => attribute.attributeId === "source_dataset_id");
 
       if (hasSourceDatasetId) {
         cacheDatasets.push(item);
@@ -620,10 +693,7 @@ const StudyOverview: FC = () => {
                         {dataset.children && dataset.children.length > 0 && expandedRows[dataset.id] && (
                           <>
                             <TableRow className="cache-datasets-header-row">
-                              <TableCell 
-                                colSpan={9}
-                                className="cache-datasets-header-cell"
-                              >
+                              <TableCell colSpan={9} className="cache-datasets-header-cell">
                                 Cache Datasets
                               </TableCell>
                             </TableRow>
@@ -646,7 +716,9 @@ const StudyOverview: FC = () => {
           {/* FHIR Datasets Table */}
           {fhirDatasets.length > 0 && (
             <>
-              <h4 className="dataset-section-title dataset-section-title--secondary">{getText(i18nKeys.STUDY_OVERVIEW__FHIR_DATASETS)}</h4>
+              <h4 className="dataset-section-title dataset-section-title--secondary">
+                {getText(i18nKeys.STUDY_OVERVIEW__FHIR_DATASETS)}
+              </h4>
               <TableContainer className="studyoverview__list">
                 <Table>
                   <colgroup>
@@ -679,10 +751,7 @@ const StudyOverview: FC = () => {
                         {dataset.children && dataset.children.length > 0 && expandedRows[dataset.id] && (
                           <>
                             <TableRow className="cache-datasets-header-row">
-                              <TableCell 
-                                colSpan={9}
-                                className="cache-datasets-header-cell"
-                              >
+                              <TableCell colSpan={9} className="cache-datasets-header-cell">
                                 Cache Datasets
                               </TableCell>
                             </TableRow>
@@ -749,7 +818,7 @@ const StudyOverview: FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {strategusStudies.map((study: any) => (
+                    {strategusStudies.map((study: NetworkStrategusStudy) => (
                       <TableRow key={study.analysisId || study.studyId}>
                         <TableCell className="icon-cell icon-cell--no-children"></TableCell>
                         <TableCell>
@@ -764,15 +833,18 @@ const StudyOverview: FC = () => {
                         </TableCell>
                         <TableCell>{study.mode || "-"}</TableCell>
                         <TableCell>{study.notebookName || "-"}</TableCell>
-                        <TableCell>
-                          {study.createdAt ? new Date(study.createdAt).toLocaleDateString() : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}
-                        </TableCell>
+                        <TableCell>{study.createdAt ? new Date(study.createdAt).toLocaleDateString() : "-"}</TableCell>
+                        <TableCell>{study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}</TableCell>
                         <TableCell>study</TableCell>
                         <TableCell className="col-action">
-                          -
+                          <StudyActionSelector
+                            study={study}
+                            handleRunStrategusStudy={handleRunStrategusStudy}
+                            handleCleanupStrategusStudy={handleCleanupStrategusStudy}
+                            handleManageStrategusResultViewer={handleManageStrategusResultViewer}
+                            handleUploadStrategusResults={handleUploadStrategusResults}
+                            handleDownloadStrategusResults={handleDownloadStrategusResults}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
@@ -879,16 +951,43 @@ const StudyOverview: FC = () => {
             />
           )}
 
-          {showManageDashboardDialog && (
-            <ManageDashboardDialog
-              study={activeDataset}
-              open={showManageDashboardDialog}
-              onClose={closeManageDashboardDialog}
+          {showManageViewerDialog && (
+            <ManageViewerDialog
+              config={{
+                type: viewerDialogType,
+                studyId: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+                studyName: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+              }}
+              open={showManageViewerDialog}
+              onClose={closeManageViewerDialog}
             />
           )}
 
           {showAddStrategusStudyDialog && (
             <AddStrategusStudyDialog open={showAddStrategusStudyDialog} onClose={handleCloseAddStrategusStudyDialog} />
+          )}
+
+          {showRunStrategusStudyDialog && (
+            <RunStrategusStudyDialog
+              study={activeStrategusStudy}
+              open={showRunStrategusStudyDialog}
+              onClose={closeRunStrategusStudyDialog}
+            />
+          )}
+
+          {showCleanupStrategusStudyDialog && (
+            <CleanupStrategusStudyDialog
+              study={activeStrategusStudy}
+              open={showCleanupStrategusStudyDialog}
+              onClose={closeCleanupStrategusStudyDialog}
+            />
+          )}
+          {showUploadStrategusResultsDialog && activeStrategusStudy && (
+            <UploadStrategusResultsDialog
+              study={activeStrategusStudy}
+              open={showUploadStrategusResultsDialog}
+              onClose={closeUploadStrategusResultsDialog}
+            />
           )}
         </div>
       </div>

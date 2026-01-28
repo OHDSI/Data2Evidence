@@ -20,7 +20,7 @@ const d2eWebapi = new WebAPIAPI();
 
 /**
  * Register all cohort management tools (CRUD operations + list)
- * - get_cohort_id_name_list (no auth)
+ * - get_cohort_id_name_list (full list includes bookmarks, requires auth + datasetId)
  * - get_atlas_cohort_definition (no auth)
  * - create_atlas_cohort_definition (requires auth)
  * - update_atlas_cohort_definition (no auth)
@@ -39,12 +39,17 @@ export function registerCohortManagementTools(server: McpServer) {
         cohortsId: CohortIdNameOutput.array(),
       },
     },
-    async ({}) => {
+    async ({}, { requestInfo }) => {
+      // Extract authorization and datasetId (both required for delete)
+      const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       // Fetch d2e cohort list
-      const data = await d2eWebapi.getAtlasCohortDefinitionList();
+      const data = await d2eWebapi.getAtlasCohortDefinitionList(
+        authorization,
+        datasetId
+      );
       const cohortData = (data as any[]).map((cohort) => ({
-        cohortId: String(cohort.id),
-        cohortName: cohort.name,
+        cohortId: String(cohort.id ?? cohort.bmkId ?? ""),
+        cohortName: String(cohort.name ?? cohort.bookmarkname ?? ""),
         cohortDescription: cohort.description || "",
       }));
       return createStructuredResponse(
@@ -84,12 +89,7 @@ export function registerCohortManagementTools(server: McpServer) {
       inputSchema: CreateCohortDefinitionInput,
     },
     async (
-      {
-        cohortDefinitionExpression,
-        cohortInfo,
-        userName,
-        isValidCohortDefinition,
-      },
+      { cohortDefinitionExpression, cohortInfo, isValidCohortDefinition },
       { requestInfo }
     ) => {
       if (!isValidCohortDefinition) {
@@ -104,7 +104,6 @@ export function registerCohortManagementTools(server: McpServer) {
       const cohortDefinition = {
         expression: cohortDefinitionExpression,
         cohortInfo: cohortInfo,
-        userName: userName,
       };
 
       const res = await d2eWebapi.createAtlasCohortDefinition(
@@ -130,18 +129,23 @@ export function registerCohortManagementTools(server: McpServer) {
         "The cohort definition must be validated first using validate_atlas_cohort_definition tool. Update an existing ATLAS cohort definition in D2E, and creation metadata is preserved. ",
       inputSchema: UpdateCohortDefinitionInput,
     },
-    async ({
-      cohortId,
-      cohortDescription,
-      cohortDefinitionExpression,
-      userName,
-      isValidCohortDefinition,
-    }) => {
+    async (
+      {
+        cohortId,
+        cohortDescription,
+        cohortDefinitionExpression,
+        isValidCohortDefinition,
+      },
+      { requestInfo }
+    ) => {
       if (!isValidCohortDefinition) {
         throw new Error(
           "Cohort definition must be validated before update. Use validate_atlas_cohort_definition tool first and set isValidCohortDefinition=true"
         );
       }
+
+      // Extract authorization (required for user update)
+      const authorization = requireAuth(requestInfo);
 
       // Fetch original cohort definition to preserve name, createdBy, createdDate
       const orgCohortDefinition = await d2eWebapi.getAtlasCohortDefinition(
@@ -155,10 +159,12 @@ export function registerCohortManagementTools(server: McpServer) {
         createdBy: orgCohortDefinition.createdBy,
         createdDate: orgCohortDefinition.createdDate,
         expression: cohortDefinitionExpression,
-        userName: userName,
       };
 
-      const res = await d2eWebapi.updateAtlasCohortDefinition(cohortDefinition);
+      const res = await d2eWebapi.updateAtlasCohortDefinition(
+        cohortDefinition,
+        authorization
+      );
       if (!res) {
         throw new Error(
           `Failed to update cohort definition in D2E with cohortId: ${cohortId}`

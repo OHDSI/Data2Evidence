@@ -27,6 +27,7 @@
 /flows/strategus_plugin                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /scripts                                             @brandantck @mwaiyee @SantanM @satish-a0 @p-hoffmann
 /services/alp-dataflow-gen                           @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+/services/alp-dataflow-gen-worker                    @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /services/alp-fhir                                   @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /services/alp-logto                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /services/alp-db-management                          @alicia-koh @csafreen @Zhimin-arya @p-hoffmann

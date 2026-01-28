@@ -17,3 +17,9 @@ const Env = z.object({
 });
 
 export const env = Env.parse(_env);
+
+export const PHENOTYPE_LIBRARY_COHORT_TEMPLATE =
+  "https://raw.githubusercontent.com/data2evidence/d2e-PhenotypeLibrary/main/inst/cohorts";
+
+export const PHENOTYPE_LIBRARY_COHORTS =
+  "/usr/src/plugins/d2ef/mcp-server/data/phenotypes/Cohorts.csv";

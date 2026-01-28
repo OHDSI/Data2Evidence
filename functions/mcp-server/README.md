@@ -46,6 +46,10 @@ Start the Data2Evidence platform
 ### 4. Connect with VS Code Copilot
 Once the server is running and the client is configured, you can use MCP features in VS Code Copilot.
 
+### Trouble shooting
+If failed to start mcp server in VS Code copilot with error "fetch error" which is usually due to the SSL certificate trust, try to set it globally:
+`sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain /path/to/ca_cert.pem`
+
 ---
 
 ## Architecture

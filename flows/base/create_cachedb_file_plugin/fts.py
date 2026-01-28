@@ -1,29 +1,65 @@
+import duckdb
+
 from prefect import task
+from prefect.context import TaskRunContext
 from prefect.logging import get_run_logger
+from prefect.tasks import exponential_backoff
 
-from .utils import get_tables_for_fts, get_document_identifier, execute_statement
 from .types import CopyParameters
+from .copy import get_trex_connection
+from .utils import get_tables_for_fts, get_document_identifier, execute_statement
 
-@task(log_prints=True, task_run_name="create_fts_index_{copy_params.target_schema}")
-def create_fts_index(
-    write_conn: any,
+
+@task(retries=3, 
+      retry_delay_seconds=exponential_backoff(backoff_factor=2),
+      log_prints=True, 
+      task_run_name="create_fts_index_{copy_params.target_schema}")
+def create_fts_index_task(
+    use_trex_conn: bool,
     copy_params: CopyParameters,
+    duckdb_file_path: str,
 ):
     """
     Create duckdb full text search indexes based on columns specified in tables_to_create_duckdb_fts_index
     """
+    logger = get_run_logger()
+
+    task_run_ctx = TaskRunContext.get()
+    logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
+
+    if use_trex_conn:
+        trex_conn = None
+        pg_cursor = None
+    
+        try:
+            trex_conn = get_trex_connection(copy_params.target_database)
+            pg_cursor = trex_conn.cursor()
+            pg_cursor.execute("CALL pg_clear_cache();")
+
+            create_fts_index(pg_cursor, copy_params, logger)
+
+        except Exception as e:
+            logger.error(f"Failed to create fts index through Trex SQL interface: {e}")
+            raise
+        finally:
+            if pg_cursor:
+                pg_cursor.close()
+            if trex_conn:
+                trex_conn.close()
+
+    else:
+        with duckdb.connect(duckdb_file_path) as file_conn:
+            create_fts_index(file_conn, copy_params, logger)
+
+    
+def create_fts_index(write_conn: any, copy_params: CopyParameters, logger):
     target_schema = copy_params.target_schema
     target_database = copy_params.target_database
 
-    logger = get_run_logger()
-    logger.info(f"Starting FTS index creation for schema '{copy_params.target_schema}'.")
-
-    # Fetch tables in schema
-    logger.debug(
-        f"Fetching copied tables from schema '{target_database}'.'{target_schema}'.."
-    )
+    logger.info(f"Starting FTS index creation for schema '{target_schema}'.")
 
     write_conn.execute(get_table_names_query(target_database, target_schema))
+
     copied_tables = [table for (table,) in write_conn.fetchall()]
 
     logger.info(f"Found {len(copied_tables)} tables in schema '{copy_params.source_schema}'.")

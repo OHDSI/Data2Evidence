@@ -47,11 +47,16 @@ export class CodeSuggestionRouter {
         res.setHeader("Connection", "keep-alive");
         req.body.model = AI_MODEL;
 
-        // Call the getChatResponse service to fetch a stream of chat responses.
         // Stream the response chunks to the client as they are received.
-        let stream = await getChatResponse(req.body);
-        for await (const chunk of stream) {
-          res.write(chunk);
+        // NOTE: This logic depends on the Langchain Agent streaming format
+        let stream = await getChatResponse(req);
+        for await (const [token, metadata] of stream) {
+          if (
+            metadata.langgraph_node === "model_request" &&
+            token.contentBlocks?.[0]?.text
+          ) {
+            res.write(token.contentBlocks[0].text);
+          }
         }
         res.status(200);
         res.end();

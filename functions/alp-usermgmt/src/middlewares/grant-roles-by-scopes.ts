@@ -14,22 +14,30 @@ const logger = createLogger('GrantRolesByScopes')
 const subProp = env.USER_MGMT_IDP_SUBJECT_PROP
 
 export const grantRolesByScopes = async (req: Request, res: Response, next: NextFunction) => {
+  const logtoApi = Container.get(LogtoAPI)
+  const userService = Container.get(UserService)
+  const isSync = Boolean(req.body.sync)
+  let sub: string = ''
+
   try {
     const bearerToken = req.headers.authorization as string
     if (!bearerToken) {
+      logger.warn('No bearer token found')
       return next()
     }
 
     const token = jwt.decode(bearerToken.replace(/bearer /i, '')) as jwt.JwtPayload
     if (!(subProp in token)) {
+      logger.warn(`No subject property "${subProp}" found in token. Available claims: ${Object.keys(token).join(', ')}`)
       return next()
     }
 
-    const isSync = Boolean(req.body.sync)
-    const userService = Container.get(UserService)
+    sub = token[subProp]
+    if (isSync) {
+      logger.info(`Assigning roles for user with subject "${sub}"`)
+    }
 
     const { scope, email } = token as { scope: string; email: string }
-    const sub = token[subProp]
     let user = await userService.getUserByIdpUserId(sub)
     let userId = user?.id
 
@@ -37,7 +45,6 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     if (!user) {
       if (env.IDP_FETCH_USER_INFO_TYPE === 'logto') {
         // Fetch user info as Logto's access_token does not contain username
-        const logtoApi = Container.get(LogtoAPI)
         const logtoUser = await logtoApi.getUser(sub)
         if (logtoUser != null) {
           // Use username in Logto context (fallback to email if empty)
@@ -45,6 +52,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
         }
       }
 
+      logger.info(`User with idp_user_id "${sub}" not found, try finding by username "${username}"`)
       user = await userService.getUserByUsername(username)
       userId = user?.id
 
@@ -54,17 +62,22 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
           return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
         }
 
-        logger.info(`First time login for new user, create user: "${sub}"`)
-        const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
-        await userService.createUser(newUser)
-        userId = newUser.id
+        if (isSync) {
+          logger.info(`First time login for new user, create user: "${sub}"`)
+          const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
+          await userService.createUser(newUser)
+          userId = newUser.id
 
-        const tokenUser: ITokenUser = {
-          userId: newUser.id || '',
-          idpUserId: sub
+          const tokenUser: ITokenUser = {
+            userId: newUser.id || '',
+            idpUserId: sub
+          }
+          req.user = tokenUser
+          Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+        } else {
+          logger.error(`User "${sub}" or "${username}" does not exist for Azure and non-sync request`)
+          return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
         }
-        req.user = tokenUser
-        Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
       } else if (!user.idpUserId) {
         logger.info(`First time login for existing user, update idp_user_id: "${sub}"`)
         await userService.updateUser({ id: user.id, idp_user_id: sub })
@@ -116,6 +129,15 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     next()
   } catch (err) {
     logger.error(`Error when assigning roles: ${err}`)
+
+    if (isSync && sub) {
+      const user = await userService.getUserByIdpUserId(sub)
+      if (!user) {
+        logger.info(`User with idp_user_id "${sub}" not found, delete from Logto`)
+        await logtoApi.deleteUser(sub)
+      }
+    }
+
     next(err)
   }
 }

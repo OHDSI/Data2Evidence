@@ -198,11 +198,21 @@ export const getCohortDefinitionList = async (
   const rawDataFromBookmarks = await bookmarksApi.getAllBookmarks(datasetId);
   const parsedBookmarksData = BookmarksSchema.parse(rawDataFromBookmarks);
 
+  // Try to get materialized cohorts, but continue with empty list if it fails
   const analyticsSvcAPI = new AnalyticsSvcAPI(token);
-  const baseMaterializedCohorts = await analyticsSvcAPI.getFilteredCohorts(
-    datasetId,
-    { datasetId }
-  );
+  let baseMaterializedCohorts: IBaseMaterializedCohort[] = [];
+  try {
+    const result = await analyticsSvcAPI.getFilteredCohorts(datasetId, {
+      datasetId,
+    });
+    // Handle undefined or non-array results
+    baseMaterializedCohorts = Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error(
+      "Failed to fetch materialized cohorts, continuing with empty list:",
+      error
+    );
+  }
 
   // Parse bookmark and atlas cohort definition
   const parsedbookmarks: IBookmark[] = parsedBookmarksData.bookmarks.map(
@@ -328,10 +338,21 @@ export const deleteCohortDefinition = async (
   cohortDefinitionId: number
 ) => {
   const analyticsSvcApi = new AnalyticsSvcAPI(token);
-  const materializedCohorts = await analyticsSvcApi.getFilteredCohorts(
-    datasetId,
-    { datasetId, atlasCohortDefinitionId: cohortDefinitionId }
-  );
+  let materializedCohorts: IBaseMaterializedCohort[] = [];
+  try {
+    const result = await analyticsSvcApi.getFilteredCohorts(datasetId, {
+      datasetId,
+      atlasCohortDefinitionId: cohortDefinitionId,
+    });
+    // Handle undefined or non-array results
+    materializedCohorts = Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error(
+      "Failed to fetch materialized cohorts during delete, continuing without deletion:",
+      error
+    );
+  }
+
   // If atlas cohort definition has a materialized cohort, delete cohort before deleting atlas cohort definition user artifact
   for (const materializedCohort of materializedCohorts) {
     // TODO: Delete materialized cohorts for other datasets as well?

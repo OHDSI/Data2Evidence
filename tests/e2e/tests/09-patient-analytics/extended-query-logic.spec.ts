@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test'
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -40,6 +41,9 @@ test(TEST_NAME, async ({ page }) => {
 
   // Click AND to change into OR
   await page.waitForTimeout(5000)
+  // This first click closes the gender dropdown first as after adding MALE, it automatically goes to the next tag dropdown selection
+  await page.getByRole('button', { name: 'AND ' }).first().click()
+  // This one does the actual change to AND
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })

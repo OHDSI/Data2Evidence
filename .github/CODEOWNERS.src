@@ -27,6 +27,7 @@
 /flows/strategus_plugin                              @data2evidence/integrate
 /scripts                                             @data2evidence/devops
 /services/alp-dataflow-gen                           @data2evidence/data
+/services/alp-dataflow-gen-worker                    @data2evidence/data
 /services/alp-fhir                                   @data2evidence/data
 /services/alp-logto                                  @data2evidence/integrate
 /services/alp-db-management                          @data2evidence/data

@@ -165,7 +165,6 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         const portalServerAPI = new PortalServerAPI();
         // Get bookmark
         const bookmark = await portalServerAPI.getBookmarkById(
-            token,
             bookmarkId,
             datasetId
         );

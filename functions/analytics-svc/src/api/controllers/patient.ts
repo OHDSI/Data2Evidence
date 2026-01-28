@@ -383,7 +383,6 @@ export async function getRecontactPatientList(req: IMRIRequest, res) {
     let cohortName = body.name;
     try {
         const study = await new PortalServerAPI().getStudy(
-            req.headers.authorization,
             body.datasetId
         );
         const { attributes } = study;

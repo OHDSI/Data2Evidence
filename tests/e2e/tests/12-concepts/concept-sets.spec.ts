@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test'
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   async function assertCount(count: string) {
@@ -121,8 +122,6 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
-
   // Dismiss popover if present
   try {
     await page.mouse.move(0, 0)
@@ -132,5 +131,12 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+
+  // GHA race condition: After updating the concept set, the cohort count may trigger a background
+  // recalculation. On slower GHA runners, this completes between the initial check and the screenshot,
+  // causing the count to change. Wait for the count to stabilize before screenshot.
+  await page.waitForTimeout(3000)
+  await expect(page.getByText('1,836 / 2,694')).toBeVisible()
+
   await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
 })

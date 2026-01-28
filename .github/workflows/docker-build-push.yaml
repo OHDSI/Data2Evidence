@@ -132,6 +132,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/trex
+          - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
+            DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-dataflow-gen-worker
 
     steps:
       - name: Free Disk Space (Ubuntu)

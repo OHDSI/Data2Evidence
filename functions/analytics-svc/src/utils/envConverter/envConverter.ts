@@ -12,6 +12,9 @@ import {
     HanaValues,
     PostgresValues,
     IntTestValues,
+    BigqueryConfig,
+    VcapAlpBigquery,
+    BigqueryValues,
 } from "./types.ts";
 
 export const dbCredentialsTemplate = {
@@ -36,12 +39,17 @@ function overrideValues(
     override?: Partial<PostgresValues>
 ): PostgresValues;
 function overrideValues(
-    value: HanaValues | PostgresValues | IntTestValues,
+    value: BigqueryValues,
+    override?: Partial<BigqueryValues>
+): BigqueryValues;
+function overrideValues(
+    value: HanaValues | PostgresValues | BigqueryValues | IntTestValues,
     override?:
         | Partial<HanaValues>
         | Partial<PostgresValues>
+        | Partial<BigqueryValues>
         | Partial<IntTestValues>
-): HanaValues | PostgresValues | IntTestValues;
+): HanaValues | PostgresValues | BigqueryValues | IntTestValues;
 function overrideValues(value: any, override: any): any {
     if (!override) {
         return value;
@@ -126,13 +134,19 @@ export const dbSvcConverter = (
 };
 
 export const vcapSvcConverter = (envJson: CombinedEnv): VcapMridb => {
-    let mridbs: (VcapAlpHana | VcapAlpPostgres | VcapAlpHanaHttpTest)[] = [];
+    let mridbs: (
+        | VcapAlpHana
+        | VcapAlpPostgres
+        | VcapAlpBigquery
+        | VcapAlpHanaHttpTest
+    )[] = [];
     // Using for loop for better type inference
     for (let i = 0; i < envJson.length; i += 1) {
         const val = envJson[i];
         if (
             val.type !== "HANA" &&
             val.type !== "POSTGRES" &&
+            val.type !== "BIGQUERY" &&
             val.type !== "INT_TEST"
         ) {
             continue;
@@ -146,8 +160,8 @@ export const vcapSvcConverter = (envJson: CombinedEnv): VcapMridb => {
 };
 
 const remapMridbToVcap = (
-    mridb: HanaConfig | PostgresConfig | IntTestConfig
-): VcapAlpHana | VcapAlpPostgres | VcapAlpHanaHttpTest => {
+    mridb: HanaConfig | PostgresConfig | BigqueryConfig | IntTestConfig
+): VcapAlpHana | VcapAlpPostgres | VcapAlpBigquery | VcapAlpHanaHttpTest => {
     if (mridb.type === "INT_TEST") {
         return {
             name: mridb.name,
@@ -188,6 +202,20 @@ const remapMridbToVcap = (
                 ca: mridb.values.ca,
                 useTLS: mridb.values.useTLS,
                 rejectUnauthorized: mridb.values.rejectUnauthorized,
+            },
+        };
+    }
+    if (mridb.type === "BIGQUERY") {
+        return {
+            name: mridb.name,
+            tags: mridb.tags,
+            credentials: {
+                authentication_mode: mridb.values.authentication_mode,
+                host: mridb.values.host,
+                port: mridb.values.port,
+                code: mridb.values.code,
+                databaseName: mridb.values.databaseName,
+                dialect: mridb.values.dialect,
             },
         };
     }

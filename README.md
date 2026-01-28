@@ -89,4 +89,3 @@ Encounter an issue or have a feature request? Please help us improve by reportin
 ### Get in contact
 
 Please [click here](https://discord.gg/5XtHky2BZe) to join us in Discord.
-

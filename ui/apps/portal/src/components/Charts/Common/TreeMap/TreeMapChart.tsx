@@ -29,9 +29,10 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConceptId
             return `<div style="padding-left: ${index * 10}px">${e.trim()}</div>`;
           })
           .join("");
+        const formattedPrevalence = parseFloat(percentPersons).toFixed(5);
         return [
           `<div class="tooltip-title">${parsedConceptPath}</div>`,
-          `${getText(i18nKeys.TREE_MAP_CHART__PREVALENCE)}: ${percentPersons}<br>`,
+          `${getText(i18nKeys.TREE_MAP_CHART__PREVALENCE)}: ${formattedPrevalence}<br>`,
           `${getText(i18nKeys.TREE_MAP_CHART__NUMBER_OF_PEOPLE)}: ${numPersons}<br>`,
           `${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${recordsPerPerson}`,
         ].join("");

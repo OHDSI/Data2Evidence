@@ -126,6 +126,15 @@
           "httpMethods": [
             "GET"
           ]
+        },
+        {
+          "path": "^/gateway/api/fhir/superadmin/StructureDefinition(.*)",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
         }
       ]
     }
