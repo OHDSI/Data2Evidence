@@ -59,14 +59,23 @@
     <div name="mainChartContainer">
       <div class="chartSize">
         <div class="mainChartToolbar">
-          <button
-            ref="downloadButton"
-            class="toolbarButton"
-            @click="downloadClicked"
-            :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')"
-          >
-            <span class="icon" style="font-family: app-icons"></span>
-          </button>
+          <div ref="downloadWrapper" class="download-wrapper">
+            <button
+              ref="downloadButton"
+              class="toolbarButton"
+              @click="downloadClicked"
+              :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')"
+            >
+              <span class="icon" style="font-family: app-icons"></span>
+            </button>
+            <dropDownMenu
+              :target="downloadButton"
+              boundariesElement="modal-body"
+              :subMenu="downloadMenuData"
+              :opened="downloadMenuOpened"
+              @clickEv="handleDownloadClick"
+            ></dropDownMenu>
+          </div>
         </div>
         <loadingAnimation v-if="chartBusy"></loadingAnimation>
         <StackBarCohortCompare
@@ -106,13 +115,6 @@
       </div>
     </div>
     <div name="legendContainer"></div>
-    <dropDownMenu
-      :target="downloadButton"
-      boundariesElement="modal-body"
-      :subMenu="downloadMenuData"
-      :opened="downloadMenuOpened"
-      @clickEv="handleDownloadClick"
-    ></dropDownMenu>
     <imageExport
       v-if="showDownloadPNGDialog"
       :overrideResponse="response"
@@ -162,6 +164,7 @@ const axis = ref('')
 const yaxis = ref('patient.attributes.pcount') // default values for bar chart
 const sortType = ref('')
 const downloadButton = ref<any>(null)
+const downloadWrapper = ref<HTMLElement | null>(null)
 const downloadMenuData = ref<any[]>([])
 const downloadMenuOpened = ref(false)
 const showDownloadPNGDialog = ref(false)
@@ -202,11 +205,7 @@ const downloadButtonClose = () => {
 }
 
 const closeSubMenu = (event: any) => {
-  if (
-    downloadMenuOpened.value &&
-    event.target !== downloadButton.value &&
-    event.target.parentElement !== downloadButton.value
-  ) {
+  if (downloadMenuOpened.value && downloadWrapper.value && !downloadWrapper.value.contains(event.target as Node)) {
     downloadButtonClose()
   }
 }

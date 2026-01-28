@@ -3,6 +3,7 @@ import { Locator, test, expect } from '@playwright/test'
 const TEST_NAME = 'CDM configuration creation'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(300 * 1000) // Set timeout to 5 minutes

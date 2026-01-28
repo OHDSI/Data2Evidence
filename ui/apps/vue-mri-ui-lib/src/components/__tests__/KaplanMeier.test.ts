@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import { shallowMount } from '@vue/test-utils'
 import { createStore } from 'vuex'
 import '../../globals'
@@ -11,10 +12,10 @@ describe('KaplanMeier.vue', () => {
 
   beforeEach(() => {
     actions = {
-      disableAllAxesandProperties: jest.fn(),
-      setAxisValue: jest.fn(),
-      setFireRequest: jest.fn(),
-      setChartPropertyValue: jest.fn(),
+      disableAllAxesandProperties: vi.fn(),
+      setAxisValue: vi.fn(),
+      setFireRequest: vi.fn(),
+      setChartPropertyValue: vi.fn(),
     }
     getters = {
       getKMDisplayInfo: () => () => {

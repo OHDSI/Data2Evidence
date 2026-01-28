@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { defineProps } from 'vue'
 const { type, size } = defineProps<{
   type: 'dark' | 'light'
   size: number
