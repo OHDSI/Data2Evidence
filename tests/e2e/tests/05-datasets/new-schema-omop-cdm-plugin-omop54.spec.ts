@@ -51,7 +51,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible({ timeout: 30000 })
   // Find and delete the child dataset first (Test Cache)
   const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
   await expect(testCacheRow).toBeVisible({ timeout: 30000 })

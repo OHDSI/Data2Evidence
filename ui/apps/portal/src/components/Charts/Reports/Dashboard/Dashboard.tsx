@@ -9,13 +9,12 @@ import BarChart from "../../Common/BarChart";
 
 import ObservationPeriodCumulativeDurationChart from "../../SourceKeys/ObservationPeriod/ObservationPeriodCumulativeDurationChart/ObservationPeriodCumulativeDurationChart";
 import ObservationPeriodObservedByMonthChart from "../../SourceKeys/ObservationPeriod/ObservationPeriodObservedByMonthChart/ObservationPeriodObservedByMonthChart";
-
-import { parsePieChartData, parseBarChartData } from "../../util";
+import AgeAtFirstObservationChart from "../../SourceKeys/ObservationPeriod/AgeAtFirstObservationChart/AgeAtFirstObservationChart";
+import { parsePieChartData } from "../../util";
 
 import { DASHBOARD_REPORT_TYPE, WEBAPI_CDMRESULTS_SOURCE_KEYS } from "../../../DQD/types";
 import "./Dashboard.scss";
 import { useTranslation } from "../../../../contexts";
-
 interface DashboardProps {
   flowRunId: string;
   datasetId: string;
@@ -71,13 +70,7 @@ const Dashboard: FC<DashboardProps> = ({ flowRunId, datasetId }) => {
               title={getText(i18nKeys.DASHBOARD__PIE_CHART_TITLE)}
             />
           </div>
-          <BarChart
-            barChartData={parseBarChartData(dashboardData.ageAtFirstObservation)}
-            title={getText(i18nKeys.DASHBOARD__BAR_CHART_TITLE)}
-            xAxisName={getText(i18nKeys.DASHBOARD__BAR_CHART_X_AXIS_NAME)}
-            yAxisName={getText(i18nKeys.DASHBOARD__BAR_CHART_Y_AXIS_NAME)}
-            tooltipFormat={getText(i18nKeys.DASHBOARD__BAR_CHART_TOOLTIP_FORMAT)}
-          />
+          <AgeAtFirstObservationChart data={dashboardData.ageAtFirstObservation} axisBaseGap={12} />
           <ObservationPeriodCumulativeDurationChart data={dashboardData.cumulativeObservation} axisBaseGap={36} />
           <ObservationPeriodObservedByMonthChart data={dashboardData.observedByMonth} axisBaseGap={18} />
         </>
