@@ -318,8 +318,8 @@ jobs:
 
       - name: Seed dummy dataset
         run: |
-          echo "Waiting 120 secs before seeding dummy dataset..."
-          sleep 120
+          echo "Waiting 30 secs before seeding dummy dataset..."
+          sleep 30
 
           docker ps
 
