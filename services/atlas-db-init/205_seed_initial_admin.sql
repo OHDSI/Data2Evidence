@@ -1,7 +1,6 @@
--- Seed WebAPI admin users from usermgmt ALP_SYSTEM_ADMIN role (idempotent)
--- Reads users with ALP_SYSTEM_ADMIN role from usermgmt and creates them as WebAPI admins
--- Note: If usermgmt schema doesn't exist yet, this will skip gracefully.
--- The WebApiAdminService will handle runtime propagation when users are granted ALP_SYSTEM_ADMIN.
+-- Seed WebAPI admin users from Logto role.systemadmin role (idempotent)
+-- Reads users with role.systemadmin role from Logto and creates them as WebAPI admins
+-- This uses Logto tables directly to avoid timing issues with usermgmt migrations.
 --
 -- WebAPI requires each user to have:
 -- 1. An entry in sec_user
@@ -16,17 +15,16 @@ DECLARE
     new_user_id INTEGER;
     personal_role_id INTEGER;
     users_synced INTEGER := 0;
-    schema_exists BOOLEAN;
+    logto_schema_exists BOOLEAN;
 BEGIN
-    -- Check if usermgmt schema AND user table exist
-    -- The schema may exist but tables may not have been created yet by the usermgmt service
+    -- Check if logto schema and users table exist
     SELECT EXISTS(
         SELECT 1 FROM information_schema.tables
-        WHERE table_schema = 'usermgmt' AND table_name = 'user'
-    ) INTO schema_exists;
+        WHERE table_schema = 'logto' AND table_name = 'users'
+    ) INTO logto_schema_exists;
 
-    IF NOT schema_exists THEN
-        RAISE NOTICE 'usermgmt.user table not found, skipping admin user seeding (WebApiAdminService will handle runtime sync)';
+    IF NOT logto_schema_exists THEN
+        RAISE NOTICE 'logto.users table not found, skipping admin user seeding';
         RETURN;
     END IF;
 
@@ -38,15 +36,15 @@ BEGIN
         RETURN;
     END IF;
 
-    -- Find all users with ALP_SYSTEM_ADMIN role in usermgmt
+    -- Find all users with role.systemadmin role in Logto
+    -- Logto user.id is the same as idp_user_id in usermgmt
     FOR rec IN
-        SELECT DISTINCT u.idp_user_id, u.username
-        FROM usermgmt."user" u
-        JOIN usermgmt.user_group ug ON u.id = ug.user_id
-        JOIN usermgmt.b2c_group g ON ug.b2c_group_id = g.id
-        WHERE g.role = 'ALP_SYSTEM_ADMIN'
-          AND u.idp_user_id IS NOT NULL
-          AND u.active = true
+        SELECT DISTINCT u.id as idp_user_id, u.username
+        FROM logto.users u
+        JOIN logto.users_roles ur ON u.id = ur.user_id
+        JOIN logto.roles r ON ur.role_id = r.id
+        WHERE r.name = 'role.systemadmin'
+          AND u.is_suspended = false
     LOOP
         -- Create user in WebAPI if not exists (using idp_user_id as login)
         INSERT INTO webapi.sec_user (login, name)
@@ -88,9 +86,9 @@ BEGIN
     END LOOP;
 
     IF users_synced = 0 THEN
-        RAISE NOTICE 'No ALP_SYSTEM_ADMIN users found in usermgmt to sync';
+        RAISE NOTICE 'No role.systemadmin users found in Logto to sync';
     ELSE
-        RAISE NOTICE 'Synced % ALP_SYSTEM_ADMIN user(s) to WebAPI admin role', users_synced;
+        RAISE NOTICE 'Synced % role.systemadmin user(s) from Logto to WebAPI admin role', users_synced;
     END IF;
 
     -- Reset sequences to avoid conflicts when WebAPI creates users/roles via OIDC

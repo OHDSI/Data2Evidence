@@ -1134,6 +1134,8 @@ services:
     depends_on:
       trex:
         condition: service_healthy
+      alp-logto-post-init:
+        condition: service_completed_successfully
     networks:
       alp:
         priority: 20
@@ -1148,10 +1150,10 @@ services:
       PGDATABASE: alp
     command: >
       sh -c '
-        echo "Waiting for usermgmt schema...";
+        echo "Waiting for logto.users table...";
         for i in $$(seq 1 60); do
-          if psql -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name = '\''usermgmt'\''" | grep -q 1; then
-            echo "usermgmt schema found";
+          if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = '\''logto'\'' AND table_name = '\''users'\''" | grep -q 1; then
+            echo "logto.users table found";
             break;
           fi;
           echo "Waiting... ($$i/60)";
