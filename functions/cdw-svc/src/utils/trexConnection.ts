@@ -6,7 +6,7 @@ const parseSql = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string,
+  resultsSchemaName: string,
   parameters: any
 ): string => {
   // Specifically for cdw-config-svc, duckdb does not require direct connection to database.
@@ -29,7 +29,7 @@ const parseSql = (
     temp,
     schemaName,
     vocabSchemaName,
-    resultSchemaName,
+    resultsSchemaName,
     parameters
   );
 };
@@ -38,17 +38,17 @@ export const getTrexConnection = async (
   databaseCode: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string = schemaName
+  resultsSchemaName: string = schemaName
 ) => {
   const dbm = Trex.databaseManager();
   logger.info(
-    `Connecting to: databaseCode:${databaseCode}, schemaName:${schemaName}, vocabSchemaName:${vocabSchemaName}, resultSchemaName:${resultSchemaName}`
+    `Connecting to: databaseCode:${databaseCode}, schemaName:${schemaName}, vocabSchemaName:${vocabSchemaName}, resultsSchemaName:${resultsSchemaName}`
   );
   const conn = dbm.getConnection(
     databaseCode,
     schemaName,
     vocabSchemaName,
-    resultSchemaName,
+    resultsSchemaName,
     {
       duckdb: parseSql,
     }

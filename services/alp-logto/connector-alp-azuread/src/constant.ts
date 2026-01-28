@@ -5,7 +5,9 @@ import {
 } from "@logto/connector-kit";
 
 export const graphAPIEndpoint = "https://graph.microsoft.com/v1.0/me";
-export const scopes = ["openid", "profile", "email", "offline_access"];
+export const graphAPIMemberOfEndpoint =
+  "https://graph.microsoft.com/v1.0/me/memberOf";
+export const defaultScopes = ["openid", "profile", "email", "offline_access"];
 
 export const defaultMetadata: ConnectorMetadata = {
   id: "azuread-alp",
@@ -49,6 +51,14 @@ export const defaultMetadata: ConnectorMetadata = {
       required: true,
       label: "Tenant ID",
       placeholder: "<tenant-id>",
+    },
+    {
+      key: "scopes",
+      type: ConnectorConfigFormItemType.Text,
+      required: false,
+      label: "Scopes",
+      placeholder: "openid,profile,email,offline_access",
+      description: "Comma-separated list of OAuth scopes. Leave empty to use default scopes.",
     },
   ],
 };
