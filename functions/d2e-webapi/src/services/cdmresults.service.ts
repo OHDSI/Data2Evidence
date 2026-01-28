@@ -10,14 +10,14 @@ export const getConceptRecordCount = async (
   const trexDao = await TrexDAO.getTrexDao(token, datasetId);
 
   const jobPluginsApi = new JobPluginsAPI(token);
-  const dcResultSchemaName =
+  const dcResultsSchemaName =
     await jobPluginsApi.getLatestSuccessfulDataCharacterizationResultsSchemaName(
       datasetId
     );
 
   const results = await trexDao.getConceptRecordCount(
     conceptIds,
-    dcResultSchemaName
+    dcResultsSchemaName
   );
   const mappedResults: ICdmresultsConceptRecordCountResponseDto = results.map(
     (e) => ({

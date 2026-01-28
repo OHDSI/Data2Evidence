@@ -33,7 +33,7 @@ export async function getAllCohorts(req: IMRIRequest, res: Response) {
         const analyticsConnection = getCohortAnalyticsConnection(req);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultSchema,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
@@ -70,7 +70,7 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
         const excludePatientIds = req.query.excludePatientIds === "true";
         let cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultSchema,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
@@ -208,7 +208,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         const cohort = await getCohortFromMriQuery(req, bookmark.bookmark_name);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultSchema,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
@@ -312,7 +312,7 @@ export async function getCohortDefinition(req: IMRIRequest, res: Response) {
 
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultSchema,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
@@ -334,7 +334,7 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
 
         let cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultSchema,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
@@ -376,7 +376,7 @@ export async function updateCohortDefinition(req: IMRIRequest, res: Response) {
 
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultSchema,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
@@ -422,7 +422,7 @@ export async function deleteCohort(req: IMRIRequest, res: Response) {
 
         let cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultSchema,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
