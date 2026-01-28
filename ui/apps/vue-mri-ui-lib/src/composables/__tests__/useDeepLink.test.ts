@@ -1,11 +1,12 @@
+import { vi, Mock } from 'vitest'
 import { useDeepLink } from '../useDeepLink'
 import CohortUrlCodec from '../../utils/CohortUrlCodec'
 
 // Mock dependencies
-jest.mock('../../utils/CohortUrlCodec')
+vi.mock('../../utils/CohortUrlCodec')
 
 // Mock store
-const mockDispatch = jest.fn()
+const mockDispatch = vi.fn()
 
 describe('useDeepLink', () => {
   let originalLocation: Location
@@ -15,7 +16,7 @@ describe('useDeepLink', () => {
     originalLocation = window.location
 
     // Clear mocks
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockDispatch.mockResolvedValue(undefined)
   })
 
@@ -45,7 +46,7 @@ describe('useDeepLink', () => {
       axisSelection: [],
       chartType: 'stacked',
     }
-    ;(CohortUrlCodec.safeDecompress as jest.Mock).mockReturnValue({
+    ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
       success: true,
       data: mockBookmark,
     })
@@ -90,7 +91,7 @@ describe('useDeepLink', () => {
     mockLocation('?linkType=cohort-definition&query=invalidQuery')
 
     // Mock failed decompression
-    ;(CohortUrlCodec.safeDecompress as jest.Mock).mockReturnValue({
+    ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
       success: false,
       error: 'Invalid base64url encoding',
     })
@@ -114,7 +115,7 @@ describe('useDeepLink', () => {
     const mockBookmark = {
       cohortDefinition: { cards: [] }, // Wrong format - API request format instead of bookmark
     }
-    ;(CohortUrlCodec.safeDecompress as jest.Mock).mockReturnValue({
+    ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
       success: true,
       data: mockBookmark,
     })
@@ -139,7 +140,7 @@ describe('useDeepLink', () => {
       filter: { some: 'filter' },
       axisSelection: [],
     }
-    ;(CohortUrlCodec.safeDecompress as jest.Mock).mockReturnValue({
+    ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
       success: true,
       data: mockBookmark,
     })
@@ -167,7 +168,7 @@ describe('useDeepLink', () => {
       filter: { some: 'filter' },
       axisSelection: [],
     }
-    ;(CohortUrlCodec.safeDecompress as jest.Mock).mockReturnValue({
+    ;(CohortUrlCodec.safeDecompress as Mock).mockReturnValue({
       success: true,
       data: mockBookmark,
     })

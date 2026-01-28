@@ -263,7 +263,11 @@ const initRoutes = (
           (err, result) => {
             if (err) {
               log.error(err);
-              res.status(500).send(err.message);
+              if (typeof err === 'string') {
+                res.status(500).send(err);
+              } else {
+                res.status(500).send(err.message);
+              }
             } else {
               res.status(200).json(result);
             }

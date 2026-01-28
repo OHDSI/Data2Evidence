@@ -165,7 +165,7 @@ export class DatasetCommandService {
         newDatasetName,
         schemaName,
         vocabSchemaName: newVocabSchemaName,
-        resultSchemaName: newResultSchemaName,
+        resultsSchemaName: newResultsSchemaName,
         timestamp,
         type: newType,
         flowParameters
@@ -175,7 +175,7 @@ export class DatasetCommandService {
         throw new HttpException(400, `Dataset with id ${sourceDatasetId} not found`)
       }
 
-      const { tenantId, databaseCode, vocabSchemaName: sourceVocabSchemaName, resultSchemaName: sourceResultSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
+      const { tenantId, databaseCode, vocabSchemaName: sourceVocabSchemaName, resultsSchemaName: sourceResultsSchemaName, tokenDatasetCode, paConfigId, dataModel, dialect, plugin } = sourceDataset
       
       // Sanitize the new dataset name to create a valid token dataset code
       const sanitizedName = newDatasetName
@@ -190,7 +190,7 @@ export class DatasetCommandService {
 
       // Use provided schema names from request, or fall back to source dataset schema names
       const finalVocabSchemaName = newVocabSchemaName || sourceVocabSchemaName;
-      const finalResultSchemaName = newResultSchemaName || sourceResultSchemaName;
+      const finalResultsSchemaName = newResultsSchemaName || sourceResultsSchemaName;
 
       const datasetSnapshot: Partial<Dataset> = {
         id: snapshotId,
@@ -200,7 +200,7 @@ export class DatasetCommandService {
         dialect,
         schemaName,
         vocabSchemaName: finalVocabSchemaName,
-        resultSchemaName: finalResultSchemaName,
+        resultsSchemaName: finalResultsSchemaName,
         tokenDatasetCode: newTokenDatasetCode,
         paConfigId,
         dataModel,
@@ -297,7 +297,7 @@ export class DatasetCommandService {
   }
 
   private async updateDataset(entityMgr: EntityManager, datasetUpdateDto: IDatasetDetailMetadataUpdateDto) {
-    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus, fhir_project_id, vocabSchemaName, resultSchemaName } = datasetUpdateDto
+    const { id: datasetId, type, tokenDatasetCode, paConfigId, visibilityStatus, fhir_project_id, vocabSchemaName, resultsSchemaName } = datasetUpdateDto
 
     const currDataset = await this.datasetRepo.getDataset(datasetId)
 
@@ -317,8 +317,8 @@ export class DatasetCommandService {
       dataset.vocabSchemaName = vocabSchemaName
     }
     
-    if (resultSchemaName !== undefined) {
-      dataset.resultSchemaName = resultSchemaName
+    if (resultsSchemaName !== undefined) {
+      dataset.resultsSchemaName = resultsSchemaName
     }
     
     await this.datasetRepo.updateDataset(entityMgr, datasetId, this.addOwner(dataset))

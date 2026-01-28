@@ -1,6 +1,8 @@
+import { vi } from 'vitest'
 import domainService from '@/store/modules/domainService'
 import * as types from '../../mutation-types'
-jest.mock('axios')
+
+vi.mock('axios')
 
 describe('store - domainService', () => {
   describe('mutations', () => {
@@ -38,7 +40,7 @@ describe('store - domainService', () => {
         }
 
         // tslint:disable-next-line:no-shadowed-variable
-        const commit = jest.fn()
+        const commit = vi.fn()
 
         const rootGetters = {
           getMriConfig: {

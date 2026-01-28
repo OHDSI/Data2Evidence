@@ -1,5 +1,4 @@
 import { services } from "../env.ts";
-import { OpenIDAPI } from "./OpenIDAPI.ts";
 import { FileOperationResponse } from "../types.ts";
 
 export class PortalServerAPI {
@@ -177,6 +176,128 @@ export class PortalServerAPI {
     } catch (error) {
       console.error(
         `Error while deleting file ${fileName} for nodeId ${nodeId}: ${error}`
+      );
+      throw error;
+    }
+  }
+
+  async uploadFileToStrategusResults(
+    bucket: string,
+    path: string,
+    file: File
+  ): Promise<FileOperationResponse> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/strategus-results/upload`;
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+
+      const options = {
+        method: "POST",
+        headers: {
+          Authorization: this.token,
+        },
+        body: formData,
+      };
+
+      // TODO: Use trex channel after form data issue been resolved
+      const result = await fetch(
+        `${url}?bucket=${bucket}&path=${encodeURIComponent(path)}`,
+        options
+      );
+      if (!result.ok) {
+        const errorText = await result.text();
+        throw new Error(
+          `Error while uploading file ${file.name} to ${bucket}/${path}: ${result.status} - ${errorText}`
+        );
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(
+        `Error while uploading file ${file.name} to ${bucket}/${path}: ${error}`
+      );
+      throw error;
+    }
+  }
+
+  async listFilesFromStrategusResults(
+    bucket: string,
+    prefix: string
+  ): Promise<any> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/strategus-results/list`;
+      const options = this.createOptions("GET");
+      const result = await this.channel.get(
+        `${url}?bucket=${bucket}&prefix=${encodeURIComponent(prefix)}`,
+        options
+      );
+      if (result.status !== 200) {
+        throw new Error(
+          `Error while listing files from ${bucket} with prefix ${prefix}`
+        );
+      }
+      return result.data;
+    } catch (error) {
+      console.error(
+        `Error while listing files from ${bucket} with prefix ${prefix}: ${error}`
+      );
+      throw error;
+    }
+  }
+
+  async getFileFromStrategusResults(
+    bucket: string,
+    studyId: string,
+    fileName: string
+  ): Promise<any> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/strategus-results/download`;
+      const options = this.createOptions("GET");
+      const path = `${studyId}/${fileName}`;
+      const result = await this.channel.get(
+        `${url}?bucket=${bucket}&path=${encodeURIComponent(path)}`,
+        options
+      );
+
+      if (result.status !== 200) {
+        throw new Error(
+          `Error while downloading file ${fileName} from ${bucket}/${path}`
+        );
+      }
+      return result.data;
+    } catch (error) {
+      console.error(
+        `Error while downloading file ${fileName} from ${bucket}: ${error}`
+      );
+      throw error;
+    }
+  }
+
+  async deleteFileFromStrategusResults(
+    bucket: string,
+    studyId: string,
+    fileName: string
+  ): Promise<FileOperationResponse> {
+    try {
+      const url = `${this.baseURL}/supabase-storage/strategus-results/delete`;
+      const options = this.createOptions("DELETE");
+      const path = `${studyId}/${fileName}`;
+      const result = await this.channel.delete(
+        `${url}?bucket=${bucket}&path=${encodeURIComponent(path)}`,
+        options
+      );
+      if (result.status !== 200) {
+        const errorText =
+          result.statusText || result.data?.message || "Unknown error";
+        const error = new Error(
+          `Error while deleting file ${fileName} from ${bucket}/${path}: ${result.status} - ${errorText}`
+        ) as Error & { statusCode?: number };
+        error.statusCode = result.status;
+        throw error;
+      }
+      return result.data;
+    } catch (error) {
+      console.error(
+        `Error while deleting file ${fileName} from ${bucket}: ${error}`
       );
       throw error;
     }
