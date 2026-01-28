@@ -2342,7 +2342,16 @@
           ]
         },
         {
-          "path": "^/jobplugins/dqd/data-quality(/category|/domain)?/history$",
+          "path": "^/jobplugins/dqd/data-quality/(category|domain)/history$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.history.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/history$",
           "scopes": [
             "dataflowmgmt.dqd.dataQuality.dataset.history.read"
           ],
