@@ -27,8 +27,13 @@ BEGIN
     INSERT INTO webapi.sec_role_permission (role_id, permission_id) VALUES (admin_role_id, perm_id) ON CONFLICT DO NOTHING;
 
     INSERT INTO webapi.sec_permission (value, description)
-    VALUES ('source:*:put', 'Create and update data sources') ON CONFLICT (value) DO NOTHING;
+    VALUES ('source:*:put', 'Update data sources') ON CONFLICT (value) DO NOTHING;
     SELECT id INTO perm_id FROM webapi.sec_permission WHERE value = 'source:*:put';
+    INSERT INTO webapi.sec_role_permission (role_id, permission_id) VALUES (admin_role_id, perm_id) ON CONFLICT DO NOTHING;
+
+    INSERT INTO webapi.sec_permission (value, description)
+    VALUES ('source:post', 'Create data sources') ON CONFLICT (value) DO NOTHING;
+    SELECT id INTO perm_id FROM webapi.sec_permission WHERE value = 'source:post';
     INSERT INTO webapi.sec_role_permission (role_id, permission_id) VALUES (admin_role_id, perm_id) ON CONFLICT DO NOTHING;
 
     INSERT INTO webapi.sec_permission (value, description)
