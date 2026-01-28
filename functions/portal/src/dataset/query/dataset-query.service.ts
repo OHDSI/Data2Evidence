@@ -309,18 +309,24 @@ export class DatasetQueryService {
     };
   }
 
-  async getDatasetCodeQuery(datasetId: string, type: string, name: string) {
+  async getDatasetCodeQuery(
+    datasetId: string,
+    type: string,
+    name: string,
+    queryName: string,
+  ) {
     const datasetCodeQuery =
       await this.datasetCodeQueryRepo.getDatasetCodeQuery(
         datasetId,
         type,
         name,
+        queryName,
       );
 
     if (!datasetCodeQuery) {
       throw new HttpException(
         404,
-        `Dataset code query for dataset id ${datasetId}, type ${type}, name ${name} not found`,
+        `Dataset code query for dataset id ${datasetId}, type ${type}, name ${name}, queryName ${queryName} not found`,
       );
     }
 
@@ -331,6 +337,40 @@ export class DatasetQueryService {
       name: datasetCodeQuery.name,
       sql: datasetCodeQuery.sql,
     };
+  }
+
+  async getDatasetCodeWithQueries(datasetId: string, type: string) {
+    const datasetCodes = await this.datasetCodeRepo.getDatasetCodesByType(
+      datasetId,
+      type,
+    );
+
+    if (!datasetCodes.length) {
+      throw new HttpException(
+        404,
+        `Dataset codes of type ${type} for dataset id ${datasetId} not found`,
+      );
+    }
+
+    const codeQueries =
+      await this.datasetCodeQueryRepo.getDatasetCodeQueriesByType(
+        datasetId,
+        type,
+      );
+
+    return datasetCodes.map((code) => ({
+      datasetId: code.datasetId,
+      name: code.name,
+      code: code.code,
+      type: code.type,
+      queries: codeQueries
+        .filter((q) => q.name === code.name)
+        .map((q) => ({
+          name: q.name,
+          queryName: q.queryName,
+          sql: q.sql,
+        })),
+    }));
   }
 
   buildDatasetResponseDto(

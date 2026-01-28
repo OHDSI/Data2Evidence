@@ -1352,6 +1352,15 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/dashboard-codes$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"          
+          ]
+        },
+        {
           "path": "^/system-portal/dataset/dashboard-code-query$",
           "scopes": [
             "portal.dataset.read",

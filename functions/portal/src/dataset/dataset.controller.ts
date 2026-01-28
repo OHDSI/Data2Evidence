@@ -162,23 +162,44 @@ export class DatasetController {
     @Query("datasetId") datasetId: string,
     @Query("type") type: string,
     @Query("name") name: string,
+    @Query("queryName") queryName: string,
   ) {
     return await this.datasetQueryService.getDatasetCodeQuery(
       datasetId,
       type,
       name,
+      queryName,
     );
   }
 
   @Put("dashboard-code-query")
   async upsertDatasetCodeQuery(
-    @Body() dto: { datasetId: string; type: string; name: string; sql: string },
+    @Body()
+    dto: {
+      datasetId: string;
+      type: string;
+      name: string;
+      queryName: string;
+      sql: string;
+    },
   ) {
     return await this.datasetCommandService.upsertDatasetCodeQuery(
       dto.datasetId,
       dto.type,
       dto.name,
+      dto.queryName,
       dto.sql,
+    );
+  }
+
+  @Get("dashboard-codes")
+  async getDatasetCodeWithQueries(
+    @Query("datasetId") datasetId: string,
+    @Query("type") type: string,
+  ) {
+    return await this.datasetQueryService.getDatasetCodeWithQueries(
+      datasetId,
+      type,
     );
   }
 }

@@ -25,4 +25,14 @@ export class DatasetCodeRepository extends Repository<DatasetCode> {
       .andWhere("dataset_code.name = :name", { name })
       .getOne();
   }
+
+  async getDatasetCodesByType(
+    datasetId: string,
+    type: string,
+  ): Promise<DatasetCode[]> {
+    return await this.createQueryBuilder("dataset_code")
+      .where("dataset_code.datasetId = :datasetId", { datasetId })
+      .andWhere("dataset_code.type = :type", { type })
+      .getMany();
+  }
 }

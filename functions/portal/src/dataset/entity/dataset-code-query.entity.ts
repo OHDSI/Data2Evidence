@@ -25,6 +25,9 @@ export class DatasetCodeQuery extends Audit {
   @Column()
   name: string;
 
+  @Column({ name: "query_name" })
+  queryName: string;
+
   @ManyToOne(() => DatasetCode, {
     onDelete: "CASCADE",
   })

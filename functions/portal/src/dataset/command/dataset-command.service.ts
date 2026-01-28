@@ -587,16 +587,24 @@ export class DatasetCommandService {
     datasetId: string,
     type: string,
     name: string,
+    queryName: string,
     sql: string,
   ) {
     const upsertCodeQueryFn = async (
       _entityMgr: EntityManager,
-      dto: { datasetId: string; type: string; name: string; sql: string },
+      dto: {
+        datasetId: string;
+        type: string;
+        name: string;
+        queryName: string;
+        sql: string;
+      },
     ) => {
       const result = await this.datasetCodeQueryRepo.upsertDatasetCodeQuery(
         dto.datasetId,
         dto.type,
         dto.name,
+        dto.queryName,
         dto.sql,
         this.userId,
       );
@@ -607,6 +615,7 @@ export class DatasetCommandService {
       datasetId,
       type,
       name,
+      queryName,
       sql,
     });
   }

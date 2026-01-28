@@ -18,22 +18,40 @@ export class DatasetCodeQueryRepository extends Repository<DatasetCodeQuery> {
     datasetId: string,
     type: string,
     name: string,
+    queryName: string,
   ): Promise<DatasetCodeQuery | null> {
     return await this.createQueryBuilder("dataset_code_query")
       .where("dataset_code_query.datasetId = :datasetId", { datasetId })
       .andWhere("dataset_code_query.type = :type", { type })
       .andWhere("dataset_code_query.name = :name", { name })
+      .andWhere("dataset_code_query.queryName = :queryName", { queryName })
       .getOne();
+  }
+
+  async getDatasetCodeQueriesByType(
+    datasetId: string,
+    type: string,
+  ): Promise<DatasetCodeQuery[]> {
+    return await this.createQueryBuilder("dataset_code_query")
+      .where("dataset_code_query.datasetId = :datasetId", { datasetId })
+      .andWhere("dataset_code_query.type = :type", { type })
+      .getMany();
   }
 
   async upsertDatasetCodeQuery(
     datasetId: string,
     type: string,
     name: string,
+    queryName: string,
     sql: string,
     userId: string,
   ): Promise<DatasetCodeQuery> {
-    const existingQuery = await this.getDatasetCodeQuery(datasetId, type, name);
+    const existingQuery = await this.getDatasetCodeQuery(
+      datasetId,
+      type,
+      name,
+      queryName,
+    );
 
     if (existingQuery) {
       existingQuery.sql = sql;
@@ -45,6 +63,7 @@ export class DatasetCodeQueryRepository extends Repository<DatasetCodeQuery> {
       datasetId,
       type,
       name,
+      queryName,
       sql,
       createdBy: userId,
       modifiedBy: userId,
