@@ -94,7 +94,7 @@ export class DatasetDto implements IDatasetDto {
   vocabSchemaName: string
 
   @IsNotEmpty()
-  resultSchemaName: string
+  resultsSchemaName: string
 
   @ValidateIf(o => o.schemaOption !== 'no_cdm')
   @IsNotEmpty()

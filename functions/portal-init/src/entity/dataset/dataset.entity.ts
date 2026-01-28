@@ -29,7 +29,7 @@ export class Dataset extends Audit {
   vocabSchemaName: string
 
   @Column({ name: 'result_schema_name' })
-  resultSchemaName: string
+  resultsSchemaName: string
 
   @Column({ name: 'flow_parameters', type: 'jsonb', nullable: true })
   flowParameters: Record<string, unknown> | null
