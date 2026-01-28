@@ -132,8 +132,6 @@ services:
       SECURITY_PROVIDER: AtlasRegularSecurity
       SECURITY_ORIGIN: "*"
       SECURITY_SSL_ENABLED: "false"
-      # JWT token secret for WebAPI session tokens
-      SECURITY_TOKEN_SECRET: ${WEBAPI_JWT_SECRET:-default-jwt-secret-change-in-production}
       # Enable forwarded headers support for reverse proxy
       SERVER_FORWARD_HEADERS_STRATEGY: NATIVE
       # Auth providers - OpenID via Logto + Database auth
