@@ -159,11 +159,9 @@ function setUpTestDatabase(dbSetupManager, testSchemaName, cb) {
  * Tear down the test database.
  *
  * @param {SetupManager} dbSetupManager - setup manager object
- * @param {Function} cb - callback
  */
-function tearDownTestDatabase(dbSetupManager, cb) {
-  dbSetupManager.stopHdbClient()
-  cb(null)
+async function tearDownTestDatabase(dbSetupManager) {
+  await dbSetupManager.releasePGClient()
 }
 
 /**
@@ -176,20 +174,23 @@ function tearDownTestDatabase(dbSetupManager, cb) {
  * @param {Function} logger - logging function taking a string to log
  * @param {Function} cb - callback taking an err, a failure count and a logger function as arguments
  */
-function runMochaSuite(mochaSuite, dbSetupManager, logger, cb) {
+async function runMochaSuite(mochaSuite, dbSetupManager, logger, cb) {
   logger('--- Entering HTTP test suite ---')
   var startTime = process.hrtime()
-  mochaSuite.run(function (failures) {
-    var timeDiff = process.hrtime(startTime)
-    var durationInSec = timeDiff[0] + 1e-9 * timeDiff[1]
-    logger('--- Exiting HTTP test suite (total runtime was ' + durationInSec.toFixed(1) + ' seconds) ---')
-    fs.unlinkSync(getEnvironmentPath())
-    logger('Tearing down test DB tables')
-    tearDownTestDatabase(dbSetupManager, function (err) {
-      logger('Closing DB connection')
-      dbSetupManager.stopHdbClient()
+  let err = null;
+  mochaSuite.run(async function (failures) {
+    try {
+      var timeDiff = process.hrtime(startTime)
+      var durationInSec = timeDiff[0] + 1e-9 * timeDiff[1]
+      logger('--- Exiting HTTP test suite (total runtime was ' + durationInSec.toFixed(1) + ' seconds) ---')
+      fs.unlinkSync(getEnvironmentPath())
+      logger('Tearing down test DB tables')
+      await tearDownTestDatabase(dbSetupManager)
+    } catch (error) {
+      err = error
+    } finally {
       cb(err, failures, logger)
-    })
+    }
   })
 }
 

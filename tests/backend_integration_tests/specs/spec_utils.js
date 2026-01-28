@@ -8,6 +8,7 @@
  */
 
 var hdb = require('hdb')
+const pg = require('pg')
 var path = require('path')
 var fs = require('fs')
 var async = require('async')
@@ -15,6 +16,8 @@ var async = require('async')
 var assert = require('assert')
 var chai = require('chai')
 var expect = chai.expect
+var pgConnLib = require('../lib/pg-connection-lib.js')
+const { PGConn } = pgConnLib
 
 var PatientCreator = require('../lib/patient_creator')
 const PATIENT_TABLES = [
@@ -37,73 +40,46 @@ function getPcount(body) {
 /**
  * Truncate all tables in a schema
  *
- * @param {HdbClient} hdbClient - HBD DB client
+ * @param {PGConn} pgConn - PG DB Connection
  * @param {String} schemaName - schema inwhich to truncate
- * @param {Function} cb - callback
  */
-function truncateSchema(hdbClient, schemaName, cb) {
-  getAllTableNamesInSchema(hdbClient, schemaName, function (err, tableNames) {
-    if (err) {
-      process.nextTick(cb, err)
-      return
-    }
-    async.each(
-      tableNames,
-      function (tableName, errCallback) {
-        var testTable = '"' + schemaName + '"."' + tableName + '"'
-        var sqlCommand = 'TRUNCATE TABLE ' + testTable
-        hdbClient.exec(sqlCommand, errCallback)
-      },
-      function (err) {
-        cb(err)
-      }
-    )
-  })
+async function truncateSchema(pgConn, schemaName) {
+  const tableNames = await getAllTableNamesInSchema(pgConn,
+    schemaName);
+  
+  for (const tableName of tableNames) {
+    let testTable = '"' + schemaName + '"."' + tableName + '"'
+    let sqlCommand = 'TRUNCATE TABLE ' + testTable
+    await pgConn.executeQuery(sqlCommand)
+  }
 }
 
 /**
  * Truncate patient data tables in a schema
  *
- * @param {HdbClient} hdbClient - HBD DB client
+ * @param {PGConn} pgConn - PG DB Connection
  * @param {String} schemaName - schema inwhich to truncate
- * @param {Function} cb - callback
  */
-function truncatePatientData(hdbClient, schemaName, cb) {
-  getAllTableNamesInSchema(
-    hdbClient,
-    schemaName,
-    function (err, tableNames) {
-      if (err) {
-        process.nextTick(cb, err)
-        return
-      }
-      async.each(
-        tableNames,
-        function (tableName, errCallback) {
-          var testTable = '"' + schemaName + '"."' + tableName + '"'
-          var sqlCommand = 'TRUNCATE TABLE ' + testTable
-          // console.log(`sqlCommand: ${sqlCommand}`);
-          hdbClient.exec(sqlCommand, errCallback)
-        },
-        function (err) {
-          cb(err)
-        }
-      )
-    },
-    PATIENT_TABLES
-  )
+async function truncatePatientData(pgConn, schemaName, cb) {
+  const tableNames = await getAllTableNamesInSchema(pgConn,
+    schemaName, PATIENT_TABLES);
+  
+  for (const tableName of tableNames) {
+    let testTable = '"' + schemaName + '"."' + tableName + '"'
+    let sqlCommand = 'TRUNCATE TABLE ' + testTable
+    await pgConn.executeQuery(sqlCommand)
+  }
 }
 
 /**
  * Retrieve the names of a set of tables in a schema.
  *
- * @param {HdbClient} hdbClient - HBD DB client
+ * @param {PGConn} pgConn - PG DB Connection
  * @param {String} schemaName - schema inwhich to truncate
- * @param {Function} cb - callback
  */
-function getAllTableNamesInSchema(hdbClient, schemaName, cb, tablePrefixArray) {
+async function getAllTableNamesInSchema(pgConn, schemaName, tablePrefixArray) {
   // get list of all tables within schema
-  var sqlCommand = `SELECT TABLE_NAME FROM M_TABLES WHERE SCHEMA_NAME = '${schemaName}' AND TABLE_TYPE = 'COLUMN'`
+  var sqlCommand = `SELECT TABLE_NAME FROM information_schema.tables where TABLE_SCHEMA = '${schemaName}' AND TABLE_TYPE = 'BASE TABLE'`
   if (
     tablePrefixArray !== undefined &&
     typeof tablePrefixArray === 'object' &&
@@ -116,17 +92,12 @@ function getAllTableNamesInSchema(hdbClient, schemaName, cb, tablePrefixArray) {
     sqlCommand += ` AND (${subQueryArray.join(' OR ')})`
   }
 
-  var collectTableNames = function (err, rows) {
-    if (err) {
-      return cb(err)
-    }
-    var tableNames = []
-    rows.forEach(function (row) {
-      tableNames.push(row['TABLE_NAME'])
-    })
-    cb(null, tableNames)
-  }
-  hdbClient.exec(sqlCommand, collectTableNames)
+  const res = await pgConn.executeQuery(sqlCommand);
+  let tableNames = []
+  res.rows.forEach(function (row) {
+    tableNames.push(row['table_name'])
+  })
+  return tableNames;
 }
 
 /**
@@ -134,49 +105,41 @@ function getAllTableNamesInSchema(hdbClient, schemaName, cb, tablePrefixArray) {
 =======
 * Create an organisation
 *
-* @param {HdbClient} hdbClient - HBD DB client
+* @param {PGConn} pgConn - PG DB Connection
 * @param {String} schemaName - schema inwhich to truncate
 * @param {String} orgId - name of the organisation
-* @param {Function} cb - callback
 */
-function createOrg(hdbClient, schemaName, orgId, cb) {
-  function createOrgItself(callback) {
-    var fullTableName = '"' + schemaName + '"."legacy.cdw.db.models::Config.Org"'
-    var sqlCommand =
-      'INSERT INTO ' + fullTableName + ' ("ValidFrom", "OrgID") VALUES (\'1950-01-02T00:00:00.000Z\', \'' + orgId + "')"
-    hdbClient.exec(sqlCommand, callback)
-  }
+async function createOrg(pgConn, schemaName, orgId) {
+  var fullTableName = '"' + schemaName + '"."legacy.cdw.db.models::Config.Org"'
+  var sqlCommand =
+    'INSERT INTO ' + fullTableName + ' ("ValidFrom", "OrgID") VALUES (\'1950-01-02T00:00:00.000Z\', \'' + orgId + "')"
+  await pgConn.executeQuery(sqlCommand)
 
-  function createOrgAncestor(callback) {
-    var fullTableName = '"' + schemaName + '"."legacy.cdw.db.models::Config.OrgAncestors"'
-    var sqlCommand =
-      'INSERT INTO ' +
-      fullTableName +
-      ' ("OrgID", "AncestorOrgID", "Distance") VALUES (\'' +
-      orgId +
-      "', '" +
-      orgId +
-      "', 0)"
-    hdbClient.exec(sqlCommand, callback)
-  }
+  var fullTableName = '"' + schemaName + '"."legacy.cdw.db.models::Config.OrgAncestors"'
+  var sqlCommand =
+    'INSERT INTO ' +
+    fullTableName +
+    ' ("OrgID", "AncestorOrgID", "Distance") VALUES (\'' +
+    orgId +
+    "', '" +
+    orgId +
+    "', 0)"
+  await pgConn.executeQuery(sqlCommand)
 
-  // Do the actual work here
-  async.series([createOrgItself, createOrgAncestor], cb)
 }
 
 /**
  * Assign a user to an organisation
  *
- * @param {HdbClient} hdbClient - HBD DB client
+ * @param {PGConn} pgConn - PG DB Connection
  * @param {String} schemaName - schema inwhich to truncate
  * @param {String} user - name of the user
  * @param {String} orgId - name of the organisation
- * @param {Function} cb - callback
  */
-function assignUserToOrg(hdbClient, schemaName, user, orgId, cb) {
+async function assignUserToOrg(pgConn, schemaName, user, orgId) {
   var fullTableName = '"' + schemaName + '"."legacy.cdw.db.models::Config.UserOrgMapping"'
   var sqlCommand = 'INSERT INTO ' + fullTableName + ' ("OrgID", "UserName") VALUES (\'' + orgId + "', '" + user + "')"
-  hdbClient.exec(sqlCommand, cb)
+  await pgConn.executeQuery(sqlCommand)
 }
 
 /**
@@ -186,43 +149,17 @@ function assignUserToOrg(hdbClient, schemaName, user, orgId, cb) {
  * @param {PatientBuilder} loadedPatientBuilder - patient builder with patients to be persisted added
  * @param {HostConfig} hostConfig - host confugration object
  * @param {Strong} configName - name of config set to use
- * @param {Function} finalCallback - callback
  */
-function persistPatientSet(loadedPatientBuilder, hostConfig, configName, finalCallback) {
-  var patientCreationHdbClient = hdb.createClient(hostConfig.getHdbSystemCredentials())
-
-  patientCreationHdbClient.on('error', function (err) {
-    if (hostConfig.getLogStatus()) {
-      // eslint-disable-next-line no-console
-      console.log('Network connection error: ', err)
-    }
-  })
+async function persistPatientSet(loadedPatientBuilder, hostConfig, configName) {
+  var patientCreationPGConn = PGConn.createPGConn(hostConfig.getPGSystemCredentials())
 
   // Define async tasks to be carried out
-  var patientCreator
-  var setupPatientCreatorTask = function (callback) {
-    var createConfigFilePath = path.join(__dirname, hostConfig.getCreationConfigName(configName))
-    var createConfig = JSON.parse(fs.readFileSync(createConfigFilePath))
-    patientCreator = new PatientCreator(hostConfig.getTestSchemaName(), patientCreationHdbClient, createConfig)
-    patientCreator.init(callback)
-  }
+  var createConfigFilePath = path.join(__dirname, hostConfig.getCreationConfigName(configName))
+  var createConfig = JSON.parse(fs.readFileSync(createConfigFilePath))
+  var patientCreator = new PatientCreator(hostConfig.getTestSchemaName(), patientCreationPGConn, createConfig)
+  await patientCreator.init()
 
-  var writeTestPatientsTask = function (callback) {
-    loadedPatientBuilder.persistAll(patientCreator, callback)
-  }
-
-  // This will be called when all the async tasks are completed
-  var stopHdbClient = function (err, result) {
-    patientCreationHdbClient.end()
-    var patientIDs
-    if (!err) {
-      patientIDs = result[result.length - 1]
-    }
-    finalCallback(err, patientIDs)
-  }
-
-  // Do the actual work here
-  async.series([setupPatientCreatorTask, writeTestPatientsTask], stopHdbClient)
+  await loadedPatientBuilder.persistAll(patientCreator)
 }
 
 /**
@@ -362,16 +299,16 @@ function adaptMriConfiguration(params, callback) {
  * };
  * @param {Function} callback - callback
  */
-function setupFullSystem(params, callback) {
-  var connectClientTask = function (cb) {
-    params.logger('Opening DB connection')
-    params.hdbClient.connect(cb)
-  }
-
-  var truncateDbTask = function (cb) {
-    params.logger('Truncating test patient data')
-    truncateSchema(params.hdbClient, params.hostConfig.getTestSchemaName(), cb)
-  }
+async function setupFullSystem(params, callback) {
+  // var connectClientTask = function (cb) {
+  //   params.logger('Opening DB connection')
+  //   params.hdbClient.connect(cb)
+  // }
+  await truncateSchema(params.pgConn, params.hostConfig.getTestSchemaName())
+  // var truncateDbTask = function (cb) {
+  //   params.logger('Truncating test patient data')
+  //   truncateSchema(params.pgConn, params.hostConfig.getTestSchemaName())
+  // }
 
   var buildPatientsTask = function (cb) {
     if (params.patientBuilder === null || typeof params.patientBuilder === 'undefined') {
@@ -389,14 +326,14 @@ function setupFullSystem(params, callback) {
   }
 
   // Do the actual work here
-  async.series([connectClientTask, truncateDbTask, buildPatientsTask, setupConfigurationTask], callback)
+  async.series([buildPatientsTask, setupConfigurationTask], callback)
 }
 
 function teardownFullSystem(params, callback) {
   var truncateSchemaTask = function (cb) {
     params.logger('Truncating test patient data')
-    truncateSchema(params.hdbClient, params.hostConfig.getTestSchemaName(), function (err) {
-      params.hdbClient.end()
+    truncateSchema(params.pgConn, params.hostConfig.getTestSchemaName(), function (err) {
+      params.pgConn.releaseClient()
       cb(err)
     })
   }

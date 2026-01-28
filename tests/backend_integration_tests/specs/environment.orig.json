@@ -4,6 +4,7 @@
   "sysappport": "41100",
   "dbhost": "${HANASERVER}",
   "dbport": "${HDIPORT}",
+  "database": "${DATABASE}",
   "instance_no": 90,
   "system_user": "${HDIUSER}",
   "system_password": "${HDIPW}",

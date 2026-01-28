@@ -256,9 +256,54 @@ HanaRequest.prototype._makeRequestOptions = function (query) {
  *   },
  *
  * @param {Object} query - query object
- * @param {Function} cb - callback
  */
-HanaRequest.prototype.request = function (query, cb) {
+HanaRequest.prototype.request = async (query) => {
+  const reqPromise = new Promise((resolve, reject) => {
+
+    log.debug('initializing request')
+
+    var options = this._makeRequestOptions(query)
+
+    request(options, (error, response, body) => {
+      if (error) {
+        log.debug('Error executing request', request, error)
+        return reject(error)
+      }
+
+      // TODO: change this implementation if required
+      // if (response.statusCode === 401) {
+      //   if (theRequest.numTrials === 2) {
+      //     throw new Error('Retried too many times')
+      //   }
+      //   theRequest.numTrials++
+      //   return that.retry(theRequest)
+      // }
+
+      response.setEncoding('utf8')
+      var data
+      try {
+        data = JSON.parse(body)
+        if (data && data.Severity && data.Severity === 'Error') {
+          error = new Error(data.Message)
+          return reject(error)
+        }
+      } catch (e) {
+        log.debug('Error parsing body')
+        log.debug(e)
+        data = body
+      }
+
+      if (error) {
+        log.debug('Error executing request', request, error)
+        return reject(error)
+      }
+
+      return resolve({response, data})
+    })
+  })
+  return await reqPromise
+}
+HanaRequest.prototype.request1 = function (query, cb) {
   var that = this
 
   log.debug('initializing request')

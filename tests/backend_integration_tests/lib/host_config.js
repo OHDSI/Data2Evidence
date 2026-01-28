@@ -25,16 +25,18 @@ function HostConfig(accessConfigPath) {
 }
 
 /**
- * Get the HDB SYSTEM login data for the HDB connection
+ * Get the PD DB SYSTEM login data for the PG connection
  *
  * @returns {Object} - JSON object with the login details
  */
-HostConfig.prototype.getHdbSystemCredentials = function () {
+HostConfig.prototype.getPGSystemCredentials = function () {
   var credentials = {}
   credentials.host = this.dbhost
   credentials.port = this.dbport
+  credentials.database = this.database
   credentials.user = this.system_user
   credentials.password = this.system_password
+
   return credentials
 }
 

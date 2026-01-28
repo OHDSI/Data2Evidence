@@ -20,14 +20,14 @@ var async = require('async')
 * conflicts when multiple test environment tests are run in parallel.
 *
 * @constructor
-* @param {HDB} hdbClient - HDB client for connecting to HANA
+* @param {PGConn} pgConn - PG Connection for connecting to PG DB
 * @param {string}
 *            schemaName Name of the test schema to be created
 * @param {boolean}
 *            randomizeSchemaName Flag deciding if the passed schema name should be supplemented with a random string
 (default: false)
 */
-function TestEnvironment(hdbClient, schemaName, randomizeSchemaName) {
+function TestEnvironment(pgConn, schemaName, randomizeSchemaName) {
   var testSchemaName = schemaName || ''
   if (randomizeSchemaName) {
     testSchemaName += Math.floor(Math.random() * 1000000)
@@ -36,78 +36,57 @@ function TestEnvironment(hdbClient, schemaName, randomizeSchemaName) {
   this.tables = []
   this.tablesStructure = {}
   this.previousGlobalSettings = null
-  this.hdbClient = hdbClient
+  this.pgConn = pgConn
 }
 
 /**
  * Test-environment initialization.
  *
  * Connects the HDB client then sets up the specified test schema.
- *
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.envSetup = function (cb) {
-  var that = this
-  this.hdbClient.connect(function (err) {
-    if (err) {
-      process.nextTick(cb, err)
-      return
-    }
-    that.dropSchema(function () {
-      // Ignore error - just means the schema wasn't there already
-      that.createSchema(cb)
-    })
-  })
+TestEnvironment.prototype.envSetup = async () => {
+  await this.dropSchema()
+  await this.createSchema()
 }
 
 /**
  * Clean up and remove test environment.
- *
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.envTeardown = function (cb) {
-  var that = this
-  this.dropSchema(function (err) {
+TestEnvironment.prototype.envTeardown = async () => {
+  try {
+    await this.dropSchema()
+  } catch (err) {
     console.log(`err on dropping schema: ${err}`)
-    that.hdbClient.end()
-    cb(err)
-  })
+  }
 }
 
 /**
  * Set up a new test schema with the already specified name
  *
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.createSchema = function (cb) {
+TestEnvironment.prototype.createSchema = async () => {
   var sqlCmd = 'CREATE SCHEMA "' + this.schema + '"'
-  this.executeSqlCommand(sqlCmd, cb)
+  await this.executeSqlCommand(sqlCmd)
 }
 
 /**
  * Truncate all the tables from the test schema
- *
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.truncateSchema = function (cb) {
+TestEnvironment.prototype.truncateSchema = async () => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema to truncate!'))
-    return
+    return new Error('No schema to truncate!')
   }
   if (this.tableListEmpty()) {
-    process.nextTick(cb, new Error('No stored tables to truncate!'))
-    return
+    return new Error('No stored tables to truncate!')
   }
-  var that = this
-  async.each(
-    that.tables,
-    function (tableName, errCallback) {
-      that.truncateTable(tableName, errCallback)
-    },
-    function (err) {
-      cb(err)
+
+  try {
+    for (const tableName of this.tables) {
+      await this.truncateTable(tableName)
     }
-  )
+  } catch (err) {
+    return err
+  }
 }
 
 /**
@@ -115,75 +94,45 @@ TestEnvironment.prototype.truncateSchema = function (cb) {
  *
  * @param {string} sourceSchema        Name of the schema holding the table to be cloned.
  * @param {array}  sourceTablePrefixes array of prefix strings used to filter which tables to clone, pass [""] for all prefixes
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.cloneSchemaTables = function (sourceSchema, sourceTablePrefixes, cb) {
+TestEnvironment.prototype.cloneSchemaTables = async (sourceSchema, sourceTablePrefixes) => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
+
   // use passed or default table prefixes (to filter on tables to be cloned)
   var tablePrefixes
   var validTablePrefixesPassed =
     sourceTablePrefixes && sourceTablePrefixes instanceof Array && sourceTablePrefixes.length > 0
   if (!validTablePrefixesPassed) {
-    process.nextTick(cb, new Error('No table prefixes given'))
-    return
+    return new Error('No table prefixes given')
   }
   tablePrefixes = sourceTablePrefixes // prefixes passed to function
-  // clone tables previously marked
-  var that = this
-  var tableNamesCb = function (err, tableNames) {
-    if (err) {
-      return cb(err)
-    }
-    async.each(
-      tableNames,
-      function (tableName, errCallback) {
-        that.createTable(sourceSchema, tableName, tableName, errCallback)
-      },
-      function (err) {
-        cb(err)
-      }
-    )
+
+  const tableNames = await this.getTableNamesInSchema(sourceSchema, tablePrefixes)
+
+  for (const tableName of tableNames) {
+    await this.createTable(sourceSchema, tableName, tableName)
   }
-  this.getTableNamesInSchema(sourceSchema, tablePrefixes, tableNamesCb)
 }
 
 /**
  * Clear all the tables from the schema
  *
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.clearSchema = function (cb) {
-  if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+TestEnvironment.prototype.clearSchema = async () => {
+  for (const tableName of this.tables) {
+    await this.clearTable(tableName)
   }
-  var that = this
-  async.each(
-    that.tables,
-    function (tableName, errCallback) {
-      that.clearTable(tableName, errCallback)
-    },
-    function (err) {
-      cb(err)
-    }
-  )
 }
 
 /**
  * Drop test schema
  *
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.dropSchema = function (cb) {
-  if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
-  }
+TestEnvironment.prototype.dropSchema = async () => {
   var sqlCmd = 'DROP SCHEMA "' + this.schema + '" CASCADE'
-  this.executeSqlCommand(sqlCmd, cb)
+  await this.executeSqlCommand(sqlCmd)
 }
 
 /**
@@ -195,33 +144,21 @@ TestEnvironment.prototype.dropSchema = function (cb) {
  *            sourceTable Name of table to be cloned
  * @param {string}
  *            newTable Name to be given to the cloned table in the test schema.
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.createTable = function (sourceSchema, sourceTable, newTable, cb) {
+TestEnvironment.prototype.createTable = async (sourceSchema, sourceTable, newTable) => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   var originTable = '"' + sourceSchema + '"."' + sourceTable + '"'
   var testTable = '"' + this.schema + '"."' + newTable + '"'
-  var sqlCmd = 'CREATE COLUMN TABLE ' + testTable + ' LIKE ' + originTable + ' WITH NO DATA'
-  var that = this
-  var sqlCb = function (err) {
-    if (err) {
-      return cb(err)
-    }
-    that.tables.push(newTable)
-    // keep an internal representation of the table structure
-    var tableColumnsCb = function (err, result) {
-      if (err) {
-        return cb(err)
-      }
-      that.tablesStructure[newTable] = result
-      cb()
-    }
-    that.getTableColumns(sourceSchema, newTable, tableColumnsCb)
-  }
-  this.executeSqlCommand(sqlCmd, sqlCb)
+  var sqlCmd = 'CREATE TABLE ' + testTable + ' AS TABLE ' + originTable + ' WITH NO DATA'
+
+  await this.executeSqlCommand(sqlCmd)
+
+  this.tables.push(newTable)
+
+  const result = await that.getTableColumns(sourceSchema, newTable)
+  this.tablesStructure[newTable] = result
 }
 
 /**
@@ -233,26 +170,22 @@ TestEnvironment.prototype.createTable = function (sourceSchema, sourceTable, new
  *            sourceTable Name of table to be cloned
  * @param {string}
  *            newTable Name to be given to the cloned table in the test schema.
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.copyInTable = function (sourceSchema, sourceTable, newTable, cb) {
+TestEnvironment.prototype.copyInTable = async (sourceSchema, sourceTable, newTable) => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
-  this.createTable(sourceSchema, sourceTable, newTable, cb)
+  await this.createTable(sourceSchema, sourceTable, newTable)
 }
 
 /**
  * Register a pre-existing table in the set schema.
  *
  * @param {String} table name of the table to be registered
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.registerTable = function (table, cb) {
+TestEnvironment.prototype.registerTable = async table => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   if (this.tables.indexOf(table) < 0) {
     this.tables.push(table)
@@ -260,18 +193,10 @@ TestEnvironment.prototype.registerTable = function (table, cb) {
   var that = this
   if (!this.tablesStructure[table]) {
     // keep an internal representation of the table structure
-    this.getTableColumns(this.schema, table, function (err, tablesStructure) {
-      if (err) {
-        return cb(err)
-      }
-      that.tablesStructure[table] = tablesStructure
-      cb()
-    })
-  } else {
-    // Call the callback but make sure we stay asynchronous
-    process.nextTick(cb)
-    return
+    this.tablesStructure[table] = await this.getTableColumns(this.schema, table)
   }
+  // Call the callback but make sure we stay asynchronous
+  return null
 }
 
 /**
@@ -295,20 +220,17 @@ TestEnvironment.prototype.deregisterTable = function (table) {
  * @param {String}
  *            table  - Table name
  * @param {String} csvPath - path to file on the HANA DB machine
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.fillTableFromCsv = function (table, csvPath, cb) {
+TestEnvironment.prototype.fillTableFromCsv = async (table, csvPath) => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   if (this.noTable(table)) {
-    process.nextTick(cb, new Error('No table ' + table + 'in cloned schema'))
-    return
+    return new Error('No table ' + table + 'in cloned schema')
   }
   var testTable = '"' + this.schema + '"."' + table + '"'
   var sqlCmd = "IMPORT FROM CSV FILE '" + csvPath + "' INTO " + testTable
-  this.executeSqlCommand(sqlCmd, cb)
+  await this.executeSqlCommand(sqlCmd)
 }
 
 /**
@@ -316,28 +238,23 @@ TestEnvironment.prototype.fillTableFromCsv = function (table, csvPath, cb) {
  *
  * @param {string} tableName - name of table into which the data should be puts
  * @param {Object} jsonData - JSON object with each key-value pair corresponding to the column name and the value to be inserted
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.insertIntoTable = function (tableName, jsonData, cb) {
+TestEnvironment.prototype.insertIntoTable = async (tableName, jsonData) => {
   // Checks
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   if (this.noTable(tableName)) {
-    process.nextTick(cb, new Error('No table ' + tableName + ' in cloned schema ' + this.schema))
-    return
+    return new Error('No table ' + tableName + ' in cloned schema ' + this.schema)
   }
   // Return early if if no data was passed
   if (Object.keys(jsonData).length === 0) {
-    process.nextTick(cb)
-    return
+    return null
   }
   for (var column in jsonData) {
     if ({}.hasOwnProperty.call(jsonData, column)) {
       if (this.noColumn(tableName, column)) {
-        process.nextTick(cb, new Error('No column ' + column + ' in table ' + tableName + 'in cloned schema'))
-        return
+        return new Error('No column ' + column + ' in table ' + tableName + 'in cloned schema')
       }
     }
   }
@@ -362,7 +279,7 @@ TestEnvironment.prototype.insertIntoTable = function (tableName, jsonData, cb) {
     'VALUES ',
     valuesToInsert
   ].join(' ')
-  this.executeSqlCommand(sqlCmd, cb)
+  await this.executeSqlCommand(sqlCmd)
 }
 
 /*
@@ -402,10 +319,9 @@ TestEnvironment.prototype._getValuesToInsertString = function (tableName, fieldN
  *
  * @param {string}
  *            table Name of test table to be cleared.
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.clearTable = function (table, cb) {
-  this.truncateTable(table, cb)
+TestEnvironment.prototype.clearTable = async table => {
+  await this.truncateTable(table)
 }
 
 /**
@@ -413,20 +329,17 @@ TestEnvironment.prototype.clearTable = function (table, cb) {
  *
  * @param {string}
  *            table Name of test table to be truncated.
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.truncateTable = function (table, cb) {
+TestEnvironment.prototype.truncateTable = async table => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   if (this.noTable(table)) {
-    process.nextTick(cb, new Error('No table ' + table + 'in cloned schema'))
-    return
+    return new Error('No table ' + table + 'in cloned schema')
   }
   var testTable = '"' + this.schema + '"."' + table + '"'
   var sqlCmd = 'TRUNCATE TABLE ' + testTable
-  this.executeSqlCommand(sqlCmd, cb)
+  await this.executeSqlCommand(sqlCmd)
 }
 
 /**
@@ -434,29 +347,17 @@ TestEnvironment.prototype.truncateTable = function (table, cb) {
  *
  * @param {string}
  *            table Name of test table to be dropped.
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.dropTable = function (table, cb) {
+TestEnvironment.prototype.dropTable = async table => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   if (this.noTable(table)) {
-    process.nextTick(cb, new Error('No table ' + table + 'in cloned schema'))
-    return
+    return new Error('No table ' + table + 'in cloned schema')
   }
   var testTable = '"' + this.schema + '"."' + table + '"'
   var sqlCmd = 'DROP TABLE ' + testTable
-  this.executeSqlCommand(
-    sqlCmd,
-    function (err) {
-      if (err) {
-        return cb(err)
-      }
-      this.deregisterTable(table)
-      cb()
-    }.bind(this)
-  )
+  await this.executeSqlCommand(sqlCmd)
 }
 
 /**
@@ -468,17 +369,15 @@ TestEnvironment.prototype.dropTable = function (table, cb) {
  *            viewName to be given to the cloned view in the test schema.
  * @param {string}
  *            viewDefinition to be given to the cloned view in the test schema.
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.createView = function (sourceSchema, viewName, viewDefinition, cb) {
+TestEnvironment.prototype.createView = async (sourceSchema, viewName, viewDefinition) => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('Cannot create table - no schema set!'))
-    return
+    return new Error('Cannot create table - no schema set!')
   }
   viewDefinition = viewDefinition.replace(new RegExp(sourceSchema, 'g'), this.schema)
   var testView = '"' + this.schema + '"."' + viewName + '"'
   var sqlCmd = 'CREATE VIEW ' + testView + ' AS ' + viewDefinition
-  this.executeSqlCommand(sqlCmd, cb)
+  await this.executeSqlCommand(sqlCmd)
 }
 
 /**
@@ -491,19 +390,13 @@ TestEnvironment.prototype.createView = function (sourceSchema, viewName, viewDef
  * @param {string}
  *            procedureDefinition  - string giving the procedure code
  * @param {String[]} procedurePrefixes - array containing the prefixes for all moved to the test schema
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.createProcedure = function (
+TestEnvironment.prototype.createProcedure = async (
   sourceSchema,
   procedureName,
   procedureDefinition,
-  procedurePrefixes,
-  cb
-) {
-  if (this.noSchema()) {
-    process.nextTick(cb, new Error('Cannot create table - no schema set!'))
-    return
-  }
+  procedurePrefixes
+) => {
   var that = this
   var regex
   // For all prefixes, add '.test' to the prefix in the procedure
@@ -515,7 +408,7 @@ TestEnvironment.prototype.createProcedure = function (
   procedureDefinition = procedureDefinition.replace(new RegExp(procedureName, 'g'), 'test.' + procedureName)
   // Replace the source schema name with the internal (test) schema
   procedureDefinition = procedureDefinition.replace(new RegExp(sourceSchema, 'g'), this.schema)
-  this.callSqlProcedure(procedureDefinition, {}, cb)
+  await this.callSqlProcedure(procedureDefinition)
 }
 
 /**
@@ -523,34 +416,30 @@ TestEnvironment.prototype.createProcedure = function (
  *
  * @param {string} sourceSchema        Name of the schema holding the tables
  * @param {array}  tablePrefixes array of prefix strings used to filter which tables to clone, pass [""] for all prefixes
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.getTableNamesInSchema = function (sourceSchema, tablePrefixes, cb) {
+TestEnvironment.prototype.getTableNamesInSchema = async (sourceSchema, tablePrefixes) => {
   // get list of all tables within schema
-  var sqlCommand = "SELECT DISTINCT(TABLE_NAME) FROM TABLE_COLUMNS WHERE SCHEMA_NAME='" + sourceSchema + "'"
-  var collectTableNames = function (err, rows) {
-    logToConsole('Collecting table names from DB query result')
-    if (err) {
-      return cb(err)
-    }
-    var tableNames = []
-    var tableName
-    var hasRightPrefix
-    rows.forEach(function (row) {
-      tableName = row['(TABLE_NAME)']
-      // filter out tables that are not matched by one of the table prefixes
-      hasRightPrefix = tablePrefixes.some(function (prefix) {
-        return tableName.substring(0, prefix.length) === prefix
-      })
-      if (hasRightPrefix) {
-        tableNames.push(tableName)
-      }
-    })
-    logToConsole('Finished collecting table names')
-    cb(null, tableNames)
-  }
+  var sqlCommand = `SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA = '${sourceSchema}' AND TABLE_TYPE = 'BASE TABLE'`
   logToConsole('Firing SQL to find table names: ' + sqlCommand)
-  this.executeSqlCommand(sqlCommand, collectTableNames)
+  const rows = await this.executeSqlCommand(sqlCommand)
+
+  logToConsole('Collecting table names from DB query result')
+ 
+  var tableNames = []
+  var tableName
+  var hasRightPrefix
+  rows.forEach(function (row) {
+    tableName = row['(TABLE_NAME)']
+    // filter out tables that are not matched by one of the table prefixes
+    hasRightPrefix = tablePrefixes.some(function (prefix) {
+      return tableName.substring(0, prefix.length) === prefix
+    })
+    if (hasRightPrefix) {
+      tableNames.push(tableName)
+    }
+  })
+  logToConsole('Finished collecting table names')
+  return tableNames
 }
 
 /**
@@ -558,9 +447,8 @@ TestEnvironment.prototype.getTableNamesInSchema = function (sourceSchema, tableP
  *
  * @param {String} schema - schema name
  * @param {String} tableName - table anme
- * @param {Function} cb - callback
  */
-TestEnvironment.prototype.getTableColumns = function (schema, tableName, cb) {
+TestEnvironment.prototype.getTableColumns = async (schema, tableName) => {
   var dataTypeMap = {
     NVARCHAR: 'text',
     VARCHAR: 'text',
@@ -571,27 +459,25 @@ TestEnvironment.prototype.getTableColumns = function (schema, tableName, cb) {
     DECIMAL: 'num',
     INTEGER: 'num'
   }
+
   var sqlCommand = [
-    'SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE_NAME, POSITION',
-    "FROM TABLE_COLUMNS WHERE SCHEMA_NAME='" + schema + "'",
-    "AND TABLE_NAME='" + tableName + "'",
-    'GROUP BY TABLE_NAME, COLUMN_NAME, DATA_TYPE_NAME, POSITION',
-    'ORDER BY POSITION'
+    'SELECT table_name, column_name, data_type, ordinal_position',
+    "FROM information_schema.columns WHERE table_schema='" + schema + "'",
+    "AND table_name='" + tableName + "'",
+    'GROUP BY table_name, column_name, data_type, ordinal_position',
+    'ORDER BY ordinal_position'
   ].join(' ')
-  var getColumnInfo = function (err, rows) {
-    if (err) {
-      return cb(err)
+
+  const rows = await this.executeSqlCommand(sqlCommand)
+
+  var result = {}
+  rows.forEach(function (row) {
+    result[row.column_name] = {
+      position: row.ordinal_position,
+      dataType: dataTypeMap[row.data_type]
     }
-    var result = {}
-    rows.forEach(function (row) {
-      result[row.COLUMN_NAME] = {
-        position: row.POSITION,
-        dataType: dataTypeMap[row.DATA_TYPE_NAME]
-      }
-    })
-    cb(null, result)
-  }
-  this.executeSqlCommand(sqlCommand, getColumnInfo)
+  })
+  return result
 }
 
 /**
@@ -599,12 +485,9 @@ TestEnvironment.prototype.getTableColumns = function (schema, tableName, cb) {
  *
  * @param {string}
  *            sqlCmd SQL command.
- * @param {function} cb - callback
  */
-TestEnvironment.prototype.executeSqlCommand = function (sqlCmd, cb) {
-  this.hdbClient.exec(sqlCmd, function (err, rows) {
-    cb(err, rows)
-  })
+TestEnvironment.prototype.executeSqlCommand = async sqlCmd => {
+  return await this.executeSqlCommand(sqlCmd)
 }
 
 /**
@@ -612,25 +495,9 @@ TestEnvironment.prototype.executeSqlCommand = function (sqlCmd, cb) {
  *
  * @param {string} sqlProc  - SQL procedure
  * @param {Object} params  - paramter object (JSON)
- * @param {function} cb  - callback
  */
-TestEnvironment.prototype.callSqlProcedure = function (sqlProc, params, cb) {
-  this.hdbClient.prepare(sqlProc, function (err, statement) {
-    if (err) {
-      process.nextTick(cb, err)
-      return
-    }
-    statement.exec(params, function (err /* , output variables appear here*/) {
-      statement.drop()
-      if (err) {
-        return cb(err)
-      }
-      // Collect all the output and pass it to the callback
-      var returnVals = Array.prototype.slice.call(arguments, 1)
-      var cbArgs = [null].concat(returnVals)
-      cb.apply(null, cbArgs)
-    })
-  })
+TestEnvironment.prototype.callSqlProcedure = async (sqlProc, params) => {
+  return await this.pgConn.executeProcedure(sqlProc, params)
 }
 
 TestEnvironment.prototype.noSchema = function () {
@@ -683,39 +550,22 @@ TestEnvironment.prototype.throwIfNoColumn = function (table, column) {
  *
  * @param {string} sourceSchema     Name of the schema holding the view to be cloned.
  * @param {array}  sourceViewPrefixes   array of prefix strings used to filter which views to clone, pass [''] for all prefixes
- * @param {function} cb - callback
  */
-TestEnvironment.prototype.cloneSchemaViews = function (sourceSchema, sourceViewPrefixes, cb) {
+TestEnvironment.prototype.cloneSchemaViews = async (sourceSchema, sourceViewPrefixes) => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   if (!(sourceViewPrefixes && sourceViewPrefixes instanceof Array && sourceViewPrefixes.length > 0)) {
-    process.nextTick(cb, new Error('No table prefixes given!'))
-    return
+    return new Error('No table prefixes given!')
   }
-  var that = this
-  var addViewsForPrefix = function (prefix, innerCb) {
-    that._getPrefixedViewsInSchema(sourceSchema, prefix, sourceViewPrefixes, function (err, viewsForThisPrefix) {
-      if (err) {
-        process.nextTick(innerCb, err)
-        return
-      }
-      // Clone views previously marked
-      var cloneTasks = viewsForThisPrefix.map(function (view) {
-        return function (callback) {
-          that.createView(sourceSchema, view.name, view.definition, callback)
-        }
-      })
-      async.series(cloneTasks, innerCb)
-    })
-  }
-  var addViewsTasks = sourceViewPrefixes.map(function (prefix) {
-    return function (callback) {
-      addViewsForPrefix(prefix, callback)
+
+  for (const prefix of sourceViewPrefixes) {
+    const viewsForThisPrefix = await this._getPrefixedViewsInSchema(sourceSchema, prefix, sourceViewPrefixes)
+
+    for (const view of viewsForThisPrefix) {
+      await this.createView(sourceSchema, view.name, view.definition)
     }
-  })
-  async.series(addViewsTasks, cb)
+  }
 }
 
 /*
@@ -723,31 +573,24 @@ TestEnvironment.prototype.cloneSchemaViews = function (sourceSchema, sourceViewP
  *
  * @private
  */
-TestEnvironment.prototype._getPrefixedViewsInSchema = function (sourceSchema, curPrefix, viewPrefixes, cb) {
-  var sqlCommand = 'CALL "_SYS_BIC"."legacy.tests.db/GET_VIEW_DEFINITION"( ?, ?, ?)'
-  var inParams = {
-    SCHEMANAME: sourceSchema,
-    PREFIX: curPrefix
-  }
-  this.callSqlProcedure(sqlCommand, inParams, function (err, inParamsUsed, resultRows) {
-    if (err) {
-      process.nextTick(cb, err)
+TestEnvironment.prototype._getPrefixedViewsInSchema = async (sourceSchema, curPrefix, viewPrefixes) => {
+  var sqlCommand = `SELECT definition FROM pg_views WHERE schemaname = '${sourceSchema}' and viewname like '${curPrefix}%'`
+
+  const resultRows = await this.executeSqlCommand(sqlCommand)
+
+  // mark these views for cloning (filtering based on prefixes)
+  var viewsForThisPrefix = []
+  resultRows.forEach(function (row) {
+    // /??????? CHECK
+    if (!row.DEFINITION) {
       return
     }
-    // mark these views for cloning (filtering based on prefixes)
-    var viewsForThisPrefix = []
-    resultRows.forEach(function (row) {
-      // /??????? CHECK
-      if (!row.DEFINITION) {
-        return
-      }
-      viewsForThisPrefix.push({
-        name: row.VIEWNAME,
-        definition: row.DEFINITION.toString('ascii') // NClob
-      })
+    viewsForThisPrefix.push({
+      name: row.VIEWNAME,
+      definition: row.DEFINITION.toString('ascii') // NClob
     })
-    cb(null, viewsForThisPrefix)
   })
+  return viewsForThisPrefix
 }
 
 /**
@@ -755,100 +598,83 @@ TestEnvironment.prototype._getPrefixedViewsInSchema = function (sourceSchema, cu
  *
  * @param {string} sourceSchema     Name of the schema holding the procedure to be cloned.
  * @param {array}  sourceProcedurePrefixes   array of prefix strings specifying which tables should be redirected in procedure
- * @param {function} cb - callback
  */
-TestEnvironment.prototype.cloneSchemaProcedures = function (sourceSchema, sourceProcedurePrefixes, cb) {
+TestEnvironment.prototype.cloneSchemaProcedures = async (sourceSchema, sourceProcedurePrefixes) => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   var procedurePrefixes = []
   if (sourceProcedurePrefixes && sourceProcedurePrefixes instanceof Array && sourceProcedurePrefixes.length > 0) {
     procedurePrefixes = sourceProcedurePrefixes // prefixes passed to function
   } else {
-    process.nextTick(cb, new Error('No table prefixes given'))
-    return
+    return new Error('No table prefixes given')
   }
-  var that = this
-  var addProceduresForPrefix = function (prefix, innerCb) {
-    that._getPrefixedProceduresInSchema(sourceSchema, prefix, function (err, proceduresForThisPrefix) {
-      if (err) {
-        return innerCb(err)
-      }
-      var procedureCloningTasks = proceduresForThisPrefix.map(function (procedure) {
-        return function (callback) {
-          that.createProcedure(sourceSchema, procedure.name, procedure.definition, procedurePrefixes, callback)
-        }
-      })
-      async.series(procedureCloningTasks, innerCb)
-    })
-  }
-  var addProcedureTasks = procedurePrefixes.map(function (prefix) {
-    return function (callback) {
-      addProceduresForPrefix(prefix, callback)
+
+  for (const prefix of sourceProcedurePrefixes) {
+    const proceduresForThisPrefix = await this._getPrefixedProceduresInSchema(sourceSchema, prefix)
+
+    for (const procedure of proceduresForThisPrefix) {
+      await this.createProcedure(sourceSchema, procedure.name, procedure.definition, procedurePrefixes)
     }
-  })
-  async.series(addProcedureTasks, cb)
+  }
 }
 
 /*
  * @private
  */
-TestEnvironment.prototype._getPrefixedProceduresInSchema = function (sourceSchema, prefix, cb) {
-  var sqlCommand = 'CALL "_SYS_BIC"."legacy.tests.db/GET_PROCEDURE_DEFINITION"( ?, ?, ?)'
+TestEnvironment.prototype._getPrefixedProceduresInSchema = async (sourceSchema, prefix) => {
+  const sqlCommand = [
+    `SELECT n.nspname AS schema_name, p.proname AS procedure_name, pg_get_functiondef(p.oid) AS definition`,
+    `FROM pg_proc p LEFT JOIN pg_namespace n ON n.oid = p.pronamespace`,
+    `WHERE p.prokind in ('p', 'f') AND n.nspname NOT IN ('pg_catalog', 'information_schema') and n.nspname = '${sourceSchema}' and p.proname like '${prefix}%'`,
+    `ORDER BY schema_name, procedure_name`
+  ].join(' ')
+
+  const resultRows = await this.executeSqlCommand(sqlCommand)
   var inParams = {
     SCHEMANAME: sourceSchema,
     PREFIX: prefix
   }
-  this.callSqlProcedure(sqlCommand, inParams, function (err, inParamsUsed, resultRows) {
-    if (err) {
-      return cb(err)
+  // mark these procedures for cloning (filtering based on prefixes)
+  var proceduresForThisPrefix = []
+  resultRows.forEach(function (row) {
+    // /??????? CHECK
+    if (!row.DEFINITION) {
+      return
     }
-    // mark these procedures for cloning (filtering based on prefixes)
-    var proceduresForThisPrefix = []
-    resultRows.forEach(function (row) {
-      // /??????? CHECK
-      if (!row.DEFINITION) {
-        return
-      }
-      proceduresForThisPrefix.push({
-        name: row.PROCEDURENAME,
-        prefix: inParams.PREFIX,
-        definition: row.DEFINITION.toString('ascii') // NClob
-      })
+    proceduresForThisPrefix.push({
+      name: row.PROCEDURENAME,
+      prefix,
+      definition: row.DEFINITION.toString('ascii') // NClob
     })
-    cb(null, proceduresForThisPrefix)
   })
+  return proceduresForThisPrefix
 }
 
 /**
  * Grant SELECT access to the schema name for a given user
  *
  * @param {String} userName - name of user
- * @param {function} cb - callback
  */
-TestEnvironment.prototype.grantUserTestSchemaRights = function (userName, cb) {
+TestEnvironment.prototype.grantUserTestSchemaRights = async userName => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   var sqlString = 'GRANT SELECT ON SCHEMA "' + this.schema + '" TO ' + userName
-  this.executeSqlCommand(sqlString, cb)
+  await this.executeSqlCommand(sqlString)
 }
 
 /**
  * Revoke SELECT access to the schema name for a given user
  *
  * @param {String} userName - name of user
- * @param {function} cb - callback
  */
-TestEnvironment.prototype.revokeUserTestSchemaRights = function (userName, cb) {
+TestEnvironment.prototype.revokeUserTestSchemaRights = async userName => {
   if (this.noSchema()) {
-    process.nextTick(cb, new Error('No schema'))
-    return
+    return new Error('No schema')
   }
   var sqlString = 'REVOKE SELECT ON SCHEMA "' + this.schema + '" FROM ' + userName
-  this.executeSqlCommand(sqlString, cb)
+  await this.executeSqlCommand(sqlString)
 }
 
 module.exports = TestEnvironment

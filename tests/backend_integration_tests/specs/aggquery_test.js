@@ -15,6 +15,9 @@ var specUtils = require('./spec_utils')
 
 // Standard modules
 var path = require('path')
+var pgConnLib = require('../lib/pg-connection-lib.js')
+const {PGConn} = pgConnLib;
+
 var hdb = require('hdb')
 var defaultBarChartParameters = {
   dataFormat: 'json',
@@ -40,11 +43,11 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
   // Define current logging behavior
   var logToConsole = utils.getLogger(hostConfig.log, 'In aggquery_test: ')
 
-  var hdbClient = null
+  var pgConn = null
   var params = null
 
   before(function (done) {
-    hdbClient = hdb.createClient(hostConfig.getHdbSystemCredentials())
+    pgConn = PGConn.createPGConn(hostConfig.getPGSystemCredentials())
     var MIN_COHORT_SIZE = 0
     params = {
       hostConfig: hostConfig,
@@ -52,7 +55,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
       minCohortSize: MIN_COHORT_SIZE,
       logger: logToConsole,
       configSetupManager: configSetupManager,
-      hdbClient: hdbClient,
+      pgConn: pgConn,
       patientBuilder: null
     }
     specUtils.setupFullSystem(params, done)
