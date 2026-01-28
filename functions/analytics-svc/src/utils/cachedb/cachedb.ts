@@ -43,7 +43,7 @@ export const getCachedbDbConnections = async ({
             credentials: analyticsCredentials,
             schemaName: analyticsCredentials.schema,
             vocabSchemaName: analyticsCredentials.vocabSchema,
-            resultSchemaName: analyticsCredentials.resultSchema,
+            resultsSchemaName: analyticsCredentials.resultsSchemaName,
             userObj,
         });
 

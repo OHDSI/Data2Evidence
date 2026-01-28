@@ -8,7 +8,7 @@ const hanaCommonTranslation = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string,
+  resultsSchemaName: string,
 ): string => {
   // The first few queries to replace are very specific query which does not require further string replacements
   // subsequent lines, hence early return is used.
@@ -61,7 +61,7 @@ const hanaCommonTranslation = (
 
   // Get snapshot schema table metadata
   const regex4 =
-    /SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON \(tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME\) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON \(tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME\) WHERE tc.SCHEMA_NAME = \? AND tc.TABLE_NAME = \?/;
+    /SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON \(tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME\) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON \(tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME\) WHERE tc.SCHEMA_NAME = \? AND tc.TABLE_NAME IN \(\?\)/;
   if (temp.match(regex4)) {
     const regexResult = regex4.exec(temp);
     if (regexResult) {
@@ -100,7 +100,7 @@ const hanaCommonTranslation = (
             )
         where
             c.table_schema = $1
-            and c.table_name = $2`;
+            and c.table_name IN ($2)`;
     }
   }
 
@@ -233,7 +233,7 @@ const hanaCommonTranslation = (
 
   temp = temp.replace(/\$\$SCHEMA\$\$./g, `"${schemaName}".`);
   temp = temp.replace(/\$\$VOCAB_SCHEMA\$\$./g, `"${vocabSchemaName}".`);
-  temp = temp.replace(/\$\$RESULT_SCHEMA\$\$./g, `"${resultSchemaName}".`);
+  temp = temp.replace(/\$\$RESULT_SCHEMA\$\$./g, `"${resultsSchemaName}".`);
 
   return temp;
 };
@@ -242,13 +242,13 @@ export const translateHanaToPostgres = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string,
+  resultsSchemaName: string,
 ) => {
   temp = hanaCommonTranslation(
     temp,
     schemaName,
     vocabSchemaName,
-    resultSchemaName,
+    resultsSchemaName,
   );
   temp = temp.replace(/LIKE_REGEXPR/gi, "~*"); // ~* short for regex, case insensitive matching
   temp = temp.replace(
@@ -269,7 +269,7 @@ export const translateHanaToDuckdb = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string,
+  resultsSchemaName: string,
   parameters?: ParameterInterface[],
 ): string => {
   temp = temp.replace(
@@ -285,7 +285,7 @@ export const translateHanaToDuckdb = (
     temp,
     schemaName,
     vocabSchemaName,
-    resultSchemaName,
+    resultsSchemaName,
   );
 
   // Cast left comparator to varchar which is required by duckdb
