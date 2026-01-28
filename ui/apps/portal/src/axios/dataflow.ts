@@ -319,7 +319,13 @@ export class Dataflow {
     });
   }
 
-  public triggerShinyLiveAssetDeployment(data: { datasetId: string; language: string; appCode: string }) {
+  public triggerShinyLiveAssetDeployment(data: {
+    datasetId: string;
+    language: string;
+    appCode: string;
+    name: string;
+    type: string;
+  }) {
     return request({
       baseURL: JOBPLUGIN_URL,
       url: "shiny-live/flow-run",

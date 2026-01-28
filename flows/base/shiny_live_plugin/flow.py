@@ -44,7 +44,10 @@ def shiny_live_plugin(options: ShinyLivePluginType):
     )
     upload_result = upload_shiny_live_assets(
         dataset_id=options.dataset_id,
-        zip_file_path=zip_file_path
+        zip_file_path=zip_file_path,
+        config_type=options.config_type,
+        name=options.name,
+        language=options.language
     )
 
     return {
@@ -137,7 +140,9 @@ def zip_shiny_live_assets(docs_dir: str, dataset_id: str, language: str) -> str:
     Args:
         docs_dir: str, path to the built assets directory
         dataset_id: str, identifier for the dataset
-
+        language: str, programming language of the Shiny Live app
+        config_type: str, configuration type of the Shiny Live app or Dashboard
+        name: str, name of the Shiny Live app or Dashboard
     Returns:
         str: Path to the created zip file
     """
@@ -163,7 +168,7 @@ def zip_shiny_live_assets(docs_dir: str, dataset_id: str, language: str) -> str:
 
 
 @task(log_prints=True)
-def upload_shiny_live_assets(dataset_id: str, zip_file_path: str) -> dict:
+def upload_shiny_live_assets(dataset_id: str, zip_file_path: str, config_type: str, name: str, language: str) -> dict:
     """
     Upload the zipped Shiny Live assets to Supabase storage.
 
@@ -185,7 +190,8 @@ def upload_shiny_live_assets(dataset_id: str, zip_file_path: str) -> dict:
         upload_result = portal_api.upload_dataset_file(
             datasetId=dataset_id,
             file_path=zip_file_path,
-            content_type='application/zip'
+            content_type='application/zip',
+            file_name=f"dashboard_{dataset_id}_{config_type}_{name}_{language.value}.zip"
         )
 
         logger.info(

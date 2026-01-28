@@ -39,7 +39,7 @@ class PortalServerAPI(BaseAPI):
         else:
             return True
 
-    def upload_dataset_file(self, datasetId: str, file_path: str, content_type: str = 'application/zip') -> dict:
+    def upload_dataset_file(self, datasetId: str, file_path: str, content_type: str = 'application/zip', file_name: str = None) -> dict:
         """
         Upload a file to a dataset.
 
@@ -58,7 +58,8 @@ class PortalServerAPI(BaseAPI):
         if not os.path.isfile(file_path):
             raise ValueError(f"File not found: {file_path}")
 
-        filename = os.path.basename(file_path)
+        filename = file_name if file_name is not None else os.path.basename(
+            file_path)
 
         try:
             # Keep file open during the entire request

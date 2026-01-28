@@ -19,6 +19,8 @@ export class ShinyLiveController {
         body("datasetId").isString().notEmpty(),
         body("language").isIn(["python", "r"]),
         body("appCode").isString().notEmpty(),
+        body("type").isString().notEmpty(),
+        body("name").isString().notEmpty(),
       ],
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
@@ -27,7 +29,7 @@ export class ShinyLiveController {
         }
 
         await this.createShinyLiveFlowRun(req, res);
-      }
+      },
     );
 
     // GET /shiny-live/flow-run/:flowRunId
@@ -41,7 +43,7 @@ export class ShinyLiveController {
         }
 
         await this.getShinyLiveFlowRun(req, res);
-      }
+      },
     );
 
     // GET /shiny-live/flow-run/:flowRunId/poll
@@ -55,18 +57,18 @@ export class ShinyLiveController {
         }
 
         await this.pollShinyLiveFlowRunCompletion(req, res);
-      }
+      },
     );
   }
 
   private async createShinyLiveFlowRun(req: Request, res: Response) {
     try {
       const token = req.headers.authorization as string;
-      const { datasetId, language, appCode } = req.body;
+      const { datasetId, language, appCode, type, name } = req.body;
 
       const result = await this.shinyLiveService.createShinyLiveFlowRun(
-        { datasetId, language, appCode },
-        token
+        { datasetId, language, appCode, type, name },
+        token,
       );
 
       res.status(201).json(result);
@@ -86,7 +88,7 @@ export class ShinyLiveController {
 
       const result = await this.shinyLiveService.getShinyLiveFlowRun(
         flowRunId,
-        token
+        token,
       );
 
       res.status(200).json(result);
@@ -106,7 +108,7 @@ export class ShinyLiveController {
 
       const result = await this.shinyLiveService.pollShinyLiveFlowRunCompletion(
         flowRunId,
-        token
+        token,
       );
 
       res.status(200).json(result);

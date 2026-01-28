@@ -943,6 +943,14 @@
                   "app_code": {
                     "type": "string",
                     "title": "App Code"
+                  },
+                  "config_type": {
+                    "type": "string",
+                    "title": "Config Type"
+                  },
+                  "name": {
+                    "type": "string",
+                    "title": "Name"
                   }
                 },
                 "required": [

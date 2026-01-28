@@ -203,6 +203,8 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           datasetId: config.id,
           language: templateLanguage,
           appCode: code,
+          name: name,
+          type: codeType,
         }),
       {
         successMessage: "Shiny assets build triggered successfully.",
