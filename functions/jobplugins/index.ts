@@ -15,6 +15,7 @@ import { PrefectController } from "./src/controllers/PrefectController.ts";
 import { ResearcherController } from "./src/controllers/ResearcherController.ts";
 import { SearchEmbeddingController } from "./src/controllers/SearchEmbeddingController.ts";
 import { ShinyLiveController } from "./src/controllers/ShinyLiveController.ts";
+import { StrategusResultsController } from "./src/controllers/StrategusResultsController.ts";
 import { WhiteRabbitController } from "./src/controllers/WhiteRabbitController.ts";
 import { initialiseDataSource } from "./src/db/data-migration.ts";
 import extractUsernameFromJwt from "./src/middlewares/extractUsernameFromJwt.ts";
@@ -32,7 +33,7 @@ app.use("/jobplugins/cohort-survival", new CohortSurvivalController().router);
 app.use("/jobplugins/db-svc", new DbSvcController().router);
 app.use(
   "/jobplugins/dqd/data-characterization",
-  new DataCharacterizationController().router
+  new DataCharacterizationController().router,
 );
 app.use("/jobplugins/search-embedding", new SearchEmbeddingController().router);
 app.use("/jobplugins/datamodel", new DataModelFlowController().router);
@@ -45,6 +46,10 @@ app.use("/jobplugins/perseus", new PerseusController().router);
 app.use("/jobplugins/researcher", new ResearcherController().router);
 app.use("/jobplugins/phenotype", new PhenotypeController().router);
 app.use("/jobplugins/shiny-live", new ShinyLiveController().router);
+app.use(
+  "/jobplugins/strategus-results",
+  new StrategusResultsController().router,
+);
 
 let ssl = JSON.parse(env.PG__SSL.toLowerCase());
 if (env.PG__CA_ROOT_CERT) {
@@ -65,7 +70,7 @@ const opt = {
 const pgclient = new pg.Client(opt);
 await pgclient.connect();
 const r = await pgclient.query(
-  `SELECT name,url,payload::JSON FROM trex.plugins where payload->'flow' is not null`
+  `SELECT name,url,payload::JSON FROM trex.plugins where payload->'flow' is not null`,
 );
 let flows = [];
 for (const row of r.rows) {
@@ -82,7 +87,7 @@ async function callPrefect(name: string) {
     `${env.PREFECT_API_URL}/deployments/name/${name}/${name}`,
     {
       method: "GET",
-    }
+    },
   );
   if (res.status != 200) {
     console.error(`Error getting flow`);
@@ -97,7 +102,7 @@ async function callPrefect(name: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({}),
-    }
+    },
   );
   if (createFlowRes.status != 200) {
     console.log(`Error creating flow run`);

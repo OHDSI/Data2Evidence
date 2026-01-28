@@ -107,7 +107,7 @@ export class DatasetRouter {
           tenantId,
           schemaOption,
           vocabSchemaValue,
-          resultSchemaValue,
+          resultsSchemaValue,
           dialect,
           databaseCode,
           schemaName,
@@ -147,8 +147,8 @@ export class DatasetRouter {
         try {
           this.logger.info(`Create dataset ${id}`);
           const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
-          const resultSchema = resultSchemaValue
-            ? resultSchemaValue
+          const resultsSchemaName = resultsSchemaValue
+            ? resultsSchemaValue
             : `${schemaName}_results`;
 
           // Create CDM & Custom schemas
@@ -170,7 +170,7 @@ export class DatasetRouter {
                     schema_name: schemaName,
                     cache_schema_name: parsedNewCacheSchemaName,
                     vocab_schema: vocabSchema,
-                    results_schema: resultSchema,
+                    results_schema: resultsSchemaName,
                     plugin: plugin,
                   },
                 };
@@ -222,7 +222,7 @@ export class DatasetRouter {
             databaseCode: databaseCode,
             schemaName,
             vocabSchemaName: vocabSchema,
-            resultSchemaName: resultSchema,
+            resultsSchemaName,
             dataModel,
             plugin,
             tenantId,
@@ -341,14 +341,14 @@ export class DatasetRouter {
         type,
         cdmSchemaValue,
         vocabSchemaValue,
-        resultSchemaValue,
+        resultsSchemaValue,
       } = req.body;
       const {
         dialect,
         databaseCode,
         schemaName,
         vocabSchemaName,
-        resultSchemaName,
+        resultsSchemaName,
       } = await portalAPI.getDataset(sourceStudyId);
 
       const sourceHasSchema = schemaName.trim() !== "";
@@ -358,7 +358,7 @@ export class DatasetRouter {
       const newSchemaName =
         cdmSchemaValue || (sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "");
       const newVocabSchemaName = vocabSchemaValue || vocabSchemaName;
-      const newResultSchemaName = resultSchemaValue || resultSchemaName;
+      const newResultsSchemaName = resultsSchemaValue || resultsSchemaName;
 
       const parsedNewSchemaName = this.schemaCase(
         newSchemaName,
@@ -372,7 +372,7 @@ export class DatasetRouter {
           newDatasetName: newStudyName,
           schemaName: parsedNewSchemaName,
           vocabSchemaName: newVocabSchemaName,
-          resultSchemaName: newResultSchemaName,
+          resultsSchemaName: newResultsSchemaName,
           timestamp: new Date(),
           type,
           flowParameters: snapshotCopyConfig

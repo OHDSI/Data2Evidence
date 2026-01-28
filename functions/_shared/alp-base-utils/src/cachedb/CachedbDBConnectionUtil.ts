@@ -20,13 +20,13 @@ export class CachedbDBConnectionUtil extends DBConnectionUtil.DBConnectionUtil {
     credentials,
     schemaName,
     vocabSchemaName,
-    resultSchemaName,
+    resultsSchemaName,
     userObj,
   }: {
     credentials: IDBCredentialsType;
     schemaName: string;
     vocabSchemaName?: string;
-    resultSchemaName?: string;
+    resultsSchemaName?: string;
     userObj?: User;
   }) {
     return new Promise<ConnectionInterface>(async (resolve, reject) => {
@@ -37,7 +37,7 @@ export class CachedbDBConnectionUtil extends DBConnectionUtil.DBConnectionUtil {
           client,
           schemaName,
           vocabSchemaName,
-          resultSchemaName,
+          resultsSchemaName,
           null,
           userObj,
         );
@@ -96,7 +96,7 @@ export class CachedbDBConnectionUtil extends DBConnectionUtil.DBConnectionUtil {
     client: any,
     schemaName: string,
     vocabSchemaName?: string,
-    resultSchemaName?: string,
+    resultsSchemaName?: string,
     cb?,
     userObj?: User,
   ): Promise<ConnectionInterface> {
@@ -114,7 +114,7 @@ export class CachedbDBConnectionUtil extends DBConnectionUtil.DBConnectionUtil {
           client,
           schemaName,
           vocabSchemaName,
-          resultSchemaName,
+          resultsSchemaName,
           callback,
           "duckdb", // TODO: Consume this from dataset metadata
         );
@@ -123,7 +123,7 @@ export class CachedbDBConnectionUtil extends DBConnectionUtil.DBConnectionUtil {
           client,
           schemaName,
           vocabSchemaName,
-          resultSchemaName,
+          resultsSchemaName,
           async (err, connection: ConnectionInterface) => {
             if (err) {
               return callback(err);

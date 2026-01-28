@@ -38,7 +38,7 @@ export default {
       return this.getConstraint(this.model.id).props.value
     },
     attributePathUid() {
-      return `${this.model.props.attributePath}__${this._uid}`
+      return `${this.model.props.attributePath}__${this.$.uid}`
     },
     vuexTexts() {
       return {
@@ -135,4 +135,3 @@ export default {
   },
 }
 </script>
-
