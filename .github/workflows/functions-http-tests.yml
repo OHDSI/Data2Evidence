@@ -313,7 +313,13 @@ jobs:
 
       - name: Seed dummy dataset
         run: |
+          docker ps
+
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT schema_name FROM information_schema.schemata"
+
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'cdw_config' AND table_type = 'BASE TABLE'"
+
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'usermgmt' AND table_type = 'BASE TABLE'"
 
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'portal' AND table_type = 'BASE TABLE'"
 
