@@ -36,6 +36,27 @@
     color: inherit;
   }
 
+  &__queries {
+    margin: 10px 25px;
+
+    &__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    &__entry {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+  }
+
   .button-group-actions {
     display: flex;
     justify-content: center;

@@ -904,7 +904,6 @@ const StudyOverview: FC = () => {
               config={{
                 type: viewerDialogType,
                 id: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
-                name: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
               }}
               open={showManageViewerDialog}
               onClose={closeManageViewerDialog}

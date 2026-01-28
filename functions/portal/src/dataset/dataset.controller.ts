@@ -148,12 +148,13 @@ export class DatasetController {
 
   @Put("dashboard-code")
   async updateDatasetDashboardCode(
-    @Body() datasetCodeDto: { datasetId: string; code: string; type: string },
+    @Body() datasetCodeDto: { datasetId: string; code: string; type: string; name: string },
   ) {
     return await this.datasetCommandService.updateDatasetDashboardCode(
       datasetCodeDto.datasetId,
       datasetCodeDto.code,
       datasetCodeDto.type,
+      datasetCodeDto.name,
     );
   }
 
