@@ -2,7 +2,7 @@ import React, { FC, useCallback, useState, useEffect, useMemo } from "react";
 import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import { PlayCircleFilled, StopCircle } from "@mui/icons-material";
-import { Button, Dialog, Select, MenuItem, InputLabel, TextField } from "@portal/components";
+import { Button, Dialog, Select, MenuItem, InputLabel, TextField, Loader } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
 import {
@@ -43,6 +43,9 @@ interface QueryEntry {
 
 const SafeEditor = Editor as any;
 
+// Configure monaco loader at module level (not on every render)
+loader.config({ monaco });
+
 const enum ViewerType {
   SHINY_SERVER = "shiny-server",
   R = "r",
@@ -50,7 +53,6 @@ const enum ViewerType {
 }
 
 const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose }) => {
-  loader.config({ monaco });
   const { getText } = useTranslation();
   const [viewerCode, setViewerCode] = useState<string>("");
   const [defaultViewerCode, setDefaultViewerCode] = useState<string>("");
@@ -58,6 +60,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   const [templateLanguage, setTemplateLanguage] = useState<ViewerType>(ViewerType.SHINY_SERVER);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
   const [name, setName] = useState<string>("");
   const [queries, setQueries] = useState<QueryEntry[]>([]);
@@ -137,54 +140,59 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     if (!open) return;
 
     const fetchData = async () => {
+      setInitialLoading(true);
       try {
-        const templates = await operations.fetchTemplates();
-        setTemplates(templates);
-      } catch (error) {
-        console.error("Failed to fetch templates:", error);
-        setTemplates([]);
-      }
-
-      // For dashboard/cohort, use dashboard-codes endpoint
-      if (config.type === "dashboard" || config.type === "cohort") {
-        setIsNewName(false);
-        setNewNameInput("");
         try {
-          const codes = await api.systemPortal.getDashboardCodes(config.id, configType);
-          setSavedCodes(codes);
-          if (codes.length > 0) {
-            const firstCode = codes[0];
-            setName(firstCode.name);
-            setViewerCode(firstCode.code);
-            setDefaultViewerCode(firstCode.code);
-            setQueries(firstCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
-          } else {
+          const templates = await operations.fetchTemplates();
+          setTemplates(templates);
+        } catch (error) {
+          console.error("Failed to fetch templates:", error);
+          setTemplates([]);
+        }
+
+        // For dashboard/cohort types, use dashboard-codes endpoint
+        if (config.type === "dashboard" || config.type === "cohort") {
+          setIsNewName(false);
+          setNewNameInput("");
+          try {
+            const codes = await api.systemPortal.getDashboardCodes(config.id, configType);
+            setSavedCodes(codes);
+            if (codes.length > 0) {
+              const firstCode = codes[0];
+              setName(firstCode.name);
+              setViewerCode(firstCode.code);
+              setDefaultViewerCode(firstCode.code);
+              setQueries(firstCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
+            } else {
+              setIsNewName(true);
+              setName("");
+              setViewerCode("");
+              setDefaultViewerCode("");
+              setQueries([]);
+            }
+          } catch (error) {
+            console.error("Failed to fetch dashboard codes:", error);
+            setSavedCodes([]);
             setIsNewName(true);
             setName("");
             setViewerCode("");
             setDefaultViewerCode("");
             setQueries([]);
           }
-        } catch (error) {
-          console.error("Failed to fetch dashboard codes:", error);
-          setSavedCodes([]);
-          setIsNewName(true);
-          setName("");
-          setViewerCode("");
-          setDefaultViewerCode("");
-          setQueries([]);
+        } else {
+          // strategus - name not used by API (see fetchCode implementation)
+          try {
+            const code = await operations.fetchCode(config.id, "");
+            setViewerCode(code);
+            setDefaultViewerCode(code);
+          } catch (error) {
+            console.error("Failed to fetch default viewer code:", error);
+            setDefaultViewerCode("");
+            setViewerCode("");
+          }
         }
-      } else {
-        // strategus
-        try {
-          const code = await operations.fetchCode(config.id, name);
-          setViewerCode(code);
-          setDefaultViewerCode(code);
-        } catch (error) {
-          console.error("Failed to fetch default viewer code:", error);
-          setDefaultViewerCode("");
-          setViewerCode("");
-        }
+      } finally {
+        setInitialLoading(false);
       }
     };
 
@@ -229,18 +237,18 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           name,
         });
 
-        // Save queries
-        for (const query of queries) {
-          if (query.queryName && query.sql) {
-            await api.systemPortal.upsertDatasetCodeQuery({
+        const queryPromises = queries
+          .filter((query) => query.queryName && query.sql)
+          .map((query) =>
+            api.systemPortal.upsertDatasetCodeQuery({
               datasetId: config.id,
               type: configType,
               name,
               queryName: query.queryName,
               sql: query.sql,
-            });
-          }
-        }
+            })
+          );
+        await Promise.all(queryPromises);
       } else {
         await operations.saveCode(config.id, viewerCode, name);
       }
@@ -496,18 +504,24 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
       </div>
       <Divider />
 
-      <div className="manage-viewer-dialog__content">
-        <SafeEditor
-          height="50vh"
-          language={editorLanguage}
-          value={viewerCode}
-          options={{
-            scrollBeyondLastLine: false,
-            fontSize: "14px",
-          }}
-          onChange={setViewerCode}
-        />
-      </div>
+      {initialLoading ? (
+        <div className="manage-viewer-dialog__loading">
+          <Loader />
+        </div>
+      ) : (
+        <div className="manage-viewer-dialog__content">
+          <SafeEditor
+            height="50vh"
+            language={editorLanguage}
+            value={viewerCode}
+            options={{
+              scrollBeyondLastLine: false,
+              fontSize: "14px",
+            }}
+            onChange={setViewerCode}
+          />
+        </div>
+      )}
       <Divider />
 
       <div className="manage-viewer-dialog__queries">
