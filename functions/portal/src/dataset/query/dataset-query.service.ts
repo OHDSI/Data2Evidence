@@ -306,6 +306,7 @@ export class DatasetQueryService {
       datasetId: datasetCode.datasetId,
       code: datasetCode.code,
       type: datasetCode.type,
+      name: datasetCode.name,
     };
   }
 
@@ -335,6 +336,7 @@ export class DatasetQueryService {
       datasetId: datasetCodeQuery.datasetId,
       type: datasetCodeQuery.type,
       name: datasetCodeQuery.name,
+      queryName: datasetCodeQuery.queryName,
       sql: datasetCodeQuery.sql,
     };
   }

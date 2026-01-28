@@ -955,7 +955,9 @@
                 },
                 "required": [
                   "dataset_id",
-                  "app_code"
+                  "app_code",
+                  "config_type",
+                  "name"
                 ]
               }
             }

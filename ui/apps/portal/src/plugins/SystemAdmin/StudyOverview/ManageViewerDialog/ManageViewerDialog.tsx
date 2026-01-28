@@ -211,7 +211,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
         errorMessage: "Failed to trigger shiny assets build.",
       }
     );
-  }, [execute, config.id, templateLanguage, code]);
+  }, [execute, config.id, templateLanguage, code, name, codeType]);
 
   const handleTemplateChange = useCallback(
     (filename: string) => {
