@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from "react";
 import env from "../../../env";
-import { loadScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
+import { loadEsModuleScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
 import PluginContainer from "./PluginContainer";
 import { Loader } from "@portal/components";
 
@@ -31,16 +31,20 @@ const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas
   useEffect(() => {
     let callbacks: (() => void)[] = [];
     setIsLoading(true);
+
+    // Load vue-mri-ui-lib scripts (D3 v3 is bundled with the app)
     fetch(PA_ASSETS_URL)
       .then((response) => response.json())
       .then(({ css, js }) => {
         loadSapScript(() => {
           const styleSheetCallbacks = css.map(loadStyleSheet);
-          const scriptCallbacks = js.map(loadScript);
+          // Use loadEsModuleScript with empty onLoad callback to load Vite-built ES modules with type="module"
+          const scriptCallbacks = js.map((src: string) => loadEsModuleScript(src, () => {}));
           hideLogoutButton();
           callbacks = [...scriptCallbacks, ...styleSheetCallbacks];
         });
       });
+
     //Remove scripts and links upon component unmounting
     return () => {
       callbacks.forEach((callback) => callback());

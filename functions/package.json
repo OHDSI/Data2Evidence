@@ -753,6 +753,8 @@
           "gateway.external.dashboards.read",
           "strategus.results.write",
           "strategus.results.delete",
+          "strategus.results.admin.upload",
+          "strategus.results.admin.delete",
           "mlflow",
           "d2e.container.logs.read"
         ],
@@ -922,6 +924,26 @@
           "path": "^/jobplugins/prefect/flow-run/strategus/remove-results-schema/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
           "scopes": [
             "jobplugins.flowRun.strategus.removeResults.add",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/strategus-results/upload",
+          "scopes": [
+            "strategus.results.admin.upload",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/strategus-results/drop/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
+          "scopes": [
+            "strategus.results.admin.delete",
             "portal.dataset.read"
           ],
           "httpMethods": [
@@ -1924,6 +1946,42 @@
         },
         {
           "path": "^/system-portal/supabase-storage/delete/file",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/list",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/download",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/upload",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+                {
+          "path": "^/system-portal/supabase-storage/strategus-results/delete",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
