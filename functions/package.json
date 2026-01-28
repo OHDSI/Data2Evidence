@@ -1352,6 +1352,17 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/dashboard-code-query$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset/list/systemadmin$",
           "scopes": [
             "portal.dataset.systemAdmin.read"
@@ -2651,6 +2662,15 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/shiny-live",
+          "scopes": [
+            "gateway.dataset.snapshot.create"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

@@ -20,6 +20,9 @@ export class DatasetCode extends Audit {
   @Column()
   code: string;
 
+  @Column()
+  name: string;
+
   // Required for creation
   @Column({ name: "dataset_id" })
   datasetId: string;

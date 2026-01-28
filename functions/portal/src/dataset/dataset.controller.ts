@@ -36,7 +36,7 @@ export class DatasetController {
   constructor(
     private readonly datasetQueryService: DatasetQueryService,
     private readonly datasetCommandService: DatasetCommandService,
-    private readonly datasetFilterService: DatasetFilterService
+    private readonly datasetFilterService: DatasetFilterService,
   ) {}
 
   @Get()
@@ -79,17 +79,17 @@ export class DatasetController {
 
   @Put()
   async updateDatasetDetailMetadata(
-    @Body() datasetDetailMetadataDto: DatasetDetailMetadataUpdateDto
+    @Body() datasetDetailMetadataDto: DatasetDetailMetadataUpdateDto,
   ) {
     return await this.datasetCommandService.updateDatasetDetailMetadata(
-      datasetDetailMetadataDto
+      datasetDetailMetadataDto,
     );
   }
 
   @Post("snapshot")
   async createDatasetSnapshot(@Body() datasetSnapshotDto: DatasetSnapshotDto) {
     return await this.datasetCommandService.createDatasetSnapshot(
-      datasetSnapshotDto
+      datasetSnapshotDto,
     );
   }
 
@@ -105,10 +105,10 @@ export class DatasetController {
 
   @Put("attribute")
   async updateDatasetAttribute(
-    @Body() datasetAttributeDto: DatasetAttributeDto
+    @Body() datasetAttributeDto: DatasetAttributeDto,
   ) {
     return await this.datasetCommandService.updateDatasetAttribute(
-      datasetAttributeDto
+      datasetAttributeDto,
     );
   }
 
@@ -140,22 +140,45 @@ export class DatasetController {
   @Get("dashboard-code")
   async getDatasetDashboardCode(
     @Query("datasetId") datasetId: string,
-    @Query("type") type: string
+    @Query("type") type: string,
+    @Query("name") name: string,
   ) {
-    return await this.datasetQueryService.getDatasetCode(
-      datasetId,
-      type
-    );
+    return await this.datasetQueryService.getDatasetCode(datasetId, type, name);
   }
 
   @Put("dashboard-code")
   async updateDatasetDashboardCode(
-    @Body() datasetCodeDto: { datasetId: string; code: string; type: string }
+    @Body() datasetCodeDto: { datasetId: string; code: string; type: string },
   ) {
     return await this.datasetCommandService.updateDatasetDashboardCode(
       datasetCodeDto.datasetId,
       datasetCodeDto.code,
-      datasetCodeDto.type
+      datasetCodeDto.type,
+    );
+  }
+
+  @Get("dashboard-code-query")
+  async getDatasetCodeQuery(
+    @Query("datasetId") datasetId: string,
+    @Query("type") type: string,
+    @Query("name") name: string,
+  ) {
+    return await this.datasetQueryService.getDatasetCodeQuery(
+      datasetId,
+      type,
+      name,
+    );
+  }
+
+  @Put("dashboard-code-query")
+  async upsertDatasetCodeQuery(
+    @Body() dto: { datasetId: string; type: string; name: string; sql: string },
+  ) {
+    return await this.datasetCommandService.upsertDatasetCodeQuery(
+      dto.datasetId,
+      dto.type,
+      dto.name,
+      dto.sql,
     );
   }
 }

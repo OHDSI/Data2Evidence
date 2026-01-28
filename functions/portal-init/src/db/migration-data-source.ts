@@ -58,7 +58,7 @@ import { UpdateDatasetTypeColumn17211757718564 } from "./migrations/172117577185
 import { AddDatasetFlowParametersColumn17211757718565 } from "./migrations/17211757718565-add-dataset-flow-parameters-column.ts";
 import { UpdateDatasetDemoTypeColumn17211757718566 } from "./migrations/17211757718566-update-dataset-demo-type-column.ts";
 import { AddNameToDatasetCode1769500730287 } from "./migrations/1769500730287-add-name-to-dataset-code.ts";
-import { AddDatasetDashboardQueryTable1769500853192 } from "./migrations/1769500853192-add-dataset-dashboard-query-table.ts";
+import { AddDatasetCodeQueryTable1769500853192 } from "./migrations/1769500853192-add-dataset-dashboard-query-table.ts";
 import { env } from "../env.ts";
 
 const migrationDataSourceOptions: DataSourceOptions = {
@@ -142,7 +142,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     AddDatasetFlowParametersColumn17211757718565,
     UpdateDatasetDemoTypeColumn17211757718566,
     AddNameToDatasetCode1769500730287,
-    AddDatasetDashboardQueryTable1769500853192,
+    AddDatasetCodeQueryTable1769500853192,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);
