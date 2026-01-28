@@ -318,18 +318,9 @@ jobs:
 
       - name: Seed dummy dataset
         run: |
+          # this is a workaround to introduce a small delay here to give enough time for the tables to be created
           echo "Waiting 30 secs before seeding dummy dataset..."
           sleep 30
-
-          docker ps
-
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT schema_name FROM information_schema.schemata"
-
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'cdw_config' AND table_type = 'BASE TABLE'"
-
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'usermgmt' AND table_type = 'BASE TABLE'"
-
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'portal' AND table_type = 'BASE TABLE'"
 
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
           ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
