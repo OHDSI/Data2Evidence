@@ -2,7 +2,7 @@ import express, { NextFunction, Response } from 'express'
 import { Service } from 'typedi'
 import { ROLES } from '../const'
 import { IAppRequest, IUserWithRolesInfo } from '../types'
-import { SystemAdminService, NifiAdminService } from '../services'
+import { SystemAdminService, NifiAdminService, WebApiAdminService } from '../services'
 import { createLogger } from '../Logger'
 import { UserGroupExt } from '../dtos'
 import { env } from '../env'
@@ -14,7 +14,8 @@ export class AlpDataAdminRouter {
 
   constructor(
     private readonly systemAdminService: SystemAdminService,
-    private readonly nifiAdminService: NifiAdminService
+    private readonly nifiAdminService: NifiAdminService,
+    private readonly webApiAdminService: WebApiAdminService
   ) {
     this.registerRoutes()
   }
@@ -47,6 +48,8 @@ export class AlpDataAdminRouter {
       try {
         if (roles.includes(ROLES.ALP_SYSTEM_ADMIN)) {
           await this.systemAdminService.register(userId, system)
+          // Propagate admin role to WebAPI
+          await this.webApiAdminService.register(userId)
         }
         if (roles.includes(ROLES.ALP_NIFI_ADMIN)) {
           await this.nifiAdminService.registerUser(userId, system)
@@ -71,6 +74,8 @@ export class AlpDataAdminRouter {
       try {
         if (roles.includes(ROLES.ALP_SYSTEM_ADMIN)) {
           await this.systemAdminService.withdraw(userId, system)
+          // Propagate admin role removal to WebAPI
+          await this.webApiAdminService.withdraw(userId)
         }
         if (roles.includes(ROLES.ALP_NIFI_ADMIN)) {
           await this.nifiAdminService.withdrawUser(userId, system)

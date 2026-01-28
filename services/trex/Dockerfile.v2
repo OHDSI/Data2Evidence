@@ -1,0 +1,101 @@
+# syntax=docker/dockerfile:1.4
+#
+# TrexSQL + WebAPI combined image
+# Based on WebAPI 3.0-dev with all trex dependencies installed
+#
+
+FROM ghcr.io/ohdsi/webapi:3.0-dev AS base
+
+USER root
+
+ENV ONNXRUNTIME_VERSION=1.20.1
+ENV DUCKDB_VERSION=1.4.0
+
+# Copy install scripts
+RUN mkdir -p /scripts
+COPY install_onnx.sh /scripts/
+COPY install_libchdb.sh /scripts/
+
+# Install system dependencies needed by trex
+# Note: default-jre-headless is not needed since WebAPI already has Java 21
+# Ubuntu noble already has recent libstdc++6, no need for Debian testing repo
+RUN apt-get update && apt-get install -y \
+    curl \
+    clang \
+    libgomp1 \
+    wget \
+    libssl-dev \
+    mesa-vulkan-drivers \
+    libopenblas-dev \
+    npm \
+    tar \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install ONNX Runtime
+RUN /scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime && \
+    cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
+    rm -rf /root/onnxruntime
+
+# Install libchdb (ClickHouse embedded library)
+WORKDIR /tmp
+RUN bash /scripts/install_libchdb.sh
+
+# Create trex data directories
+RUN mkdir -p /usr/src /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in
+
+WORKDIR /usr/src
+
+# Copy and install npm dependencies for trex
+COPY deno.json package.json package-lock.json .npmrc ./
+RUN npm install
+
+# Pre-install DuckDB extensions for offline use
+RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
+    cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
+    for lib in autocomplete avro aws azure fts httpfs icu inet json mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner ui vss; do \
+        wget -q http://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${lib}.duckdb_extension.gz && \
+        gzip -d ${lib}.duckdb_extension.gz; \
+    done && \
+    for lib in bigquery; do \
+        wget -q http://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${lib}.duckdb_extension.gz && \
+        gzip -d ${lib}.duckdb_extension.gz; \
+    done
+
+# Create directories for trex core and cert
+RUN mkdir -p ./cert ./core
+
+# Copy trex core files
+COPY ./core ./core
+
+# Bundle trex TypeScript files
+RUN npx trex bundle -e ./core/server/index.ts -o ./core/server/index.eszip && \
+    npx trex bundle -e ./core/event/index.ts -o ./core/event/index.eszip
+
+# Copy logto configuration
+RUN mkdir -p ./logto
+COPY ./logto ./logto
+
+# Copy built-in CDW data
+COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
+
+# Set trex environment variables
+ENV TREXAS_HOST=0.0.0.0
+ENV TREXAS_PORT=9876
+ENV PGWIRE_HOST=0.0.0.0
+ENV PGWIRE_PORT=5433
+ENV TLS_CERT_PATH=""
+ENV TLS_KEY_PATH=""
+ENV TLS_PORT=9443
+ENV MAIN_PATH=/usr/src/main
+
+# Set up data directories that trexas expects (started by WebAPI's trexsql-ext)
+RUN mkdir -p /var/lib/ohdsi/webapi/data/cache /var/lib/ohdsi/webapi/data/plugins
+
+# Go back to WebAPI working directory
+WORKDIR /var/lib/ohdsi/webapi
+
+# Expose both WebAPI and trex ports
+EXPOSE 8080 33001 5432 33000 9876 5433 9443
+
+# Run WebAPI directly - trexas will be started internally by trexsql-ext
+CMD ["sh", "-c", "exec java ${DEFAULT_JAVA_OPTS} ${JAVA_OPTS} -Dorg.duckdb.lib_path=/tmp/trexsql/libtrexsql_java.so --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED -jar WebAPI.jar"]

@@ -40,6 +40,10 @@ export class DatasetQueryService {
 
   async getDataset(id: string): Promise<IDataset> {
     const baseColumns = this.getDatasetBaseColumns()
+    // Support lookup by both UUID id and tokenDatasetCode
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+    const whereClause = isUuid ? 'dataset.id = :id' : 'dataset.tokenDatasetCode = :id'
+
     const dataset = await this.datasetRepo
       .createQueryBuilder('dataset')
       .leftJoin('dataset.datasetDetail', 'datasetDetail')
@@ -47,7 +51,7 @@ export class DatasetQueryService {
       .leftJoin('dataset.tags', 'tag')
       .leftJoin('dataset.attributes', 'attribute')
       .leftJoin('attribute.attributeConfig', 'attributeConfig')
-      .where('dataset.id = :id', { id })
+      .where(whereClause, { id })
       .select(baseColumns)
       .getOne()
 

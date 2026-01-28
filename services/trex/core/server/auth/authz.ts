@@ -306,11 +306,20 @@ export async function authz(c: Context, next: any) {
       });
     }
 
-    const token = jwt.decode(bearerToken.split(" ")[1]); //as IToken
-    //const { client_id, grant_type } = token
-    const sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
-    const idpUserId = token["oid"] || sub;
+    let token: any;
+    let sub: string;
+    let idpUserId: string;
     let mriUserObj: any;
+
+    token = jwt.decode(bearerToken.split(" ")[1]);
+    if (!token) {
+      logger.error("authz: failed to decode token");
+      throw new HTTPException(401, {
+        res: new Response("Invalid token", { status: 401 }),
+      });
+    }
+    sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
+    idpUserId = token["oid"] || sub;
 
     const match = global.REQUIRED_URL_SCOPES.find(
       ({ path, httpMethods }) =>

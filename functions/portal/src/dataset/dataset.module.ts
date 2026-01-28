@@ -5,6 +5,7 @@ import { RequestContextService } from '../common/request-context.service.ts'
 import { DatabaseModule } from '../database/module.ts'
 import { TenantModule } from '../tenant/tenant.module.ts'
 import { UserMgmtModule } from '../user-mgmt/user-mgmt.module.ts'
+import { WebApiModule } from '../webapi/webapi.module.ts'
 import { DatasetCommandService } from './command/dataset-command.service.ts'
 import { DatasetFilterService } from './dataset-filter.service.ts'
 import { DatasetController } from './dataset.controller.ts'
@@ -30,6 +31,7 @@ const imports: Array<any> = [
   TenantModule,
   AnalyticsModule,
   UserMgmtModule,
+  WebApiModule,
   PublicDatasetModule,
   DatasetPaConfigModule,
   MetadataConfigModule,

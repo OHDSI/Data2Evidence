@@ -769,7 +769,7 @@ export function arrayBufferEquals(a: any, b: any) {
  * @returns {Boolean} True, if token belongs to client credentials authN flow.
  */
 export function isClientCredToken(token: any) {
-  return token.authType && token.authType === "azure-ad";
+  return token && token.authType && token.authType === "azure-ad";
 }
 
 /**

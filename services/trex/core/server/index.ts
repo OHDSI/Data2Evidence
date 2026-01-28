@@ -9,6 +9,7 @@ import { addRoutes as addDBMRoutes } from "./routes/dbm.ts"
 import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
+import { authn } from "./auth/authn.ts"
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -35,6 +36,43 @@ export async function initTrex() {
     addPluginRoutes(app);
     addPortalRoutes(app);
     addLogRoutes(app);
+
+    // Proxy WebAPI requests with Logto token exchange
+    app.all('/WebAPI/*', authn, async (c) => {
+        const url = new URL(c.req.url);
+        const targetUrl = `http://localhost:8080${url.pathname}${url.search}`;
+
+        const headers = new Headers(c.req.raw.headers);
+        headers.delete('host');
+
+        const webApiToken = c.get("webApiToken");
+        if (webApiToken) {
+            headers.set("Authorization", `Bearer ${webApiToken}`);
+        }
+
+        try {
+            const response = await fetch(targetUrl, {
+                method: c.req.method,
+                headers: headers,
+                body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : undefined,
+                // @ts-ignore - duplex is needed for streaming request bodies
+                duplex: 'half',
+                redirect: 'manual',
+            });
+
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+            });
+        } catch (e) {
+            logger.error(`WebAPI proxy error: ${e}`);
+            return new Response(JSON.stringify({ error: 'WebAPI proxy error' }), {
+                status: 502,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+    });
 
     await Plugins.initPlugins(app);
     logger.log("Added plugins");
