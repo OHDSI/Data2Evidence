@@ -1,27 +1,27 @@
-import React, { FC, useCallback, useState, useEffect, useMemo } from "react";
+import React, { FC, useCallback, useState, useMemo } from "react";
 import Divider from "@mui/material/Divider";
 import CircularProgress from "@mui/material/CircularProgress";
 import { PlayCircleFilled, StopCircle } from "@mui/icons-material";
-import { Button, Dialog, Select, MenuItem, InputLabel, TextField, Loader } from "@portal/components";
+import { Button, Dialog, Select, MenuItem, InputLabel, Loader } from "@portal/components";
 import * as monaco from "monaco-editor";
 import { loader, Editor } from "@monaco-editor/react";
-import {
-  Study,
-  CloseDialogType,
-  StudyDashboardTemplateData,
-  Feedback,
-  NetworkStrategusStudy,
-  ViewerCodeWithQueries,
-} from "../../../../types";
+import { CloseDialogType } from "../../../../types";
 import { useKernelViewer } from "../../../../hooks";
 import { useTranslation } from "../../../../contexts";
 import { api } from "../../../../axios/api";
-import "./ManageViewerDialog.scss";
 import { i18nKeys } from "../../../../contexts/app-context/states";
+import { createConfigStrategy } from "./configStrategies";
+import { useAsyncOperation } from "./hooks/useAsyncOperation";
+import { useViewerData } from "./hooks/useViewerData";
+import { useQueryManagement } from "./hooks/useQueryManagement";
+import { CodeNameSelect } from "./components/CodeNameSelect";
+import { QueriesSection } from "./components/QueriesSection";
+import { TemplateSelect } from "./components/TemplateSelect";
+import "./ManageViewerDialog.scss";
 
 interface ViewerConfig {
   type: "dashboard" | "cohort" | "strategus";
-  id: string; // datasetId or studyId
+  id: string;
 }
 
 interface ManageViewerDialogProps {
@@ -30,20 +30,8 @@ interface ManageViewerDialogProps {
   onClose?: (type: CloseDialogType) => void;
 }
 
-interface ViewerOperations {
-  fetchTemplates: () => Promise<StudyDashboardTemplateData[]>;
-  fetchCode: (id: string, name: string) => Promise<string>;
-  saveCode: (id: string, code: string, name: string) => Promise<void>;
-}
-
-interface QueryEntry {
-  queryName: string;
-  sql: string;
-}
-
 const SafeEditor = Editor as any;
 
-// Configure monaco loader at module level (not on every render)
 loader.config({ monaco });
 
 const enum ViewerType {
@@ -54,25 +42,42 @@ const enum ViewerType {
 
 const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose }) => {
   const { getText } = useTranslation();
-  const [viewerCode, setViewerCode] = useState<string>("");
-  const [defaultViewerCode, setDefaultViewerCode] = useState<string>("");
-  const [templates, setTemplates] = useState<StudyDashboardTemplateData[]>([]);
   const [templateLanguage, setTemplateLanguage] = useState<ViewerType>(ViewerType.SHINY_SERVER);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>({});
-  const [name, setName] = useState<string>("");
-  const [queries, setQueries] = useState<QueryEntry[]>([]);
-  const [configType, setConfigType] = useState<"dashboard" | "cohort">(
-    config.type === "cohort" ? "cohort" : "dashboard"
-  );
-  const [savedCodes, setSavedCodes] = useState<ViewerCodeWithQueries[]>([]);
-  const [isNewName, setIsNewName] = useState(false);
-  const [newNameInput, setNewNameInput] = useState("");
-  const [originalQueryNames, setOriginalQueryNames] = useState<string[]>([]);
+  const [codeType, setCodeType] = useState<"dashboard" | "cohort">(config.type === "cohort" ? "cohort" : "dashboard");
 
+  const strategy = useMemo(() => createConfigStrategy(config.type), [config.type]);
+  const { loading, feedback, clearFeedback, execute } = useAsyncOperation();
   const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.id);
+
+  const {
+    templates,
+    savedCodes,
+    code,
+    name,
+    isNewName,
+    queries,
+    originalQueryNames,
+    initialLoading,
+    setQueries,
+    selectCode,
+    applyTemplate,
+    updateCode,
+    updateName,
+    markSaved,
+  } = useViewerData({
+    open,
+    configId: config.id,
+    configType: config.type,
+    codeType,
+    strategy,
+  });
+
+  const { addQuery, updateQuery, removeQuery, getDeletedQueryNames, getValidQueries } = useQueryManagement({
+    queries,
+    setQueries,
+    originalQueryNames,
+  });
 
   const viewerTypes = useMemo(
     () => [
@@ -87,40 +92,8 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     return templateLanguage === ViewerType.Python ? "python" : "r";
   }, [templateLanguage]);
 
-  const operations = useMemo((): ViewerOperations => {
-    if (config.type === "dashboard") {
-      return {
-        fetchTemplates: () => api.systemPortal.getDashboardTemplatesFromRepo(),
-        fetchCode: async (id: string, codeName: string) => {
-          const result = await api.systemPortal.getDashboardCode(id, "dashboard", codeName);
-          return result.code;
-        },
-        saveCode: async (id: string, code: string, codeName: string) => {
-          await api.systemPortal.upsertDashboardCode({
-            datasetId: id,
-            code,
-            type: "dashboard",
-            name: codeName,
-          });
-        },
-      };
-    } else {
-      // strategus
-      return {
-        fetchTemplates: () => api.strategusAnalysis.getStudyViewerTemplates(),
-        fetchCode: async (id: string, _codeName: string) => {
-          const study = await api.strategusAnalysis.getStrategusAnalysis(id);
-          return study.viewerCode || "";
-        },
-        saveCode: (id: string, code: string, _codeName: string) =>
-          api.strategusAnalysis.saveStategusAnalysisViewerCode(id, code),
-      };
-    }
-  }, [config.type]);
-
-  const getI18nKeys = useCallback(() => {
+  const i18n = useMemo(() => {
     const prefix = config.type === "dashboard" ? "MANAGE_DASHBOARD_DIALOG" : "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG";
-
     return {
       title: `${prefix}__TITLE` as keyof typeof i18nKeys,
       startViewer: `${prefix}__START_VIEWER` as keyof typeof i18nKeys,
@@ -135,81 +108,13 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     };
   }, [config.type]);
 
-  const i18n = getI18nKeys();
-
-  useEffect(() => {
-    if (!open) return;
-
-    const fetchData = async () => {
-      setInitialLoading(true);
-      try {
-        try {
-          const templates = await operations.fetchTemplates();
-          setTemplates(templates);
-        } catch (error) {
-          console.error("Failed to fetch templates:", error);
-          setTemplates([]);
-        }
-
-        // For dashboard/cohort types, use dashboard-codes endpoint
-        if (config.type === "dashboard" || config.type === "cohort") {
-          setIsNewName(false);
-          setNewNameInput("");
-          try {
-            const codes = await api.systemPortal.getDashboardCodes(config.id, configType);
-            setSavedCodes(codes);
-            if (codes.length > 0) {
-              const firstCode = codes[0];
-              setName(firstCode.name);
-              setViewerCode(firstCode.code);
-              setDefaultViewerCode(firstCode.code);
-              setQueries(firstCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
-              setOriginalQueryNames(firstCode.queries.map((q) => q.queryName));
-            } else {
-              setIsNewName(true);
-              setName("");
-              setViewerCode("");
-              setDefaultViewerCode("");
-              setQueries([]);
-              setOriginalQueryNames([]);
-            }
-          } catch (error) {
-            console.error("Failed to fetch dashboard codes:", error);
-            setSavedCodes([]);
-            setIsNewName(true);
-            setName("");
-            setViewerCode("");
-            setDefaultViewerCode("");
-            setQueries([]);
-            setOriginalQueryNames([]);
-          }
-        } else {
-          // strategus - name not used by API (see fetchCode implementation)
-          try {
-            const code = await operations.fetchCode(config.id, "");
-            setViewerCode(code);
-            setDefaultViewerCode(code);
-          } catch (error) {
-            console.error("Failed to fetch default viewer code:", error);
-            setDefaultViewerCode("");
-            setViewerCode("");
-          }
-        }
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [open, config.id, config.type, configType, operations]);
-
   const handleStartViewer = useCallback(async () => {
     try {
-      await startViewer(viewerCode);
+      await startViewer(code);
     } catch (error) {
       console.error("Failed to start viewer:", error);
     }
-  }, [startViewer, viewerCode]);
+  }, [startViewer, code]);
 
   const handleStopViewer = useCallback(async () => {
     try {
@@ -221,163 +126,106 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
-      setFeedback({});
+      clearFeedback();
       typeof onClose === "function" && onClose(type);
     },
-    [onClose]
+    [onClose, clearFeedback]
   );
 
   const handleSave = useCallback(async () => {
-    setFeedback({});
-    try {
-      setLoading(true);
-
-      if (config.type === "dashboard" || config.type === "cohort") {
-        // Save code
-        await api.systemPortal.upsertDashboardCode({
-          datasetId: config.id,
-          code: viewerCode,
-          type: configType,
-          name,
-        });
-
-        // Find queries that were removed or renamed (old names no longer present)
-        const currentQueryNames = queries.filter((q) => q.queryName).map((q) => q.queryName);
-        const deletedQueryNames = originalQueryNames.filter((origName) => !currentQueryNames.includes(origName));
-
-        // Delete removed queries
-        const deletePromises = deletedQueryNames.map((queryName) =>
-          api.systemPortal.deleteDatasetCodeQuery({
+    await execute(
+      async () => {
+        if (strategy.supportsMultipleCodes) {
+          // Save code
+          await api.systemPortal.upsertDashboardCode({
             datasetId: config.id,
-            type: configType,
+            code,
+            type: codeType,
             name,
-            queryName,
-          })
-        );
-        await Promise.all(deletePromises);
+          });
 
-        // Upsert current queries
-        const upsertPromises = queries
-          .filter((query) => query.queryName && query.sql)
-          .map((query) =>
-            api.systemPortal.upsertDatasetCodeQuery({
-              datasetId: config.id,
-              type: configType,
-              name,
-              queryName: query.queryName,
-              sql: query.sql,
-            })
+          // Delete removed queries
+          const deletedQueryNames = getDeletedQueryNames();
+          await Promise.all(
+            deletedQueryNames.map((queryName) =>
+              api.systemPortal.deleteDatasetCodeQuery({
+                datasetId: config.id,
+                type: codeType,
+                name,
+                queryName,
+              })
+            )
           );
-        await Promise.all(upsertPromises);
 
-        // Update original query names to match current state
-        setOriginalQueryNames(currentQueryNames);
-      } else {
-        await operations.saveCode(config.id, viewerCode, name);
+          // Upsert current queries
+          const validQueries = getValidQueries();
+          await Promise.all(
+            validQueries.map((query) =>
+              api.systemPortal.upsertDatasetCodeQuery({
+                datasetId: config.id,
+                type: codeType,
+                name,
+                queryName: query.queryName,
+                sql: query.sql,
+              })
+            )
+          );
+
+          markSaved();
+        } else {
+          await strategy.saveCode({ id: config.id, code, name, type: codeType });
+        }
+        setSelectedTemplate("default");
+      },
+      {
+        successMessage: getText(i18n.saveSuccess),
+        errorMessage: getText(i18n.saveError, [config.id]),
       }
-
-      setFeedback({
-        type: "success",
-        message: getText(i18n.saveSuccess),
-      });
-      setDefaultViewerCode(viewerCode);
-      setSelectedTemplate("default");
-    } catch (error) {
-      console.error("Failed to save code:", error);
-      setFeedback({
-        type: "error",
-        message: getText(i18n.saveError, [config.id]),
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [viewerCode, config.id, config.type, getText, operations, i18n, name, queries, configType, originalQueryNames]);
+    );
+  }, [
+    execute,
+    strategy,
+    config.id,
+    code,
+    name,
+    codeType,
+    getDeletedQueryNames,
+    getValidQueries,
+    markSaved,
+    getText,
+    i18n,
+  ]);
 
   const handleBuildAssets = useCallback(async () => {
-    setFeedback({});
-    try {
-      setLoading(true);
-      await api.dataflow.triggerShinyLiveAssetDeployment({
-        datasetId: config.id,
-        language: templateLanguage,
-        appCode: viewerCode,
-      });
-      setFeedback({
-        type: "success",
-        message: "Shiny assets build triggered successfully.",
-      });
-    } catch (error) {
-      console.error("Failed to trigger shiny assets build:", error);
-      setFeedback({
-        type: "error",
-        message: "Failed to trigger shiny assets build.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [viewerCode, templateLanguage]);
+    await execute(
+      () =>
+        api.dataflow.triggerShinyLiveAssetDeployment({
+          datasetId: config.id,
+          language: templateLanguage,
+          appCode: code,
+        }),
+      {
+        successMessage: "Shiny assets build triggered successfully.",
+        errorMessage: "Failed to trigger shiny assets build.",
+      }
+    );
+  }, [execute, config.id, templateLanguage, code]);
 
   const handleTemplateChange = useCallback(
     (filename: string) => {
       setSelectedTemplate(filename);
-      if (filename === "default") {
-        setViewerCode(defaultViewerCode);
-      } else {
-        const tmpl = templates.find((t) => t.filename === filename);
-        if (tmpl?.content) {
-          setViewerCode(tmpl.content);
-        }
-      }
+      applyTemplate(filename);
     },
-    [defaultViewerCode, templates]
+    [applyTemplate]
   );
-
-  const clearFeedback = useCallback(() => {
-    setFeedback({});
-  }, []);
-
-  const handleAddQuery = useCallback(() => {
-    setQueries((prev) => [...prev, { queryName: "", sql: "" }]);
-  }, []);
-
-  const handleQueryChange = useCallback((index: number, field: keyof QueryEntry, value: string) => {
-    setQueries((prev) => prev.map((q, i) => (i === index ? { ...q, [field]: value } : q)));
-  }, []);
-
-  const handleRemoveQuery = useCallback((index: number) => {
-    setQueries((prev) => prev.filter((_, i) => i !== index));
-  }, []);
 
   const handleNameChange = useCallback(
     (selectedName: string) => {
-      if (selectedName === "__new__") {
-        setIsNewName(true);
-        setNewNameInput("");
-        setName("");
-        setViewerCode("");
-        setDefaultViewerCode("");
-        setQueries([]);
-        setOriginalQueryNames([]);
-      } else {
-        setIsNewName(false);
-        setName(selectedName);
-        const selectedCode = savedCodes.find((c) => c.name === selectedName);
-        if (selectedCode) {
-          setViewerCode(selectedCode.code);
-          setDefaultViewerCode(selectedCode.code);
-          setQueries(selectedCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
-          setOriginalQueryNames(selectedCode.queries.map((q) => q.queryName));
-        }
-      }
+      selectCode(selectedName);
       setSelectedTemplate("default");
     },
-    [savedCodes]
+    [selectCode]
   );
-
-  const handleNewNameInputChange = useCallback((value: string) => {
-    setNewNameInput(value);
-    setName(value);
-  }, []);
 
   const dialogClassName = `manage-viewer-dialog manage-viewer-dialog--${config.type}`;
 
@@ -397,78 +245,36 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
       <div className="manage-viewer-dialog__header">
         <div className="manage-viewer-dialog__header__selection">
-          {(config.type === "dashboard" || config.type === "cohort") && (
+          {strategy.supportsMultipleCodes && (
             <div>
               <InputLabel sx={{ mb: 1 }}>Config Type</InputLabel>
               <Select
                 sx={{ width: "100%" }}
                 variant="standard"
-                value={configType}
-                onChange={(event) => setConfigType(event.target.value as "dashboard" | "cohort")}
+                value={codeType}
+                onChange={(event) => setCodeType(event.target.value as "dashboard" | "cohort")}
               >
                 <MenuItem value="dashboard">Dashboard</MenuItem>
                 <MenuItem value="cohort">Cohort</MenuItem>
               </Select>
             </div>
           )}
-          <div>
-            <InputLabel sx={{ mb: 1 }}>Name</InputLabel>
-            {config.type === "dashboard" || config.type === "cohort" ? (
-              <Select
-                sx={{ width: "100%" }}
-                variant="standard"
-                value={isNewName ? "__new__" : name}
-                onChange={(event) => handleNameChange(event.target.value)}
-              >
-                {savedCodes.map((code) => (
-                  <MenuItem key={code.name} value={code.name}>
-                    {code.name}
-                  </MenuItem>
-                ))}
-                <MenuItem value="__new__">
-                  <em>+ New</em>
-                </MenuItem>
-              </Select>
-            ) : (
-              <TextField
-                sx={{ width: "100%" }}
-                variant="standard"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter code name"
-              />
-            )}
-          </div>
-          {isNewName && (config.type === "dashboard" || config.type === "cohort") && (
-            <div>
-              <InputLabel sx={{ mb: 1 }}>New Name</InputLabel>
-              <TextField
-                sx={{ width: "100%" }}
-                variant="standard"
-                value={newNameInput}
-                onChange={(e) => handleNewNameInputChange(e.target.value)}
-                placeholder="Enter new name"
-              />
-            </div>
-          )}
-          <div>
-            <InputLabel sx={{ mb: 1 }}>Template</InputLabel>
-            <Select
-              sx={{ width: "100%" }}
-              variant="standard"
-              value={selectedTemplate}
-              onChange={(event) => handleTemplateChange(event.target.value)}
-            >
-              <MenuItem value="default">
-                <em>Default</em>
-              </MenuItem>
-              {templates.map((template) => (
-                <MenuItem key={template.filename} value={template.filename}>
-                  {template?.filename}
-                </MenuItem>
-              ))}
-            </Select>
-          </div>
+
+          <CodeNameSelect
+            savedCodes={savedCodes}
+            isNewName={isNewName}
+            name={name}
+            onNameChange={handleNameChange}
+            onNewNameInput={updateName}
+            supportsMultipleCodes={strategy.supportsMultipleCodes}
+          />
+
+          <TemplateSelect
+            templates={templates}
+            selectedTemplate={selectedTemplate}
+            onTemplateChange={handleTemplateChange}
+          />
+
           <div>
             <InputLabel sx={{ mb: 1 }}>Viewer Type</InputLabel>
             <Select
@@ -538,44 +344,25 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           <SafeEditor
             height="50vh"
             language={editorLanguage}
-            value={viewerCode}
+            value={code}
             options={{
               scrollBeyondLastLine: false,
               fontSize: "14px",
             }}
-            onChange={setViewerCode}
+            onChange={updateCode}
           />
         </div>
       )}
       <Divider />
 
-      <div className="manage-viewer-dialog__queries">
-        <div className="manage-viewer-dialog__queries__header">
-          <InputLabel>Queries</InputLabel>
-          <Button text="Add Query" onClick={handleAddQuery} variant="outlined" size="small" />
-        </div>
-        {queries.map((query, index) => (
-          <div key={index} className="manage-viewer-dialog__queries__entry">
-            <TextField
-              label="Query Name"
-              variant="standard"
-              value={query.queryName}
-              onChange={(e) => handleQueryChange(index, "queryName", e.target.value)}
-              sx={{ flex: 1 }}
-            />
-            <TextField
-              label="SQL"
-              variant="standard"
-              value={query.sql}
-              onChange={(e) => handleQueryChange(index, "sql", e.target.value)}
-              sx={{ flex: 2 }}
-              multiline
-              rows={1}
-            />
-            <Button text="Remove" onClick={() => handleRemoveQuery(index)} variant="text" size="small" />
-          </div>
-        ))}
-      </div>
+      {strategy.supportsQueries && (
+        <QueriesSection
+          queries={queries}
+          onAddQuery={addQuery}
+          onUpdateQuery={updateQuery}
+          onRemoveQuery={removeQuery}
+        />
+      )}
       <Divider />
 
       <div className="button-group-actions">
