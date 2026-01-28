@@ -106,7 +106,7 @@ export class DemoService {
       databaseCode: env.DEMO_DB_CODE,
       cdmSchemaValue: env.DEMO_DB_CDM_SCHEMA,
       vocabSchemaValue: env.DEMO_DB_CDM_SCHEMA,
-      resultSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
+      resultsSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
     };
 
     const result = await datasetAPI.createDataset(dataset);
