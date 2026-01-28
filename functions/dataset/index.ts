@@ -54,21 +54,20 @@ export class DatasetRouter {
         const analyticsSvcAPI = new AnalyticsSvcAPI(token);
 
         try {
-          const metadata = await analyticsSvcAPI.getCdmSchemaSnapshotMetadata(
-            datasetId
-          );
+          const metadata =
+            await analyticsSvcAPI.getCdmSchemaSnapshotMetadata(datasetId);
           return res.status(200).json(metadata);
         } catch (error) {
           this.logger.error(
             `Error when getting CDM schema snapshot metadata: ${JSON.stringify(
-              error
-            )}`
+              error,
+            )}`,
           );
           res
             .status(500)
             .send("Error when getting CDM schema snapshot metadata");
         }
-      }
+      },
     );
 
     this.router.get("/cohorts", async (req: Request, res: Response) => {
@@ -86,7 +85,7 @@ export class DatasetRouter {
         return res.status(200).json(result);
       } catch (error) {
         this.logger.error(
-          `Error when getting cohorts: ${JSON.stringify(error)}`
+          `Error when getting cohorts: ${JSON.stringify(error)}`,
         );
         res.status(500).send("Error when getting cohorts");
       }
@@ -127,19 +126,19 @@ export class DatasetRouter {
         const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
         const parsedNewCacheSchemaName = this.schemaCase(
           newCacheSchemaName,
-          dialect as DbDialect
+          dialect as DbDialect,
         );
 
         // Token study code validation
         const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
         if (!tokenStudyCode.match(tokenFormat)) {
           this.logger.error(
-            `Token dataset code ${tokenStudyCode} has invalid format`
+            `Token dataset code ${tokenStudyCode} has invalid format`,
           );
           return res.status(400).send("Token dataset code format is invalid");
         } else if (await portalAPI.hasDataset(tokenStudyCode)) {
           this.logger.error(
-            `Provided token dataset code ${tokenStudyCode} is already used`
+            `Provided token dataset code ${tokenStudyCode} is already used`,
           );
           return res.status(400).send("Token dataset code is already used");
         }
@@ -159,7 +158,7 @@ export class DatasetRouter {
             ) {
               try {
                 this.logger.info(
-                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`
+                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`,
                 );
 
                 const options = {
@@ -181,7 +180,7 @@ export class DatasetRouter {
                 await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
               } catch (error) {
                 this.logger.error(
-                  `Error while creating new CDM schema! ${error}`
+                  `Error while creating new CDM schema! ${error}`,
                 );
                 return res.status(500).send("Error while creating CDM schema");
               }
@@ -195,14 +194,14 @@ export class DatasetRouter {
 
             if (!db) {
               this.logger.error(
-                `Database with code ${databaseCode} does not exist`
+                `Database with code ${databaseCode} does not exist`,
               );
               return res.status(400).send("Database does not exist");
             }
 
             if (!db.vocab_schemas.includes(schemaName)) {
               this.logger.info(
-                `Vocab schema ${schemaName} does not exist in database ${databaseCode}. Appending it to the database`
+                `Vocab schema ${schemaName} does not exist in database ${databaseCode}. Appending it to the database`,
               );
 
               await dbAPI.updateDbDetails({
@@ -251,7 +250,7 @@ export class DatasetRouter {
           ) {
             try {
               this.logger.info(
-                `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`
+                `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
               );
 
               const fhirCacheFlowRunDto = {
@@ -262,7 +261,7 @@ export class DatasetRouter {
               await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
             } catch (error) {
               this.logger.error(
-                `Error while creating FHIR cache schema! ${error}`
+                `Error while creating FHIR cache schema! ${error}`,
               );
               return res
                 .status(500)
@@ -288,12 +287,12 @@ export class DatasetRouter {
             ) {
               try {
                 this.logger.info(
-                  `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`
+                  `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`,
                 );
 
                 const dataModels = await jobpluginsAPI.getDatamodels();
                 const dataModelInfo = dataModels.find(
-                  (model) => model.datamodel === dataModel
+                  (model) => model.datamodel === dataModel,
                 );
 
                 await jobpluginsAPI.createDatamartCacheFlowRun(
@@ -301,11 +300,11 @@ export class DatasetRouter {
                   newCacheDataset.id,
                   {},
                   dataModelInfo?.flowId,
-                  `datamart-cache-${schemaName}`
+                  `datamart-cache-${schemaName}`,
                 );
               } catch (error) {
                 this.logger.error(
-                  `Error while creating cache for existing schema! ${error}`
+                  `Error while creating cache for existing schema! ${error}`,
                 );
                 return res
                   .status(500)
@@ -319,11 +318,11 @@ export class DatasetRouter {
             .json({ id: newDataset.id, cacheId: newCacheDataset.id });
         } catch (error) {
           this.logger.error(
-            `Error while creating dataset: ${JSON.stringify(error)}`
+            `Error while creating dataset: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error while creating dataset");
         }
-      }
+      },
     );
 
     this.router.post("/snapshot", async (req: Request, res: Response) => {
@@ -362,7 +361,7 @@ export class DatasetRouter {
 
       const parsedNewSchemaName = this.schemaCase(
         newSchemaName,
-        dialect as DbDialect
+        dialect as DbDialect,
       );
 
       try {
@@ -390,7 +389,7 @@ export class DatasetRouter {
             sourceType === SourceDatasetType.FHIR
           ) {
             this.logger.info(
-              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`
+              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`,
             );
             try {
               const fhirCacheFlowRunDto = {
@@ -406,14 +405,14 @@ export class DatasetRouter {
           } else {
             this.logger.info(
               `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
-                snapshotCopyConfig
-              )})`
+                snapshotCopyConfig,
+              )})`,
             );
 
             try {
               const dataModels = await jobpluginsAPI.getDatamodels();
               const dataModelInfo = dataModels.find(
-                (model) => model.datamodel === dataModel
+                (model) => model.datamodel === dataModel,
               );
 
               await jobpluginsAPI.createDatamartCacheFlowRun(
@@ -421,7 +420,7 @@ export class DatasetRouter {
                 newDataset.id,
                 snapshotCopyConfig,
                 dataModelInfo.flowId,
-                `datamart-snapshot-${schemaName}`
+                `datamart-snapshot-${schemaName}`,
               );
             } catch (error) {
               this.logger.error(`Error copying CDM schema! ${error}`);
@@ -433,7 +432,7 @@ export class DatasetRouter {
         return res.status(200).json(newDataset);
       } catch (error) {
         this.logger.error(
-          `Error when copying dataset: ${JSON.stringify(error)}`
+          `Error when copying dataset: ${JSON.stringify(error)}`,
         );
         res.status(500).send(`Error when copying dataset: ${error}`);
       }
@@ -459,7 +458,7 @@ export class DatasetRouter {
         return res.status(200).json(mapped);
       } catch (error) {
         this.logger.error(
-          `Error when getting dashboards: ${JSON.stringify(error)}`
+          `Error when getting dashboards: ${JSON.stringify(error)}`,
         );
         res.status(500).send("Error when getting dashboards");
       }
@@ -468,12 +467,22 @@ export class DatasetRouter {
     this.router.use(
       "/shiny-live",
       async (req: Request, res: Response, next: NextFunction) => {
-        const { datasetId, language } = req.query || {};
+        const { datasetId, type, name, language } = req.query || {};
 
         if (!datasetId) {
           return res.status(400).send(`datasetId is required`);
         } else if (typeof datasetId !== "string") {
           return res.status(400).send(`datasetId query param is invalid`);
+        }
+        if (!type) {
+          return res.status(400).send(`type is required`);
+        } else if (typeof type !== "string") {
+          return res.status(400).send(`type query param is invalid`);
+        }
+        if (!name) {
+          return res.status(400).send(`name is required`);
+        } else if (typeof name !== "string") {
+          return res.status(400).send(`name query param is invalid`);
         }
         if (!language) {
           return res.status(400).send(`language is required`);
@@ -485,7 +494,9 @@ export class DatasetRouter {
           // Get the static files directory (downloads and unzips if needed)
           const staticDir = await this.shinyLiveService.getStaticFilesDir(
             datasetId,
-            language
+            type,
+            name,
+            language,
           );
 
           // Serve static files from the unzipped directory
@@ -494,11 +505,11 @@ export class DatasetRouter {
           staticMiddleware(req, res, next);
         } catch (error) {
           this.logger.error(
-            `Error in shiny-live endpoint: ${JSON.stringify(error)}`
+            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error loading shiny-live application");
         }
-      }
+      },
     );
   }
 }

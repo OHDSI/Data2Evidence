@@ -16,9 +16,11 @@ export class ShinyLiveService {
 
   private async downloadZip(
     datasetId: string,
-    language: string
+    type: string,
+    name: string,
+    language: string,
   ): Promise<ReadableStream> {
-    const fileName = `${datasetId}_${language}.zip`;
+    const fileName = `dashboard_${datasetId}_${type}_${name}_${language}.zip`;
     const filePath = `datasets/${datasetId}/${fileName}`;
     const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
 
@@ -34,10 +36,10 @@ export class ShinyLiveService {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(
-        `Error downloading shinylive zip: ${response.status} - ${errorText}`
+        `Error downloading shinylive zip: ${response.status} - ${errorText}`,
       );
       throw new Error(
-        `Failed to download shinylive zip: ${response.status} ${errorText}`
+        `Failed to download shinylive zip: ${response.status} ${errorText}`,
       );
     }
 
@@ -50,7 +52,7 @@ export class ShinyLiveService {
 
   private async unzipFile(
     zipStream: ReadableStream,
-    targetDir: string
+    targetDir: string,
   ): Promise<void> {
     console.log(`Unzipping to: ${targetDir}`);
 
@@ -92,19 +94,21 @@ export class ShinyLiveService {
 
   async getStaticFilesDir(
     datasetId: string,
-    language: string
+    type: string,
+    name: string,
+    language: string,
   ): Promise<string> {
     const targetDir = path.join(
       process.cwd(),
       "temp",
-      `${datasetId}_${language}`
+      `${datasetId}_${type}_${name}_${language}`,
     );
 
     // Download and unzip
     console.log(
-      `Downloading and unzipping shinylive for ${datasetId}_${language}`
+      `Downloading and unzipping shinylive for ${datasetId}_${type}_${name}_${language}`,
     );
-    const zipStream = await this.downloadZip(datasetId, language);
+    const zipStream = await this.downloadZip(datasetId, type, name, language);
     await this.unzipFile(zipStream, targetDir);
 
     return targetDir;
