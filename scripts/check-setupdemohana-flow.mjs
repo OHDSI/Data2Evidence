@@ -194,7 +194,7 @@ let num_of_jobs = 0;
 try {
     var inprogress_count=1;
     while (inprogress_count>0 && Date.now() < duration + start) { 
-        var progressRespObj = await fetch(`https://${CADDY__D2E__PUBLIC_FQDN}/d2e/prefect/api/flow_runs/filter`, {
+        var progressRespObj = await fetch(`https://${CADDY__D2E__PUBLIC_FQDN}/d2e/prefect/d2e/api/flow_runs/filter`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
