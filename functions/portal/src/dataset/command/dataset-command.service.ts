@@ -620,6 +620,20 @@ export class DatasetCommandService {
     });
   }
 
+  async deleteDatasetCodeQuery(
+    datasetId: string,
+    type: string,
+    name: string,
+    queryName: string,
+  ) {
+    return await this.datasetCodeQueryRepo.deleteDatasetCodeQuery(
+      datasetId,
+      type,
+      name,
+      queryName,
+    );
+  }
+
   private async addCustomAttribute(
     entityMgr: EntityManager,
     datasetId: string,

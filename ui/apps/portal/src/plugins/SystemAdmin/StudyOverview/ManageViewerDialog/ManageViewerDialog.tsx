@@ -70,6 +70,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   const [savedCodes, setSavedCodes] = useState<ViewerCodeWithQueries[]>([]);
   const [isNewName, setIsNewName] = useState(false);
   const [newNameInput, setNewNameInput] = useState("");
+  const [originalQueryNames, setOriginalQueryNames] = useState<string[]>([]);
 
   const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.id);
 
@@ -163,12 +164,14 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
               setViewerCode(firstCode.code);
               setDefaultViewerCode(firstCode.code);
               setQueries(firstCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
+              setOriginalQueryNames(firstCode.queries.map((q) => q.queryName));
             } else {
               setIsNewName(true);
               setName("");
               setViewerCode("");
               setDefaultViewerCode("");
               setQueries([]);
+              setOriginalQueryNames([]);
             }
           } catch (error) {
             console.error("Failed to fetch dashboard codes:", error);
@@ -178,6 +181,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
             setViewerCode("");
             setDefaultViewerCode("");
             setQueries([]);
+            setOriginalQueryNames([]);
           }
         } else {
           // strategus - name not used by API (see fetchCode implementation)
@@ -237,7 +241,23 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           name,
         });
 
-        const queryPromises = queries
+        // Find queries that were removed or renamed (old names no longer present)
+        const currentQueryNames = queries.filter((q) => q.queryName).map((q) => q.queryName);
+        const deletedQueryNames = originalQueryNames.filter((origName) => !currentQueryNames.includes(origName));
+
+        // Delete removed queries
+        const deletePromises = deletedQueryNames.map((queryName) =>
+          api.systemPortal.deleteDatasetCodeQuery({
+            datasetId: config.id,
+            type: configType,
+            name,
+            queryName,
+          })
+        );
+        await Promise.all(deletePromises);
+
+        // Upsert current queries
+        const upsertPromises = queries
           .filter((query) => query.queryName && query.sql)
           .map((query) =>
             api.systemPortal.upsertDatasetCodeQuery({
@@ -248,7 +268,10 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
               sql: query.sql,
             })
           );
-        await Promise.all(queryPromises);
+        await Promise.all(upsertPromises);
+
+        // Update original query names to match current state
+        setOriginalQueryNames(currentQueryNames);
       } else {
         await operations.saveCode(config.id, viewerCode, name);
       }
@@ -268,7 +291,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     } finally {
       setLoading(false);
     }
-  }, [viewerCode, config.id, config.type, getText, operations, i18n, name, queries, configType]);
+  }, [viewerCode, config.id, config.type, getText, operations, i18n, name, queries, configType, originalQueryNames]);
 
   const handleBuildAssets = useCallback(async () => {
     setFeedback({});
@@ -334,6 +357,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
         setViewerCode("");
         setDefaultViewerCode("");
         setQueries([]);
+        setOriginalQueryNames([]);
       } else {
         setIsNewName(false);
         setName(selectedName);
@@ -342,6 +366,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           setViewerCode(selectedCode.code);
           setDefaultViewerCode(selectedCode.code);
           setQueries(selectedCode.queries.map((q) => ({ queryName: q.queryName, sql: q.sql })));
+          setOriginalQueryNames(selectedCode.queries.map((q) => q.queryName));
         }
       }
       setSelectedTemplate("default");

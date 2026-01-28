@@ -193,6 +193,21 @@ export class DatasetController {
     );
   }
 
+  @Delete("dashboard-code-query")
+  async deleteDatasetCodeQuery(
+    @Query("datasetId") datasetId: string,
+    @Query("type") type: string,
+    @Query("name") name: string,
+    @Query("queryName") queryName: string,
+  ) {
+    return await this.datasetCommandService.deleteDatasetCodeQuery(
+      datasetId,
+      type,
+      name,
+      queryName,
+    );
+  }
+
   @Get("dashboard-codes")
   async getDatasetCodeWithQueries(
     @Query("datasetId") datasetId: string,

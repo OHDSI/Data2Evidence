@@ -70,4 +70,18 @@ export class DatasetCodeQueryRepository extends Repository<DatasetCodeQuery> {
     });
     return await this.save(query);
   }
+
+  async deleteDatasetCodeQuery(
+    datasetId: string,
+    type: string,
+    name: string,
+    queryName: string,
+  ) {
+    return await this.delete({
+      datasetId,
+      type,
+      name,
+      queryName,
+    });
+  }
 }

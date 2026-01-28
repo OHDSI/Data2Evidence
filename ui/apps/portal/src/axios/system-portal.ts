@@ -355,6 +355,20 @@ export class SystemPortal {
     });
   }
 
+  public deleteDatasetCodeQuery(params: {
+    datasetId: string;
+    type: string;
+    name: string;
+    queryName: string;
+  }) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "dataset/dashboard-code-query",
+      method: "DELETE",
+      params,
+    });
+  }
+
   public getDashboardCodes(datasetId: string, type: string): Promise<ViewerCodeWithQueries[]> {
     return request({
       baseURL: SYSTEM_PORTAL_URL,

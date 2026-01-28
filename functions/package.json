@@ -1364,11 +1364,13 @@
           "path": "^/system-portal/dataset/dashboard-code-query$",
           "scopes": [
             "portal.dataset.read",
-            "portal.dataset.update"
+            "portal.dataset.update",
+            "portal.dataset.delete"
           ],
           "httpMethods": [
             "GET",
-            "PUT"
+            "PUT",
+            "DELETE"
           ]
         },
         {
