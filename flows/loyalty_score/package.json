@@ -18,7 +18,7 @@
   "homepage": "https://github.com/data2evidence/d2e-flows#readme",
   "trex": {
     "flow": {
-      "image": "ghcr.io/ohdsi/d2e/flow-loyalty_score",
+      "image": "ghcr.io/ohdsi/d2e/flow-loyalty-score",
       "flows": [
         {
           "name": "loyalty_score_plugin",
