@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'setup-feature-flags'
 const SHOULD_SKIP = false
