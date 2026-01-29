@@ -281,7 +281,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
         paConfigId: formData.paConfigId,
         cdmSchemaValue: study.schemaName,
         vocabSchemaValue: study.vocabSchemaName,
-        resultSchemaValue: study.resultSchemaName,
+        resultsSchemaValue: study.resultsSchemaName,
       };
       // If snapshotCopyConfig is not empty, add to CopyStudyInput
       if (!(Object.keys(snapshotCopyConfig).length === 0)) {

@@ -16,7 +16,7 @@ export class UiSettings {
   public static settings: Settings | null = null
 
   private static promise: Promise<Settings> | null = null
-  private static readonly baseUrl = '/prefect'
+  private static readonly baseUrl = '/prefect/d2e'
 
   public static async load(): Promise<Settings> {
     if (this.settings !== null) {
