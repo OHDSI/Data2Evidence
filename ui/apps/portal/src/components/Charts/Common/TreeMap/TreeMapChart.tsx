@@ -21,7 +21,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
 
   // Create a unique key for each item
   const getItemKey = (item: any) => {
-    return item.value?.[4] || "";
+    return item.value?.[4] || item.name;
   };
 
   // Initialize chart data with itemStyle for each item
@@ -127,17 +127,17 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
     ...(extraChartConfigs && { ...extraChartConfigs }),
   };
 
-  const handleNodeClick = (conceptId: string, conceptName: string, conceptPath: string, itemName: string) => {
+  const handleNodeClick = (conceptId: string, conceptName: string, itemName: string) => {
     setSelectedConcept({ id: conceptId, name: conceptName });
-    // Use conceptPath (value[4]) or name as the unique key
-    const itemKey = conceptPath || itemName;
+    // Use conceptName or itemName as the unique key
+    const itemKey = conceptName || itemName;
     setSelectedItemKey(itemKey);
   };
 
   const onEvents = {
     click: (e: any) => {
-      // e.value[3] = conceptId, e.value[4] = conceptPath, e.name = display name
-      return handleNodeClick(e.value[3], e.value[4], e.value[4], e.name);
+      // e.value[3] = conceptId, e.value[4] = conceptPath (if available), e.name = display name
+      return handleNodeClick(e.value[3], e.value[4] || e.name, e.name);
     },
   };
 

@@ -7,6 +7,7 @@ declare module "@mui/material/styles" {
       selectedRowBorder: string;
       tableHeaderBg: string;
       alternateRowBg: string;
+      treeMapLegendColor: string[];
     };
   }
   interface PaletteOptions {
@@ -14,6 +15,7 @@ declare module "@mui/material/styles" {
       selectedRowBorder?: string;
       tableHeaderBg?: string;
       alternateRowBg?: string;
+      treeMapLegendColor?: string[];
     };
   }
 }
@@ -37,6 +39,7 @@ export const theme = createTheme({
       selectedRowBorder: "#FDA2A2",
       tableHeaderBg: "#edf2f7",
       alternateRowBg: "#fafafa",
+      treeMapLegendColor: ["#edf2f7", "#4FA6EE"],
     },
   },
   components: {
