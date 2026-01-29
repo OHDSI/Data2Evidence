@@ -31,8 +31,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.11.0-beta"; // Update this as needed
-  default_version: string = "0.11.0"; // Update this as needed default/base version
+  LATEST_DOCKER_TAG_NAME: string = "0.12.2-beta"; // Update this as needed
+  default_version: string = "0.12.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
@@ -76,7 +76,7 @@ class D2ECli {
         "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/";
     } else {
       this.PLUGINS_API_VERSION =
-        process.env.PLUGINS_API_VERSION ?? `${this.version}`;
+        process.env.PLUGINS_API_VERSION ?? `~${this.version}`;
       this.DOCKER_TAG_NAME =
         process.env.DOCKER_TAG_NAME ?? `${this.LATEST_DOCKER_TAG_NAME}`;
       this.PLUGINS_IMAGE_TAG =
@@ -245,7 +245,7 @@ class D2ECli {
       .option("-h, --hana", "")
       .option("--hades", "")
       .option(
-        "-c, --compose-file",
+        "-c, --composeFile <path>",
         "[PATH] is path to an additional docker compose file"
       )
       .option("-t, --docker-context <context>", "[CONTEXT] Use docker context")
@@ -765,16 +765,12 @@ class D2ECli {
           return;
         }
         const cwd = process.cwd();
-        const hanapw =
-          process.env.HANAPW || `${this.generate_random_password(16)}`;
+        const hanapw = process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
         const envVariables = {
           HANA_SYSTEM_PASSWORD: this.hanapw,
-          INSTALL_SQLALCHEMY:
-            "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
-          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${
-            this.PROJECT_NAME || "d2e"
-          }_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
+          INSTALL_SQLALCHEMY: `"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"`,
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)

@@ -253,7 +253,7 @@ export type DatasetDB = {
   databaseCode: string;
   dialect: string;
   vocabSchemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
   schemaName: string;
 };
 
