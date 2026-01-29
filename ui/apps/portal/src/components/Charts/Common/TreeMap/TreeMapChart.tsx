@@ -91,13 +91,14 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
       hoverLink: false,
       orient: "horizontal",
       left: "center",
-      bottom: "0%",
+      bottom: "-8px",
       dimension: 1,
       inRange: {
         color: ["#aaa", "#000E7E"],
       },
       textStyle: {
         color: theme.palette.text.primary,
+        fontSize: 16,
       },
       formatter: (value: number) => {
         return `${value.toFixed(2)}`;
@@ -118,15 +119,6 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
           gapWidth: 1,
         },
         visualDimension: 1,
-        // levels: [
-        //   {
-        //     color: ["#aaa", "#000E7E"],
-        //     colorMappingBy: "value",
-        //     itemStyle: {
-        //       gapWidth: 1,
-        //     },
-        //   },
-        // ],
       },
     ],
     ...(extraChartConfigs && { ...extraChartConfigs }),
@@ -160,7 +152,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         notMerge={false}
         lazyUpdate={true}
       />
-      <div>{getText(i18nKeys.TREE_MAP_CHART__CHART_LEGEND)}</div>
+      <div className="legend-box-size">{getText(i18nKeys.TREE_MAP_CHART__CHART_LEGEND)}</div>
     </>
   );
 };
