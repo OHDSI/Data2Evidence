@@ -40,8 +40,6 @@ const LineChart: FC<LineChartProps> = ({
   const yAxisNameGap = getAxisNameGap(series, lineChartFormatConfig?.yAxisFormat, axisBaseGap);
   const option = {
     grid: {
-      left: "4%",
-      bottom: "8%",
       containLabel: true,
     },
 
