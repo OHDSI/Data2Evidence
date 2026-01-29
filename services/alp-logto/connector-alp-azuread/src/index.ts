@@ -19,10 +19,11 @@ import {
 } from "@logto/connector-kit";
 
 import {
-  scopes,
+  defaultScopes,
   defaultMetadata,
   defaultTimeout,
   graphAPIEndpoint,
+  graphAPIMemberOfEndpoint,
 } from "./constant.js";
 import type { AzureADConfig } from "./types.js";
 import {
@@ -33,12 +34,20 @@ import {
 
 const ENDPOINT = `http://localhost:${process.env.PORT}`;
 
+const parseScopes = (scopesConfig?: string): string[] => {
+  if (!scopesConfig || scopesConfig.trim() === "") {
+    return defaultScopes;
+  }
+  return scopesConfig.split(",").map((s) => s.trim()).filter(Boolean);
+};
+
 const getAuthorizationUri =
   (getConfig: GetConnectorConfig): GetAuthorizationUri =>
   async ({ state, redirectUri }) => {
     const config = await getConfig(defaultMetadata.id);
     validateConfig(config, azureADConfigGuard);
-    const { clientId, cloudInstance, tenantId } = config;
+    const { clientId, cloudInstance, tenantId, scopes: scopesConfig } = config;
+    const scopes = parseScopes(scopesConfig);
 
     const params = new URLSearchParams({
       client_id: clientId,
@@ -53,6 +62,8 @@ const getAuthorizationUri =
       path.join(cloudInstance, tenantId, "oauth2/authorize")
     ).toString();
 
+    console.log(`[AzureAD Connector] Authorization URI: ${`${authorityUri}?${params.toString()}`}`);
+
     return `${authorityUri}?${params.toString()}`;
   };
 
@@ -61,7 +72,8 @@ const getAccessToken = async (
   code: string,
   redirectUri: string
 ) => {
-  const { clientId, clientSecret, cloudInstance, tenantId } = config;
+  const { clientId, clientSecret, cloudInstance, tenantId, scopes: scopesConfig } = config;
+  const scopes = parseScopes(scopesConfig);
   try {
     const tokenUri = new URL(
       path.join(cloudInstance, tenantId, "oauth2/v2.0/token")
@@ -82,8 +94,10 @@ const getAccessToken = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Token exchange failed: ${JSON.stringify(errorData)}`);
+      const errorData: any = await response.json();
+      const errorMessage = `Token exchange failed: ${errorData.error_description || JSON.stringify(errorData)}`;
+      console.error(`[AzureAD Connector] ${errorMessage}`);
+      throw new ConnectorError(ConnectorErrorCodes.General, errorMessage);
     }
 
     const authResult = await response.json();
@@ -104,6 +118,30 @@ const getAccessToken = async (
   }
 };
 
+const getUserGroups = async (accessToken: string): Promise<string[]> => {
+  try {
+    const response = await got.get(graphAPIMemberOfEndpoint, {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      timeout: { request: defaultTimeout },
+    });
+
+    const data = JSON.parse(response.body);
+
+    // Filter for groups and extract IDs
+    const groups = data.value
+      .filter((item: any) => item["@odata.type"] === "#microsoft.graph.group")
+      .map((group: any) => group.id);
+
+    console.log(`User groups from Graph API: ${JSON.stringify(groups)}`);
+    return groups;
+  } catch (error) {
+    console.error("Error fetching user groups from Graph API:", error);
+    return []; // Fail silently - no roles will be assigned
+  }
+};
+
 const assignLogtoRolesByAzureGroups = async (
   idToken: string,
   accessToken: string
@@ -112,12 +150,13 @@ const assignLogtoRolesByAzureGroups = async (
   const decodedIdToken: any = jwtDecode(idToken);
   const decodedAccessToken: any = jwtDecode(accessToken);
 
-  // check groups and compare with env
-  const azureGroups = decodedIdToken["groups"] || [];
+  // Fetch groups via Graph API instead of token claim
+  const azureGroups = await getUserGroups(accessToken);
   const rolesGroupMap = JSON.parse(process.env.LOGTO_ROLES_AZ_GROUPS_MAPPING!);
   const eligibleLogtoRoles = Object.keys(rolesGroupMap || {}).filter(
     (role) => azureGroups?.indexOf(rolesGroupMap[role]) > -1
   );
+  console.log(`Eligible Logto roles based on Azure groups: ${JSON.stringify(eligibleLogtoRoles)}`);
 
   const oid = decodedIdToken["oid"];
   const name = decodedIdToken["name"];
