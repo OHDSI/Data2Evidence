@@ -91,16 +91,9 @@ export function Step3Form() {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h2>Form Entry</h2>
+          <h2>Error</h2>
         </div>
-        <div className={styles.error} role="alert">
-          Error: No wizard selected
-        </div>
-        <div className={styles.buttonRow}>
-          <button type="button" onClick={goBack} className={styles.button}>
-            Back
-          </button>
-        </div>
+        <p>Error: No wizard selected. Please return to step 1.</p>
       </div>
     );
   }

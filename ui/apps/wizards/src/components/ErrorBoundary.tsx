@@ -1,4 +1,4 @@
-import { Component, ReactNode } from "react";
+import React, { Component, ReactNode } from "react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -21,12 +21,16 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Error caught by ErrorBoundary:", error, errorInfo);
+    console.error("[Wizards] Error caught by ErrorBoundary:", error, errorInfo);
   }
 
   handleReset = () => {
     this.setState({ hasError: false, error: null });
     this.props.onReset?.();
+  };
+
+  handleReload = () => {
+    window.location.reload();
   };
 
   render() {
@@ -35,9 +39,30 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div style={{ padding: "2rem", textAlign: "center" }}>
           <h2>Something went wrong</h2>
           <p>{this.state.error?.message || "An unexpected error occurred"}</p>
-          <button onClick={this.handleReset} style={{ marginTop: "1rem", padding: "0.5rem 1rem" }}>
-            Try Again
-          </button>
+          <div style={{ marginTop: "1rem", display: "flex", gap: "1rem", justifyContent: "center" }}>
+            <button onClick={this.handleReset} style={{ padding: "0.5rem 1rem" }}>
+              Try Again
+            </button>
+            <button onClick={this.handleReload} style={{ padding: "0.5rem 1rem" }}>
+              Reload Page
+            </button>
+          </div>
+          {process.env.NODE_ENV === "development" && this.state.error?.stack && (
+            <pre
+              style={{
+                marginTop: "2rem",
+                textAlign: "left",
+                background: "#f5f5f5",
+                padding: "1rem",
+                borderRadius: "4px",
+                overflow: "auto",
+                maxWidth: "800px",
+                margin: "2rem auto 0",
+              }}
+            >
+              {this.state.error.stack}
+            </pre>
+          )}
         </div>
       );
     }

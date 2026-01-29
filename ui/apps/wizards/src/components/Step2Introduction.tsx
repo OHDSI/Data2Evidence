@@ -7,16 +7,8 @@ export function Step2Introduction() {
   if (!selectedWizard) {
     return (
       <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>Introduction</h2>
-        </div>
-        <div className={styles.error} role="alert">
-          Error: No wizard selected
-        </div>
-        <div className={styles.buttonRow}>
-          <button type="button" onClick={goBack} className={styles.button}>
-            Back
-          </button>
+        <div className={styles.section}>
+          <p>Error: No wizard selected. Please return to step 1.</p>
         </div>
       </div>
     );

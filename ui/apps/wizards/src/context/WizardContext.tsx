@@ -41,14 +41,19 @@ export function WizardProvider({
   }, []);
 
   const selectWizard = useCallback(async (id: string) => {
-    const wizard = await getWizardById(id);
-    setState((prev) => ({
-      ...prev,
-      selectedWizardId: id,
-      selectedWizard: wizard || null,
-      currentStep: 2,
-      formData: {}, // Clear form data when selecting new wizard
-    }));
+    try {
+      const wizard = await getWizardById(id);
+      setState((prev) => ({
+        ...prev,
+        selectedWizardId: id,
+        selectedWizard: wizard || null,
+        currentStep: 2,
+        formData: {}, // Clear form data when selecting new wizard
+      }));
+    } catch (err) {
+      console.error("[Wizards] Failed to select wizard:", err);
+      throw err;
+    }
   }, []);
 
   const updateFormData = useCallback((data: Record<string, any>) => {

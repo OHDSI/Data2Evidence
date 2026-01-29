@@ -10,25 +10,31 @@ export function Step1Selection() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadWizards() {
-      try {
-        setLoading(true);
-        setError(null);
-        const definitions = await getWizardDefinitions();
-        setWizards(definitions);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load wizards");
-      } finally {
-        setLoading(false);
-      }
+  const loadWizards = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const definitions = await getWizardDefinitions();
+      setWizards(definitions);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load wizards";
+      console.error("[Wizards] Failed to load wizard definitions:", err);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
     loadWizards();
   }, []);
 
-  const handleWizardSelect = (wizardId: string) => {
-    selectWizard(wizardId);
+  const handleWizardSelect = async (wizardId: string) => {
+    try {
+      await selectWizard(wizardId);
+    } catch {
+      setError("Failed to load wizard. Please try again.");
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent, wizardId: string) => {
@@ -51,6 +57,10 @@ export function Step1Selection() {
     );
   }
 
+  const handleRetry = () => {
+    loadWizards();
+  };
+
   if (error) {
     return (
       <div className={styles.container}>
@@ -59,6 +69,11 @@ export function Step1Selection() {
         </div>
         <div className={styles.error} role="alert">
           Error: {error}
+        </div>
+        <div style={{ marginTop: "1rem", textAlign: "center" }}>
+          <button onClick={handleRetry} className={styles.retryButton}>
+            Retry
+          </button>
         </div>
       </div>
     );

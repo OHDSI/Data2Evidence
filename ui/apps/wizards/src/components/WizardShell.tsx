@@ -7,9 +7,14 @@ import { Step4Results } from "./Step4Results";
 import styles from "./WizardShell.module.css";
 
 export function WizardShell() {
-  const { currentStep, resetWizard } = useWizardContext();
+  const { currentStep, selectedWizard, setCurrentStep, resetWizard } = useWizardContext();
 
   const renderStep = () => {
+    if (currentStep > 1 && !selectedWizard) {
+      console.warn("[Wizards] No wizard selected, redirecting to step 1");
+      setCurrentStep(1);
+      return <Step1Selection />;
+    }
     switch (currentStep) {
       case 1:
         return <Step1Selection />;

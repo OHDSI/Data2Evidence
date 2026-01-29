@@ -70,3 +70,24 @@
 .error {
   color: #c00;
 }
+
+.retryButton {
+  padding: 0.5rem 1rem;
+  background: #0066cc;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.retryButton:hover {
+  background: #0052a3;
+}
+
+.retryButton:focus {
+  outline: 2px solid #0066cc;
+  outline-offset: 2px;
+}
