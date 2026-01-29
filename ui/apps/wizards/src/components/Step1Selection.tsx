@@ -1,0 +1,101 @@
+import { useState, useEffect } from "react";
+import { getWizardDefinitions } from "../config/wizardDefinitions";
+import { useWizardContext } from "../context/WizardContext";
+import type { WizardDefinition } from "../types/wizard";
+import styles from "./Step1Selection.module.css";
+
+export function Step1Selection() {
+  const { selectWizard } = useWizardContext();
+  const [wizards, setWizards] = useState<WizardDefinition[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadWizards() {
+      try {
+        setLoading(true);
+        setError(null);
+        const definitions = await getWizardDefinitions();
+        setWizards(definitions);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load wizards");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadWizards();
+  }, []);
+
+  const handleWizardSelect = (wizardId: string) => {
+    selectWizard(wizardId);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent, wizardId: string) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleWizardSelect(wizardId);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h2>Select a Wizard</h2>
+          <p className={styles.progress}>Step 1 of 4</p>
+        </div>
+        <div className={styles.loading}>Loading wizards...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h2>Select a Wizard</h2>
+          <p className={styles.progress}>Step 1 of 4</p>
+        </div>
+        <div className={styles.error}>Error: {error}</div>
+      </div>
+    );
+  }
+
+  if (wizards.length === 0) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h2>Select a Wizard</h2>
+          <p className={styles.progress}>Step 1 of 4</p>
+        </div>
+        <div className={styles.empty}>No wizards available</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2>Select a Wizard</h2>
+        <p className={styles.progress}>Step 1 of 4</p>
+      </div>
+      <div className={styles.grid}>
+        {wizards.map((wizard) => (
+          <div
+            key={wizard.id}
+            className={styles.card}
+            onClick={() => handleWizardSelect(wizard.id)}
+            onKeyDown={(e) => handleKeyDown(e, wizard.id)}
+            role="button"
+            tabIndex={0}
+            aria-label={`Select ${wizard.name} wizard`}
+          >
+            <h3 className={styles.cardTitle}>{wizard.name}</h3>
+            <p className={styles.cardDescription}>{wizard.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
