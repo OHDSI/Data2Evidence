@@ -76,6 +76,7 @@ export class WebApiSourceService {
       username: creds.username,
       password: creds.password,
       daimons: this.buildDaimons(dataset),
+      krbAuthMethod: 'DEFAULT',
     }
   }
 

@@ -11,6 +11,7 @@ export interface ISourceRequest {
   username?: string
   password?: string
   daimons: IDaimonRequest[]
+  krbAuthMethod?: string
 }
 
 /**
