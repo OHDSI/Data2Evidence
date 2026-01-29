@@ -46,7 +46,7 @@ test(TEST_NAME, async ({ page }) => {
   // Search for it in any table (main or nested)
   await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
   // Wait for job container to stabilize before navigating to Jobs page
-  await page.waitForTimeout(8000)
+  await page.waitForTimeout(20000)
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
   const firstEntry = page
