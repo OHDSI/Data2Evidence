@@ -1,51 +1,19 @@
-import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { getWizardById } from "../config/wizardDefinitions";
 import { useWizardContext } from "../context/WizardContext";
-import type { WizardDefinition, FieldDefinition } from "../types/wizard";
+import type { FieldDefinition } from "../types/wizard";
 import styles from "./Step3Form.module.css";
 
 export function Step3Form() {
-  const { selectedWizardId, formData, updateFormData, goBack, goForward } = useWizardContext();
-  const [wizard, setWizard] = useState<WizardDefinition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { selectedWizard, formData, updateFormData, goBack, goForward } = useWizardContext();
 
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
   } = useForm({
-    mode: "onBlur",
+    mode: "onChange",
     defaultValues: formData,
   });
-
-  useEffect(() => {
-    async function loadWizard() {
-      if (!selectedWizardId) {
-        setError("No wizard selected");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const definition = await getWizardById(selectedWizardId);
-        if (!definition) {
-          setError("Wizard not found");
-        } else {
-          setWizard(definition);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load wizard");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadWizard();
-  }, [selectedWizardId]);
 
   const onSubmit = (data: Record<string, any>) => {
     updateFormData(data);
@@ -119,26 +87,15 @@ export function Step3Form() {
     }
   };
 
-  if (loading) {
+  if (!selectedWizard) {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
           <h2>Form Entry</h2>
-          <p className={styles.progress}>Step 3 of 4</p>
         </div>
-        <div className={styles.loading}>Loading wizard...</div>
-      </div>
-    );
-  }
-
-  if (error || !wizard) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>Form Entry</h2>
-          <p className={styles.progress}>Step 3 of 4</p>
+        <div className={styles.error} role="alert">
+          Error: No wizard selected
         </div>
-        <div className={styles.error}>Error: {error || "Wizard not found"}</div>
         <div className={styles.buttonRow}>
           <button type="button" onClick={goBack} className={styles.button}>
             Back
@@ -151,12 +108,11 @@ export function Step3Form() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>{wizard.name}</h2>
-        <p className={styles.progress}>Step 3 of 4</p>
+        <h2>{selectedWizard.name}</h2>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        <div className={styles.formFields}>{wizard.fields.map((field) => renderField(field))}</div>
+        <div className={styles.formFields}>{selectedWizard.fields.map((field) => renderField(field))}</div>
 
         <div className={styles.buttonRow}>
           <button type="button" onClick={goBack} className={styles.button}>

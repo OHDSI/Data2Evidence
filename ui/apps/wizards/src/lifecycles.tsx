@@ -9,7 +9,7 @@ const lifecycles = singleSpaReact({
   React,
   ReactDOMClient,
   rootComponent: (props: PortalProps) => (
-    <WizardProvider>
+    <WizardProvider portalProps={props}>
       <App {...props} />
     </WizardProvider>
   ),

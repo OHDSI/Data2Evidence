@@ -43,9 +43,10 @@ export function Step1Selection() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h2>Select a Wizard</h2>
-          <p className={styles.progress}>Step 1 of 4</p>
         </div>
-        <div className={styles.loading}>Loading wizards...</div>
+        <div className={styles.loading} role="status">
+          Loading wizards...
+        </div>
       </div>
     );
   }
@@ -55,9 +56,10 @@ export function Step1Selection() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h2>Select a Wizard</h2>
-          <p className={styles.progress}>Step 1 of 4</p>
         </div>
-        <div className={styles.error}>Error: {error}</div>
+        <div className={styles.error} role="alert">
+          Error: {error}
+        </div>
       </div>
     );
   }
@@ -67,7 +69,6 @@ export function Step1Selection() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h2>Select a Wizard</h2>
-          <p className={styles.progress}>Step 1 of 4</p>
         </div>
         <div className={styles.empty}>No wizards available</div>
       </div>
@@ -78,7 +79,6 @@ export function Step1Selection() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h2>Select a Wizard</h2>
-        <p className={styles.progress}>Step 1 of 4</p>
       </div>
       <div className={styles.grid}>
         {wizards.map((wizard) => (

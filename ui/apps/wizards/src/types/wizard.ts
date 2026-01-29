@@ -27,7 +27,6 @@ export interface WizardDefinition {
 export interface WizardState {
   currentStep: 1 | 2 | 3 | 4;
   selectedWizardId: string | null;
+  selectedWizard: WizardDefinition | null;
   formData: Record<string, any>;
-  wizardDefinitions: WizardDefinition[];
-  navigationHistory: number[];
 }

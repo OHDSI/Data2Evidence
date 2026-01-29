@@ -8,6 +8,7 @@
     "build:dev": "vite build --mode=development",
     "build:watch": "vite build --mode=development --watch",
     "preview": "vite preview --mode=development",
+    "test": "vitest run",
     "lint": "eslint src --ext js,ts,tsx",
     "format": "prettier --write .",
     "check-format": "prettier --check ."
@@ -20,6 +21,8 @@
     "single-spa-react": "^6.0.2"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@typescript-eslint/parser": "^6.0.0",
@@ -29,9 +32,11 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.33.0",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "jsdom": "^27.4.0",
     "prettier": "^3.0.0",
     "typescript": "^5.2.2",
     "vite": "^5.3.1",
-    "vite-plugin-css-injected-by-js": "^3.5.1"
+    "vite-plugin-css-injected-by-js": "^3.5.1",
+    "vitest": "^4.0.18"
   }
 }

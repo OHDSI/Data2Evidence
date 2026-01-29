@@ -46,6 +46,9 @@ bun run lint
 
 # Format code
 bun run format
+
+# Test
+bun run test
 ```
 
 ### Local Testing with Portal
