@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'Change Password and Logout'
 const SHOULD_SKIP = false
@@ -41,5 +41,5 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('snackbar-message')).toContainText('Password updated')
   await page.getByTestId('dialog-close').click()
   await page.getByRole('button', { name: 'Logout' }).click()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
 })
