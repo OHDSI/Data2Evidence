@@ -483,7 +483,7 @@ export async function getAnalyticsConnection(
   let databaseCode;
   let schemaName;
   let vocabSchemaName;
-  let resultSchemaName;
+  let resultsSchemaName;
   let dialect;
 
   // Use built in duckdb file
@@ -491,7 +491,7 @@ export async function getAnalyticsConnection(
     databaseCode = DUCKDB_FILE_DATABASE_CODE;
     schemaName = DUCKDB_FILE_SCHEMA_NAME;
     vocabSchemaName = DUCKDB_FILE_SCHEMA_NAME;
-    resultSchemaName = DUCKDB_FILE_SCHEMA_NAME;
+    resultsSchemaName = DUCKDB_FILE_SCHEMA_NAME;
   } else {
     try {
       // Resolve datasetId into database code, schema name and vocab schema name
@@ -499,7 +499,7 @@ export async function getAnalyticsConnection(
       databaseCode = dataset.databaseCode;
       schemaName = dataset.schemaName;
       vocabSchemaName = dataset.vocabSchemaName;
-      resultSchemaName = dataset.resultSchemaName;
+      resultsSchemaName = dataset.resultsSchemaName;
       dialect = dataset.dialect;
     } catch (err) {
       logger.error(err);
@@ -544,14 +544,14 @@ export async function getAnalyticsConnection(
     analyticsCredentials.cdwSchema = schemaName;
     analyticsCredentials.schema = schemaName;
     analyticsCredentials.vocabSchema = vocabSchemaName;
-    analyticsCredentials.resultSchema = resultSchemaName;
+    analyticsCredentials.resultsSchemaName = resultsSchemaName;
 
     analyticsConnection =
       await dbConnectionUtil.DBConnectionUtil.getDBConnection({
         credentials: analyticsCredentials,
         schemaName,
         vocabSchemaName,
-        resultSchemaName,
+        resultsSchemaName,
         userObj,
       });
   } else {
@@ -559,7 +559,7 @@ export async function getAnalyticsConnection(
       databaseCode,
       schemaName,
       vocabSchemaName,
-      resultSchemaName
+      resultsSchemaName
     );
   }
 
