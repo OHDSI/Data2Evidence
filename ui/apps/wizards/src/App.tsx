@@ -2,6 +2,7 @@ import { PortalProps } from "./types/portal";
 import { useWizardContext } from "./context/WizardContext";
 import { Step1Selection } from "./components/Step1Selection";
 import { Step2Introduction } from "./components/Step2Introduction";
+import { Step3Form } from "./components/Step3Form";
 
 export default function App(_props: PortalProps) {
   const { currentStep } = useWizardContext();
@@ -13,12 +14,7 @@ export default function App(_props: PortalProps) {
       case 2:
         return <Step2Introduction />;
       case 3:
-        return (
-          <div style={{ padding: "20px" }}>
-            <h2>Step 3: Form Entry</h2>
-            <p>Coming soon...</p>
-          </div>
-        );
+        return <Step3Form />;
       case 4:
         return (
           <div style={{ padding: "20px" }}>
