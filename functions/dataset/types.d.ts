@@ -94,7 +94,7 @@ export interface Dataset {
   dialect: string
   databaseCode: string
   schemaName: string
-  resultSchemaName: string
+  resultsSchemaName: string
   dashboards: DatasetDashboard[]
   vocabSchemaName: string
 }

@@ -9,7 +9,7 @@ export default class TrexConnection {
     databaseCode: string,
     schemaName: string,
     vocabSchemaName: string,
-    resultSchemaName: string
+    resultsSchemaName: string
   ) {
     try {
       // @ts-ignore To ignore Cannot find name 'Trex'
@@ -18,7 +18,7 @@ export default class TrexConnection {
         databaseCode,
         schemaName,
         vocabSchemaName,
-        resultSchemaName,
+        resultsSchemaName,
         {
           duckdb: (e: unknown) => e,
           hana: (e: unknown) => e,
