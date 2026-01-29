@@ -43,5 +43,5 @@ export class DatasetDetailMetadataUpdateDto implements IDatasetDetailMetadataUpd
 
   vocabSchemaName?: string
 
-  resultSchemaName?: string
+  resultsSchemaName?: string
 }
