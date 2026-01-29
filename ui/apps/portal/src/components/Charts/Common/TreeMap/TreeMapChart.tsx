@@ -91,10 +91,10 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
       hoverLink: false,
       orient: "horizontal",
       left: "center",
-      bottom: "-8px",
+      bottom: "-4px",
       dimension: 1,
       inRange: {
-        color: ["#aaa", "#000E7E"],
+        color: theme.palette.custom.treeMapLegendColor,
       },
       textStyle: {
         color: theme.palette.text.primary,
@@ -117,6 +117,9 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         itemStyle: {
           borderColor: "black",
           gapWidth: 1,
+        },
+        label: {
+          color: "black",
         },
         visualDimension: 1,
       },
