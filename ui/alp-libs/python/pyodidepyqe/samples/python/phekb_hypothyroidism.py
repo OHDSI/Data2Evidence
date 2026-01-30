@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from pyqe import *
-
 # Define query with name
-query = Query('Hypothyroidism OMOP5 Patient Count')
 
 # Define condition occurrence with concept set
 hypothyroidism = ConceptSet('Hypothyroidism', Domain.CONDITION, [
@@ -63,8 +61,10 @@ hypothyroidism_group = CriteriaGroup(
     MatchCriteria.ALL, [hypothyroidism_condition, hypothyroidism_lab_measurement, hypothyroidism_meds_exposure])
 hypothyroidism_group.add_exclusive_group(hypothyroidism_excluded_procedures_group)
 
-# Add criteria group into query
+# Define query with name
 query = Query('Hypothyroidism OMOP5 Patient Count')
+
+# Add criteria group into query
 query.add_criteria_group(hypothyroidism_group)
 request = query.get_patient_count_filter()
 
