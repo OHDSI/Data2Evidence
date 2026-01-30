@@ -1,8 +1,9 @@
 import { useWizardContext } from "../context/WizardContext";
+import { generateDeepLink } from "../utils/deepLinks";
 import styles from "./Step4Results.module.css";
 
 export function Step4Results() {
-  const { selectedWizard, formData, goBack } = useWizardContext();
+  const { selectedWizard, formData, goBack, portalProps } = useWizardContext();
 
   if (!selectedWizard) {
     return (
@@ -42,21 +43,42 @@ export function Step4Results() {
         <div className={styles.actionButtons}>
           {selectedWizard.resultActions.map((action) => {
             const isPlaceholder = action.type === "placeholder";
+            const deepLinkUrl =
+              action.type === "deep-link" ? generateDeepLink(action, formData, portalProps.datasetId) : null;
+
             return (
-              <button
-                key={action.id}
-                type="button"
-                disabled={isPlaceholder}
-                onClick={() => {
-                  if (!isPlaceholder) {
-                    console.log(`[Wizards] Action: ${action.label} (Coming soon)`);
-                  }
-                }}
-                className={`${styles.button} ${styles.actionButton}`}
-                title={isPlaceholder ? "Coming soon" : undefined}
-              >
-                {action.label}
-              </button>
+              <div key={action.id} style={{ marginBottom: "1rem" }}>
+                <button
+                  type="button"
+                  disabled={isPlaceholder}
+                  onClick={() => {
+                    if (deepLinkUrl) {
+                      window.location.href = deepLinkUrl;
+                    } else if (!isPlaceholder) {
+                      console.log(`[Wizards] Action: ${action.label} (Coming soon)`);
+                    }
+                  }}
+                  className={`${styles.button} ${styles.actionButton}`}
+                  title={isPlaceholder ? "Coming soon" : undefined}
+                >
+                  {action.label}
+                </button>
+                {deepLinkUrl && (
+                  <div style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "#666" }}>
+                    <strong>URL:</strong>{" "}
+                    <code
+                      style={{
+                        background: "#f5f5f5",
+                        padding: "0.25rem 0.5rem",
+                        borderRadius: "4px",
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {deepLinkUrl}
+                    </code>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

@@ -11,7 +11,7 @@ const STORAGE_KEY = "deepLinkParams";
 export interface DeepLinkParams {
   // Portal params (used for routing, not restored to URL)
   datasetId?: string;
-  route?: string;
+  path?: string; // Full relative path, e.g. "/researcher/wizards" or "/researcher/cohort"
   // PA params (restored to URL for PA to consume)
   linkType?: string;
   query?: string;
@@ -66,20 +66,56 @@ export const clearDeepLinkParams = (): void => {
  */
 export const extractDeepLinkParamsFromUrl = (url: string | URLSearchParams): DeepLinkParams => {
   try {
-    const searchParams = typeof url === "string" ? new URL(url).searchParams : url;
+    if (typeof url === "string") {
+      const urlObj = new URL(url);
+      const searchParams = urlObj.searchParams;
+      const params: DeepLinkParams = {};
+
+      const datasetId = searchParams.get("datasetId");
+      const linkType = searchParams.get("linkType");
+      const query = searchParams.get("query");
+
+      if (datasetId) params.datasetId = datasetId;
+      if (linkType) params.linkType = linkType;
+      if (query) params.query = query;
+
+      // Extract path from URL pathname (relative to /d2e/portal)
+      // Only capture /researcher/* sub-paths (not /no-access, /login, etc.)
+      const pathname = urlObj.pathname;
+      const basePath = "/d2e/portal";
+      if (pathname.startsWith(basePath)) {
+        const relativePath = pathname.slice(basePath.length);
+        if (relativePath.startsWith("/researcher/") && relativePath !== "/researcher/") {
+          params.path = relativePath;
+        }
+      }
+
+      // Backward compat: convert ?route=X to path=/researcher/X
+      const route = searchParams.get("route");
+      if (route && !params.path) {
+        params.path = `/researcher/${route}`;
+      }
+
+      return params;
+    }
+
+    // URLSearchParams path — no pathname available, extract query params only
+    const searchParams = url;
     const params: DeepLinkParams = {};
 
-    // Portal params (used for routing)
     const datasetId = searchParams.get("datasetId");
-    const route = searchParams.get("route");
-    // PA params (restored to URL for PA to consume)
     const linkType = searchParams.get("linkType");
     const query = searchParams.get("query");
 
     if (datasetId) params.datasetId = datasetId;
-    if (route) params.route = route;
     if (linkType) params.linkType = linkType;
     if (query) params.query = query;
+
+    // Backward compat: convert ?route=X to path=/researcher/X
+    const route = searchParams.get("route");
+    if (route) {
+      params.path = `/researcher/${route}`;
+    }
 
     return params;
   } catch (error) {

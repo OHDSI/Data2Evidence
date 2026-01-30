@@ -291,9 +291,17 @@ describe("deepLinkHandler", () => {
       );
     });
 
-    it("should route to /cohort when route=cohort and pass PA params", () => {
+    it("should route to /cohort using path-based URL and pass PA params", () => {
+      // Path-based URL: /researcher/cohort instead of ?route=cohort
+      deepLinkStorage.saveDeepLinkParams({
+        datasetId: "dataset-2",
+        path: "/researcher/cohort",
+        linkType: "cohort-definition",
+        query: "abc123",
+      });
+
       const result = syncDatasetFromUrl({
-        url: "http://localhost:3000/researcher/pa?datasetId=dataset-2&route=cohort&linkType=cohort-definition&query=abc123",
+        url: "http://localhost:3000/d2e/portal/researcher/cohort?datasetId=dataset-2&linkType=cohort-definition&query=abc123",
         availableDatasets,
         setActiveDatasetId: mockSetActiveDatasetId,
         setFeedback: mockSetFeedback,
@@ -307,7 +315,7 @@ describe("deepLinkHandler", () => {
         datasetId: "dataset-2",
       });
       expect(mockSetActiveDatasetId).toHaveBeenCalledWith("dataset-2");
-      // Only PA params (linkType, query) in URL - not Portal params (datasetId, route)
+      // PA params (linkType, query) appended to stored path
       expect(mockNavigate).toHaveBeenCalledWith("/researcher/cohort?linkType=cohort-definition&query=abc123", {
         state: { tenantId: "tenant-2" },
       });
@@ -318,7 +326,7 @@ describe("deepLinkHandler", () => {
       // Simulate initial page load saved params (auth stripped URL params)
       deepLinkStorage.saveDeepLinkParams({
         datasetId: "test-dataset-123",
-        route: "cohort",
+        path: "/researcher/cohort",
         linkType: "cohort-definition",
         query: "xyz789",
       });
@@ -338,7 +346,7 @@ describe("deepLinkHandler", () => {
         datasetId: "test-dataset-123",
       });
       expect(mockSetActiveDatasetId).toHaveBeenCalledWith("test-dataset-123");
-      // Only PA params restored to URL
+      // PA params restored to URL with stored path
       expect(mockNavigate).toHaveBeenCalledWith("/researcher/cohort?linkType=cohort-definition&query=xyz789", {
         state: { tenantId: "tenant-test" },
       });
@@ -348,9 +356,9 @@ describe("deepLinkHandler", () => {
     });
 
     it("should merge URL params with sessionStorage params", () => {
-      // Simulate saved params (route and PA params saved, datasetId in URL)
+      // Simulate saved params (path and PA params saved, datasetId in URL)
       deepLinkStorage.saveDeepLinkParams({
-        route: "cohort",
+        path: "/researcher/cohort",
         linkType: "cohort-definition",
         query: "xyz789",
       });
@@ -370,7 +378,7 @@ describe("deepLinkHandler", () => {
         datasetId: "dataset-1",
       });
       expect(mockSetActiveDatasetId).toHaveBeenCalledWith("dataset-1");
-      // Only PA params in URL
+      // PA params appended to stored path
       expect(mockNavigate).toHaveBeenCalledWith("/researcher/cohort?linkType=cohort-definition&query=xyz789", {
         state: { tenantId: "tenant-1" },
       });
@@ -379,8 +387,8 @@ describe("deepLinkHandler", () => {
       expect(deepLinkStorage.loadDeepLinkParams()).toBeNull();
     });
 
-    it("should default to /information when no route param", () => {
-      // Only PA params, no route specified
+    it("should default to /information when no path stored", () => {
+      // Only PA params, no path specified
       deepLinkStorage.saveDeepLinkParams({
         datasetId: "dataset-1",
         linkType: "some-other-type",
@@ -400,6 +408,53 @@ describe("deepLinkHandler", () => {
       expect(mockNavigate).toHaveBeenCalledWith("/researcher/information?linkType=some-other-type&query=abc", {
         state: { tenantId: "tenant-1" },
       });
+    });
+
+    it("should navigate to stored path with first dataset when no datasetId", () => {
+      // Path-based deep link without datasetId (e.g., /researcher/wizards)
+      deepLinkStorage.saveDeepLinkParams({
+        path: "/researcher/wizards",
+      });
+
+      const result = syncDatasetFromUrl({
+        url: "http://localhost:3000/researcher/pa",
+        availableDatasets,
+        setActiveDatasetId: mockSetActiveDatasetId,
+        setFeedback: mockSetFeedback,
+        navigate: mockNavigate,
+        basePath: "/researcher",
+      });
+
+      expect(result).toEqual({
+        hasDatasetParam: false,
+        syncSuccess: true,
+        datasetId: "dataset-1",
+      });
+      expect(mockSetActiveDatasetId).toHaveBeenCalledWith("dataset-1");
+      expect(mockNavigate).toHaveBeenCalledWith("/researcher/wizards");
+      expect(deepLinkStorage.loadDeepLinkParams()).toBeNull();
+    });
+
+    it("should not navigate when no datasetId, no path, and no datasets", () => {
+      deepLinkStorage.saveDeepLinkParams({
+        path: "/researcher/wizards",
+      });
+
+      const result = syncDatasetFromUrl({
+        url: "http://localhost:3000/researcher/pa",
+        availableDatasets: [],
+        setActiveDatasetId: mockSetActiveDatasetId,
+        setFeedback: mockSetFeedback,
+        navigate: mockNavigate,
+        basePath: "/researcher",
+      });
+
+      expect(result).toEqual({
+        hasDatasetParam: false,
+        syncSuccess: false,
+        datasetId: null,
+      });
+      expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
 });
