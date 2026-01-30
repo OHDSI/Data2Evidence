@@ -1,0 +1,20 @@
+# Dockerfile for building UI in a consistent bun environment
+# Usage: docker build -f Dockerfile.build -t d2e-ui-builder .
+#        docker run --rm -v "$(pwd):/app" d2e-ui-builder
+
+# Using bookworm (not slim) because we need Python 3.11 for pyodidepyqe build
+FROM node:24.13.0-bookworm
+
+WORKDIR /app
+
+# Install python3-venv (needed for pyodidepyqe build)
+RUN apt-get update && apt-get install -y python3-venv && rm -rf /var/lib/apt/lists/*
+
+# Install bun
+RUN npm install -g bun@1.2.23
+
+# Allow nx to use cache from host machine (needed when building in Docker with mounted volumes)
+ENV NX_REJECT_UNKNOWN_LOCAL_CACHE=false
+
+# Remove host venv (not compatible with container) and rebuild
+CMD ["sh", "-c", "rm -rf alp-libs/python/pyodidepyqe/venv && bun install && bun build-all"]
