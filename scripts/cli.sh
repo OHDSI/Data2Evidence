@@ -233,7 +233,11 @@ EOF
     patchdemodb)
         source "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
+        # Create cohort table if it doesn't exist
         docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
+        # Update CDM version to 5.4 - the broadsea-atlasdb uses CDM 5.4 schema
+        # (e.g., ADMITTED_FROM_CONCEPT_ID instead of ADMITTING_SOURCE_CONCEPT_ID)
+        docker exec $database_host psql -h localhost -U postgres -c "UPDATE demo_cdm.cdm_source SET cdm_version = '5.4' WHERE cdm_version != '5.4' OR cdm_version IS NULL"
         ;;
     init)
         if [[ -n "${init_choice:-}" ]]; then
