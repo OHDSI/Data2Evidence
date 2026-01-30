@@ -77,9 +77,8 @@ export const test = base.extend<{
       log => log.includes('[ERROR]') || log.includes('[PAGE ERROR]') || log.includes('[REQUEST FAILED]')
     )
 
-    // Skip saving logs if test passed on first try
-    const passedFirstTry = testInfo.status === 'passed' && testInfo.retry === 0
-    if (!passedFirstTry) {
+    // Always save logs for failed tests, or if there were errors/warnings
+    if (testInfo.status !== 'passed' || hasErrors) {
       const outputDir = testInfo.outputDir
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true })
