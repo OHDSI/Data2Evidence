@@ -10,6 +10,8 @@ interface CodeNameSelectProps {
   onNameChange: (selectedName: string) => void;
   onNewNameInput: (value: string) => void;
   supportsMultipleCodes: boolean;
+  error?: boolean;
+  helperText?: string;
 }
 
 export const CodeNameSelect: FC<CodeNameSelectProps> = ({
@@ -19,6 +21,8 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
   onNameChange,
   onNewNameInput,
   supportsMultipleCodes,
+  error,
+  helperText,
 }) => {
   if (!supportsMultipleCodes) {
     return (
@@ -29,7 +33,9 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
           variant="standard"
           value={name}
           onChange={(e) => onNewNameInput(e.target.value)}
-          placeholder="Enter code name"
+          placeholder="Enter new name"
+          error={error}
+          helperText={helperText}
         />
       </div>
     );
@@ -64,6 +70,8 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
             value={name}
             onChange={(e) => onNewNameInput(e.target.value)}
             placeholder="Enter new name"
+            error={error}
+            helperText={helperText}
           />
         </div>
       )}

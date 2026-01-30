@@ -45,6 +45,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   const [templateLanguage, setTemplateLanguage] = useState<ViewerType>(ViewerType.SHINY_SERVER);
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   const [codeType, setCodeType] = useState<"dashboard" | "cohort">(config.type === "cohort" ? "cohort" : "dashboard");
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const strategy = useMemo(() => createConfigStrategy(config.type), [config.type]);
   const { loading, feedback, clearFeedback, execute } = useAsyncOperation();
@@ -221,12 +222,28 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     [applyTemplate]
   );
 
+  const validateName = useCallback((value: string): string | null => {
+    if (value.includes(" ")) {
+      return "Name cannot contain spaces";
+    }
+    return null;
+  }, []);
+
   const handleNameChange = useCallback(
     (selectedName: string) => {
       selectCode(selectedName);
       setSelectedTemplate("default");
+      setNameError(null);
     },
     [selectCode]
+  );
+
+  const handleNewNameInput = useCallback(
+    (value: string) => {
+      updateName(value);
+      setNameError(validateName(value));
+    },
+    [updateName, validateName]
   );
 
   const dialogClassName = `manage-viewer-dialog manage-viewer-dialog--${config.type}`;
@@ -267,8 +284,10 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
             isNewName={isNewName}
             name={name}
             onNameChange={handleNameChange}
-            onNewNameInput={updateName}
+            onNewNameInput={handleNewNameInput}
             supportsMultipleCodes={strategy.supportsMultipleCodes}
+            error={!!nameError}
+            helperText={nameError || undefined}
           />
 
           <TemplateSelect
@@ -369,7 +388,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
       <div className="button-group-actions">
         <Button text={getText(i18n.cancel)} onClick={() => handleClose("cancelled")} variant="outlined" block />
-        <Button text={getText(i18n.save)} onClick={handleSave} block loading={loading} />
+        <Button text={getText(i18n.save)} onClick={handleSave} block loading={loading} disabled={!!nameError} />
       </div>
     </Dialog>
   );
