@@ -1,4 +1,5 @@
-import React, { FC, useRef, useState, useEffect } from "react";
+import React, { FC, useState, useEffect } from "react";
+import type { EChartsOption } from "echarts";
 
 import ReactECharts from "echarts-for-react";
 import "./TreeMapChart.scss";
@@ -14,40 +15,54 @@ interface TreeMapChartProps {
 
 const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, extraChartConfigs }) => {
   const { getText, i18nKeys } = useTranslation();
-  const chartRef = useRef<any>(null);
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const theme = useTheme();
+  const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
   // Create a unique key for each item
   const getItemKey = (item: any) => {
     return item.value?.[4] || item.name;
   };
 
-  // Initialize chart data with itemStyle for each item
-  useEffect(() => {
-    const dataWithStyles = data.map((item) => {
-      const itemKey = getItemKey(item);
-      if (itemKey && itemKey === selectedItemKey) {
-        return {
-          ...item,
-          itemStyle: {
-            borderColor: theme.palette.custom.selectedRowBorder,
-            borderWidth: 3,
-          },
-        };
-      }
-      return item;
-    });
-    setChartData(dataWithStyles);
-  }, [data, selectedItemKey]);
+  // Detect if records per person data is meaningful (not just placeholder values)
+  // If all values are 1, it's likely a placeholder from simple format data
+  const hasRecordsPerPerson = data.length > 0 && data.some((item) => item.value?.[1] !== 1);
 
-  // Calculate min and max records per person from data
+  // Calculate min and max records per person from data (only needed if hasRecordsPerPerson)
   const recordsPerPersonValues = data.length > 0 ? data.map((item) => item.value?.[1] || 0) : [0, 100];
   const minRecordsPerPerson = Math.min(...recordsPerPersonValues);
   const maxRecordsPerPerson = Math.max(...recordsPerPersonValues);
 
-  const option = {
+  // Initialize chart data with itemStyle for each item
+  useEffect(() => {
+    const solidColor = theme.palette.custom.treeMapLegendColor[1];
+
+    const dataWithStyles = data.map((item) => {
+      const itemKey = getItemKey(item);
+      const itemStyle: any = {};
+
+      // Apply selection styling
+      if (itemKey && itemKey === selectedItemKey) {
+        itemStyle.borderColor = borderSelectedColor;
+        itemStyle.borderWidth = 3;
+      }
+
+      // For simple format data, apply solid color
+      if (!hasRecordsPerPerson) {
+        itemStyle.color = solidColor;
+      }
+
+      return {
+        ...item,
+        ...(Object.keys(itemStyle).length > 0 && { itemStyle }),
+      };
+    });
+    setChartData(dataWithStyles);
+  }, [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor]);
+
+  // Build the base option object
+  const baseOption: EChartsOption = {
     tooltip: {
       formatter: function (info: any) {
         const value = info.value;
@@ -64,12 +79,19 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
           })
           .join("");
         const formattedPrevalence = parseFloat(percentPersons).toFixed(5);
-        return [
+
+        const tooltipLines = [
           `<div class="tooltip-title">${parsedConceptPath}</div>`,
           `${getText(i18nKeys.TREE_MAP_CHART__PREVALENCE)}: ${formattedPrevalence}<br>`,
           `${getText(i18nKeys.TREE_MAP_CHART__NUMBER_OF_PEOPLE)}: ${numPersons}<br>`,
-          `${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${recordsPerPerson}`,
-        ].join("");
+        ];
+
+        // Only show records per person if the data has meaningful values
+        if (hasRecordsPerPerson) {
+          tooltipLines.push(`${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${recordsPerPerson}`);
+        }
+
+        return tooltipLines.join("");
       },
       confine: true,
       className: "treemap-tooltip",
@@ -80,28 +102,6 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         dataView: { readOnly: false },
         saveAsImage: {},
         restore: {},
-      },
-    },
-    visualMap: {
-      type: "continuous",
-      min: minRecordsPerPerson,
-      max: maxRecordsPerPerson,
-      text: ["", getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)],
-      calculable: true,
-      hoverLink: false,
-      orient: "horizontal",
-      left: "center",
-      bottom: "-4px",
-      dimension: 1,
-      inRange: {
-        color: theme.palette.custom.treeMapLegendColor,
-      },
-      textStyle: {
-        color: theme.palette.text.primary,
-        fontSize: 16,
-      },
-      formatter: (value: number) => {
-        return `${value.toFixed(2)}`;
       },
     },
     series: [
@@ -121,11 +121,42 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         label: {
           color: "black",
         },
-        visualDimension: 1,
       },
     ],
-    ...(extraChartConfigs && { ...extraChartConfigs }),
   };
+
+  // Add visualMap and visualDimension only if records per person data is meaningful
+  if (hasRecordsPerPerson) {
+    baseOption.visualMap = {
+      type: "continuous",
+      min: minRecordsPerPerson,
+      max: maxRecordsPerPerson,
+      text: ["", getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)],
+      calculable: true,
+      hoverLink: false,
+      orient: "horizontal",
+      left: "center",
+      bottom: "-4px",
+      dimension: 1,
+      inRange: {
+        color: theme.palette.custom.treeMapLegendColor,
+      },
+      textStyle: {
+        color: theme.palette.text.primary,
+        fontSize: 16,
+      },
+      formatter: (value) => {
+        return `${Number(value).toFixed(2)}`;
+      },
+    };
+    // Type assertion needed because ECharts types don't narrow series array properly
+    if (Array.isArray(baseOption.series) && baseOption.series[0]) {
+      (baseOption.series[0] as any).visualDimension = 1;
+    }
+  }
+
+  // Merge with extra configs if provided
+  const option = extraChartConfigs ? { ...baseOption, ...extraChartConfigs } : baseOption;
 
   const handleNodeClick = (conceptId: string, conceptName: string, itemName: string) => {
     setSelectedConcept({ id: conceptId, name: conceptName });
@@ -144,7 +175,6 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   return (
     <>
       <ReactECharts
-        ref={chartRef}
         style={{
           height: "100%",
           minHeight: 500,

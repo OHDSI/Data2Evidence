@@ -187,7 +187,7 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
         </div>
       )}
 
-      {selectedConcept?.id === "" ? (
+      {!selectedConcept?.id ? (
         <></>
       ) : isloadingDrilldownData ? (
         // Loader is shown inside treemap TreeMapChartTable itself as a "popup" instead of here
