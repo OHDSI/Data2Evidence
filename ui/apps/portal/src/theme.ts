@@ -39,7 +39,7 @@ export const theme = createTheme({
       selectedRowBorder: "#FDA2A2",
       tableHeaderBg: "#edf2f7",
       alternateRowBg: "#fafafa",
-      treeMapLegendColor: ["#edf2f7", "#4FA6EE"],
+      treeMapLegendColor: ["#edf2f7", "#8499E6"],
     },
   },
   components: {
