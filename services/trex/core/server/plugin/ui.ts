@@ -3,9 +3,7 @@ import { env, global, logger } from "../env.ts";
 import { Hono, Context } from "npm:hono";
 
 const portalRoutes = [
-  "/portal",
   "/portal/login",
-  "/portal/login-callback",
   "/portal/researcher/*",
   "/portal/systemadmin/*",
   "/portal/public/*",
@@ -29,21 +27,19 @@ function _addStatic(app: Hono, url: string, path: string) {
 }
 
 export function addPlugin(app: Hono, value: any, dir: string) {
+  if (value.routes)
+    value.routes.forEach((r: any) => {
+      _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
+    });
   // Redirect root to portal
   app.get("/", (c) => {
     return c.redirect(`/d2e/portal/`);
   });
 
-  // Serve portal index.html for client-side routing (must be before static files)
+  // Serve portal index.html for client-side routing
   portalRoutes.forEach((route) => {
     app.use(route, serveStatic({ path: `${dir}resources/portal/index.html` }));
   });
-
-  // Register static file routes after SPA fallback routes
-  if (value.routes)
-    value.routes.forEach((r: any) => {
-      _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
-    });
   if (value.uiplugins) {
     global.PLUGINS_JSON = updatePluginJson(
       JSON.parse(global.PLUGINS_JSON),
