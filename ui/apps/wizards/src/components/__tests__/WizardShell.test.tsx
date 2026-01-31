@@ -1,10 +1,9 @@
-import React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useEffect } from "react";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { renderHook, act } from "@testing-library/react";
 import { WizardShell } from "../WizardShell";
 import { WizardProvider, useWizardContext } from "../../context/WizardContext";
-import type { WizardDefinition } from "../../types/wizard";
 
 // Mock the wizard definitions module
 vi.mock("../../config/wizardDefinitions", () => ({
@@ -103,7 +102,7 @@ describe("WizardShell", () => {
       const TestComponent = () => {
         const { selectWizard, goForward, currentStepIndex } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("test-wizard");
         }, []);
 
@@ -162,7 +161,7 @@ describe("WizardShell", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("test-wizard");
         }, []);
 
@@ -187,7 +186,7 @@ describe("WizardShell", () => {
       const TestComponent = () => {
         const { selectWizard, currentStepIndex } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("test-wizard");
         }, []);
 
@@ -225,7 +224,7 @@ describe("WizardShell", () => {
       const TestComponent = () => {
         const { selectWizard, setCurrentStepIndex } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("test-wizard").then(() => {
             // Jump to invalid step index
             setCurrentStepIndex(99);
@@ -252,7 +251,7 @@ describe("WizardShell", () => {
       const TestComponent = () => {
         const { selectWizard, setCurrentStepIndex } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("test-wizard").then(() => {
             setCurrentStepIndex(99);
           });
@@ -277,7 +276,7 @@ describe("WizardShell", () => {
         const { setCurrentStepIndex, currentStepIndex } = useWizardContext();
 
         // Try to navigate to step 1 without selecting a wizard
-        React.useEffect(() => {
+        useEffect(() => {
           setCurrentStepIndex(1);
         }, []);
 
@@ -310,7 +309,7 @@ describe("WizardShell", () => {
 function TestWrapperIntro() {
   const { selectWizard } = useWizardContext();
 
-  React.useEffect(() => {
+  useEffect(() => {
     selectWizard("test-wizard");
   }, []);
 
@@ -320,7 +319,7 @@ function TestWrapperIntro() {
 function TestWrapperForm() {
   const { selectWizard, setCurrentStepIndex } = useWizardContext();
 
-  React.useEffect(() => {
+  useEffect(() => {
     selectWizard("test-wizard").then(() => {
       setCurrentStepIndex(1);
     });
@@ -332,7 +331,7 @@ function TestWrapperForm() {
 function TestWrapperResults() {
   const { selectWizard, setCurrentStepIndex } = useWizardContext();
 
-  React.useEffect(() => {
+  useEffect(() => {
     selectWizard("test-wizard").then(() => {
       setCurrentStepIndex(2);
     });

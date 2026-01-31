@@ -1,4 +1,4 @@
-import React from "react";
+import { Fragment } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
@@ -259,7 +259,7 @@ export function StepForm() {
               {groupFields.map((gField, gIndex) => {
                 const fieldError = errors[gField.id];
                 return (
-                  <React.Fragment key={gField.id}>
+                  <Fragment key={gField.id}>
                     {gIndex > 0 && <span className={styles.groupSeparator}>-</span>}
                     <input
                       id={gField.id}
@@ -271,7 +271,7 @@ export function StepForm() {
                         required: gField.required ? `${gField.label} is required` : false,
                       })}
                     />
-                  </React.Fragment>
+                  </Fragment>
                 );
               })}
             </div>

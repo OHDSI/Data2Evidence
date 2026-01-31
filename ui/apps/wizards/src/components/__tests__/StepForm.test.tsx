@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect } from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -115,7 +115,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -146,7 +146,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -171,7 +171,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -196,7 +196,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -225,7 +225,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -253,7 +253,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -281,7 +281,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -308,7 +308,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -346,7 +346,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -383,7 +383,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("select-test-wizard");
         }, []);
 
@@ -439,7 +439,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("deep-link-wizard");
         }, []);
 
@@ -482,7 +482,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("next-step-wizard");
         }, []);
 
@@ -520,7 +520,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("deep-link-wizard");
         }, []);
 
@@ -563,7 +563,7 @@ describe("StepForm - Select Field Type", () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
-        React.useEffect(() => {
+        useEffect(() => {
           selectWizard("deep-link-wizard");
         }, []);
 

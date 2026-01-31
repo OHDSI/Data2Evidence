@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect } from "react";
 import { useWizardContext } from "../context/WizardContext";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { StepSelection } from "./StepSelection";
@@ -27,7 +27,7 @@ export function WizardShell() {
     useWizardContext();
 
   // Handle invalid state: index > -1 but no wizard selected
-  React.useEffect(() => {
+  useEffect(() => {
     if (currentStepIndex > -1 && !selectedWizard) {
       console.warn("[Wizards] No wizard selected, redirecting to selection page");
       setCurrentStepIndex(-1);
