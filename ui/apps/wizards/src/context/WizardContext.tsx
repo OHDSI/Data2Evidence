@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import type { WizardState } from "../types/wizard";
+import type { WizardState, WizardStepConfig } from "../types/wizard";
 import type { PortalProps } from "../types/portal";
 import { getWizardById } from "../config/wizardDefinitions";
 
@@ -18,6 +18,8 @@ interface WizardContextValue extends WizardState {
   resetWizard: () => void;
   goBack: () => void;
   goForward: () => void;
+  // Helper functions
+  getCurrentStepConfig: () => WizardStepConfig | null;
   // Portal props from parent
   portalProps: PortalProps;
 }
@@ -135,7 +137,7 @@ export function WizardProvider({
         };
       }
       // If no wizard selected or no steps, don't increment
-      if (!prev.selectedWizard?.steps?.length) {
+      if (!prev.selectedWizard || prev.selectedWizard.steps.length === 0) {
         return prev;
       }
       // Don't increment beyond the wizard's steps
@@ -150,6 +152,31 @@ export function WizardProvider({
     });
   }, []);
 
+  /**
+   * Get the current step configuration based on currentStepIndex.
+   * Returns null in the following cases:
+   * - currentStepIndex is -1 (selection page)
+   * - No wizard is selected
+   * - currentStepIndex is out of bounds
+   * @returns The current step config or null
+   */
+  const getCurrentStepConfig = useCallback((): WizardStepConfig | null => {
+    // Selection page - no step config
+    if (state.currentStepIndex === -1) {
+      return null;
+    }
+    // No wizard selected
+    if (!state.selectedWizard) {
+      return null;
+    }
+    // Index out of bounds
+    if (state.currentStepIndex < 0 || state.currentStepIndex >= state.selectedWizard.steps.length) {
+      return null;
+    }
+    // Return the step config at the current index
+    return state.selectedWizard.steps[state.currentStepIndex];
+  }, [state.currentStepIndex, state.selectedWizard]);
+
   const value: WizardContextValue = {
     ...state,
     setCurrentStepIndex,
@@ -158,6 +185,7 @@ export function WizardProvider({
     resetWizard,
     goBack,
     goForward,
+    getCurrentStepConfig,
     portalProps,
   };
 
