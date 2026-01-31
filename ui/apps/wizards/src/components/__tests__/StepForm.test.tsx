@@ -168,7 +168,7 @@ describe("StepForm - Select Field Type", () => {
       expect(label.tagName).toBe("LABEL");
     });
 
-    it("should show required asterisk when field.required = true", async () => {
+    it("should show required text when field.required = true", async () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
@@ -189,9 +189,8 @@ describe("StepForm - Select Field Type", () => {
         expect(screen.getByText(/Gender/)).toBeInTheDocument();
       });
 
-      // Gender field has required: true
-      const genderLabel = screen.getByText(/Gender/);
-      expect(genderLabel.textContent).toContain("*");
+      // Gender field has required: true - should show required text
+      expect(screen.getByText("This is a required field")).toBeInTheDocument();
     });
 
     it("should show placeholder option for non-required select fields", async () => {
@@ -302,8 +301,8 @@ describe("StepForm - Select Field Type", () => {
       });
 
       // Submit button should be disabled when required field is empty
-      const submitButton = screen.getByText("Submit");
-      expect(submitButton).toBeDisabled();
+      const submitButtons = screen.getAllByText("Submit");
+      expect(submitButtons[0]).toBeDisabled();
     });
 
     it("should show error message for invalid selection", async () => {
@@ -373,8 +372,8 @@ describe("StepForm - Select Field Type", () => {
 
       // Submit button should become enabled
       await waitFor(() => {
-        const submitButton = screen.getByText("Submit");
-        expect(submitButton).not.toBeDisabled();
+        const submitButtons = screen.getAllByText("Submit");
+        expect(submitButtons[0]).not.toBeDisabled();
       });
     });
   });
@@ -413,14 +412,14 @@ describe("StepForm - Select Field Type", () => {
       const selectElement = screen.getByLabelText(/Gender/);
       await user.selectOptions(selectElement, "8507");
 
-      const submitButton = screen.getByText("Submit");
+      const submitButtons = screen.getAllByText("Submit");
 
       // Wait for button to be enabled
       await waitFor(() => {
-        expect(submitButton).not.toBeDisabled();
+        expect(submitButtons[0]).not.toBeDisabled();
       });
 
-      await user.click(submitButton);
+      await user.click(submitButtons[0]);
 
       // Form data should be updated (this is handled by the component)
       // We'll verify by checking that the value persists
@@ -470,12 +469,12 @@ describe("StepForm - Select Field Type", () => {
       await user.type(input, "Diabetes");
 
       await waitFor(() => {
-        const submitButton = screen.getByText("Open cohort");
-        expect(submitButton).not.toBeDisabled();
+        const submitButtons = screen.getAllByText("Open cohort");
+        expect(submitButtons[0]).not.toBeDisabled();
       });
 
-      const submitButton = screen.getByText("Open cohort");
-      await user.click(submitButton);
+      const submitButtons = screen.getAllByText("Open cohort");
+      await user.click(submitButtons[0]);
 
       // Check that window.location.href was set to a deep link
       await waitFor(() => {
@@ -513,12 +512,12 @@ describe("StepForm - Select Field Type", () => {
       await user.type(input, "test value");
 
       await waitFor(() => {
-        const submitButton = screen.getByText("Next");
-        expect(submitButton).not.toBeDisabled();
+        const submitButtons = screen.getAllByText("Next");
+        expect(submitButtons[0]).not.toBeDisabled();
       });
 
-      const submitButton = screen.getByText("Next");
-      await user.click(submitButton);
+      const submitButtons = screen.getAllByText("Next");
+      await user.click(submitButtons[0]);
 
       // window.location.href should not be set for next-step action
       // It should remain empty (from beforeEach setup)
@@ -551,12 +550,12 @@ describe("StepForm - Select Field Type", () => {
       await user.type(input, "Diabetes");
 
       await waitFor(() => {
-        const submitButton = screen.getByText("Open cohort");
-        expect(submitButton).not.toBeDisabled();
+        const submitButtons = screen.getAllByText("Open cohort");
+        expect(submitButtons[0]).not.toBeDisabled();
       });
 
-      const submitButton = screen.getByText("Open cohort");
-      await user.click(submitButton);
+      const submitButtons = screen.getAllByText("Open cohort");
+      await user.click(submitButtons[0]);
 
       await waitFor(() => {
         expect(window.location.href).toBeTruthy();
@@ -594,12 +593,12 @@ describe("StepForm - Select Field Type", () => {
       await user.type(input, "Diabetes");
 
       await waitFor(() => {
-        const submitButton = screen.getByText("Open cohort");
-        expect(submitButton).not.toBeDisabled();
+        const submitButtons = screen.getAllByText("Open cohort");
+        expect(submitButtons[0]).not.toBeDisabled();
       });
 
-      const submitButton = screen.getByText("Open cohort");
-      await user.click(submitButton);
+      const submitButtons = screen.getAllByText("Open cohort");
+      await user.click(submitButtons[0]);
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(

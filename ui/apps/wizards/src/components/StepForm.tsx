@@ -1,3 +1,4 @@
+import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
@@ -68,13 +69,14 @@ export function StepForm() {
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
-              {field.label}
-              {field.required && <span className={styles.required}> *</span>}
+              {field.label}:
             </label>
             <input
               id={field.id}
               type="number"
+              placeholder={field.placeholder}
               className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+              aria-invalid={!!fieldError}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
                 valueAsNumber: true,
@@ -94,7 +96,12 @@ export function StepForm() {
                     : undefined,
               })}
             />
-            {fieldError && <span className={styles.errorMessage}>{fieldError.message as string}</span>}
+            {field.required && <span className={styles.requiredText}>This is a required field</span>}
+            {fieldError && (
+              <span className={styles.errorMessage} role="alert">
+                {fieldError.message as string}
+              </span>
+            )}
           </div>
         );
 
@@ -102,18 +109,49 @@ export function StepForm() {
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
-              {field.label}
-              {field.required && <span className={styles.required}> *</span>}
+              {field.label}:
             </label>
             <input
               id={field.id}
               type="text"
+              placeholder={field.placeholder}
               className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+              aria-invalid={!!fieldError}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {fieldError && <span className={styles.errorMessage}>{fieldError.message as string}</span>}
+            {field.required && <span className={styles.requiredText}>This is a required field</span>}
+            {fieldError && (
+              <span className={styles.errorMessage} role="alert">
+                {fieldError.message as string}
+              </span>
+            )}
+          </div>
+        );
+
+      case "date":
+        return (
+          <div key={field.id} className={styles.fieldGroup}>
+            <label htmlFor={field.id} className={styles.label}>
+              {field.label}:
+            </label>
+            <input
+              id={field.id}
+              type="date"
+              aria-label={field.placeholder || field.label}
+              className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+              aria-invalid={!!fieldError}
+              {...register(field.id, {
+                required: field.required ? `${field.label} is required` : false,
+              })}
+            />
+            {field.required && <span className={styles.requiredText}>This is a required field</span>}
+            {fieldError && (
+              <span className={styles.errorMessage} role="alert">
+                {fieldError.message as string}
+              </span>
+            )}
           </div>
         );
 
@@ -123,8 +161,7 @@ export function StepForm() {
           return (
             <div key={field.id} className={styles.fieldGroup}>
               <label htmlFor={field.id} className={styles.label}>
-                {field.label}
-                {field.required && <span className={styles.required}> *</span>}
+                {field.label}:
               </label>
               <div className={styles.errorMessage}>Error: No options available for {field.label}</div>
             </div>
@@ -134,8 +171,7 @@ export function StepForm() {
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
-              {field.label}
-              {field.required && <span className={styles.required}> *</span>}
+              {field.label}:
             </label>
             <Controller
               name={field.id}
@@ -149,8 +185,9 @@ export function StepForm() {
                   {...controllerField}
                   id={field.id}
                   className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+                  aria-invalid={!!fieldError}
                 >
-                  {!field.required && <option value="">Select {field.label}</option>}
+                  {!field.required && <option value="">{field.placeholder || `Select ${field.label}`}</option>}
                   {field.options?.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -159,14 +196,19 @@ export function StepForm() {
                 </select>
               )}
             />
-            {fieldError && <span className={styles.errorMessage}>{fieldError.message as string}</span>}
+            {field.required && <span className={styles.requiredText}>This is a required field</span>}
+            {fieldError && (
+              <span className={styles.errorMessage} role="alert">
+                {fieldError.message as string}
+              </span>
+            )}
           </div>
         );
 
       default:
         return (
           <div key={field.id} className={styles.fieldGroup}>
-            <label className={styles.label}>{field.label}</label>
+            <label className={styles.label}>{field.label}:</label>
             <div className={styles.unsupported}>Unsupported field type: {field.type}</div>
           </div>
         );
@@ -187,25 +229,90 @@ export function StepForm() {
   // Get submit button text from stepConfig or default to "Next"
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
 
+  // Group fields by the 'group' property
+  const renderFields = () => {
+    const fields = selectedWizard.fields;
+    const renderedFields: JSX.Element[] = [];
+    const processedIndices = new Set<number>();
+
+    fields.forEach((field, index) => {
+      // Skip if already processed as part of a group
+      if (processedIndices.has(index)) return;
+
+      // Check if this field is part of a group
+      if (field.group) {
+        // Find all adjacent fields with the same group
+        const groupFields = [field];
+        let nextIndex = index + 1;
+
+        while (nextIndex < fields.length && fields[nextIndex].group === field.group) {
+          groupFields.push(fields[nextIndex]);
+          processedIndices.add(nextIndex);
+          nextIndex++;
+        }
+
+        // Render grouped fields in one row
+        renderedFields.push(
+          <div key={`group-${field.group}-${index}`} className={styles.fieldGroupRow}>
+            <label className={styles.label}>{field.group.charAt(0).toUpperCase() + field.group.slice(1)}:</label>
+            <div className={styles.groupInputs}>
+              {groupFields.map((gField, gIndex) => {
+                const fieldError = errors[gField.id];
+                return (
+                  <React.Fragment key={gField.id}>
+                    {gIndex > 0 && <span className={styles.groupSeparator}>-</span>}
+                    <input
+                      id={gField.id}
+                      type={gField.type}
+                      placeholder={gField.placeholder}
+                      className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+                      aria-invalid={!!fieldError}
+                      {...register(gField.id, {
+                        required: gField.required ? `${gField.label} is required` : false,
+                      })}
+                    />
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            {groupFields.map((gField) => {
+              const fieldError = errors[gField.id];
+              return fieldError ? (
+                <span key={`error-${gField.id}`} className={styles.errorMessage} role="alert">
+                  {fieldError.message as string}
+                </span>
+              ) : null;
+            })}
+          </div>,
+        );
+
+        processedIndices.add(index);
+      } else {
+        // Render individual field normally
+        renderedFields.push(renderField(field));
+      }
+    });
+
+    return renderedFields;
+  };
+
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <h2>{stepConfig?.title || selectedWizard.name}</h2>
-      </div>
+      <h2>{stepConfig?.title || selectedWizard.name}</h2>
 
       {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
 
       {stepConfig?.note && <div className={styles.note}>{stepConfig.note}</div>}
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
-        <div className={styles.formFields}>{selectedWizard.fields.map((field) => renderField(field))}</div>
+      <form onSubmit={handleSubmit(onSubmit)} className={styles.form} aria-label={selectedWizard.name + " form"}>
+        <div className={styles.formFields}>{renderFields()}</div>
 
         <div className={styles.buttonRow}>
           <button type="button" onClick={goBack} className={styles.button}>
             Back
           </button>
           <button type="submit" disabled={!isValid} className={`${styles.button} ${styles.buttonPrimary}`}>
-            {submitLabel}
+            <span>▦</span> {submitLabel}
           </button>
         </div>
       </form>
