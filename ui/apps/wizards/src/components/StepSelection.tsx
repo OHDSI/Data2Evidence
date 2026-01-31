@@ -4,6 +4,9 @@ import { useWizardContext } from "../context/WizardContext";
 import type { WizardDefinition } from "../types/wizard";
 import styles from "./StepSelection.module.css";
 
+/**
+ * Wizard selection grid.
+ */
 export function StepSelection() {
   const { selectWizard } = useWizardContext();
   const [wizards, setWizards] = useState<WizardDefinition[]>([]);

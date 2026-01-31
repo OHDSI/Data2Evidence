@@ -2,6 +2,9 @@ import { useWizardContext } from "../context/WizardContext";
 import type { IntroStepConfig } from "../types/wizard";
 import styles from "./StepIntro.module.css";
 
+/**
+ * Introduction step renderer.
+ */
 export function StepIntro() {
   const { selectedWizard, goBack, goForward, getCurrentStepConfig } = useWizardContext();
   const stepConfig = getCurrentStepConfig();

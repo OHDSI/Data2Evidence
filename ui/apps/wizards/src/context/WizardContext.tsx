@@ -91,9 +91,9 @@ export function WizardProvider({
 
   /**
    * Navigate to the previous step.
-   * - From step 0 -> goes to -1 (selection page) and clears wizard selection
-   * - From step 1+ -> decrements currentStepIndex
-   * - From -1 -> stays at -1
+   * - From index 0 -> goes to -1 (selection page) and clears wizard selection
+   * - From index 1+ -> decrements currentStepIndex
+   * - From index -1 -> stays at -1
    * Note: formData is preserved intentionally to allow users to return
    * to the wizard and resume with their previous inputs.
    */

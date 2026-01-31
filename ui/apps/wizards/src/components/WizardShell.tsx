@@ -19,6 +19,9 @@ const stepTypeRegistry: Record<StepType, React.ComponentType> = {
   results: StepResults,
 };
 
+/**
+ * Main wizard renderer using step type registry.
+ */
 export function WizardShell() {
   const { currentStepIndex, selectedWizard, getCurrentStepConfig, setCurrentStepIndex, resetWizard } =
     useWizardContext();

@@ -4,6 +4,9 @@ import type { FieldDefinition, FormStepConfig } from "../types/wizard";
 import { generateFormSubmitDeepLink } from "../utils/deepLinks";
 import styles from "./StepForm.module.css";
 
+/**
+ * Form step renderer with config-driven fields.
+ */
 export function StepForm() {
   const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig, portalProps } =
     useWizardContext();

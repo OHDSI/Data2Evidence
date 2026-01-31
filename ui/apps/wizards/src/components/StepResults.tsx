@@ -2,6 +2,9 @@ import { useWizardContext } from "../context/WizardContext";
 import { generateDeepLink } from "../utils/deepLinks";
 import styles from "./StepResults.module.css";
 
+/**
+ * Results step renderer with deep links.
+ */
 export function StepResults() {
   const { selectedWizard, formData, goBack, portalProps, getCurrentStepConfig } = useWizardContext();
   const stepConfig = getCurrentStepConfig();
