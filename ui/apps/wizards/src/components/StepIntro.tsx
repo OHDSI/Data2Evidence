@@ -1,23 +1,30 @@
 import { useWizardContext } from "../context/WizardContext";
-import styles from "./Step2Introduction.module.css";
+import type { IntroStepConfig } from "../types/wizard";
+import styles from "./StepIntro.module.css";
 
-export function Step2Introduction() {
-  const { selectedWizard, goBack, goForward } = useWizardContext();
+export function StepIntro() {
+  const { selectedWizard, goBack, goForward, getCurrentStepConfig } = useWizardContext();
+  const stepConfig = getCurrentStepConfig();
 
   if (!selectedWizard) {
     return (
       <div className={styles.container}>
         <div className={styles.section}>
-          <p>Error: No wizard selected. Please return to step 1.</p>
+          <p>Error: No wizard selected. Please return to wizard selection.</p>
         </div>
       </div>
     );
   }
 
+  // Get inputs and outputs from stepConfig if available
+  const introConfig = stepConfig?.config as IntroStepConfig | undefined;
+  const inputs = introConfig?.inputs || selectedWizard.fields.map((f) => f.label);
+  const outputs = introConfig?.outputs || selectedWizard.resultActions.map((a) => a.label);
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>{selectedWizard.name}</h2>
+        <h2>{stepConfig?.title || selectedWizard.name}</h2>
       </div>
 
       <div className={styles.section}>
@@ -27,10 +34,9 @@ export function Step2Introduction() {
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Required Inputs</h3>
         <ul className={styles.list}>
-          {selectedWizard.fields.map((field) => (
-            <li key={field.id} className={styles.listItem}>
-              {field.label}
-              {field.required && <span className={styles.required}> *</span>}
+          {inputs.map((input, index) => (
+            <li key={index} className={styles.listItem}>
+              {input}
             </li>
           ))}
         </ul>
@@ -39,9 +45,9 @@ export function Step2Introduction() {
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>Expected Outputs</h3>
         <ul className={styles.list}>
-          {selectedWizard.resultActions.map((action) => (
-            <li key={action.id} className={styles.listItem}>
-              {action.label}
+          {outputs.map((output, index) => (
+            <li key={index} className={styles.listItem}>
+              {output}
             </li>
           ))}
         </ul>

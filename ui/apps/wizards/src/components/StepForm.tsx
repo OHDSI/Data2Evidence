@@ -1,10 +1,11 @@
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
-import type { FieldDefinition } from "../types/wizard";
-import styles from "./Step3Form.module.css";
+import type { FieldDefinition, FormStepConfig } from "../types/wizard";
+import styles from "./StepForm.module.css";
 
-export function Step3Form() {
-  const { selectedWizard, formData, updateFormData, goBack, goForward } = useWizardContext();
+export function StepForm() {
+  const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig } = useWizardContext();
+  const stepConfig = getCurrentStepConfig();
 
   const {
     register,
@@ -93,16 +94,23 @@ export function Step3Form() {
         <div className={styles.header}>
           <h2>Error</h2>
         </div>
-        <p>Error: No wizard selected. Please return to step 1.</p>
+        <p>Error: No wizard selected. Please return to wizard selection.</p>
       </div>
     );
   }
 
+  // Get submit button text from stepConfig or default to "Next"
+  const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>{selectedWizard.name}</h2>
+        <h2>{stepConfig?.title || selectedWizard.name}</h2>
       </div>
+
+      {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
+
+      {stepConfig?.note && <div className={styles.note}>{stepConfig.note}</div>}
 
       <form onSubmit={handleSubmit(onSubmit)} className={styles.form}>
         <div className={styles.formFields}>{selectedWizard.fields.map((field) => renderField(field))}</div>
@@ -112,7 +120,7 @@ export function Step3Form() {
             Back
           </button>
           <button type="submit" disabled={!isValid} className={`${styles.button} ${styles.buttonPrimary}`}>
-            Next
+            {submitLabel}
           </button>
         </div>
       </form>

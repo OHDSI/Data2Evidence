@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { getWizardDefinitions } from "../config/wizardDefinitions";
 import { useWizardContext } from "../context/WizardContext";
 import type { WizardDefinition } from "../types/wizard";
-import styles from "./Step1Selection.module.css";
+import styles from "./StepSelection.module.css";
 
-export function Step1Selection() {
+export function StepSelection() {
   const { selectWizard } = useWizardContext();
   const [wizards, setWizards] = useState<WizardDefinition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,8 @@ export function Step1Selection() {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h2>Select a Wizard</h2>
+          <h2>Getting started</h2>
+          <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
         </div>
         <div className={styles.loading} role="status">
           Loading wizards...
@@ -65,7 +66,8 @@ export function Step1Selection() {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h2>Select a Wizard</h2>
+          <h2>Getting started</h2>
+          <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
         </div>
         <div className={styles.error} role="alert">
           Error: {error}
@@ -83,7 +85,8 @@ export function Step1Selection() {
     return (
       <div className={styles.container}>
         <div className={styles.header}>
-          <h2>Select a Wizard</h2>
+          <h2>Getting started</h2>
+          <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
         </div>
         <div className={styles.empty}>No wizards available</div>
       </div>
@@ -93,7 +96,8 @@ export function Step1Selection() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>Select a Wizard</h2>
+        <h2>Getting started</h2>
+        <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
       </div>
       <div className={styles.grid}>
         {wizards.map((wizard) => (

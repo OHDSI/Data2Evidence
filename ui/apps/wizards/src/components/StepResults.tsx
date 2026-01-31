@@ -1,9 +1,10 @@
 import { useWizardContext } from "../context/WizardContext";
 import { generateDeepLink } from "../utils/deepLinks";
-import styles from "./Step4Results.module.css";
+import styles from "./StepResults.module.css";
 
-export function Step4Results() {
-  const { selectedWizard, formData, goBack, portalProps } = useWizardContext();
+export function StepResults() {
+  const { selectedWizard, formData, goBack, portalProps, getCurrentStepConfig } = useWizardContext();
+  const stepConfig = getCurrentStepConfig();
 
   if (!selectedWizard) {
     return (
@@ -11,7 +12,7 @@ export function Step4Results() {
         <div className={styles.header}>
           <h2>Error</h2>
         </div>
-        <p>Error: No wizard selected. Please return to step 1.</p>
+        <p>Error: No wizard selected. Please return to wizard selection.</p>
       </div>
     );
   }
@@ -19,7 +20,7 @@ export function Step4Results() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>Wizard Complete!</h2>
+        <h2>{stepConfig?.title || "Wizard Complete!"}</h2>
       </div>
 
       <div className={styles.section}>

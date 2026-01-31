@@ -1,9 +1,9 @@
 import { useWizardContext } from "../context/WizardContext";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { Step1Selection } from "./Step1Selection";
-import { Step2Introduction } from "./Step2Introduction";
-import { Step3Form } from "./Step3Form";
-import { Step4Results } from "./Step4Results";
+import { StepSelection } from "./StepSelection";
+import { StepIntro } from "./StepIntro";
+import { StepForm } from "./StepForm";
+import { StepResults } from "./StepResults";
 import styles from "./WizardShell.module.css";
 
 export function WizardShell() {
@@ -12,23 +12,23 @@ export function WizardShell() {
   const renderStep = () => {
     // Selection page (index -1)
     if (currentStepIndex === -1) {
-      return <Step1Selection />;
+      return <StepSelection />;
     }
 
     // If index > -1 but no wizard selected, redirect to selection
     if (currentStepIndex > -1 && !selectedWizard) {
       console.warn("[Wizards] No wizard selected, redirecting to selection page");
       setCurrentStepIndex(-1);
-      return <Step1Selection />;
+      return <StepSelection />;
     }
 
     switch (currentStepIndex) {
       case 0:
-        return <Step2Introduction />;
+        return <StepIntro />;
       case 1:
-        return <Step3Form />;
+        return <StepForm />;
       case 2:
-        return <Step4Results />;
+        return <StepResults />;
       default:
         return null;
     }
@@ -39,7 +39,7 @@ export function WizardShell() {
       <header className={styles.header}>
         <h1 className={styles.title}>Wizards</h1>
         <p className={styles.progress}>
-          Step {currentStepIndex + 1} of {selectedWizard?.steps?.length ?? 3}
+          Step {currentStepIndex + 1} of {selectedWizard?.steps.length ?? 3}
         </p>
       </header>
       <main className={styles.content}>
