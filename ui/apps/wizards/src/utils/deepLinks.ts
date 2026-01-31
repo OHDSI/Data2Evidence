@@ -59,3 +59,40 @@ export function decodeWizardConfig(encoded: string): Record<string, any> {
     throw new Error("Invalid wizard configuration format");
   }
 }
+
+/**
+ * Generate deep link URL for form submit action.
+ *
+ * Expected URL format (from implementation plan):
+ * /d2e/portal/researcher/cohort?datasetId={datasetId}&linkType=cohort-definition&query={encodedConfig}
+ *
+ * @param wizardId - The ID of the wizard being submitted
+ * @param formData - Wizard form data to encode in URL
+ * @param datasetId - Dataset ID from portal context (optional, defaults to "default")
+ * @returns Deep link URL string
+ */
+export function generateFormSubmitDeepLink(
+  wizardId: string,
+  formData: Record<string, any>,
+  datasetId?: string,
+): string {
+  const resolvedDatasetId = datasetId || "default";
+
+  // Create config object with wizardId and formData
+  const config = {
+    wizardId,
+    formData,
+  };
+
+  const encodedConfig = encodeWizardConfig(config);
+
+  // Build URL with query parameters using URLSearchParams
+  const params = new URLSearchParams({
+    datasetId: resolvedDatasetId,
+    linkType: "cohort-definition",
+    query: encodedConfig,
+  });
+  const url = `/d2e/portal/researcher/cohort?${params.toString()}`;
+
+  return url;
+}

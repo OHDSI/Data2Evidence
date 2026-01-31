@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateDeepLink, encodeWizardConfig, decodeWizardConfig } from "../deepLinks";
+import { generateDeepLink, encodeWizardConfig, decodeWizardConfig, generateFormSubmitDeepLink } from "../deepLinks";
 import type { ResultAction } from "../../types/wizard";
 
 describe("deepLinks", () => {
@@ -275,6 +275,112 @@ describe("deepLinks", () => {
       expect(result).toContain("dataset%2Fwith%2Fslash");
       // Base64 characters should be URL-encoded if they contain special chars
       expect(result).not.toContain("dataset/with/slash");
+    });
+  });
+
+  describe("generateFormSubmitDeepLink", () => {
+    it("should generate URL with correct format", () => {
+      const wizardId = "patient-cohort-wizard";
+      const formData = { condition: "Diabetes", ageMin: 18 };
+      const datasetId = "dataset-123";
+
+      const result = generateFormSubmitDeepLink(wizardId, formData, datasetId);
+
+      expect(result).toBeTruthy();
+      expect(result).toContain("/d2e/portal/researcher/cohort");
+      expect(result).toContain("datasetId=dataset-123");
+      expect(result).toContain("linkType=cohort-definition");
+      expect(result).toContain("query=");
+    });
+
+    it("should use default datasetId when not provided", () => {
+      const wizardId = "patient-cohort-wizard";
+      const formData = { condition: "Diabetes" };
+
+      const result = generateFormSubmitDeepLink(wizardId, formData);
+
+      expect(result).toContain("datasetId=default");
+    });
+
+    it("should include wizardId in encoded config", () => {
+      const wizardId = "patient-cohort-wizard";
+      const formData = { condition: "Diabetes", ageMin: 18 };
+
+      const result = generateFormSubmitDeepLink(wizardId, formData);
+
+      // Extract and decode the query parameter
+      const queryMatch = result.match(/query=([^&]+)/);
+      expect(queryMatch).toBeTruthy();
+
+      const encodedConfig = decodeURIComponent(queryMatch![1]);
+      const config = decodeWizardConfig(encodedConfig);
+
+      expect(config.wizardId).toBe(wizardId);
+      expect(config.formData).toEqual(formData);
+    });
+
+    it("should URL-encode special characters in datasetId", () => {
+      const wizardId = "test-wizard";
+      const formData = { field: "value" };
+      const datasetId = "dataset/with/slash";
+
+      const result = generateFormSubmitDeepLink(wizardId, formData, datasetId);
+
+      expect(result).toContain("datasetId=dataset%2Fwith%2Fslash");
+      expect(result).not.toContain("datasetId=dataset/with/slash");
+    });
+
+    it("should URL-encode base64 config", () => {
+      const wizardId = "test-wizard";
+      const formData = { field: "value with spaces" };
+
+      const result = generateFormSubmitDeepLink(wizardId, formData);
+
+      // Query parameter should be URL-encoded
+      expect(result).toContain("query=");
+      // Should not contain unencoded base64 characters that need encoding
+      const queryMatch = result.match(/query=([^&]+)/);
+      expect(queryMatch).toBeTruthy();
+      // The encoded value should be safe for URLs
+      expect(queryMatch![1]).toMatch(/^[A-Za-z0-9%_.-]+$/);
+    });
+
+    it("should handle empty formData", () => {
+      const wizardId = "test-wizard";
+      const formData = {};
+
+      const result = generateFormSubmitDeepLink(wizardId, formData);
+
+      expect(result).toBeTruthy();
+      expect(result).toContain("query=");
+
+      // Verify config can be decoded
+      const queryMatch = result.match(/query=([^&]+)/);
+      const encodedConfig = decodeURIComponent(queryMatch![1]);
+      const config = decodeWizardConfig(encodedConfig);
+
+      expect(config.wizardId).toBe(wizardId);
+      expect(config.formData).toEqual({});
+    });
+
+    it("should preserve complex formData structures", () => {
+      const wizardId = "complex-wizard";
+      const formData = {
+        condition: "Diabetes",
+        ageRange: { min: 18, max: 65 },
+        medications: ["insulin", "metformin"],
+        includePregnant: false,
+      };
+
+      const result = generateFormSubmitDeepLink(wizardId, formData);
+
+      // Extract and decode the query parameter
+      const queryMatch = result.match(/query=([^&]+)/);
+      const encodedConfig = decodeURIComponent(queryMatch![1]);
+      const config = decodeWizardConfig(encodedConfig);
+
+      expect(config.wizardId).toBe(wizardId);
+      expect(config.formData).toEqual(formData);
     });
   });
 });

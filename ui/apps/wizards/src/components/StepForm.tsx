@@ -1,10 +1,12 @@
 import { useForm, Controller } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
+import { generateFormSubmitDeepLink } from "../utils/deepLinks";
 import styles from "./StepForm.module.css";
 
 export function StepForm() {
-  const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig } = useWizardContext();
+  const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig, portalProps } =
+    useWizardContext();
   const stepConfig = getCurrentStepConfig();
 
   const {
@@ -19,7 +21,40 @@ export function StepForm() {
 
   const onSubmit = (data: Record<string, any>) => {
     updateFormData(data);
-    goForward();
+
+    // Check stepConfig for submitAction
+    const formStepConfig = stepConfig?.config as FormStepConfig | undefined;
+    const submitAction = formStepConfig?.submitAction || "next-step";
+
+    console.log("[Wizards StepForm] Submit action:", submitAction);
+
+    if (submitAction === "deep-link") {
+      try {
+        // Generate deep link URL
+        if (!selectedWizard) {
+          console.error("[Wizards StepForm] Cannot generate deep link: No wizard selected");
+          goForward();
+          return;
+        }
+
+        // Combine existing formData with new data
+        const combinedFormData = { ...formData, ...data };
+
+        const deepLinkUrl = generateFormSubmitDeepLink(selectedWizard.id, combinedFormData, portalProps.datasetId);
+
+        console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
+
+        // Navigate to the deep link
+        window.location.href = deepLinkUrl;
+      } catch (error) {
+        console.error("[Wizards StepForm] Failed to generate deep link:", error);
+        // Fall back to goForward on error
+        goForward();
+      }
+    } else {
+      // Default behavior: next-step or undefined
+      goForward();
+    }
   };
 
   const renderField = (field: FieldDefinition) => {

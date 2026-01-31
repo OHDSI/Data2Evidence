@@ -71,7 +71,7 @@ const wizardDefinitions: WizardDefinition[] = [
         id: "form",
         type: "form" as const,
         title: "Form",
-        config: { submitLabel: "Submit", submitAction: "deep-link" as const },
+        config: { submitLabel: "Submit", submitAction: "next-step" as const },
       },
       { id: "results", type: "results" as const, title: "Results" },
     ],
