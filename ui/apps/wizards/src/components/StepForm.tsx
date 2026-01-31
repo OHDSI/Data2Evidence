@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
 import styles from "./StepForm.module.css";
@@ -10,6 +10,7 @@ export function StepForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
@@ -73,6 +74,52 @@ export function StepForm() {
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
+            />
+            {fieldError && <span className={styles.errorMessage}>{fieldError.message as string}</span>}
+          </div>
+        );
+
+      case "select":
+        // Validate that options exist and are not empty
+        if (!field.options || field.options.length === 0) {
+          return (
+            <div key={field.id} className={styles.fieldGroup}>
+              <label htmlFor={field.id} className={styles.label}>
+                {field.label}
+                {field.required && <span className={styles.required}> *</span>}
+              </label>
+              <div className={styles.errorMessage}>Error: No options available for {field.label}</div>
+            </div>
+          );
+        }
+
+        return (
+          <div key={field.id} className={styles.fieldGroup}>
+            <label htmlFor={field.id} className={styles.label}>
+              {field.label}
+              {field.required && <span className={styles.required}> *</span>}
+            </label>
+            <Controller
+              name={field.id}
+              control={control}
+              defaultValue={formData[field.id] ?? ""}
+              rules={{
+                required: field.required ? `${field.label} is required` : false,
+              }}
+              render={({ field: controllerField }) => (
+                <select
+                  {...controllerField}
+                  id={field.id}
+                  className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+                >
+                  {!field.required && <option value="">Select {field.label}</option>}
+                  {field.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             />
             {fieldError && <span className={styles.errorMessage}>{fieldError.message as string}</span>}
           </div>
