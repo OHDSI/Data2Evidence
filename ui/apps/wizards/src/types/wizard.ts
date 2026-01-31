@@ -74,8 +74,8 @@ export interface WizardDefinition {
   description: string;
   fields: FieldDefinition[];
   resultActions: ResultAction[];
-  /** Optional step configuration for config-driven flow */
-  steps?: WizardStepConfig[];
+  /** Step configuration defining the wizard's flow */
+  steps: WizardStepConfig[];
 }
 
 /**

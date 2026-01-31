@@ -31,6 +31,16 @@ const wizardDefinitions: WizardDefinition[] = [
         },
       },
     ],
+    steps: [
+      { id: "intro", type: "intro" as const, title: "Introduction" },
+      {
+        id: "form",
+        type: "form" as const,
+        title: "Form",
+        config: { submitLabel: "Submit", submitAction: "deep-link" as const },
+      },
+      { id: "results", type: "results" as const, title: "Results" },
+    ],
     resultActions: [
       {
         id: "view-cohort",

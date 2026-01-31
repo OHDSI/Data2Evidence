@@ -3,9 +3,16 @@ import type { WizardState } from "../types/wizard";
 import type { PortalProps } from "../types/portal";
 import { getWizardById } from "../config/wizardDefinitions";
 
+/**
+ * Context value for wizard state and navigation.
+ *
+ * currentStepIndex semantics:
+ * - -1 = wizard selection page (no wizard selected)
+ * - 0+ = index within the selected wizard's steps array
+ */
 interface WizardContextValue extends WizardState {
   // State mutation actions
-  setCurrentStep: (step: 1 | 2 | 3 | 4) => void;
+  setCurrentStepIndex: (index: number) => void;
   selectWizard: (id: string) => Promise<void>;
   updateFormData: (data: Record<string, any>) => void;
   resetWizard: () => void;
@@ -18,7 +25,7 @@ interface WizardContextValue extends WizardState {
 const WizardContext = createContext<WizardContextValue | undefined>(undefined);
 
 const getInitialState = (): WizardState => ({
-  currentStep: 1,
+  currentStepIndex: -1,
   selectedWizardId: null,
   selectedWizard: null,
   formData: {},
@@ -33,13 +40,23 @@ export function WizardProvider({
 }) {
   const [state, setState] = useState<WizardState>(getInitialState);
 
-  const setCurrentStep = useCallback((step: 1 | 2 | 3 | 4) => {
+  /**
+   * Directly set the current step index.
+   * @param index - Step index (-1 = selection page, 0+ = wizard step index)
+   */
+  const setCurrentStepIndex = useCallback((index: number) => {
     setState((prev) => ({
       ...prev,
-      currentStep: step,
+      currentStepIndex: index,
     }));
   }, []);
 
+  /**
+   * Select a wizard by ID and reset to step 0.
+   * Clears previous form data and sets currentStepIndex to 0 (first wizard step).
+   * @param id - Wizard identifier
+   * @throws Error if wizard loading fails
+   */
   const selectWizard = useCallback(async (id: string) => {
     try {
       const wizard = await getWizardById(id);
@@ -47,7 +64,7 @@ export function WizardProvider({
         ...prev,
         selectedWizardId: id,
         selectedWizard: wizard || null,
-        currentStep: 2,
+        currentStepIndex: 0,
         formData: {}, // Clear form data when selecting new wizard
       }));
     } catch (err) {
@@ -70,29 +87,72 @@ export function WizardProvider({
     setState(getInitialState());
   }, []);
 
+  /**
+   * Navigate to the previous step.
+   * - From step 0 -> goes to -1 (selection page) and clears wizard selection
+   * - From step 1+ -> decrements currentStepIndex
+   * - From -1 -> stays at -1
+   * Note: formData is preserved intentionally to allow users to return
+   * to the wizard and resume with their previous inputs.
+   */
   const goBack = useCallback(() => {
     setState((prev) => {
-      const newStep = Math.max(1, prev.currentStep - 1) as 1 | 2 | 3 | 4;
+      const newIndex = prev.currentStepIndex - 1;
+      // Don't go below -1
+      if (newIndex < -1) {
+        return prev;
+      }
+      // If going back to -1 (selection page), clear wizard selection
+      if (newIndex === -1) {
+        return {
+          ...prev,
+          currentStepIndex: -1,
+          selectedWizardId: null,
+          selectedWizard: null,
+          // formData preserved intentionally for resume functionality
+        };
+      }
       return {
         ...prev,
-        currentStep: newStep,
+        currentStepIndex: newIndex,
       };
     });
   }, []);
 
+  /**
+   * Navigate to the next step.
+   * - From -1 (selection page) -> advances to step 0
+   * - From 0+ -> increments currentStepIndex (if not at last step)
+   * - Stays at current step if at the end or no wizard selected
+   */
   const goForward = useCallback(() => {
     setState((prev) => {
-      const newStep = Math.min(4, prev.currentStep + 1) as 1 | 2 | 3 | 4;
+      // If we're at -1 (selection page), we can always increment to 0
+      if (prev.currentStepIndex === -1) {
+        return {
+          ...prev,
+          currentStepIndex: 0,
+        };
+      }
+      // If no wizard selected or no steps, don't increment
+      if (!prev.selectedWizard?.steps?.length) {
+        return prev;
+      }
+      // Don't increment beyond the wizard's steps
+      const maxIndex = prev.selectedWizard.steps.length - 1;
+      if (prev.currentStepIndex >= maxIndex) {
+        return prev;
+      }
       return {
         ...prev,
-        currentStep: newStep,
+        currentStepIndex: prev.currentStepIndex + 1,
       };
     });
   }, []);
 
   const value: WizardContextValue = {
     ...state,
-    setCurrentStep,
+    setCurrentStepIndex,
     selectWizard,
     updateFormData,
     resetWizard,

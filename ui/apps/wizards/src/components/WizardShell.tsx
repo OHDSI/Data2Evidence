@@ -7,22 +7,27 @@ import { Step4Results } from "./Step4Results";
 import styles from "./WizardShell.module.css";
 
 export function WizardShell() {
-  const { currentStep, selectedWizard, setCurrentStep, resetWizard } = useWizardContext();
+  const { currentStepIndex, selectedWizard, setCurrentStepIndex, resetWizard } = useWizardContext();
 
   const renderStep = () => {
-    if (currentStep > 1 && !selectedWizard) {
-      console.warn("[Wizards] No wizard selected, redirecting to step 1");
-      setCurrentStep(1);
+    // Selection page (index -1)
+    if (currentStepIndex === -1) {
       return <Step1Selection />;
     }
-    switch (currentStep) {
-      case 1:
-        return <Step1Selection />;
-      case 2:
+
+    // If index > -1 but no wizard selected, redirect to selection
+    if (currentStepIndex > -1 && !selectedWizard) {
+      console.warn("[Wizards] No wizard selected, redirecting to selection page");
+      setCurrentStepIndex(-1);
+      return <Step1Selection />;
+    }
+
+    switch (currentStepIndex) {
+      case 0:
         return <Step2Introduction />;
-      case 3:
+      case 1:
         return <Step3Form />;
-      case 4:
+      case 2:
         return <Step4Results />;
       default:
         return null;
@@ -33,7 +38,9 @@ export function WizardShell() {
     <div className={styles.shell}>
       <header className={styles.header}>
         <h1 className={styles.title}>Wizards</h1>
-        <p className={styles.progress}>Step {currentStep} of 4</p>
+        <p className={styles.progress}>
+          Step {currentStepIndex + 1} of {selectedWizard?.steps?.length ?? 3}
+        </p>
       </header>
       <main className={styles.content}>
         <ErrorBoundary onReset={resetWizard}>{renderStep()}</ErrorBoundary>

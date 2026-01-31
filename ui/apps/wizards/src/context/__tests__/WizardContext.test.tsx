@@ -16,7 +16,7 @@ describe("WizardContext", () => {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
-      expect(result.current.currentStep).toBe(1);
+      expect(result.current.currentStepIndex).toBe(-1);
       expect(result.current.selectedWizardId).toBe(null);
       expect(result.current.selectedWizard).toBe(null);
       expect(result.current.formData).toEqual({});
@@ -24,7 +24,7 @@ describe("WizardContext", () => {
   });
 
   describe("selectWizard", () => {
-    it("should update selectedWizardId, selectedWizard and set step to 2", async () => {
+    it("should update selectedWizardId, selectedWizard and set currentStepIndex to 0", async () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
@@ -36,7 +36,7 @@ describe("WizardContext", () => {
       expect(result.current.selectedWizardId).toBe("patient-count");
       expect(result.current.selectedWizard).toBeDefined();
       expect(result.current.selectedWizard?.id).toBe("patient-count");
-      expect(result.current.currentStep).toBe(2);
+      expect(result.current.currentStepIndex).toBe(0);
     });
 
     it("should clear form data when selecting a new wizard", async () => {
@@ -68,111 +68,125 @@ describe("WizardContext", () => {
 
       expect(result.current.selectedWizardId).toBe("nonexistent");
       expect(result.current.selectedWizard).toBe(null);
-      expect(result.current.currentStep).toBe(2);
+      expect(result.current.currentStepIndex).toBe(0);
     });
   });
 
   describe("goForward", () => {
-    it("should increment step from 1 to 2", () => {
+    it("should increment index from -1 to 0", () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
-      expect(result.current.currentStep).toBe(1);
+      expect(result.current.currentStepIndex).toBe(-1);
 
       act(() => {
         result.current.goForward();
       });
 
-      expect(result.current.currentStep).toBe(2);
+      expect(result.current.currentStepIndex).toBe(0);
     });
 
-    it("should increment step from 2 to 3", () => {
+    it("should not increment beyond wizard steps length", async () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
-      act(() => {
-        result.current.setCurrentStep(2);
+      await act(async () => {
+        await result.current.selectWizard("patient-count");
       });
 
-      expect(result.current.currentStep).toBe(2);
+      // Set to a high index
+      act(() => {
+        result.current.setCurrentStepIndex(10);
+      });
+
+      const beforeIndex = result.current.currentStepIndex;
 
       act(() => {
         result.current.goForward();
       });
 
-      expect(result.current.currentStep).toBe(3);
+      // Should not increment when already at or beyond wizard bounds
+      expect(result.current.currentStepIndex).toBe(beforeIndex);
     });
 
-    it("should be capped at step 4", () => {
+    it("should not increment when no wizard is selected", () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
       act(() => {
-        result.current.setCurrentStep(4);
+        result.current.setCurrentStepIndex(0);
       });
 
-      expect(result.current.currentStep).toBe(4);
+      expect(result.current.currentStepIndex).toBe(0);
 
       act(() => {
         result.current.goForward();
       });
 
-      expect(result.current.currentStep).toBe(4);
+      // Should not increment when no wizard selected
+      expect(result.current.currentStepIndex).toBe(0);
     });
   });
 
   describe("goBack", () => {
-    it("should decrement step from 2 to 1", () => {
+    it("should decrement index from 1 to 0", async () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
-      act(() => {
-        result.current.setCurrentStep(2);
+      await act(async () => {
+        await result.current.selectWizard("patient-count");
       });
 
-      expect(result.current.currentStep).toBe(2);
+      act(() => {
+        result.current.setCurrentStepIndex(1);
+      });
+
+      expect(result.current.currentStepIndex).toBe(1);
 
       act(() => {
         result.current.goBack();
       });
 
-      expect(result.current.currentStep).toBe(1);
+      expect(result.current.currentStepIndex).toBe(0);
     });
 
-    it("should decrement step from 3 to 2", () => {
+    it("should decrement index from 0 to -1 and clear wizard", async () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
-      act(() => {
-        result.current.setCurrentStep(3);
+      await act(async () => {
+        await result.current.selectWizard("patient-count");
       });
 
-      expect(result.current.currentStep).toBe(3);
+      expect(result.current.currentStepIndex).toBe(0);
+      expect(result.current.selectedWizard).toBeDefined();
 
       act(() => {
         result.current.goBack();
       });
 
-      expect(result.current.currentStep).toBe(2);
+      expect(result.current.currentStepIndex).toBe(-1);
+      expect(result.current.selectedWizard).toBe(null);
+      expect(result.current.selectedWizardId).toBe(null);
     });
 
-    it("should be capped at step 1", () => {
+    it("should not decrement below -1", () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
-      expect(result.current.currentStep).toBe(1);
+      expect(result.current.currentStepIndex).toBe(-1);
 
       act(() => {
         result.current.goBack();
       });
 
-      expect(result.current.currentStep).toBe(1);
+      expect(result.current.currentStepIndex).toBe(-1);
     });
   });
 
@@ -237,31 +251,49 @@ describe("WizardContext", () => {
     });
   });
 
-  describe("setCurrentStep", () => {
-    it("should set the step directly to 3", () => {
+  describe("setCurrentStepIndex", () => {
+    it("should set the index directly to 0", () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
-      expect(result.current.currentStep).toBe(1);
+      expect(result.current.currentStepIndex).toBe(-1);
 
       act(() => {
-        result.current.setCurrentStep(3);
+        result.current.setCurrentStepIndex(0);
       });
 
-      expect(result.current.currentStep).toBe(3);
+      expect(result.current.currentStepIndex).toBe(0);
     });
 
-    it("should set the step directly to 4", () => {
+    it("should set the index directly to 2", () => {
       const { result } = renderHook(() => useWizardContext(), {
         wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
       });
 
       act(() => {
-        result.current.setCurrentStep(4);
+        result.current.setCurrentStepIndex(2);
       });
 
-      expect(result.current.currentStep).toBe(4);
+      expect(result.current.currentStepIndex).toBe(2);
+    });
+
+    it("should allow setting index to -1", () => {
+      const { result } = renderHook(() => useWizardContext(), {
+        wrapper: ({ children }) => <WizardProvider>{children}</WizardProvider>,
+      });
+
+      act(() => {
+        result.current.setCurrentStepIndex(5);
+      });
+
+      expect(result.current.currentStepIndex).toBe(5);
+
+      act(() => {
+        result.current.setCurrentStepIndex(-1);
+      });
+
+      expect(result.current.currentStepIndex).toBe(-1);
     });
   });
 
@@ -277,10 +309,10 @@ describe("WizardContext", () => {
 
       act(() => {
         result.current.updateFormData({ field1: "value1" });
-        result.current.setCurrentStep(3);
+        result.current.setCurrentStepIndex(2);
       });
 
-      expect(result.current.currentStep).toBe(3);
+      expect(result.current.currentStepIndex).toBe(2);
       expect(result.current.selectedWizardId).toBe("patient-count");
       expect(result.current.formData).toEqual({ field1: "value1" });
 
@@ -288,7 +320,7 @@ describe("WizardContext", () => {
         result.current.resetWizard();
       });
 
-      expect(result.current.currentStep).toBe(1);
+      expect(result.current.currentStepIndex).toBe(-1);
       expect(result.current.selectedWizardId).toBe(null);
       expect(result.current.selectedWizard).toBe(null);
       expect(result.current.formData).toEqual({});
