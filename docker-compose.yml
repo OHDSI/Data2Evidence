@@ -95,6 +95,9 @@ services:
         priority: 20
       data:
         priority: 10
+    volumes:
+      - trex:/usr/src/data
+      - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
     ports:
       - "8090:8080"
     healthcheck:
