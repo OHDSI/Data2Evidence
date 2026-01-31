@@ -83,21 +83,27 @@ export function WizardShell() {
     return <StepComponent />;
   };
 
-  // Calculate progress display
-  const showProgress = selectedWizard && selectedWizard.steps.length >= 1;
-  const totalSteps = selectedWizard ? selectedWizard.steps.length : 0;
-
   return (
     <div className={styles.shell}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>Wizards</h1>
-        {showProgress && (
-          <p className={styles.progress}>
-            Step {currentStepIndex + 1} of {totalSteps}
-          </p>
-        )}
-      </header>
       <main className={styles.content}>
+        <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
+          <ol className={styles.breadcrumbList}>
+            <li>
+              <button type="button" className={styles.breadcrumbLink} onClick={resetWizard}>
+                Home
+              </button>
+            </li>
+            <li>
+              <span className={styles.breadcrumbSeparator} aria-hidden="true">
+                {" "}
+                /{" "}
+              </span>
+              <span className={styles.breadcrumbCurrent} aria-current="page">
+                Cohort Wizards
+              </span>
+            </li>
+          </ol>
+        </nav>
         <ErrorBoundary onReset={resetWizard}>{renderStep()}</ErrorBoundary>
       </main>
     </div>

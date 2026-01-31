@@ -18,7 +18,9 @@ export function StepSelection() {
       setLoading(true);
       setError(null);
       const definitions = await getWizardDefinitions();
-      setWizards(definitions);
+      // Filter out hidden wizards
+      const visibleWizards = definitions.filter((w) => !w.hidden);
+      setWizards(visibleWizards);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load wizards";
       console.error("[Wizards] Failed to load wizard definitions:", err);

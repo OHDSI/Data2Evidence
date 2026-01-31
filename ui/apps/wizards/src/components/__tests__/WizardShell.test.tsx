@@ -132,8 +132,33 @@ describe("WizardShell", () => {
     });
   });
 
-  describe("Progress Indicator", () => {
-    it("should show progress indicator for multi-step wizards", async () => {
+  describe("Breadcrumb", () => {
+    it("should show breadcrumb on selection page", () => {
+      render(
+        <WizardProvider>
+          <WizardShell />
+        </WizardProvider>,
+      );
+
+      expect(screen.getByText("Home")).toBeInTheDocument();
+      expect(screen.getByText("Cohort Wizards")).toBeInTheDocument();
+    });
+
+    it("should have accessible breadcrumb navigation structure", () => {
+      render(
+        <WizardProvider>
+          <WizardShell />
+        </WizardProvider>,
+      );
+
+      const nav = screen.getByRole("navigation", { name: "Breadcrumb" });
+      expect(nav).toBeInTheDocument();
+
+      const currentPage = screen.getByText("Cohort Wizards");
+      expect(currentPage).toHaveAttribute("aria-current", "page");
+    });
+
+    it("should show breadcrumb on form page", async () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
@@ -150,21 +175,28 @@ describe("WizardShell", () => {
         </WizardProvider>,
       );
 
-      // Should show "Step 1 of 3"
       await waitFor(() => {
-        expect(screen.getByText("Step 1 of 3")).toBeInTheDocument();
+        expect(screen.getByText("Introduction")).toBeInTheDocument();
       });
+
+      expect(screen.getByText("Home")).toBeInTheDocument();
+      expect(screen.getByText("Cohort Wizards")).toBeInTheDocument();
     });
 
-    it("should show progress indicator for single-step wizards", async () => {
+    it("should navigate to selection when Home is clicked", async () => {
       const TestComponent = () => {
-        const { selectWizard } = useWizardContext();
+        const { selectWizard, currentStepIndex } = useWizardContext();
 
         React.useEffect(() => {
-          selectWizard("single-step-wizard");
+          selectWizard("test-wizard");
         }, []);
 
-        return <WizardShell />;
+        return (
+          <div>
+            <WizardShell />
+            <div data-testid="step-index">{currentStepIndex}</div>
+          </div>
+        );
       };
 
       render(
@@ -173,24 +205,18 @@ describe("WizardShell", () => {
         </WizardProvider>,
       );
 
-      // Wait for wizard to load
       await waitFor(() => {
         expect(screen.getByText("Introduction")).toBeInTheDocument();
       });
 
-      // Should show "Step 1 of 1" for single-step wizard
-      expect(screen.getByText("Step 1 of 1")).toBeInTheDocument();
-    });
+      const homeButton = screen.getByText("Home");
+      homeButton.click();
 
-    it("should hide progress indicator on selection page", () => {
-      render(
-        <WizardProvider>
-          <WizardShell />
-        </WizardProvider>,
-      );
+      await waitFor(() => {
+        expect(screen.getByTestId("step-index")).toHaveTextContent("-1");
+      });
 
-      // Selection page should not show progress
-      expect(screen.queryByText(/Step \d+ of \d+/)).not.toBeInTheDocument();
+      expect(screen.getByText("Getting started")).toBeInTheDocument();
     });
   });
 
