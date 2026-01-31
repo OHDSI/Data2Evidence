@@ -1,12 +1,42 @@
 import type { WizardDefinition, FieldDefinition } from "../types/wizard";
+import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
+import type { CdwConfig } from "./cdwConfig";
+
+/**
+ * Enrich a field definition using CDW config data looked up via configPath.
+ */
+function enrichField(field: FieldDefinition, cdwConfig: CdwConfig): FieldDefinition {
+  if (!field.configPath) return field;
+
+  const attr = getAttributeByPath(cdwConfig, field.configPath);
+  if (!attr) return field;
+
+  return {
+    ...field,
+    type: attr.type,
+    label: attr.name || field.label,
+    placeholder: attr.name || field.placeholder,
+  };
+}
+
+/**
+ * Enrich all fields in a wizard definition using CDW config.
+ */
+function enrichWizard(wizard: WizardDefinition, cdwConfig: CdwConfig): WizardDefinition {
+  return {
+    ...wizard,
+    fields: wizard.fields.map((field) => enrichField(field, cdwConfig)),
+  };
+}
 
 /**
  * Shared field definitions mapped to CDW config paths.
+ * Type, label, and placeholder are defaults that get overridden by CDW config.
  */
 const WIZARD_FIELDS: FieldDefinition[] = [
   {
     id: "age",
-    type: "number",
+    type: "num",
     label: "Age",
     required: false,
     configPath: "patient.attributes.Age",
@@ -27,7 +57,7 @@ const wizardDefinitions: WizardDefinition[] = [
     fields: [
       {
         id: "minAge",
-        type: "number",
+        type: "num",
         label: "Minimum Age",
         required: true,
         validation: {
@@ -37,7 +67,7 @@ const wizardDefinitions: WizardDefinition[] = [
       },
       {
         id: "maxAge",
-        type: "number",
+        type: "num",
         label: "Maximum Age",
         required: true,
         validation: {
@@ -138,17 +168,20 @@ const wizardDefinitions: WizardDefinition[] = [
 ];
 
 /**
- * Get all available wizard definitions.
- * Returns a promise to mimic future API calls.
+ * Get all available wizard definitions, enriched with CDW config data.
  */
-export async function getWizardDefinitions(): Promise<WizardDefinition[]> {
-  return Promise.resolve(wizardDefinitions);
+export async function getWizardDefinitions(datasetId?: string): Promise<WizardDefinition[]> {
+  const cdwConfig = await fetchCdwConfig(datasetId);
+  return wizardDefinitions.map((wizard) => enrichWizard(wizard, cdwConfig));
 }
 
 /**
- * Get a specific wizard definition by ID.
- * Returns undefined if the wizard is not found.
+ * Get a specific wizard definition by ID, enriched with CDW config data.
  */
-export async function getWizardById(id: string): Promise<WizardDefinition | undefined> {
-  return Promise.resolve(wizardDefinitions.find((wizard) => wizard.id === id));
+export async function getWizardById(id: string, datasetId?: string): Promise<WizardDefinition | undefined> {
+  const wizard = wizardDefinitions.find((w) => w.id === id);
+  if (!wizard) return undefined;
+
+  const cdwConfig = await fetchCdwConfig(datasetId);
+  return enrichWizard(wizard, cdwConfig);
 }

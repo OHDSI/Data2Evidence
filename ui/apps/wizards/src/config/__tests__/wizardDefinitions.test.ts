@@ -39,7 +39,7 @@ describe("wizardDefinitions", () => {
 
           expect(typeof field.id).toBe("string");
           expect(typeof field.type).toBe("string");
-          expect(["text", "number", "date", "select"]).toContain(field.type);
+          expect(["text", "num", "datetime", "time"]).toContain(field.type);
           expect(typeof field.label).toBe("string");
           expect(typeof field.required).toBe("boolean");
         });
@@ -189,7 +189,7 @@ describe("wizardDefinitions", () => {
 
         const ageField = wizard?.fields.find((f) => f.id === "age");
         expect(ageField).toBeDefined();
-        expect(ageField?.type).toBe("number");
+        expect(ageField?.type).toBe("num");
         expect(ageField?.label).toBe("Age");
         expect(ageField?.required).toBe(false);
         expect(ageField?.configPath).toBe("patient.attributes.Age");

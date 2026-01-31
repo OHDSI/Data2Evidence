@@ -8,7 +8,7 @@ import styles from "./StepSelection.module.css";
  * Wizard selection grid.
  */
 export function StepSelection() {
-  const { selectWizard } = useWizardContext();
+  const { selectWizard, portalProps } = useWizardContext();
   const [wizards, setWizards] = useState<WizardDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ export function StepSelection() {
     try {
       setLoading(true);
       setError(null);
-      const definitions = await getWizardDefinitions();
+      const definitions = await getWizardDefinitions(portalProps.datasetId);
       // Filter out hidden wizards
       const visibleWizards = definitions.filter((w) => !w.hidden);
       setWizards(visibleWizards);

@@ -16,7 +16,7 @@ vi.mock("../../config/wizardDefinitions", () => ({
         fields: [
           {
             id: "gender",
-            type: "select",
+            type: "text",
             label: "Gender",
             required: true,
             options: [
@@ -26,7 +26,7 @@ vi.mock("../../config/wizardDefinitions", () => ({
           },
           {
             id: "country",
-            type: "select",
+            type: "text",
             label: "Country",
             required: false,
             options: [

@@ -64,8 +64,48 @@ export function StepForm() {
   const renderField = (field: FieldDefinition) => {
     const fieldError = errors[field.id];
 
+    // Fields with options render as select regardless of type
+    if (field.options && field.options.length > 0) {
+      return (
+        <div key={field.id} className={styles.fieldGroup}>
+          <label htmlFor={field.id} className={styles.label}>
+            {field.label}:
+          </label>
+          <Controller
+            name={field.id}
+            control={control}
+            defaultValue={formData[field.id] ?? ""}
+            rules={{
+              required: field.required ? `${field.label} is required` : false,
+            }}
+            render={({ field: controllerField }) => (
+              <select
+                {...controllerField}
+                id={field.id}
+                className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+                aria-invalid={!!fieldError}
+              >
+                {!field.required && <option value="">{field.placeholder || `Select ${field.label}`}</option>}
+                {field.options?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          />
+          {field.required && <span className={styles.requiredText}>This is a required field</span>}
+          {fieldError && (
+            <span className={styles.errorMessage} role="alert">
+              {fieldError.message as string}
+            </span>
+          )}
+        </div>
+      );
+    }
+
     switch (field.type) {
-      case "number":
+      case "num":
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
@@ -130,7 +170,8 @@ export function StepForm() {
           </div>
         );
 
-      case "date":
+      case "datetime":
+      case "time":
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
@@ -145,56 +186,6 @@ export function StepForm() {
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
-            />
-            {field.required && <span className={styles.requiredText}>This is a required field</span>}
-            {fieldError && (
-              <span className={styles.errorMessage} role="alert">
-                {fieldError.message as string}
-              </span>
-            )}
-          </div>
-        );
-
-      case "select":
-        // Validate that options exist and are not empty
-        if (!field.options || field.options.length === 0) {
-          return (
-            <div key={field.id} className={styles.fieldGroup}>
-              <label htmlFor={field.id} className={styles.label}>
-                {field.label}:
-              </label>
-              <div className={styles.errorMessage}>Error: No options available for {field.label}</div>
-            </div>
-          );
-        }
-
-        return (
-          <div key={field.id} className={styles.fieldGroup}>
-            <label htmlFor={field.id} className={styles.label}>
-              {field.label}:
-            </label>
-            <Controller
-              name={field.id}
-              control={control}
-              defaultValue={formData[field.id] ?? ""}
-              rules={{
-                required: field.required ? `${field.label} is required` : false,
-              }}
-              render={({ field: controllerField }) => (
-                <select
-                  {...controllerField}
-                  id={field.id}
-                  className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
-                  aria-invalid={!!fieldError}
-                >
-                  {!field.required && <option value="">{field.placeholder || `Select ${field.label}`}</option>}
-                  {field.options?.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              )}
             />
             {field.required && <span className={styles.requiredText}>This is a required field</span>}
             {fieldError && (

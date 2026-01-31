@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import type { WizardState, WizardStepConfig } from "../types/wizard";
 import type { PortalProps } from "../types/portal";
 import { getWizardById } from "../config/wizardDefinitions";
+import { setTokenGetter } from "../axios/request";
 
 /**
  * Context value for wizard state and navigation.
@@ -42,6 +43,12 @@ export function WizardProvider({
 }) {
   const [state, setState] = useState<WizardState>(getInitialState);
 
+  useEffect(() => {
+    if (portalProps.getToken) {
+      setTokenGetter(portalProps.getToken);
+    }
+  }, [portalProps.getToken]);
+
   /**
    * Directly set the current step index.
    * @param index - Step index (-1 = selection page, 0+ = wizard step index)
@@ -59,21 +66,24 @@ export function WizardProvider({
    * @param id - Wizard identifier
    * @throws Error if wizard loading fails
    */
-  const selectWizard = useCallback(async (id: string) => {
-    try {
-      const wizard = await getWizardById(id);
-      setState((prev) => ({
-        ...prev,
-        selectedWizardId: id,
-        selectedWizard: wizard || null,
-        currentStepIndex: 0,
-        formData: {}, // Clear form data when selecting new wizard
-      }));
-    } catch (err) {
-      console.error("[Wizards] Failed to select wizard:", err);
-      throw err;
-    }
-  }, []);
+  const selectWizard = useCallback(
+    async (id: string) => {
+      try {
+        const wizard = await getWizardById(id, portalProps.datasetId);
+        setState((prev) => ({
+          ...prev,
+          selectedWizardId: id,
+          selectedWizard: wizard || null,
+          currentStepIndex: 0,
+          formData: {}, // Clear form data when selecting new wizard
+        }));
+      } catch (err) {
+        console.error("[Wizards] Failed to select wizard:", err);
+        throw err;
+      }
+    },
+    [portalProps.datasetId],
+  );
 
   const updateFormData = useCallback((data: Record<string, any>) => {
     setState((prev) => ({
