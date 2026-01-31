@@ -1,13 +1,35 @@
+import React from "react";
 import { useWizardContext } from "../context/WizardContext";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { StepSelection } from "./StepSelection";
 import { StepIntro } from "./StepIntro";
 import { StepForm } from "./StepForm";
 import { StepResults } from "./StepResults";
+import type { StepType } from "../types/wizard";
 import styles from "./WizardShell.module.css";
 
+/**
+ * Step type registry mapping step types to their corresponding components.
+ * This enables config-driven routing where wizards define their flow via step configs.
+ */
+const stepTypeRegistry: Record<StepType, React.ComponentType> = {
+  selection: StepSelection,
+  intro: StepIntro,
+  form: StepForm,
+  results: StepResults,
+};
+
 export function WizardShell() {
-  const { currentStepIndex, selectedWizard, setCurrentStepIndex, resetWizard } = useWizardContext();
+  const { currentStepIndex, selectedWizard, getCurrentStepConfig, setCurrentStepIndex, resetWizard } =
+    useWizardContext();
+
+  // Handle invalid state: index > -1 but no wizard selected
+  React.useEffect(() => {
+    if (currentStepIndex > -1 && !selectedWizard) {
+      console.warn("[Wizards] No wizard selected, redirecting to selection page");
+      setCurrentStepIndex(-1);
+    }
+  }, [currentStepIndex, selectedWizard, setCurrentStepIndex]);
 
   const renderStep = () => {
     // Selection page (index -1)
@@ -15,32 +37,62 @@ export function WizardShell() {
       return <StepSelection />;
     }
 
-    // If index > -1 but no wizard selected, redirect to selection
+    // If index > -1 but no wizard selected, show selection (redirect handled in useEffect)
     if (currentStepIndex > -1 && !selectedWizard) {
-      console.warn("[Wizards] No wizard selected, redirecting to selection page");
-      setCurrentStepIndex(-1);
       return <StepSelection />;
     }
 
-    switch (currentStepIndex) {
-      case 0:
-        return <StepIntro />;
-      case 1:
-        return <StepForm />;
-      case 2:
-        return <StepResults />;
-      default:
-        return null;
+    // Get the current step configuration from context
+    const stepConfig = getCurrentStepConfig();
+
+    // If stepConfig is null or wizard is missing, show error
+    if (!stepConfig || !selectedWizard) {
+      console.error("[Wizards] Invalid step configuration:", {
+        stepConfig,
+        selectedWizard: selectedWizard?.id,
+        currentStepIndex,
+      });
+      return (
+        <div className={styles.error}>
+          <h2>Configuration Error</h2>
+          <p>Unable to load step configuration. Please return to the selection page.</p>
+          <button onClick={() => setCurrentStepIndex(-1)}>Back to Selection</button>
+        </div>
+      );
     }
+
+    // Look up the component by step type in the registry
+    const StepComponent = stepTypeRegistry[stepConfig.type];
+
+    // Handle unknown step types
+    if (!StepComponent) {
+      console.error("[Wizards] Unknown step type:", stepConfig.type);
+      return (
+        <div className={styles.error}>
+          <h2>Configuration Error</h2>
+          <p>Unknown step type: {stepConfig.type}</p>
+          <button onClick={() => setCurrentStepIndex(-1)}>Back to Selection</button>
+        </div>
+      );
+    }
+
+    // Render the component (step components get config from context internally)
+    return <StepComponent />;
   };
+
+  // Calculate progress display - hide for single-step wizards
+  const showProgress = selectedWizard && selectedWizard.steps.length > 1;
+  const totalSteps = selectedWizard ? selectedWizard.steps.length : 0;
 
   return (
     <div className={styles.shell}>
       <header className={styles.header}>
         <h1 className={styles.title}>Wizards</h1>
-        <p className={styles.progress}>
-          Step {currentStepIndex + 1} of {selectedWizard?.steps.length ?? 3}
-        </p>
+        {showProgress && (
+          <p className={styles.progress}>
+            Step {currentStepIndex + 1} of {totalSteps}
+          </p>
+        )}
       </header>
       <main className={styles.content}>
         <ErrorBoundary onReset={resetWizard}>{renderStep()}</ErrorBoundary>
