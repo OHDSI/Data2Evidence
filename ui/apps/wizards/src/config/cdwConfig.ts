@@ -6,10 +6,20 @@ export interface CdwAttributeConfig {
   [key: string]: unknown;
 }
 
+export interface ChartOptions {
+  initialAttributes?: {
+    measures?: string[];
+    categories?: string[];
+    stackCategory?: string[];
+  };
+  initialChart?: string;
+}
+
 export interface CdwConfig {
   patient: {
     attributes: Record<string, CdwAttributeConfig>;
   };
+  chartOptions?: ChartOptions;
 }
 
 export interface ConfigMeta {
@@ -28,6 +38,14 @@ const mockConfig: CdwConfig = {
       Age: { name: "Age", type: "num" },
       Gender_concept_name: { name: "Gender", type: "text" },
     },
+  },
+  chartOptions: {
+    initialAttributes: {
+      measures: ["patient.attributes.pcount"],
+      categories: ["patient.attributes.Age"],
+      stackCategory: [],
+    },
+    initialChart: "stacked",
   },
 };
 

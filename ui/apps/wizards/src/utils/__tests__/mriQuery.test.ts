@@ -109,13 +109,47 @@ describe("buildMriBookmark", () => {
     });
   });
 
-  it("should have default axis selections all n/a", () => {
+  it("should have all n/a axis selections when no chartOptions provided", () => {
     const result = buildMriBookmark([], {}, meta, "ds-1");
     for (const axis of result.axisSelection) {
       expect(axis.attributeId).toBe("n/a");
       expect(axis.configPath).toBe("n/a");
       expect(axis.instanceID).toBe("n/a");
     }
-    expect(result.axisSelection.map((a) => a.axis)).toEqual(["x", "y", "color", "shape", "size"]);
+    expect(result.axisSelection.map((a) => a.axis)).toEqual(["x1", "x2", "x3", "stack", "y"]);
+  });
+
+  it("should set Y axis from chartOptions.initialAttributes.measures", () => {
+    const chartOptions = {
+      initialAttributes: {
+        measures: ["patient.attributes.pcount"],
+        categories: [],
+      },
+    };
+    const result = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
+    const yAxis = result.axisSelection.find((a) => a.axis === "y");
+    expect(yAxis?.attributeId).toBe("patient.attributes.pcount");
+    expect(yAxis?.configPath).toBe("patient");
+    expect(yAxis?.instanceID).toBe("patient.attributes.pcount");
+  });
+
+  it("should set X1 axis from chartOptions.initialAttributes.categories", () => {
+    const chartOptions = {
+      initialAttributes: {
+        measures: [],
+        categories: ["patient.attributes.monthOfBirth"],
+      },
+    };
+    const result = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
+    const x1Axis = result.axisSelection.find((a) => a.axis === "x1");
+    expect(x1Axis?.attributeId).toBe("patient.attributes.monthOfBirth");
+    expect(x1Axis?.configPath).toBe("patient");
+    expect(x1Axis?.instanceID).toBe("patient.attributes.monthOfBirth");
+  });
+
+  it("should use chartOptions.initialChart for chartType", () => {
+    const chartOptions = { initialChart: "boxplot" };
+    const result = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
+    expect(result.chartType).toBe("boxplot");
   });
 });

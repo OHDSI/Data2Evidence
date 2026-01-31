@@ -1,5 +1,5 @@
 import type { FieldDefinition } from "../types/wizard";
-import type { ConfigMeta } from "../config/cdwConfig";
+import type { ConfigMeta, ChartOptions } from "../config/cdwConfig";
 
 interface Expression {
   type: "Expression";
@@ -65,6 +65,7 @@ export function buildMriBookmark(
   formData: Record<string, any>,
   meta: ConfigMeta,
   datasetId: string,
+  chartOptions?: ChartOptions,
 ): MriBookmark {
   const attributes: Attribute[] = [];
 
@@ -118,21 +119,55 @@ export function buildMriBookmark(
     ],
   };
 
-  const defaultAxisSelection: AxisSelection[] = Array.from({ length: 5 }, (_, i) => ({
-    attributeId: "n/a",
-    axis: ["x", "y", "color", "shape", "size"][i],
-    configPath: "n/a",
-    instanceID: "n/a",
-    seq: i,
-  }));
+  const axisNames = ["x1", "x2", "x3", "stack", "y"];
+  const initialAttrs = chartOptions?.initialAttributes;
+
+  const axisSelection: AxisSelection[] = axisNames.map((axis, i) => {
+    let attributePath: string | undefined;
+
+    // Index 0-2: categories (x1, x2, x3)
+    if (i <= 2) {
+      attributePath = initialAttrs?.categories?.[i];
+    }
+    // Index 3: stackCategory
+    else if (i === 3) {
+      attributePath = initialAttrs?.stackCategory?.[0];
+    }
+    // Index 4: measures (y)
+    else if (i === 4) {
+      attributePath = initialAttrs?.measures?.[0];
+    }
+
+    if (attributePath) {
+      // Extract configPath (filter card path) and instanceID from the attribute path
+      // e.g. "patient.attributes.pcount" -> configPath "patient", instanceID "patient.attributes.pcount"
+      const parts = attributePath.split(".");
+      const filterCardPath = parts[0];
+      return {
+        attributeId: attributePath,
+        axis,
+        configPath: filterCardPath,
+        instanceID: attributePath,
+        seq: i,
+      };
+    }
+
+    return {
+      attributeId: "n/a",
+      axis,
+      configPath: "n/a",
+      instanceID: "n/a",
+      seq: i,
+    };
+  });
 
   return {
     filter: {
       configMetadata: { id: meta.configId, version: meta.configVersion },
       cards,
     },
-    chartType: "stacked",
-    axisSelection: defaultAxisSelection,
+    chartType: chartOptions?.initialChart || "stacked",
+    axisSelection,
     metadata: { version: 3 },
     datasetId,
   };

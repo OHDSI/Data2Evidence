@@ -1,5 +1,5 @@
 import type { ResultAction, FieldDefinition } from "../types/wizard";
-import type { ConfigMeta } from "../config/cdwConfig";
+import type { ConfigMeta, ChartOptions } from "../config/cdwConfig";
 import { buildMriBookmark } from "./mriQuery";
 import { compress } from "./cohortUrlCodec";
 
@@ -82,10 +82,11 @@ export function generateFormSubmitDeepLink(
   formData: Record<string, any>,
   configMeta: ConfigMeta,
   datasetId?: string,
+  chartOptions?: ChartOptions,
 ): string {
   const resolvedDatasetId = datasetId || "default";
 
-  const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId);
+  const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId, chartOptions);
   const compressed = compress(bookmark);
 
   const params = new URLSearchParams({

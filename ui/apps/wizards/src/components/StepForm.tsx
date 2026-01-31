@@ -46,13 +46,14 @@ export function StepForm() {
         const combinedFormData = { ...formData, ...data };
 
         // Fetch config meta (cached from wizard load)
-        const { meta: configMeta } = await fetchCdwConfig(portalProps.datasetId);
+        const { config: cdwConfig, meta: configMeta } = await fetchCdwConfig(portalProps.datasetId);
 
         const deepLinkUrl = generateFormSubmitDeepLink(
           selectedWizard.fields,
           combinedFormData,
           configMeta,
           portalProps.datasetId,
+          cdwConfig.chartOptions,
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
