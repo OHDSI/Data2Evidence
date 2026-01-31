@@ -1,39 +1,16 @@
 import type { WizardDefinition, FieldDefinition } from "../types/wizard";
 
 /**
- * Shared MVP field definitions for new wizards.
+ * Shared field definitions mapped to CDW config paths.
  */
-const MVP_FIELDS: FieldDefinition[] = [
+const WIZARD_FIELDS: FieldDefinition[] = [
   {
-    id: "height",
+    id: "age",
     type: "number",
-    label: "Height (cm)",
-    required: true,
-    validation: {
-      min: 0,
-    },
-    placeholder: "Height (cm)",
-  },
-  {
-    id: "weight",
-    type: "number",
-    label: "Weight (kg)",
-    required: true,
-    validation: {
-      min: 0,
-    },
-    placeholder: "Weight (kg)",
-  },
-  {
-    id: "gender",
-    type: "select",
-    label: "Gender",
+    label: "Age",
     required: false,
-    options: [
-      { label: "Male", value: "8507" },
-      { label: "Female", value: "8532" },
-    ],
-    placeholder: "Gender",
+    configPath: "patient.attributes.Age",
+    placeholder: "Age",
   },
 ];
 
@@ -99,7 +76,7 @@ const wizardDefinitions: WizardDefinition[] = [
     name: "Calculate Incidence",
     description:
       "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
-    fields: MVP_FIELDS,
+    fields: WIZARD_FIELDS,
     steps: [
       {
         id: "form",
@@ -116,7 +93,7 @@ const wizardDefinitions: WizardDefinition[] = [
     name: "Calculate Prevalence",
     description:
       "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
-    fields: MVP_FIELDS,
+    fields: WIZARD_FIELDS,
     steps: [
       {
         id: "form",
@@ -132,7 +109,7 @@ const wizardDefinitions: WizardDefinition[] = [
     name: "Calculate Mortality",
     description:
       "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
-    fields: MVP_FIELDS,
+    fields: WIZARD_FIELDS,
     steps: [
       {
         id: "form",
@@ -147,7 +124,7 @@ const wizardDefinitions: WizardDefinition[] = [
     id: "cross-sectional-demographics",
     name: "Cross sectional Demographics",
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
-    fields: MVP_FIELDS,
+    fields: WIZARD_FIELDS,
     steps: [
       {
         id: "form",

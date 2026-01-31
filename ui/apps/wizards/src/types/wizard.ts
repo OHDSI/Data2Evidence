@@ -7,6 +7,7 @@ export interface FieldDefinition {
   required: boolean;
   validation?: Record<string, any>;
   options?: Array<{ label: string; value: string }>; // For select fields
+  configPath?: string;
   group?: string;
   placeholder?: string;
 }
