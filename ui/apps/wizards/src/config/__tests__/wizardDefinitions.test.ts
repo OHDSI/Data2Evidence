@@ -3,10 +3,10 @@ import { getWizardDefinitions, getWizardById } from "../wizardDefinitions";
 
 describe("wizardDefinitions", () => {
   describe("getWizardDefinitions", () => {
-    it("should return an array with at least 1 wizard", async () => {
+    it("should return an array with exactly 5 wizards", async () => {
       const wizards = await getWizardDefinitions();
       expect(Array.isArray(wizards)).toBe(true);
-      expect(wizards.length).toBeGreaterThanOrEqual(1);
+      expect(wizards.length).toBe(5);
     });
 
     it("should return wizards with required fields", async () => {
@@ -96,6 +96,123 @@ describe("wizardDefinitions", () => {
 
         expect(wizard).toBeDefined();
         expect(wizard?.id).toBe(firstWizardId);
+      }
+    });
+  });
+
+  describe("new wizard definitions", () => {
+    it("should have calculate-incidence wizard with correct structure", async () => {
+      const wizard = await getWizardById("calculate-incidence");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("calculate-incidence");
+      expect(wizard?.name).toBe("Calculate Incidence");
+      expect(wizard?.description).toBe(
+        "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
+      );
+      expect(wizard?.resultActions).toEqual([]);
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+      expect(wizard?.steps[0].note).toBe(
+        "Note: this is a very rough approximation that is just a starting a more comprehensive analysis.",
+      );
+      expect(wizard?.steps[0].config).toEqual({
+        submitLabel: "Open cohort",
+        submitAction: "deep-link",
+      });
+    });
+
+    it("should have calculate-prevalence wizard with correct structure", async () => {
+      const wizard = await getWizardById("calculate-prevalence");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("calculate-prevalence");
+      expect(wizard?.name).toBe("Calculate Prevalence");
+      expect(wizard?.description).toBe(
+        "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
+      );
+      expect(wizard?.resultActions).toEqual([]);
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+      expect(wizard?.steps[0].config).toEqual({
+        submitLabel: "Open cohort",
+        submitAction: "deep-link",
+      });
+    });
+
+    it("should have calculate-mortality wizard with correct structure", async () => {
+      const wizard = await getWizardById("calculate-mortality");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("calculate-mortality");
+      expect(wizard?.name).toBe("Calculate Mortality");
+      expect(wizard?.description).toBe(
+        "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
+      );
+      expect(wizard?.resultActions).toEqual([]);
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+      expect(wizard?.steps[0].config).toEqual({
+        submitLabel: "Open cohort",
+        submitAction: "deep-link",
+      });
+    });
+
+    it("should have cross-sectional-demographics wizard with correct structure", async () => {
+      const wizard = await getWizardById("cross-sectional-demographics");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("cross-sectional-demographics");
+      expect(wizard?.name).toBe("Cross sectional Demographics");
+      expect(wizard?.description).toBe("Assessment of hypertension and cholesterol levels in post-operative patients.");
+      expect(wizard?.resultActions).toEqual([]);
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+      expect(wizard?.steps[0].config).toEqual({
+        submitLabel: "Open cohort",
+        submitAction: "deep-link",
+      });
+    });
+
+    it("should have all new wizards with correct MVP fields", async () => {
+      const wizardIds = [
+        "calculate-incidence",
+        "calculate-prevalence",
+        "calculate-mortality",
+        "cross-sectional-demographics",
+      ];
+
+      for (const id of wizardIds) {
+        const wizard = await getWizardById(id);
+
+        expect(wizard?.fields).toHaveLength(3);
+
+        // Height field
+        const heightField = wizard?.fields.find((f) => f.id === "height");
+        expect(heightField).toBeDefined();
+        expect(heightField?.type).toBe("number");
+        expect(heightField?.label).toBe("Height (cm)");
+        expect(heightField?.required).toBe(false);
+        expect(heightField?.validation).toEqual({ min: 0 });
+
+        // Weight field
+        const weightField = wizard?.fields.find((f) => f.id === "weight");
+        expect(weightField).toBeDefined();
+        expect(weightField?.type).toBe("number");
+        expect(weightField?.label).toBe("Weight (kg)");
+        expect(weightField?.required).toBe(false);
+        expect(weightField?.validation).toEqual({ min: 0 });
+
+        // Gender field
+        const genderField = wizard?.fields.find((f) => f.id === "gender");
+        expect(genderField).toBeDefined();
+        expect(genderField?.type).toBe("select");
+        expect(genderField?.label).toBe("Gender");
+        expect(genderField?.required).toBe(false);
+        expect(genderField?.options).toEqual([
+          { label: "Male", value: "8507" },
+          { label: "Female", value: "8532" },
+        ]);
       }
     });
   });

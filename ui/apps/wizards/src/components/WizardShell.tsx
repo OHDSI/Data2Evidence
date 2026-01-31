@@ -80,8 +80,8 @@ export function WizardShell() {
     return <StepComponent />;
   };
 
-  // Calculate progress display - hide for single-step wizards
-  const showProgress = selectedWizard && selectedWizard.steps.length > 1;
+  // Calculate progress display
+  const showProgress = selectedWizard && selectedWizard.steps.length >= 1;
   const totalSteps = selectedWizard ? selectedWizard.steps.length : 0;
 
   return (

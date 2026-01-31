@@ -156,7 +156,7 @@ describe("WizardShell", () => {
       });
     });
 
-    it("should hide progress indicator for single-step wizards", async () => {
+    it("should show progress indicator for single-step wizards", async () => {
       const TestComponent = () => {
         const { selectWizard } = useWizardContext();
 
@@ -178,8 +178,8 @@ describe("WizardShell", () => {
         expect(screen.getByText("Introduction")).toBeInTheDocument();
       });
 
-      // Should not show progress for single-step wizard
-      expect(screen.queryByText(/Step \d+ of \d+/)).not.toBeInTheDocument();
+      // Should show "Step 1 of 1" for single-step wizard
+      expect(screen.getByText("Step 1 of 1")).toBeInTheDocument();
     });
 
     it("should hide progress indicator on selection page", () => {

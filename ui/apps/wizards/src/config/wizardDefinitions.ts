@@ -1,4 +1,38 @@
-import type { WizardDefinition } from "../types/wizard";
+import type { WizardDefinition, FieldDefinition } from "../types/wizard";
+
+/**
+ * Shared MVP field definitions for new wizards.
+ */
+const MVP_FIELDS: FieldDefinition[] = [
+  {
+    id: "height",
+    type: "number",
+    label: "Height (cm)",
+    required: false,
+    validation: {
+      min: 0,
+    },
+  },
+  {
+    id: "weight",
+    type: "number",
+    label: "Weight (kg)",
+    required: false,
+    validation: {
+      min: 0,
+    },
+  },
+  {
+    id: "gender",
+    type: "select",
+    label: "Gender",
+    required: false,
+    options: [
+      { label: "Male", value: "8507" },
+      { label: "Female", value: "8532" },
+    ],
+  },
+];
 
 /**
  * Hardcoded wizard definitions.
@@ -55,6 +89,70 @@ const wizardDefinitions: WizardDefinition[] = [
         label: "Download SQL",
       },
     ],
+  },
+  {
+    id: "calculate-incidence",
+    name: "Calculate Incidence",
+    description:
+      "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
+    fields: MVP_FIELDS,
+    steps: [
+      {
+        id: "form",
+        type: "form" as const,
+        title: "Form",
+        note: "Note: this is a very rough approximation that is just a starting a more comprehensive analysis.",
+        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
+      },
+    ],
+    resultActions: [],
+  },
+  {
+    id: "calculate-prevalence",
+    name: "Calculate Prevalence",
+    description:
+      "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
+    fields: MVP_FIELDS,
+    steps: [
+      {
+        id: "form",
+        type: "form" as const,
+        title: "Form",
+        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
+      },
+    ],
+    resultActions: [],
+  },
+  {
+    id: "calculate-mortality",
+    name: "Calculate Mortality",
+    description:
+      "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
+    fields: MVP_FIELDS,
+    steps: [
+      {
+        id: "form",
+        type: "form" as const,
+        title: "Form",
+        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
+      },
+    ],
+    resultActions: [],
+  },
+  {
+    id: "cross-sectional-demographics",
+    name: "Cross sectional Demographics",
+    description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
+    fields: MVP_FIELDS,
+    steps: [
+      {
+        id: "form",
+        type: "form" as const,
+        title: "Form",
+        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
+      },
+    ],
+    resultActions: [],
   },
 ];
 
