@@ -8,19 +8,21 @@ const MVP_FIELDS: FieldDefinition[] = [
     id: "height",
     type: "number",
     label: "Height (cm)",
-    required: false,
+    required: true,
     validation: {
       min: 0,
     },
+    placeholder: "Height (cm)",
   },
   {
     id: "weight",
     type: "number",
     label: "Weight (kg)",
-    required: false,
+    required: true,
     validation: {
       min: 0,
     },
+    placeholder: "Weight (kg)",
   },
   {
     id: "gender",
@@ -31,6 +33,7 @@ const MVP_FIELDS: FieldDefinition[] = [
       { label: "Male", value: "8507" },
       { label: "Female", value: "8532" },
     ],
+    placeholder: "Gender",
   },
 ];
 
@@ -43,6 +46,7 @@ const wizardDefinitions: WizardDefinition[] = [
     id: "patient-count",
     name: "Patient Count Estimation",
     description: "Estimate patient counts based on age criteria",
+    hidden: true,
     fields: [
       {
         id: "minAge",

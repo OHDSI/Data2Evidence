@@ -192,16 +192,18 @@ describe("wizardDefinitions", () => {
         expect(heightField).toBeDefined();
         expect(heightField?.type).toBe("number");
         expect(heightField?.label).toBe("Height (cm)");
-        expect(heightField?.required).toBe(false);
+        expect(heightField?.required).toBe(true);
         expect(heightField?.validation).toEqual({ min: 0 });
+        expect(heightField?.placeholder).toBe("Height (cm)");
 
         // Weight field
         const weightField = wizard?.fields.find((f) => f.id === "weight");
         expect(weightField).toBeDefined();
         expect(weightField?.type).toBe("number");
         expect(weightField?.label).toBe("Weight (kg)");
-        expect(weightField?.required).toBe(false);
+        expect(weightField?.required).toBe(true);
         expect(weightField?.validation).toEqual({ min: 0 });
+        expect(weightField?.placeholder).toBe("Weight (kg)");
 
         // Gender field
         const genderField = wizard?.fields.find((f) => f.id === "gender");
@@ -209,6 +211,7 @@ describe("wizardDefinitions", () => {
         expect(genderField?.type).toBe("select");
         expect(genderField?.label).toBe("Gender");
         expect(genderField?.required).toBe(false);
+        expect(genderField?.placeholder).toBe("Gender");
         expect(genderField?.options).toEqual([
           { label: "Male", value: "8507" },
           { label: "Female", value: "8532" },

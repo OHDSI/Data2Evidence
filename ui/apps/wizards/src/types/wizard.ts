@@ -7,6 +7,8 @@ export interface FieldDefinition {
   required: boolean;
   validation?: Record<string, any>;
   options?: Array<{ label: string; value: string }>; // For select fields
+  group?: string;
+  placeholder?: string;
 }
 
 export interface ResultAction {
@@ -76,6 +78,7 @@ export interface WizardDefinition {
   resultActions: ResultAction[];
   /** Step configuration defining the wizard's flow */
   steps: WizardStepConfig[];
+  hidden?: boolean;
 }
 
 /**
