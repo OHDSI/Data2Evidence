@@ -171,7 +171,7 @@ const wizardDefinitions: WizardDefinition[] = [
  * Get all available wizard definitions, enriched with CDW config data.
  */
 export async function getWizardDefinitions(datasetId?: string): Promise<WizardDefinition[]> {
-  const cdwConfig = await fetchCdwConfig(datasetId);
+  const { config: cdwConfig } = await fetchCdwConfig(datasetId);
   return wizardDefinitions.map((wizard) => enrichWizard(wizard, cdwConfig));
 }
 
@@ -182,6 +182,6 @@ export async function getWizardById(id: string, datasetId?: string): Promise<Wiz
   const wizard = wizardDefinitions.find((w) => w.id === id);
   if (!wizard) return undefined;
 
-  const cdwConfig = await fetchCdwConfig(datasetId);
+  const { config: cdwConfig } = await fetchCdwConfig(datasetId);
   return enrichWizard(wizard, cdwConfig);
 }

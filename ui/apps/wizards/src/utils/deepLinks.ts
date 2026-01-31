@@ -1,4 +1,7 @@
-import type { ResultAction } from "../types/wizard";
+import type { ResultAction, FieldDefinition } from "../types/wizard";
+import type { ConfigMeta } from "../config/cdwConfig";
+import { buildMriBookmark } from "./mriQuery";
+import { compress } from "./cohortUrlCodec";
 
 /**
  * Generate deep link URL for wizard result action.
@@ -61,36 +64,34 @@ export function decodeWizardConfig(encoded: string): Record<string, any> {
 }
 
 /**
- * Generate deep link URL for form submit action.
+ * Generate deep link URL for form submit action using MRI bookmark format.
  *
- * Expected URL format (from implementation plan):
- * /d2e/portal/researcher/cohort?datasetId={datasetId}&linkType=cohort-definition&query={encodedConfig}
+ * Builds an MRI bookmark JSON from wizard fields and form data, compresses it
+ * with pako (compatible with vue-mri CohortUrlCodec), and encodes it in the URL.
  *
- * @param wizardId - The ID of the wizard being submitted
- * @param formData - Wizard form data to encode in URL
+ * URL format: /d2e/portal/researcher/cohort?datasetId={datasetId}&linkType=cohort-definition&query={compressed}
+ *
+ * @param fields - Wizard field definitions (needed for configPath mapping)
+ * @param formData - Wizard form data values
+ * @param configMeta - CDW config metadata (configId, configVersion)
  * @param datasetId - Dataset ID from portal context (optional, defaults to "default")
  * @returns Deep link URL string
  */
 export function generateFormSubmitDeepLink(
-  wizardId: string,
+  fields: FieldDefinition[],
   formData: Record<string, any>,
+  configMeta: ConfigMeta,
   datasetId?: string,
 ): string {
   const resolvedDatasetId = datasetId || "default";
 
-  // Create config object with wizardId and formData
-  const config = {
-    wizardId,
-    formData,
-  };
+  const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId);
+  const compressed = compress(bookmark);
 
-  const encodedConfig = encodeWizardConfig(config);
-
-  // Build URL with query parameters using URLSearchParams
   const params = new URLSearchParams({
     datasetId: resolvedDatasetId,
     linkType: "cohort-definition",
-    query: encodedConfig,
+    query: compressed,
   });
   const url = `/d2e/portal/researcher/cohort?${params.toString()}`;
 

@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { generateDeepLink, encodeWizardConfig, decodeWizardConfig, generateFormSubmitDeepLink } from "../deepLinks";
-import type { ResultAction } from "../../types/wizard";
+import { decompress } from "../cohortUrlCodec";
+import type { ResultAction, FieldDefinition } from "../../types/wizard";
+import type { ConfigMeta } from "../../config/cdwConfig";
 
 describe("deepLinks", () => {
   describe("generateDeepLink", () => {
@@ -279,12 +281,16 @@ describe("deepLinks", () => {
   });
 
   describe("generateFormSubmitDeepLink", () => {
+    const defaultMeta: ConfigMeta = { configId: "test-config", configVersion: "1" };
+    const defaultFields: FieldDefinition[] = [
+      { id: "age", type: "num", label: "Age", required: false, configPath: "patient.attributes.Age" },
+    ];
+
     it("should generate URL with correct format", () => {
-      const wizardId = "patient-cohort-wizard";
-      const formData = { condition: "Diabetes", ageMin: 18 };
+      const formData = { age: 65 };
       const datasetId = "dataset-123";
 
-      const result = generateFormSubmitDeepLink(wizardId, formData, datasetId);
+      const result = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, datasetId);
 
       expect(result).toBeTruthy();
       expect(result).toContain("/d2e/portal/researcher/cohort");
@@ -294,93 +300,60 @@ describe("deepLinks", () => {
     });
 
     it("should use default datasetId when not provided", () => {
-      const wizardId = "patient-cohort-wizard";
-      const formData = { condition: "Diabetes" };
-
-      const result = generateFormSubmitDeepLink(wizardId, formData);
+      const result = generateFormSubmitDeepLink(defaultFields, {}, defaultMeta);
 
       expect(result).toContain("datasetId=default");
     });
 
-    it("should include wizardId in encoded config", () => {
-      const wizardId = "patient-cohort-wizard";
-      const formData = { condition: "Diabetes", ageMin: 18 };
+    it("should produce a pako-compressed MRI bookmark", () => {
+      const formData = { age: 65 };
+      const result = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, "ds-1");
 
-      const result = generateFormSubmitDeepLink(wizardId, formData);
-
-      // Extract and decode the query parameter
       const queryMatch = result.match(/query=([^&]+)/);
       expect(queryMatch).toBeTruthy();
 
-      const encodedConfig = decodeURIComponent(queryMatch![1]);
-      const config = decodeWizardConfig(encodedConfig);
+      const compressed = decodeURIComponent(queryMatch![1]);
+      const bookmark = decompress<any>(compressed);
 
-      expect(config.wizardId).toBe(wizardId);
-      expect(config.formData).toEqual(formData);
+      expect(bookmark.filter.configMetadata).toEqual({ id: "test-config", version: "1" });
+      expect(bookmark.metadata).toEqual({ version: 3 });
+      expect(bookmark.datasetId).toBe("ds-1");
+      expect(bookmark.chartType).toBe("stacked");
+
+      // Check the attribute was created
+      const filterCard = bookmark.filter.cards.content[0].content[0];
+      expect(filterCard.attributes.content).toHaveLength(1);
+      expect(filterCard.attributes.content[0].configPath).toBe("patient.attributes.Age");
+      expect(filterCard.attributes.content[0].constraints.content[0].value).toBe("65");
     });
 
     it("should URL-encode special characters in datasetId", () => {
-      const wizardId = "test-wizard";
-      const formData = { field: "value" };
       const datasetId = "dataset/with/slash";
-
-      const result = generateFormSubmitDeepLink(wizardId, formData, datasetId);
+      const result = generateFormSubmitDeepLink([], {}, defaultMeta, datasetId);
 
       expect(result).toContain("datasetId=dataset%2Fwith%2Fslash");
-      expect(result).not.toContain("datasetId=dataset/with/slash");
     });
 
-    it("should URL-encode base64 config", () => {
-      const wizardId = "test-wizard";
-      const formData = { field: "value with spaces" };
-
-      const result = generateFormSubmitDeepLink(wizardId, formData);
-
-      // Query parameter should be URL-encoded
-      expect(result).toContain("query=");
-      // Should not contain unencoded base64 characters that need encoding
-      const queryMatch = result.match(/query=([^&]+)/);
-      expect(queryMatch).toBeTruthy();
-      // The encoded value should be safe for URLs
-      expect(queryMatch![1]).toMatch(/^[A-Za-z0-9%_.-]+$/);
-    });
-
-    it("should handle empty formData", () => {
-      const wizardId = "test-wizard";
-      const formData = {};
-
-      const result = generateFormSubmitDeepLink(wizardId, formData);
+    it("should handle empty formData and fields", () => {
+      const result = generateFormSubmitDeepLink([], {}, defaultMeta);
 
       expect(result).toBeTruthy();
       expect(result).toContain("query=");
 
-      // Verify config can be decoded
       const queryMatch = result.match(/query=([^&]+)/);
-      const encodedConfig = decodeURIComponent(queryMatch![1]);
-      const config = decodeWizardConfig(encodedConfig);
-
-      expect(config.wizardId).toBe(wizardId);
-      expect(config.formData).toEqual({});
+      const bookmark = decompress<any>(decodeURIComponent(queryMatch![1]));
+      const filterCard = bookmark.filter.cards.content[0].content[0];
+      expect(filterCard.attributes.content).toHaveLength(0);
     });
 
-    it("should preserve complex formData structures", () => {
-      const wizardId = "complex-wizard";
-      const formData = {
-        condition: "Diabetes",
-        ageRange: { min: 18, max: 65 },
-        medications: ["insulin", "metformin"],
-        includePregnant: false,
-      };
+    it("should produce URL-safe query parameter (base64url)", () => {
+      const result = generateFormSubmitDeepLink(defaultFields, { age: 30 }, defaultMeta);
 
-      const result = generateFormSubmitDeepLink(wizardId, formData);
-
-      // Extract and decode the query parameter
       const queryMatch = result.match(/query=([^&]+)/);
-      const encodedConfig = decodeURIComponent(queryMatch![1]);
-      const config = decodeWizardConfig(encodedConfig);
-
-      expect(config.wizardId).toBe(wizardId);
-      expect(config.formData).toEqual(formData);
+      expect(queryMatch).toBeTruthy();
+      // After URL decoding, should be base64url (no +, /, =)
+      const raw = decodeURIComponent(queryMatch![1]);
+      expect(raw).toMatch(/^[A-Za-z0-9_-]+$/);
     });
   });
 });

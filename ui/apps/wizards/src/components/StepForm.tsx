@@ -3,6 +3,7 @@ import { useForm, Controller } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
 import { generateFormSubmitDeepLink } from "../utils/deepLinks";
+import { fetchCdwConfig } from "../config/cdwConfig";
 import styles from "./StepForm.module.css";
 
 /**
@@ -23,7 +24,7 @@ export function StepForm() {
     defaultValues: formData,
   });
 
-  const onSubmit = (data: Record<string, any>) => {
+  const onSubmit = async (data: Record<string, any>) => {
     updateFormData(data);
 
     // Check stepConfig for submitAction
@@ -44,7 +45,15 @@ export function StepForm() {
         // Combine existing formData with new data
         const combinedFormData = { ...formData, ...data };
 
-        const deepLinkUrl = generateFormSubmitDeepLink(selectedWizard.id, combinedFormData, portalProps.datasetId);
+        // Fetch config meta (cached from wizard load)
+        const { meta: configMeta } = await fetchCdwConfig(portalProps.datasetId);
+
+        const deepLinkUrl = generateFormSubmitDeepLink(
+          selectedWizard.fields,
+          combinedFormData,
+          configMeta,
+          portalProps.datasetId,
+        );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
 

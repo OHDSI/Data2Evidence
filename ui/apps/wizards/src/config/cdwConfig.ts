@@ -12,6 +12,16 @@ export interface CdwConfig {
   };
 }
 
+export interface ConfigMeta {
+  configId: string;
+  configVersion: string;
+}
+
+export interface CdwConfigResult {
+  config: CdwConfig;
+  meta: ConfigMeta;
+}
+
 const mockConfig: CdwConfig = {
   patient: {
     attributes: {
@@ -22,14 +32,16 @@ const mockConfig: CdwConfig = {
 
 const isDev = import.meta.env.DEV;
 
-let cachedConfig: CdwConfig | null = null;
+const mockMeta: ConfigMeta = { configId: "mock", configVersion: "1" };
 
-export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfig> {
-  if (cachedConfig) return cachedConfig;
+let cachedResult: CdwConfigResult | null = null;
+
+export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfigResult> {
+  if (cachedResult) return cachedResult;
 
   if (isDev) {
-    cachedConfig = mockConfig;
-    return cachedConfig;
+    cachedResult = { config: mockConfig, meta: mockMeta };
+    return cachedResult;
   }
 
   const response = await client.get("/d2e/analytics-svc/pa/services/analytics.xsjs", {
@@ -41,8 +53,11 @@ export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfig> {
 
   const data = response.data;
   const configEntry = Array.isArray(data) ? data[0] : data;
-  cachedConfig = configEntry.config as CdwConfig;
-  return cachedConfig;
+  cachedResult = {
+    config: configEntry.config as CdwConfig,
+    meta: configEntry.meta as ConfigMeta,
+  };
+  return cachedResult;
 }
 
 export function getAttributeByPath(config: CdwConfig, path: string): CdwAttributeConfig | undefined {
