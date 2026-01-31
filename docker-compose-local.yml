@@ -13,7 +13,7 @@ services:
       - 25433:5433
       - 33000:33000
     volumes:
-      - trex:/var/lib/ohdsi/webapi/data  # Persist plugins and cache data
+      - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin

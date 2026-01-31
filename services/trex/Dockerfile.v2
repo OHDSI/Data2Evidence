@@ -91,6 +91,10 @@ ENV MAIN_PATH=/usr/src/main
 # Set up data directories that trexas expects (started by WebAPI's trexsql-ext)
 RUN mkdir -p /var/lib/ohdsi/webapi/data/cache /var/lib/ohdsi/webapi/data/plugins
 
+# Create symlinks so Deno can find node_modules and deno.json from WebAPI's working directory
+RUN ln -s /usr/src/node_modules /var/lib/ohdsi/webapi/node_modules && \
+    ln -s /usr/src/deno.json /var/lib/ohdsi/webapi/deno.json
+
 # Go back to WebAPI working directory
 WORKDIR /var/lib/ohdsi/webapi
 
