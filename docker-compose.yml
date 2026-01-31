@@ -114,6 +114,8 @@ services:
         - *x-fhir
         - *x-pg
         - *x-trex-sql
+      # Plugin paths for trex - must match volume mount at /usr/src/data
+      PLUGINS_PATH: /usr/src/data/plugins
       DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
       DATASOURCE_URL: jdbc:postgresql://alp-minerva-postgres:5432/alp?currentSchema=webapi
       DATASOURCE_USERNAME: postgres
