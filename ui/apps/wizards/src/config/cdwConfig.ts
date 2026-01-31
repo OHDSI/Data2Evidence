@@ -26,6 +26,7 @@ const mockConfig: CdwConfig = {
   patient: {
     attributes: {
       Age: { name: "Age", type: "num" },
+      Gender_concept_name: { name: "Gender", type: "text" },
     },
   },
 };
@@ -58,6 +59,37 @@ export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfigResul
     meta: configEntry.meta as ConfigMeta,
   };
   return cachedResult;
+}
+
+const mockAttributeValues: Record<string, Array<{ label: string; value: string }>> = {
+  "patient.attributes.Gender_concept_name": [
+    { label: "FEMALE", value: "FEMALE" },
+    { label: "MALE", value: "MALE" },
+  ],
+};
+
+export async function fetchAttributeValues(
+  attributePath: string,
+  meta: ConfigMeta,
+  datasetId?: string,
+): Promise<Array<{ label: string; value: string }>> {
+  if (isDev) {
+    return mockAttributeValues[attributePath] || [];
+  }
+
+  const response = await client.get("/d2e/analytics-svc/api/services/values", {
+    params: {
+      attributePath,
+      configId: meta.configId,
+      configVersion: meta.configVersion,
+      datasetId,
+      searchQuery: "",
+      attributeType: "text",
+    },
+  });
+
+  const items: Array<{ value: string; text: string }> = response.data?.data || [];
+  return items.map((item) => ({ label: item.text, value: item.value }));
 }
 
 export function getAttributeByPath(config: CdwConfig, path: string): CdwAttributeConfig | undefined {

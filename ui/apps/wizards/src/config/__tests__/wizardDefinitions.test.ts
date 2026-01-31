@@ -185,7 +185,7 @@ describe("wizardDefinitions", () => {
       for (const id of wizardIds) {
         const wizard = await getWizardById(id);
 
-        expect(wizard?.fields).toHaveLength(1);
+        expect(wizard?.fields).toHaveLength(2);
 
         const ageField = wizard?.fields.find((f) => f.id === "age");
         expect(ageField).toBeDefined();
@@ -194,6 +194,16 @@ describe("wizardDefinitions", () => {
         expect(ageField?.required).toBe(false);
         expect(ageField?.configPath).toBe("patient.attributes.Age");
         expect(ageField?.placeholder).toBe("Age");
+
+        const genderField = wizard?.fields.find((f) => f.id === "gender");
+        expect(genderField).toBeDefined();
+        expect(genderField?.type).toBe("text");
+        expect(genderField?.label).toBe("Gender");
+        expect(genderField?.configPath).toBe("patient.attributes.Gender_concept_name");
+        expect(genderField?.options).toEqual([
+          { label: "FEMALE", value: "FEMALE" },
+          { label: "MALE", value: "MALE" },
+        ]);
       }
     });
   });
