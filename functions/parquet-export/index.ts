@@ -1,6 +1,4 @@
 import express, { Request, Response, Router } from "express";
-import * as parquet from "parquetjs";
-import { PassThrough } from "stream";
 import { env } from "./env.ts";
 
 const logger = console;
@@ -21,43 +19,6 @@ interface DatasetMetadata {
   schemaName: string;
   vocabSchemaName: string;
   resultSchemaName: string;
-}
-
-function inferParquetType(value: unknown): string {
-  if (value === null || value === undefined) return "UTF8";
-  if (typeof value === "number") return Number.isInteger(value) ? "INT64" : "DOUBLE";
-  if (typeof value === "boolean") return "BOOLEAN";
-  if (value instanceof Date) return "TIMESTAMP_MILLIS";
-  return "UTF8";
-}
-
-function buildParquetSchema(rows: Record<string, unknown>[]): parquet.ParquetSchema {
-  if (!rows || rows.length === 0) {
-    return new parquet.ParquetSchema({});
-  }
-
-  const fields: Record<string, { type: string; optional: boolean }> = {};
-  for (const [columnName, value] of Object.entries(rows[0])) {
-    fields[columnName] = { type: inferParquetType(value), optional: true };
-  }
-  return new parquet.ParquetSchema(fields);
-}
-
-async function writeParquetBuffer(
-  rows: Record<string, unknown>[],
-  schema: parquet.ParquetSchema
-): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  const outputStream = new PassThrough();
-  outputStream.on("data", (chunk: Buffer) => chunks.push(chunk));
-
-  const writer = await parquet.ParquetWriter.openStream(schema, outputStream);
-  for (const row of rows) {
-    await writer.appendRow(row);
-  }
-  await writer.close();
-
-  return Buffer.concat(chunks);
 }
 
 function isValidUUID(str: string): boolean {
@@ -132,7 +93,7 @@ const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
   const requestId = crypto.randomUUID();
-  logger.info(`[${requestId}] Parquet export request`);
+  let tempFilePath: string | null = null;
 
   try {
     const token = req.headers.authorization || "";
@@ -152,9 +113,6 @@ router.get("/", async (req: Request, res: Response) => {
     }
     if (!isValidCohortId(cohortId)) {
       return res.status(400).json({ error: "Invalid parameter", message: "cohortId must be numeric" });
-    }
-    if (!isValidUUID(templateId)) {
-      return res.status(400).json({ error: "Invalid parameter", message: "templateId must be a valid UUID" });
     }
 
     let template: SqlQueryTemplate;
@@ -190,34 +148,29 @@ router.get("/", async (req: Request, res: Response) => {
     );
 
     try {
-      const results = await new Promise((resolve, reject) => {
-        conn.execute(substitutedSql, [], (err: Error | null, result: unknown) => {
+      const tempDir = Deno.env.get("TMPDIR") || "/tmp";
+      tempFilePath = `${tempDir}/export-${requestId}.parquet`;
+      const copyQuery = `COPY (${substitutedSql}) TO '${tempFilePath}' (FORMAT PARQUET)`;
+
+      await new Promise((resolve, reject) => {
+        conn.execute(copyQuery, [], (err: Error | null, result: unknown) => {
           err ? reject(err) : resolve(result);
         });
       });
 
-      const resultArray = results as Record<string, unknown>[];
-      if (!resultArray || resultArray.length === 0) {
-        const emptySchema = new parquet.ParquetSchema({ _empty: { type: "BOOLEAN", optional: true } });
-        const emptyBuffer = await writeParquetBuffer([], emptySchema);
-        res.setHeader("Content-Type", "application/octet-stream");
-        res.setHeader("Content-Disposition", `attachment; filename=export-${Date.now()}.parquet`);
-        return res.end(emptyBuffer);
-      }
-
-      const schema = buildParquetSchema(resultArray);
-      const parquetBuffer = await writeParquetBuffer(resultArray, schema);
-
-      logger.info(`[${requestId}] Export complete: ${resultArray.length} rows, ${parquetBuffer.length} bytes`);
+      const parquetBuffer = await Deno.readFile(tempFilePath);
 
       res.setHeader("Content-Type", "application/octet-stream");
       res.setHeader("Content-Disposition", `attachment; filename=export-${Date.now()}.parquet`);
-      return res.end(parquetBuffer);
+      return res.end(Buffer.from(parquetBuffer));
     } catch (error) {
       logger.error(`[${requestId}] Query failed: ${error.message}`);
       return res.status(500).json({ error: "Query execution failed", message: "An error occurred" });
     } finally {
       conn.close();
+      if (tempFilePath) {
+        try { await Deno.remove(tempFilePath); } catch { /* cleanup */ }
+      }
     }
   } catch (error) {
     logger.error(`[${requestId}] Error: ${error.message}`);
