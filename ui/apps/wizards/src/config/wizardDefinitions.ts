@@ -14,8 +14,7 @@ function enrichField(field: FieldDefinition, cdwConfig: CdwConfig): FieldDefinit
   return {
     ...field,
     type: attr.type,
-    label: attr.name || field.label,
-    placeholder: attr.name || field.placeholder,
+    label: field.label || attr.name,
   };
 }
 
@@ -40,7 +39,6 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     label: "Age",
     required: false,
     configPath: "patient.attributes.Age",
-    placeholder: "Age",
   },
   {
     id: "gender",
@@ -48,7 +46,6 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     label: "Gender",
     required: false,
     configPath: "patient.attributes.Gender_concept_name",
-    placeholder: "Select Gender",
   },
   {
     id: "condition",
@@ -56,7 +53,6 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     label: "Condition",
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-    placeholder: "Select Condition",
   },
 ];
 
