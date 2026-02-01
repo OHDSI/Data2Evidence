@@ -51,11 +51,24 @@ bun run format
 bun run test
 ```
 
-### Local Testing with Portal
+### Local Testing with Portal (Recommended)
+
+The preferred development workflow is to build and copy files into the local Trex resources directory:
+
+1. Build the app: `bun run build`
+2. The production build outputs to `../../resources/wizards/` which Trex serves directly
+3. Access via portal at `/researcher/wizards`
+4. Rebuild after changes with `bun run build`
+
+This ensures styles and behavior match production exactly. The `bun start` dev server may have CSS differences due to Vite's dev mode style injection.
+
+### Alternative: Dev Server
 
 1. Start the wizards dev server: `bun start`
 2. Use import-map-overrides browser extension to point to localhost:8084
 3. Access via portal at `/researcher/wizards`
+
+Note: Dev server styles may differ from production.
 
 ## Build Output
 
