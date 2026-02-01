@@ -60,6 +60,8 @@ export function TypeaheadField({
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
+  const hasSelection = useRef(!!defaultValue);
+  const inputTextRef = useRef(defaultValue);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -110,6 +112,13 @@ export function TypeaheadField({
       defaultValue={defaultValue}
       rules={{
         required: required ? `${label} is required` : false,
+        validate: () => {
+          // No text typed and no selection → empty field, valid (required rule handles emptiness)
+          if (!inputTextRef.current) return true;
+          // Text present but not from dropdown selection → invalid
+          if (!hasSelection.current) return `Please select a ${label} from the dropdown`;
+          return true;
+        },
       }}
       render={({ field: controllerField }) => {
         const handleFocus = () => {
@@ -119,6 +128,8 @@ export function TypeaheadField({
 
         const handleInputChange = (text: string) => {
           setInputText(text);
+          inputTextRef.current = text;
+          hasSelection.current = false;
           // Clear the selected value — user is typing new text
           controllerField.onChange("");
           setIsOpen(true);
@@ -128,6 +139,7 @@ export function TypeaheadField({
 
         const handleSelect = (option: Option) => {
           setInputText(option.label);
+          hasSelection.current = true;
           controllerField.onChange(option.value);
           setIsOpen(false);
           setHighlightIndex(-1);

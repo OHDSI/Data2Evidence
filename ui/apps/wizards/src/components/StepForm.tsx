@@ -302,7 +302,16 @@ export function StepForm() {
 
       {stepConfig?.note && <div className={styles.note}>{stepConfig.note}</div>}
 
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.form} aria-label={selectedWizard.name + " form"}>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "BUTTON") {
+            e.preventDefault();
+          }
+        }}
+        className={styles.form}
+        aria-label={selectedWizard.name + " form"}
+      >
         <div className={styles.formFields}>{renderFields()}</div>
 
         <div className={styles.buttonRow}>
