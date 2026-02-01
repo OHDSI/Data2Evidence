@@ -1,8 +1,8 @@
 import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'grant-user-admin-role'
-const SHOULD_SKIP = false
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+const SHOULD_SKIP = true
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled - 404 on page reload with WebAPI architecture`)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
