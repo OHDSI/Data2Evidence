@@ -27,19 +27,22 @@ function _addStatic(app: Hono, url: string, path: string) {
 }
 
 export function addPlugin(app: Hono, value: any, dir: string) {
-  if (value.routes)
-    value.routes.forEach((r: any) => {
-      _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
-    });
   // Redirect root to portal
   app.get("/", (c) => {
     return c.redirect(`/d2e/portal/`);
   });
 
   // Serve portal index.html for client-side routing
+  // IMPORTANT: Must be registered BEFORE static files to handle SPA routes on page reload
   portalRoutes.forEach((route) => {
     app.use(route, serveStatic({ path: `${dir}resources/portal/index.html` }));
   });
+
+  // Register static file routes after SPA fallback routes
+  if (value.routes)
+    value.routes.forEach((r: any) => {
+      _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
+    });
   if (value.uiplugins) {
     global.PLUGINS_JSON = updatePluginJson(
       JSON.parse(global.PLUGINS_JSON),
