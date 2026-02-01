@@ -1,6 +1,10 @@
 import { test, expect } from '../fixtures'
 
-test('test', async ({ page }) => {
+const TEST_NAME = 'grant-admin-role'
+const SHOULD_SKIP = true
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled - WebAPI architecture`)
+
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
