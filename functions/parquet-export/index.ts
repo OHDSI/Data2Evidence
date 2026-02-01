@@ -29,8 +29,45 @@ function isValidCohortId(str: string): boolean {
   return /^\d+$/.test(str);
 }
 
-function substituteCohortId(sqlTemplate: string, cohortId: string): string {
-  return sqlTemplate.replace(/\{\{COHORT_ID\}\}/g, cohortId);
+function isValidTemplateId(str: string): boolean {
+  return /^[a-zA-Z0-9_-]+$/.test(str) && !str.includes('..');
+}
+
+function isAxiosError(error: unknown): error is { response?: { status?: number } } {
+  return typeof error === 'object' && error !== null && 'response' in error;
+}
+
+function validateSqlTemplate(sql: string): boolean {
+  const forbidden = /;\s*(DROP|DELETE|TRUNCATE|ALTER|CREATE|INSERT|UPDATE|GRANT|REVOKE)/i;
+  return !forbidden.test(sql);
+}
+
+function isValidSqlIdentifier(str: string): boolean {
+  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(str) && str.length <= 128;
+}
+
+function substituteTemplateParams(
+  sqlTemplate: string,
+  params: { cohortId: string; schema: string; vocabSchema: string; resultSchema: string }
+): string {
+  if (!isValidCohortId(params.cohortId)) {
+    throw new Error("Invalid cohortId");
+  }
+  if (!isValidSqlIdentifier(params.schema)) {
+    throw new Error("Invalid schema name");
+  }
+  if (params.vocabSchema && !isValidSqlIdentifier(params.vocabSchema)) {
+    throw new Error("Invalid vocab schema name");
+  }
+  if (params.resultSchema && !isValidSqlIdentifier(params.resultSchema)) {
+    throw new Error("Invalid result schema name");
+  }
+
+  return sqlTemplate
+    .replace(/\{\{COHORT_ID\}\}/g, params.cohortId)
+    .replace(/\{\{SCHEMA\}\}/g, params.schema)
+    .replace(/\{\{VOCAB_SCHEMA\}\}/g, params.vocabSchema || "")
+    .replace(/\{\{RESULT_SCHEMA\}\}/g, params.resultSchema || "");
 }
 
 async function resolveTemplate(templateId: string, token: string): Promise<SqlQueryTemplate> {
@@ -57,7 +94,7 @@ async function resolveTemplate(templateId: string, token: string): Promise<SqlQu
     const result = await channel.get(url, { headers: { Authorization: token }, timeout: 20000 });
     return result.data as SqlQueryTemplate;
   } catch (error) {
-    if (error?.response?.status === 404) {
+    if (isAxiosError(error) && error.response?.status === 404) {
       throw new Error(`Template not found: ${templateId}`);
     }
     throw new Error("Template service unavailable");
@@ -79,7 +116,7 @@ async function resolveDataset(datasetId: string, token: string): Promise<Dataset
     const result = await channel.get(url, { headers: { Authorization: token }, timeout: 20000 });
     return result.data as DatasetMetadata;
   } catch (error) {
-    if (error?.response?.status === 404) {
+    if (isAxiosError(error) && error.response?.status === 404) {
       throw new Error(`Dataset not found: ${datasetId}`);
     }
     throw new Error("Portal service unavailable");
@@ -114,13 +151,17 @@ router.get("/", async (req: Request, res: Response) => {
     if (!isValidCohortId(cohortId)) {
       return res.status(400).json({ error: "Invalid parameter", message: "cohortId must be numeric" });
     }
+    if (!isValidTemplateId(templateId)) {
+      return res.status(400).json({ error: "Invalid parameter", message: "templateId contains invalid characters" });
+    }
 
     let template: SqlQueryTemplate;
     try {
       template = await resolveTemplate(templateId, token);
     } catch (error) {
-      if (error.message.includes("not found")) {
-        return res.status(404).json({ error: "Template not found", message: error.message });
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("not found")) {
+        return res.status(404).json({ error: "Template not found", message: msg });
       }
       return res.status(503).json({ error: "Template service unavailable", message: "Please try again later" });
     }
@@ -129,13 +170,29 @@ router.get("/", async (req: Request, res: Response) => {
     try {
       dataset = await resolveDataset(datasetId, token);
     } catch (error) {
-      if (error.message.includes("not found")) {
-        return res.status(404).json({ error: "Dataset not found", message: error.message });
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes("not found")) {
+        return res.status(404).json({ error: "Dataset not found", message: msg });
       }
       return res.status(503).json({ error: "Portal service unavailable", message: "Please try again later" });
     }
 
-    const substitutedSql = substituteCohortId(template.sqlText, cohortId);
+    let substitutedSql: string;
+    try {
+      substitutedSql = substituteTemplateParams(template.sqlText, {
+        cohortId,
+        schema: dataset.schemaName,
+        vocabSchema: dataset.vocabSchemaName,
+        resultSchema: dataset.resultSchemaName,
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      return res.status(400).json({ error: "Invalid parameter", message: msg });
+    }
+
+    if (!validateSqlTemplate(substitutedSql)) {
+      return res.status(400).json({ error: "Invalid template", message: "Template contains forbidden SQL statements" });
+    }
 
     // @ts-ignore Trex global
     const dbm = Trex.databaseManager();
@@ -164,7 +221,8 @@ router.get("/", async (req: Request, res: Response) => {
       res.setHeader("Content-Disposition", `attachment; filename=export-${Date.now()}.parquet`);
       return res.end(Buffer.from(parquetBuffer));
     } catch (error) {
-      logger.error(`[${requestId}] Query failed: ${error.message}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error(`[${requestId}] Query failed: ${msg}`);
       return res.status(500).json({ error: "Query execution failed", message: "An error occurred" });
     } finally {
       conn.close();
@@ -173,7 +231,8 @@ router.get("/", async (req: Request, res: Response) => {
       }
     }
   } catch (error) {
-    logger.error(`[${requestId}] Error: ${error.message}`);
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`[${requestId}] Error: ${msg}`);
     return res.status(500).json({ error: "Internal server error", message: "An unexpected error occurred" });
   }
 });
