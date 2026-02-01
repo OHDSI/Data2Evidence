@@ -211,6 +211,45 @@
   color: #c00;
 }
 
+.typeaheadWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.typeaheadDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.typeaheadOption {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.typeaheadOption:hover,
+.typeaheadOptionHighlighted {
+  background: #e8eaf6;
+}
+
+.typeaheadMessage {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #999;
+}
+
 @media (max-width: 768px) {
   .fieldGroup,
   .fieldGroupRow {

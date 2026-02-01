@@ -1,49 +1,31 @@
 import type { WizardDefinition, FieldDefinition } from "../types/wizard";
-import { fetchCdwConfig, getAttributeByPath, fetchAttributeValues } from "./cdwConfig";
-import type { CdwConfig, ConfigMeta } from "./cdwConfig";
+import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
+import type { CdwConfig } from "./cdwConfig";
 
 /**
  * Enrich a field definition using CDW config data looked up via configPath.
- * For text fields, fetches available values from the values API.
  */
-async function enrichField(
-  field: FieldDefinition,
-  cdwConfig: CdwConfig,
-  meta: ConfigMeta,
-  datasetId?: string,
-): Promise<FieldDefinition> {
+function enrichField(field: FieldDefinition, cdwConfig: CdwConfig): FieldDefinition {
   if (!field.configPath) return field;
 
   const attr = getAttributeByPath(cdwConfig, field.configPath);
   if (!attr) return field;
 
-  const enriched: FieldDefinition = {
+  return {
     ...field,
     type: attr.type,
     label: attr.name || field.label,
     placeholder: attr.name || field.placeholder,
   };
-
-  if (attr.type === "text" && !field.options) {
-    enriched.options = await fetchAttributeValues(field.configPath, meta, datasetId);
-  }
-
-  return enriched;
 }
 
 /**
  * Enrich all fields in a wizard definition using CDW config.
  */
-async function enrichWizard(
-  wizard: WizardDefinition,
-  cdwConfig: CdwConfig,
-  meta: ConfigMeta,
-  datasetId?: string,
-): Promise<WizardDefinition> {
-  const fields = await Promise.all(wizard.fields.map((field) => enrichField(field, cdwConfig, meta, datasetId)));
+function enrichWizard(wizard: WizardDefinition, cdwConfig: CdwConfig): WizardDefinition {
   return {
     ...wizard,
-    fields,
+    fields: wizard.fields.map((field) => enrichField(field, cdwConfig)),
   };
 }
 
@@ -67,6 +49,14 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     required: false,
     configPath: "patient.attributes.Gender_concept_name",
     placeholder: "Select Gender",
+  },
+  {
+    id: "condition",
+    type: "text",
+    label: "Condition",
+    required: false,
+    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    placeholder: "Select Condition",
   },
 ];
 
@@ -197,8 +187,8 @@ const wizardDefinitions: WizardDefinition[] = [
  * Get all available wizard definitions, enriched with CDW config data.
  */
 export async function getWizardDefinitions(datasetId?: string): Promise<WizardDefinition[]> {
-  const { config: cdwConfig, meta } = await fetchCdwConfig(datasetId);
-  return Promise.all(wizardDefinitions.map((wizard) => enrichWizard(wizard, cdwConfig, meta, datasetId)));
+  const { config: cdwConfig } = await fetchCdwConfig(datasetId);
+  return wizardDefinitions.map((wizard) => enrichWizard(wizard, cdwConfig));
 }
 
 /**
@@ -208,6 +198,6 @@ export async function getWizardById(id: string, datasetId?: string): Promise<Wiz
   const wizard = wizardDefinitions.find((w) => w.id === id);
   if (!wizard) return undefined;
 
-  const { config: cdwConfig, meta } = await fetchCdwConfig(datasetId);
-  return enrichWizard(wizard, cdwConfig, meta, datasetId);
+  const { config: cdwConfig } = await fetchCdwConfig(datasetId);
+  return enrichWizard(wizard, cdwConfig);
 }

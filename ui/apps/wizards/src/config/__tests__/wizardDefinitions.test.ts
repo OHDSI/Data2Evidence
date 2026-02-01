@@ -185,7 +185,7 @@ describe("wizardDefinitions", () => {
       for (const id of wizardIds) {
         const wizard = await getWizardById(id);
 
-        expect(wizard?.fields).toHaveLength(2);
+        expect(wizard?.fields).toHaveLength(3);
 
         const ageField = wizard?.fields.find((f) => f.id === "age");
         expect(ageField).toBeDefined();
@@ -200,10 +200,17 @@ describe("wizardDefinitions", () => {
         expect(genderField?.type).toBe("text");
         expect(genderField?.label).toBe("Gender");
         expect(genderField?.configPath).toBe("patient.attributes.Gender_concept_name");
-        expect(genderField?.options).toEqual([
-          { label: "FEMALE", value: "FEMALE" },
-          { label: "MALE", value: "MALE" },
-        ]);
+        // Options are no longer preloaded — fetched on user interaction via TypeaheadField
+        expect(genderField?.options).toBeUndefined();
+
+        const conditionField = wizard?.fields.find((f) => f.id === "condition");
+        expect(conditionField).toBeDefined();
+        expect(conditionField?.type).toBe("text");
+        expect(conditionField?.label).toBe("Condition");
+        expect(conditionField?.configPath).toBe(
+          "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+        );
+        expect(conditionField?.options).toBeUndefined();
       }
     });
   });

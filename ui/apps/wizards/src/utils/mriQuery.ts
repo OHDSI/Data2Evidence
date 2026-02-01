@@ -1,5 +1,5 @@
 import type { FieldDefinition } from "../types/wizard";
-import type { ConfigMeta, ChartOptions } from "../config/cdwConfig";
+import type { ConfigMeta, ChartOptions, CdwConfig } from "../config/cdwConfig";
 
 interface Expression {
   type: "Expression";
@@ -60,21 +60,59 @@ interface MriBookmark {
 /**
  * Build an MRI bookmark JSON that the cohort builder can understand.
  */
+/**
+ * Look up the display name for an interaction from the CDW config.
+ * Config stores names as: patient.interactions.<key>.name = [{ lang: "", value: "Display Name" }]
+ * Falls back to the path key with first letter capitalized.
+ */
+function getFilterCardName(cardPath: string, config?: CdwConfig): string {
+  if (cardPath === "patient") return "Basic Data";
+
+  // Traverse config dynamically to find the object at cardPath
+  const parts = cardPath.split(".");
+  let current: any = config;
+  for (const part of parts) {
+    current = current?.[part];
+  }
+
+  // Config stores name as either a string or an array of { lang, value }
+  const nameVal = current?.name;
+  if (typeof nameVal === "string" && nameVal) {
+    return nameVal;
+  }
+  if (Array.isArray(nameVal) && nameVal.length > 0 && nameVal[0].value) {
+    return nameVal[0].value;
+  }
+
+  // Fallback: use the last path segment, capitalized
+  const key = parts[parts.length - 1];
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
 export function buildMriBookmark(
   fields: FieldDefinition[],
   formData: Record<string, any>,
   meta: ConfigMeta,
   datasetId: string,
   chartOptions?: ChartOptions,
+  config?: CdwConfig,
 ): MriBookmark {
-  const attributes: Attribute[] = [];
+  // Group attributes by their filter card path (everything before ".attributes.")
+  const cardGroups = new Map<string, Attribute[]>();
 
   for (const field of fields) {
     const value = formData[field.id];
     if (value === undefined || value === null || value === "") continue;
     if (!field.configPath) continue;
 
-    attributes.push({
+    const attrIndex = field.configPath.indexOf(".attributes.");
+    const cardPath = attrIndex >= 0 ? field.configPath.substring(0, attrIndex) : "patient";
+
+    if (!cardGroups.has(cardPath)) {
+      cardGroups.set(cardPath, []);
+    }
+
+    cardGroups.get(cardPath)!.push({
       type: "Attribute",
       configPath: field.configPath,
       instanceID: field.configPath,
@@ -92,31 +130,51 @@ export function buildMriBookmark(
     });
   }
 
-  const filterCard: FilterCard = {
-    type: "FilterCard",
-    configPath: "patient",
-    instanceNumber: 1,
-    instanceID: "patient",
-    name: "Basic Data",
-    inactive: false,
-    attributes: {
-      type: "BooleanContainer",
-      op: "AND",
-      content: attributes,
-    },
-  };
+  // Ensure patient card always exists
+  if (!cardGroups.has("patient")) {
+    cardGroups.set("patient", []);
+  }
 
-  // Standard nesting: AND > OR > FilterCard
+  // Build a FilterCard for each group, each wrapped in its own OR container
+  // Track letter suffixes per interaction type: "Condition Occurrence A", "Condition Occurrence B", etc.
+  const typeCounters = new Map<string, number>();
+  const filterCardContainers: BooleanContainer[] = [];
+  for (const [cardPath, attributes] of cardGroups) {
+    const baseName = getFilterCardName(cardPath, config);
+    let name = baseName;
+    if (cardPath !== "patient") {
+      const count = typeCounters.get(baseName) || 0;
+      const letter = String.fromCharCode(65 + count); // A, B, C...
+      name = `${baseName} ${letter}`;
+      typeCounters.set(baseName, count + 1);
+    }
+
+    const filterCard: FilterCard = {
+      type: "FilterCard",
+      configPath: cardPath,
+      instanceNumber: 1,
+      instanceID: cardPath,
+      name,
+      inactive: false,
+      attributes: {
+        type: "BooleanContainer",
+        op: "AND",
+        content: attributes,
+      },
+    };
+
+    filterCardContainers.push({
+      type: "BooleanContainer",
+      op: "OR",
+      content: [filterCard],
+    });
+  }
+
+  // Standard nesting: AND > [OR > FilterCard, OR > FilterCard, ...]
   const cards: BooleanContainer = {
     type: "BooleanContainer",
     op: "AND",
-    content: [
-      {
-        type: "BooleanContainer",
-        op: "OR",
-        content: [filterCard],
-      },
-    ],
+    content: filterCardContainers,
   };
 
   const axisNames = ["x1", "x2", "x3", "stack", "y"];

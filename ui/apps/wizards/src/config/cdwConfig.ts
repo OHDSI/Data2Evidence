@@ -18,8 +18,17 @@ export interface ChartOptions {
 export interface CdwConfig {
   patient: {
     attributes: Record<string, CdwAttributeConfig>;
+    interactions?: Record<
+      string,
+      {
+        attributes: Record<string, CdwAttributeConfig>;
+        [key: string]: unknown;
+      }
+    >;
+    [key: string]: unknown;
   };
   chartOptions?: ChartOptions;
+  [key: string]: unknown;
 }
 
 export interface ConfigMeta {
@@ -37,6 +46,14 @@ const mockConfig: CdwConfig = {
     attributes: {
       Age: { name: "Age", type: "num" },
       Gender_concept_name: { name: "Gender", type: "text" },
+    },
+    interactions: {
+      conditionoccurrence: {
+        name: "Condition Occurrence",
+        attributes: {
+          condition_occ_concept_name: { name: "Condition", type: "text" },
+        },
+      },
     },
   },
   chartOptions: {
@@ -84,15 +101,24 @@ const mockAttributeValues: Record<string, Array<{ label: string; value: string }
     { label: "FEMALE", value: "FEMALE" },
     { label: "MALE", value: "MALE" },
   ],
+  "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name": [
+    { label: "Diabetes mellitus", value: "Diabetes mellitus" },
+    { label: "Hypertension", value: "Hypertension" },
+    { label: "Asthma", value: "Asthma" },
+  ],
 };
 
 export async function fetchAttributeValues(
   attributePath: string,
   meta: ConfigMeta,
   datasetId?: string,
+  searchQuery?: string,
 ): Promise<Array<{ label: string; value: string }>> {
   if (isDev) {
-    return mockAttributeValues[attributePath] || [];
+    const values = mockAttributeValues[attributePath] || [];
+    const query = (searchQuery || "").toLowerCase();
+    if (!query) return values;
+    return values.filter((v) => v.label.toLowerCase().includes(query));
   }
 
   const response = await client.get("/d2e/analytics-svc/api/services/values", {
@@ -101,7 +127,7 @@ export async function fetchAttributeValues(
       configId: meta.configId,
       configVersion: meta.configVersion,
       datasetId,
-      searchQuery: "",
+      searchQuery: searchQuery || "",
       attributeType: "text",
     },
   });

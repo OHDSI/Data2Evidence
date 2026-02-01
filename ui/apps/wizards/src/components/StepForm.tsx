@@ -1,9 +1,11 @@
-import { Fragment } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { Fragment, useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
 import { generateFormSubmitDeepLink } from "../utils/deepLinks";
 import { fetchCdwConfig } from "../config/cdwConfig";
+import type { ConfigMeta } from "../config/cdwConfig";
+import { TypeaheadField } from "./TypeaheadField";
 import styles from "./StepForm.module.css";
 
 /**
@@ -13,6 +15,11 @@ export function StepForm() {
   const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig, portalProps } =
     useWizardContext();
   const stepConfig = getCurrentStepConfig();
+  const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
+
+  useEffect(() => {
+    fetchCdwConfig(portalProps.datasetId).then(({ meta }) => setConfigMeta(meta));
+  }, [portalProps.datasetId]);
 
   const {
     register,
@@ -54,6 +61,7 @@ export function StepForm() {
           configMeta,
           portalProps.datasetId,
           cdwConfig.chartOptions,
+          cdwConfig,
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
@@ -74,35 +82,24 @@ export function StepForm() {
   const renderField = (field: FieldDefinition) => {
     const fieldError = errors[field.id];
 
-    // Fields with options render as select regardless of type
-    if (field.options && field.options.length > 0) {
+    // Text fields with configPath use typeahead search
+    if (field.type === "text" && field.configPath && configMeta) {
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
             {field.label}:
           </label>
-          <Controller
-            name={field.id}
+          <TypeaheadField
+            fieldId={field.id}
+            label={field.label}
+            placeholder={field.placeholder}
+            required={field.required}
+            configPath={field.configPath}
+            configMeta={configMeta}
+            datasetId={portalProps.datasetId}
             control={control}
             defaultValue={formData[field.id] ?? ""}
-            rules={{
-              required: field.required ? `${field.label} is required` : false,
-            }}
-            render={({ field: controllerField }) => (
-              <select
-                {...controllerField}
-                id={field.id}
-                className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
-                aria-invalid={!!fieldError}
-              >
-                {!field.required && <option value="">{field.placeholder || `Select ${field.label}`}</option>}
-                {field.options?.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )}
+            error={fieldError as { message?: string } | undefined}
           />
           {field.required && <span className={styles.requiredText}>This is a required field</span>}
           {fieldError && (
