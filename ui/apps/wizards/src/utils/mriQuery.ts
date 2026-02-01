@@ -4,7 +4,7 @@ import type { ConfigMeta, ChartOptions, CdwConfig } from "../config/cdwConfig";
 interface Expression {
   type: "Expression";
   operator: string;
-  value: string;
+  value: string | number;
 }
 
 interface Attribute {
@@ -13,7 +13,7 @@ interface Attribute {
   instanceID: string;
   constraints: {
     type: "BooleanContainer";
-    op: "OR";
+    op: "AND" | "OR";
     content: Expression[];
   };
 }
@@ -89,6 +89,42 @@ function getFilterCardName(cardPath: string, config?: CdwConfig): string {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
 
+/**
+ * Parse a numeric expression string into Expression objects.
+ *
+ * Supported formats (comma-separated):
+ *   >=60        → { operator: ">=", value: 60 }
+ *   >50,<=70    → two expressions
+ *   [50-80]     → >=50, <=80
+ *   [50-80[     → >=50, <80
+ *   ]50-80]     → >50, <=80
+ *   ]50-80[     → >50, <80
+ *   60          → { operator: "=", value: 60 }
+ */
+function parseNumericExpressions(value: string): Expression[] {
+  const v = value.trim();
+
+  // Range syntax: [50-80], [50-80[, ]50-80], ]50-80[
+  const rangeMatch = v.match(/^([[\]])\s*(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)\s*([[\]])$/);
+  if (rangeMatch) {
+    const lowerOp = rangeMatch[1] === "[" ? ">=" : ">";
+    const upperOp = rangeMatch[4] === "]" ? "<=" : "<";
+    return [
+      { type: "Expression", operator: lowerOp, value: Number(rangeMatch[2]) },
+      { type: "Expression", operator: upperOp, value: Number(rangeMatch[3]) },
+    ];
+  }
+
+  // Operator + number: >=60, >50, <=70, <80, =60, !=60
+  const opMatch = v.match(/^(>=|<=|>|<|=|!=)\s*(-?\d+(?:\.\d+)?)$/);
+  if (opMatch) {
+    return [{ type: "Expression", operator: opMatch[1], value: Number(opMatch[2]) }];
+  }
+
+  // Plain number defaults to "="
+  return [{ type: "Expression", operator: "=", value: Number(v) }];
+}
+
 export function buildMriBookmark(
   fields: FieldDefinition[],
   formData: Record<string, any>,
@@ -112,20 +148,22 @@ export function buildMriBookmark(
       cardGroups.set(cardPath, []);
     }
 
+    const expressions: Expression[] =
+      field.type === "num"
+        ? parseNumericExpressions(String(value))
+        : [{ type: "Expression", operator: "=", value: String(value) }];
+
+    // Numeric expressions use AND (e.g. >=50 AND <=80), text uses OR
+    const constraintOp = field.type === "num" ? "AND" : "OR";
+
     cardGroups.get(cardPath)!.push({
       type: "Attribute",
       configPath: field.configPath,
       instanceID: field.configPath,
       constraints: {
         type: "BooleanContainer",
-        op: "OR",
-        content: [
-          {
-            type: "Expression",
-            operator: "=",
-            value: String(value),
-          },
-        ],
+        op: constraintOp,
+        content: expressions,
       },
     });
   }

@@ -120,27 +120,23 @@ export function StepForm() {
             </label>
             <input
               id={field.id}
-              type="number"
-              placeholder={field.placeholder}
+              type="text"
+              placeholder={field.placeholder || "e.g. >=60, [50-80]"}
               className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
               aria-invalid={!!fieldError}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
-                valueAsNumber: true,
-                min:
-                  field.validation?.min !== undefined
-                    ? {
-                        value: field.validation.min,
-                        message: `Minimum value is ${field.validation.min}`,
-                      }
-                    : undefined,
-                max:
-                  field.validation?.max !== undefined
-                    ? {
-                        value: field.validation.max,
-                        message: `Maximum value is ${field.validation.max}`,
-                      }
-                    : undefined,
+                validate: (v) => {
+                  if (!v || v === "") return true;
+                  const s = String(v).trim();
+                  const isRange = /^[[\]]\s*-?\d+(\.\d+)?\s*-\s*-?\d+(\.\d+)?\s*[[\]]$/.test(s);
+                  const isOp = /^(>=|<=|>|<|=|!=)\s*-?\d+(\.\d+)?$/.test(s);
+                  const isNum = /^-?\d+(\.\d+)?$/.test(s);
+                  if (!isRange && !isOp && !isNum) {
+                    return `Invalid expression. Examples: >=60, >50, [50-80], 60`;
+                  }
+                  return true;
+                },
               })}
             />
             {field.required && <span className={styles.requiredText}>This is a required field</span>}
