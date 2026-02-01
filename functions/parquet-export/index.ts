@@ -46,9 +46,28 @@ function isValidSqlIdentifier(str: unknown): str is string {
   return typeof str === 'string' && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(str) && str.length <= 128;
 }
 
+function isValidParamValue(str: unknown): str is string {
+  if (typeof str !== 'string') return false;
+  if (str.length > 1000) return false;
+  if (/[;'"\\]|--|\/\*|\*\//.test(str)) return false;
+  return true;
+}
+
+function sanitizeParamValue(value: string): string {
+  return value.replace(/'/g, "''");
+}
+
+function extractPlaceholders(sql: string): string[] {
+  const matches = sql.match(/\{\{([A-Z][A-Z0-9_]*)\}\}/g) || [];
+  return [...new Set(matches.map(m => m.slice(2, -2)))];
+}
+
+const RESERVED_PLACEHOLDERS = new Set(['COHORT_ID', 'SCHEMA', 'VOCAB_SCHEMA', 'RESULT_SCHEMA']);
+
 function substituteTemplateParams(
   sqlTemplate: string,
-  params: { cohortId: string; schema: string; vocabSchema: string; resultSchema: string }
+  params: { cohortId: string; schema: string; vocabSchema: string; resultSchema: string },
+  additionalParams: Record<string, string>
 ): string {
   if (!isValidCohortId(params.cohortId)) {
     throw new Error("Invalid cohortId");
@@ -63,11 +82,36 @@ function substituteTemplateParams(
     throw new Error("Invalid result schema name");
   }
 
-  return sqlTemplate
+  let result = sqlTemplate
     .replace(/\{\{COHORT_ID\}\}/g, params.cohortId)
     .replace(/\{\{SCHEMA\}\}/g, params.schema)
     .replace(/\{\{VOCAB_SCHEMA\}\}/g, params.vocabSchema || "")
     .replace(/\{\{RESULT_SCHEMA\}\}/g, params.resultSchema || "");
+
+  const remainingPlaceholders = extractPlaceholders(result);
+  const missingParams: string[] = [];
+  for (const placeholder of remainingPlaceholders) {
+    if (!RESERVED_PLACEHOLDERS.has(placeholder) && !(placeholder in additionalParams)) {
+      missingParams.push(placeholder);
+    }
+  }
+
+  if (missingParams.length > 0) {
+    throw new Error(`Missing required parameters: ${missingParams.join(', ')}`);
+  }
+
+  for (const placeholder of remainingPlaceholders) {
+    if (!RESERVED_PLACEHOLDERS.has(placeholder)) {
+      const value = additionalParams[placeholder];
+      if (!isValidParamValue(value)) {
+        throw new Error(`Invalid value for parameter: ${placeholder}`);
+      }
+      const sanitized = sanitizeParamValue(value);
+      result = result.replace(new RegExp(`\\{\\{${placeholder}\\}\\}`, 'g'), sanitized);
+    }
+  }
+
+  return result;
 }
 
 async function resolveTemplate(templateId: string, token: string): Promise<SqlQueryTemplate> {
@@ -177,14 +221,26 @@ router.get("/", async (req: Request, res: Response) => {
       return res.status(503).json({ error: "Portal service unavailable", message: "Please try again later" });
     }
 
+    const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId']);
+    const additionalParams: Record<string, string> = {};
+    for (const [key, value] of Object.entries(req.query)) {
+      if (!reservedQueryParams.has(key) && typeof value === 'string') {
+        additionalParams[key.toUpperCase()] = value;
+      }
+    }
+
     let substitutedSql: string;
     try {
-      substitutedSql = substituteTemplateParams(template.sqlText, {
-        cohortId,
-        schema: dataset.schemaName,
-        vocabSchema: dataset.vocabSchemaName,
-        resultSchema: dataset.resultSchemaName,
-      });
+      substitutedSql = substituteTemplateParams(
+        template.sqlText,
+        {
+          cohortId,
+          schema: dataset.schemaName,
+          vocabSchema: dataset.vocabSchemaName,
+          resultSchema: dataset.resultSchemaName,
+        },
+        additionalParams
+      );
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       return res.status(400).json({ error: "Invalid parameter", message: msg });
