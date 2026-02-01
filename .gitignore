@@ -20,6 +20,7 @@ run_ssh.sh
 .DS_Store
 *eszip
 **/.parcel-cache/
+!tests/e2e/package-lock.json
 !functions/package-lock.json
 !fhir_functions/package-lock.json
 

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 test('Switch to admin portal', async ({ page }) => {
   await page.goto('/d2e/portal')

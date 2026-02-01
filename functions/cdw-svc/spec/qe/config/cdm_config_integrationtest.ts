@@ -33,8 +33,9 @@ describe("CDM Configuration tests,", () => {
   beforeAll((done) => {
     fakeSettings = new Settings();
     createConfigConnection((err, configConnection) => {
+      connection = configConnection;
       ffhQeConfig = new FfhQeConfig(
-        configConnection,
+        connection,
         new AssignmentProxy([]),
         fakeSettings,
         new User("TEST_USER"),
@@ -42,7 +43,7 @@ describe("CDM Configuration tests,", () => {
       );
       ffhConfig = ffhQeConfig.getFfhConfigObj();
       facade = new ConfigFacade(
-        configConnection,
+        connection,
         ffhQeConfig,
         new User("TEST_USER"),
         true

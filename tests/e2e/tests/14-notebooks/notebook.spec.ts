@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'Notebook'
 const SHOULD_SKIP = false
@@ -46,7 +46,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Import notebook - Cannot interact with macOS to close the file dialog
   await page.getByRole('button', { name: 'Import Notebook' }).click()
-  const fileInput = await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 2000 })
+  const fileInput = await page.waitForSelector('input[type="file"]', { state: 'attached' })
   await fileInput.setInputFiles(require('path').join(__dirname, 'Test_Notebook.ipynb'))
   // Close the file selector if a close button exists
   const closeFileDialog = await page.$('button[aria-label="Cancel"]')

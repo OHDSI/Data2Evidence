@@ -1,4 +1,12 @@
-import { registerApplication, start } from "single-spa";
+import {
+  registerApplication,
+  start,
+  unregisterApplication,
+  getAppStatus,
+  MOUNTED,
+  NOT_LOADED,
+  NOT_MOUNTED,
+} from "single-spa";
 import { RegisteredApp, SingleSpaPluginConfig } from "./types";
 import { createActivityFunction, generateContainerId } from "./utils";
 import { resolveModuleUrl } from "./overrideUtils";
@@ -75,4 +83,27 @@ export function updateCustomProps(appId: string, customProps: Record<string, any
 export function startSingleSpa(options?: { urlRerouteOnly?: boolean }): void {
   start(options || { urlRerouteOnly: true });
   console.log("[singleSpaRegistry] Started monitoring URL changes");
+}
+
+export async function unloadSingleSpaApp(appId: string): Promise<void> {
+  if (!registeredApps.has(appId)) {
+    console.debug(`[singleSpaRegistry] App ${appId} is not registered, skipping unload`);
+    return;
+  }
+
+  const status = getAppStatus(appId);
+  console.debug(`[singleSpaRegistry] ${appId} - unregistering, current status: ${status}`);
+
+  try {
+    if (status === MOUNTED || status === NOT_MOUNTED || status === NOT_LOADED) {
+      await unregisterApplication(appId);
+      console.debug(`[singleSpaRegistry] ${appId} - unregistered successfully`);
+    }
+
+    registeredApps.delete(appId);
+    moduleCache.delete(appId);
+    propsStore.delete(appId);
+  } catch (error) {
+    console.error(`[singleSpaRegistry] Failed to unregister app ${appId}:`, error);
+  }
 }

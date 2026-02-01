@@ -29,7 +29,7 @@ def loyalty_score_plugin(options:LoyaltyPluginType):
 
 def load_coef_table(conn, coeff_table_name, schema_name):
     if coeff_table_name:
-        coef = conn.table(database=schema_name, name=coeff_table_name)
+        coef = conn.table(coeff_table_name, database=schema_name)
         coef = coef.select(coef).to_pandas()
         coef.set_index('Feature',inplace=True)
     else:         
@@ -98,8 +98,19 @@ def retrain_algo(options:RetrainConfig):
         logger.info(f'Algorithm retrain completed')
         coef_retrain['coeff'] = coef_retrain['coeff'].round(3)
         y_pred = lasso.predict(X_test)
-        auc_roc = round(roc_auc_score(y_test, y_pred),3)
-        summary_table = pd.DataFrame({'Metric':['auc_roc_retrain'], 'value': [auc_roc]})
+        
+        # Check test set class distribution before calculating ROC AUC
+        y_test_unique = y_test.unique()
+        logger.info(f'Test set - Return=0: {(y_test==0).sum()}, Return=1: {(y_test==1).sum()}')
+        
+        if len(y_test_unique) < 2:
+            logger.warning(f"Only one class in test set. Cannot calculate ROC AUC. Skipping AUC calculation.")
+            summary_table = pd.DataFrame({'Metric':['auc_roc_retrain', 'warning'], 'value': [None, 'Single class in test set']})
+        else:
+            auc_roc = round(roc_auc_score(y_test, y_pred), 3)
+            logger.info(f'Test set AUC ROC: {auc_roc}')
+            summary_table = pd.DataFrame({'Metric':['auc_roc_retrain'], 'value': [auc_roc]})
+        
         summary_table_name = f'{retrain_coeff_table_name}_summary_table'
 
     with dbdao.engine.connect() as conn:
@@ -143,9 +154,15 @@ def data_prep(conn, index_st, index_ed, database_code, schema_name, use_cache_db
 
 @task(log_prints=True)
 def eligible_person(conn, schema_name, index_st, index_ed, age18):
-    person = conn.table(database=schema_name, name='person')
-    death = conn.table(database=schema_name, name='death')
-    visit_occurrence = conn.table(database=schema_name, name='visit_occurrence')
+    logger = get_run_logger()
+    person = conn.table('person', database=schema_name)
+    death = conn.table('death', database=schema_name)
+    visit_occurrence = conn.table('visit_occurrence', database=schema_name)
+    
+    # Log initial person count
+    total_persons = person.count().execute()
+    logger.info(f"Total persons in person table: {total_persons}")
+    
     birth_date = (
         person.year_of_birth.cast('string') + '-' + 
         person.month_of_birth.cast('string') + '-' + 
@@ -159,6 +176,9 @@ def eligible_person(conn, schema_name, index_st, index_ed, age18):
             )
             .select(person.person_id)
         )
+    age_filter_count = age_filter.count().execute()
+    logger.info(f"Persons after age filter (>=18 years old & alive): {age_filter_count}")
+    
     visit_filter = (
         visit_occurrence
         .filter((visit_occurrence.visit_start_date < index_ed) & (visit_occurrence.visit_end_date > index_st))
@@ -166,12 +186,19 @@ def eligible_person(conn, schema_name, index_st, index_ed, age18):
         .aggregate(count=visit_occurrence.person_id.count())
         .filter(lambda t: t['count'] >= 1)
     )
+    visit_filter_count = visit_filter.count().execute()
+    logger.info(f"Persons with visits in period [{index_st} to {index_ed}]: {visit_filter_count}")
+    
     final_expr = (
         age_filter
         .inner_join(visit_filter, age_filter.person_id == visit_filter.person_id)
         .select(age_filter.person_id)
         .distinct()
     )
-    return final_expr.execute()
+    result = final_expr.execute()
+    final_count = len(result)
+    logger.info(f"Final eligible persons (age filter + visit filter): {final_count}")
+    
+    return result
 
 
