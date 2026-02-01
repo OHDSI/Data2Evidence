@@ -226,14 +226,19 @@ router.get("/", async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Query execution failed", message: "An error occurred" });
     } finally {
       conn.close();
-      if (tempFilePath) {
-        try { await Deno.remove(tempFilePath); } catch { /* cleanup */ }
-      }
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logger.error(`[${requestId}] Error: ${msg}`);
     return res.status(500).json({ error: "Internal server error", message: "An unexpected error occurred" });
+  } finally {
+    if (tempFilePath) {
+      try {
+        await Deno.remove(tempFilePath);
+      } catch {
+        logger.error(`[${requestId}] Failed to cleanup temp file: ${tempFilePath}`);
+      }
+    }
   }
 });
 
