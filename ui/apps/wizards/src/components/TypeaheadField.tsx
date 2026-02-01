@@ -64,9 +64,12 @@ export function TypeaheadField({
   const inputTextRef = useRef(defaultValue);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const lastQueryRef = useRef<string | null>(null);
 
   const fetchOptions = useCallback(
     async (query: string) => {
+      if (query === lastQueryRef.current) return;
+      lastQueryRef.current = query;
       setLoading(true);
       try {
         const results = await fetchAttributeValues(configPath, configMeta, datasetId, query);
@@ -79,6 +82,11 @@ export function TypeaheadField({
     },
     [configPath, configMeta, datasetId],
   );
+
+  // Prefetch initial options on mount
+  useEffect(() => {
+    fetchOptions("");
+  }, [fetchOptions]);
 
   const debouncedFetch = useCallback(
     (query: string) => {
