@@ -21,16 +21,16 @@ interface DatasetMetadata {
   resultSchemaName: string;
 }
 
-function isValidUUID(str: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+function isValidUUID(str: unknown): str is string {
+  return typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
 
-function isValidCohortId(str: string): boolean {
-  return /^\d+$/.test(str);
+function isValidCohortId(str: unknown): str is string {
+  return typeof str === 'string' && /^\d+$/.test(str);
 }
 
-function isValidTemplateId(str: string): boolean {
-  return /^[a-zA-Z0-9_-]+$/.test(str) && !str.includes('..');
+function isValidTemplateId(str: unknown): str is string {
+  return typeof str === 'string' && /^[a-zA-Z0-9_-]+$/.test(str);
 }
 
 function isAxiosError(error: unknown): error is { response?: { status?: number } } {
@@ -42,8 +42,8 @@ function validateSqlTemplate(sql: string): boolean {
   return !forbidden.test(sql);
 }
 
-function isValidSqlIdentifier(str: string): boolean {
-  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(str) && str.length <= 128;
+function isValidSqlIdentifier(str: unknown): str is string {
+  return typeof str === 'string' && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(str) && str.length <= 128;
 }
 
 function substituteTemplateParams(
