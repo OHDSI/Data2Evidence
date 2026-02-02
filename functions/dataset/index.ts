@@ -464,31 +464,12 @@ export class DatasetRouter {
       }
     });
 
+    // resourceId format: datasetId_type_name_language
     this.router.use(
-      "/shiny-live",
+      "/shiny-live/:resourceId",
       async (req: Request, res: Response, next: NextFunction) => {
-        const { datasetId, type, name, language } = req.query || {};
-
-        if (!datasetId) {
-          return res.status(400).send(`datasetId is required`);
-        } else if (typeof datasetId !== "string") {
-          return res.status(400).send(`datasetId query param is invalid`);
-        }
-        if (!type) {
-          return res.status(400).send(`type is required`);
-        } else if (typeof type !== "string") {
-          return res.status(400).send(`type query param is invalid`);
-        }
-        if (!name) {
-          return res.status(400).send(`name is required`);
-        } else if (typeof name !== "string") {
-          return res.status(400).send(`name query param is invalid`);
-        }
-        if (!language) {
-          return res.status(400).send(`language is required`);
-        } else if (typeof language !== "string") {
-          return res.status(400).send(`language query param is invalid`);
-        }
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
 
         try {
           // Get the static files directory (downloads and unzips if needed)
