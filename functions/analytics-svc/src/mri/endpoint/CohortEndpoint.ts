@@ -31,8 +31,9 @@ export class CohortEndpoint {
                 QueryObject.format(`SELECT TABLE_NAME FROM TABLES WHERE 
                                                     SCHEMA_NAME='${connection.cohortSchemaName}' AND 
                                                     TABLE_NAME IN ('COHORT','COHORT_DEFINITION');`);
-            const tables =
-                await checkCohortTablesExist.executeQuery(connection);
+            const tables = await checkCohortTablesExist.executeQuery(
+                connection
+            );
 
             if (
                 !tables.data.some((table) => table["TABLE_NAME"] === "COHORT")
@@ -216,8 +217,9 @@ export class CohortEndpoint {
                 ...queryParameters
             );
 
-            const selectQueryResult =
-                await this.executeCohortQuery(selectQuery);
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
+            );
 
             const processingCohort = async (
                 cohortDefObj,
@@ -295,8 +297,9 @@ export class CohortEndpoint {
                 ...queryParameters
             );
 
-            const selectQueryResult =
-                await this.executeCohortQuery(selectQuery);
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
+            );
             if (selectQueryResult.data[0]) {
                 return selectQueryResult.data[0].COUNT;
             } else {
@@ -509,8 +512,9 @@ export class CohortEndpoint {
                 cohortDefinitionId
             );
 
-            const selectQueryResult =
-                await this.executeCohortQuery(selectQuery);
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
+            );
             // Extract subject ids from array of objects
             let patientIds;
             if (selectQueryResult.data instanceof Array) {
@@ -558,8 +562,9 @@ export class CohortEndpoint {
                 selectQueryString,
                 ...sqlParams
             );
-            const selectQueryResult =
-                await this.executeCohortQuery(selectQuery);
+            const selectQueryResult = await this.executeCohortQuery(
+                selectQuery
+            );
             let cohortDefinitionId =
                 selectQueryResult.data[0].COHORT_DEFINITION_ID;
 
