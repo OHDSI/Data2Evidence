@@ -12,7 +12,8 @@ import Home from './pages/Home';
 import './index.css';
 
 const fetcher = createRequester(async (...args) => {
-  let [input, init] = args;
+  const [originalInput, init] = args;
+  let input = originalInput;
   if (typeof input === 'string' && input.includes('/oidc/token')) {
     console.log('change path to /oauth/token');
     input = input.replace('/oidc/token', '/oauth/token');
