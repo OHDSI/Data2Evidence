@@ -142,7 +142,8 @@ export function buildMriBookmark(
     if (!field.configPath) continue;
 
     const attrIndex = field.configPath.indexOf(".attributes.");
-    const cardPath = attrIndex >= 0 ? field.configPath.substring(0, attrIndex) : "patient";
+    const cardPath = field.filterCardPath
+      || (attrIndex >= 0 ? field.configPath.substring(0, attrIndex) : "patient");
 
     if (!cardGroups.has(cardPath)) {
       cardGroups.set(cardPath, []);
@@ -153,8 +154,8 @@ export function buildMriBookmark(
         ? parseNumericExpressions(String(value))
         : [{ type: "Expression", operator: "=", value: String(value) }];
 
-    // Numeric expressions use AND (e.g. >=50 AND <=80), text uses OR
-    const constraintOp = field.type === "num" ? "AND" : "OR";
+    // Numeric ranges use AND (e.g. >=50 AND <=80), single values and text use OR
+    const constraintOp = field.type === "num" && expressions.length > 1 ? "AND" : "OR";
 
     cardGroups.get(cardPath)!.push({
       type: "Attribute",
@@ -166,6 +167,28 @@ export function buildMriBookmark(
         content: expressions,
       },
     });
+
+    // Add fixed attributes for compound fields (e.g. measurement concept name/id)
+    if (field.fixedAttributes) {
+      for (const fixed of field.fixedAttributes) {
+        cardGroups.get(cardPath)!.push({
+          type: "Attribute",
+          configPath: fixed.configPath,
+          instanceID: fixed.configPath,
+          constraints: {
+            type: "BooleanContainer",
+            op: "OR",
+            content: [
+              {
+                type: "Expression",
+                operator: fixed.operator,
+                value: fixed.value,
+              },
+            ],
+          },
+        });
+      }
+    }
   }
 
   // Ensure patient card always exists

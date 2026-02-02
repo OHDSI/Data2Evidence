@@ -10,6 +10,14 @@ export interface FieldDefinition {
   configPath?: string;
   group?: string;
   placeholder?: string;
+  /** For compound fields: override the filter card path (e.g. "patient.interactions.measurement") */
+  filterCardPath?: string;
+  /** For compound fields: fixed attributes added to the same filter card */
+  fixedAttributes?: Array<{
+    configPath: string;
+    operator: string;
+    value: string | number;
+  }>;
 }
 
 export interface ResultAction {

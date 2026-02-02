@@ -68,6 +68,21 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
   },
+  {
+    id: "height",
+    type: "num",
+    label: "Height",
+    required: false,
+    configPath: "patient.interactions.measurement.attributes.numval",
+    filterCardPath: "patient.interactions.measurement",
+    fixedAttributes: [
+      {
+        configPath: "patient.interactions.measurement.attributes.meas_concept_name",
+        operator: "=",
+        value: "Body Height",
+      },
+    ],
+  },
 ];
 
 /**

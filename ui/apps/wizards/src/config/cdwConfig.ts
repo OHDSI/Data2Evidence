@@ -54,6 +54,14 @@ const mockConfig: CdwConfig = {
           condition_occ_concept_name: { name: "Condition", type: "text" },
         },
       },
+      measurement: {
+        name: "Measurement",
+        attributes: {
+          numval: { name: "Value As Number", type: "num" },
+          meas_concept_name: { name: "Measurement concept name", type: "text" },
+          measurementid: { name: "Measurement Id", type: "text" },
+        },
+      },
     },
   },
   chartOptions: {
