@@ -146,8 +146,8 @@ export function buildMriBookmark(
     const attrIndex = field.configPath.indexOf(".attributes.");
     const basePath = field.filterCardPath || (attrIndex >= 0 ? field.configPath.substring(0, attrIndex) : "patient");
 
-    // Compound fields (with fixedAttributes) each get their own card, keyed by field.id
-    const cardKey = field.fixedAttributes ? `${basePath}::${field.id}` : basePath;
+    // Each non-patient field gets its own filter card, keyed by field.id
+    const cardKey = basePath === "patient" ? basePath : `${basePath}::${field.id}`;
 
     if (!cardGroups.has(cardKey)) {
       cardGroups.set(cardKey, []);

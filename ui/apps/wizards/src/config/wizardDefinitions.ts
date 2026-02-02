@@ -61,13 +61,21 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     required: false,
     configPath: "patient.attributes.raceName",
   },
-  {
-    id: "condition",
-    type: "text",
-    label: "Condition",
-    required: false,
-    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-  },
+  // Commenting to provide example of having conditions as a filter
+  // {
+  //   id: "condition",
+  //   type: "text",
+  //   label: "Condition",
+  //   required: false,
+  //   configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  // },
+  // {
+  //   id: "condition2",
+  //   type: "text",
+  //   label: "Condition2",
+  //   required: false,
+  //   configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  // },
   {
     id: "height",
     type: "num",
