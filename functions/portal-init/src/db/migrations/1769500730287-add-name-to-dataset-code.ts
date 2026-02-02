@@ -9,9 +9,19 @@ export class AddNameToDatasetCode1769500730287 implements MigrationInterface {
       `ALTER TABLE "portal"."dataset_code" DROP CONSTRAINT IF EXISTS "PK_dataset_code_id"`,
     );
 
-    // Add the name column
+    // Add the name column (nullable first)
     await queryRunner.query(
-      `ALTER TABLE "portal"."dataset_code" ADD COLUMN "name" character varying DEFAULT '' NOT NULL`,
+      `ALTER TABLE "portal"."dataset_code" ADD COLUMN "name" character varying`,
+    );
+
+    // Set existing rows' name to dataset_id + id for uniqueness
+    await queryRunner.query(
+      `UPDATE "portal"."dataset_code" SET "name" = "dataset_id"::text || '_' || "id"::text WHERE "name" IS NULL`,
+    );
+
+    // Make column NOT NULL
+    await queryRunner.query(
+      `ALTER TABLE "portal"."dataset_code" ALTER COLUMN "name" SET NOT NULL`,
     );
 
     // Add the new composite primary key
