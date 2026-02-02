@@ -499,6 +499,10 @@ export class DatasetRouter {
             language,
           );
 
+          if (!staticDir) {
+            return res.status(404).send("Shinylive application not found");
+          }
+
           // Serve static files from the unzipped directory
           const staticMiddleware = express.static(staticDir);
 

@@ -20,7 +20,7 @@ export class ShinyLiveService {
     type: string,
     name: string,
     language: string,
-  ): Promise<ReadableStream> {
+  ): Promise<ReadableStream | null> {
     const fileName = `dashboard_${datasetId}_${type}_${name}_${language}.zip`;
     const filePath = `datasets/${datasetId}/${fileName}`;
     const url = `${this.baseUrl}/object/${this.DEFAULT_BUCKET}/${filePath}`;
@@ -40,6 +40,9 @@ export class ShinyLiveService {
       });
 
       if (!response.ok) {
+        if (response.status == 400 || response.status === 404) {
+          return null;
+        }
         const errorText = await response.text();
         throw new Error(`Failed to download: ${response.status} ${errorText}`);
       }
@@ -115,7 +118,7 @@ export class ShinyLiveService {
     type: string,
     name: string,
     language: string,
-  ): Promise<string> {
+  ): Promise<string | null> {
     const targetDir = path.join(
       process.cwd(),
       "temp",
@@ -123,14 +126,11 @@ export class ShinyLiveService {
     );
 
     const zipStream = await this.downloadZip(datasetId, type, name, language);
-
-    try {
-      await this.unzipFile(zipStream, targetDir);
-    } catch (error) {
-      console.error(`Error unzipping shinylive: ${error}`);
-      throw error;
+    if (!zipStream) {
+      return null;
     }
 
+    await this.unzipFile(zipStream, targetDir);
     return targetDir;
   }
 }
