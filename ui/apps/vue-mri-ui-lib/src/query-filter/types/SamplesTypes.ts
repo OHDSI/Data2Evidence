@@ -39,7 +39,7 @@ export interface Sample {
 }
 
 export interface FetchSamplesResponse {
-  cohortDefinitionId: number | string
+  cohortDefinitionId: string
   sourceId: number
   generationStatus: 'COMPLETE' | 'PENDING' | 'FAILED' | string
   samples: Sample[]
