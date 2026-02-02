@@ -90,7 +90,18 @@ export function generateFormSubmitDeepLink(
   const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId, chartOptions, config);
   const compressed = compress(bookmark);
 
-  const wizards = compress({});
+  // Collect wizard-only fields (no configPath) into the wizards param
+  const wizardsData: Record<string, any> = {};
+  for (const field of fields) {
+    if (field.type === "yearRange") {
+      const from = formData[`${field.id}_from`];
+      const to = formData[`${field.id}_to`];
+      if (from || to) {
+        wizardsData[field.id] = { from: from || null, to: to || null };
+      }
+    }
+  }
+  const wizards = compress(wizardsData);
 
   const params = new URLSearchParams({
     datasetId: resolvedDatasetId,

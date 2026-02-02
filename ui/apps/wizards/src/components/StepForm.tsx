@@ -111,6 +111,40 @@ export function StepForm() {
       );
     }
 
+    if (field.type === "yearRange") {
+      const fromError = errors[`${field.id}_from`];
+      const toError = errors[`${field.id}_to`];
+      return (
+        <div key={field.id} className={styles.fieldGroup}>
+          <label className={styles.label}>{field.label}:</label>
+          <div className={styles.groupInputs}>
+            <input
+              id={`${field.id}_from`}
+              type="date"
+              className={`${styles.input} ${fromError ? styles.inputError : ""}`}
+              {...register(`${field.id}_from`, {
+                required: field.required ? `${field.label} from date is required` : false,
+              })}
+            />
+            <span className={styles.groupSeparator}>-</span>
+            <input
+              id={`${field.id}_to`}
+              type="date"
+              className={`${styles.input} ${toError ? styles.inputError : ""}`}
+              {...register(`${field.id}_to`, {
+                required: field.required ? `${field.label} to date is required` : false,
+              })}
+            />
+          </div>
+          {(fromError || toError) && (
+            <span className={styles.errorMessage} role="alert">
+              {(fromError?.message || toError?.message) as string}
+            </span>
+          )}
+        </div>
+      );
+    }
+
     switch (field.type) {
       case "num":
         return (

@@ -1,4 +1,4 @@
-export type FieldType = "text" | "num" | "datetime" | "time";
+export type FieldType = "text" | "num" | "datetime" | "time" | "yearRange";
 
 export interface FieldDefinition {
   id: string;

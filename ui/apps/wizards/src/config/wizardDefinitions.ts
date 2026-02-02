@@ -181,6 +181,12 @@ const WIZARD_FIELDS: FieldDefinition[] = [
       },
     ],
   },
+  {
+    id: "year",
+    type: "yearRange",
+    label: "Years",
+    required: false,
+  },
 ];
 
 /**
