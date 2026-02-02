@@ -296,6 +296,12 @@
           "source": "/dockerlogs",
           "service": "docker-logs",
           "rmsrc": false
+        },
+        {
+          "source": "/parquet-export",
+          "function": "/parquet-export",
+          "imports": "/parquet-export/deno.json",
+          "env": "parquet-export"
         }
       ],
       "env": {
@@ -333,7 +339,11 @@
           "PG__IDLE_TIMEOUT_IN_MS": 1000,
           "PG__DIALECT": "postgresql",
           "LOCAL_DEBUG": "false",
-          "isHttpTestRun": "${isHttpTestRun}"
+          "isHttpTestRun": "${isHttpTestRun}",
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
+        },
+        "parquet-export": {
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
         },
         "analytics-svc": {
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
@@ -2927,6 +2937,15 @@
           "httpMethods": [
             "POST",
             "PUT"
+          ]
+        },
+        {
+          "path": "^/parquet-export",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         }
       ]
