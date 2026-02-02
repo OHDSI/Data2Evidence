@@ -6,6 +6,7 @@ export const env = {
   NODE_ENV: _env.NODE_ENV,
   GATEWAY_WO_PROTOCOL_FQDN: _env.GATEWAY_WO_PROTOCOL_FQDN,
   SERVICE_ROUTES: _env.SERVICE_ROUTES || "{}",
+  SUPABASE_STORAGE_JWT_TOKEN: _env.SUPABASE_STORAGE_JWT_TOKEN,
 };
 
 export const services = JSON.parse(env.SERVICE_ROUTES);

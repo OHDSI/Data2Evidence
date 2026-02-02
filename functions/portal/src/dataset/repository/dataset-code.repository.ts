@@ -14,10 +14,25 @@ export class DatasetCodeRepository extends Repository<DatasetCode> {
     super(DatasetCode, dataSource.manager);
   }
 
-  async getDatasetCode(datasetId: string, type: string) {
+  async getDatasetCode(
+    datasetId: string,
+    type: string,
+    name: string,
+  ): Promise<DatasetCode | null> {
     return await this.createQueryBuilder("dataset_code")
       .where("dataset_code.datasetId = :datasetId", { datasetId })
       .andWhere("dataset_code.type = :type", { type })
+      .andWhere("dataset_code.name = :name", { name })
       .getOne();
+  }
+
+  async getDatasetCodesByType(
+    datasetId: string,
+    type: string,
+  ): Promise<DatasetCode[]> {
+    return await this.createQueryBuilder("dataset_code")
+      .where("dataset_code.datasetId = :datasetId", { datasetId })
+      .andWhere("dataset_code.type = :type", { type })
+      .getMany();
   }
 }

@@ -454,7 +454,8 @@
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
         },
         "dataset": {
-          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -1381,6 +1382,28 @@
           "httpMethods": [
             "GET",
             "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-codes$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"          
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code-query$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update",
+            "portal.dataset.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT",
+            "DELETE"
           ]
         },
         {
@@ -2719,6 +2742,15 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/shiny-live",
+          "scopes": [
+            "gateway.dataset.snapshot.create"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {
