@@ -36,7 +36,7 @@ const WIZARD_FIELDS: FieldDefinition[] = [
   {
     id: "age",
     type: "num",
-    label: "Age",
+    label: "Age Range",
     required: false,
     configPath: "patient.attributes.Age",
   },
@@ -46,6 +46,20 @@ const WIZARD_FIELDS: FieldDefinition[] = [
     label: "Gender",
     required: false,
     configPath: "patient.attributes.Gender_concept_name",
+  },
+  {
+    id: "ethnicity",
+    type: "text",
+    label: "Ethnicity",
+    required: false,
+    configPath: "patient.attributes.ethnicityName",
+  },
+  {
+    id: "race",
+    type: "text",
+    label: "Race",
+    required: false,
+    configPath: "patient.attributes.raceName",
   },
   {
     id: "condition",
