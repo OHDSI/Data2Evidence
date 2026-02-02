@@ -74,6 +74,10 @@
       ],
       "api": [
         {
+          "source": "/calculator",
+          "service": "calculator"
+        },
+        {
           "source": "/gateway/dashboard",
           "service": "kpi-dashboard"
         },
@@ -622,6 +626,8 @@
           "nifimgmt.userAdmin"
         ],
         "ALP_SYSTEM_ADMIN": [
+          "calculator.read",
+          "calculator.write",
           "PAConfig.ui",
           "PAConfig.svc",
           "PAConfig.svc/read",
@@ -789,6 +795,8 @@
           "d2e.webapi.public"
         ],
         "RESEARCHER": [
+          "calculator.read",
+          "calculator.write",
           "PA.svc",
           "PAConfig.svc/read",
           "CDWConfig.svc/read",
@@ -870,6 +878,16 @@
         ]
       },
       "scopes": [
+        {
+          "route": "^/calculator/(.*)",
+          "scope": "calculator.read",
+          "httpMethods": ["GET"]
+        },
+        {
+          "route": "^/calculator/(.*)",
+          "scope": "calculator.write",
+          "httpMethods": ["POST"]
+        },
         {
           "path": "^/gateway/dashboard/(.*)",
           "scopes": [
