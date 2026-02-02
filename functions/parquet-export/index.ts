@@ -227,6 +227,7 @@ router.get("/", async (req: Request, res: Response) => {
     }
 
     const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId', 'format']);
+
     const additionalParams: Record<string, string> = {};
     for (const [key, value] of Object.entries(req.query)) {
       if (!reservedQueryParams.has(key) && typeof value === 'string') {
