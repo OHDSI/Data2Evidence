@@ -90,10 +90,13 @@ export function generateFormSubmitDeepLink(
   const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId, chartOptions, config);
   const compressed = compress(bookmark);
 
+  const wizards = compress({});
+
   const params = new URLSearchParams({
     datasetId: resolvedDatasetId,
     linkType: "cohort-definition",
     query: compressed,
+    wizards,
   });
   const url = `/d2e/portal/researcher/cohort?${params.toString()}`;
 
