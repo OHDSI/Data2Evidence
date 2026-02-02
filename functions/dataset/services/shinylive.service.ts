@@ -1,8 +1,9 @@
-import { Untar } from "jsr:@std/archive/untar";
-import { readerFromStreamReader } from "jsr:@std/io/reader-from-stream-reader";
 import { ensureDir } from "jsr:@std/fs/ensure-dir";
+import { unzipSync } from "npm:fflate";
 import path from "node:path";
 import { env, services } from "../env.ts";
+
+const FETCH_TIMEOUT_MS = 60000;
 
 export class ShinyLiveService {
   private readonly baseUrl: string;
@@ -26,70 +27,87 @@ export class ShinyLiveService {
 
     console.log(`Downloading shinylive zip: ${url}`);
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${this.authToken}`,
-      },
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(
-        `Error downloading shinylive zip: ${response.status} - ${errorText}`,
-      );
-      throw new Error(
-        `Failed to download shinylive zip: ${response.status} ${errorText}`,
-      );
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.authToken}`,
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to download: ${response.status} ${errorText}`);
+      }
+
+      if (!response.body) {
+        throw new Error("Response body is null");
+      }
+
+      return response.body;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async streamToBuffer(stream: ReadableStream): Promise<Uint8Array> {
+    const chunks: Uint8Array[] = [];
+    const reader = stream.getReader();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
     }
 
-    if (!response.body) {
-      throw new Error("Response body is null");
+    const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+    const buffer = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      buffer.set(chunk, offset);
+      offset += chunk.length;
     }
 
-    return response.body;
+    return buffer;
+  }
+
+  private async writeExtractedFiles(
+    unzipped: Record<string, Uint8Array>,
+    targetDir: string,
+  ): Promise<void> {
+    for (const [fileName, fileData] of Object.entries(unzipped)) {
+      if (fileName.endsWith("/")) continue;
+
+      const filePath = path.join(targetDir, fileName);
+      await ensureDir(path.dirname(filePath));
+      await Deno.writeFile(filePath, fileData);
+    }
   }
 
   private async unzipFile(
     zipStream: ReadableStream,
     targetDir: string,
   ): Promise<void> {
-    console.log(`Unzipping to: ${targetDir}`);
-
-    await ensureDir(targetDir);
-
-    const reader = readerFromStreamReader(zipStream.getReader());
-    const untar = new Untar(reader);
-
-    // Extract all files
-    for await (const entry of untar) {
-      if (entry.type === "directory") {
-        const dirPath = path.join(targetDir, entry.fileName);
-        await ensureDir(dirPath);
-      } else if (entry.type === "file") {
-        const filePath = path.join(targetDir, entry.fileName);
-        const fileDir = path.dirname(filePath);
-
-        await ensureDir(fileDir);
-
-        const file = await Deno.open(filePath, {
-          create: true,
-          write: true,
-        });
-
-        const buffer = new Uint8Array(1024 * 64); // 64KB buffer
-        let bytesRead = await reader.read(buffer);
-
-        while (bytesRead !== null) {
-          await file.write(buffer.subarray(0, bytesRead));
-          bytesRead = await reader.read(buffer);
-        }
-
-        file.close();
+    // Remove existing target dir to avoid conflicts
+    try {
+      await Deno.remove(targetDir, { recursive: true });
+    } catch (e) {
+      if (!(e instanceof Deno.errors.NotFound)) {
+        console.warn(`Warning removing existing dir: ${e}`);
       }
     }
 
-    console.log(`Successfully unzipped to: ${targetDir}`);
+    await ensureDir(targetDir);
+
+    const zipData = await this.streamToBuffer(zipStream);
+    const unzipped = unzipSync(zipData);
+    await this.writeExtractedFiles(unzipped, targetDir);
+
+    console.log(`Unzipped shinylive to: ${targetDir}`);
   }
 
   async getStaticFilesDir(
@@ -104,12 +122,14 @@ export class ShinyLiveService {
       `dashboard_${datasetId}_${type}_${name}_${language}`,
     );
 
-    // Download and unzip
-    console.log(
-      `Downloading and unzipping shinylive for ${datasetId}_${type}_${name}_${language}`,
-    );
     const zipStream = await this.downloadZip(datasetId, type, name, language);
-    await this.unzipFile(zipStream, targetDir);
+
+    try {
+      await this.unzipFile(zipStream, targetDir);
+    } catch (error) {
+      console.error(`Error unzipping shinylive: ${error}`);
+      throw error;
+    }
 
     return targetDir;
   }
