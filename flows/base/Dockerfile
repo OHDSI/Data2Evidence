@@ -62,7 +62,6 @@ RUN apt-get update && \
     less \
     python3-pip \
     openjdk-17-jdk \
-    # libarchive-dev \
     libbz2-dev \
     libcairo2-dev \
     libfontconfig1-dev \
