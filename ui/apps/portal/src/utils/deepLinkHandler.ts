@@ -131,16 +131,25 @@ export const syncDatasetFromUrl = ({
   // Determine target path from stored path (default: basePath/information)
   const targetPath = storedParams?.path || `${basePath}/information`;
 
-  // Build query string with only PA params (linkType, query)
+  // Restore all non-portal query params from URL or sessionStorage
   const urlObj = new URL(url);
-  const paParams = new URLSearchParams();
-  const linkType = urlObj.searchParams.get("linkType") || storedParams?.linkType;
-  const query = urlObj.searchParams.get("query") || storedParams?.query;
-  if (linkType) paParams.set("linkType", linkType);
-  if (query) paParams.set("query", query);
+  const restoredParams = new URLSearchParams();
+
+  // Merge: sessionStorage params first, then URL params override
+  if (storedParams?.queryParams) {
+    for (const [key, value] of Object.entries(storedParams.queryParams)) {
+      restoredParams.set(key, value);
+    }
+  }
+  // URL params take precedence over stored params
+  urlObj.searchParams.forEach((value, key) => {
+    if (key !== "datasetId") {
+      restoredParams.set(key, value);
+    }
+  });
 
   // Build navigation path
-  const queryString = paParams.toString();
+  const queryString = restoredParams.toString();
   const navigationPath = queryString ? `${targetPath}?${queryString}` : targetPath;
 
   // Navigate to target page

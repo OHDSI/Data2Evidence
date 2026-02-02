@@ -12,9 +12,8 @@ export interface DeepLinkParams {
   // Portal params (used for routing, not restored to URL)
   datasetId?: string;
   path?: string; // Full relative path, e.g. "/researcher/wizards" or "/researcher/cohort"
-  // PA params (restored to URL for PA to consume)
-  linkType?: string;
-  query?: string;
+  // All other query params (restored to URL for downstream apps to consume)
+  queryParams?: Record<string, string>;
 }
 
 /**
@@ -65,23 +64,31 @@ export const clearDeepLinkParams = (): void => {
  * @returns Deep link parameters found in URL
  */
 export const extractDeepLinkParamsFromUrl = (url: string | URLSearchParams): DeepLinkParams => {
+  // Params consumed by portal (not restored to URL)
+  const PORTAL_PARAMS = new Set(["datasetId"]);
+
   try {
+    const searchParams = typeof url === "string" ? new URL(url).searchParams : url;
+    const params: DeepLinkParams = {};
+
+    const datasetId = searchParams.get("datasetId");
+    if (datasetId) params.datasetId = datasetId;
+
+    // Collect all non-portal query params for downstream apps
+    const queryParams: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      if (!PORTAL_PARAMS.has(key)) {
+        queryParams[key] = value;
+      }
+    });
+    if (Object.keys(queryParams).length > 0) {
+      params.queryParams = queryParams;
+    }
+
     if (typeof url === "string") {
-      const urlObj = new URL(url);
-      const searchParams = urlObj.searchParams;
-      const params: DeepLinkParams = {};
-
-      const datasetId = searchParams.get("datasetId");
-      const linkType = searchParams.get("linkType");
-      const query = searchParams.get("query");
-
-      if (datasetId) params.datasetId = datasetId;
-      if (linkType) params.linkType = linkType;
-      if (query) params.query = query;
-
       // Extract path from URL pathname (relative to /d2e/portal)
       // Only capture /researcher/* sub-paths (not /no-access, /login, etc.)
-      const pathname = urlObj.pathname;
+      const pathname = new URL(url).pathname;
       const basePath = "/d2e/portal";
       if (pathname.startsWith(basePath)) {
         const relativePath = pathname.slice(basePath.length);
@@ -89,32 +96,6 @@ export const extractDeepLinkParamsFromUrl = (url: string | URLSearchParams): Dee
           params.path = relativePath;
         }
       }
-
-      // Backward compat: convert ?route=X to path=/researcher/X
-      const route = searchParams.get("route");
-      if (route && !params.path) {
-        params.path = `/researcher/${route}`;
-      }
-
-      return params;
-    }
-
-    // URLSearchParams path — no pathname available, extract query params only
-    const searchParams = url;
-    const params: DeepLinkParams = {};
-
-    const datasetId = searchParams.get("datasetId");
-    const linkType = searchParams.get("linkType");
-    const query = searchParams.get("query");
-
-    if (datasetId) params.datasetId = datasetId;
-    if (linkType) params.linkType = linkType;
-    if (query) params.query = query;
-
-    // Backward compat: convert ?route=X to path=/researcher/X
-    const route = searchParams.get("route");
-    if (route) {
-      params.path = `/researcher/${route}`;
     }
 
     return params;
