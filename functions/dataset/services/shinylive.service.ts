@@ -101,7 +101,7 @@ export class ShinyLiveService {
     const targetDir = path.join(
       process.cwd(),
       "temp",
-      `${datasetId}_${type}_${name}_${language}`,
+      `dashboard_${datasetId}_${type}_${name}_${language}`,
     );
 
     // Download and unzip
