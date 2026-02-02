@@ -203,7 +203,7 @@ class Query(_AuthApi):
         if self._study_config_id is None or self._selectedStudyId is None:
             raise ValueError("Study config ID and selected study ID must be set before building entities.")
         frontend_config = await PAConfig()._get_frontend_config(
-           self._study_config_id, self._selectedStudyId)
+           self._study_config_id, self._selectedStudyId, None)
         Person.generate_patient_class(frontend_config)
         Interactions.generate_interaction_type_class(frontend_config)
 
@@ -213,7 +213,7 @@ class Query(_AuthApi):
         if self._study_config_id is None or self._selectedStudyId is None:
             raise ValueError("Study config ID and selected study ID must be set before configuring columns.")
         fe_config = await PAConfig()._get_frontend_config(
-            self._study_config_id, self._selectedStudyId)
+            self._study_config_id, self._selectedStudyId, None)
         if len(fe_config) > 0:
             patient_attributes = fe_config[0]['config']['patient']['attributes'].keys()
         else:

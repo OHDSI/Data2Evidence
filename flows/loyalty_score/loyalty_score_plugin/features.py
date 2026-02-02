@@ -4,7 +4,7 @@ import pandas as pd
 
 def get_gold_label(conn, data, schema_name, train_ed, index_date):
     # Achieve gold labels
-    visit = conn.table(database=schema_name, name='visit_occurrence')
+    visit = conn.table('visit_occurrence', database=schema_name)
     expr = (
         visit
         .filter((visit.visit_start_date > train_ed) & (visit.visit_end_date <= index_date))
@@ -22,7 +22,7 @@ def getcodes(feature:str):
 
 # @task(log_prints=True)
 def diagnosis(data, conn, schema_name, index_st, index_ed):
-    condition = conn.table(database=schema_name, name='condition_occurrence')
+    condition = conn.table('condition_occurrence', database=schema_name)
     expr = (
         condition
         .filter((condition.condition_start_date < index_ed) & (condition.condition_end_date > index_st))
@@ -36,7 +36,7 @@ def diagnosis(data, conn, schema_name, index_st, index_ed):
     data['Diagnosis_2'] = data.person_id.isin(person).astype(int)
 
 def medications(data, conn, schema_name, index_st, index_ed):
-    drug_exposure = conn.table(database=schema_name, name='drug_exposure')
+    drug_exposure = conn.table('drug_exposure', database=schema_name)
     expr = (
         drug_exposure
         .filter((drug_exposure.drug_exposure_start_date < index_ed) & (drug_exposure.drug_exposure_end_date > index_st))
@@ -52,7 +52,7 @@ def medications(data, conn, schema_name, index_st, index_ed):
 def visits(data, conn, schema_name, index_st, index_ed):
     # ED_visit
     concept_ids = getcodes('ED Visit')
-    visit = conn.table(database=schema_name, name='visit_occurrence')
+    visit = conn.table('visit_occurrence', database=schema_name)
     expr = (
         visit
         .filter((visit.visit_start_date < index_ed) & (visit.visit_end_date > index_st) & (visit.visit_concept_id.isin(concept_ids)))
@@ -101,7 +101,7 @@ def same_MD(data, conn, schema_name, index_st, index_ed):
 
 
     # same_MD_2
-    visit = conn.table(database=schema_name, name='visit_occurrence')
+    visit = conn.table('visit_occurrence', database=schema_name)
     expr = (
         visit
         .filter((visit.visit_start_date < index_ed) & (visit.visit_end_date > index_st) & 
@@ -130,8 +130,8 @@ class routine():
     def get_routine(self, fact):
         concept_ids = getcodes(fact)
         if fact == 'BMI':
-            measurement = self.conn.table(database=self.schema_name, name='measurement')
-            observation = self.conn.table(database=self.schema_name, name='observation')
+            measurement = self.conn.table('measurement', database=self.schema_name)
+            observation = self.conn.table('observation', database=self.schema_name)
             m_filter = (
                 measurement
                 .filter((measurement.measurement_date.between(self.index_st, self.index_ed)) & 
@@ -152,8 +152,8 @@ class routine():
             )
 
         elif fact in ['Colonoscopy','Mammography','Medical_Exam','Pap_Test']:
-            measurement = self.conn.table(database=self.schema_name, name='measurement')
-            procedure_o = self.conn.table(database=self.schema_name, name='procedure_occurrence')
+            measurement = self.conn.table('measurement', database=self.schema_name)
+            procedure_o = self.conn.table('procedure_occurrence', database=self.schema_name)
             m_filter = (
                 measurement
                 .filter((measurement.measurement_date.between(self.index_st, self.index_ed)) & 
@@ -174,8 +174,8 @@ class routine():
             )
 
         elif fact in ['Flu_Shot','Pneumococcal_Vaccine']:
-            drug = self.conn.table(database=self.schema_name, name='drug_exposure')
-            observation = self.conn.table(database=self.schema_name, name='observation')
+            drug = self.conn.table('drug_exposure', database=self.schema_name)
+            observation = self.conn.table('observation', database=self.schema_name)
             d_filter = (
                 drug
                 .filter((drug.drug_exposure_start_date < self.index_ed) & 
@@ -197,7 +197,7 @@ class routine():
                 .select(d_filter.person_id.coalesce(o_filter.person_id).name('person_id'))
             )
         else:
-            measurement = self.conn.table(database=self.schema_name, name='measurement')
+            measurement = self.conn.table('measurement', database=self.schema_name)
             final = (
                 measurement
                 .filter((measurement.measurement_date.between(self.index_st, self.index_ed)) & 

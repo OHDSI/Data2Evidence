@@ -745,6 +745,12 @@ export class HanaHDBDao {
     });
   };
 
+  private injectSessionVariablesToCredentials = (credentials: any, token: string) => {
+    credentials["token"] = token;
+    credentials["SESSIONVARIABLE:APPLICATION"] = `${env.PROJECT_NAME}-concepts`;
+    credentials["SESSIONVARIABLE:APPLICATIONUSER"] = decode(token).email ?? decode(token).sub; // Fallback to sub from logto token if thirdparty token isnt present
+  }
+
   private getHanaHDBConnection = () => {
     return new Promise((resolve, reject) => {
       try {
@@ -773,17 +779,11 @@ export class HanaHDBDao {
 
         if (credentials.authentication_mode === "JWT") {
           // Add token to credentials
-          if (this.jwt) {
-            const thirdPartyToken = decode(this.jwt.replace(/bearer /i, ""))[
+          const thirdPartyToken = decode(this.jwt.replace(/bearer /i, ""))[
               "thirdPartyToken"
             ];
-
-            credentials["token"] = thirdPartyToken;
-            credentials[
-              "SESSIONVARIABLE:APPLICATION"
-            ] = `${env.PROJECT_NAME}-concepts`;
-            credentials["SESSIONVARIABLE:APPLICATIONUSER"] =
-              decode(thirdPartyToken).oid;
+          if (thirdPartyToken) {
+            injectSessionVariablesToCredentials(credentials, thirdPartyToken);
           } else {
             throw new Error(
               "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
@@ -794,6 +794,11 @@ export class HanaHDBDao {
           credentials["user"] = datasetDatabaseCredential.credentials.readUser;
           credentials["password"] =
             datasetDatabaseCredential.credentials.readPassword;
+
+          const token = decode(this.jwt.replace(/bearer /i, ""))[
+              "thirdPartyToken"
+            ] ?? this.jwt.replace(/bearer /i, "");
+          injectSessionVariablesToCredentials(credentials, token);
         }
 
         const client = hdb.createClient(credentials);
