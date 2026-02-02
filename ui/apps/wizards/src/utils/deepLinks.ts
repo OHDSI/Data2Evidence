@@ -85,6 +85,7 @@ export function generateFormSubmitDeepLink(
   chartOptions?: ChartOptions,
   config?: CdwConfig,
   wizardFields?: FieldDefinition[],
+  wizardId?: string,
 ): string {
   const resolvedDatasetId = datasetId || "default";
 
@@ -93,6 +94,9 @@ export function generateFormSubmitDeepLink(
 
   // Collect wizard-only fields into the wizards param
   const wizardsData: Record<string, any> = {};
+  if (wizardId) {
+    wizardsData.analysisType = wizardId;
+  }
   for (const field of wizardFields || []) {
     if (field.type === "yearRange") {
       const from = formData[`${field.id}_from`];

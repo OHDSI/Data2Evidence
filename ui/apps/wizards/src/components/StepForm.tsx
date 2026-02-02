@@ -63,6 +63,7 @@ export function StepForm() {
           cdwConfig.chartOptions,
           cdwConfig,
           selectedWizard.wizardFields,
+          selectedWizard.id,
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
