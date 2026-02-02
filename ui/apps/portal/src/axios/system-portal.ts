@@ -16,6 +16,8 @@ import {
   FeatureInput,
   Config,
   ViewerCode,
+  ViewerCodeQuery,
+  ViewerCodeWithQueries,
 } from "../types";
 import { ConfigTypes } from "../constant";
 const SYSTEM_PORTAL_URL = "system-portal/";
@@ -317,12 +319,12 @@ export class SystemPortal {
     });
   }
 
-  public getDashboardCode(datasetId: string, type: string): Promise<ViewerCode> {
+  public getDashboardCode(datasetId: string, type: string, name: string): Promise<ViewerCode> {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
       url: "dataset/dashboard-code",
       method: "GET",
-      params: { datasetId, type },
+      params: { datasetId, type, name },
     });
   }
 
@@ -332,6 +334,47 @@ export class SystemPortal {
       url: "dataset/dashboard-code",
       method: "PUT",
       data: dashboardCode,
+    });
+  }
+
+  public getDatasetCodeQuery(datasetId: string, type: string, name: string, queryName: string): Promise<ViewerCodeQuery> {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "dataset/dashboard-code-query",
+      method: "GET",
+      params: { datasetId, type, name, queryName },
+    });
+  }
+
+  public upsertDatasetCodeQuery(query: ViewerCodeQuery) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "dataset/dashboard-code-query",
+      method: "PUT",
+      data: query,
+    });
+  }
+
+  public deleteDatasetCodeQuery(params: {
+    datasetId: string;
+    type: string;
+    name: string;
+    queryName: string;
+  }) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "dataset/dashboard-code-query",
+      method: "DELETE",
+      params,
+    });
+  }
+
+  public getDashboardCodes(datasetId: string, type: string): Promise<ViewerCodeWithQueries[]> {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "dataset/dashboard-codes",
+      method: "GET",
+      params: { datasetId, type },
     });
   }
 }
