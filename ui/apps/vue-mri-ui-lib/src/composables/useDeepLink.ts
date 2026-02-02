@@ -128,6 +128,7 @@ export function useDeepLink(dispatch: any) {
       dispatch('setAlertMessage', {
         message: 'Cohort definition loaded successfully from shared link.',
         messageType: 'success',
+        title: 'Success',
       })
     } catch (error) {
       console.error('[DeepLink] Processing error:', error)
