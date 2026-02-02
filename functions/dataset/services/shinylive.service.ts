@@ -4,6 +4,55 @@ import path from "node:path";
 import { env, services } from "../env.ts";
 
 const FETCH_TIMEOUT_MS = 60000;
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface CacheEntry {
+  extractedAt: number;
+  targetDir: string;
+}
+
+// Shared cache across all ShinyLiveService instances
+const sharedCache = new Map<string, CacheEntry>();
+
+function startCacheCleanup() {
+  setInterval(async () => {
+    const now = Date.now();
+
+    // Remove expired cache entries
+    for (const [key, entry] of sharedCache) {
+      if (now - entry.extractedAt >= CACHE_TTL_MS) {
+        sharedCache.delete(key);
+        try {
+          await Deno.remove(entry.targetDir, { recursive: true });
+          console.log(`Cleaned up expired shinylive cache: ${key}`);
+        } catch {
+          // ignore if already gone
+        }
+      }
+    }
+
+    // Clean orphaned temp dirs (not in cache)
+    const tempDir = path.join(process.cwd(), "temp");
+    try {
+      for await (const entry of Deno.readDir(tempDir)) {
+        if (entry.isDirectory && entry.name.startsWith("dashboard_")) {
+          const dirPath = path.join(tempDir, entry.name);
+          const cacheKey = entry.name.replace("dashboard_", "");
+          if (!sharedCache.has(cacheKey)) {
+            await Deno.remove(dirPath, { recursive: true });
+            console.log(`Cleaned up orphaned shinylive dir: ${entry.name}`);
+          }
+        }
+      }
+    } catch {
+      // temp dir may not exist
+    }
+  }, CLEANUP_INTERVAL_MS);
+}
+
+// Start cleanup on module load
+startCacheCleanup();
 
 export class ShinyLiveService {
   private readonly baseUrl: string;
@@ -119,11 +168,24 @@ export class ShinyLiveService {
     name: string,
     language: string,
   ): Promise<string | null> {
+    const cacheKey = `${datasetId}_${type}_${name}_${language}`;
     const targetDir = path.join(
       process.cwd(),
       "temp",
-      `dashboard_${datasetId}_${type}_${name}_${language}`,
+      `dashboard_${cacheKey}`,
     );
+
+    // Check cache
+    const cached = sharedCache.get(cacheKey);
+    if (cached && Date.now() - cached.extractedAt < CACHE_TTL_MS) {
+      try {
+        await Deno.stat(cached.targetDir);
+        console.log(`Cache hit for shinylive: ${cacheKey}`);
+        return cached.targetDir;
+      } catch {
+        // dir deleted, proceed to download
+      }
+    }
 
     const zipStream = await this.downloadZip(datasetId, type, name, language);
     if (!zipStream) {
@@ -131,6 +193,7 @@ export class ShinyLiveService {
     }
 
     await this.unzipFile(zipStream, targetDir);
+    sharedCache.set(cacheKey, { extractedAt: Date.now(), targetDir });
     return targetDir;
   }
 }
