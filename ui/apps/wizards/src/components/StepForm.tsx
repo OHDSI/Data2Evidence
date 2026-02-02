@@ -62,6 +62,7 @@ export function StepForm() {
           portalProps.datasetId,
           cdwConfig.chartOptions,
           cdwConfig,
+          selectedWizard.wizardFields,
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
@@ -343,6 +344,10 @@ export function StepForm() {
         aria-label={selectedWizard.name + " form"}
       >
         <div className={styles.formFields}>{renderFields()}</div>
+
+        {selectedWizard.wizardFields && selectedWizard.wizardFields.length > 0 && (
+          <div className={styles.formFields}>{selectedWizard.wizardFields.map((field) => renderField(field))}</div>
+        )}
 
         <div className={styles.buttonRow}>
           <button type="button" onClick={goBack} className={styles.button}>

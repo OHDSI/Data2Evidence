@@ -181,11 +181,59 @@ const WIZARD_FIELDS: FieldDefinition[] = [
       },
     ],
   },
+];
+
+/**
+ * Wizard-only fields — stored in the wizards query param, not in the MRI bookmark.
+ */
+const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
   {
     id: "year",
     type: "yearRange",
     label: "Years",
     required: false,
+  },
+  {
+    id: "condition1",
+    type: "text",
+    label: "Condition 1",
+    required: false,
+    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  },
+  {
+    id: "condition2",
+    type: "text",
+    label: "Condition 2",
+    required: false,
+    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  },
+  {
+    id: "condition3",
+    type: "text",
+    label: "Condition 3",
+    required: false,
+    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  },
+  {
+    id: "condition4",
+    type: "text",
+    label: "Condition 4",
+    required: false,
+    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  },
+  {
+    id: "condition5",
+    type: "text",
+    label: "Condition 5",
+    required: false,
+    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+  },
+  {
+    id: "condition6",
+    type: "text",
+    label: "Condition 6",
+    required: false,
+    configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
   },
 ];
 
@@ -252,6 +300,7 @@ const wizardDefinitions: WizardDefinition[] = [
     description:
       "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
     fields: WIZARD_FIELDS,
+    wizardFields: WIZARD_ONLY_FIELDS,
     steps: [
       {
         id: "form",
@@ -269,6 +318,7 @@ const wizardDefinitions: WizardDefinition[] = [
     description:
       "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
     fields: WIZARD_FIELDS,
+    wizardFields: WIZARD_ONLY_FIELDS,
     steps: [
       {
         id: "form",
@@ -285,6 +335,7 @@ const wizardDefinitions: WizardDefinition[] = [
     description:
       "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
     fields: WIZARD_FIELDS,
+    wizardFields: WIZARD_ONLY_FIELDS,
     steps: [
       {
         id: "form",
@@ -300,6 +351,7 @@ const wizardDefinitions: WizardDefinition[] = [
     name: "Cross sectional Demographics",
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
     fields: WIZARD_FIELDS,
+    wizardFields: WIZARD_ONLY_FIELDS,
     steps: [
       {
         id: "form",

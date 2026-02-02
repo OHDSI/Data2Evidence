@@ -84,20 +84,26 @@ export function generateFormSubmitDeepLink(
   datasetId?: string,
   chartOptions?: ChartOptions,
   config?: CdwConfig,
+  wizardFields?: FieldDefinition[],
 ): string {
   const resolvedDatasetId = datasetId || "default";
 
   const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId, chartOptions, config);
   const compressed = compress(bookmark);
 
-  // Collect wizard-only fields (no configPath) into the wizards param
+  // Collect wizard-only fields into the wizards param
   const wizardsData: Record<string, any> = {};
-  for (const field of fields) {
+  for (const field of wizardFields || []) {
     if (field.type === "yearRange") {
       const from = formData[`${field.id}_from`];
       const to = formData[`${field.id}_to`];
       if (from || to) {
         wizardsData[field.id] = { from: from || null, to: to || null };
+      }
+    } else {
+      const value = formData[field.id];
+      if (value !== undefined && value !== null && value !== "") {
+        wizardsData[field.id] = value;
       }
     }
   }

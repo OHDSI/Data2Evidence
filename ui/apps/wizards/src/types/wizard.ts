@@ -83,7 +83,10 @@ export interface WizardDefinition {
   id: string;
   name: string;
   description: string;
+  /** Fields that map to MRI bookmark filter cards */
   fields: FieldDefinition[];
+  /** Wizard-only fields stored in the wizards query param, not in MRI bookmark */
+  wizardFields?: FieldDefinition[];
   resultActions: ResultAction[];
   /** Step configuration defining the wizard's flow */
   steps: WizardStepConfig[];
