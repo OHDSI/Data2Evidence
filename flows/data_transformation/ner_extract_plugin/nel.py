@@ -8,7 +8,6 @@ from .umls2omop import mapper
 class EntityExtractorLinker(object):
     def __init__(self) -> None:
         self.pipelines= list()
-        pass
 
     def add_pipeline(self, model_name:str, linker_name:str):
         logger = get_run_logger()
