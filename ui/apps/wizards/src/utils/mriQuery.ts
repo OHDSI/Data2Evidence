@@ -134,7 +134,9 @@ export function buildMriBookmark(
   config?: CdwConfig,
 ): MriBookmark {
   // Group attributes by their filter card path (everything before ".attributes.")
+  // cardGroups key is a grouping key; cardConfigPaths maps the key to the actual configPath for the FilterCard
   const cardGroups = new Map<string, Attribute[]>();
+  const cardConfigPaths = new Map<string, string>();
 
   for (const field of fields) {
     const value = formData[field.id];
@@ -142,11 +144,14 @@ export function buildMriBookmark(
     if (!field.configPath) continue;
 
     const attrIndex = field.configPath.indexOf(".attributes.");
-    const cardPath = field.filterCardPath
-      || (attrIndex >= 0 ? field.configPath.substring(0, attrIndex) : "patient");
+    const basePath = field.filterCardPath || (attrIndex >= 0 ? field.configPath.substring(0, attrIndex) : "patient");
 
-    if (!cardGroups.has(cardPath)) {
-      cardGroups.set(cardPath, []);
+    // Compound fields (with fixedAttributes) each get their own card, keyed by field.id
+    const cardKey = field.fixedAttributes ? `${basePath}::${field.id}` : basePath;
+
+    if (!cardGroups.has(cardKey)) {
+      cardGroups.set(cardKey, []);
+      cardConfigPaths.set(cardKey, basePath);
     }
 
     const expressions: Expression[] =
@@ -157,7 +162,7 @@ export function buildMriBookmark(
     // Numeric ranges use AND (e.g. >=50 AND <=80), single values and text use OR
     const constraintOp = field.type === "num" && expressions.length > 1 ? "AND" : "OR";
 
-    cardGroups.get(cardPath)!.push({
+    cardGroups.get(cardKey)!.push({
       type: "Attribute",
       configPath: field.configPath,
       instanceID: field.configPath,
@@ -171,7 +176,7 @@ export function buildMriBookmark(
     // Add fixed attributes for compound fields (e.g. measurement concept name/id)
     if (field.fixedAttributes) {
       for (const fixed of field.fixedAttributes) {
-        cardGroups.get(cardPath)!.push({
+        cardGroups.get(cardKey)!.push({
           type: "Attribute",
           configPath: fixed.configPath,
           instanceID: fixed.configPath,
@@ -198,29 +203,54 @@ export function buildMriBookmark(
 
   // Build a FilterCard for each group, each wrapped in its own OR container
   // Track letter suffixes per interaction type: "Condition Occurrence A", "Condition Occurrence B", etc.
+  // Track instance numbers per configPath for unique instanceIDs (.1, .2, etc.)
   const typeCounters = new Map<string, number>();
+  const instanceCounters = new Map<string, number>();
   const filterCardContainers: BooleanContainer[] = [];
-  for (const [cardPath, attributes] of cardGroups) {
-    const baseName = getFilterCardName(cardPath, config);
+  for (const [cardKey, attributes] of cardGroups) {
+    const cfgPath = cardConfigPaths.get(cardKey) || cardKey;
+    const baseName = getFilterCardName(cfgPath, config);
     let name = baseName;
-    if (cardPath !== "patient") {
+    if (cardKey !== "patient") {
       const count = typeCounters.get(baseName) || 0;
       const letter = String.fromCharCode(65 + count); // A, B, C...
       name = `${baseName} ${letter}`;
       typeCounters.set(baseName, count + 1);
     }
 
+    // Instance IDs: patient has no suffix, interactions use .1, .2, etc.
+    let cardInstanceID: string;
+    let instanceNumber: number;
+    if (cardKey === "patient") {
+      cardInstanceID = "patient";
+      instanceNumber = 1;
+    } else {
+      const instCount = (instanceCounters.get(cfgPath) || 0) + 1;
+      instanceCounters.set(cfgPath, instCount);
+      cardInstanceID = `${cfgPath}.${instCount}`;
+      instanceNumber = instCount;
+    }
+
+    // Rewrite attribute instanceIDs to match: cardInstanceID.attributes.attrKey
+    const rewrittenAttributes: Attribute[] = attributes.map((attr) => {
+      const attrKey = attr.configPath.split(".").pop() || attr.configPath;
+      return {
+        ...attr,
+        instanceID: `${cardInstanceID}.attributes.${attrKey}`,
+      };
+    });
+
     const filterCard: FilterCard = {
       type: "FilterCard",
-      configPath: cardPath,
-      instanceNumber: 1,
-      instanceID: cardPath,
+      configPath: cfgPath,
+      instanceNumber,
+      instanceID: cardInstanceID,
       name,
       inactive: false,
       attributes: {
         type: "BooleanContainer",
         op: "AND",
-        content: attributes,
+        content: rewrittenAttributes,
       },
     };
 

@@ -83,6 +83,96 @@ const WIZARD_FIELDS: FieldDefinition[] = [
       },
     ],
   },
+  {
+    id: "weight",
+    type: "num",
+    label: "Weight",
+    required: false,
+    configPath: "patient.interactions.measurement.attributes.numval",
+    filterCardPath: "patient.interactions.measurement",
+    fixedAttributes: [
+      {
+        configPath: "patient.interactions.measurement.attributes.meas_concept_name",
+        operator: "=",
+        value: "Body Weight",
+      },
+    ],
+  },
+  {
+    id: "bmi",
+    type: "num",
+    label: "BMI",
+    required: false,
+    configPath: "patient.interactions.measurement.attributes.numval",
+    filterCardPath: "patient.interactions.measurement",
+    fixedAttributes: [
+      {
+        configPath: "patient.interactions.measurement.attributes.meas_concept_name",
+        operator: "=",
+        value: "Body mass index",
+      },
+    ],
+  },
+  {
+    id: "respRate",
+    type: "num",
+    label: "Resp Rate",
+    required: false,
+    configPath: "patient.interactions.measurement.attributes.numval",
+    filterCardPath: "patient.interactions.measurement",
+    fixedAttributes: [
+      {
+        configPath: "patient.interactions.measurement.attributes.meas_concept_name",
+        operator: "=",
+        value: "Respiratory rate",
+      },
+    ],
+  },
+  {
+    id: "pulseRate",
+    type: "num",
+    label: "Pulse Rate",
+    required: false,
+    configPath: "patient.interactions.measurement.attributes.numval",
+    filterCardPath: "patient.interactions.measurement",
+    fixedAttributes: [
+      {
+        configPath: "patient.interactions.measurement.attributes.meas_concept_name",
+        operator: "=",
+        value: "Pulse rate",
+      },
+    ],
+  },
+  {
+    id: "systolicBp",
+    type: "num",
+    label: "Systolic Blood Pressure",
+    required: false,
+    configPath: "patient.interactions.measurement.attributes.numval",
+    filterCardPath: "patient.interactions.measurement",
+    fixedAttributes: [
+      {
+        configPath: "patient.interactions.measurement.attributes.meas_concept_name",
+        operator: "=",
+        value: "Systolic blood pressure",
+      },
+    ],
+  },
+  {
+    id: "diastolicBp",
+    type: "num",
+    label: "Diastolic Blood Pressure",
+    required: false,
+    configPath: "patient.interactions.measurement.attributes.numval",
+    filterCardPath: "patient.interactions.measurement",
+    fixedAttributes: [
+      {
+        configPath: "patient.interactions.measurement.attributes.meas_concept_name",
+        operator: "=",
+        value: "Diastolic blood pressure",
+      },
+    ],
+  },
 ];
 
 /**
