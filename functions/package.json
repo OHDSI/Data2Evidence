@@ -1090,6 +1090,25 @@
           ]
         },
         {
+          "path": "^/pa-config-svc/wizards/config$",
+          "scopes": [
+            "PAConfig.svc/read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/wizards/config$",
+          "scopes": [
+            "PAConfig.svc"
+          ],
+          "httpMethods": [
+            "PUT",
+            "DELETE"
+          ]
+        },
+        {
           "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
           "scopes": [
             "CDWConfig.svc/read"

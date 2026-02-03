@@ -1,6 +1,9 @@
 import type { WizardDefinition, FieldDefinition } from "../types/wizard";
 import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
 import type { CdwConfig } from "./cdwConfig";
+import client from "../axios/request";
+
+const isDev = import.meta.env.DEV;
 
 /**
  * Enrich a field definition using CDW config data looked up via configPath.
@@ -25,12 +28,12 @@ function enrichWizard(wizard: WizardDefinition, cdwConfig: CdwConfig): WizardDef
   return {
     ...wizard,
     fields: wizard.fields.map((field) => enrichField(field, cdwConfig)),
+    wizardFields: wizard.wizardFields?.map((field) => enrichField(field, cdwConfig)),
   };
 }
 
 /**
- * Shared field definitions mapped to CDW config paths.
- * Type, label, and placeholder are defaults that get overridden by CDW config.
+ * Dev-only mock definitions used when running locally without the portal backend.
  */
 const WIZARD_FIELDS: FieldDefinition[] = [
   {
@@ -183,9 +186,6 @@ const WIZARD_FIELDS: FieldDefinition[] = [
   },
 ];
 
-/**
- * Wizard-only fields — stored in the wizards query param, not in the MRI bookmark.
- */
 const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
   {
     id: "year",
@@ -237,63 +237,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
   },
 ];
 
-/**
- * Hardcoded wizard definitions.
- * This will be replaced with API calls in the future.
- */
-const wizardDefinitions: WizardDefinition[] = [
-  {
-    id: "patient-count",
-    name: "Patient Count Estimation",
-    description: "Estimate patient counts based on age criteria",
-    hidden: true,
-    fields: [
-      {
-        id: "minAge",
-        type: "num",
-        label: "Minimum Age",
-        required: true,
-        validation: {
-          min: 0,
-          max: 120,
-        },
-      },
-      {
-        id: "maxAge",
-        type: "num",
-        label: "Maximum Age",
-        required: true,
-        validation: {
-          min: 0,
-          max: 120,
-        },
-      },
-    ],
-    steps: [
-      { id: "intro", type: "intro" as const, title: "Introduction" },
-      {
-        id: "form",
-        type: "form" as const,
-        title: "Form",
-        config: { submitLabel: "Submit", submitAction: "next-step" as const },
-      },
-      { id: "results", type: "results" as const, title: "Results" },
-    ],
-    resultActions: [
-      {
-        id: "view-cohort",
-        type: "deep-link",
-        label: "View Cohort on D2E",
-        urlTemplate:
-          "/d2e/portal/researcher/cohort?datasetId={datasetId}&linkType=cohort-definition&query=eJzVVl1v2jAU_SvIzwkjTQoVD5PC14a0loqyp2lCN_YNWAtJ5DgIVvHfex1ooCNtWLVp2ksUX597fO6X7EcWykijYt1HxpM4lItb1CBAg7FIwbrMCzm6POjY7lUQ2l7gte0bHgAt0Qs7HXA8IZjF1qgymcTk4LOdxTgokR1YNcaadb-d_dNp96CX5JKClmbDYjLONMQc7_JVYGS1jqbx4AUyhhWSoQeZ5I2BUWygwLVckz2EKEMyZMNYq-3peiN1udTb1HCMihz0STJxgNZKBrnGKvlnkptHeNNfIKuWe446nOw_28lE9JlWIGN9dvIBPdykCrMizRZLUlSgE8oR-2jyD1FOmOvW7nvJ3kuSCCHuExPRUjqNF9knU7bbWfUBfcJYoJoTjGOq50XG6wOs9vqdgP9cBCtyXE7CnlSEqJf-C_wvaK6H-XcDM0Ag1kbpTK5wdBjROI-iC6trXdC5FAN1EM0LhdQkhJDmN-E8Vwrp6IppdF5JYR1V0zkObP95uzEp9xv-vxneWt0nvVFuHxo7Q_1aR9Wno574_-29i4_JEkXq2e10PL_35_3P_nQ2f5jQZzAc-V-_zIp7ZAlKz_Z0lGn-A4syb2T2gBEWKS7KW-ZzLC4a7YAKJ38a1viDuTk4aFwkalu4b5xigl5y7nFv-1290899p59X4VcRe8qTvLgz32TbOkXtVicPgPJSd6kUxki9Od4_ClrXEPDQdtuibXt4c2OD5wkbhIPoQitotZHtngC7x-Rw",
-      },
-      {
-        id: "download-sql",
-        type: "placeholder",
-        label: "Download SQL",
-      },
-    ],
-  },
+const mockWizardDefinitions: WizardDefinition[] = [
   {
     id: "calculate-incidence",
     name: "Calculate Incidence",
@@ -365,18 +309,71 @@ const wizardDefinitions: WizardDefinition[] = [
 ];
 
 /**
+ * Fetch wizard definitions from the portal backend API.
+ * Falls back to mock definitions in dev mode.
+ */
+async function fetchWizardDefinitions(datasetId?: string): Promise<WizardDefinition[]> {
+  if (isDev) {
+    return mockWizardDefinitions;
+  }
+
+  const response = await client.get("/d2e/pa-config-svc/wizards/config", {
+    params: { datasetId },
+  });
+
+  // Validate response is an object
+  if (!response.data || typeof response.data !== "object") {
+    console.warn("[Wizards] Invalid config response:", response.data);
+    return [];
+  }
+
+  const wizards = response.data.wizards;
+
+  // Validate that wizards is an array
+  if (!Array.isArray(wizards)) {
+    console.warn("[Wizards] Invalid config: wizards is not an array", wizards);
+    return [];
+  }
+
+  // Filter out invalid wizard entries
+  return wizards.filter((wizard) => {
+    if (!wizard || typeof wizard !== "object") {
+      console.warn("[Wizards] Skipping invalid wizard entry:", wizard);
+      return false;
+    }
+    if (!wizard.id || typeof wizard.id !== "string") {
+      console.warn("[Wizards] Skipping wizard without valid id:", wizard);
+      return false;
+    }
+    if (!Array.isArray(wizard.fields)) {
+      console.warn("[Wizards] Skipping wizard without fields array:", wizard.id);
+      return false;
+    }
+    if (!Array.isArray(wizard.steps)) {
+      console.warn("[Wizards] Skipping wizard without steps array:", wizard.id);
+      return false;
+    }
+    return true;
+  });
+}
+
+/**
  * Get all available wizard definitions, enriched with CDW config data.
  */
 export async function getWizardDefinitions(datasetId?: string): Promise<WizardDefinition[]> {
-  const { config: cdwConfig } = await fetchCdwConfig(datasetId);
-  return wizardDefinitions.map((wizard) => enrichWizard(wizard, cdwConfig));
+  const [definitions, { config: cdwConfig }] = await Promise.all([
+    fetchWizardDefinitions(datasetId),
+    fetchCdwConfig(datasetId),
+  ]);
+  return definitions.map((wizard) => enrichWizard(wizard, cdwConfig));
 }
 
 /**
  * Get a specific wizard definition by ID, enriched with CDW config data.
  */
 export async function getWizardById(id: string, datasetId?: string): Promise<WizardDefinition | undefined> {
-  const wizard = wizardDefinitions.find((w) => w.id === id);
+  const definitions = await fetchWizardDefinitions(datasetId);
+  const wizard = definitions.find((w) => w.id === id);
   if (!wizard) return undefined;
 
   const { config: cdwConfig } = await fetchCdwConfig(datasetId);
