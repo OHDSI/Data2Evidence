@@ -17,6 +17,7 @@ import { Notebook } from '../notebook/entity/notebook.entity.ts';
 import { UserArtifactGroup } from '../user-artifact/entity/user-artifact-group.entity.ts';
 import { UserArtifact } from '../user-artifact/entity/user-artifact.entity.ts';
 import { DatasetCode } from '../dataset/entity/dataset-code.entity.ts';
+import { DatasetCodeQuery } from '../dataset/entity/dataset-code-query.entity.ts';
 @Injectable()
 export class PostgresService implements OnAppBootstrap, OnAppClose {
   private _env = Deno.env.toObject();
@@ -51,7 +52,7 @@ export class PostgresService implements OnAppBootstrap, OnAppClose {
       database: this._env.PG__DB_NAME,
       schema: this._env.PG_SCHEMA,
       ssl,
-      entities: [Feature, Config, UserArtifact, UserArtifactGroup, Dataset, DatasetDetail, DatasetTag, DatasetTagConfig, DatasetDashboard, DatasetRelease, DatasetAttribute, DatasetAttributeConfig, Notebook, DatasetCode],
+      entities: [Feature, Config, UserArtifact, UserArtifactGroup, Dataset, DatasetDetail, DatasetTag, DatasetTagConfig, DatasetDashboard, DatasetRelease, DatasetAttribute, DatasetAttributeConfig, Notebook, DatasetCode, DatasetCodeQuery],
     });
   }
 
