@@ -20,7 +20,8 @@ import {
   DatasetReleaseRepository,
   DatasetRepository,
   DatasetTagRepository,
-  DatasetCodeRepository
+  DatasetCodeRepository,
+  DatasetCodeQueryRepository
 } from './repository/index.ts'
 import { IsDatasetAttributeValueValid } from './validator/dataset-attribute.validator.ts'
 import { ResourceModule } from './resource/resource.module.ts'
@@ -47,6 +48,7 @@ const injectables = [
   DatasetTagRepository,
   DatasetReleaseRepository,
   DatasetCodeRepository,
+  DatasetCodeQueryRepository,
   IsDatasetAttributeValueValid,
   TransactionRunner,
   RequestContextService

@@ -116,4 +116,11 @@ export class User {
     }
     return false;
   }
+
+  public getEmail(): string | undefined {
+    if (this.isAlice || this.isClientCredReqUser) {
+      return undefined;
+    }
+    return this.user.email;
+  }
 }

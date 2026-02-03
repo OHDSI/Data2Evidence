@@ -905,6 +905,64 @@
             }
           },
           "type": "adminshare"
+        },
+        {
+          "name": "shiny_live_plugin",
+          "entrypoint": "flows.shiny_live_plugin.flow.shiny_live_plugin",
+          "parameter_openapi_schema": {
+            "type": "object",
+            "title": "Parameters",
+            "required": [
+              "options"
+            ],
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/ShinyLivePluginType",
+                "title": "options",
+                "position": 0
+              }
+            },
+            "definitions": {
+              "ShinyLivePluginType": {
+                "type": "object",
+                "title": "ShinyLivePluginType",
+                "properties": {
+                  "dataset_id": {
+                    "type": "string",
+                    "title": "Dataset Id"
+                  },
+                  "language": {
+                    "enum": [
+                      "r",
+                      "python"
+                    ],
+                    "title": "Language",
+                    "type": "string",
+                    "default": "r"
+                  },
+                  "app_code": {
+                    "type": "string",
+                    "title": "App Code"
+                  },
+                  "config_type": {
+                    "type": "string",
+                    "title": "Config Type"
+                  },
+                  "name": {
+                    "type": "string",
+                    "title": "Name"
+                  }
+                },
+                "required": [
+                  "dataset_id",
+                  "app_code",
+                  "config_type",
+                  "name"
+                ]
+              }
+            }
+          },
+          "type": "shiny_live"
         }
       ]
     }

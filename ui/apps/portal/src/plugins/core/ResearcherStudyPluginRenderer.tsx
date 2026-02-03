@@ -1,6 +1,12 @@
 import { FC, useEffect, useMemo, useState } from "react";
 import { loadPlugin } from "./pluginLoader";
-import { SingleSpaAppContainer, registerSingleSpaApp, startSingleSpa, updateCustomProps } from "../../singleSpa";
+import {
+  SingleSpaAppContainer,
+  registerSingleSpaApp,
+  startSingleSpa,
+  updateCustomProps,
+  unloadSingleSpaApp,
+} from "../../singleSpa";
 import { getAuthToken } from "../../containers/auth";
 import { useUser } from "../../contexts";
 import { useToken } from "../../contexts/app-context/hooks/use-token";
@@ -115,6 +121,18 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
       });
     }
   }, [studyId, locale, idpUserId, username, data, path, configType, isRegistered, features, featuresLoading]);
+
+  // Cleanup: unload the single-spa app when the component unmounts
+  // This ensures the app can be properly remounted when returning to Researcher
+  useEffect(() => {
+    if (configType === "app") {
+      const appId = generateAppId(path);
+      return () => {
+        console.log(`[ResearcherStudyPluginRenderer] Unmounting, unloading app: ${appId}`);
+        unloadSingleSpaApp(appId);
+      };
+    }
+  }, [configType, path]);
 
   // Load legacy plugins when path changes
   useEffect(() => {

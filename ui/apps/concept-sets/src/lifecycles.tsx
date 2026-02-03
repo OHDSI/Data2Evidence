@@ -31,8 +31,15 @@ const lifecycles = singleSpaReact({
       if (container) {
         return container;
       }
+      console.warn(
+        "[Concept Sets] Container element not found in DOM:",
+        containerId,
+      );
     }
 
+    console.warn(
+      "[Concept Sets] No containerId provided, using single-spa default",
+    );
     return undefined;
   },
 });

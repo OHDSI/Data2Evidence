@@ -50,6 +50,7 @@ jobs:
               - ".github/workflows/functions-http-tests.yml"
               - "package.json"
               - "docker-compose.yml"
+              - "scripts/**"
 
   run-http-tests:
     needs: [pick_runner, check_file_changes]
@@ -132,6 +133,7 @@ jobs:
           sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
           sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
           grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+          echo >> $DOTENV_FILE
           echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
           echo "USE_DUCKDB=false" >> $DOTENV_FILE
           echo "USE_CACHEDB=false" >> $DOTENV_FILE
@@ -154,8 +156,11 @@ jobs:
       - name: Start system services
         run: |
           node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
-          echo "Waiting 120 secs for services to start..."
-          sleep 120
+          echo "Waiting 160 secs for services to start..."
+          sleep 160
+          echo "Trex Health check..."
+          curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
+
 
       - name: Check status of docker containers
         run: |
