@@ -114,7 +114,13 @@ function substituteTemplateParams(
   return result;
 }
 
-async function resolveTemplate(templateId: string, token: string): Promise<SqlQueryTemplate> {
+async function resolveTemplate(
+  templateId: string,
+  datasetId: string,
+  type: string,
+  name: string,
+  token: string
+): Promise<SqlQueryTemplate> {
   const envTemplates = env.SQL_QUERY_TEMPLATES;
   if (envTemplates) {
     const sqlText = envTemplates[templateId];
@@ -125,23 +131,28 @@ async function resolveTemplate(templateId: string, token: string): Promise<SqlQu
   }
 
   const serviceRoutes = env.SERVICE_ROUTES || {};
-  const baseUrl = serviceRoutes.strategusAnalysis || serviceRoutes["strategus-analysis"] || "";
+  const baseUrl = serviceRoutes.portalServer || serviceRoutes["portal-server"] || "";
   if (!baseUrl) {
-    throw new Error("Strategus Analysis Service URL not configured and SQL_QUERY_TEMPLATES not set");
+    throw new Error("Portal Server URL not configured and SQL_QUERY_TEMPLATES not set");
   }
 
   // @ts-ignore Trex global
-  const channel = Trex.tokioChannel("d2e-functions/strategus-analysis");
-  const url = `${baseUrl}/strategus/analysis/template/${templateId}`;
+  const channel = Trex.tokioChannel("d2e-functions/portal");
+  const url = `${baseUrl}/system-portal/dataset/dashboard-code-query?` +
+    `datasetId=${encodeURIComponent(datasetId)}` +
+    `&type=${encodeURIComponent(type)}` +
+    `&name=${encodeURIComponent(name)}` +
+    `&queryName=${encodeURIComponent(templateId)}`;
 
   try {
     const result = await channel.get(url, { headers: { Authorization: token }, timeout: 20000 });
-    return result.data as SqlQueryTemplate;
+    const data = result.data as { sql: string; queryName: string };
+    return { id: data.queryName, name: data.queryName, sqlText: data.sql, createdAt: "", updatedAt: "" };
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 404) {
       throw new Error(`Template not found: ${templateId}`);
     }
-    throw new Error("Template service unavailable");
+    throw new Error("Portal service unavailable");
   }
 }
 
@@ -181,11 +192,20 @@ router.get("/", async (req: Request, res: Response) => {
     const datasetId = req.query.datasetId as string | undefined;
     const cohortId = req.query.cohortId as string | undefined;
     const templateId = req.query.templateId as string | undefined;
+    const name = req.query.name as string | undefined;
+    const type = (req.query.type as string | undefined) || env.DEFAULT_QUERY_TYPE;
 
     if (!datasetId || !cohortId || !templateId) {
       return res.status(400).json({
         error: "Missing required parameters",
         message: "datasetId, cohortId, and templateId are required",
+      });
+    }
+
+    if (!name) {
+      return res.status(400).json({
+        error: "Missing required parameter",
+        message: "name is required",
       });
     }
 
@@ -198,10 +218,16 @@ router.get("/", async (req: Request, res: Response) => {
     if (!isValidTemplateId(templateId)) {
       return res.status(400).json({ error: "Invalid parameter", message: "templateId contains invalid characters" });
     }
+    if (!isValidTemplateId(name)) {
+      return res.status(400).json({ error: "Invalid parameter", message: "name contains invalid characters" });
+    }
+    if (!isValidTemplateId(type)) {
+      return res.status(400).json({ error: "Invalid parameter", message: "type contains invalid characters" });
+    }
 
     let template: SqlQueryTemplate;
     try {
-      template = await resolveTemplate(templateId, token);
+      template = await resolveTemplate(templateId, datasetId, type, name, token);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       if (msg.includes("not found")) {
@@ -226,7 +252,7 @@ router.get("/", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid parameter", message: "format must be 'parquet' or 'json'" });
     }
 
-    const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId', 'format']);
+    const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId', 'format', 'name', 'type']);
 
     const additionalParams: Record<string, string> = {};
     for (const [key, value] of Object.entries(req.query)) {
