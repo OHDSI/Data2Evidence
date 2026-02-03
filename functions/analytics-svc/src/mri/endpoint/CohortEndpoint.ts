@@ -142,7 +142,7 @@ export class CohortEndpoint {
                 // Clone and manipulate query to execute on srcdb so that original query is unaffected
                 const queryClone = Object.create(Object.getPrototypeOf(query));
                 Object.assign(queryClone, structuredClone(query));
-                queryClone.queryString = queryClone.queryString.replace(
+                queryClone.queryString = queryClone.queryString.replaceAll(
                     this.schemaName,
                     `${this.connection.writeConn.__database}__srcdb.${this.schemaName}`
                 );
