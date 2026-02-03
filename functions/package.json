@@ -806,6 +806,7 @@
           "portal.dataset.paConfig.read",
           "portal.dataset.resource.read",
           "portal.dataset.read",
+          "parquet.export",
           "portal.dataset.resource.download",
           "portal.notebook.read",
           "portal.notebook.add",
@@ -2973,11 +2974,12 @@
         {
           "path": "^/parquet-export",
           "scopes": [
-            "portal.dataset.read"
+            "parquet.export"
           ],
           "httpMethods": [
             "GET"
-          ]
+          ],
+          "datasetId": "datasetId"
         }
       ]
     }
