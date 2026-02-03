@@ -4,6 +4,7 @@ import { SystemPortal } from "./system-portal";
 import { Dataflow } from "./dataflow";
 import { DbCredentialsMgr } from "./db-credentials-mgr";
 import { Gateway } from "./gateway";
+import { FhirGateway } from "./fhir-gateway";
 import { Translation } from "./translation";
 import { Trex } from "./trex";
 import { Demo } from "./demo";
@@ -24,4 +25,5 @@ export const api = {
   strategusResults: new StrategusResults(),
   strategusAnalysis: new StrategusAnalysis(),
   publicWebapiProxyAPI: new PublicWebapiProxyAPI(),
+  fhirGateway: new FhirGateway(),
 };

@@ -1,18 +1,11 @@
 import { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
+import { INCLUSION_REPORT_COLORS } from './constants'
 
 type TooltipData = {
   count: string
   summary: string
   passed: string[]
   failed: string[]
-}
-
-const RULE_FAILURE_COLORS = {
-  allFailedOr5Plus: '#fabfb4',
-  threeToFour: '#fcdab6',
-  two: '#dedcab',
-  one: '#cdd99e',
-  allPassed: '#53bead',
 }
 
 /**
@@ -42,16 +35,16 @@ function calculateRuleCounts(bits: string): { passCount: number; failCount: numb
  */
 function getColorByFailureCount(failCount: number): string {
   if (failCount === 0) {
-    return RULE_FAILURE_COLORS.allPassed
+    return INCLUSION_REPORT_COLORS.allPassed
   } else if (failCount === 1) {
-    return RULE_FAILURE_COLORS.one
+    return INCLUSION_REPORT_COLORS.one
   } else if (failCount === 2) {
-    return RULE_FAILURE_COLORS.two
+    return INCLUSION_REPORT_COLORS.two
   } else if (failCount < 5) {
-    return RULE_FAILURE_COLORS.threeToFour
+    return INCLUSION_REPORT_COLORS.threeToFour
   } else {
     // 5+ failed or all failed
-    return RULE_FAILURE_COLORS.allFailedOr5Plus
+    return INCLUSION_REPORT_COLORS.allFailedOr5Plus
   }
 }
 
@@ -154,8 +147,9 @@ export function convertTreemapData(data: any, inclusionReportResponse: Inclusion
 
     // Calculate number of failed rules based on the binary string name
     const { failCount } = calculateRuleCounts(node.name)
+    const color = getColorByFailureCount(failCount)
     newNode.itemStyle = {
-      color: getColorByFailureCount(failCount),
+      color: color,
     }
 
     return newNode

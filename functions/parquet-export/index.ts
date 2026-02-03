@@ -221,7 +221,13 @@ router.get("/", async (req: Request, res: Response) => {
       return res.status(503).json({ error: "Portal service unavailable", message: "Please try again later" });
     }
 
-    const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId']);
+    const format = (req.query.format as string | undefined)?.toLowerCase() || 'parquet';
+    if (format !== 'parquet' && format !== 'json') {
+      return res.status(400).json({ error: "Invalid parameter", message: "format must be 'parquet' or 'json'" });
+    }
+
+    const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId', 'format']);
+
     const additionalParams: Record<string, string> = {};
     for (const [key, value] of Object.entries(req.query)) {
       if (!reservedQueryParams.has(key) && typeof value === 'string') {
@@ -261,6 +267,18 @@ router.get("/", async (req: Request, res: Response) => {
     );
 
     try {
+      if (format === 'json') {
+        const rows = await new Promise<unknown[]>((resolve, reject) => {
+          conn.execute(substitutedSql, [], (err: Error | null, result: unknown[]) => {
+            err ? reject(err) : resolve(result);
+          });
+        });
+
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", `attachment; filename=export-${Date.now()}.json`);
+        return res.json(rows);
+      }
+
       const tempDir = Deno.env.get("TMPDIR") || "/tmp";
       tempFilePath = `${tempDir}/export-${requestId}.parquet`;
       const copyQuery = `COPY (${substitutedSql}) TO '${tempFilePath}' (FORMAT PARQUET)`;
