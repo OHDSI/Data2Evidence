@@ -16,7 +16,6 @@ export interface IMRIRequest extends Request {
     };
     studiesDbMetadata: {
         studies: any;
-        cachedAt: number;
     };
     selectedstudyDbMetadata: StudyDbMetadata;
     swagger: any;
@@ -390,7 +389,6 @@ export interface StudyDbMetadata {
 
 export interface StudiesDbMetadata {
     studies: StudyDbMetadata[];
-    cachedAt: number;
 }
 
 export type QuerySvcResultType = {
