@@ -17,10 +17,15 @@
 }
 table {
   font-size: 16px;
-}
-.rule-name {
-  max-width: 70ch;
-  text-align: left;
+
+  .rule-name {
+    max-width: 70ch;
+    text-align: left;
+  }
+  
+  .rule-id {
+    text-align: left;
+  }
 }
 
 .inclusion-report-container {
@@ -65,7 +70,7 @@ h4 {
 
 .summary-table th,
 .rules-table th {
-  padding: 0.75rem;
+  padding: 0.5rem;
   font-weight: 500;
   border-bottom: 2px solid var(--color-ui-light-border, #ddd);
   color: #333;
@@ -73,8 +78,22 @@ h4 {
 
 .summary-table td,
 .rules-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid var(--color-ui-light-border, #ddd);
+  padding: 0.5rem;
+
+  &.drag-icon {
+    cursor: move;
+    padding: 0.1rem;
+    font-size: 24px;
+    text-align: center;
+  }
+
+  &.reorder-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.1rem;
+  }
+  cursor:inherit
 }
 
 .summary-table,
@@ -82,6 +101,9 @@ h4 {
   color: var(--color-ui-medium-text);
   tr.grayed-out {
     color: var(--color-mri-disabled-text);
+  }
+  tr {
+    border-bottom: 1px solid var(--color-ui-light-border, #ddd);
   }
 }
 
