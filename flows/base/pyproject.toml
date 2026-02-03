@@ -20,6 +20,7 @@ dependencies = [
     "rpy2==3.5.13",
     "sqlalchemy==2.0.38",
     "sqlalchemy-bigquery==1.14.1",
+    "shinylive==0.8.5",
 ]
 
 [project.optional-dependencies]
