@@ -44,13 +44,6 @@ const mriConfigConnection = new MriConfigConnection(
 );
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 /**
- * Declare variables
- */
-let alpPortalStudiesDbMetadataCacheTTLSeconds: number;
-let studiesDbMetadata: StudiesDbMetadata;
-let publicStudiesDbMetadata: StudiesDbMetadata;
-
-/**
  * Declare Startup Functions
  */
 
@@ -69,9 +62,6 @@ const initRoutes = async (app: express.Application) => {
         app.use(timerMiddleware());
     }
 
-    alpPortalStudiesDbMetadataCacheTTLSeconds =
-        env.ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS || 600;
-
     analyticsCredentials = env.VCAP_SERVICES["mridb"]
         .filter((x) => x["tags"]?.indexOf("analytics") > -1)
         //.filterServices({ tag: "analytics" })
@@ -81,25 +71,9 @@ const initRoutes = async (app: express.Application) => {
             return acc;
         }, {});
 
-    // Calls Alp-Portal for studies db metadata and cache it
+    // Calls Alp-Portal for studies db metadata
     // Ignore Alp-Portal check for readiness probe check
     app.use(async (req: IMRIRequest, res, next) => {
-        // log.debug(
-        //     `🚀 ~ file: main.ts ~ line 107 ~ app.use ~ req.headers: ${JSON.stringify(
-        //         req.headers,
-        //         null,
-        //         2
-        //     )}`
-        // );
-        const hasExpiredStudiesDbMetadataCache = (studiesDb): boolean => {
-            if (!studiesDb?.studies) {
-                return true;
-            }
-            const timeToLiveInMilliseconds: number =
-                alpPortalStudiesDbMetadataCacheTTLSeconds * 1000;
-            return studiesDb.cachedAt + timeToLiveInMilliseconds < Date.now();
-        };
-
         try {
             if (req.url !== "/check-readiness" && !utils.isClientCredReq(req)) {
                 const publicEndpoint = "/analytics-svc/api/services/public";
@@ -107,39 +81,23 @@ const initRoutes = async (app: express.Application) => {
                 // Checks if its public
                 if (req.originalUrl.startsWith(publicEndpoint)) {
                     log.info("getting public studies metadata");
-                    if (
-                        hasExpiredStudiesDbMetadataCache(
-                            publicStudiesDbMetadata
-                        )
-                    ) {
-                        studies =
-                            await new PortalServerAPI().getPublicStudies();
-                        publicStudiesDbMetadata = {
-                            studies,
-                            cachedAt: Date.now(),
-                        };
-                    }
-                    req.studiesDbMetadata = publicStudiesDbMetadata;
+                    studies = await new PortalServerAPI().getPublicStudies();
                 } else {
-                    if (hasExpiredStudiesDbMetadataCache(studiesDbMetadata)) {
-                        // Get Analytics Credential for study based on selected study
-                        const timestamp = new Date().valueOf();
-                        console.time(
-                            `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
-                        );
-                        const portalServerAPI = new PortalServerAPI();
-                        studies = await portalServerAPI.getStudies();
-                        console.timeEnd(
-                            `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
-                        );
-                        studiesDbMetadata = {
-                            studies,
-                            cachedAt: Date.now(),
-                        };
-                        // console.log(`studiesDbMetadata ${JSON.stringify(studiesDbMetadata)}`)
-                    }
-                    req.studiesDbMetadata = studiesDbMetadata; //Because this is cached
+                    // Get Analytics Credential for study based on selected study
+                    const timestamp = new Date().valueOf();
+                    console.time(
+                        `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
+                    );
+                    const portalServerAPI = new PortalServerAPI();
+                    studies = await portalServerAPI.getStudies();
+                    console.timeEnd(
+                        `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
+                    );
                 }
+
+                req.studiesDbMetadata = {
+                    studies,
+                };
             }
 
             req.dbCredentials = {

@@ -346,7 +346,6 @@
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": "${ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS:-20}",
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
           "LOCAL_DEBUG": "false",
           "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
@@ -2008,7 +2007,7 @@
             "POST"
           ]
         },
-                {
+        {
           "path": "^/system-portal/supabase-storage/strategus-results/delete",
           "scopes": [
             "portal.supabaseStorage.delete"
