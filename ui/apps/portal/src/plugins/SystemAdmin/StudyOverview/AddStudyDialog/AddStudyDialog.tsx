@@ -536,7 +536,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             id: dataset.id,
             description: description,
           };
-          await api.gateway.createFhirStaging(fhirProjectInput);
+          await api.fhirGateway.createFhirStaging(fhirProjectInput);
         } catch (err: any) {
           setFeedback({
             type: "error",
