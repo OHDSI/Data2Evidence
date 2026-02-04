@@ -106,6 +106,9 @@ const getters = {
         }
         hoverTemplate += toolTipSelected
 
+        const fullName = String(category.name)
+        const truncatedName = truncateAtWordBoundary(fullName, 20)
+
         return {
           x: xData,
           y: category.data.map(data => data[measureId]),
@@ -113,7 +116,8 @@ const getters = {
           hovertemplate: hoverTemplate,
           customdata: customdataArray,
           selectedpoints: selection ? selection[index] : [],
-          name: category.name,
+          name: truncatedName,
+          meta: { fullName },
         }
       })
       return chartData

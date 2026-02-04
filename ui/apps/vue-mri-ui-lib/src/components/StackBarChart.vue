@@ -1,5 +1,12 @@
 <template>
-  <div class="stackbar-container" id="stacked-chart" style="width: 100%; height: 100%"></div>
+  <div class="stackbar-wrapper">
+    <div class="stackbar-container" id="stacked-chart"></div>
+    <StackBarChartLegend
+      v-if="chartData.traces && chartData.traces.length > 0"
+      :traces="chartData.traces"
+      :colorway="layout.colorway"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -8,18 +15,23 @@ import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
+import StackBarChartLegend from './StackBarChartLegend.vue'
 
 let stackBarChart
 
 export default {
   name: 'stackBarChart',
+  components: {
+    StackBarChartLegend,
+  },
   props: ['busyEv', 'shouldRerenderChart'],
   data() {
     return {
-      chartData: {},
+      chartData: {} as { traces?: any[]; axisType?: string; categories?: any[]; measures?: any[]; data?: any[] },
       errorMessage: '',
       sbChartStyle: {},
       debounceId: 0,
+      layout: Constants.PlotlyConsts.layout,
     }
   },
   created() {
@@ -288,11 +300,21 @@ export default {
         this.chartData = this.dataToTraces(data)
         this.layout.xaxis.type = this.chartData.axisType
         Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
+
+        // Resize chart after DOM updates to account for legend space
+        this.$nextTick(() => {
+          Plotly.Plots.resize(stackBarChart)
+        })
       }
     },
     setupPlotly() {
-      stackBarChart = this.$el
+      stackBarChart = this.$el.querySelector('.stackbar-container')
       Plotly.newPlot(stackBarChart, this.chartData.traces, this.layout, this.config)
+
+      // Resize chart after DOM updates to account for legend space
+      this.$nextTick(() => {
+        Plotly.Plots.resize(stackBarChart)
+      })
 
       const selectionUpdate = () => {
         // Update selection in state to activate drilldown
@@ -342,3 +364,17 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.stackbar-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 8px;
+}
+.stackbar-container {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+</style>
