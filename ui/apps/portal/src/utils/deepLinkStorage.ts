@@ -64,12 +64,30 @@ export const clearDeepLinkParams = (): void => {
  * @returns Deep link parameters found in URL
  */
 export const extractDeepLinkParamsFromUrl = (url: string | URLSearchParams): DeepLinkParams => {
+  // Whitelist of path suffixes that support deep linking with query params
+  const DEEP_LINK_SUFFIXES = ["/cohort", "/wizards"];
   // Params consumed by portal (not restored to URL)
   const PORTAL_PARAMS = new Set(["datasetId"]);
 
   try {
     const searchParams = typeof url === "string" ? new URL(url).searchParams : url;
     const params: DeepLinkParams = {};
+
+    // Check if pathname ends with a whitelisted suffix
+    if (typeof url === "string") {
+      const pathname = new URL(url).pathname;
+      const matchedSuffix = DEEP_LINK_SUFFIXES.find((suffix) => pathname.endsWith(suffix));
+      if (!matchedSuffix) {
+        return {};
+      }
+      // Store the matched path for navigation (e.g., "/researcher/cohort")
+      // Extract everything from /researcher onwards
+      const researcherIndex = pathname.indexOf("/researcher");
+      params.path = researcherIndex >= 0 ? pathname.slice(researcherIndex) : matchedSuffix;
+    } else {
+      // URLSearchParams passed directly - can't check path
+      return {};
+    }
 
     const datasetId = searchParams.get("datasetId");
     if (datasetId) params.datasetId = datasetId;
@@ -83,19 +101,6 @@ export const extractDeepLinkParamsFromUrl = (url: string | URLSearchParams): Dee
     });
     if (Object.keys(queryParams).length > 0) {
       params.queryParams = queryParams;
-    }
-
-    if (typeof url === "string") {
-      // Extract path from URL pathname (relative to /d2e/portal)
-      // Only capture /researcher/* sub-paths (not /no-access, /login, etc.)
-      const pathname = new URL(url).pathname;
-      const basePath = "/d2e/portal";
-      if (pathname.startsWith(basePath)) {
-        const relativePath = pathname.slice(basePath.length);
-        if (relativePath.startsWith("/researcher/") && relativePath !== "/researcher/") {
-          params.path = relativePath;
-        }
-      }
     }
 
     return params;

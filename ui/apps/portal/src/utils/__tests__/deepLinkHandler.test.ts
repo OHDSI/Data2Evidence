@@ -327,8 +327,7 @@ describe("deepLinkHandler", () => {
       deepLinkStorage.saveDeepLinkParams({
         datasetId: "test-dataset-123",
         path: "/researcher/cohort",
-        linkType: "cohort-definition",
-        query: "xyz789",
+        queryParams: { linkType: "cohort-definition", query: "xyz789" },
       });
 
       const result = syncDatasetFromUrl({
@@ -359,8 +358,7 @@ describe("deepLinkHandler", () => {
       // Simulate saved params (path and PA params saved, datasetId in URL)
       deepLinkStorage.saveDeepLinkParams({
         path: "/researcher/cohort",
-        linkType: "cohort-definition",
-        query: "xyz789",
+        queryParams: { linkType: "cohort-definition", query: "xyz789" },
       });
 
       const result = syncDatasetFromUrl({
@@ -391,8 +389,7 @@ describe("deepLinkHandler", () => {
       // Only PA params, no path specified
       deepLinkStorage.saveDeepLinkParams({
         datasetId: "dataset-1",
-        linkType: "some-other-type",
-        query: "abc",
+        queryParams: { linkType: "some-other-type", query: "abc" },
       });
 
       const result = syncDatasetFromUrl({

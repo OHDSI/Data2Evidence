@@ -324,7 +324,7 @@ describe("deepLinks", () => {
       const filterCard = bookmark.filter.cards.content[0].content[0];
       expect(filterCard.attributes.content).toHaveLength(1);
       expect(filterCard.attributes.content[0].configPath).toBe("patient.attributes.Age");
-      expect(filterCard.attributes.content[0].constraints.content[0].value).toBe("65");
+      expect(filterCard.attributes.content[0].constraints.content[0].value).toBe(65);
     });
 
     it("should URL-encode special characters in datasetId", () => {

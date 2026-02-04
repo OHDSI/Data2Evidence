@@ -8,13 +8,13 @@ const meta: ConfigMeta = { configId: "test-config", configVersion: "2" };
 describe("buildMriBookmark", () => {
   it("should produce correct top-level structure", () => {
     const fields: FieldDefinition[] = [];
-    const result = buildMriBookmark(fields, {}, meta, "ds-1");
+    const { bookmark } = buildMriBookmark(fields, {}, meta, "ds-1");
 
-    expect(result.filter.configMetadata).toEqual({ id: "test-config", version: "2" });
-    expect(result.chartType).toBe("stacked");
-    expect(result.metadata).toEqual({ version: 3 });
-    expect(result.datasetId).toBe("ds-1");
-    expect(result.axisSelection).toHaveLength(5);
+    expect(bookmark.filter.configMetadata).toEqual({ id: "test-config", version: "2" });
+    expect(bookmark.chartType).toBe("stacked");
+    expect(bookmark.metadata).toEqual({ version: 3 });
+    expect(bookmark.datasetId).toBe("ds-1");
+    expect(bookmark.axisSelection).toHaveLength(5);
   });
 
   it("should create attribute for num field with value", () => {
@@ -23,9 +23,9 @@ describe("buildMriBookmark", () => {
     ];
     const formData = { age: 65 };
 
-    const result = buildMriBookmark(fields, formData, meta, "ds-1");
+    const { bookmark } = buildMriBookmark(fields, formData, meta, "ds-1");
 
-    const filterCard = result.filter.cards.content[0].content[0] as any;
+    const filterCard = bookmark.filter.cards.content[0].content[0] as any;
     expect(filterCard.type).toBe("FilterCard");
     expect(filterCard.configPath).toBe("patient");
     expect(filterCard.name).toBe("Basic Data");
@@ -38,7 +38,7 @@ describe("buildMriBookmark", () => {
     expect(attr.constraints.content[0]).toEqual({
       type: "Expression",
       operator: "=",
-      value: "65",
+      value: 65,
     });
   });
 
@@ -58,8 +58,8 @@ describe("buildMriBookmark", () => {
     ];
     const formData = { gender: "M" };
 
-    const result = buildMriBookmark(fields, formData, meta, "ds-1");
-    const filterCard = result.filter.cards.content[0].content[0] as any;
+    const { bookmark } = buildMriBookmark(fields, formData, meta, "ds-1");
+    const filterCard = bookmark.filter.cards.content[0].content[0] as any;
     const attr = filterCard.attributes.content[0];
 
     expect(attr.configPath).toBe("patient.attributes.Gender");
@@ -70,8 +70,8 @@ describe("buildMriBookmark", () => {
     const fields: FieldDefinition[] = [{ id: "notes", type: "text", label: "Notes", required: false }];
     const formData = { notes: "some text" };
 
-    const result = buildMriBookmark(fields, formData, meta, "ds-1");
-    const filterCard = result.filter.cards.content[0].content[0] as any;
+    const { bookmark } = buildMriBookmark(fields, formData, meta, "ds-1");
+    const filterCard = bookmark.filter.cards.content[0].content[0] as any;
     expect(filterCard.attributes.content).toHaveLength(0);
   });
 
@@ -81,8 +81,8 @@ describe("buildMriBookmark", () => {
     ];
     const formData = { age: "" };
 
-    const result = buildMriBookmark(fields, formData, meta, "ds-1");
-    const filterCard = result.filter.cards.content[0].content[0] as any;
+    const { bookmark } = buildMriBookmark(fields, formData, meta, "ds-1");
+    const filterCard = bookmark.filter.cards.content[0].content[0] as any;
     expect(filterCard.attributes.content).toHaveLength(0);
   });
 
@@ -93,30 +93,30 @@ describe("buildMriBookmark", () => {
     ];
     const formData = { age: 30, gender: "F" };
 
-    const result = buildMriBookmark(fields, formData, meta, "ds-1");
-    const filterCard = result.filter.cards.content[0].content[0] as any;
+    const { bookmark } = buildMriBookmark(fields, formData, meta, "ds-1");
+    const filterCard = bookmark.filter.cards.content[0].content[0] as any;
     expect(filterCard.attributes.op).toBe("AND");
     expect(filterCard.attributes.content).toHaveLength(2);
   });
 
   it("should use standard AND > OR > FilterCard nesting", () => {
-    const result = buildMriBookmark([], {}, meta, "ds-1");
-    expect(result.filter.cards.type).toBe("BooleanContainer");
-    expect(result.filter.cards.op).toBe("AND");
-    expect(result.filter.cards.content[0]).toMatchObject({
+    const { bookmark } = buildMriBookmark([], {}, meta, "ds-1");
+    expect(bookmark.filter.cards.type).toBe("BooleanContainer");
+    expect(bookmark.filter.cards.op).toBe("AND");
+    expect(bookmark.filter.cards.content[0]).toMatchObject({
       type: "BooleanContainer",
       op: "OR",
     });
   });
 
   it("should have all n/a axis selections when no chartOptions provided", () => {
-    const result = buildMriBookmark([], {}, meta, "ds-1");
-    for (const axis of result.axisSelection) {
+    const { bookmark } = buildMriBookmark([], {}, meta, "ds-1");
+    for (const axis of bookmark.axisSelection) {
       expect(axis.attributeId).toBe("n/a");
       expect(axis.configPath).toBe("n/a");
       expect(axis.instanceID).toBe("n/a");
     }
-    expect(result.axisSelection.map((a) => a.axis)).toEqual(["x1", "x2", "x3", "stack", "y"]);
+    expect(bookmark.axisSelection.map((a) => a.axis)).toEqual(["x1", "x2", "x3", "stack", "y"]);
   });
 
   it("should set Y axis from chartOptions.initialAttributes.measures", () => {
@@ -126,8 +126,8 @@ describe("buildMriBookmark", () => {
         categories: [],
       },
     };
-    const result = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
-    const yAxis = result.axisSelection.find((a) => a.axis === "y");
+    const { bookmark } = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
+    const yAxis = bookmark.axisSelection.find((a) => a.axis === "y");
     expect(yAxis?.attributeId).toBe("patient.attributes.pcount");
     expect(yAxis?.configPath).toBe("patient");
     expect(yAxis?.instanceID).toBe("patient.attributes.pcount");
@@ -140,8 +140,8 @@ describe("buildMriBookmark", () => {
         categories: ["patient.attributes.monthOfBirth"],
       },
     };
-    const result = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
-    const x1Axis = result.axisSelection.find((a) => a.axis === "x1");
+    const { bookmark } = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
+    const x1Axis = bookmark.axisSelection.find((a) => a.axis === "x1");
     expect(x1Axis?.attributeId).toBe("patient.attributes.monthOfBirth");
     expect(x1Axis?.configPath).toBe("patient");
     expect(x1Axis?.instanceID).toBe("patient.attributes.monthOfBirth");
@@ -149,7 +149,7 @@ describe("buildMriBookmark", () => {
 
   it("should use chartOptions.initialChart for chartType", () => {
     const chartOptions = { initialChart: "boxplot" };
-    const result = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
-    expect(result.chartType).toBe("boxplot");
+    const { bookmark } = buildMriBookmark([], {}, meta, "ds-1", chartOptions);
+    expect(bookmark.chartType).toBe("boxplot");
   });
 });
