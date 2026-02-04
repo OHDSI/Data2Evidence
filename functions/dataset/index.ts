@@ -498,95 +498,16 @@ export class DatasetRouter {
 
           this.logger.info(`[ShinyLive] staticDir: ${staticDir}`);
 
-          // Service workers need special headers to work from nested paths
-          const basePath = `/d2e/gateway/api/dataset/shiny-live/${resourceId}`;
-
-          if (
-            req.path.endsWith("shinylive-sw.js") ||
-            req.path.endsWith("load-shinylive-sw.js")
-          ) {
-            // Allow SW to control the base path and all subpaths
-            res.setHeader("Service-Worker-Allowed", basePath + "/");
-            // Set proper content type for service worker
-            res.setHeader(
-              "Content-Type",
-              "application/javascript; charset=utf-8",
-            );
-            // Add cache control to prevent stale SW
-            res.setHeader(
-              "Cache-Control",
-              "no-cache, no-store, must-revalidate",
-            );
-            this.logger.info(
-              `[ShinyLive] Setting Service-Worker-Allowed: ${basePath}/`,
-            );
-          }
-
-          // Serve shinylive-sw.js explicitly, falling back if packaged at root
-          if (req.path.endsWith("/shinylive/shinylive-sw.js")) {
-            const fs = await import("node:fs/promises");
-            const path = await import("node:path");
-            const candidates = [
-              path.join(staticDir, "shinylive", "shinylive-sw.js"),
-              path.join(staticDir, "shinylive-sw.js"),
-            ];
-
-            for (const candidate of candidates) {
-              try {
-                await fs.access(candidate);
-                res.setHeader(
-                  "Content-Type",
-                  "application/javascript; charset=utf-8",
-                );
-                res.setHeader(
-                  "Cache-Control",
-                  "no-cache, no-store, must-revalidate",
-                );
-                res.sendFile(candidate);
-                return;
-              } catch {
-                // continue to next candidate
-              }
-            }
-          }
-
-          // Special handling for index.html to inject config
-          if (req.path === "/" || req.path === "/index.html") {
-            const fs = await import("node:fs/promises");
-            const path = await import("node:path");
-            const indexPath = path.join(staticDir, "index.html");
-
-            try {
-              let html = await fs.readFile(indexPath, "utf-8");
-
-              // Inject meta tag to configure service worker directory
-              html = html.replace(
-                "<head>",
-                `<head>\n    <meta name="shinylive:serviceworker_dir" content="${basePath}/shinylive">`,
-              );
-
-              res.setHeader("Content-Type", "text/html; charset=utf-8");
-              res.send(html);
-              return;
-            } catch (error) {
-              this.logger.error(
-                `[ShinyLive] Error reading index.html: ${error}`,
-              );
-              res.status(500).send("Error loading application");
-              return;
-            }
-          }
-
-          // Use express.static middleware to serve other files
+          // Serve static files including index.html
           const staticMiddleware = express.static(staticDir, {
-            index: false, // We handle index.html above
+            index: "index.html",
             fallthrough: true,
           });
 
           staticMiddleware(req, res, next);
         } catch (error) {
           this.logger.error(
-            `[ShinyLive] Error in shiny-live endpoint: ${JSON.stringify(error)}`,
+            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error loading shiny-live application");
         }
