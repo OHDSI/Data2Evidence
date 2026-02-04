@@ -472,7 +472,7 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const saveConceptSet = useCallback(async () => {
     if (!conceptSetName.trim().length) {
-      setErrorMsg("Please enter a name.");
+      setErrorMsg(getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_EMPTY_ERROR));
       return;
     }
 
