@@ -115,7 +115,7 @@ export const DashboardIframe: FC<DashboardIframeProps> = ({
 
         // Cache-bust the iframe URL to force reload with new token
         try {
-          const src = new URL(iframeRef.current.src);
+          const src = new URL(iframeUrl);
           src.searchParams.set("t", Date.now().toString());
           iframeRef.current.src = src.toString();
         } catch (err) {
