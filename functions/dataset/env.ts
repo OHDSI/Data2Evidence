@@ -1,5 +1,3 @@
-import type { LoggingLevel } from "./types.d.ts";
-
 const _env = Deno.env.toObject();
 
 export const env = {
