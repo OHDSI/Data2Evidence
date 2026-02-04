@@ -522,58 +522,6 @@ export class DatasetRouter {
             );
           }
 
-          // Special handling for load-shinylive-sw.js to enforce correct SW scope
-          if (req.path.endsWith("/load-shinylive-sw.js")) {
-            const fs = await import("node:fs/promises");
-            const path = await import("node:path");
-            const swLoaderPath = path.join(
-              staticDir,
-              "shinylive",
-              "load-shinylive-sw.js",
-            );
-
-            try {
-              const swLoaderCode = await fs.readFile(swLoaderPath, "utf-8");
-
-              // Force SW registration to use app base scope and the expected SW script URL
-              const wrapped = `(() => {
-  const baseScope = new URL('${basePath}/', window.location.origin).toString();
-  const swUrl = new URL('shinylive/shinylive-sw.js', baseScope).toString();
-
-  // Monkey-patch register to enforce URL + scope
-  const origRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
-  navigator.serviceWorker.register = function(scriptURL, options) {
-    const absUrl = /^https?:/i.test(String(scriptURL))
-      ? scriptURL
-      : new URL(scriptURL, baseScope).toString();
-    const merged = { ...(options || {}), scope: options?.scope || baseScope };
-    return origRegister(absUrl, merged);
-  };
-
-  // Attempt registration once with enforced URL/scope for control
-  origRegister(swUrl, { scope: baseScope }).catch(err => {
-    console.error('[ShinyLive SW] Registration failed', err);
-  });
-})();
-${swLoaderCode}`;
-
-              res.setHeader(
-                "Content-Type",
-                "application/javascript; charset=utf-8",
-              );
-              res.setHeader(
-                "Cache-Control",
-                "no-cache, no-store, must-revalidate",
-              );
-              res.send(wrapped);
-              return;
-            } catch (error) {
-              this.logger.error(
-                `[ShinyLive] Error reading load-shinylive-sw.js: ${error}`,
-              );
-            }
-          }
-
           // Serve shinylive-sw.js explicitly, falling back if packaged at root
           if (req.path.endsWith("/shinylive/shinylive-sw.js")) {
             const fs = await import("node:fs/promises");
