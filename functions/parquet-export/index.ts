@@ -146,7 +146,17 @@ async function resolveTemplate(
 
   try {
     const result = await channel.get(url, { headers: { Authorization: token }, timeout: 20000 });
-    const data = result.data as { sql: string; queryName: string };
+    const data = result.data as { sql?: unknown; queryName?: unknown };
+    if (typeof data.sql !== "string" || data.sql.trim() === "" ||
+        typeof data.queryName !== "string" || data.queryName.trim() === "") {
+      logger.error("Invalid portal service response for SQL template", {
+        templateId,
+        datasetId,
+        type,
+        name,
+      });
+      throw new Error("Invalid portal service response");
+    }
     return { id: data.queryName, name: data.queryName, sqlText: data.sql, createdAt: "", updatedAt: "" };
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 404) {
@@ -216,13 +226,13 @@ router.get("/", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid parameter", message: "cohortId must be numeric" });
     }
     if (!isValidTemplateId(templateId)) {
-      return res.status(400).json({ error: "Invalid parameter", message: "templateId contains invalid characters" });
+      return res.status(400).json({ error: "Invalid parameter", message: "templateId must contain only letters, numbers, underscores, or hyphens" });
     }
     if (!isValidTemplateId(name)) {
-      return res.status(400).json({ error: "Invalid parameter", message: "name contains invalid characters" });
+      return res.status(400).json({ error: "Invalid parameter", message: "name must contain only letters, numbers, underscores, or hyphens" });
     }
     if (!isValidTemplateId(type)) {
-      return res.status(400).json({ error: "Invalid parameter", message: "type contains invalid characters" });
+      return res.status(400).json({ error: "Invalid parameter", message: "type must contain only letters, numbers, underscores, or hyphens" });
     }
 
     let template: SqlQueryTemplate;
