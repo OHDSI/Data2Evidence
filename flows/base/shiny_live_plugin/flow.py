@@ -144,7 +144,7 @@ def upload_shiny_live_folder(docs_dir: str, dataset_id: str, config_type: str, n
     logger = get_run_logger()
 
     normalized_language = language.lower().replace('.', '_')
-    base_path = f"dashboard_{dataset_id}_{config_type}_{name}_{normalized_language}"
+    base_path = f"{dataset_id}/dashboard/{dataset_id}_{config_type}_{name}_{normalized_language}"
 
     logger.info(
         f"Uploading Shiny Live assets from {docs_dir} to base path {base_path}...")
