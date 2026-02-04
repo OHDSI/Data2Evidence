@@ -27,6 +27,7 @@ export class DbCredentialsAPI {
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDbList(): Promise<IDbDto[]> {
     try {
       this.logger.info("Get database list");
@@ -34,12 +35,15 @@ export class DbCredentialsAPI {
       const url = `${this.baseURL}/trex/db/`;
       const result = await get(url, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while getting database list: ${error}`);
+    } catch (error: any) {
+      const status = error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting database list: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDb(dto: IDbCreateDto) {
     try {
       this.logger.info("Create database");
@@ -47,8 +51,10 @@ export class DbCredentialsAPI {
       const url = `${this.baseURL}/trex/db/`;
       const result = await post(url, dto, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while creating database: ${error}`);
+    } catch (error: any) {
+      const status = error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while creating database: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }

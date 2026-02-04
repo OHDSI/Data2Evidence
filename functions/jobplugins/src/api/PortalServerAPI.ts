@@ -26,6 +26,7 @@ export class PortalServerAPI {
       : true;
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDatasetReleaseById(
     releaseId: string
   ): Promise<{ releaseDate: string }> {
@@ -34,17 +35,18 @@ export class PortalServerAPI {
         releaseId
       )}`;
       const options = this.createOptions("GET");
-      const result = this.channel.get(url, options);
-      if (result.status !== 200) {
-        throw new Error("Error while getting dataset release by id");
-      }
+      const result = await this.channel.get(url, options);
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
-    } catch (error) {
-      console.error(`Error while getting dataset release by id: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting dataset release by id: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDataset(datasetId: string) {
     try {
       const url = `${this.baseURL}/dataset`;
@@ -54,43 +56,47 @@ export class PortalServerAPI {
         `${url}?${queryParams.toString()}`,
         options
       );
-      if (result.status !== 200) {
-        throw new Error("Error while getting dataset by datasetId");
-      }
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
-    } catch (error) {
-      console.error(`Error while getting dataset by datasetId: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting dataset by datasetId: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
 
+  // TODO: Improve error handling - currently returns null on any error, should distinguish between "not found" and other errors
   async getConfigSecretByType(type: string) {
     try {
       const url = `${this.baseURL}/config/secret/${type}`;
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);
-      if (result.status !== 200) {
-        console.log(`Config type '${type}' not found or inaccessible`);
-        return null;
-      }
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
-    } catch (error) {
-      console.error(`Error while getting system config: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      if (status === 404) {
+        console.log(`Config type '${type}' not found`);
+      } else {
+        console.error(`Error while getting system config '${type}': ${error.message}, status: ${status}`);
+      }
       return null;
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async listFiles(nodeId: string): Promise<any> {
     try {
       const url = `${this.baseURL}/supabase-storage/list/file`;
       const options = this.createOptions("GET");
       const result = await this.channel.get(`${url}?nodeId=${nodeId}`, options);
-      if (result.status !== 200) {
-        throw new Error(`Error while listing files for nodeId ${nodeId}`);
-      }
-      return result.json();
-    } catch (error) {
-      console.error(`Error while listing files for nodeId ${nodeId}: ${error}`);
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while listing files for nodeId ${nodeId}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -131,6 +137,7 @@ export class PortalServerAPI {
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getFile(nodeId: string, fileName: string): Promise<any> {
     try {
       const url = `${this.baseURL}/supabase-storage/get/file`;
@@ -139,22 +146,19 @@ export class PortalServerAPI {
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
-
-      if (result.status !== 200) {
-        const errorText = await result.text();
-        throw new Error(
-          `Error while downloading file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
-        );
-      }
-      return await result.json();
-    } catch (error) {
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
       console.error(
-        `Error while downloading file ${fileName} for nodeId ${nodeId}: ${error}`
+        `Error while downloading file ${fileName} for nodeId ${nodeId}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`
       );
       throw error;
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async deleteFile(
     nodeId: string,
     fileName: string
@@ -162,20 +166,17 @@ export class PortalServerAPI {
     try {
       const url = `${this.baseURL}/supabase-storage/delete/file`;
       const options = this.createOptions("DELETE");
-      const result = this.channel.delete(
+      const result = await this.channel.delete(
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
-      if (result.status !== 200) {
-        const errorText = await result.statusText;
-        throw new Error(
-          `Error while deleting file ${fileName} for nodeId ${nodeId}: ${result.status} - ${errorText}`
-        );
-      }
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
-    } catch (error) {
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
       console.error(
-        `Error while deleting file ${fileName} for nodeId ${nodeId}: ${error}`
+        `Error while deleting file ${fileName} for nodeId ${nodeId}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`
       );
       throw error;
     }
@@ -219,6 +220,7 @@ export class PortalServerAPI {
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async listFilesFromStrategusResults(
     bucket: string,
     prefix: string
@@ -230,20 +232,19 @@ export class PortalServerAPI {
         `${url}?bucket=${bucket}&prefix=${encodeURIComponent(prefix)}`,
         options
       );
-      if (result.status !== 200) {
-        throw new Error(
-          `Error while listing files from ${bucket} with prefix ${prefix}`
-        );
-      }
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
-    } catch (error) {
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
       console.error(
-        `Error while listing files from ${bucket} with prefix ${prefix}: ${error}`
+        `Error while listing files from ${bucket} with prefix ${prefix}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`
       );
       throw error;
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getFileFromStrategusResults(
     bucket: string,
     studyId: string,
@@ -257,21 +258,19 @@ export class PortalServerAPI {
         `${url}?bucket=${bucket}&path=${encodeURIComponent(path)}`,
         options
       );
-
-      if (result.status !== 200) {
-        throw new Error(
-          `Error while downloading file ${fileName} from ${bucket}/${path}`
-        );
-      }
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
-    } catch (error) {
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
       console.error(
-        `Error while downloading file ${fileName} from ${bucket}: ${error}`
+        `Error while downloading file ${fileName} from ${bucket}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`
       );
       throw error;
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async deleteFileFromStrategusResults(
     bucket: string,
     studyId: string,
@@ -285,21 +284,17 @@ export class PortalServerAPI {
         `${url}?bucket=${bucket}&path=${encodeURIComponent(path)}`,
         options
       );
-      if (result.status !== 200) {
-        const errorText =
-          result.statusText || result.data?.message || "Unknown error";
-        const error = new Error(
-          `Error while deleting file ${fileName} from ${bucket}/${path}: ${result.status} - ${errorText}`
-        ) as Error & { statusCode?: number };
-        error.statusCode = result.status;
-        throw error;
-      }
+      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
-    } catch (error) {
-      console.error(
-        `Error while deleting file ${fileName} from ${bucket}: ${error}`
-      );
-      throw error;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      const err = new Error(
+        `Error while deleting file ${fileName} from ${bucket}/${path}: ${error.message}, status: ${status}`
+      ) as Error & { statusCode?: number };
+      err.statusCode = status;
+      console.error(err.message, responseData);
+      throw err;
     }
   }
 

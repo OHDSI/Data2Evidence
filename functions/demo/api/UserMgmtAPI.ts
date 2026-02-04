@@ -28,6 +28,7 @@ export class UserMgmtAPI {
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async registerStudyRoles(params: {
     userIds: string[];
     tenantId: string;
@@ -40,8 +41,10 @@ export class UserMgmtAPI {
       console.log("Registering study roles with params:", params);
       const result = await this.channel.post(url, params, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while getting datasets: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while registering study roles: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }

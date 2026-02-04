@@ -28,6 +28,7 @@ export class DatasetAPI {
     }
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDataset(dto: any) {
     try {
       this.logger.info("Create dataset");
@@ -35,8 +36,10 @@ export class DatasetAPI {
       const url = this.baseURL;
       const result = await this.channel.post(url, dto, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while creating dataset: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while creating dataset: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }

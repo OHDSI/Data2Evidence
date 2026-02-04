@@ -42,18 +42,24 @@ export class JobpluginsAPI {
     return options;
   }
 
-  // TODO: Check where the actual implementation is
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getSchemasVersionInformation(): Promise<any> {
     this.logger.info(`Getting schemas version information`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/fetch-version-info`;
-    const result = await post(url, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/fetch-version-info`;
+      const result = await post(url, options);
+      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed get schemas version information: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(`Failed get schemas version information`);
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createCDMSchema(
     databaseCode: string,
     schemaName: string,
@@ -62,25 +68,29 @@ export class JobpluginsAPI {
     vocabSchema: string
   ): Promise<any> {
     this.logger.info(`Create CDM schema ${schemaName} in ${databaseCode}`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "createCDMSchema",
-      requestType: "post",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}/schema/${schemaName}`,
-      requestBody: {
-        vocabSchema: vocabSchema,
-      },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/run`;
+      const body = {
+        dbSvcOperation: "createCDMSchema",
+        requestType: "post",
+        requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}/schema/${schemaName}`,
+        requestBody: {
+          vocabSchema: vocabSchema,
+        },
+      };
+      const result = await this.channel.post(url, body, options);
+      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed to create CDM schema ${schemaName} with data model ${dataModel} in ${databaseCode}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(
-      `Failed to create CDM schema ${schemaName} with data model ${dataModel} in ${databaseCode}`
-    );
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async copyCDMSchema(
     databaseCode: string,
     sourceSchemaName: string,
@@ -94,23 +104,27 @@ export class JobpluginsAPI {
       targetSchemaName: targetSchemaName,
     };
     this.logger.info(`Copy CDM schema (${JSON.stringify(data)})`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "copyCDMSchema",
-      requestType: "post",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshot/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
-      requestBody: { snapshotCopyConfig: snapshotCopyConfig },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/run`;
+      const body = {
+        dbSvcOperation: "copyCDMSchema",
+        requestType: "post",
+        requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshot/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
+        requestBody: { snapshotCopyConfig: snapshotCopyConfig },
+      };
+      const result = await this.channel.post(url, body, options);
+      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed to copy CDM schema ${sourceSchemaName} in ${databaseCode}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(
-      `Failed to copy CDM schema ${sourceSchemaName} in ${databaseCode}`
-    );
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async updateSchema(
     schemaName: string,
     dataModel: string,
@@ -119,50 +133,66 @@ export class JobpluginsAPI {
     vocabSchema: string
   ): Promise<any> {
     this.logger.info(`Updating schema for ${schemaName}`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "updateSchema",
-      requestType: "put",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}?schema=${schemaName}`,
-      requestBody: { vocabSchema },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/run`;
+      const body = {
+        dbSvcOperation: "updateSchema",
+        requestType: "put",
+        requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}?schema=${schemaName}`,
+        requestBody: { vocabSchema },
+      };
+      const result = await this.channel.post(url, body, options);
+      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed to update schema for ${schemaName}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(`Failed to update schema for ${schemaName}`);
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDataModelFlowRun(
     options: object,
     flowId?: string,
     flowRunName?: string
   ): Promise<any> {
     this.logger.info(`Running create data model flow run`);
-    const postOptions = await this.getRequestConfig();
-    const url = `${this.baseURL}/datamodel/create_datamodel_run`;
-    const body = {
-      flowId,
-      options,
-      flowRunName,
-    };
-    const result = await this.channel.post(url, body, postOptions);
-
-    if (result.data) {
+    try {
+      const postOptions = await this.getRequestConfig();
+      const url = `${this.baseURL}/datamodel/create_datamodel_run`;
+      const body = {
+        flowId,
+        options,
+        flowRunName,
+      };
+      const result = await this.channel.post(url, body, postOptions);
+      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed to run flow: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(`Failed to run flow`);
   }
 
+  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDatamodels(): Promise<any> {
     this.logger.info(`Getting datamodels`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/datamodel/list`;
-    const result = await this.channel.get(url, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/datamodel/list`;
+      const result = await this.channel.get(url, options);
+      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed get datamodels: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(`Failed get datamodels`);
   }
 }
