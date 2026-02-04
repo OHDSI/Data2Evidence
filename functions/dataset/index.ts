@@ -234,8 +234,6 @@ export class DatasetRouter {
             fhir_project_id: fhirProjectId,
           };
 
-          // TODO: Improve error handling - Trex tokio channel now throws on non-2xx responses
-          // The old pattern of checking newDataset.error is no longer needed as errors are thrown
           let newDataset;
           try {
             newDataset = await portalAPI.createDataset(newDatasetInput);

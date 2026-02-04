@@ -72,7 +72,6 @@ export class AnalyticsSvcAPI {
     conceptId: string,
     vocabSchema: string,
     datasetId: string
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   ) {
     try {
       const url = `${this.baseURL}/data-characterization/${encodeURIComponent(
@@ -85,7 +84,6 @@ export class AnalyticsSvcAPI {
       console.log(`Calling ${url} for conceptId ${conceptId}`);
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;

@@ -29,7 +29,6 @@ export class PortalAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDataset(datasetId: string): Promise<IDataset> {
     try {
       const options = await this.getRequestConfig();
@@ -46,7 +45,6 @@ export class PortalAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDatasets(): Promise<IDataset[]> {
     try {
       const options = await this.getRequestConfig();

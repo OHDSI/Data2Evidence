@@ -28,7 +28,6 @@ export class UserMgmtAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async registerStudyRoles(params: {
     userIds: string[];
     tenantId: string;

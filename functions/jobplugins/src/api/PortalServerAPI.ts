@@ -26,7 +26,6 @@ export class PortalServerAPI {
       : true;
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDatasetReleaseById(
     releaseId: string
   ): Promise<{ releaseDate: string }> {
@@ -36,7 +35,6 @@ export class PortalServerAPI {
       )}`;
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -46,7 +44,6 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDataset(datasetId: string) {
     try {
       const url = `${this.baseURL}/dataset`;
@@ -56,7 +53,6 @@ export class PortalServerAPI {
         `${url}?${queryParams.toString()}`,
         options
       );
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -66,13 +62,11 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - currently returns null on any error, should distinguish between "not found" and other errors
   async getConfigSecretByType(type: string) {
     try {
       const url = `${this.baseURL}/config/secret/${type}`;
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -85,13 +79,11 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async listFiles(nodeId: string): Promise<any> {
     try {
       const url = `${this.baseURL}/supabase-storage/list/file`;
       const options = this.createOptions("GET");
       const result = await this.channel.get(`${url}?nodeId=${nodeId}`, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -135,7 +127,6 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getFile(nodeId: string, fileName: string): Promise<any> {
     try {
       const url = `${this.baseURL}/supabase-storage/get/file`;
@@ -144,7 +135,6 @@ export class PortalServerAPI {
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -154,7 +144,6 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async deleteFile(
     nodeId: string,
     fileName: string
@@ -166,7 +155,6 @@ export class PortalServerAPI {
         `${url}?nodeId=${nodeId}&fileName=${fileName}`,
         options
       );
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -212,7 +200,6 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async listFilesFromStrategusResults(
     bucket: string,
     prefix: string
@@ -224,7 +211,6 @@ export class PortalServerAPI {
         `${url}?bucket=${bucket}&prefix=${encodeURIComponent(prefix)}`,
         options
       );
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -234,7 +220,6 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getFileFromStrategusResults(
     bucket: string,
     studyId: string,
@@ -248,7 +233,6 @@ export class PortalServerAPI {
         `${url}?bucket=${bucket}&path=${encodeURIComponent(path)}`,
         options
       );
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -258,7 +242,6 @@ export class PortalServerAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async deleteFileFromStrategusResults(
     bucket: string,
     studyId: string,
@@ -272,7 +255,6 @@ export class PortalServerAPI {
         `${url}?bucket=${bucket}&path=${encodeURIComponent(path)}`,
         options
       );
-      // Note: Trex tokio channel now throws on non-2xx responses, so status check is handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;

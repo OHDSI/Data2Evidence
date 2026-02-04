@@ -46,14 +46,12 @@ export class JobPluginsAPI {
     return options;
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDatamodelFlowRun(data: ICreateDatamodelFlowRunDto) {
     this.logger.info("Running create datamodel flow run");
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/datamodel/create_datamodel_run`;
       const result = await this.channel.post(url, data, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -63,14 +61,12 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createFhirCacheFlowRun(data: ICreateFhirCacheFlowRunDto) {
     this.logger.info("Running create FHIR cache flow run");
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cachedb/create-fhir-file`;
       const result = await this.channel.post(url, data, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -80,14 +76,12 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDatamodels() {
     this.logger.info("Running get datamodel list");
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/datamodel/list`;
       const result = await this.channel.get(url, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -97,14 +91,12 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getSchemasVersionInformation(): Promise<any> {
     this.logger.info(`Getting schemas version information`);
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/db-svc/fetch-version-info`;
       const result = await this.channel.post(url, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -114,7 +106,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createCDMSchema(
     databaseCode: string,
     schemaName: string,
@@ -135,7 +126,6 @@ export class JobPluginsAPI {
         },
       };
       const result = await this.channel.post(url, body, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -145,7 +135,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async copyCDMSchema(
     databaseCode: string,
     sourceSchemaName: string,
@@ -169,7 +158,6 @@ export class JobPluginsAPI {
         requestBody: { snapshotCopyConfig: snapshotCopyConfig },
       };
       const result = await this.channel.post(url, body, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -179,7 +167,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async updateSchema(
     schemaName: string,
     dataModel: string,
@@ -198,7 +185,6 @@ export class JobPluginsAPI {
         requestBody: { vocabSchema },
       };
       const result = await this.channel.post(url, body, options);
-      // Note: Trex tokio channel now throws on non-2xx responses, so errors are handled via catch
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -208,7 +194,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDatamartCacheFlowRun(
     datasetId: string,
     cacheDatasetId: string,
@@ -229,7 +214,6 @@ export class JobPluginsAPI {
         flowRunName,
       };
       const result = await post(url, body, postOptions);
-      // Note: post() may also throw on errors now
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;

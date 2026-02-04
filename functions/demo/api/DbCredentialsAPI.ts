@@ -27,7 +27,6 @@ export class DbCredentialsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDbList(): Promise<IDbDto[]> {
     try {
       this.logger.info("Get database list");
@@ -43,7 +42,6 @@ export class DbCredentialsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDb(dto: IDbCreateDto) {
     try {
       this.logger.info("Create database");

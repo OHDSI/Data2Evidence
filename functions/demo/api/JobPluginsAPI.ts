@@ -38,7 +38,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createCacheFlowRun(dto: ICacheCreateFlowRun) {
     try {
       this.logger.info(`Create cache flow run: ${JSON.stringify(dto)}`);
@@ -48,7 +47,6 @@ export class JobPluginsAPI {
       const result = await this.channel.post(url, dto, options);
       this.logger.info(`Cache flow run result: ${JSON.stringify(result)}`);
       this.logger.info(`Cache flow run result.data: ${JSON.stringify(result?.data)}`);
-      // Note: Trex tokio channel now throws on non-2xx responses, so status logging is mainly for successful responses
       return result.data;
     } catch (error: any) {
       const status = error.status || error.response?.status;
@@ -58,7 +56,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getCacheFlowRunStatus(dto: ICacheStatusFlowRun) {
     try {
       this.logger.info(
@@ -76,7 +73,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDqdFlowRun(dto: IDqdCreateFlowRun) {
     try {
       this.logger.info(`Create DQD flow run: ${JSON.stringify(dto)}`);
@@ -92,7 +88,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async getDqdFlowRunOverviewResults(dto: IDQDResultFlowRun) {
     try {
       this.logger.info(
@@ -111,7 +106,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDcFlowRun(dto: IDcCreateFlowRun) {
     try {
       this.logger.info(`Create DC flow run: ${JSON.stringify(dto)}`);
@@ -127,7 +121,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createGetVersionInfoFlowRun(dto: IGetVersionInfoCreateFlowRun) {
     try {
       this.logger.info(
@@ -145,7 +138,6 @@ export class JobPluginsAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createPhenotypeFlowRun(dto: IPhenotypeCreateFlowRun) {
     try {
       this.logger.info(`Create phenotype flow run: ${JSON.stringify(dto)}`);

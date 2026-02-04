@@ -28,7 +28,6 @@ export class DatasetAPI {
     }
   }
 
-  // TODO: Improve error handling - extract error details from error.response instead of silently catching
   async createDataset(dto: any) {
     try {
       this.logger.info("Create dataset");
