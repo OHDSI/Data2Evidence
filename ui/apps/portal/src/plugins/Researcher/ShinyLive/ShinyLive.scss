@@ -5,9 +5,11 @@
   width: 100%;
   overflow: hidden;
 
-  &__dashboard {
-    height: 100%;
-    width: 100%;
+  &__selector {
+    padding: 1rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e0e0e0;
+    flex-shrink: 0;
   }
 
   &__loading {
@@ -19,8 +21,9 @@
     color: #666666;
   }
 
-  &__error {
+  &__empty {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100%;
@@ -28,7 +31,22 @@
 
     p {
       font-size: 1rem;
-      color: #d32f2f;
+      color: #757575;
+      text-align: center;
+    }
+  }
+
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+
+    p {
+      font-size: 1rem;
+      color: #757575;
       text-align: center;
     }
   }
