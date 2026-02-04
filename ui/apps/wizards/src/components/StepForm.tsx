@@ -34,6 +34,7 @@ export function StepForm() {
     register,
     handleSubmit,
     control,
+    watch,
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
@@ -127,27 +128,51 @@ export function StepForm() {
     if (field.type === "yearRange") {
       const fromError = errors[`${field.id}_from`];
       const toError = errors[`${field.id}_to`];
+      const currentYear = new Date().getFullYear();
+      const startYear = 1900;
+      const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
+      const fromYearValue = watch(`${field.id}_from`);
+
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label className={styles.label}>{field.label}:</label>
           <div className={styles.groupInputs}>
-            <input
+            <select
               id={`${field.id}_from`}
-              type="date"
               className={`${styles.input} ${fromError ? styles.inputError : ""}`}
               {...register(`${field.id}_from`, {
-                required: field.required ? `${field.label} from date is required` : false,
+                required: field.required ? `${field.label} from year is required` : false,
               })}
-            />
+            >
+              <option value="">From year</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
             <span className={styles.groupSeparator}>-</span>
-            <input
+            <select
               id={`${field.id}_to`}
-              type="date"
               className={`${styles.input} ${toError ? styles.inputError : ""}`}
               {...register(`${field.id}_to`, {
-                required: field.required ? `${field.label} to date is required` : false,
+                required: field.required ? `${field.label} to year is required` : false,
+                validate: (value) => {
+                  if (!value) return true;
+                  if (fromYearValue && Number(value) < Number(fromYearValue)) {
+                    return "To year must be greater than or equal to from year";
+                  }
+                  return true;
+                },
               })}
-            />
+            >
+              <option value="">To year</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
           {(fromError || toError) && (
             <span className={styles.errorMessage} role="alert">
