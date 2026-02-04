@@ -86,17 +86,31 @@ export function generateFormSubmitDeepLink(
   config?: CdwConfig,
   wizardFields?: FieldDefinition[],
   wizardId?: string,
+  displayValues?: Record<string, string>,
 ): string {
   const resolvedDatasetId = datasetId || "default";
 
-  const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId, chartOptions, config);
+  const { bookmark, fieldInstanceMap } = buildMriBookmark(
+    fields,
+    formData,
+    configMeta,
+    resolvedDatasetId,
+    chartOptions,
+    config,
+  );
   const compressed = compress(bookmark);
 
   // Collect wizard-only fields into the wizards param
   const wizardsData: Record<string, any> = {};
   if (wizardId) {
-    wizardsData.analysisType = wizardId;
+    wizardsData.dashboardType = wizardId;
   }
+
+  // Collect condition values as array and their display values separately
+  const conditions: string[] = [];
+  const wizardDisplayValues: Record<string, { value: string; displayName: string }> = {};
+
+  // For wizardFields: process each field
   for (const field of wizardFields || []) {
     if (field.type === "yearRange") {
       const from = formData[`${field.id}_from`];
@@ -107,10 +121,51 @@ export function generateFormSubmitDeepLink(
     } else {
       const value = formData[field.id];
       if (value !== undefined && value !== null && value !== "") {
-        wizardsData[field.id] = value;
+        const displayName = displayValues?.[field.id];
+
+        // Check if this is a condition field (id starts with "condition")
+        if (field.id.startsWith("condition")) {
+          // Check if wildcard toggle is enabled
+          const hasWildcard = formData[`${field.id}_wildcard`] === true;
+          const conditionValue = hasWildcard ? `${value}.*` : value;
+          conditions.push(conditionValue);
+          if (field.type === "text" && displayName) {
+            wizardDisplayValues[field.id] = { value, displayName };
+          }
+        } else if (field.type === "text" && displayName) {
+          wizardsData[field.id] = { value, displayName };
+        } else {
+          wizardsData[field.id] = value;
+        }
       }
     }
   }
+
+  // Add conditions array if not empty
+  if (conditions.length > 0) {
+    wizardsData.conditions = conditions;
+  }
+
+  // For fields: map instanceID -> { value, displayName } for text fields with display values
+  const fieldDisplayValues: Record<string, { value: string; displayName: string }> = {};
+  for (const mapping of fieldInstanceMap) {
+    const displayName = displayValues?.[mapping.fieldId];
+    if (displayName) {
+      const value = formData[mapping.fieldId];
+      fieldDisplayValues[mapping.instanceID] = { value, displayName };
+    }
+  }
+
+  // Build displayValues object with fields and wizards keys
+  const hasFieldDisplayValues = Object.keys(fieldDisplayValues).length > 0;
+  const hasWizardDisplayValues = Object.keys(wizardDisplayValues).length > 0;
+  if (hasFieldDisplayValues || hasWizardDisplayValues) {
+    wizardsData.displayValues = {
+      ...(hasFieldDisplayValues && { fields: fieldDisplayValues }),
+      ...(hasWizardDisplayValues && { wizards: wizardDisplayValues }),
+    };
+  }
+
   const wizards = compress(wizardsData);
 
   const params = new URLSearchParams({

@@ -150,7 +150,7 @@
           "id": "condition1",
           "type": "text",
           "label": "Condition 1",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         },
         {
@@ -353,7 +353,7 @@
           "id": "condition1",
           "type": "text",
           "label": "Condition 1",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         },
         {
@@ -555,7 +555,7 @@
           "id": "condition1",
           "type": "text",
           "label": "Condition 1",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         },
         {
@@ -756,43 +756,8 @@
         {
           "id": "condition1",
           "type": "text",
-          "label": "Condition 1",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition2",
-          "type": "text",
-          "label": "Condition 2",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition3",
-          "type": "text",
-          "label": "Condition 3",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition4",
-          "type": "text",
-          "label": "Condition 4",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition5",
-          "type": "text",
-          "label": "Condition 5",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition6",
-          "type": "text",
-          "label": "Condition 6",
-          "required": false,
+          "label": "Disease/Condition",
+          "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }
       ],

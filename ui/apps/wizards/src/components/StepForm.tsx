@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
@@ -16,6 +16,15 @@ export function StepForm() {
     useWizardContext();
   const stepConfig = getCurrentStepConfig();
   const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
+  const displayValuesRef = useRef<Record<string, string>>({});
+
+  const handleDisplayValueChange = useCallback((fieldId: string, displayValue: string | null) => {
+    if (displayValue) {
+      displayValuesRef.current[fieldId] = displayValue;
+    } else {
+      delete displayValuesRef.current[fieldId];
+    }
+  }, []);
 
   useEffect(() => {
     fetchCdwConfig(portalProps.datasetId).then(({ meta }) => setConfigMeta(meta));
@@ -25,6 +34,8 @@ export function StepForm() {
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
@@ -64,6 +75,7 @@ export function StepForm() {
           cdwConfig,
           selectedWizard.wizardFields,
           selectedWizard.id,
+          displayValuesRef.current,
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
@@ -86,24 +98,36 @@ export function StepForm() {
 
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
+      const isConditionField = field.id.startsWith("condition");
+      const fieldValue = watch(field.id);
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
             {field.label}:
           </label>
-          <TypeaheadField
-            fieldId={field.id}
-            label={field.label}
-            placeholder={field.placeholder}
-            required={field.required}
-            configPath={field.configPath}
-            configMeta={configMeta}
-            datasetId={portalProps.datasetId}
-            control={control}
-            defaultValue={formData[field.id] ?? ""}
-            error={fieldError as { message?: string } | undefined}
-          />
-          {field.required && <span className={styles.requiredText}>This is a required field</span>}
+          <div className={styles.inputWithToggle}>
+            <TypeaheadField
+              fieldId={field.id}
+              label={field.label}
+              placeholder={field.placeholder}
+              required={field.required}
+              configPath={field.configPath}
+              configMeta={configMeta}
+              datasetId={portalProps.datasetId}
+              control={control}
+              setValue={setValue}
+              defaultValue={formData[field.id] ?? ""}
+              error={fieldError as { message?: string } | undefined}
+              onDisplayValueChange={handleDisplayValueChange}
+            />
+            {isConditionField && (
+              <div className={styles.wildcardToggle}>
+                <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
+                <label htmlFor={`${field.id}_wildcard`}>Include descendants</label>
+              </div>
+            )}
+          </div>
+          {field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>}
           {fieldError && (
             <span className={styles.errorMessage} role="alert">
               {fieldError.message as string}
@@ -116,27 +140,51 @@ export function StepForm() {
     if (field.type === "yearRange") {
       const fromError = errors[`${field.id}_from`];
       const toError = errors[`${field.id}_to`];
+      const currentYear = new Date().getFullYear();
+      const startYear = 1900;
+      const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
+      const fromYearValue = watch(`${field.id}_from`);
+
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label className={styles.label}>{field.label}:</label>
           <div className={styles.groupInputs}>
-            <input
+            <select
               id={`${field.id}_from`}
-              type="date"
               className={`${styles.input} ${fromError ? styles.inputError : ""}`}
               {...register(`${field.id}_from`, {
-                required: field.required ? `${field.label} from date is required` : false,
+                required: field.required ? `${field.label} from year is required` : false,
               })}
-            />
+            >
+              <option value="">From year</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
             <span className={styles.groupSeparator}>-</span>
-            <input
+            <select
               id={`${field.id}_to`}
-              type="date"
               className={`${styles.input} ${toError ? styles.inputError : ""}`}
               {...register(`${field.id}_to`, {
-                required: field.required ? `${field.label} to date is required` : false,
+                required: field.required ? `${field.label} to year is required` : false,
+                validate: (value) => {
+                  if (!value) return true;
+                  if (fromYearValue && Number(value) < Number(fromYearValue)) {
+                    return "To year must be greater than or equal to from year";
+                  }
+                  return true;
+                },
               })}
-            />
+            >
+              <option value="">To year</option>
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
           {(fromError || toError) && (
             <span className={styles.errorMessage} role="alert">

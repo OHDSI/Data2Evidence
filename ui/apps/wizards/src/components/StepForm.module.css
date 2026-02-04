@@ -52,6 +52,7 @@
   flex-direction: row;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .fieldGroupRow {
@@ -74,7 +75,8 @@
   color: #c00;
   font-size: 13px;
   white-space: nowrap;
-  margin-left: 8px;
+  margin-left: auto;
+  text-align: right;
 }
 
 .groupInputs {
@@ -213,7 +215,19 @@
 
 .typeaheadWrapper {
   position: relative;
-  flex: 1;
+  width: 400px;
+  flex-shrink: 0;
+}
+
+.typeaheadWrapper .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputWithToggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .typeaheadDropdown {
@@ -248,6 +262,27 @@
   padding: 8px 12px;
   font-size: 14px;
   color: #999;
+}
+
+.wildcardToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wildcardToggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.wildcardToggle label {
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
 }
 
 @media (max-width: 768px) {

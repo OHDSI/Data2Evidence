@@ -1,12 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { getWizardDefinitions, getWizardById } from "../wizardDefinitions";
+
+// Mock cdwConfig - tests run in dev mode so they use hardcoded definitions
+vi.mock("../cdwConfig", () => ({
+  fetchCdwConfig: vi.fn().mockResolvedValue({
+    config: {},
+    meta: { configId: "test", configVersion: "1" },
+  }),
+  getAttributeByPath: vi.fn(),
+}));
 
 describe("wizardDefinitions", () => {
   describe("getWizardDefinitions", () => {
-    it("should return an array with exactly 5 wizards", async () => {
+    it("should return an array with exactly 4 wizards", async () => {
       const wizards = await getWizardDefinitions();
       expect(Array.isArray(wizards)).toBe(true);
-      expect(wizards.length).toBe(5);
+      expect(wizards.length).toBe(4);
     });
 
     it("should return wizards with required fields", async () => {
@@ -39,7 +48,7 @@ describe("wizardDefinitions", () => {
 
           expect(typeof field.id).toBe("string");
           expect(typeof field.type).toBe("string");
-          expect(["text", "num", "datetime", "time"]).toContain(field.type);
+          expect(["text", "num", "datetime", "time", "yearRange"]).toContain(field.type);
           expect(typeof field.label).toBe("string");
           expect(typeof field.required).toBe("boolean");
         });
@@ -65,14 +74,14 @@ describe("wizardDefinitions", () => {
   });
 
   describe("getWizardById", () => {
-    it("should return the wizard with id 'patient-count'", async () => {
-      const wizard = await getWizardById("patient-count");
+    it("should return the wizard with id 'calculate-incidence'", async () => {
+      const wizard = await getWizardById("calculate-incidence");
 
       expect(wizard).toBeDefined();
-      expect(wizard?.id).toBe("patient-count");
-      expect(wizard?.name).toBe("Patient Count Estimation");
+      expect(wizard?.id).toBe("calculate-incidence");
+      expect(wizard?.name).toBe("Calculate Incidence");
       expect(wizard?.fields.length).toBeGreaterThan(0);
-      expect(wizard?.resultActions.length).toBeGreaterThan(0);
+      expect(wizard?.resultActions).toEqual([]);
     });
 
     it("should return undefined for nonexistent wizard id", async () => {
@@ -185,15 +194,14 @@ describe("wizardDefinitions", () => {
       for (const id of wizardIds) {
         const wizard = await getWizardById(id);
 
-        expect(wizard?.fields).toHaveLength(3);
+        expect(wizard?.fields).toHaveLength(11);
 
         const ageField = wizard?.fields.find((f) => f.id === "age");
         expect(ageField).toBeDefined();
         expect(ageField?.type).toBe("num");
-        expect(ageField?.label).toBe("Age");
+        expect(ageField?.label).toBe("Age Range");
         expect(ageField?.required).toBe(false);
         expect(ageField?.configPath).toBe("patient.attributes.Age");
-        expect(ageField?.placeholder).toBe("Age");
 
         const genderField = wizard?.fields.find((f) => f.id === "gender");
         expect(genderField).toBeDefined();
@@ -203,14 +211,12 @@ describe("wizardDefinitions", () => {
         // Options are no longer preloaded — fetched on user interaction via TypeaheadField
         expect(genderField?.options).toBeUndefined();
 
-        const conditionField = wizard?.fields.find((f) => f.id === "condition");
-        expect(conditionField).toBeDefined();
-        expect(conditionField?.type).toBe("text");
-        expect(conditionField?.label).toBe("Condition");
-        expect(conditionField?.configPath).toBe(
-          "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-        );
-        expect(conditionField?.options).toBeUndefined();
+        // Condition fields are now in wizardFields, not fields
+        const heightField = wizard?.fields.find((f) => f.id === "height");
+        expect(heightField).toBeDefined();
+        expect(heightField?.type).toBe("num");
+        expect(heightField?.label).toBe("Height");
+        expect(heightField?.configPath).toBe("patient.interactions.measurement.attributes.numval");
       }
     });
   });

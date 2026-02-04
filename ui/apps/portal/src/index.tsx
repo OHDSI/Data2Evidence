@@ -4,20 +4,19 @@ import { BrowserRouter } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { App } from "./App";
 import { theme } from "./theme";
-import { extractDeepLinkParamsFromUrl, saveDeepLinkParams, loadDeepLinkParams } from "./utils/deepLinkStorage";
+import { extractDeepLinkParamsFromUrl, saveDeepLinkParams } from "./utils/deepLinkStorage";
 import "./webcomponents/registerWebComponents";
 import "./index.scss";
 import "import-map-overrides";
 
 // Save deep link params BEFORE any redirects happen
 // This must run synchronously before React initializes
-// Only save if nothing is already stored (avoid overwriting with OIDC callback params)
+// Only whitelisted paths (/researcher/cohort, /researcher/wizards) will have params extracted
+// New params always replace existing ones
 try {
-  if (!loadDeepLinkParams()) {
-    const params = extractDeepLinkParamsFromUrl(window.location.href);
-    if (Object.keys(params).length > 0) {
-      saveDeepLinkParams(params);
-    }
+  const params = extractDeepLinkParamsFromUrl(window.location.href);
+  if (Object.keys(params).length > 0) {
+    saveDeepLinkParams(params);
   }
 } catch (error) {
   console.warn("Failed to save deep link params on initial load:", error);
