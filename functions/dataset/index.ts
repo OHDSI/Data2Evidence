@@ -123,7 +123,7 @@ export class DatasetRouter {
           cacheDatasetType,
         } = req.body;
 
-        const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
+        const newCacheSchemaName = schemaName ? schemaName : `CDM${id}`.replace(/-/g, "");
         const parsedNewCacheSchemaName = this.schemaCase(
           newCacheSchemaName,
           dialect as DbDialect,
@@ -354,8 +354,7 @@ export class DatasetRouter {
       const id = uuidv4();
 
       // Use parent schema names if provided, otherwise generate new ones
-      const newSchemaName =
-        cdmSchemaValue || (sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "");
+      const newSchemaName = `CDM${id}`.replace(/-/g, "");
       const newVocabSchemaName = vocabSchemaValue || vocabSchemaName;
       const newResultsSchemaName = resultsSchemaValue || resultsSchemaName;
 

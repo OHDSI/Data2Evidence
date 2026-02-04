@@ -33,7 +33,7 @@ export let logger = {
 export const publicURLs = [
     '^/portalsvc/public-graphql$',
     '^/usermgmt/api/user-group/public$',
-    '^/system-portal/dataset/public/list$',
+    '^/d2e/system-portal/dataset/public/list$',
     '^/system-portal/feature/list$',
     '^/system-portal/config/public/types.*$',
     '^/system-portal/config/public/overview-description$',
@@ -124,6 +124,6 @@ export const env = {
     D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
     D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
 
-    CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1',
-    CACHE_FLOW_LEVEL_CONCURRENCY: _env.CACHE_FLOW_LEVEL_CONCURRENCY || '1'
+    CACHE_FLOW_LEVEL_CONCURRENCY: _env.CACHE_FLOW_LEVEL_CONCURRENCY || '1',
+    CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1'
 }

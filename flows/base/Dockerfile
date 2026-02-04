@@ -164,8 +164,8 @@ COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/pyt
 COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.venv /app/.venv
 
 
-COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
-COPY --chown=docker:docker --chmod=711 ./base /app/flows/
+# COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
+# COPY --chown=docker:docker --chmod=711 ./base /app/flows/
 
 WORKDIR /app
 

@@ -31,12 +31,11 @@ export class DbCredentialsAPI {
             };
 
             const options = {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                httpAgent: this.agent,
+              headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+              },
             };
-
+            console.log("Requesting client credentials token from OAuth server: ", params);
             const data = Object.keys(params)
                 .map(
                     (key) =>
@@ -47,6 +46,7 @@ export class DbCredentialsAPI {
                 .join("&");
             const result = await post(this.oauthUrl, data, options);
             this.accessToken = `Bearer ${result.data.access_token}`;
+            console.log("Obtained client credentials token: ", this.accessToken);
             return this.accessToken;
         }catch(error: any){
             console.error(`Error obtaining client credentials token: ${error.response?.data || error.message}`);
@@ -58,10 +58,9 @@ export class DbCredentialsAPI {
       let options = {}
       options = {
         headers: {
-          Authorization: this.accessToken
+          authorization: this.accessToken
         }
       }
-  
       return options;
     }
 
