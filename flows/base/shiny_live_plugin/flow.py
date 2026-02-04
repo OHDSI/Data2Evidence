@@ -2,8 +2,6 @@ from prefect import flow, task
 from prefect.logging import get_run_logger
 from prefect_shell import ShellOperation
 import os
-import shutil
-# from rpy2 import robjects
 from .types import ShinyLivePluginType
 
 from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
@@ -19,7 +17,7 @@ def shiny_live_plugin(options: ShinyLivePluginType):
 
     Args:
         options: ShinyLivePluginType with:
-            - dataset_id: str, identifier for the dataset to be used in the app 
+            - dataset_id: str, identifier for the dataset to be used in the app
             - language: FlowLanguageType, programming language of the app ("python" or "r")
             - app_code: str, the code of the Shiny Live application
     """
@@ -37,14 +35,9 @@ def shiny_live_plugin(options: ShinyLivePluginType):
         language=options.language,
         app_dir=app_dir
     )
-    zip_file_path = zip_shiny_live_assets(
+    upload_result = upload_shiny_live_folder(
         docs_dir=docs_dir,
         dataset_id=options.dataset_id,
-        language=options.language
-    )
-    upload_result = upload_shiny_live_assets(
-        dataset_id=options.dataset_id,
-        zip_file_path=zip_file_path,
         config_type=options.config_type,
         name=options.name,
         language=options.language
@@ -54,7 +47,7 @@ def shiny_live_plugin(options: ShinyLivePluginType):
         'status': 'success',
         'dataset_id': options.dataset_id,
         'language': options.language,
-        'zip_file_path': zip_file_path,
+        'base_path': upload_result.get('base_path'),
         'upload_result': upload_result
     }
 
@@ -133,70 +126,44 @@ def build_shiny_live_assets(language: str, app_dir: str) -> str:
 
 
 @task(log_prints=True)
-def zip_shiny_live_assets(docs_dir: str, dataset_id: str, language: str) -> str:
+def upload_shiny_live_folder(docs_dir: str, dataset_id: str, config_type: str, name: str, language: str) -> dict:
     """
-    Zip the built Shiny Live assets directory.
+    Upload the Shiny Live assets folder to Supabase storage.
 
     Args:
         docs_dir: str, path to the built assets directory
         dataset_id: str, identifier for the dataset
-        language: str, programming language of the Shiny Live app
         config_type: str, configuration type of the Shiny Live app or Dashboard
         name: str, name of the Shiny Live app or Dashboard
-    Returns:
-        str: Path to the created zip file
-    """
-
-    logger = get_run_logger()
-    logger.info(f"Zipping Shiny Live assets from {docs_dir}...")
-
-    normalized_language = language.lower().replace('.', '_')
-    zip_base_path = os.path.join(os.path.dirname(
-        docs_dir), f"shiny_live_app_{dataset_id}_{normalized_language}")
-
-    try:
-        zip_file_path = shutil.make_archive(
-            base_name=zip_base_path,
-            format='zip',
-            root_dir=docs_dir
-        )
-        logger.info(f"Created zip file: {zip_file_path}")
-        return zip_file_path
-    except Exception as e:
-        logger.error(f"Failed to create zip file: {e}")
-        raise
-
-
-@task(log_prints=True)
-def upload_shiny_live_assets(dataset_id: str, zip_file_path: str, config_type: str, name: str, language: str) -> dict:
-    """
-    Upload the zipped Shiny Live assets to Supabase storage.
-
-    Args:
-        dataset_id: str, identifier for the dataset
-        zip_file_path: str, path to the zip file
+        language: str, programming language of the Shiny Live app
 
     Returns:
         dict: Upload result from PortalServerAPI
     """
 
     logger = get_run_logger()
+
+    normalized_language = language.lower().replace('.', '_')
+    base_path = f"dashboard_{dataset_id}_{config_type}_{name}_{normalized_language}"
+
     logger.info(
-        f"Uploading Shiny Live assets from {zip_file_path} to dataset {dataset_id}...")
+        f"Uploading Shiny Live assets from {docs_dir} to base path {base_path}...")
 
     try:
+        logger.info("about to create portal api")
         portal_api = PortalServerAPI()
-
-        upload_result = portal_api.upload_dataset_file(
-            datasetId=dataset_id,
-            file_path=zip_file_path,
-            content_type='application/zip',
-            file_name=f"dashboard_{dataset_id}_{config_type}_{name}_{language.value}.zip"
+        logger.info("about to call upload graphs folder")
+        upload_result = portal_api.upload_graphs_folder(
+            folder_path=docs_dir,
+            base_path=base_path
         )
 
         logger.info(
             f"Successfully uploaded Shiny Live assets: {upload_result}")
-        return upload_result
+        return {
+            **upload_result,
+            'base_path': base_path
+        }
     except Exception as e:
         logger.error(f"Failed to upload Shiny Live assets: {e}")
         raise

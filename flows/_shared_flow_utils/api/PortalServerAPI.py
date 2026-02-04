@@ -79,3 +79,69 @@ class PortalServerAPI(BaseAPI):
             raise Exception(f"Request failed for file {file_path}: {e}")
         except Exception as e:
             raise Exception(f"Failed to upload file {file_path}: {e}")
+
+    def upload_graphs_folder(
+        self,
+        folder_path: str,
+        base_path: str,
+        parallel: bool = True,
+        concurrency_limit: int = 5
+    ) -> dict:
+        """
+        Upload an entire folder to Supabase storage (portal-datasets-graphs bucket).
+
+        Args:
+            folder_path: Local path to the folder to upload
+            base_path: Base path in storage (e.g., "dashboard_{dataset_id}_{config_type}_{name}_{language}")
+            parallel: Whether to upload files in parallel (default: True)
+            concurrency_limit: Max concurrent uploads when parallel=True (default: 5)
+        Returns:
+            dict: Response from the server with uploaded file paths
+        """
+        request_url = (
+            f"{self.url}supabase-storage/upload/folder"
+            f"?basePath={base_path}&parallel={str(parallel).lower()}&concurrencyLimit={concurrency_limit}"
+        )
+
+        headers = self.headers.copy()
+        headers.pop("Content-Type", None)
+
+        if not os.path.isdir(folder_path):
+            raise ValueError(f"Folder not found: {folder_path}")
+
+        files_to_upload = []
+        for root, _, files in os.walk(folder_path):
+            for file_name in files:
+                file_full_path = os.path.join(root, file_name)
+                relative_path = os.path.relpath(file_full_path, folder_path)
+                files_to_upload.append((relative_path, file_full_path))
+
+        if not files_to_upload:
+            raise ValueError(f"No files found in folder: {folder_path}")
+
+        try:
+            multipart_files = []
+            file_handles = []
+
+            for relative_path, file_full_path in files_to_upload:
+                fh = open(file_full_path, "rb")
+                file_handles.append(fh)
+                multipart_files.append(
+                    (relative_path, (relative_path, fh, "application/octet-stream")))
+
+            response = requests.post(
+                request_url,
+                headers=headers,
+                files=multipart_files,
+                verify=self.get_verify_value(),
+            )
+
+            for fh in file_handles:
+                fh.close()
+
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"Request failed for folder {folder_path}: {e}")
+        except Exception as e:
+            raise Exception(f"Failed to upload folder {folder_path}: {e}")
