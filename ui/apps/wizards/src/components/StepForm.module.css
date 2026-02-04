@@ -250,6 +250,26 @@
   color: #999;
 }
 
+.wildcardToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.wildcardToggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.wildcardToggle label {
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .fieldGroup,
   .fieldGroupRow {

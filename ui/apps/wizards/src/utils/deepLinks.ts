@@ -125,7 +125,10 @@ export function generateFormSubmitDeepLink(
 
         // Check if this is a condition field (id starts with "condition")
         if (field.id.startsWith("condition")) {
-          conditions.push(value);
+          // Check if wildcard toggle is enabled
+          const hasWildcard = formData[`${field.id}_wildcard`] === true;
+          const conditionValue = hasWildcard ? `${value}.*` : value;
+          conditions.push(conditionValue);
           if (field.type === "text" && displayName) {
             wizardDisplayValues[field.id] = { value, displayName };
           }

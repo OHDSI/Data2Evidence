@@ -97,6 +97,7 @@ export function StepForm() {
 
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
+      const isConditionField = field.id.startsWith("condition");
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
@@ -115,6 +116,12 @@ export function StepForm() {
             error={fieldError as { message?: string } | undefined}
             onDisplayValueChange={handleDisplayValueChange}
           />
+          {isConditionField && (
+            <div className={styles.wildcardToggle}>
+              <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
+              <label htmlFor={`${field.id}_wildcard`}>Wildcard</label>
+            </div>
+          )}
           {field.required && <span className={styles.requiredText}>This is a required field</span>}
           {fieldError && (
             <span className={styles.errorMessage} role="alert">
