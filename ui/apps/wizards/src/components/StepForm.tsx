@@ -36,7 +36,7 @@ export function StepForm() {
     control,
     watch,
     setValue,
-    formState: { errors, touchedFields, isSubmitted },
+    formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
     defaultValues: formData,
@@ -57,11 +57,6 @@ export function StepForm() {
     }
     return true;
   }, [selectedWizard, formValues]);
-
-  // Helper to check if we should show error styling for a field
-  const shouldShowError = (fieldId: string) => {
-    return (touchedFields[fieldId] || isSubmitted) && errors[fieldId];
-  };
 
   const onSubmit = async (data: Record<string, any>) => {
     updateFormData(data);
@@ -120,7 +115,6 @@ export function StepForm() {
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
       const isConditionField = field.id.startsWith("condition");
-      const showError = shouldShowError(field.id);
       const fieldValue = formValues[field.id];
       return (
         <div key={field.id} className={styles.fieldGroup}>
@@ -139,7 +133,7 @@ export function StepForm() {
               control={control}
               setValue={setValue}
               defaultValue={formData[field.id] ?? ""}
-              error={showError ? (fieldError as { message?: string } | undefined) : undefined}
+              error={fieldError as { message?: string } | undefined}
               onDisplayValueChange={handleDisplayValueChange}
             />
             {isConditionField && (
@@ -149,7 +143,7 @@ export function StepForm() {
               </div>
             )}
           </div>
-          {showError && fieldError ? (
+          {fieldError ? (
             <span className={styles.errorMessage} role="alert">
               {fieldError.message as string}
             </span>
@@ -163,14 +157,12 @@ export function StepForm() {
     if (field.type === "yearRange") {
       const fromError = errors[`${field.id}_from`];
       const toError = errors[`${field.id}_to`];
-      const showFromError = shouldShowError(`${field.id}_from`);
-      const showToError = shouldShowError(`${field.id}_to`);
       const currentYear = new Date().getFullYear();
       const startYear = 1900;
       const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
       const fromYearValue = watch(`${field.id}_from`);
       const toYearValue = formValues[`${field.id}_to`];
-      const hasYearError = (showFromError && fromError) || (showToError && toError);
+      const hasYearError = fromError || toError;
 
       return (
         <div key={field.id} className={styles.fieldGroup}>
@@ -178,7 +170,7 @@ export function StepForm() {
           <div className={styles.groupInputs}>
             <select
               id={`${field.id}_from`}
-              className={`${styles.input} ${showFromError && fromError ? styles.inputError : ""}`}
+              className={`${styles.input} ${fromError ? styles.inputError : ""}`}
               {...register(`${field.id}_from`, {
                 required: field.required ? `${field.label} from year is required` : false,
               })}
@@ -193,7 +185,7 @@ export function StepForm() {
             <span className={styles.groupSeparator}>-</span>
             <select
               id={`${field.id}_to`}
-              className={`${styles.input} ${showToError && toError ? styles.inputError : ""}`}
+              className={`${styles.input} ${toError ? styles.inputError : ""}`}
               {...register(`${field.id}_to`, {
                 required: field.required ? `${field.label} to year is required` : false,
                 validate: (value) => {
@@ -225,7 +217,6 @@ export function StepForm() {
       );
     }
 
-    const showError = shouldShowError(field.id);
     const fieldValue = formValues[field.id];
 
     switch (field.type) {
@@ -239,8 +230,8 @@ export function StepForm() {
               id={field.id}
               type="text"
               placeholder={field.placeholder || "e.g. >=60, [50-80]"}
-              className={`${styles.input} ${showError && fieldError ? styles.inputError : ""}`}
-              aria-invalid={showError && !!fieldError}
+              className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+              aria-invalid={!!fieldError}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
                 validate: (v) => {
@@ -256,7 +247,7 @@ export function StepForm() {
                 },
               })}
             />
-            {showError && fieldError ? (
+            {fieldError ? (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
@@ -276,13 +267,13 @@ export function StepForm() {
               id={field.id}
               type="text"
               placeholder={field.placeholder}
-              className={`${styles.input} ${showError && fieldError ? styles.inputError : ""}`}
-              aria-invalid={showError && !!fieldError}
+              className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+              aria-invalid={!!fieldError}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {showError && fieldError ? (
+            {fieldError ? (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
@@ -303,13 +294,13 @@ export function StepForm() {
               id={field.id}
               type="date"
               aria-label={field.placeholder || field.label}
-              className={`${styles.input} ${showError && fieldError ? styles.inputError : ""}`}
-              aria-invalid={showError && !!fieldError}
+              className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
+              aria-invalid={!!fieldError}
               {...register(field.id, {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {showError && fieldError ? (
+            {fieldError ? (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
@@ -444,7 +435,7 @@ export function StepForm() {
           </button>
           <button
             type="submit"
-            disabled={!allRequiredFieldsFilled()}
+            disabled={!allRequiredFieldsFilled() || !isValid}
             className={`${styles.button} ${styles.buttonPrimary}`}
           >
             <span>▦</span> {submitLabel}
