@@ -13,6 +13,7 @@ interface TypeaheadFieldProps {
   configMeta: ConfigMeta;
   datasetId?: string;
   control: Control<any>;
+  setValue?: (name: string, value: any, options?: { shouldValidate?: boolean }) => void;
   defaultValue?: string;
   error?: { message?: string };
   onDisplayValueChange?: (fieldId: string, displayValue: string | null) => void;
@@ -53,6 +54,7 @@ export function TypeaheadField({
   configMeta,
   datasetId,
   control,
+  setValue,
   defaultValue = "",
   error,
   onDisplayValueChange,
@@ -121,12 +123,15 @@ export function TypeaheadField({
       control={control}
       defaultValue={defaultValue}
       rules={{
-        required: required ? `${label} is required` : false,
-        validate: () => {
-          // No text typed and no selection → empty field, valid (required rule handles emptiness)
-          if (!inputTextRef.current) return true;
-          // Text present but not from dropdown selection → invalid
-          if (!hasSelection.current) return `Please select a ${label} from the dropdown`;
+        validate: (value) => {
+          // Handle required validation - check both form value and our refs
+          if (required && !value && !hasSelection.current) {
+            return `${label} is required`;
+          }
+          // Text typed but not from dropdown selection → invalid
+          if (inputTextRef.current && !hasSelection.current) {
+            return `Please select a ${label} from the dropdown`;
+          }
           return true;
         },
       }}
@@ -150,11 +155,13 @@ export function TypeaheadField({
 
         const handleSelect = (option: Option) => {
           setInputText(option.label);
+          inputTextRef.current = option.label;
           hasSelection.current = true;
-          controllerField.onChange(option.value);
           onDisplayValueChange?.(fieldId, option.label);
           setIsOpen(false);
           setHighlightIndex(-1);
+          // Use setValue with shouldValidate to set value and trigger validation
+          setValue?.(fieldId, option.value, { shouldValidate: true });
         };
 
         const handleKeyDown = (e: React.KeyboardEvent) => {

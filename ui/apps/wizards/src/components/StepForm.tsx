@@ -35,6 +35,7 @@ export function StepForm() {
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
@@ -98,31 +99,35 @@ export function StepForm() {
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
       const isConditionField = field.id.startsWith("condition");
+      const fieldValue = watch(field.id);
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
             {field.label}:
           </label>
-          <TypeaheadField
-            fieldId={field.id}
-            label={field.label}
-            placeholder={field.placeholder}
-            required={field.required}
-            configPath={field.configPath}
-            configMeta={configMeta}
-            datasetId={portalProps.datasetId}
-            control={control}
-            defaultValue={formData[field.id] ?? ""}
-            error={fieldError as { message?: string } | undefined}
-            onDisplayValueChange={handleDisplayValueChange}
-          />
-          {isConditionField && (
-            <div className={styles.wildcardToggle}>
-              <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
-              <label htmlFor={`${field.id}_wildcard`}>Wildcard</label>
-            </div>
-          )}
-          {field.required && <span className={styles.requiredText}>This is a required field</span>}
+          <div className={styles.inputWithToggle}>
+            <TypeaheadField
+              fieldId={field.id}
+              label={field.label}
+              placeholder={field.placeholder}
+              required={field.required}
+              configPath={field.configPath}
+              configMeta={configMeta}
+              datasetId={portalProps.datasetId}
+              control={control}
+              setValue={setValue}
+              defaultValue={formData[field.id] ?? ""}
+              error={fieldError as { message?: string } | undefined}
+              onDisplayValueChange={handleDisplayValueChange}
+            />
+            {isConditionField && (
+              <div className={styles.wildcardToggle}>
+                <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
+                <label htmlFor={`${field.id}_wildcard`}>Include descendants</label>
+              </div>
+            )}
+          </div>
+          {field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>}
           {fieldError && (
             <span className={styles.errorMessage} role="alert">
               {fieldError.message as string}
