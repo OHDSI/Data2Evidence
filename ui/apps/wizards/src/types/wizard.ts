@@ -20,13 +20,6 @@ export interface FieldDefinition {
   }>;
 }
 
-export interface ResultAction {
-  id: string;
-  label: string;
-  type: "deep-link" | "download" | "placeholder";
-  urlTemplate?: string;
-}
-
 /**
  * Step types supported by the wizard system.
  * - selection: Wizard selection grid
@@ -79,7 +72,11 @@ export interface WizardStepConfig {
   config?: StepTypeConfig;
 }
 
-export interface WizardDefinition {
+/**
+ * External wizard configuration (from backend/config).
+ * Simplified to only contain the variable parts - fields and metadata.
+ */
+export interface WizardConfig {
   id: string;
   name: string;
   description: string;
@@ -87,10 +84,16 @@ export interface WizardDefinition {
   fields: FieldDefinition[];
   /** Wizard-only fields stored in the wizards query param, not in MRI bookmark */
   wizardFields?: FieldDefinition[];
-  resultActions: ResultAction[];
-  /** Step configuration defining the wizard's flow */
-  steps: WizardStepConfig[];
   hidden?: boolean;
+}
+
+/**
+ * Internal wizard definition with hardcoded steps.
+ * Extended from WizardConfig with runtime-added properties.
+ */
+export interface WizardDefinition extends WizardConfig {
+  /** Step configuration - hardcoded in the app */
+  steps: WizardStepConfig[];
 }
 
 /**

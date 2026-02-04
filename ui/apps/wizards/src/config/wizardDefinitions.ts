@@ -1,9 +1,22 @@
-import type { WizardDefinition, FieldDefinition } from "../types/wizard";
+import type { WizardDefinition, WizardConfig, FieldDefinition, WizardStepConfig } from "../types/wizard";
 import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
 import type { CdwConfig } from "./cdwConfig";
 import client from "../axios/request";
 
 const isDev = import.meta.env.DEV;
+
+/**
+ * Default steps used by all wizards.
+ * Hardcoded here since all wizards use the same flow.
+ */
+const DEFAULT_STEPS: WizardStepConfig[] = [
+  {
+    id: "form",
+    type: "form",
+    title: "Form",
+    config: { submitLabel: "Open cohort", submitAction: "deep-link" },
+  },
+];
 
 /**
  * Enrich a field definition using CDW config data looked up via configPath.
@@ -22,13 +35,15 @@ function enrichField(field: FieldDefinition, cdwConfig: CdwConfig): FieldDefinit
 }
 
 /**
- * Enrich all fields in a wizard definition using CDW config.
+ * Convert a WizardConfig to WizardDefinition by adding hardcoded steps
+ * and enriching fields with CDW config data.
  */
-function enrichWizard(wizard: WizardDefinition, cdwConfig: CdwConfig): WizardDefinition {
+function toWizardDefinition(config: WizardConfig, cdwConfig: CdwConfig): WizardDefinition {
   return {
-    ...wizard,
-    fields: wizard.fields.map((field) => enrichField(field, cdwConfig)),
-    wizardFields: wizard.wizardFields?.map((field) => enrichField(field, cdwConfig)),
+    ...config,
+    fields: config.fields.map((field) => enrichField(field, cdwConfig)),
+    wizardFields: config.wizardFields?.map((field) => enrichField(field, cdwConfig)),
+    steps: DEFAULT_STEPS,
   };
 }
 
@@ -237,7 +252,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
   },
 ];
 
-const mockWizardDefinitions: WizardDefinition[] = [
+const mockWizardConfigs: WizardConfig[] = [
   {
     id: "calculate-incidence",
     name: "Calculate Incidence",
@@ -245,16 +260,6 @@ const mockWizardDefinitions: WizardDefinition[] = [
       "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
     fields: WIZARD_FIELDS,
     wizardFields: WIZARD_ONLY_FIELDS,
-    steps: [
-      {
-        id: "form",
-        type: "form" as const,
-        title: "Form",
-        note: "Note: this is a very rough approximation that is just a starting a more comprehensive analysis.",
-        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
-      },
-    ],
-    resultActions: [],
   },
   {
     id: "calculate-prevalence",
@@ -263,15 +268,6 @@ const mockWizardDefinitions: WizardDefinition[] = [
       "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
     fields: WIZARD_FIELDS,
     wizardFields: WIZARD_ONLY_FIELDS,
-    steps: [
-      {
-        id: "form",
-        type: "form" as const,
-        title: "Form",
-        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
-      },
-    ],
-    resultActions: [],
   },
   {
     id: "calculate-mortality",
@@ -280,15 +276,6 @@ const mockWizardDefinitions: WizardDefinition[] = [
       "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
     fields: WIZARD_FIELDS,
     wizardFields: WIZARD_ONLY_FIELDS,
-    steps: [
-      {
-        id: "form",
-        type: "form" as const,
-        title: "Form",
-        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
-      },
-    ],
-    resultActions: [],
   },
   {
     id: "cross-sectional-demographics",
@@ -296,25 +283,16 @@ const mockWizardDefinitions: WizardDefinition[] = [
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
     fields: WIZARD_FIELDS,
     wizardFields: WIZARD_ONLY_FIELDS,
-    steps: [
-      {
-        id: "form",
-        type: "form" as const,
-        title: "Form",
-        config: { submitLabel: "Open cohort", submitAction: "deep-link" as const },
-      },
-    ],
-    resultActions: [],
   },
 ];
 
 /**
- * Fetch wizard definitions from the portal backend API.
- * Falls back to mock definitions in dev mode.
+ * Fetch wizard configs from the portal backend API.
+ * Falls back to mock configs in dev mode.
  */
-async function fetchWizardDefinitions(datasetId?: string): Promise<WizardDefinition[]> {
+async function fetchWizardConfigs(datasetId?: string): Promise<WizardConfig[]> {
   if (isDev) {
-    return mockWizardDefinitions;
+    return mockWizardConfigs;
   }
 
   const response = await client.get("/d2e/pa-config-svc/wizards/config", {
@@ -349,10 +327,6 @@ async function fetchWizardDefinitions(datasetId?: string): Promise<WizardDefinit
       console.warn("[Wizards] Skipping wizard without fields array:", wizard.id);
       return false;
     }
-    if (!Array.isArray(wizard.steps)) {
-      console.warn("[Wizards] Skipping wizard without steps array:", wizard.id);
-      return false;
-    }
     return true;
   });
 }
@@ -361,21 +335,21 @@ async function fetchWizardDefinitions(datasetId?: string): Promise<WizardDefinit
  * Get all available wizard definitions, enriched with CDW config data.
  */
 export async function getWizardDefinitions(datasetId?: string): Promise<WizardDefinition[]> {
-  const [definitions, { config: cdwConfig }] = await Promise.all([
-    fetchWizardDefinitions(datasetId),
+  const [configs, { config: cdwConfig }] = await Promise.all([
+    fetchWizardConfigs(datasetId),
     fetchCdwConfig(datasetId),
   ]);
-  return definitions.map((wizard) => enrichWizard(wizard, cdwConfig));
+  return configs.map((config) => toWizardDefinition(config, cdwConfig));
 }
 
 /**
  * Get a specific wizard definition by ID, enriched with CDW config data.
  */
 export async function getWizardById(id: string, datasetId?: string): Promise<WizardDefinition | undefined> {
-  const definitions = await fetchWizardDefinitions(datasetId);
-  const wizard = definitions.find((w) => w.id === id);
-  if (!wizard) return undefined;
+  const configs = await fetchWizardConfigs(datasetId);
+  const config = configs.find((w) => w.id === id);
+  if (!config) return undefined;
 
   const { config: cdwConfig } = await fetchCdwConfig(datasetId);
-  return enrichWizard(wizard, cdwConfig);
+  return toWizardDefinition(config, cdwConfig);
 }

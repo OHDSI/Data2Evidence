@@ -188,20 +188,7 @@
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }
-      ],
-      "steps": [
-        {
-          "id": "form",
-          "type": "form",
-          "title": "Form",
-          "note": "Note: this is a very rough approximation that is just a starting a more comprehensive analysis.",
-          "config": {
-            "submitLabel": "Open cohort",
-            "submitAction": "deep-link"
-          }
-        }
-      ],
-      "resultActions": []
+      ]
     },
     {
       "id": "calculate-prevalence",
@@ -391,19 +378,7 @@
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }
-      ],
-      "steps": [
-        {
-          "id": "form",
-          "type": "form",
-          "title": "Form",
-          "config": {
-            "submitLabel": "Open cohort",
-            "submitAction": "deep-link"
-          }
-        }
-      ],
-      "resultActions": []
+      ]
     },
     {
       "id": "calculate-mortality",
@@ -593,19 +568,7 @@
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }
-      ],
-      "steps": [
-        {
-          "id": "form",
-          "type": "form",
-          "title": "Form",
-          "config": {
-            "submitLabel": "Open cohort",
-            "submitAction": "deep-link"
-          }
-        }
-      ],
-      "resultActions": []
+      ]
     },
     {
       "id": "cross-sectional-demographics",
@@ -760,19 +723,7 @@
           "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }
-      ],
-      "steps": [
-        {
-          "id": "form",
-          "type": "form",
-          "title": "Form",
-          "config": {
-            "submitLabel": "Open cohort",
-            "submitAction": "deep-link"
-          }
-        }
-      ],
-      "resultActions": []
+      ]
     }
   ]
 }
