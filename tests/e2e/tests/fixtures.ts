@@ -47,7 +47,7 @@ export const test = base.extend<{
     const logs: string[] = []
 
     // Capture all console messages
-    page.on('console', (msg) => {
+    page.on('console', msg => {
       const type = msg.type()
       const text = msg.text()
       const timestamp = new Date().toISOString()
@@ -56,14 +56,14 @@ export const test = base.extend<{
     })
 
     // Capture uncaught page errors
-    page.on('pageerror', (error) => {
+    page.on('pageerror', error => {
       const timestamp = new Date().toISOString()
       const logEntry = `[${timestamp}] [PAGE ERROR] ${error.message}\n${error.stack}`
       logs.push(logEntry)
     })
 
     // Capture request failures
-    page.on('requestfailed', (request) => {
+    page.on('requestfailed', request => {
       const timestamp = new Date().toISOString()
       const failure = request.failure()
       const logEntry = `[${timestamp}] [REQUEST FAILED] ${request.method()} ${request.url()} - ${failure?.errorText || 'Unknown error'}`
@@ -74,11 +74,12 @@ export const test = base.extend<{
 
     // After test, save console logs to a file if there were any errors or warnings
     const hasErrors = logs.some(
-      (log) => log.includes('[ERROR]') || log.includes('[PAGE ERROR]') || log.includes('[REQUEST FAILED]')
+      log => log.includes('[ERROR]') || log.includes('[PAGE ERROR]') || log.includes('[REQUEST FAILED]')
     )
 
-    // Always save logs for failed tests, or if there were errors/warnings
-    if (testInfo.status !== 'passed' || hasErrors) {
+    // Skip saving logs if test passed on first try
+    const passedFirstTry = testInfo.status === 'passed' && testInfo.retry === 0
+    if (!passedFirstTry) {
       const outputDir = testInfo.outputDir
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true })

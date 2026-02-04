@@ -14,7 +14,7 @@ import InclusionReport from './InclusionReport/index.vue'
 import Samples from './Samples.vue'
 
 const props = defineProps<{
-  cohortDefinitionId: number
+  cohortDefinitionId: string
   availableSources: any[]
   patientCounts?: Record<string, number | null>
   isGeneratingCohort?: boolean
@@ -159,7 +159,6 @@ const hasCohortGenerated = computed(() => {
             v-if="selectedView === 'inclusion-report'"
             :cohort-definition-id="cohortDefinitionId"
             :source-key="activeDataset"
-            :modeId="1"
             :generation-status="generationStatus[activeDataset]"
             :patient-count="patientCounts?.[activeDataset]"
           />
@@ -179,4 +178,3 @@ const hasCohortGenerated = computed(() => {
 <style lang="scss" scoped>
 @import '../styles/ExecuteSidePanel.scss';
 </style>
-

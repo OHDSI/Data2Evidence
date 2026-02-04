@@ -221,7 +221,7 @@ import { AgeFilter, GenderFilter, Sample, CreateSampleDTO } from '../types/Sampl
 import AppButton from '@/lib/ui/app-button.vue'
 
 const props = defineProps<{
-  cohortDefinitionId: number
+  cohortDefinitionId: string
   sourceKey: string
   patientCount: number | null
 }>()
@@ -494,4 +494,3 @@ const getGenderFromId = (conceptId: number) => {
 <style lang="scss" scoped>
 @import '../styles/Samples.scss';
 </style>
-

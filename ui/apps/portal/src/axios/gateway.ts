@@ -72,21 +72,4 @@ export class Gateway {
     });
   }
 
-  public createFhirStaging(input: NewFhirProjectInput): Promise<any> {
-    return request({
-      baseURL: GATEWAY_BASE_URL,
-      url: "/fhir/createProject",
-      method: "POST",
-      data: input,
-    });
-  }
-
-  public deleteFhirStaging(id: string): Promise<any> {
-    return request({
-      baseURL: GATEWAY_BASE_URL,
-      url: `/fhir/deleteProject/${id}`,
-      method: "delete",
-    });
-  }
-
 }
