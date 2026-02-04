@@ -409,54 +409,56 @@ sap.ui.define([
         return $.when.apply($, tableTypePlaceholderMap.dimTables
             .reduce(function (list, dim) {
                 
-                list.push(BackendLinker.filterSuggestion({
-                    expression: dim.placeholder + ".INTERACTION_TYPE",
-                    table: dim.placeholder,
-                    mapping: mapping
-                }, function (result, data) {
-                    if (result !== "error") {
-                        data.data.forEach(function (item) {
-                            suggestionProcessor.filterCardFilter(item.value, dim.placeholder);
-                        });
-                    }
-                    }));
+                // list.push(BackendLinker.filterSuggestion({
+                //     expression: dim.placeholder + ".INTERACTION_TYPE",
+                //     table: dim.placeholder,
+                //     mapping: mapping
+                // }, function (result, data) {
+                //     if (result !== "error") {
+                //         data.data.forEach(function (item) {
+                //             suggestionProcessor.filterCardFilter(item.value, dim.placeholder);
+                //         });
+                //     }
+                //     }));
                 
-                list.push(BackendLinker.columnFilterSuggestion({
-                    table: dim.placeholder,
-                    mapping: mapping
-                }, function (result, data) {
-                    if (result !== "error") {
-                        data.data.forEach(function (item) {
-                            suggestionProcessor.attributeRelational(item.value, dim.placeholder);
-                        });
-                    }
-                    }));
+                // list.push(BackendLinker.columnFilterSuggestion({
+                //     table: dim.placeholder,
+                //     mapping: mapping
+                // }, function (result, data) {
+                //     if (result !== "error") {
+                //         data.data.forEach(function (item) {
+                //             suggestionProcessor.attributeRelational(item.value, dim.placeholder);
+                //         });
+                //     }
+                //     }));
+
+                return list;
                 
-                return list.concat(dim.attributeTables.map(function (a) {
-                    return BackendLinker.filterSuggestion({
-                        expression: a.placeholder + ".ATTRIBUTE",
-                        table: a.placeholder,
-                        mapping: mapping
-                    }, function (result, data) {
-                        if (result !== "error") {
-                            data.data.forEach(function (item) {
-                                suggestionProcessor.attributeEAV(item.value, a.placeholder);
-                            });
-                        }
-                    });  
-                }));                
+                // return list.concat(dim.attributeTables.map(function (a) {
+                //     return BackendLinker.filterSuggestion({
+                //         expression: a.placeholder + ".ATTRIBUTE",
+                //         table: a.placeholder,
+                //         mapping: mapping
+                //     }, function (result, data) {
+                //         if (result !== "error") {
+                //             data.data.forEach(function (item) {
+                //                 suggestionProcessor.attributeEAV(item.value, a.placeholder);
+                //             });
+                //         }
+                //     });  
+                // }));                
                 
             }, [
-                BackendLinker.columnFilterSuggestion({
-                    table: tableTypePlaceholderMap.factTable.placeholder,
-                    mapping: mapping
-                }, function (result, data) {
-                    if (result !== "error") {
-                        data.data.forEach(function (item) {
-                            suggestionProcessor.attributeRelationalPatient(item.value, tableTypePlaceholderMap.factTable.placeholder);
-                        });
-                    }
-                })
+                // BackendLinker.columnFilterSuggestion({
+                //     table: tableTypePlaceholderMap.factTable.placeholder,
+                //     mapping: mapping
+                // }, function (result, data) {
+                //     if (result !== "error") {
+                //         data.data.forEach(function (item) {
+                //             suggestionProcessor.attributeRelationalPatient(item.value, tableTypePlaceholderMap.factTable.placeholder);
+                //         });
+                //     }
+                // })
             ]));       
     };
 
