@@ -82,6 +82,38 @@
     color: #666666;
   }
 
+  &__empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 3rem 2rem;
+    text-align: center;
+  }
+
+  &__empty-icon {
+    width: 64px;
+    height: 64px;
+    color: #9e9e9e;
+    margin-bottom: 1.5rem;
+  }
+
+  &__empty-title {
+    margin: 0 0 0.75rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #424242;
+  }
+
+  &__empty-message {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: #757575;
+    max-width: 400px;
+    line-height: 1.5;
+  }
+
   &__error {
     display: flex;
     align-items: center;

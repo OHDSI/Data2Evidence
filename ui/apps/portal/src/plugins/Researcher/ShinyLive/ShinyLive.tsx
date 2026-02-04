@@ -1,3 +1,4 @@
+import { DescriptionOutlined } from "@mui/icons-material";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import { FC, useEffect, useRef, useState } from "react";
 import "./ShinyLive.scss";
@@ -27,6 +28,25 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
 
         const url = `${window.location.origin}/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_testing_r/`;
         console.log("[Dashboard] Setting iframe URL:", url);
+
+        // Check if the dashboard exists before loading iframe
+        const checkResponse = await fetch(url, {
+          method: "HEAD",
+          credentials: "include",
+        });
+
+        if (checkResponse.status === 404) {
+          console.error("[Dashboard] Dashboard not found (404)");
+          setError("Dashboard not found. The application may not have been created yet.");
+          return;
+        }
+
+        if (!checkResponse.ok) {
+          console.error(`[Dashboard] Dashboard check failed with status ${checkResponse.status}`);
+          setError(`Failed to load dashboard (status ${checkResponse.status})`);
+          return;
+        }
+
         setIframeUrl(url);
       } catch (err) {
         console.error("[Dashboard] Error setting up Dashboard:", err);
@@ -45,8 +65,10 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     <div className="shinylive-plugin">
       <div className="shinylive-plugin__content">
         {error ? (
-          <div className="shinylive-plugin__error">
-            <p>Error: {error}</p>
+          <div className="shinylive-plugin__empty-state">
+            <DescriptionOutlined className="shinylive-plugin__empty-icon" />
+            <h3 className="shinylive-plugin__empty-title">Dashboard Not Available</h3>
+            <p className="shinylive-plugin__empty-message">{error}</p>
           </div>
         ) : iframeUrl ? (
           <>
