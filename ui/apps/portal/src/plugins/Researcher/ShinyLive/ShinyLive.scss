@@ -5,72 +5,9 @@
   width: 100%;
   overflow: hidden;
 
-  &__header {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid #e0e0e0;
-    background-color: #ffffff;
-
-    h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #333333;
-    }
-  }
-
-  &__content {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    background-color: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__status {
-    padding: 0.75rem 1rem;
-    background-color: #e3f2fd;
-    border-bottom: 1px solid #2196f3;
-    text-align: center;
-    font-size: 0.875rem;
-    color: #1976d2;
-    flex-shrink: 0;
-  }
-
-  &__error-banner {
-    padding: 1rem;
-    background-color: #fff3cd;
-    border-bottom: 2px solid #ffc107;
-    text-align: center;
-    flex-shrink: 0;
-
-    p {
-      margin: 0 0 0.75rem 0;
-      font-size: 0.875rem;
-      color: #856404;
-    }
-  }
-
-  &__open-button {
-    padding: 0.5rem 1.5rem;
-    background-color: #1976d2;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    &:hover {
-      background-color: #1565c0;
-    }
-  }
-
-  &__iframe {
+  &__dashboard {
+    height: 100%;
     width: 100%;
-    flex: 1;
-    border: none;
-    display: block;
   }
 
   &__loading {
@@ -80,38 +17,6 @@
     height: 100%;
     font-size: 1.125rem;
     color: #666666;
-  }
-
-  &__empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 3rem 2rem;
-    text-align: center;
-  }
-
-  &__empty-icon {
-    width: 64px;
-    height: 64px;
-    color: #9e9e9e;
-    margin-bottom: 1.5rem;
-  }
-
-  &__empty-title {
-    margin: 0 0 0.75rem 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #424242;
-  }
-
-  &__empty-message {
-    margin: 0;
-    font-size: 0.9375rem;
-    color: #757575;
-    max-width: 400px;
-    line-height: 1.5;
   }
 
   &__error {
