@@ -8,10 +8,12 @@ interface ShinyLiveProps extends PageProps<ResearcherStudyMetadata> {}
 export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const [iframeUrl, setIframeUrl] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [bearerToken, setBearerToken] = useState<string>("");
+  const [isIframeOpen, setIsIframeOpen] = useState<boolean>(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
-    const setupIframe = async () => {
+    const fetchToken = async () => {
       if (!metadata?.studyId) {
         console.log("[Dashboard] No dataset selected");
         setError("No dataset selected");
@@ -19,12 +21,29 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
       }
 
       try {
-        // Get the token (this verifies authentication)
         const token = await metadata.getToken();
+        if (token) {
+          setBearerToken(token);
+        }
+      } catch (error) {
+        console.error("[Dashboard] Error fetching auth token:", error);
+        setError("Failed to authenticate");
+      }
+    };
 
+    fetchToken();
+  }, [metadata?.studyId, metadata]);
+
+  // Setup iframe URL after token is available
+  useEffect(() => {
+    const setupIframe = async () => {
+      if (!metadata?.studyId || !bearerToken) {
+        return;
+      }
+
+      try {
         // Set the token in a cookie so the iframe requests will be authenticated
-        // The backend's authn.ts checks for 'authtoken' cookie
-        document.cookie = `authtoken=${token}; path=/; secure; samesite=strict`;
+        document.cookie = `authtoken=${bearerToken}; path=/; secure; SameSite=Strict;`;
 
         const url = `${window.location.origin}/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_testing_r/`;
         console.log("[Dashboard] Setting iframe URL:", url);
@@ -48,6 +67,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
         }
 
         setIframeUrl(url);
+        setIsIframeOpen(true);
       } catch (err) {
         console.error("[Dashboard] Error setting up Dashboard:", err);
         setError(err instanceof Error ? err.message : "Failed to load Dashboard application");
@@ -55,10 +75,66 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     };
 
     setupIframe();
-  }, [metadata?.studyId, metadata]);
+  }, [metadata?.studyId, bearerToken]);
+
+  // Handle token refresh and iframe cookie updates
+  useEffect(() => {
+    if (isIframeOpen && iframeRef.current && iframeRef.current.contentWindow && bearerToken) {
+      try {
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/; secure; SameSite=Strict;`;
+      } catch (error) {
+        console.error("[Dashboard] Error setting cookie in iframe:", error);
+      }
+    }
+
+    // Listen for token refresh events
+    const onTokenRefreshed = (e: Event) => {
+      const token = (e as CustomEvent)?.detail?.accessToken as string | undefined;
+      if (!token) return;
+
+      console.log("[Dashboard] Token refreshed, updating cookies");
+      setBearerToken(token);
+
+      // Update parent document cookie
+      document.cookie = `authtoken=${token}; path=/; secure; SameSite=Strict;`;
+
+      // Update iframe cookie and reload if iframe is open
+      if (isIframeOpen && iframeRef.current?.contentWindow) {
+        try {
+          iframeRef.current.contentWindow.document.cookie = `authtoken=${token}; path=/; secure; SameSite=Strict;`;
+        } catch (err) {
+          console.error("[Dashboard] Error updating iframe cookie after OIDC refresh:", err);
+        }
+
+        // Cache-bust the iframe URL to force reload with new token
+        try {
+          const src = new URL(iframeRef.current.src);
+          src.searchParams.set("t", Date.now().toString());
+          iframeRef.current.src = src.toString();
+        } catch (err) {
+          console.warn("[Dashboard] Cache-busting failed; resetting to base URL", err);
+          if (iframeRef.current && iframeUrl) {
+            iframeRef.current.src = iframeUrl;
+          }
+        }
+      }
+    };
+
+    window.addEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
+    return () => window.removeEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
+  }, [isIframeOpen, bearerToken, iframeUrl]);
 
   const handleIframeLoad = () => {
     console.log("[Dashboard] Iframe loaded successfully");
+
+    // Set cookie in iframe after it loads
+    if (iframeRef.current?.contentWindow && bearerToken) {
+      try {
+        iframeRef.current.contentWindow.document.cookie = `authtoken=${bearerToken}; path=/; secure; SameSite=Strict;`;
+      } catch (error) {
+        console.error("[Dashboard] Error setting cookie in iframe on load:", error);
+      }
+    }
   };
 
   return (
