@@ -1969,6 +1969,15 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/upload/folder",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/supabase-storage/get/file",
           "scopes": [
             "portal.supabaseStorage.read"
