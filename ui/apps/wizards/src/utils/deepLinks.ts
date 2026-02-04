@@ -86,10 +86,18 @@ export function generateFormSubmitDeepLink(
   config?: CdwConfig,
   wizardFields?: FieldDefinition[],
   wizardId?: string,
+  displayValues?: Record<string, string>,
 ): string {
   const resolvedDatasetId = datasetId || "default";
 
-  const bookmark = buildMriBookmark(fields, formData, configMeta, resolvedDatasetId, chartOptions, config);
+  const { bookmark, fieldInstanceMap } = buildMriBookmark(
+    fields,
+    formData,
+    configMeta,
+    resolvedDatasetId,
+    chartOptions,
+    config,
+  );
   const compressed = compress(bookmark);
 
   // Collect wizard-only fields into the wizards param
@@ -97,6 +105,8 @@ export function generateFormSubmitDeepLink(
   if (wizardId) {
     wizardsData.analysisType = wizardId;
   }
+
+  // For wizardFields: store { value, displayName } for text fields with display values
   for (const field of wizardFields || []) {
     if (field.type === "yearRange") {
       const from = formData[`${field.id}_from`];
@@ -107,10 +117,29 @@ export function generateFormSubmitDeepLink(
     } else {
       const value = formData[field.id];
       if (value !== undefined && value !== null && value !== "") {
-        wizardsData[field.id] = value;
+        const displayName = displayValues?.[field.id];
+        if (field.type === "text" && displayName) {
+          wizardsData[field.id] = { value, displayName };
+        } else {
+          wizardsData[field.id] = value;
+        }
       }
     }
   }
+
+  // For fields: map instanceID -> { value, displayName } for text fields with display values
+  const fieldDisplayValues: Record<string, { value: string; displayName: string }> = {};
+  for (const mapping of fieldInstanceMap) {
+    const displayName = displayValues?.[mapping.fieldId];
+    if (displayName) {
+      const value = formData[mapping.fieldId];
+      fieldDisplayValues[mapping.instanceID] = { value, displayName };
+    }
+  }
+  if (Object.keys(fieldDisplayValues).length > 0) {
+    wizardsData.fieldDisplayValues = fieldDisplayValues;
+  }
+
   const wizards = compress(wizardsData);
 
   const params = new URLSearchParams({

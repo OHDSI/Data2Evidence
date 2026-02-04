@@ -57,6 +57,16 @@ interface MriBookmark {
   datasetId: string;
 }
 
+export interface FieldInstanceMapping {
+  fieldId: string;
+  instanceID: string;
+}
+
+export interface MriBookmarkResult {
+  bookmark: MriBookmark;
+  fieldInstanceMap: FieldInstanceMapping[];
+}
+
 /**
  * Build an MRI bookmark JSON that the cohort builder can understand.
  */
@@ -132,10 +142,16 @@ export function buildMriBookmark(
   datasetId: string,
   chartOptions?: ChartOptions,
   config?: CdwConfig,
-): MriBookmark {
+): MriBookmarkResult {
+  // Track field -> instanceID mapping for display value resolution
+  const fieldInstanceMap: FieldInstanceMapping[] = [];
   // Group attributes by their filter card path (everything before ".attributes.")
   // cardGroups key is a grouping key; cardConfigPaths maps the key to the actual configPath for the FilterCard
-  const cardGroups = new Map<string, Attribute[]>();
+  // Track which field created which attribute for display value mapping
+  interface AttributeWithFieldId extends Attribute {
+    _fieldId?: string;
+  }
+  const cardGroups = new Map<string, AttributeWithFieldId[]>();
   const cardConfigPaths = new Map<string, string>();
 
   for (const field of fields) {
@@ -171,6 +187,7 @@ export function buildMriBookmark(
         op: constraintOp,
         content: expressions,
       },
+      _fieldId: field.id,
     });
 
     // Add fixed attributes for compound fields (e.g. measurement concept name/id)
@@ -232,11 +249,22 @@ export function buildMriBookmark(
     }
 
     // Rewrite attribute instanceIDs to match: cardInstanceID.attributes.attrKey
+    // Also record field -> instanceID mapping for display value resolution
     const rewrittenAttributes: Attribute[] = attributes.map((attr) => {
       const attrKey = attr.configPath.split(".").pop() || attr.configPath;
+      const newInstanceID = `${cardInstanceID}.attributes.${attrKey}`;
+      // Record mapping if this attribute came from a field (not a fixedAttribute)
+      if ((attr as AttributeWithFieldId)._fieldId) {
+        fieldInstanceMap.push({
+          fieldId: (attr as AttributeWithFieldId)._fieldId!,
+          instanceID: newInstanceID,
+        });
+      }
+      // Return clean Attribute without the internal _fieldId
+      const { _fieldId, ...cleanAttr } = attr as AttributeWithFieldId;
       return {
-        ...attr,
-        instanceID: `${cardInstanceID}.attributes.${attrKey}`,
+        ...cleanAttr,
+        instanceID: newInstanceID,
       };
     });
 
@@ -311,13 +339,16 @@ export function buildMriBookmark(
   });
 
   return {
-    filter: {
-      configMetadata: { id: meta.configId, version: meta.configVersion },
-      cards,
+    bookmark: {
+      filter: {
+        configMetadata: { id: meta.configId, version: meta.configVersion },
+        cards,
+      },
+      chartType: chartOptions?.initialChart || "stacked",
+      axisSelection,
+      metadata: { version: 3 },
+      datasetId,
     },
-    chartType: chartOptions?.initialChart || "stacked",
-    axisSelection,
-    metadata: { version: 3 },
-    datasetId,
+    fieldInstanceMap,
   };
 }

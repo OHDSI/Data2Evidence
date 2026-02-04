@@ -15,6 +15,7 @@ interface TypeaheadFieldProps {
   control: Control<any>;
   defaultValue?: string;
   error?: { message?: string };
+  onDisplayValueChange?: (fieldId: string, displayValue: string | null) => void;
 }
 
 interface Option {
@@ -54,6 +55,7 @@ export function TypeaheadField({
   control,
   defaultValue = "",
   error,
+  onDisplayValueChange,
 }: TypeaheadFieldProps) {
   const [inputText, setInputText] = useState(defaultValue);
   const [options, setOptions] = useState<Option[]>([]);
@@ -140,6 +142,7 @@ export function TypeaheadField({
           hasSelection.current = false;
           // Clear the selected value — user is typing new text
           controllerField.onChange("");
+          onDisplayValueChange?.(fieldId, null);
           setIsOpen(true);
           setHighlightIndex(-1);
           debouncedFetch(text);
@@ -149,6 +152,7 @@ export function TypeaheadField({
           setInputText(option.label);
           hasSelection.current = true;
           controllerField.onChange(option.value);
+          onDisplayValueChange?.(fieldId, option.label);
           setIsOpen(false);
           setHighlightIndex(-1);
         };

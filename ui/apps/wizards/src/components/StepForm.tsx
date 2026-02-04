@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
@@ -16,6 +16,15 @@ export function StepForm() {
     useWizardContext();
   const stepConfig = getCurrentStepConfig();
   const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
+  const displayValuesRef = useRef<Record<string, string>>({});
+
+  const handleDisplayValueChange = useCallback((fieldId: string, displayValue: string | null) => {
+    if (displayValue) {
+      displayValuesRef.current[fieldId] = displayValue;
+    } else {
+      delete displayValuesRef.current[fieldId];
+    }
+  }, []);
 
   useEffect(() => {
     fetchCdwConfig(portalProps.datasetId).then(({ meta }) => setConfigMeta(meta));
@@ -64,6 +73,7 @@ export function StepForm() {
           cdwConfig,
           selectedWizard.wizardFields,
           selectedWizard.id,
+          displayValuesRef.current,
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
@@ -102,6 +112,7 @@ export function StepForm() {
             control={control}
             defaultValue={formData[field.id] ?? ""}
             error={fieldError as { message?: string } | undefined}
+            onDisplayValueChange={handleDisplayValueChange}
           />
           {field.required && <span className={styles.requiredText}>This is a required field</span>}
           {fieldError && (
