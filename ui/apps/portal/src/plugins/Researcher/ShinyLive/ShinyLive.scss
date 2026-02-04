@@ -23,11 +23,52 @@
     position: relative;
     overflow: hidden;
     background-color: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__status {
+    padding: 0.75rem 1rem;
+    background-color: #e3f2fd;
+    border-bottom: 1px solid #2196f3;
+    text-align: center;
+    font-size: 0.875rem;
+    color: #1976d2;
+    flex-shrink: 0;
+  }
+
+  &__error-banner {
+    padding: 1rem;
+    background-color: #fff3cd;
+    border-bottom: 2px solid #ffc107;
+    text-align: center;
+    flex-shrink: 0;
+
+    p {
+      margin: 0 0 0.75rem 0;
+      font-size: 0.875rem;
+      color: #856404;
+    }
+  }
+
+  &__open-button {
+    padding: 0.5rem 1.5rem;
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #1565c0;
+    }
   }
 
   &__iframe {
     width: 100%;
-    height: 100%;
+    flex: 1;
     border: none;
     display: block;
   }

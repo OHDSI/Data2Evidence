@@ -471,6 +471,18 @@ export class DatasetRouter {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
 
+        // Validate that we have all parts of the resourceId
+        if (!datasetId || !type || !name || !language) {
+          this.logger.error(
+            `[ShinyLive] Invalid resourceId format: ${resourceId}`,
+          );
+          return res
+            .status(400)
+            .send(
+              "Invalid resource ID format. Expected: datasetId_type_name_language",
+            );
+        }
+
         try {
           // Get the static files directory (downloads and unzips if needed)
           const staticDir = await this.shinyLiveService.getStaticFilesDir(
@@ -484,13 +496,149 @@ export class DatasetRouter {
             return res.status(404).send("Shinylive application not found");
           }
 
-          // Serve static files from the unzipped directory
-          const staticMiddleware = express.static(staticDir);
+          this.logger.info(`[ShinyLive] staticDir: ${staticDir}`);
+
+          // Service workers need special headers to work from nested paths
+          const basePath = `/d2e/gateway/api/dataset/shiny-live/${resourceId}`;
+
+          if (
+            req.path.endsWith("shinylive-sw.js") ||
+            req.path.endsWith("load-shinylive-sw.js")
+          ) {
+            // Allow SW to control the base path and all subpaths
+            res.setHeader("Service-Worker-Allowed", basePath + "/");
+            // Set proper content type for service worker
+            res.setHeader(
+              "Content-Type",
+              "application/javascript; charset=utf-8",
+            );
+            // Add cache control to prevent stale SW
+            res.setHeader(
+              "Cache-Control",
+              "no-cache, no-store, must-revalidate",
+            );
+            this.logger.info(
+              `[ShinyLive] Setting Service-Worker-Allowed: ${basePath}/`,
+            );
+          }
+
+          // Special handling for load-shinylive-sw.js to enforce correct SW scope
+          if (req.path.endsWith("/load-shinylive-sw.js")) {
+            const fs = await import("node:fs/promises");
+            const path = await import("node:path");
+            const swLoaderPath = path.join(
+              staticDir,
+              "shinylive",
+              "load-shinylive-sw.js",
+            );
+
+            try {
+              const swLoaderCode = await fs.readFile(swLoaderPath, "utf-8");
+
+              // Force SW registration to use app base scope and the expected SW script URL
+              const wrapped = `(() => {
+  const baseScope = new URL('${basePath}/', window.location.origin).toString();
+  const swUrl = new URL('shinylive/shinylive-sw.js', baseScope).toString();
+
+  // Monkey-patch register to enforce URL + scope
+  const origRegister = navigator.serviceWorker.register.bind(navigator.serviceWorker);
+  navigator.serviceWorker.register = function(scriptURL, options) {
+    const absUrl = /^https?:/i.test(String(scriptURL))
+      ? scriptURL
+      : new URL(scriptURL, baseScope).toString();
+    const merged = { ...(options || {}), scope: options?.scope || baseScope };
+    return origRegister(absUrl, merged);
+  };
+
+  // Attempt registration once with enforced URL/scope for control
+  origRegister(swUrl, { scope: baseScope }).catch(err => {
+    console.error('[ShinyLive SW] Registration failed', err);
+  });
+})();
+${swLoaderCode}`;
+
+              res.setHeader(
+                "Content-Type",
+                "application/javascript; charset=utf-8",
+              );
+              res.setHeader(
+                "Cache-Control",
+                "no-cache, no-store, must-revalidate",
+              );
+              res.send(wrapped);
+              return;
+            } catch (error) {
+              this.logger.error(
+                `[ShinyLive] Error reading load-shinylive-sw.js: ${error}`,
+              );
+            }
+          }
+
+          // Serve shinylive-sw.js explicitly, falling back if packaged at root
+          if (req.path.endsWith("/shinylive/shinylive-sw.js")) {
+            const fs = await import("node:fs/promises");
+            const path = await import("node:path");
+            const candidates = [
+              path.join(staticDir, "shinylive", "shinylive-sw.js"),
+              path.join(staticDir, "shinylive-sw.js"),
+            ];
+
+            for (const candidate of candidates) {
+              try {
+                await fs.access(candidate);
+                res.setHeader(
+                  "Content-Type",
+                  "application/javascript; charset=utf-8",
+                );
+                res.setHeader(
+                  "Cache-Control",
+                  "no-cache, no-store, must-revalidate",
+                );
+                res.sendFile(candidate);
+                return;
+              } catch {
+                // continue to next candidate
+              }
+            }
+          }
+
+          // Special handling for index.html to inject config
+          if (req.path === "/" || req.path === "/index.html") {
+            const fs = await import("node:fs/promises");
+            const path = await import("node:path");
+            const indexPath = path.join(staticDir, "index.html");
+
+            try {
+              let html = await fs.readFile(indexPath, "utf-8");
+
+              // Inject meta tag to configure service worker directory
+              html = html.replace(
+                "<head>",
+                `<head>\n    <meta name="shinylive:serviceworker_dir" content="${basePath}/shinylive">`,
+              );
+
+              res.setHeader("Content-Type", "text/html; charset=utf-8");
+              res.send(html);
+              return;
+            } catch (error) {
+              this.logger.error(
+                `[ShinyLive] Error reading index.html: ${error}`,
+              );
+              res.status(500).send("Error loading application");
+              return;
+            }
+          }
+
+          // Use express.static middleware to serve other files
+          const staticMiddleware = express.static(staticDir, {
+            index: false, // We handle index.html above
+            fallthrough: true,
+          });
 
           staticMiddleware(req, res, next);
         } catch (error) {
           this.logger.error(
-            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
+            `[ShinyLive] Error in shiny-live endpoint: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error loading shiny-live application");
         }
