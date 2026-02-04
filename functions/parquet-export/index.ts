@@ -18,7 +18,7 @@ interface DatasetMetadata {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
 }
 
 function isValidUUID(str: unknown): str is string {
