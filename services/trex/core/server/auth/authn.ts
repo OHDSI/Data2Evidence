@@ -16,9 +16,6 @@ export async function authn(c: Context, next: Function) {
   } else {
     let token = "";
     const regex = /\b(Bearer|bearer|token)\b/;
-    logger.log(`Authorization header: ${c.req.header("Authorization")}`);
-    logger.log(`authorization header: ${c.req.header("authorization")}`);
-    logger.log(`Path: ${c.req.path}`)
     if (
       c.req.header("authorization") &&
       c.req.header("authorization")?.split(" ")[0].match(regex)
@@ -48,8 +45,6 @@ export async function authn(c: Context, next: Function) {
       return new Response("Unauthorized", { status: 401 });
     }
     let authError = false;
-    logger.log("authenticate: verifying token");
-    logger.log(`Token: ${token}`);
     await jwtVerify(token, JWKS).catch((err: any) => {
       logger.error("authenticate: jwt verify failed");
       authError = true;
