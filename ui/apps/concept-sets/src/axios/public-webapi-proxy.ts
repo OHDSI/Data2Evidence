@@ -26,14 +26,14 @@ export class PublicWebapiProxyAPI {
   mapDcResultKeysToUppercase = (data: unknown[]) => {
     return data.map((obj: any) => {
       return Object.fromEntries(
-        Object.entries(obj).map(([k, v]) => [k.toUpperCase(), v])
+        Object.entries(obj).map(([k, v]) => [k.toUpperCase(), v]),
       );
     });
   };
 
   async getDataCharacterizationResults(
     dataSource: string,
-    sourceKey: string
+    sourceKey: string,
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -50,7 +50,7 @@ export class PublicWebapiProxyAPI {
           dcResultsKeys.map((key) => [
             key,
             this.mapDcResultKeysToUppercase(result.data[key] as []),
-          ])
+          ]),
         );
       }
 
@@ -58,7 +58,7 @@ export class PublicWebapiProxyAPI {
     } catch (error) {
       console.error(error);
       throw new Error(
-        `Error while getting data characterization results from public webapi`
+        `Error while getting data characterization results from public webapi`,
       );
     }
   }
@@ -66,7 +66,7 @@ export class PublicWebapiProxyAPI {
   async getDataCharacterizationResultsDrilldown(
     dataSource: string,
     sourceKey: string,
-    conceptId: string
+    conceptId: string,
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -83,7 +83,7 @@ export class PublicWebapiProxyAPI {
           dcResultsKeys.map((key) => [
             key,
             this.mapDcResultKeysToUppercase(result.data[key] as []),
-          ])
+          ]),
         );
       }
 
@@ -91,7 +91,7 @@ export class PublicWebapiProxyAPI {
     } catch (error) {
       console.error(error);
       throw new Error(
-        `Error while getting data characterization drilldown results from public webapi`
+        `Error while getting data characterization drilldown results from public webapi`,
       );
     }
   }
@@ -105,7 +105,8 @@ export class PublicWebapiProxyAPI {
     domainId: string[],
     vocabularyId: string[],
     standardConcept: string[],
-    validity: string[]
+    validity: string[],
+    signal?: AbortSignal,
   ): Promise<[IWebapiConcept[], number]> {
     // Allow search if there are domain filters, even with empty search text
     if (searchText === "" && (!domainId || domainId.length === 0)) {
@@ -127,6 +128,7 @@ export class PublicWebapiProxyAPI {
         url: `d2e-webapi/vocabulary/${dataSource}/search`,
         method: "POST",
         data,
+        signal,
       });
 
       // Truncate results based on pagination parameters
@@ -167,7 +169,7 @@ export class PublicWebapiProxyAPI {
     return request({
       baseURL: this.baseURL,
       url: `d2e-webapi/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(
-        conceptSetName
+        conceptSetName,
       )}`,
       method: "GET",
     });
@@ -184,7 +186,7 @@ export class PublicWebapiProxyAPI {
 
   public updateConceptSet(
     conceptSetId: number,
-    conceptSet: Partial<ConceptSet>
+    conceptSet: Partial<ConceptSet>,
   ) {
     return request<number>({
       baseURL: this.baseURL,
@@ -196,7 +198,7 @@ export class PublicWebapiProxyAPI {
 
   public updateConceptSetItems(
     conceptSetId: number,
-    conceptSetConcepts: ConceptSetConcept[]
+    conceptSetConcepts: ConceptSetConcept[],
   ) {
     const data = conceptSetConcepts.map((concept) => ({
       conceptId: concept.id,

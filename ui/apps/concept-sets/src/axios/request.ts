@@ -60,6 +60,10 @@ const requestNoCache = async <T = any>(
   };
 
   const onError = function (error: any) {
+    // Skip canceled request rerrors
+    if (axios.isCancel(error) || error?.message === "canceled") {
+      return Promise.reject(error.message || error);
+    }
     console.error("Request Failed:", error.config);
 
     if (error.response) {
@@ -86,5 +90,9 @@ const requestNoCache = async <T = any>(
 export const request = memoize(requestNoCache, {
   maxAge: 3000,
   promise: true,
-  normalizer: (args) => JSON.stringify(args),
+  normalizer: (args) => {
+    const [options] = args;
+    const { signal, ...rest } = options;
+    return JSON.stringify(rest);
+  },
 });
