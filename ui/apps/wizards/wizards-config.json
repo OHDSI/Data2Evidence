@@ -180,13 +180,6 @@
           "label": "Condition 5",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition6",
-          "type": "text",
-          "label": "Condition 6",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }
       ]
     },
@@ -370,13 +363,6 @@
           "label": "Condition 5",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition6",
-          "type": "text",
-          "label": "Condition 6",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }
       ]
     },
@@ -558,13 +544,6 @@
           "id": "condition5",
           "type": "text",
           "label": "Condition 5",
-          "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
-        },
-        {
-          "id": "condition6",
-          "type": "text",
-          "label": "Condition 6",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
         }

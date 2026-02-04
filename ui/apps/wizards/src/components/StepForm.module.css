@@ -22,11 +22,17 @@
 }
 
 .note {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   font-size: 14px;
-  color: #666;
+  color: #333;
   font-style: italic;
   line-height: 1.5;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 0 0 24px 0;
 }
 
 .progress {
@@ -66,7 +72,6 @@
   width: 220px;
   min-width: 220px;
   font-size: 14px;
-  font-weight: bold;
   color: #1a237e;
   text-align: right;
 }
@@ -76,7 +81,6 @@
   font-size: 13px;
   white-space: nowrap;
   margin-left: auto;
-  text-align: right;
 }
 
 .groupInputs {
