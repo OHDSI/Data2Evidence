@@ -103,7 +103,7 @@ export function generateFormSubmitDeepLink(
   // Collect wizard-only fields into the wizards param
   const wizardsData: Record<string, any> = {};
   if (wizardId) {
-    wizardsData.analysisType = wizardId;
+    wizardsData.dashboardType = wizardId;
   }
 
   // For wizardFields: store { value, displayName } for text fields with display values
