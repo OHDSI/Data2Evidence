@@ -16,6 +16,7 @@ export async function authn(c: Context, next: Function) {
   } else {
     let token = "";
     const regex = /\b(Bearer|bearer|token)\b/;
+    
     if (
       c.req.header("authorization") &&
       c.req.header("authorization")?.split(" ")[0].match(regex)

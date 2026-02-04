@@ -33,7 +33,7 @@ export let logger = {
 export const publicURLs = [
     '^/portalsvc/public-graphql$',
     '^/usermgmt/api/user-group/public$',
-    '^/d2e/system-portal/dataset/public/list$',
+    '^/system-portal/dataset/public/list$',
     '^/system-portal/feature/list$',
     '^/system-portal/config/public/types.*$',
     '^/system-portal/config/public/overview-description$',
