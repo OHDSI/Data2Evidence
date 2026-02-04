@@ -1,4 +1,5 @@
-import express, { NextFunction, Request, Response } from "npm:express";
+import express, { Request, Response } from "npm:express";
+import { Buffer } from "node:buffer";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
@@ -467,30 +468,45 @@ export class DatasetRouter {
     // resourceId format: datasetId_type_name_language
     this.router.use(
       "/shiny-live/:resourceId",
-      async (req: Request, res: Response, next: NextFunction) => {
+      async (req: Request, res: Response) => {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
+        const subPath = req.path.slice(1) || "index.html";
 
         try {
-          // Get the static files directory (downloads and unzips if needed)
-          const staticDir = await this.shinyLiveService.getStaticFilesDir(
+          const url = this.shinyLiveService.getPublicUrl(
             datasetId,
             type,
             name,
             language,
+            subPath,
           );
 
-          if (!staticDir) {
-            return res.status(404).send("Shinylive application not found");
+          const response = await fetch(url);
+          if (!response.ok) {
+            if (response.status == 400 || response.status === 404) {
+              return res.status(404).send("Resource not found");
+            }
+
+            return res
+              .status(response.status)
+              .send("Error fetching resource from supabase");
           }
 
-          // Serve static files from the unzipped directory
-          const staticMiddleware = express.static(staticDir);
+          res.set(
+            "Content-Type",
+            response.headers.get("content-type") || "application/octet-stream",
+          );
+          res.set(
+            "Cache-Control",
+            response.headers.get("cache-control") || "public, max-age=3600",
+          );
 
-          staticMiddleware(req, res, next);
+          const data = await response.arrayBuffer();
+          res.send(Buffer.from(data));
         } catch (error) {
           this.logger.error(
-            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
+            `Error proxying shiny-live: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error loading shiny-live application");
         }
