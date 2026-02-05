@@ -8,7 +8,6 @@ const Env = z
             .string()
             .refine((val) => !isNaN(parseInt(val)))
             .transform(Number),
-        DUCKDB__DATA_FOLDER: z.string(),
         IDP__ALP_SVC__CLIENT_ID: z.string(),
         IDP__ALP_SVC__CLIENT_SECRET: z.string(),
         USE_EXTENSION_FOR_COHORT_CREATION: z.string(),
