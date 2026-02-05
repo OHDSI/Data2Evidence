@@ -22,11 +22,17 @@
 }
 
 .note {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   font-size: 14px;
-  color: #666;
+  color: #333;
   font-style: italic;
   line-height: 1.5;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 0 0 24px 0;
 }
 
 .progress {
@@ -55,30 +61,6 @@
   flex-wrap: wrap;
 }
 
-.fieldGroupRow {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-}
-
-.label {
-  width: 220px;
-  min-width: 220px;
-  font-size: 14px;
-  font-weight: bold;
-  color: #1a237e;
-  text-align: right;
-}
-
-.requiredText {
-  color: #c00;
-  font-size: 13px;
-  white-space: nowrap;
-  margin-left: auto;
-  text-align: right;
-}
-
 .groupInputs {
   display: flex;
   flex-direction: row;
@@ -91,6 +73,21 @@
   color: #333;
   font-size: 14px;
   padding: 0 4px;
+}
+
+.label {
+  width: 220px;
+  min-width: 220px;
+  font-size: 14px;
+  color: #1a237e;
+  text-align: right;
+}
+
+.requiredText {
+  color: #c00;
+  font-size: 13px;
+  white-space: nowrap;
+  margin-left: auto;
 }
 
 .required {
@@ -131,7 +128,7 @@
 .errorMessage {
   font-size: 13px;
   color: #c00;
-  margin-top: 2px;
+  margin-left: auto;
 }
 
 .unsupported {
@@ -200,6 +197,12 @@
 .buttonPrimary:hover:not(:disabled) {
   background: #0d1442;
   border-color: #0d1442;
+}
+
+.buttonPrimary:disabled {
+  background: #9a9fc4;
+  border-color: #9a9fc4;
+  color: #fff;
 }
 
 .loading,
@@ -286,8 +289,7 @@
 }
 
 @media (max-width: 768px) {
-  .fieldGroup,
-  .fieldGroupRow {
+  .fieldGroup {
     flex-direction: column;
     align-items: flex-start;
   }

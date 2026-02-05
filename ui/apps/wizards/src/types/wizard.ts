@@ -5,10 +5,7 @@ export interface FieldDefinition {
   type: FieldType;
   label: string;
   required: boolean;
-  validation?: Record<string, any>;
-  options?: Array<{ label: string; value: string }>; // For select fields
   configPath?: string;
-  group?: string;
   placeholder?: string;
   /** For compound fields: override the filter card path (e.g. "patient.interactions.measurement") */
   filterCardPath?: string;
@@ -18,13 +15,10 @@ export interface FieldDefinition {
     operator: string;
     value: string | number;
   }>;
-}
-
-export interface ResultAction {
-  id: string;
-  label: string;
-  type: "deep-link" | "download" | "placeholder";
-  urlTemplate?: string;
+  /** If true, this field is stored in the wizards query param only, not in the MRI bookmark */
+  isWizardField?: boolean;
+  /** If true, text fields accept free text input without requiring dropdown selection */
+  allowFreeText?: boolean;
 }
 
 /**
@@ -79,18 +73,25 @@ export interface WizardStepConfig {
   config?: StepTypeConfig;
 }
 
-export interface WizardDefinition {
+/**
+ * External wizard configuration (from backend/config).
+ * Simplified to only contain the variable parts - fields and metadata.
+ */
+export interface WizardConfig {
   id: string;
   name: string;
   description: string;
-  /** Fields that map to MRI bookmark filter cards */
+  /** All fields — MRI bookmark fields and wizard-only fields (isWizardField: true) */
   fields: FieldDefinition[];
-  /** Wizard-only fields stored in the wizards query param, not in MRI bookmark */
-  wizardFields?: FieldDefinition[];
-  resultActions: ResultAction[];
-  /** Step configuration defining the wizard's flow */
+}
+
+/**
+ * Internal wizard definition with hardcoded steps.
+ * Extended from WizardConfig with runtime-added properties.
+ */
+export interface WizardDefinition extends WizardConfig {
+  /** Step configuration - hardcoded in the app */
   steps: WizardStepConfig[];
-  hidden?: boolean;
 }
 
 /**

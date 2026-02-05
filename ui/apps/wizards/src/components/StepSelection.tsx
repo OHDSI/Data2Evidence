@@ -18,9 +18,7 @@ export function StepSelection() {
       setLoading(true);
       setError(null);
       const definitions = await getWizardDefinitions(portalProps.datasetId);
-      // Filter out hidden wizards
-      const visibleWizards = definitions.filter((w) => !w.hidden);
-      setWizards(visibleWizards);
+      setWizards(definitions);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load wizards";
       console.error("[Wizards] Failed to load wizard definitions:", err);

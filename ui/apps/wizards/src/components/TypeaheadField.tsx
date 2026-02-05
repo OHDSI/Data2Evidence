@@ -17,6 +17,7 @@ interface TypeaheadFieldProps {
   defaultValue?: string;
   error?: { message?: string };
   onDisplayValueChange?: (fieldId: string, displayValue: string | null) => void;
+  allowFreeText?: boolean;
 }
 
 interface Option {
@@ -58,6 +59,7 @@ export function TypeaheadField({
   defaultValue = "",
   error,
   onDisplayValueChange,
+  allowFreeText = false,
 }: TypeaheadFieldProps) {
   const [inputText, setInputText] = useState(defaultValue);
   const [options, setOptions] = useState<Option[]>([]);
@@ -124,13 +126,20 @@ export function TypeaheadField({
       defaultValue={defaultValue}
       rules={{
         validate: (value) => {
-          // Handle required validation - check both form value and our refs
-          if (required && !value && !hasSelection.current) {
-            return `${label} is required`;
+          if (allowFreeText) {
+            // Free text mode: just check required
+            if (required && !inputTextRef.current) {
+              return `${label} is required`;
+            }
+            return true;
           }
           // Text typed but not from dropdown selection → invalid
           if (inputTextRef.current && !hasSelection.current) {
             return `Please select a ${label} from the dropdown`;
+          }
+          // Handle required validation - check both form value and our refs
+          if (required && !value && !hasSelection.current) {
+            return `${label} is required`;
           }
           return true;
         },
@@ -145,17 +154,24 @@ export function TypeaheadField({
           setInputText(text);
           inputTextRef.current = text;
           hasSelection.current = false;
-          // Clear the selected value — user is typing new text
-          controllerField.onChange("");
-          onDisplayValueChange?.(fieldId, null);
+          if (allowFreeText) {
+            // Free text mode: use typed text as both value and display name
+            setValue?.(fieldId, text, { shouldValidate: true });
+            onDisplayValueChange?.(fieldId, text || null);
+          } else {
+            // Strict mode: clear the selected value — user is typing new text
+            controllerField.onChange("");
+            onDisplayValueChange?.(fieldId, null);
+          }
           setIsOpen(true);
           setHighlightIndex(-1);
           debouncedFetch(text);
         };
 
         const handleSelect = (option: Option) => {
-          setInputText(option.label);
-          inputTextRef.current = option.label;
+          const displayText = option.label !== option.value ? `${option.label} (${option.value})` : option.label;
+          setInputText(displayText);
+          inputTextRef.current = displayText;
           hasSelection.current = true;
           onDisplayValueChange?.(fieldId, option.label);
           setIsOpen(false);

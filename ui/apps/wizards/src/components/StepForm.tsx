@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
@@ -42,6 +42,21 @@ export function StepForm() {
     defaultValues: formData,
   });
 
+  // Watch all form values to check if required fields are filled
+  const formValues = watch();
+
+  // Check if all required fields have values
+  const allRequiredFieldsFilled = useCallback(() => {
+    if (!selectedWizard) return false;
+    for (const field of selectedWizard.fields) {
+      if (field.required) {
+        const value = formValues[field.id];
+        if (!value || value === "") return false;
+      }
+    }
+    return true;
+  }, [selectedWizard, formValues]);
+
   const onSubmit = async (data: Record<string, any>) => {
     updateFormData(data);
 
@@ -66,14 +81,17 @@ export function StepForm() {
         // Fetch config meta (cached from wizard load)
         const { config: cdwConfig, meta: configMeta } = await fetchCdwConfig(portalProps.datasetId);
 
+        const mriFields = selectedWizard.fields.filter((f) => !f.isWizardField);
+        const wizardOnlyFields = selectedWizard.fields.filter((f) => f.isWizardField);
+
         const deepLinkUrl = generateFormSubmitDeepLink(
-          selectedWizard.fields,
+          mriFields,
           combinedFormData,
           configMeta,
           portalProps.datasetId,
           cdwConfig.chartOptions,
           cdwConfig,
-          selectedWizard.wizardFields,
+          wizardOnlyFields,
           selectedWizard.id,
           displayValuesRef.current,
         );
@@ -99,7 +117,7 @@ export function StepForm() {
     // Text fields with configPath use typeahead search
     if (field.type === "text" && field.configPath && configMeta) {
       const isConditionField = field.id.startsWith("condition");
-      const fieldValue = watch(field.id);
+      const fieldValue = formValues[field.id];
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
@@ -119,19 +137,21 @@ export function StepForm() {
               defaultValue={formData[field.id] ?? ""}
               error={fieldError as { message?: string } | undefined}
               onDisplayValueChange={handleDisplayValueChange}
+              allowFreeText={field.allowFreeText}
             />
-            {isConditionField && (
+            {isConditionField && fieldValue && (
               <div className={styles.wildcardToggle}>
                 <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
                 <label htmlFor={`${field.id}_wildcard`}>Include descendants</label>
               </div>
             )}
           </div>
-          {field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>}
-          {fieldError && (
+          {fieldError ? (
             <span className={styles.errorMessage} role="alert">
               {fieldError.message as string}
             </span>
+          ) : (
+            field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
           )}
         </div>
       );
@@ -144,6 +164,8 @@ export function StepForm() {
       const startYear = 1900;
       const years = Array.from({ length: currentYear - startYear + 1 }, (_, i) => currentYear - i);
       const fromYearValue = watch(`${field.id}_from`);
+      const toYearValue = formValues[`${field.id}_to`];
+      const hasYearError = fromError || toError;
 
       return (
         <div key={field.id} className={styles.fieldGroup}>
@@ -186,14 +208,19 @@ export function StepForm() {
               ))}
             </select>
           </div>
-          {(fromError || toError) && (
+          {hasYearError ? (
             <span className={styles.errorMessage} role="alert">
               {(fromError?.message || toError?.message) as string}
             </span>
+          ) : (
+            field.required &&
+            (!fromYearValue || !toYearValue) && <span className={styles.requiredText}>This is a required field</span>
           )}
         </div>
       );
     }
+
+    const fieldValue = formValues[field.id];
 
     switch (field.type) {
       case "num":
@@ -223,11 +250,12 @@ export function StepForm() {
                 },
               })}
             />
-            {field.required && <span className={styles.requiredText}>This is a required field</span>}
-            {fieldError && (
+            {fieldError ? (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
+            ) : (
+              field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
             )}
           </div>
         );
@@ -248,11 +276,12 @@ export function StepForm() {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {field.required && <span className={styles.requiredText}>This is a required field</span>}
-            {fieldError && (
+            {fieldError ? (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
+            ) : (
+              field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
             )}
           </div>
         );
@@ -274,11 +303,12 @@ export function StepForm() {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {field.required && <span className={styles.requiredText}>This is a required field</span>}
-            {fieldError && (
+            {fieldError ? (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
+            ) : (
+              field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
             )}
           </div>
         );
@@ -307,80 +337,21 @@ export function StepForm() {
   // Get submit button text from stepConfig or default to "Next"
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
 
-  // Group fields by the 'group' property
-  const renderFields = () => {
-    const fields = selectedWizard.fields;
-    const renderedFields: JSX.Element[] = [];
-    const processedIndices = new Set<number>();
-
-    fields.forEach((field, index) => {
-      // Skip if already processed as part of a group
-      if (processedIndices.has(index)) return;
-
-      // Check if this field is part of a group
-      if (field.group) {
-        // Find all adjacent fields with the same group
-        const groupFields = [field];
-        let nextIndex = index + 1;
-
-        while (nextIndex < fields.length && fields[nextIndex].group === field.group) {
-          groupFields.push(fields[nextIndex]);
-          processedIndices.add(nextIndex);
-          nextIndex++;
-        }
-
-        // Render grouped fields in one row
-        renderedFields.push(
-          <div key={`group-${field.group}-${index}`} className={styles.fieldGroupRow}>
-            <label className={styles.label}>{field.group.charAt(0).toUpperCase() + field.group.slice(1)}:</label>
-            <div className={styles.groupInputs}>
-              {groupFields.map((gField, gIndex) => {
-                const fieldError = errors[gField.id];
-                return (
-                  <Fragment key={gField.id}>
-                    {gIndex > 0 && <span className={styles.groupSeparator}>-</span>}
-                    <input
-                      id={gField.id}
-                      type={gField.type}
-                      placeholder={gField.placeholder}
-                      className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
-                      aria-invalid={!!fieldError}
-                      {...register(gField.id, {
-                        required: gField.required ? `${gField.label} is required` : false,
-                      })}
-                    />
-                  </Fragment>
-                );
-              })}
-            </div>
-            {groupFields.map((gField) => {
-              const fieldError = errors[gField.id];
-              return fieldError ? (
-                <span key={`error-${gField.id}`} className={styles.errorMessage} role="alert">
-                  {fieldError.message as string}
-                </span>
-              ) : null;
-            })}
-          </div>,
-        );
-
-        processedIndices.add(index);
-      } else {
-        // Render individual field normally
-        renderedFields.push(renderField(field));
-      }
-    });
-
-    return renderedFields;
+  const renderFields = (fields: FieldDefinition[]) => {
+    return fields.map((field) => renderField(field));
   };
 
   return (
     <div className={styles.container}>
-      <h2>{stepConfig?.title || selectedWizard.name}</h2>
+      <h2>{selectedWizard.name}</h2>
 
       {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
 
-      {stepConfig?.note && <div className={styles.note}>{stepConfig.note}</div>}
+      <div className={styles.note}>
+        Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.
+      </div>
+
+      <hr className={styles.divider} />
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -392,17 +363,17 @@ export function StepForm() {
         className={styles.form}
         aria-label={selectedWizard.name + " form"}
       >
-        <div className={styles.formFields}>{renderFields()}</div>
-
-        {selectedWizard.wizardFields && selectedWizard.wizardFields.length > 0 && (
-          <div className={styles.formFields}>{selectedWizard.wizardFields.map((field) => renderField(field))}</div>
-        )}
+        <div className={styles.formFields}>{renderFields(selectedWizard.fields)}</div>
 
         <div className={styles.buttonRow}>
           <button type="button" onClick={goBack} className={styles.button}>
             Back
           </button>
-          <button type="submit" disabled={!isValid} className={`${styles.button} ${styles.buttonPrimary}`}>
+          <button
+            type="submit"
+            disabled={!allRequiredFieldsFilled() || !isValid}
+            className={`${styles.button} ${styles.buttonPrimary}`}
+          >
             <span>▦</span> {submitLabel}
           </button>
         </div>

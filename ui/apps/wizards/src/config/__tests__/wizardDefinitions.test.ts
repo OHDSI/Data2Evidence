@@ -26,13 +26,13 @@ describe("wizardDefinitions", () => {
         expect(wizard).toHaveProperty("name");
         expect(wizard).toHaveProperty("description");
         expect(wizard).toHaveProperty("fields");
-        expect(wizard).toHaveProperty("resultActions");
+        expect(wizard).toHaveProperty("steps");
 
         expect(typeof wizard.id).toBe("string");
         expect(typeof wizard.name).toBe("string");
         expect(typeof wizard.description).toBe("string");
         expect(Array.isArray(wizard.fields)).toBe(true);
-        expect(Array.isArray(wizard.resultActions)).toBe(true);
+        expect(Array.isArray(wizard.steps)).toBe(true);
       });
     });
 
@@ -55,19 +55,15 @@ describe("wizardDefinitions", () => {
       });
     });
 
-    it("should return wizards with valid result actions", async () => {
+    it("should return wizards with hardcoded steps", async () => {
       const wizards = await getWizardDefinitions();
 
       wizards.forEach((wizard) => {
-        wizard.resultActions.forEach((action) => {
-          expect(action).toHaveProperty("id");
-          expect(action).toHaveProperty("type");
-          expect(action).toHaveProperty("label");
-
-          expect(typeof action.id).toBe("string");
-          expect(typeof action.type).toBe("string");
-          expect(["deep-link", "download", "placeholder"]).toContain(action.type);
-          expect(typeof action.label).toBe("string");
+        expect(wizard.steps).toHaveLength(1);
+        expect(wizard.steps[0].type).toBe("form");
+        expect(wizard.steps[0].config).toEqual({
+          submitLabel: "Open cohort",
+          submitAction: "deep-link",
         });
       });
     });
@@ -81,7 +77,7 @@ describe("wizardDefinitions", () => {
       expect(wizard?.id).toBe("calculate-incidence");
       expect(wizard?.name).toBe("Calculate Incidence");
       expect(wizard?.fields.length).toBeGreaterThan(0);
-      expect(wizard?.resultActions).toEqual([]);
+      expect(wizard?.steps).toHaveLength(1);
     });
 
     it("should return undefined for nonexistent wizard id", async () => {
@@ -119,16 +115,8 @@ describe("wizardDefinitions", () => {
       expect(wizard?.description).toBe(
         "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
       );
-      expect(wizard?.resultActions).toEqual([]);
       expect(wizard?.steps).toHaveLength(1);
       expect(wizard?.steps[0].type).toBe("form");
-      expect(wizard?.steps[0].note).toBe(
-        "Note: this is a very rough approximation that is just a starting a more comprehensive analysis.",
-      );
-      expect(wizard?.steps[0].config).toEqual({
-        submitLabel: "Open cohort",
-        submitAction: "deep-link",
-      });
     });
 
     it("should have calculate-prevalence wizard with correct structure", async () => {
@@ -140,13 +128,8 @@ describe("wizardDefinitions", () => {
       expect(wizard?.description).toBe(
         "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
       );
-      expect(wizard?.resultActions).toEqual([]);
       expect(wizard?.steps).toHaveLength(1);
       expect(wizard?.steps[0].type).toBe("form");
-      expect(wizard?.steps[0].config).toEqual({
-        submitLabel: "Open cohort",
-        submitAction: "deep-link",
-      });
     });
 
     it("should have calculate-mortality wizard with correct structure", async () => {
@@ -158,13 +141,8 @@ describe("wizardDefinitions", () => {
       expect(wizard?.description).toBe(
         "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
       );
-      expect(wizard?.resultActions).toEqual([]);
       expect(wizard?.steps).toHaveLength(1);
       expect(wizard?.steps[0].type).toBe("form");
-      expect(wizard?.steps[0].config).toEqual({
-        submitLabel: "Open cohort",
-        submitAction: "deep-link",
-      });
     });
 
     it("should have cross-sectional-demographics wizard with correct structure", async () => {
@@ -174,13 +152,8 @@ describe("wizardDefinitions", () => {
       expect(wizard?.id).toBe("cross-sectional-demographics");
       expect(wizard?.name).toBe("Cross sectional Demographics");
       expect(wizard?.description).toBe("Assessment of hypertension and cholesterol levels in post-operative patients.");
-      expect(wizard?.resultActions).toEqual([]);
       expect(wizard?.steps).toHaveLength(1);
       expect(wizard?.steps[0].type).toBe("form");
-      expect(wizard?.steps[0].config).toEqual({
-        submitLabel: "Open cohort",
-        submitAction: "deep-link",
-      });
     });
 
     it("should have all new wizards with age field mapped to config", async () => {
@@ -194,7 +167,7 @@ describe("wizardDefinitions", () => {
       for (const id of wizardIds) {
         const wizard = await getWizardById(id);
 
-        expect(wizard?.fields).toHaveLength(11);
+        expect(wizard?.fields).toHaveLength(18);
 
         const ageField = wizard?.fields.find((f) => f.id === "age");
         expect(ageField).toBeDefined();
@@ -202,16 +175,19 @@ describe("wizardDefinitions", () => {
         expect(ageField?.label).toBe("Age Range");
         expect(ageField?.required).toBe(false);
         expect(ageField?.configPath).toBe("patient.attributes.Age");
+        expect(ageField?.isWizardField).toBeFalsy();
 
         const genderField = wizard?.fields.find((f) => f.id === "gender");
         expect(genderField).toBeDefined();
         expect(genderField?.type).toBe("text");
         expect(genderField?.label).toBe("Gender");
         expect(genderField?.configPath).toBe("patient.attributes.Gender_concept_name");
-        // Options are no longer preloaded — fetched on user interaction via TypeaheadField
-        expect(genderField?.options).toBeUndefined();
 
-        // Condition fields are now in wizardFields, not fields
+        // Wizard-only fields have isWizardField: true
+        const condition1Field = wizard?.fields.find((f) => f.id === "condition1");
+        expect(condition1Field).toBeDefined();
+        expect(condition1Field?.isWizardField).toBe(true);
+
         const heightField = wizard?.fields.find((f) => f.id === "height");
         expect(heightField).toBeDefined();
         expect(heightField?.type).toBe("num");

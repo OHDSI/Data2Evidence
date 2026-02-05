@@ -106,9 +106,8 @@ export function generateFormSubmitDeepLink(
     wizardsData.dashboardType = wizardId;
   }
 
-  // Collect condition values as array and their display values separately
-  const conditions: string[] = [];
-  const wizardDisplayValues: Record<string, { value: string; displayName: string }> = {};
+  // Collect condition values as array of objects
+  const conditions: Array<{ value: string; displayName: string; useDescendants: boolean }> = [];
 
   // For wizardFields: process each field
   for (const field of wizardFields || []) {
@@ -125,13 +124,12 @@ export function generateFormSubmitDeepLink(
 
         // Check if this is a condition field (id starts with "condition")
         if (field.id.startsWith("condition")) {
-          // Check if wildcard toggle is enabled
-          const hasWildcard = formData[`${field.id}_wildcard`] === true;
-          const conditionValue = hasWildcard ? `${value}.*` : value;
-          conditions.push(conditionValue);
-          if (field.type === "text" && displayName) {
-            wizardDisplayValues[field.id] = { value, displayName };
-          }
+          const useDescendants = formData[`${field.id}_wildcard`] === true;
+          conditions.push({
+            value,
+            displayName: displayName || value,
+            useDescendants,
+          });
         } else if (field.type === "text" && displayName) {
           wizardsData[field.id] = { value, displayName };
         } else {
@@ -156,14 +154,10 @@ export function generateFormSubmitDeepLink(
     }
   }
 
-  // Build displayValues object with fields and wizards keys
+  // Build displayValues object for fields
   const hasFieldDisplayValues = Object.keys(fieldDisplayValues).length > 0;
-  const hasWizardDisplayValues = Object.keys(wizardDisplayValues).length > 0;
-  if (hasFieldDisplayValues || hasWizardDisplayValues) {
-    wizardsData.displayValues = {
-      ...(hasFieldDisplayValues && { fields: fieldDisplayValues }),
-      ...(hasWizardDisplayValues && { wizards: wizardDisplayValues }),
-    };
+  if (hasFieldDisplayValues) {
+    wizardsData.displayValues = { fields: fieldDisplayValues };
   }
 
   const wizards = compress(wizardsData);
