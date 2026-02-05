@@ -31,8 +31,6 @@ export const env = {
       _env.OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL,
     cohort_diagnostics_module_settings_url:
       _env.OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL,
-    cachedb_host: _env.CACHEDB__HOST,
-    cachedb_port: _env.CACHEDB__PORT,
     pg_db_name: _env.PG__DB_NAME,
     pg_db_host: _env.PG__HOST,
     pg_db_port: _env.PG__PORT,

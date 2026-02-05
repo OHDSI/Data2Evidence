@@ -5,14 +5,16 @@ import LineChart from "../../LineChart";
 
 import "./DrilldownPrevalenceByMonthChart.scss";
 import { useTranslation } from "../../../../../contexts";
+import { appendConceptName } from "../../../util";
 
 interface DrilldownPrevalenceByMonthChartProps {
   data: any;
+  titleSuffix?: string;
 }
 
-const DrilldownPrevalenceByMonthChart: FC<DrilldownPrevalenceByMonthChartProps> = ({ data }) => {
+const DrilldownPrevalenceByMonthChart: FC<DrilldownPrevalenceByMonthChartProps> = ({ data, titleSuffix }) => {
   const { getText, i18nKeys } = useTranslation();
-  const title = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__TITLE);
+  const title = appendConceptName(getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__TITLE), titleSuffix);
   const xAxisName = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__X_AXIS_NAME);
   const yAxisName = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__Y_AXIS_NAME);
   const tooltipFormat = getText(i18nKeys.DRILLDOWN_PREVALENCE_BY_MONTH_CHART__TOOLTIP_FORMAT);

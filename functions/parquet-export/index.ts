@@ -18,7 +18,7 @@ interface DatasetMetadata {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
 }
 
 function isValidUUID(str: unknown): str is string {
@@ -114,7 +114,13 @@ function substituteTemplateParams(
   return result;
 }
 
-async function resolveTemplate(templateId: string, token: string): Promise<SqlQueryTemplate> {
+async function resolveTemplate(
+  templateId: string,
+  datasetId: string,
+  type: string,
+  name: string,
+  token: string
+): Promise<SqlQueryTemplate> {
   const envTemplates = env.SQL_QUERY_TEMPLATES;
   if (envTemplates) {
     const sqlText = envTemplates[templateId];
@@ -125,23 +131,38 @@ async function resolveTemplate(templateId: string, token: string): Promise<SqlQu
   }
 
   const serviceRoutes = env.SERVICE_ROUTES || {};
-  const baseUrl = serviceRoutes.strategusAnalysis || serviceRoutes["strategus-analysis"] || "";
+  const baseUrl = serviceRoutes.portalServer || serviceRoutes["portal-server"] || "";
   if (!baseUrl) {
-    throw new Error("Strategus Analysis Service URL not configured and SQL_QUERY_TEMPLATES not set");
+    throw new Error("Portal Server URL not configured and SQL_QUERY_TEMPLATES not set");
   }
 
   // @ts-ignore Trex global
-  const channel = Trex.tokioChannel("d2e-functions/strategus-analysis");
-  const url = `${baseUrl}/strategus/analysis/template/${templateId}`;
+  const channel = Trex.tokioChannel("d2e-functions/portal");
+  const url = `${baseUrl}/system-portal/dataset/dashboard-code-query?` +
+    `datasetId=${encodeURIComponent(datasetId)}` +
+    `&type=${encodeURIComponent(type)}` +
+    `&name=${encodeURIComponent(name)}` +
+    `&queryName=${encodeURIComponent(templateId)}`;
 
   try {
     const result = await channel.get(url, { headers: { Authorization: token }, timeout: 20000 });
-    return result.data as SqlQueryTemplate;
+    const data = result.data as { sql?: unknown; queryName?: unknown };
+    if (typeof data.sql !== "string" || data.sql.trim() === "" ||
+        typeof data.queryName !== "string" || data.queryName.trim() === "") {
+      logger.error("Invalid portal service response for SQL template", {
+        templateId,
+        datasetId,
+        type,
+        name,
+      });
+      throw new Error("Invalid portal service response");
+    }
+    return { id: data.queryName, name: data.queryName, sqlText: data.sql, createdAt: "", updatedAt: "" };
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 404) {
       throw new Error(`Template not found: ${templateId}`);
     }
-    throw new Error("Template service unavailable");
+    throw new Error("Portal service unavailable");
   }
 }
 
@@ -181,11 +202,20 @@ router.get("/", async (req: Request, res: Response) => {
     const datasetId = req.query.datasetId as string | undefined;
     const cohortId = req.query.cohortId as string | undefined;
     const templateId = req.query.templateId as string | undefined;
+    const name = req.query.name as string | undefined;
+    const type = (req.query.type as string | undefined) || env.DEFAULT_QUERY_TYPE;
 
     if (!datasetId || !cohortId || !templateId) {
       return res.status(400).json({
         error: "Missing required parameters",
         message: "datasetId, cohortId, and templateId are required",
+      });
+    }
+
+    if (!name) {
+      return res.status(400).json({
+        error: "Missing required parameter",
+        message: "name is required",
       });
     }
 
@@ -196,12 +226,18 @@ router.get("/", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid parameter", message: "cohortId must be numeric" });
     }
     if (!isValidTemplateId(templateId)) {
-      return res.status(400).json({ error: "Invalid parameter", message: "templateId contains invalid characters" });
+      return res.status(400).json({ error: "Invalid parameter", message: "templateId must contain only letters, numbers, underscores, or hyphens" });
+    }
+    if (!isValidTemplateId(name)) {
+      return res.status(400).json({ error: "Invalid parameter", message: "name must contain only letters, numbers, underscores, or hyphens" });
+    }
+    if (!isValidTemplateId(type)) {
+      return res.status(400).json({ error: "Invalid parameter", message: "type must contain only letters, numbers, underscores, or hyphens" });
     }
 
     let template: SqlQueryTemplate;
     try {
-      template = await resolveTemplate(templateId, token);
+      template = await resolveTemplate(templateId, datasetId, type, name, token);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       if (msg.includes("not found")) {
@@ -221,7 +257,13 @@ router.get("/", async (req: Request, res: Response) => {
       return res.status(503).json({ error: "Portal service unavailable", message: "Please try again later" });
     }
 
-    const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId']);
+    const format = (req.query.format as string | undefined)?.toLowerCase() || 'parquet';
+    if (format !== 'parquet' && format !== 'json') {
+      return res.status(400).json({ error: "Invalid parameter", message: "format must be 'parquet' or 'json'" });
+    }
+
+    const reservedQueryParams = new Set(['datasetId', 'cohortId', 'templateId', 'format', 'name', 'type']);
+
     const additionalParams: Record<string, string> = {};
     for (const [key, value] of Object.entries(req.query)) {
       if (!reservedQueryParams.has(key) && typeof value === 'string') {
@@ -261,6 +303,18 @@ router.get("/", async (req: Request, res: Response) => {
     );
 
     try {
+      if (format === 'json') {
+        const rows = await new Promise<unknown[]>((resolve, reject) => {
+          conn.execute(substitutedSql, [], (err: Error | null, result: unknown[]) => {
+            err ? reject(err) : resolve(result);
+          });
+        });
+
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", `attachment; filename=export-${Date.now()}.json`);
+        return res.json(rows);
+      }
+
       const tempDir = Deno.env.get("TMPDIR") || "/tmp";
       tempFilePath = `${tempDir}/export-${requestId}.parquet`;
       const copyQuery = `COPY (${substitutedSql}) TO '${tempFilePath}' (FORMAT PARQUET)`;

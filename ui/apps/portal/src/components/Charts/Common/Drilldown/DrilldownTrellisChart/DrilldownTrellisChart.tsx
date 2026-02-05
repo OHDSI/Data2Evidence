@@ -52,6 +52,8 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
   const GRID_HEIGHT = 60 / numRows;
   const GRID_TOP_MARGIN = 8;
   const GRID_VERTICAL_GAP = 30 / numRows;
+  const TITLE_OFFSET = 6 / numRows; // Dynamic offset for grid titles
+  const ROW_LABEL_OFFSET = 9 / numRows; // Dynamic offset for row labels
 
   // Get keys from trellisData sorted
   const sortedTrellisNames = Object.keys(trellisData).sort();
@@ -74,7 +76,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
       // Top label for this row (positioned above trellis names)
       gridTitles.push({
         text: trellisTopLabel,
-        top: `${rowTop - 5}%`,
+        top: `${rowTop - ROW_LABEL_OFFSET}%`,
         left: "center",
         textStyle: {
           fontSize: 14,
@@ -106,7 +108,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
     gridTitles.push({
       textAlign: "center",
       text: trellisName,
-      top: `${rowIndex * (GRID_HEIGHT + GRID_VERTICAL_GAP) + GRID_TOP_MARGIN - 2}%`,
+      top: `${rowIndex * (GRID_HEIGHT + GRID_VERTICAL_GAP) + GRID_TOP_MARGIN - TITLE_OFFSET}%`,
       left: `${colIndex * (GRID_WIDTH + GRID_GAP) + GRID_WIDTH / 2 + GRID_LEFT_MARGIN}%`,
       textStyle: {
         fontWeight: "normal",
