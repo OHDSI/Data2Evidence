@@ -362,11 +362,7 @@ export function StepForm() {
         className={styles.form}
         aria-label={selectedWizard.name + " form"}
       >
-        <div className={styles.formFields}>{renderFields(selectedWizard.fields.filter((f) => !f.isWizardField))}</div>
-
-        {selectedWizard.fields.some((f) => f.isWizardField) && (
-          <div className={styles.formFields}>{renderFields(selectedWizard.fields.filter((f) => f.isWizardField))}</div>
-        )}
+        <div className={styles.formFields}>{renderFields(selectedWizard.fields)}</div>
 
         <div className={styles.buttonRow}>
           <button type="button" onClick={goBack} className={styles.button}>
