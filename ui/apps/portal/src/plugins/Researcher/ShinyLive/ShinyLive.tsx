@@ -7,7 +7,8 @@ import "./ShinyLive.scss";
 
 interface Dashboard {
   name: string;
-  language: "python" | "r";
+  type: string;
+  language: "python" | "r" | "shiny-server";
 }
 
 interface ShinyLiveProps extends PageProps<ResearcherStudyMetadata> {}
@@ -19,6 +20,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [selectedDashboard, setSelectedDashboard] = useState<string>("");
   const [isLoadingDashboards, setIsLoadingDashboards] = useState<boolean>(false);
+  const [isShinyServer, setIsShinyServer] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchTokenAndDashboards = async () => {
@@ -51,6 +53,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
               .filter((item: any) => item.language) // Only include dashboards with language
               .map((item: any) => ({
                 name: item.name,
+                type: item.type,
                 language: item.language,
               }));
             setDashboards(parsedDashboards);
@@ -58,7 +61,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
             // Auto-select first dashboard if available
             if (parsedDashboards.length > 0) {
               const firstDashboard = parsedDashboards[0];
-              setSelectedDashboard(`${firstDashboard.name}_${firstDashboard.language}`);
+              setSelectedDashboard(`${firstDashboard.name}_${firstDashboard.type}_${firstDashboard.language}`);
             }
           } else {
             console.error("[ShinyLive] Failed to fetch dashboards:", response.status);
@@ -76,11 +79,64 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     fetchTokenAndDashboards();
   }, [metadata?.studyId, metadata]);
 
+  // Handle token refresh for Shiny Server dashboards
+  useEffect(() => {
+    if (!isShinyServer || !token) return;
+
+    // Set initial cookie
+    try {
+      document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict;`;
+      console.log("[ShinyLive] Set authtoken cookie for Shiny Server");
+    } catch (err) {
+      console.error("[ShinyLive] Error setting cookie:", err);
+    }
+
+    // Listen for token refresh events
+    const onTokenRefreshed = (e: Event) => {
+      const refreshedToken = (e as CustomEvent)?.detail?.accessToken as string | undefined;
+      if (!refreshedToken) return;
+
+      console.log("[ShinyLive] Token refreshed via OIDC event, updating cookie");
+      setToken(refreshedToken);
+      
+      // Update cookie
+      try {
+        document.cookie = `authtoken=${refreshedToken}; path=/strategus-results; secure; SameSite=Strict;`;
+      } catch (err) {
+        console.error("[ShinyLive] Error updating cookie after OIDC refresh:", err);
+      }
+    };
+
+    window.addEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
+    return () => window.removeEventListener("oidc:token_refreshed", onTokenRefreshed as EventListener);
+  }, [isShinyServer, token]);
+
   // Update dashboard URL when selection changes
   useEffect(() => {
     if (selectedDashboard && metadata?.studyId) {
-      const url = `${window.location.origin}/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_${selectedDashboard}/`;
-      console.log("[ShinyLive] Setting dashboard URL:", url);
+      // Parse the selected dashboard: name_type_language
+      const parts = selectedDashboard.split('_');
+      const language = parts.pop(); // Last part is language
+      const type = parts.pop(); // Second to last is type
+      const name = parts.join('_'); // Rest is the name (could contain underscores)
+      
+      let url: string;
+      
+      // Check if this is a Shiny Server dashboard (language === "shiny-server")
+      const isShinyServerDashboard = language === "shiny-server";
+      setIsShinyServer(isShinyServerDashboard);
+      
+      if (isShinyServerDashboard) {
+        // Shiny Server: proxy to strategus-results
+        // Use container ID pattern: {studyId}_{dashboardName}
+        // No validation middleware on backend, so this will work
+        url = `/strategus-results/${metadata.studyId}_${name}`;
+      } else {
+        // ShinyLive: serve static files
+        url = `${window.location.origin}/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_${name}_${language}/`;
+      }
+      
+      console.log("[ShinyLive] Setting dashboard URL:", url, { name, type, language, isShinyServer: isShinyServerDashboard });
       setDashboardUrl(url);
     }
   }, [selectedDashboard, metadata?.studyId]);
@@ -114,14 +170,19 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
                 label="Select Dashboard"
                 onChange={handleDashboardChange}
               >
-                {dashboards.map((dashboard) => (
-                  <MenuItem
-                    key={`${dashboard.name}_${dashboard.language}`}
-                    value={`${dashboard.name}_${dashboard.language}`}
-                  >
-                    {dashboard.name} ({dashboard.language?.toUpperCase() || "UNKNOWN"})
-                  </MenuItem>
-                ))}
+                {dashboards.map((dashboard) => {
+                  const dashboardKey = `${dashboard.name}_${dashboard.type}_${dashboard.language}`;
+                  // Display type based on language field: "shiny-server" means Shiny Server, otherwise ShinyLive
+                  const displayType = dashboard.language === "shiny-server" ? "Shiny Server (R)" : `ShinyLive (${dashboard.language?.toUpperCase()})`;
+                  return (
+                    <MenuItem
+                      key={dashboardKey}
+                      value={dashboardKey}
+                    >
+                      {dashboard.name} - {displayType}
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
           </div>

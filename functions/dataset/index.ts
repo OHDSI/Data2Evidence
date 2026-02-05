@@ -459,11 +459,12 @@ export class DatasetRouter {
         const portalAPI = new PortalAPI(token);
         const dashboards = await portalAPI.getDatasetDashboards(datasetId);
 
-        // Map to return id, datasetId, name, and language
+        // Map to return id, datasetId, name, type, and language
         const mapped = dashboards.map((dashboard: DashboardCode) => ({
           id: dashboard.id,
           datasetId: dashboard.datasetId,
           name: dashboard.name,
+          type: dashboard.type,
           language: dashboard.language,
         }));
 

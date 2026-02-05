@@ -3,7 +3,7 @@ import { request } from "./request";
 const STRATEGUS_RESULTS_URL = "strategus-results";
 
 export class StrategusResults {
-  public startStrategusResultViewer(studyId: string, datasetId: string, viewerCode: string) {
+  public startStrategusResultViewer(studyId: string, datasetId: string, viewerCode: string, dashboardName?: string) {
     return request({
       baseURL: STRATEGUS_RESULTS_URL,
       url: "/",
@@ -12,25 +12,29 @@ export class StrategusResults {
         studyId,
         datasetId,
         viewerCode,
+        dashboardName,
       },
     });
   }
 
-  public stopStrategusResultViewer(studyId: string) {
+  public stopStrategusResultViewer(studyId: string, dashboardName?: string) {
     return request({
       baseURL: STRATEGUS_RESULTS_URL,
       url: "/",
       method: "DELETE",
       data: {
         studyId,
+        dashboardName,
       },
     });
   }
 
-  public getStrategusResultViewerStatus(studyId: string): Promise<{ running: boolean; message: string }> {
+  public getStrategusResultViewerStatus(studyId: string, dashboardName?: string): Promise<{ running: boolean; message: string }> {
+    // Construct the container ID to match backend routing
+    const containerId = dashboardName ? `${studyId}_${dashboardName}` : studyId;
     return request({
       baseURL: STRATEGUS_RESULTS_URL,
-      url: `/${studyId}/status`,
+      url: `/${containerId}/status`,
       method: "GET",
     });
   }

@@ -49,7 +49,6 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
   const strategy = useMemo(() => createConfigStrategy(config.type), [config.type]);
   const { loading, feedback, clearFeedback, execute } = useAsyncOperation();
-  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.id);
 
   const {
     templates,
@@ -73,6 +72,9 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     codeType,
     strategy,
   });
+
+  // Pass the dashboard name to useKernelViewer for unique container IDs
+  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.id, name);
 
   const { addQuery, updateQuery, removeQuery, getDeletedQueryNames, getValidQueries } = useQueryManagement({
     queries,
@@ -110,12 +112,17 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   }, [config.type]);
 
   const handleStartViewer = useCallback(async () => {
+    // For strategus viewers, require a dashboard name
+    if (config.type === "strategus" && !name) {
+      console.error("Cannot start viewer: dashboard name is required");
+      return;
+    }
     try {
       await startViewer(code);
     } catch (error) {
       console.error("Failed to start viewer:", error);
     }
-  }, [startViewer, code]);
+  }, [startViewer, code, config.type, name]);
 
   const handleStopViewer = useCallback(async () => {
     try {
@@ -144,7 +151,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           } else if (templateLanguage === ViewerType.R) {
             language = "r";
           } else if (templateLanguage === ViewerType.SHINY_SERVER) {
-            language = "shiny_server"
+            language = "shiny-server"; // Use consistent naming with the enum
           }
 
           // Save code
@@ -347,7 +354,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
                   )
                 }
                 text={viewerStatus === "starting" ? getText(i18n.startingViewer) : getText(i18n.startViewer)}
-                disabled={viewerStatus !== "down" && viewerStatus !== "failed"}
+                disabled={viewerStatus !== "down" && viewerStatus !== "failed" || !name}
                 variant="text"
               />
 

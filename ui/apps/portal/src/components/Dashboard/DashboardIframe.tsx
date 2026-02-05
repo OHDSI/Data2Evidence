@@ -54,8 +54,9 @@ export const DashboardIframe: FC<DashboardIframeProps> = ({
         console.log("[DashboardIframe] Setting iframe URL:", url);
 
         // Check if the dashboard exists before loading iframe
+        // Use GET instead of HEAD because some servers (like Shiny Server) don't respond to HEAD
         const checkResponse = await fetch(url, {
-          method: "HEAD",
+          method: "GET",
           credentials: "include",
         });
 

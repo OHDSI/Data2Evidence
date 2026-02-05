@@ -18,7 +18,7 @@ export class StrategusResultsRouter {
     this.router.post("/", async (req: Request, res: Response) => {
       try {
         const token = req.headers["authorization"];
-        const { studyId, datasetId, viewerCode } = req.body;
+        const { studyId, datasetId, viewerCode, dashboardName } = req.body;
 
         if (!studyId) {
           return res.status(400).json({
@@ -42,11 +42,16 @@ export class StrategusResultsRouter {
           token,
           studyId,
           datasetId,
-          viewerCode
+          viewerCode,
+          dashboardName // Optional dashboard name for unique container ID
         );
 
+        const containerIdMessage = dashboardName 
+          ? `${studyId}_${dashboardName}` 
+          : studyId;
+
         res.status(200).json({
-          message: `Strategus Results Viewer created successfully for study: ${studyId}`,
+          message: `Strategus Results Viewer created successfully for study: ${studyId} (container: ${containerIdMessage})`,
         });
       } catch (error) {
         res.status(500).json({
@@ -59,7 +64,8 @@ export class StrategusResultsRouter {
       try {
         const token = req.headers["authorization"];
         const studyId = req.body.studyId;
-        const result = await stopStrategusResultsViewer(token, studyId);
+        const dashboardName = req.body.dashboardName;
+        const result = await stopStrategusResultsViewer(token, studyId, dashboardName);
         if (result.stopped) {
           res.status(200).json(result);
         } else {
@@ -74,12 +80,14 @@ export class StrategusResultsRouter {
 
     this.router.get(
       "/:studyId/status",
-      validateStudyIdMiddleware,
       async (req: Request, res: Response) => {
-        const { studyId } = req.params;
-
+        // Parse studyId which may include dashboard name: {studyId}_{dashboardName}
+        const studyIdParam = req.params.studyId;
+        
+        // Container ID matches the studyId parameter (could include dashboard name)
+        const containerId = studyIdParam;
         const strategusViewerHost = `http://${encodeURIComponent(
-          studyId
+          containerId
         )}:3838`;
         try {
           const response = await fetch(strategusViewerHost, { method: "GET" });
@@ -87,30 +95,30 @@ export class StrategusResultsRouter {
           if (response.ok) {
             res.status(200).send({
               running: true,
-              message: `Strategus Viewer for study ${studyId} is up.`,
+              message: `Strategus Viewer for container ${containerId} is up.`,
             });
           }
         } catch (error) {
           res.status(503).json({
             running: false,
-            message: `Strategus Viewer for study ${studyId} is down.`,
+            message: `Strategus Viewer for container ${containerId} is down.`,
           });
         }
       }
     );
 
+    // Handle requests to container root (/:studyId without additional path)
     this.router.all(
-      "/:studyId/*",
-      validateStudyIdMiddleware,
+      "/:studyId",
       async (req: Request, res: Response) => {
-        const { studyId } = req.params;
-        const restOfPath = req.path.replace(`/${studyId}`, "");
+        const studyIdParam = req.params.studyId;
+        const containerId = studyIdParam;
         const strategusViewerHost = `http://${encodeURIComponent(
-          studyId
+          containerId
         )}:3838`;
 
         try {
-          const targetUrl = `${strategusViewerHost}${restOfPath}`;
+          const targetUrl = `${strategusViewerHost}/`;
           const newHeaders = new Headers(req.headers);
           newHeaders.append(
             "x-source-origin",
@@ -123,7 +131,7 @@ export class StrategusResultsRouter {
             body: req.rawBody,
             redirect: "follow",
           };
-          console.log(`Forwarding request to strategus viewer: ${targetUrl}`);
+          console.log(`Forwarding request to strategus viewer root (container: ${containerId}): ${targetUrl}`);
 
           const response = await fetch(targetUrl, requestOptions);
 
@@ -140,7 +148,60 @@ export class StrategusResultsRouter {
           }
         } catch (error) {
           console.error(
-            `Error forwarding request to strategus viewer: ${error}`
+            `Error forwarding request to strategus viewer (container: ${containerId}): ${error}`
+          );
+          res.status(500).json({
+            message: "Error forwarding request to strategus viewer",
+          });
+        }
+      }
+    );
+
+    this.router.all(
+      "/:studyId/*",
+      async (req: Request, res: Response) => {
+        // Parse studyId which may include dashboard name: {studyId}_{dashboardName}
+        const studyIdParam = req.params.studyId;
+        const restOfPath = req.path.replace(`/${studyIdParam}`, "");
+        
+        // Container ID matches the studyId parameter (could include dashboard name)
+        const containerId = studyIdParam;
+        const strategusViewerHost = `http://${encodeURIComponent(
+          containerId
+        )}:3838`;
+
+        try {
+          const targetUrl = `${strategusViewerHost}${restOfPath}`;
+          const newHeaders = new Headers(req.headers);
+          newHeaders.append(
+            "x-source-origin",
+            `${req.protocol}://${req.get("host")}`
+          );
+
+          const requestOptions: RequestInit = {
+            method: req.method,
+            headers: newHeaders,
+            body: req.rawBody,
+            redirect: "follow",
+          };
+          console.log(`Forwarding request to strategus viewer (container: ${containerId}): ${targetUrl}`);
+
+          const response = await fetch(targetUrl, requestOptions);
+
+          response.headers.forEach((value, key) => {
+            res.setHeader(key, value);
+          });
+
+          res.status(response.status);
+
+          if (response.body) {
+            Readable.fromWeb(response.body as any).pipe(res);
+          } else {
+            res.end();
+          }
+        } catch (error) {
+          console.error(
+            `Error forwarding request to strategus viewer (container: ${containerId}): ${error}`
           );
           res.status(500).json({
             message: "Error forwarding request to strategus viewer",

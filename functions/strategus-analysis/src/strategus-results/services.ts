@@ -16,9 +16,12 @@ export const startStrategusResultsViewer = async (
   token: string,
   studyId: string,
   datasetId: string,
-  viewerCode: string
+  viewerCode: string,
+  dashboardName?: string
 ): Promise<void> => {
-  console.log("Creating Strategus Results Viewer for study:", studyId);
+  // Create unique container ID by appending dashboard name
+  const containerId = dashboardName ? `${studyId}_${dashboardName}` : studyId;
+  console.log("Creating Strategus Results Viewer for study:", studyId, "with container ID:", containerId);
 
   try {
     const manager = new KernelManager({
@@ -31,7 +34,7 @@ export const startStrategusResultsViewer = async (
     });
 
     const kernelConnection: IKernelConnection = await getKernelConnection(
-      studyId,
+      containerId,
       manager
     );
 
@@ -91,8 +94,12 @@ export const startStrategusResultsViewer = async (
 
 export const stopStrategusResultsViewer = async (
   token: string,
-  studyId: string
+  studyId: string,
+  dashboardName?: string
 ): Promise<{ stopped: boolean; message: string }> => {
+  // Create unique container ID by appending dashboard name
+  const containerId = dashboardName ? `${studyId}_${dashboardName}` : studyId;
+  
   try {
     const manager = new KernelManager({
       standby: "when-hidden",
@@ -103,15 +110,15 @@ export const stopStrategusResultsViewer = async (
       }),
     });
 
-    const runningKernel = await getKernel(studyId, manager);
+    const runningKernel = await getKernel(containerId, manager);
 
     if (runningKernel) {
       await manager.shutdown(runningKernel.id);
-      return { stopped: true, message: `Kernel for study ${studyId} stopped.` };
+      return { stopped: true, message: `Kernel for study ${studyId} (container: ${containerId}) stopped.` };
     } else {
       return {
         stopped: false,
-        message: `No running kernel found for study ${studyId}.`,
+        message: `No running kernel found for study ${studyId} (container: ${containerId}).`,
       };
     }
   } catch (error) {
