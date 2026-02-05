@@ -185,6 +185,12 @@
   border-color: #0d1442;
 }
 
+.buttonPrimary:disabled {
+  background: #9a9fc4;
+  border-color: #9a9fc4;
+  color: #fff;
+}
+
 .loading,
 .error {
   padding: 40px;
