@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
@@ -336,70 +336,8 @@ export function StepForm() {
   // Get submit button text from stepConfig or default to "Next"
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
 
-  // Group fields by the 'group' property
   const renderFields = (fields: FieldDefinition[]) => {
-    const renderedFields: JSX.Element[] = [];
-    const processedIndices = new Set<number>();
-
-    fields.forEach((field, index) => {
-      // Skip if already processed as part of a group
-      if (processedIndices.has(index)) return;
-
-      // Check if this field is part of a group
-      if (field.group) {
-        // Find all adjacent fields with the same group
-        const groupFields = [field];
-        let nextIndex = index + 1;
-
-        while (nextIndex < fields.length && fields[nextIndex].group === field.group) {
-          groupFields.push(fields[nextIndex]);
-          processedIndices.add(nextIndex);
-          nextIndex++;
-        }
-
-        // Render grouped fields in one row
-        renderedFields.push(
-          <div key={`group-${field.group}-${index}`} className={styles.fieldGroupRow}>
-            <label className={styles.label}>{field.group.charAt(0).toUpperCase() + field.group.slice(1)}:</label>
-            <div className={styles.groupInputs}>
-              {groupFields.map((gField, gIndex) => {
-                const fieldError = errors[gField.id];
-                return (
-                  <Fragment key={gField.id}>
-                    {gIndex > 0 && <span className={styles.groupSeparator}>-</span>}
-                    <input
-                      id={gField.id}
-                      type={gField.type}
-                      placeholder={gField.placeholder}
-                      className={`${styles.input} ${fieldError ? styles.inputError : ""}`}
-                      aria-invalid={!!fieldError}
-                      {...register(gField.id, {
-                        required: gField.required ? `${gField.label} is required` : false,
-                      })}
-                    />
-                  </Fragment>
-                );
-              })}
-            </div>
-            {groupFields.map((gField) => {
-              const fieldError = errors[gField.id];
-              return fieldError ? (
-                <span key={`error-${gField.id}`} className={styles.errorMessage} role="alert">
-                  {fieldError.message as string}
-                </span>
-              ) : null;
-            })}
-          </div>,
-        );
-
-        processedIndices.add(index);
-      } else {
-        // Render individual field normally
-        renderedFields.push(renderField(field));
-      }
-    });
-
-    return renderedFields;
+    return fields.map((field) => renderField(field));
   };
 
   return (

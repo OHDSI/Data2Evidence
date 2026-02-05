@@ -61,13 +61,6 @@
   flex-wrap: wrap;
 }
 
-.fieldGroupRow {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12px;
-}
-
 .label {
   width: 220px;
   min-width: 220px;
@@ -81,20 +74,6 @@
   font-size: 13px;
   white-space: nowrap;
   margin-left: auto;
-}
-
-.groupInputs {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-
-.groupSeparator {
-  color: #333;
-  font-size: 14px;
-  padding: 0 4px;
 }
 
 .required {
@@ -290,8 +269,7 @@
 }
 
 @media (max-width: 768px) {
-  .fieldGroup,
-  .fieldGroupRow {
+  .fieldGroup {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -303,10 +281,6 @@
   }
 
   .input {
-    width: 100%;
-  }
-
-  .groupInputs {
     width: 100%;
   }
 
