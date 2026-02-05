@@ -46,8 +46,7 @@ export const publicURLs = [
     '^/callback$',
     '^/prefect/docs$',
     '^/openapi.json$',
-    '^/fhir-server/healthcheck$',
-    '^/gateway/api/dataset/shiny-live/.*$'
+    '^/fhir-server/healthcheck$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([
