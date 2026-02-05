@@ -9,6 +9,8 @@ library(shiny)
 library(TreatmentPatterns)
 
 resultsDatabaseSchema <- "$DATABASE_SCHEMA"
+datasetId <- "$DATASET_ID"
+studyId <- "$STUDY_ID"
 
 # Specify the connection to the results database
 resultsConnectionDetails <- DatabaseConnector::createConnectionDetails(
