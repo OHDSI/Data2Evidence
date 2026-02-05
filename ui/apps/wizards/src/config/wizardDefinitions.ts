@@ -42,7 +42,6 @@ function toWizardDefinition(config: WizardConfig, cdwConfig: CdwConfig): WizardD
   return {
     ...config,
     fields: config.fields.map((field) => enrichField(field, cdwConfig)),
-    wizardFields: config.wizardFields?.map((field) => enrichField(field, cdwConfig)),
     steps: DEFAULT_STEPS,
   };
 }
@@ -199,14 +198,12 @@ const WIZARD_FIELDS: FieldDefinition[] = [
       },
     ],
   },
-];
-
-const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
   {
     id: "year",
     type: "yearRange",
     label: "Years",
     required: false,
+    isWizardField: true,
   },
   {
     id: "condition1",
@@ -214,6 +211,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
     label: "Condition 1",
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    isWizardField: true,
   },
   {
     id: "condition2",
@@ -221,6 +219,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
     label: "Condition 2",
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    isWizardField: true,
   },
   {
     id: "condition3",
@@ -228,6 +227,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
     label: "Condition 3",
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    isWizardField: true,
   },
   {
     id: "condition4",
@@ -235,6 +235,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
     label: "Condition 4",
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    isWizardField: true,
   },
   {
     id: "condition5",
@@ -242,6 +243,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
     label: "Condition 5",
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    isWizardField: true,
   },
   {
     id: "condition6",
@@ -249,6 +251,7 @@ const WIZARD_ONLY_FIELDS: FieldDefinition[] = [
     label: "Condition 6",
     required: false,
     configPath: "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+    isWizardField: true,
   },
 ];
 
@@ -259,7 +262,6 @@ const mockWizardConfigs: WizardConfig[] = [
     description:
       "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
     fields: WIZARD_FIELDS,
-    wizardFields: WIZARD_ONLY_FIELDS,
   },
   {
     id: "calculate-prevalence",
@@ -267,7 +269,6 @@ const mockWizardConfigs: WizardConfig[] = [
     description:
       "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
     fields: WIZARD_FIELDS,
-    wizardFields: WIZARD_ONLY_FIELDS,
   },
   {
     id: "calculate-mortality",
@@ -275,14 +276,12 @@ const mockWizardConfigs: WizardConfig[] = [
     description:
       "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
     fields: WIZARD_FIELDS,
-    wizardFields: WIZARD_ONLY_FIELDS,
   },
   {
     id: "cross-sectional-demographics",
     name: "Cross sectional Demographics",
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
     fields: WIZARD_FIELDS,
-    wizardFields: WIZARD_ONLY_FIELDS,
   },
 ];
 

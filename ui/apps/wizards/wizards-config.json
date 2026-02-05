@@ -137,49 +137,53 @@
               "value": "Diastolic blood pressure"
             }
           ]
-        }
-      ],
-      "wizardFields": [
+        },
         {
           "id": "year",
           "type": "yearRange",
           "label": "Years",
-          "required": false
+          "required": false,
+          "isWizardField": true
         },
         {
           "id": "condition1",
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition2",
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition3",
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition4",
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition5",
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         }
       ]
     },
@@ -320,49 +324,53 @@
               "value": "Diastolic blood pressure"
             }
           ]
-        }
-      ],
-      "wizardFields": [
+        },
         {
           "id": "year",
           "type": "yearRange",
           "label": "Years",
-          "required": false
+          "required": false,
+          "isWizardField": true
         },
         {
           "id": "condition1",
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition2",
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition3",
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition4",
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition5",
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         }
       ]
     },
@@ -503,49 +511,53 @@
               "value": "Diastolic blood pressure"
             }
           ]
-        }
-      ],
-      "wizardFields": [
+        },
         {
           "id": "year",
           "type": "yearRange",
           "label": "Years",
-          "required": false
+          "required": false,
+          "isWizardField": true
         },
         {
           "id": "condition1",
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition2",
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition3",
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition4",
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         },
         {
           "id": "condition5",
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         }
       ]
     },
@@ -686,21 +698,21 @@
               "value": "Diastolic blood pressure"
             }
           ]
-        }
-      ],
-      "wizardFields": [
+        },
         {
           "id": "year",
           "type": "yearRange",
           "label": "Years",
-          "required": false
+          "required": false,
+          "isWizardField": true
         },
         {
           "id": "condition1",
           "type": "text",
           "label": "Disease/Condition",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name"
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true
         }
       ]
     }

@@ -48,8 +48,7 @@ export function StepForm() {
   // Check if all required fields have values
   const allRequiredFieldsFilled = useCallback(() => {
     if (!selectedWizard) return false;
-    const allFields = [...selectedWizard.fields, ...(selectedWizard.wizardFields || [])];
-    for (const field of allFields) {
+    for (const field of selectedWizard.fields) {
       if (field.required) {
         const value = formValues[field.id];
         if (!value || value === "") return false;
@@ -82,14 +81,17 @@ export function StepForm() {
         // Fetch config meta (cached from wizard load)
         const { config: cdwConfig, meta: configMeta } = await fetchCdwConfig(portalProps.datasetId);
 
+        const mriFields = selectedWizard.fields.filter((f) => !f.isWizardField);
+        const wizardOnlyFields = selectedWizard.fields.filter((f) => f.isWizardField);
+
         const deepLinkUrl = generateFormSubmitDeepLink(
-          selectedWizard.fields,
+          mriFields,
           combinedFormData,
           configMeta,
           portalProps.datasetId,
           cdwConfig.chartOptions,
           cdwConfig,
-          selectedWizard.wizardFields,
+          wizardOnlyFields,
           selectedWizard.id,
           displayValuesRef.current,
         );
@@ -335,8 +337,7 @@ export function StepForm() {
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
 
   // Group fields by the 'group' property
-  const renderFields = () => {
-    const fields = selectedWizard.fields;
+  const renderFields = (fields: FieldDefinition[]) => {
     const renderedFields: JSX.Element[] = [];
     const processedIndices = new Set<number>();
 
@@ -423,10 +424,10 @@ export function StepForm() {
         className={styles.form}
         aria-label={selectedWizard.name + " form"}
       >
-        <div className={styles.formFields}>{renderFields()}</div>
+        <div className={styles.formFields}>{renderFields(selectedWizard.fields.filter((f) => !f.isWizardField))}</div>
 
-        {selectedWizard.wizardFields && selectedWizard.wizardFields.length > 0 && (
-          <div className={styles.formFields}>{selectedWizard.wizardFields.map((field) => renderField(field))}</div>
+        {selectedWizard.fields.some((f) => f.isWizardField) && (
+          <div className={styles.formFields}>{renderFields(selectedWizard.fields.filter((f) => f.isWizardField))}</div>
         )}
 
         <div className={styles.buttonRow}>

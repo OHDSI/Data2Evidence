@@ -167,7 +167,7 @@ describe("wizardDefinitions", () => {
       for (const id of wizardIds) {
         const wizard = await getWizardById(id);
 
-        expect(wizard?.fields).toHaveLength(11);
+        expect(wizard?.fields).toHaveLength(18);
 
         const ageField = wizard?.fields.find((f) => f.id === "age");
         expect(ageField).toBeDefined();
@@ -175,6 +175,7 @@ describe("wizardDefinitions", () => {
         expect(ageField?.label).toBe("Age Range");
         expect(ageField?.required).toBe(false);
         expect(ageField?.configPath).toBe("patient.attributes.Age");
+        expect(ageField?.isWizardField).toBeFalsy();
 
         const genderField = wizard?.fields.find((f) => f.id === "gender");
         expect(genderField).toBeDefined();
@@ -184,7 +185,11 @@ describe("wizardDefinitions", () => {
         // Options are no longer preloaded — fetched on user interaction via TypeaheadField
         expect(genderField?.options).toBeUndefined();
 
-        // Condition fields are now in wizardFields, not fields
+        // Wizard-only fields have isWizardField: true
+        const condition1Field = wizard?.fields.find((f) => f.id === "condition1");
+        expect(condition1Field).toBeDefined();
+        expect(condition1Field?.isWizardField).toBe(true);
+
         const heightField = wizard?.fields.find((f) => f.id === "height");
         expect(heightField).toBeDefined();
         expect(heightField?.type).toBe("num");

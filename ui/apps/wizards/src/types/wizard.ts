@@ -18,6 +18,8 @@ export interface FieldDefinition {
     operator: string;
     value: string | number;
   }>;
+  /** If true, this field is stored in the wizards query param only, not in the MRI bookmark */
+  isWizardField?: boolean;
 }
 
 /**
@@ -80,10 +82,8 @@ export interface WizardConfig {
   id: string;
   name: string;
   description: string;
-  /** Fields that map to MRI bookmark filter cards */
+  /** All fields — MRI bookmark fields and wizard-only fields (isWizardField: true) */
   fields: FieldDefinition[];
-  /** Wizard-only fields stored in the wizards query param, not in MRI bookmark */
-  wizardFields?: FieldDefinition[];
 }
 
 /**
