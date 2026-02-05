@@ -139,7 +139,7 @@ export function StepForm() {
               onDisplayValueChange={handleDisplayValueChange}
               allowFreeText={field.allowFreeText}
             />
-            {isConditionField && (
+            {isConditionField && fieldValue && (
               <div className={styles.wildcardToggle}>
                 <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
                 <label htmlFor={`${field.id}_wildcard`}>Include descendants</label>
