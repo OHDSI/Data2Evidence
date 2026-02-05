@@ -442,6 +442,28 @@ export async function deleteCohort(req: IMRIRequest, res: Response) {
     }
 }
 
+export async function checkIfSchemaCanMaterializeCohort(
+    req: IMRIRequest,
+    res: Response
+) {
+    try {
+        const analyticsConnection = await getCohortAnalyticsConnection(req);
+
+        const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
+            analyticsConnection,
+            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            req.dbCredentials.studyAnalyticsCredential.dialect,
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+        );
+
+        const result = await cohortEndpoint.checkIfSchemaCanMaterializeCohort();
+        res.status(200).send(result);
+    } catch (err) {
+        logger.error(err);
+        res.status(500).send(MRIEndpointErrorHandler({ err, language }));
+    }
+}
+
 // Form and return cohort object
 async function getCohortFromMriQuery(
     req: IMRIRequest,
