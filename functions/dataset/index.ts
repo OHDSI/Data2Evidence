@@ -234,10 +234,16 @@ export class DatasetRouter {
             fhir_project_id: fhirProjectId,
           };
 
-          const newDataset = await portalAPI.createDataset(newDatasetInput);
-
-          if (newDataset.error) {
-            return res.status(400).json(newDataset);
+          let newDataset;
+          try {
+            newDataset = await portalAPI.createDataset(newDatasetInput);
+          } catch (createError: any) {
+            const status = createError.status || createError.response?.status;
+            const responseData = createError.response?.data;
+            this.logger.error(`Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+            // Return 400 for client errors, 500 for server errors
+            const httpStatus = status >= 400 && status < 500 ? status : 500;
+            return res.status(httpStatus).json(responseData || { error: createError.message });
           }
 
           this.logger.info("Creating cache dataset in Portal");
