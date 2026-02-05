@@ -23,8 +23,8 @@
 /functions/query-gen-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/terminology-svc                           @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/alp-dataflow-gen-init                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
-/flows                                               @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
-/flows/strategus_plugin                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/plugins/flows                                       @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+/plugins/flows/strategus_plugin                      @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /scripts                                             @brandantck @mwaiyee @SantanM @satish-a0 @p-hoffmann
 /services/alp-dataflow-gen                           @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /services/alp-dataflow-gen-worker                    @alicia-koh @csafreen @Zhimin-arya @p-hoffmann

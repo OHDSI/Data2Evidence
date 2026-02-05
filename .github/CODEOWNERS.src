@@ -23,8 +23,8 @@
 /functions/query-gen-svc                             @data2evidence/analyze
 /functions/terminology-svc                           @data2evidence/analyze
 /functions/alp-dataflow-gen-init                     @data2evidence/data
-/flows                                               @data2evidence/data
-/flows/strategus_plugin                              @data2evidence/integrate
+/plugins/flows                                       @data2evidence/data
+/plugins/flows/strategus_plugin                      @data2evidence/integrate
 /scripts                                             @data2evidence/devops
 /services/alp-dataflow-gen                           @data2evidence/data
 /services/alp-dataflow-gen-worker                    @data2evidence/data

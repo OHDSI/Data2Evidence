@@ -73,13 +73,13 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "flows/base/**"
+              - "plugins/flows/base/**"
 
       - name: Build Flow base docker image
         if: steps.flow_file_changes.outputs.src == 'true'
         id: build_flow_base_image
         run: |
-          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./plugins/flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./plugins/flows
 
       - name: Build docker images
         if: success() || failure()

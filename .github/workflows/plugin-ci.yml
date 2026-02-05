@@ -67,7 +67,7 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "flows/**"
+              - "plugins/flows/**"
               - "package.json"
               - "docker-compose.yml"
               - "ui/**"
@@ -93,13 +93,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/i2b2/
-          - PKGPATH: ./flows/search_embedding/
-          - PKGPATH: ./flows/data_management/
-          - PKGPATH: ./flows/hades/
-          - PKGPATH: ./flows/loyalty_score/
-          - PKGPATH: ./flows/data_transformation/
+          - PKGPATH: ./plugins/flows/base/
+          - PKGPATH: ./plugins/flows/i2b2/
+          - PKGPATH: ./plugins/flows/search_embedding/
+          - PKGPATH: ./plugins/flows/data_management/
+          - PKGPATH: ./plugins/flows/hades/
+          - PKGPATH: ./plugins/flows/loyalty_score/
+          - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./ui
             NPM: bun
           - PKGPATH: ./functions/
