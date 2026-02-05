@@ -576,4 +576,53 @@ export class CohortEndpoint {
             throw err;
         }
     }
+
+    public async checkIfSchemaCanMaterializeCohort(): Promise<boolean> {
+        // Checks if the schema has the required tables to materialize cohorts
+        // To successfully materialize cohort, schema must have the following tables
+        // 1. cohort
+        // 2. cohort_definition
+
+        let sql, sqlParams;
+        if (this.connection.constructor.name === "TrexConnection") {
+            sql = `
+                    select
+                        count(1) AS COUNT_TABLES
+                    from
+                        information_schema.tables
+                    where
+                        table_catalog = %s
+                        and table_schema = %s
+                        and table_name in ('cohort', 'cohort_definition');
+                    `;
+            sqlParams = [
+                this.connection.connection.__database, // Check against cache file instead of source db
+                this.schemaName,
+            ];
+        } else {
+            sql = `
+                    SELECT
+                        COUNT(1) AS COUNT_TABLES
+                    FROM
+                        SYS.TABLES
+                    WHERE
+                        SCHEMA_NAME = %s
+                        AND TABLE_NAME IN ('COHORT', 'COHORT_DEFINITION');
+                    `;
+            sqlParams = [this.schemaName];
+        }
+        try {
+            const query = QueryObject.format(sql, ...sqlParams);
+            const result = await this.executeCohortQuery(query);
+            if (result.data[0]) {
+                // Result must be 2 for function to return true, meaning that both cohort and cohort definition tables exist
+                return result.data[0].COUNT_TABLES === 2;
+            } else {
+                return false;
+            }
+        } catch (err) {
+            logger.error(`Failed to check if schema can materialize cohort`);
+            throw err;
+        }
+    }
 }
