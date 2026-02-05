@@ -49,8 +49,6 @@
     "../_shared/alp-base-utils/src/SecurityUtils": "../_shared/alp-base-utils/src/SecurityUtils.ts",
     "../_shared/alp-base-utils/src/QueryObject": "../_shared/alp-base-utils/src/QueryObject.ts",
     "../_shared/alp-base-utils/src/User": "../_shared/alp-base-utils/src/User.ts",
-    "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil": "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil.ts",
-    "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection": "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection.ts",
     "../_shared/alp-base-utils/src/helpers/hanaTranslation": "../_shared/alp-base-utils/src/helpers/hanaTranslation.ts",
     "../_shared/alp-base-utils/src/helpers/translateHanaToDuckdb.test": "../_shared/alp-base-utils/src/helpers/translateHanaToDuckdb.test.ts",
     "../_shared/alp-base-utils/src/helpers/translateHanaToPostgres.test": "../_shared/alp-base-utils/src/helpers/translateHanaToPostgres.test.ts",
