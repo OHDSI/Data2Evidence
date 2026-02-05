@@ -4,4 +4,5 @@ export const env = {
   NODE_ENV: _env.NODE_ENV,
   SERVICE_ROUTES: _env.SERVICE_ROUTES ? JSON.parse(_env.SERVICE_ROUTES) : {},
   SQL_QUERY_TEMPLATES: _env.SQL_QUERY_TEMPLATES ? JSON.parse(_env.SQL_QUERY_TEMPLATES) : null,
+  DEFAULT_QUERY_TYPE: _env.DEFAULT_QUERY_TYPE || "shinylive",
 };

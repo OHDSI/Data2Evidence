@@ -118,10 +118,7 @@ export const getConceptSet = async (
     ]);
 
     const conceptIds = conceptSet.concepts.map((c) => c.id);
-    const concepts = await cachedbService.getConceptsByIds(
-      conceptIds,
-      query.datasetId
-    );
+    const concepts = await cachedbService.getConceptsByIds(conceptIds);
     const conceptSetWithConceptDetails = {
       ...conceptSet,
       concepts: concepts.map((concept) => {
@@ -222,10 +219,7 @@ export const getIncludedConcepts = async (
     );
     const promises = rawConceptSets.map(async (conceptSet) => {
       const conceptIds = conceptSet.concepts.map((c) => c.id);
-      const concepts = await cachedbService.getConceptsByIds(
-        conceptIds,
-        datasetId
-      );
+      const concepts = await cachedbService.getConceptsByIds(conceptIds);
       const conceptSetWithConceptDetails = {
         ...conceptSet,
         concepts: concepts.map((concept) => {
@@ -294,8 +288,7 @@ export const resolveConceptSetExpression = async (
 
     const uniqueConceptIds = await _resolveConceptSetConcepts(
       cachedbService,
-      concepts,
-      datasetId
+      concepts
     );
 
     res.send(uniqueConceptIds);
@@ -307,8 +300,7 @@ export const resolveConceptSetExpression = async (
 
 const _resolveConceptSetConcepts = async (
   cachedbService: CachedbService,
-  conceptSetConcepts: ConceptSetConcept[],
-  datasetId: string
+  conceptSetConcepts: ConceptSetConcept[]
 ): Promise<number[]> => {
   const conceptIds: number[] = [];
   const conceptIdsToIncludeDescendant: number[] = [];
@@ -367,7 +359,6 @@ const _resolveConceptSetConcepts = async (
     await Promise.all([
       _getConceptSetConceptIds(
         cachedbService,
-        datasetId,
         conceptIds,
         conceptIdsToIncludeDescendant,
         conceptIdsToIncludeMapped,
@@ -375,7 +366,6 @@ const _resolveConceptSetConcepts = async (
       ),
       _getConceptSetConceptIds(
         cachedbService,
-        datasetId,
         conceptIdsToExclude,
         conceptIdsToExcludeDescendant,
         conceptIdsToExcludeMapped,
@@ -394,7 +384,6 @@ const _resolveConceptSetConcepts = async (
 
 const _getConceptSetConceptIds = async (
   cachedbService: CachedbService,
-  datasetId: string,
   conceptIds: number[],
   conceptIdsToIncludeDescendant: number[],
   conceptIdsToIncludeMapped: number[],
@@ -408,21 +397,18 @@ const _getConceptSetConceptIds = async (
   const [includedConceptIds, mappedConceptIds] = await Promise.all([
     cachedbService.getConceptsAndDescendantIds(
       conceptIds,
-      conceptIdsToIncludeDescendant,
-      datasetId
+      conceptIdsToIncludeDescendant
     ),
     (async () => {
       const mappedConceptsAndDescendantIds =
         await cachedbService.getConceptsAndDescendantIds(
           conceptIdsToIncludeMapped,
-          conceptIdsToIncludeMappedAndDescendant,
-          datasetId
+          conceptIdsToIncludeMappedAndDescendant
         );
 
       const mappedConceptIds =
         await cachedbService.getConceptRelationshipMapsTo(
-          mappedConceptsAndDescendantIds,
-          datasetId
+          mappedConceptsAndDescendantIds
         );
       return mappedConceptIds;
     })(),
