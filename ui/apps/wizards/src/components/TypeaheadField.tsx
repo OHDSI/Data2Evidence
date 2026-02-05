@@ -124,13 +124,13 @@ export function TypeaheadField({
       defaultValue={defaultValue}
       rules={{
         validate: (value) => {
-          // Handle required validation - check both form value and our refs
-          if (required && !value && !hasSelection.current) {
-            return `${label} is required`;
-          }
           // Text typed but not from dropdown selection → invalid
           if (inputTextRef.current && !hasSelection.current) {
             return `Please select a ${label} from the dropdown`;
+          }
+          // Handle required validation - check both form value and our refs
+          if (required && !value && !hasSelection.current) {
+            return `${label} is required`;
           }
           return true;
         },

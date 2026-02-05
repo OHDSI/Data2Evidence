@@ -135,7 +135,7 @@
 .errorMessage {
   font-size: 13px;
   color: #c00;
-  margin-top: 2px;
+  margin-left: auto;
 }
 
 .unsupported {

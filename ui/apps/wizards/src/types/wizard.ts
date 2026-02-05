@@ -84,7 +84,6 @@ export interface WizardConfig {
   fields: FieldDefinition[];
   /** Wizard-only fields stored in the wizards query param, not in MRI bookmark */
   wizardFields?: FieldDefinition[];
-  hidden?: boolean;
 }
 
 /**
