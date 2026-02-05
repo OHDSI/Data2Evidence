@@ -5,8 +5,6 @@ export interface FieldDefinition {
   type: FieldType;
   label: string;
   required: boolean;
-  validation?: Record<string, any>;
-  options?: Array<{ label: string; value: string }>; // For select fields
   configPath?: string;
   placeholder?: string;
   /** For compound fields: override the filter card path (e.g. "patient.interactions.measurement") */

@@ -182,8 +182,6 @@ describe("wizardDefinitions", () => {
         expect(genderField?.type).toBe("text");
         expect(genderField?.label).toBe("Gender");
         expect(genderField?.configPath).toBe("patient.attributes.Gender_concept_name");
-        // Options are no longer preloaded — fetched on user interaction via TypeaheadField
-        expect(genderField?.options).toBeUndefined();
 
         // Wizard-only fields have isWizardField: true
         const condition1Field = wizard?.fields.find((f) => f.id === "condition1");
