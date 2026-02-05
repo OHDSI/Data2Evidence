@@ -151,7 +151,8 @@
           "label": "Condition 1",
           "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition2",
@@ -159,7 +160,8 @@
           "label": "Condition 2",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition3",
@@ -167,7 +169,8 @@
           "label": "Condition 3",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition4",
@@ -175,7 +178,8 @@
           "label": "Condition 4",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition5",
@@ -183,7 +187,8 @@
           "label": "Condition 5",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         }
       ]
     },
@@ -338,7 +343,8 @@
           "label": "Condition 1",
           "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition2",
@@ -346,7 +352,8 @@
           "label": "Condition 2",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition3",
@@ -354,7 +361,8 @@
           "label": "Condition 3",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition4",
@@ -362,7 +370,8 @@
           "label": "Condition 4",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition5",
@@ -370,7 +379,8 @@
           "label": "Condition 5",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         }
       ]
     },
@@ -525,7 +535,8 @@
           "label": "Condition 1",
           "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition2",
@@ -533,7 +544,8 @@
           "label": "Condition 2",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition3",
@@ -541,7 +553,8 @@
           "label": "Condition 3",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition4",
@@ -549,7 +562,8 @@
           "label": "Condition 4",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         },
         {
           "id": "condition5",
@@ -557,7 +571,8 @@
           "label": "Condition 5",
           "required": false,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         }
       ]
     },
@@ -712,7 +727,8 @@
           "label": "Disease/Condition",
           "required": true,
           "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true
+          "isWizardField": true,
+          "allowFreeText": true
         }
       ]
     }

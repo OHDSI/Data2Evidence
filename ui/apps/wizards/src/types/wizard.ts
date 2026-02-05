@@ -17,6 +17,8 @@ export interface FieldDefinition {
   }>;
   /** If true, this field is stored in the wizards query param only, not in the MRI bookmark */
   isWizardField?: boolean;
+  /** If true, text fields accept free text input without requiring dropdown selection */
+  allowFreeText?: boolean;
 }
 
 /**

@@ -137,6 +137,7 @@ export function StepForm() {
               defaultValue={formData[field.id] ?? ""}
               error={fieldError as { message?: string } | undefined}
               onDisplayValueChange={handleDisplayValueChange}
+              allowFreeText={field.allowFreeText}
             />
             {isConditionField && (
               <div className={styles.wildcardToggle}>
