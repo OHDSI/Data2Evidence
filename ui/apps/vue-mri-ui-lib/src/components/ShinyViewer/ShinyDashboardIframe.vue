@@ -24,10 +24,8 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { getPortalAPI } from '@/utils/PortalUtils'
-import type { Dashboard } from '@/api/DashboardService'
 
 const props = defineProps<{
-  dashboard: Dashboard
   datasetId: string
   cohortId: string
   wizardConfig?: Record<string, any> // Wizard configuration object
@@ -47,12 +45,12 @@ const portalAPI = getPortalAPI()
 
 // Build iframe URL with resourceId format
 // Format: /api/dataset/shiny-live/{datasetId}_{type}_{name}_{language}/
-// Note: datasetId kept in URL for routing, cohortId moved to postMessage context
 const iframeUrl = computed(() => {
-  if (!props.dashboard) return ''
+  if (!props.wizardConfig) return ''
 
   // Construct resourceId
-  const resourceId = `${props.datasetId}_${props.dashboard.type}_${props.dashboard.name}_${props.dashboard.language}`
+  // TODO: Add support for dashboard language selection (python/r) in the future
+  const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
 
   return `/gateway/api/dataset/shiny-live/${resourceId}`
 })
