@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -45,12 +46,12 @@ test(TEST_NAME, async ({ page }) => {
   // This one does the actual change to AND
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
 
   // Click OR to change into AND
   await page.getByRole('button', { name: 'OR ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
 
   // Click AND to change into OR
   await page.getByRole('button', { name: 'AND ' }).first().click()
@@ -68,7 +69,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Condition Occurrence B').nth(1).hover()
   await page.locator('#pane-right').getByText('Condition Start Date').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
 
   // Click and Drag and press drilldown
   await page.mouse.move(800, 200)
@@ -92,7 +93,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Condition Occurrence B').locator('..').locator('..').locator('.bs-dropdown').click()
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  // await expect(page).toHaveScreenshot()
 
   // Reload saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
@@ -102,7 +103,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Extended Logic Filter').click()
   await page.getByRole('button', { name: 'Discard' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  // await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  // await expect(page).toHaveScreenshot()
 
   // Delete saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()

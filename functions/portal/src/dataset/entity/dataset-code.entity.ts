@@ -9,7 +9,7 @@ import {
 import { Audit } from "../../common/entity/audit.entity.ts";
 
 @Entity("dataset_code")
-@Unique(["datasetId", "type"])
+@Unique(["datasetId", "type", "name"])
 export class DatasetCode extends Audit {
   @PrimaryGeneratedColumn()
   id: number;
@@ -19,6 +19,9 @@ export class DatasetCode extends Audit {
 
   @Column()
   code: string;
+
+  @Column()
+  name: string;
 
   // Required for creation
   @Column({ name: "dataset_id" })

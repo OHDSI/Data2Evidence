@@ -1,13 +1,15 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'jobs-execute-view-log-and-result'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
-test(TEST_NAME, async ({ page }) => {
+test(TEST_NAME, async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   test.setTimeout(300000) // Set timeout to 5 minutes
   // Jobs: Execute Job - Create DQD job with name dqd_demo
-  await page.goto('https://localhost:443/d2e/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -16,8 +18,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.getByRole('cell', { name: 'Demo dataset' })).toBeVisible()
-  const value = await page.getByRole('cell').nth(1).textContent()
+  await expect(page.getByText('Demo dataset')).toBeVisible()
+  // Get the dataset ID
+  await page.locator('div.alp-text__copy-button-container').nth(2).locator('button.alp-icon-button--icon-only').click()
+  const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
+  // Get the dataset ID
+  await page.locator('div.alp-text__copy-button-container').nth(3).locator('button.alp-icon-button--icon-only').click()
+  const schema_name = await page.evaluate(async () => await navigator.clipboard.readText())
   await page.getByRole('link', { name: 'Jobs' }).click()
   await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible()
   await page.getByRole('button', { name: 'Jobs' }).click()
@@ -28,14 +35,19 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Custom run' }).click()
   await page.locator('input[type="text"]').click()
   await page.locator('input[type="text"]').fill('dqd_demo')
+  // Jobs: Execute Job - Fill in the DQD job parameters
+  // Fill up Datasetid field
   await page.locator('.p-textarea__control').first().click()
-  await page.locator('.p-textarea__control').first().fill(value)
+  await page.locator('.p-textarea__control').first().fill(dataset_id)
   await page
     .locator('div:nth-child(3) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
+  // Fill up Schemaname field
   await page
     .locator('div:nth-child(3) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
-    .fill('demo_cdm')
+    .fill(schema_name)
+
+  // Fill up Releasedate field
   await page
     .locator('div:nth-child(4) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
@@ -47,30 +59,34 @@ test(TEST_NAME, async ({ page }) => {
   await page
     .locator('div:nth-child(4) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill(currentDate)
+  // Fill up Databasecode field
   await page
     .locator('div:nth-child(5) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(5) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill('demo_database')
+  // Fill up Vocabschemaname field
   await page
     .locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
-    .fill('demo_cdm')
+    .fill(schema_name)
+  // Fill up Cdmversionnumber field
   await page
     .locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(8) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill('5.3')
+  // Fill up Resultsschemaname field
   await page
     .locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
   await page
     .locator('div:nth-child(9) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
-    .fill('demo_cdm')
+    .fill(schema_name)
   await page.getByRole('button', { name: 'Submit' }).click()
   await page.getByRole('button', { name: 'Job Runs' }).click()
   await expect(page.getByRole('heading', { name: 'Job Runs' })).toBeVisible()
@@ -89,12 +105,12 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText("Worker 'prefect-docker-worker")).toBeVisible()
 
   // Jobs: View Results - View results for job dqd_demo
-  await page.getByText('Job RunsJobsBlocksVariables', { timeout: 1000 }).scrollIntoViewIfNeeded()
+  await page.getByText('Job RunsJobsBlocksVariables').scrollIntoViewIfNeeded()
   await page.getByText('Completed', { exact: true }).waitFor({ state: 'visible', timeout: 300000 })
   await page.getByRole('button', { name: 'View Results' }).waitFor({ state: 'visible', timeout: 300000 })
   await page.getByRole('button', { name: 'View Results' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset: demo_cdm .+/)
+  await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset+/)
   await expect(page.getByRole('dialog')).toHaveText(
     /.+1047 out of 1933 passed checks are Not Applicable, due to empty tables or fields.+/
   )

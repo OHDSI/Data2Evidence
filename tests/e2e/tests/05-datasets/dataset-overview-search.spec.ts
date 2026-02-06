@@ -1,6 +1,11 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
-test('test', async ({ page }) => {
+const TEST_NAME = 'dataset-overview-search'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
+
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')

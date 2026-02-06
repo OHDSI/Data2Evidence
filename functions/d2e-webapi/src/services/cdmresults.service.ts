@@ -5,19 +5,17 @@ import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 export const getConceptRecordCount = async (
   token: string,
   datasetId: string,
-  conceptIds: number[]
+  conceptIds: number[],
 ): Promise<ICdmresultsConceptRecordCountResponseDto> => {
   const trexDao = await TrexDAO.getTrexDao(token, datasetId);
 
   const jobPluginsApi = new JobPluginsAPI(token);
-  const dcResultSchemaName =
-    await jobPluginsApi.getLatestSuccessfulDataCharacterizationResultsSchemaName(
-      datasetId
-    );
+  const dcResultsSchemaName =
+    await jobPluginsApi.getConceptRecordsCountResultsSchemaName(datasetId);
 
   const results = await trexDao.getConceptRecordCount(
     conceptIds,
-    dcResultSchemaName
+    dcResultsSchemaName,
   );
   const mappedResults: ICdmresultsConceptRecordCountResponseDto = results.map(
     (e) => ({
@@ -27,12 +25,12 @@ export const getConceptRecordCount = async (
         e.PERSON_COUNT,
         e.DESCENDANT_PERSON_COUNT,
       ],
-    })
+    }),
   );
 
   // Add array of [0,0,0,0] as value to conceptIds not in results
   const conceptIdsAbsentFromResults = new Set(conceptIds).difference(
-    new Set(results.map((e) => e.CONCEPT_ID))
+    new Set(results.map((e) => e.CONCEPT_ID)),
   );
   for (const conceptId of conceptIdsAbsentFromResults) {
     mappedResults.push({

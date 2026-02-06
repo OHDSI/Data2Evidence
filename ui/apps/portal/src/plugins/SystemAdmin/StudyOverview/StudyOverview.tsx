@@ -1,36 +1,36 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableHead from "@mui/material/TableHead";
-import TableContainer from "@mui/material/TableContainer";
-import IconButton from "@mui/material/IconButton";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import { Loader, TableCell, TableRow, Text, Button, Tooltip } from "@portal/components";
-import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
-import { useDialogHelper, useDatasets, useDatabases } from "../../../hooks";
-import { useTranslation } from "../../../contexts";
-import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
-import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
-import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
-import CopyStudyDialog from "./CopyStudyDialog/CopyStudyDialog";
-import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
-import ActionSelector from "./ActionSelector/ActionSelector";
-import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
-import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
-import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
-import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
+import IconButton from "@mui/material/IconButton";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import { Button, Loader, TableCell, TableRow, Text, Tooltip } from "@portal/components";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../axios/api";
+import { useTranslation } from "../../../contexts";
+import { useDatabases, useDatasets, useDialogHelper } from "../../../hooks";
+import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
 import { JobRunTypes } from "../DQD/types";
+import ActionSelector from "./ActionSelector/ActionSelector";
+import StudyActionSelector from "./ActionSelector/StudyActionSelector";
+import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
+import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
+import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
+import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
+import CopyStudyDialog from "./CopyStudyDialog/CopyStudyDialog";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
+import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
+import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
+import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
+import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
+import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
 import SourceInformationDialog from "./SourceInformationDialog/SourceInformationDialog";
-import ManageDashboardDialog from "./ManageDashboardDialog/ManageDashboardDialog";
-import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudyDialog";
-import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
-import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
-import ManageStrategusResultViewerDialog from "./ManageStrategusResultViewerDialog/ManageStrategusResultViewerDialog";
-import StudyActionSelector from "./ActionSelector/StudyActionSelector";
+import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
+import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
+import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
+import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
 
 import "./StudyOverview.scss";
 
@@ -71,18 +71,16 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
     useDialogHelper(false);
-  const [showManageDashboardDialog, openManageDashboardDialog, closeManageDashboardDialog] = useDialogHelper(false);
+  const [showManageViewerDialog, openManageViewerDialog, closeManageViewerDialog] = useDialogHelper(false);
+  const [viewerDialogType, setViewerDialogType] = useState<"dashboard" | "strategus">("dashboard");
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
     useDialogHelper(false);
   const [showRunStrategusStudyDialog, openRunStrategusStudyDialog, closeRunStrategusStudyDialog] =
     useDialogHelper(false);
   const [showCleanupStrategusStudyDialog, openCleanupStrategusStudyDialog, closeCleanupStrategusStudyDialog] =
     useDialogHelper(false);
-  const [
-    showManageStrategusResultViewerDialog,
-    openManageStrategusResultViewerDialog,
-    closeManageStrategusResultViewerDialog,
-  ] = useDialogHelper(false);
+  const [showUploadStrategusResultsDialog, openUploadStrategusResultsDialog, closeUploadStrategusResultsDialog] =
+    useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [activeStrategusStudy, setActiveStrategusStudy] = useState<NetworkStrategusStudy>();
@@ -194,9 +192,10 @@ const StudyOverview: FC = () => {
   const handleManageDashboard = useCallback(
     (dataset: Study) => {
       setActiveDataset(dataset);
-      openManageDashboardDialog();
+      setViewerDialogType("dashboard");
+      openManageViewerDialog();
     },
-    [openManageDashboardDialog]
+    [openManageViewerDialog]
   );
 
   const handleRunStrategusStudy = useCallback(
@@ -218,10 +217,58 @@ const StudyOverview: FC = () => {
   const handleManageStrategusResultViewer = useCallback(
     (study: NetworkStrategusStudy) => {
       setActiveStrategusStudy(study);
-      openManageStrategusResultViewerDialog();
+      setViewerDialogType("strategus");
+      openManageViewerDialog();
     },
-    [openManageStrategusResultViewerDialog]
+    [openManageViewerDialog]
   );
+
+  const handleUploadStrategusResults = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openUploadStrategusResultsDialog();
+    },
+    [openUploadStrategusResultsDialog]
+  );
+
+  const handleDownloadStrategusResults = useCallback(async (study: NetworkStrategusStudy) => {
+    try {
+      const filesList = await api.strategusResults.listStrategusResultsFiles(study.studyId);
+
+      if (!filesList || filesList.length === 0) {
+        console.error(`No results file found for study ${study.studyId}`);
+        return;
+      }
+
+      const latestFile = filesList[0];
+      const fileName = latestFile.name.split("/").pop();
+
+      const response = await api.strategusResults.downloadStrategusResultsFile(study.studyId, fileName);
+
+      if (response.signedUrl) {
+        window.open(response.signedUrl, "_blank");
+      } else if (response.data) {
+        const byteCharacters = atob(response.data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: "application/zip" });
+
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName || `${study.studyId}_results.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error: any) {
+      console.error("Download error:", error);
+    }
+  }, []);
 
   const toggleRow = useCallback((datasetId: string) => {
     setExpandedRows((prev) => ({
@@ -795,6 +842,8 @@ const StudyOverview: FC = () => {
                             handleRunStrategusStudy={handleRunStrategusStudy}
                             handleCleanupStrategusStudy={handleCleanupStrategusStudy}
                             handleManageStrategusResultViewer={handleManageStrategusResultViewer}
+                            handleUploadStrategusResults={handleUploadStrategusResults}
+                            handleDownloadStrategusResults={handleDownloadStrategusResults}
                           />
                         </TableCell>
                       </TableRow>
@@ -902,11 +951,14 @@ const StudyOverview: FC = () => {
             />
           )}
 
-          {showManageDashboardDialog && (
-            <ManageDashboardDialog
-              study={activeDataset}
-              open={showManageDashboardDialog}
-              onClose={closeManageDashboardDialog}
+          {showManageViewerDialog && (
+            <ManageViewerDialog
+              config={{
+                type: viewerDialogType,
+                id: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+              }}
+              open={showManageViewerDialog}
+              onClose={closeManageViewerDialog}
             />
           )}
 
@@ -929,12 +981,11 @@ const StudyOverview: FC = () => {
               onClose={closeCleanupStrategusStudyDialog}
             />
           )}
-
-          {showManageStrategusResultViewerDialog && activeStrategusStudy && (
-            <ManageStrategusResultViewerDialog
+          {showUploadStrategusResultsDialog && activeStrategusStudy && (
+            <UploadStrategusResultsDialog
               study={activeStrategusStudy}
-              open={showManageStrategusResultViewerDialog}
-              onClose={closeManageStrategusResultViewerDialog}
+              open={showUploadStrategusResultsDialog}
+              onClose={closeUploadStrategusResultsDialog}
             />
           )}
         </div>

@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from pyqe import *
 
-# Define query with name
-query = Query('Diabetic Retinopathy OMOP5 Patient Count')
 
 # Define condition occurrence with concept set
 t1d_mellitus = ConceptSet('Type 1 Diabetes Mellitus', Domain.CONDITION, ['201254'])
@@ -26,8 +24,10 @@ diabetic_retinopathy_group = CriteriaGroup(
     MatchCriteria.ALL, [diabetic_retinopathy_dx_condition])
 diabetic_retinopathy_group.add_exclusive_group(diabetes_mellitus_group)
 
-# Add criteria group into query
+# Define query with name
 query = Query('Diabetic Retinopathy OMOP5 Patient Count')
+
+# Add criteria group into query
 query.add_criteria_group(diabetic_retinopathy_group)
 request = query.get_patient_count_filter()
 

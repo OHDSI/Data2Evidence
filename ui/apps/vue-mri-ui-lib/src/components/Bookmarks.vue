@@ -18,7 +18,7 @@
                 class="form-control"
                 v-focus
                 required
-                :maxlength="this.maxLength+1"
+                :maxlength="this.maxLength + 1"
                 v-model="renamedBookmark"
                 @keydown.enter="confirmRenameBookmark"
               />
@@ -236,7 +236,6 @@ export default {
       showSharedBookmarks: false,
       showCopyExtensionDialog: false,
       aSelBookmarkList: [],
-      initBookmarkId: this.initBookmarkId,
       showCohortCompareDialog: false,
       showCohortListDialog: false,
       showAddCohortDialog: false,

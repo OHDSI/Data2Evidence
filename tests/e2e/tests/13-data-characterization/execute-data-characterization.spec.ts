@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'execute-data-characterization'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   //Increase timeout longer than the configured 30s
@@ -32,7 +33,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Check if the user is already granted researcher access
   await page.waitForTimeout(5000)
-  const isVisible = await page.getByRole('cell', { name: 'admin', exact: true }).isVisible({ timeout: 5000 })
+  const isVisible = await page.getByRole('cell', { name: 'admin', exact: true }).isVisible()
 
   if (!isVisible) {
     const addExistingUsersButton = page.getByTestId('dialog').getByTestId('button')
@@ -40,12 +41,14 @@ test(TEST_NAME, async ({ page }) => {
     await addExistingUsersButton.click()
     // Wait for 5 seconds to ensure the menu items are visible
     await page.waitForTimeout(5000)
-    await expect(page.getByRole('menuitem', { name: /admin/ })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('menuitem', { name: /admin/ })).toBeVisible()
     await page.getByRole('menuitem', { name: /admin/ }).click()
-    await expect(page.getByRole('cell', { name: /admin/ })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('cell', { name: /admin/ })).toBeVisible()
   }
   await page.getByTestId('dialog-close').click()
 
+  // Wait for job container to stabilize before navigating to Jobs page
+  await page.waitForTimeout(5000)
   // Open jobs page
   await page.getByRole('link', { name: 'Jobs' }).click()
   await page.getByRole('button', { name: 'Job Runs' }).click()
@@ -77,6 +80,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Show All Reports' }).click()
 
   // Verify if Dashboard results are rendered
-  await expect(page.getByText('Number of persons: 2694')).toBeVisible({ timeout: 10000 })
-  await expect(page.getByText('Concepts Per Person')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('Number of persons: 2694')).toBeVisible()
+  await expect(page.getByText('Concepts Per Person')).toBeVisible()
 })

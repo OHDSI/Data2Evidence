@@ -17,7 +17,6 @@ import express from "express";
 import helmet from "helmet";
 import path from "path";
 import yaml from "npm:yaml";
-import { access, constants } from "node:fs/promises";
 import * as mri2 from "./mri/endpoint/analytics";
 import * as xsenv from "@sap/xsenv";
 import { Settings } from "./qe/settings/Settings";
@@ -35,8 +34,6 @@ import {
     ANALYTICS_DB_DIALECTS,
 } from "./types";
 import PortalServerAPI from "./api/PortalServerAPI";
-import { getDuckdbDBConnection } from "./utils/DuckdbConnection";
-import { getCachedbDbConnections } from "./utils/cachedb/cachedb.ts";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
 import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
@@ -46,13 +43,6 @@ const mriConfigConnection = new MriConfigConnection(
     env.SERVICE_ROUTES?.paConfig
 );
 const envVarUtils = new EnvVarUtils(Deno.env.toObject());
-/**
- * Declare variables
- */
-let alpPortalStudiesDbMetadataCacheTTLSeconds: number;
-let studiesDbMetadata: StudiesDbMetadata;
-let publicStudiesDbMetadata: StudiesDbMetadata;
-
 /**
  * Declare Startup Functions
  */
@@ -72,9 +62,6 @@ const initRoutes = async (app: express.Application) => {
         app.use(timerMiddleware());
     }
 
-    alpPortalStudiesDbMetadataCacheTTLSeconds =
-        env.ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS || 600;
-
     analyticsCredentials = env.VCAP_SERVICES["mridb"]
         .filter((x) => x["tags"]?.indexOf("analytics") > -1)
         //.filterServices({ tag: "analytics" })
@@ -84,25 +71,9 @@ const initRoutes = async (app: express.Application) => {
             return acc;
         }, {});
 
-    // Calls Alp-Portal for studies db metadata and cache it
+    // Calls Alp-Portal for studies db metadata
     // Ignore Alp-Portal check for readiness probe check
     app.use(async (req: IMRIRequest, res, next) => {
-        // log.debug(
-        //     `🚀 ~ file: main.ts ~ line 107 ~ app.use ~ req.headers: ${JSON.stringify(
-        //         req.headers,
-        //         null,
-        //         2
-        //     )}`
-        // );
-        const hasExpiredStudiesDbMetadataCache = (studiesDb): boolean => {
-            if (!studiesDb?.studies) {
-                return true;
-            }
-            const timeToLiveInMilliseconds: number =
-                alpPortalStudiesDbMetadataCacheTTLSeconds * 1000;
-            return studiesDb.cachedAt + timeToLiveInMilliseconds < Date.now();
-        };
-
         try {
             if (req.url !== "/check-readiness" && !utils.isClientCredReq(req)) {
                 const publicEndpoint = "/analytics-svc/api/services/public";
@@ -110,39 +81,23 @@ const initRoutes = async (app: express.Application) => {
                 // Checks if its public
                 if (req.originalUrl.startsWith(publicEndpoint)) {
                     log.info("getting public studies metadata");
-                    if (
-                        hasExpiredStudiesDbMetadataCache(
-                            publicStudiesDbMetadata
-                        )
-                    ) {
-                        studies =
-                            await new PortalServerAPI().getPublicStudies();
-                        publicStudiesDbMetadata = {
-                            studies,
-                            cachedAt: Date.now(),
-                        };
-                    }
-                    req.studiesDbMetadata = publicStudiesDbMetadata;
+                    studies = await new PortalServerAPI().getPublicStudies();
                 } else {
-                    if (hasExpiredStudiesDbMetadataCache(studiesDbMetadata)) {
-                        // Get Analytics Credential for study based on selected study
-                        const timestamp = new Date().valueOf();
-                        console.time(
-                            `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
-                        );
-                        const portalServerAPI = new PortalServerAPI();
-                        studies = await portalServerAPI.getStudies();
-                        console.timeEnd(
-                            `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
-                        );
-                        studiesDbMetadata = {
-                            studies,
-                            cachedAt: Date.now(),
-                        };
-                        // console.log(`studiesDbMetadata ${JSON.stringify(studiesDbMetadata)}`)
-                    }
-                    req.studiesDbMetadata = studiesDbMetadata; //Because this is cached
+                    // Get Analytics Credential for study based on selected study
+                    const timestamp = new Date().valueOf();
+                    console.time(
+                        `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
+                    );
+                    const portalServerAPI = new PortalServerAPI();
+                    studies = await portalServerAPI.getStudies();
+                    console.timeEnd(
+                        `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
+                    );
                 }
+
+                req.studiesDbMetadata = {
+                    studies,
+                };
             }
 
             req.dbCredentials = {
@@ -201,25 +156,12 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-                // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
                 if (
                     env.USE_TREX_DB_CONN === "true" &&
                     credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
                 ) {
                     req.dbConnections = getTrexDbConnection({
                         analyticsCredentials: credentials,
-                    });
-                }
-                // Even if USE_CACHEDB is true, For Hana dialect it will use the legacy / non-cachedb connection always. So that both duckdb and Hana datasets can functionally coexist
-                else if (
-                    env.USE_CACHEDB === "true" &&
-                    credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
-                ) {
-                    req.dbConnections = await getCachedbDbConnections({
-                        analyticsCredentials: credentials,
-                        userObj: userObj,
-                        token: req.headers.authorization,
-                        datasetId: req.selectedstudyDbMetadata.id,
                     });
                 } else {
                     req.dbConnections = await getDBConnections({
@@ -682,10 +624,9 @@ const getTrexDbConnection = ({
             temp: string,
             schemaName: string,
             vocabSchemaName: string,
-            resultSchemaName: string,
+            resultsSchemaName: string,
             parameters: any
         ): string => {
-            // Specifically for trex db connection, direct connection alias is different from cachedb.
             // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
             temp = temp.replace(
                 /\$\$SCHEMA_DIRECT_CONN\$\$./g,
@@ -695,7 +636,7 @@ const getTrexDbConnection = ({
                 temp,
                 schemaName,
                 vocabSchemaName,
-                resultSchemaName,
+                resultsSchemaName,
                 parameters
             );
         };
@@ -703,7 +644,7 @@ const getTrexDbConnection = ({
             analyticsCredentials.code,
             analyticsCredentials.schema,
             analyticsCredentials.vocabSchema,
-            analyticsCredentials.resultSchema,
+            analyticsCredentials.resultsSchemaName,
             { duckdb: parseSql }
         );
 
@@ -720,108 +661,43 @@ const getDBConnections = async ({
 }): Promise<{
     analyticsConnection: Connection.ConnectionInterface;
 }> => {
-    // Define defaults for both analytics & Vocab connections
-    let analyticsConnectionPromise;
-    if (
-        env.USE_DUCKDB === "true" &&
-        analyticsCredentials.dialect !== ANALYTICS_DB_DIALECTS.HANA
-    ) {
-        // Use duckdb as analyticsConnection if USE_DUCKDB flag is set to true
-        const duckdbSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.schema}`;
-        const duckdbVocabSchemaFileName = `${analyticsCredentials.code}_${analyticsCredentials.vocabSchema}`;
-
-        try {
-            // Check duckdb dataset access
-            await access(
-                path.join(env.DUCKDB__DATA_FOLDER, duckdbSchemaFileName),
-                constants.R_OK
-            );
-            await access(
-                path.join(env.DUCKDB__DATA_FOLDER, duckdbVocabSchemaFileName),
-                constants.R_OK
-            );
-            log.debug(
-                `Duckdb accessible at paths ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbSchemaFileName
-                )} AND ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbVocabSchemaFileName
-                )}`
-            );
-
-            // resolve error from getDuckdbDBConnection so that PA screen continues to load and user is able to select other datasets.
-            analyticsConnectionPromise = new Promise(
-                async (resolve, _reject) => {
-                    try {
-                        const conn = await getDuckdbDBConnection(
-                            duckdbSchemaFileName,
-                            duckdbVocabSchemaFileName
-                        );
-                        resolve(conn);
-                    } catch (err) {
-                        resolve(err);
-                    }
-                }
-            );
-        } catch (e) {
-            log.error(e);
-            log.warn(
-                `Duckdb Inaccessible at following paths ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbSchemaFileName
-                )} OR ${path.join(
-                    env.DUCKDB__DATA_FOLDER,
-                    duckdbVocabSchemaFileName
-                )}. Hence fallback to Postgres dialect connection`
-            );
-        }
+    // node hdb library checks for these to use TLS
+    // TLS does not work with deno for self signed certs
+    if (!analyticsCredentials.useTLS) {
+        delete analyticsCredentials.key;
+        delete analyticsCredentials.cert;
+        delete analyticsCredentials.ca;
+        delete analyticsCredentials.pfx;
     }
 
-    if (!analyticsConnectionPromise) {
-        //Initialize if not yet until this point
-        // node hdb library checks for these to use TLS
-        // TLS does not work with deno for self signed certs
-        if (!analyticsCredentials.useTLS) {
-            delete analyticsCredentials.key;
-            delete analyticsCredentials.cert;
-            delete analyticsCredentials.ca;
-            delete analyticsCredentials.pfx;
-        }
+    if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
+        analyticsCredentials[
+            "SESSIONVARIABLE:APPLICATION"
+        ] = `${env.PROJECT_NAME}-cohorts`;
+        analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
+            userObj.getEmail() ?? userObj.getUser();
 
-        if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
-            analyticsCredentials[
-                "SESSIONVARIABLE:APPLICATION"
-            ] = `${env.PROJECT_NAME}-cohorts`;
-            analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
-                userObj.getUser();
-
-            if (analyticsCredentials.authentication_mode === "JWT") {
-                delete analyticsCredentials.user;
-                delete analyticsCredentials.password;
-                if (userObj.thirdPartyToken) {
-                    analyticsCredentials["token"] = userObj.thirdPartyToken;
-                } else {
-                    throw new Error(
-                        "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
-                    );
-                }
+        if (analyticsCredentials.authentication_mode === "JWT") {
+            delete analyticsCredentials.user;
+            delete analyticsCredentials.password;
+            if (userObj.thirdPartyToken) {
+                analyticsCredentials["token"] = userObj.thirdPartyToken;
+            } else {
+                throw new Error(
+                    "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+                );
             }
         }
-
-        analyticsConnectionPromise =
-            dbConnectionUtil.DBConnectionUtil.getDBConnection({
-                credentials: analyticsCredentials,
-                schemaName: analyticsCredentials.schema,
-                vocabSchemaName: analyticsCredentials.vocabSchema,
-                resultSchemaName: analyticsCredentials.resultSchema,
-                userObj,
-            });
     }
 
-    const [analyticsConnection] = await Promise.all([
-        analyticsConnectionPromise,
-    ]);
+    const analyticsConnection =
+        await dbConnectionUtil.DBConnectionUtil.getDBConnection({
+            credentials: analyticsCredentials,
+            schemaName: analyticsCredentials.schema,
+            vocabSchemaName: analyticsCredentials.vocabSchema,
+            resultsSchemaName: analyticsCredentials.resultsSchemaName,
+            userObj,
+        });
 
     return {
         analyticsConnection,

@@ -17,24 +17,24 @@ export class TrexDAO {
   private readonly conn: TrexConnection;
 
   private readonly vocabSchemaName: string;
-  private readonly resultSchemaName: string;
+  private readonly resultsSchemaName: string;
 
   constructor(
     databaseCode: string,
     schemaName: string,
     vocabSchemaName: string,
-    resultSchemaName: string
+    resultsSchemaName: string
   ) {
     try {
       this.conn = new TrexConnection(
         databaseCode,
         schemaName,
         vocabSchemaName,
-        resultSchemaName
+        resultsSchemaName
       );
 
       this.vocabSchemaName = vocabSchemaName;
-      this.resultSchemaName = resultSchemaName;
+      this.resultsSchemaName = resultsSchemaName;
     } catch (err) {
       console.error("Error getting trex connection, ", err);
       throw err;
@@ -43,14 +43,14 @@ export class TrexDAO {
 
   public static async getTrexDao(token: string, datasetId: string) {
     const portalServerApi = new PortalServerAPI(token);
-    const { databaseCode, schemaName, vocabSchemaName, resultSchemaName } =
+    const { databaseCode, schemaName, vocabSchemaName, resultsSchemaName } =
       await portalServerApi.getDataset(datasetId);
 
     return new TrexDAO(
       databaseCode,
       schemaName,
       vocabSchemaName,
-      resultSchemaName
+      resultsSchemaName
     );
   }
 
@@ -59,7 +59,7 @@ export class TrexDAO {
   ): Promise<IWebapiConcept[]> {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
                 select
@@ -94,7 +94,7 @@ export class TrexDAO {
   ): Promise<IAncestorsLookup[]> {
     try {
       // TODO: Move ancestors and descendants as a sql parameter instead of being in the sql statement itself.
-      // ancestors and descendants has to be in sql statement now as cachedb does not support array sql parameter types
+      // ancestors and descendants has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
             select distinct ancestor_concept_id ancestor_id, descendant_concept_id descendant_id
@@ -116,7 +116,7 @@ export class TrexDAO {
   ): Promise<IConceptRecommended[]> {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
           select concept_id_1, concept_id_2, relationship_id from ${
@@ -142,7 +142,7 @@ export class TrexDAO {
         ? ""
         : `AND invalid_reason = '' `;
       // TODO: Move conceptIds as a sql parameter instead of being in the sql statement itself.
-      // conceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // conceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
           select *
@@ -280,16 +280,16 @@ export class TrexDAO {
 
   async getConceptRecordCount(
     conceptIds: number[],
-    dcResultSchemaName: string
+    dcResultsSchemaName: string
   ): Promise<IConceptRecordCount[]> {
-    if (dcResultSchemaName === "") {
+    if (dcResultsSchemaName === "") {
       return [];
     }
     try {
       // Sql referenced from OHDSI WebAPI CDMCacheRepository.java
       const sql = `
         select concept_id AS CONCEPT_ID, record_count AS RECORD_COUNT, descendant_record_count AS DESCENDANT_RECORD_COUNT, person_count AS PERSON_COUNT, descendant_person_count AS DESCENDANT_PERSON_COUNT
-        from ${dcResultSchemaName}.achilles_result_concept_count
+        from ${dcResultsSchemaName}.achilles_result_concept_count
         where concept_id IN (${conceptIds.join(", ")})
       `;
 

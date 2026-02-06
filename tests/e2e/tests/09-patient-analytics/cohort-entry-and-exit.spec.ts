@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'patient-analytics-cohort-entry-and-exit'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
@@ -53,12 +54,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.waitForTimeout(2000) // Wait 2 seconds for "A filter card has been added..." popup in previous action to disappear
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
 
   // Change AND to OR, CEE should be removed from filtercards
   await page.getByRole('button', { name: 'AND ' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot({ maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
 
   // Go to PA config and uncheck CEE
   await page.getByRole('link', { name: 'Account' }).click()

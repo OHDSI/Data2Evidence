@@ -79,7 +79,7 @@ const Person: FC<PersonProps> = ({ flowRunId, datasetId }) => {
           <TreeMapChartTable
             data={personData.race}
             title={getText(i18nKeys.PERSON__PIE_CHART_2_TITLE)}
-            setSelectedConceptId={() => {}} //drilldown disabled for race
+            setSelectedConcept={() => {}} //drilldown disabled for race
           />
         </>
       )}
