@@ -60,7 +60,6 @@ const iframeUrl = computed(() => {
 // Set up message listeners IMMEDIATELY in setup, not in onMounted
 // This prevents race condition where iframe sends SHINYLIVE_READY before listeners are attached
 window.addEventListener('message', handleIframeMessage)
-window.addEventListener('oidc:token_refreshed', handleTokenRefresh as EventListener)
 
 onMounted(async () => {
   console.log('[Parent] Component mounted, fetching token')
@@ -87,7 +86,6 @@ onMounted(async () => {
 onUnmounted(() => {
   console.log('[Parent] Component unmounting, cleaning up listeners')
   window.removeEventListener('message', handleIframeMessage)
-  window.removeEventListener('oidc:token_refreshed', handleTokenRefresh as EventListener)
 })
 
 // No watcher needed - send on SHINYLIVE_READY only
@@ -215,41 +213,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
   } catch (err) {
     console.error('[Parent] Error sending message to iframe:', err)
     error.value = 'Failed to authenticate with dashboard'
-  }
-}
-
-function handleTokenRefresh(event: Event) {
-  const customEvent = event as CustomEvent
-  const token = customEvent?.detail?.accessToken as string | undefined
-
-  console.log('[Parent] Token refresh event received')
-  if (!token) {
-    console.warn('Token refresh event received but no token provided')
-    return
-  }
-
-  console.log('[Parent] OIDC token refreshed, updating iframe')
-  bearerToken.value = token
-  tokenSent.value = false // Reset flag so watcher sends new token
-
-  // Re-send updated token to iframe (NO reload needed!)
-  if (isIframeReady.value) {
-    const iframeOrigin = getIframeOrigin()
-    const message = {
-      type: 'TOKEN_REFRESH',
-      token: token,
-      timestamp: Date.now(),
-      parentOrigin: CURRENT_ORIGIN, // Include parent origin in refresh too
-    }
-
-    if (iframeRef.value?.contentWindow) {
-      try {
-        iframeRef.value.contentWindow.postMessage(message, iframeOrigin)
-        console.log('Updated token sent to ShinyLive iframe')
-      } catch (err) {
-        console.error('Error sending refreshed token:', err)
-      }
-    }
   }
 }
 
