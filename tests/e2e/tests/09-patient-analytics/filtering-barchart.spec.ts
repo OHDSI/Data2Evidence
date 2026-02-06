@@ -4,7 +4,7 @@ const TEST_NAME = 'filtering-barchart'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   test.slow()
   // Sign in
   await page.goto('/d2e/portal')

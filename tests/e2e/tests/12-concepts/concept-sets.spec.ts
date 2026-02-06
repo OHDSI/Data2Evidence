@@ -5,7 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   async function assertCount(count: string) {
     return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible()
   }
