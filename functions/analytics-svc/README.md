@@ -1,6 +1,3 @@
-### To use postgres connection instead of duckdb
-Update `USE_DUCKDB` environment variable for  `alp-minerva-analytics-svc` to `false`
-
 # Prepare the test schema
 
 For easiness use the Az HANA instance, which doesn't have the SSL enabled.

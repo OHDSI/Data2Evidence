@@ -38,8 +38,6 @@ export interface ConnectionInterface {
     rollback(callback: CallBackInterface): void;
     setAutoCommitToFalse(callback?: CallBackInterface): void;
     getTranslatedSql(sql: string, schemaName: string, parameters: ParameterInterface[]): string;
-    activate_nativedb_communication?(credentials: any): void;
-    deactivate_nativedb_communication?(dbName: any): void;
     getApplicationUser?(): Promise<any>;
     setCohortSchemaName?(cohortSchemaName: string): void;
 }

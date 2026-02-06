@@ -5,9 +5,6 @@ let env = {};
 function initEnv(__env) {
   const _env = Object.assign({}, Deno.env.toObject(), __env);
   const envSchema = z.object({
-    CACHEDB__HOST: z.string(),
-    CACHEDB__PORT: z.string().transform(Number),
-
     USE_TREX_DB_CONN: z.string().transform(Boolean),
 
     HANA_FTS_FUZZY: z.string().transform(Number),

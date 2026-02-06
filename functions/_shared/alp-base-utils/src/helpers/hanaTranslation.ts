@@ -272,15 +272,6 @@ export const translateHanaToDuckdb = (
   resultsSchemaName: string,
   parameters?: ParameterInterface[],
 ): string => {
-  temp = temp.replace(
-    /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
-    `direct_db_conn.${schemaName}.COHORT_DEFINITION`,
-  );
-  temp = temp.replace(
-    /\$\$SCHEMA\$\$.COHORT/g,
-    `direct_db_conn.${schemaName}.COHORT`,
-  );
-
   temp = hanaCommonTranslation(
     temp,
     schemaName,
@@ -290,11 +281,6 @@ export const translateHanaToDuckdb = (
 
   // Cast left comparator to varchar which is required by duckdb
   temp = temp.replace(/LIKE_REGEXPR/gi, "::VARCHAR ILIKE");
-
-  temp = temp.replace(
-    /\$\$SCHEMA_DIRECT_CONN\$\$./g,
-    `direct_db_conn.${schemaName}.`,
-  ); // Used when using cachedb connection connecting to duckdb, but additionally requires direct connection to database schema
 
   temp = temp.replace(/DAYS_BETWEEN \(/gi, `date_diff ('day', `);
   temp = temp.replace(
