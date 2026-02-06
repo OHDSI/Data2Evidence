@@ -140,10 +140,10 @@ class omop_transform_utils:
                         if val.isdigit():
                             num = int(val)
                             return num if num != 0 else 1
-                            # fallback: crc32 to produce a stable 31-bit positive int (fits signed int)
-                            num = zlib.crc32(val.encode("utf-8")) & 0xffffffff
-                            num = num & 0x7fffffff
-                            return num if num != 0 else 1
+                        # fallback: crc32 to produce a stable 31-bit positive int (fits signed int)
+                        num = zlib.crc32(val.encode("utf-8")) & 0xffffffff
+                        num = num & 0x7fffffff
+                        return num if num != 0 else 1
                     # Dicts: prefer 'id' or 'reference' keys
                     if isinstance(v, dict):
                         if "id" in v and (isinstance(v["id"], (str, int))):
