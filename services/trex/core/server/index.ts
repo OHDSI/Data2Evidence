@@ -69,6 +69,7 @@ export async function initTrex() {
                 cpuTimeSoftLimitMs,
                 cpuTimeHardLimitMs,
                 staticPatterns,
+                allowHostFsAccess: true,
                 context: {
                     useReadSyncFileAPI: true,
                     unstableSloppyImports: true,
