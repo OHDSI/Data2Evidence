@@ -217,7 +217,6 @@
           },
           {
             "name": "Dashboard",
-            "nameI18nKey": "UI_PLUGIN_SHINY_LIVE",
             "route": "shiny-live",
             "pluginPath": "plugins/Researcher/ShinyLive/module",
             "featureFlag": "shinyLive",
