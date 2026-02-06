@@ -466,7 +466,7 @@ export class DatasetRouter {
     });
 
     // resourceId format: datasetId_type_name_language
-    this.router.use(
+    this.router.get(
       "/shiny-live/:resourceId",
       async (req: Request, res: Response) => {
         const resourceId = req.params.resourceId;
@@ -509,6 +509,31 @@ export class DatasetRouter {
             `Error proxying shiny-live: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error loading shiny-live application");
+        }
+      },
+    );
+
+    // resourceId format: datasetId_type_name_language
+    this.router.delete(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response) => {
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
+        this.logger.info(`Deleting shiny-live resources for ${resourceId}`);
+
+        try {
+          await this.shinyLiveService.deleteDatasetShinyLiveResources(
+            datasetId,
+            type,
+            name,
+            language,
+          );
+          return res.status(200).send("Resource deleted successfully");
+        } catch (error) {
+          this.logger.error(
+            `Error deleting shiny-live resources: ${JSON.stringify(error)}`,
+          );
+          res.status(500).send("Error deleting shiny-live resources");
         }
       },
     );
