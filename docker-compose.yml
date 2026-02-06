@@ -85,10 +85,10 @@ services:
     extra_hosts:
       - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
     depends_on:
-      demodb:
-        condition: service_healthy
-      alp-logto:
-        condition: service_healthy
+      alp-minerva-pg-mgmt-init:
+        condition: service_completed_successfully
+      alp-logto-post-init:
+        condition: service_completed_successfully
     networks:
       alp:
         priority: 20
