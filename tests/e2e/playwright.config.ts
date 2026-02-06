@@ -25,5 +25,6 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: process.env.CI ? 1 : 0
+  // Allow all tests to run even when failures occur, useful for collecting all screenshot diffs
+  maxFailures: process.env.CI ? undefined : 0
 })
