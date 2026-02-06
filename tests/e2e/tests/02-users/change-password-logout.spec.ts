@@ -1,8 +1,8 @@
 import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'Change Password and Logout'
-const SHOULD_SKIP = true
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled - WebAPI architecture`)
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
