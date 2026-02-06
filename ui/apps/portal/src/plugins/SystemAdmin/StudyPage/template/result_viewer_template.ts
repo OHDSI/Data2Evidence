@@ -9,6 +9,8 @@ library(shiny)
 library(TreatmentPatterns)
 
 resultsDatabaseSchema <- "$DATABASE_SCHEMA"
+datasetId <- "$DATASET_ID"
+studyId <- "$STUDY_ID"
 
 # Specify the connection to the results database
 resultsConnectionDetails <- DatabaseConnector::createConnectionDetails(
@@ -161,6 +163,75 @@ survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
   })
 }
 
+################### Table 1 Visualization Module (Shiny) ##########################
+table1ModuleUI <- function(id) {
+  ns <- NS(id)
+  fluidPage(
+    fluidRow(
+      column(12, div(style = "text-align:left;",
+        h4("Select Cohort ID:"),
+        div(style = "display:inline-block; min-width:200px;", selectInput(ns("cohort1"), label = NULL, choices = NULL))
+      ))
+    ),
+    br(),
+    fluidRow(
+      column(12,
+        div(
+          style = "max-width: 70%; width: 100%; border: 2px solid #b3b3b3; border-radius: 10px; padding: 2vw 2vw 2vw 2vw; margin-bottom: 2vw; box-sizing: border-box; text-align:left;",
+          h4("Table 1 for Cohorts", style = "text-align:left; font-size:1.5vw; margin-bottom:1vw;"),
+          div(style = "overflow-x:auto; text-align:left; width:100%;",
+            tableOutput(ns("table1out")),
+            tags$style(HTML(paste0("#", ns("table1out"), " table, #", ns("table1out"), " th, #", ns("table1out"), " td { text-align: center !important; }")))
+          )
+        )
+      )
+    )
+  )
+}
+
+table1ModuleServer <- function(id, connectionHandler, resultDatabaseSettings, cohortTable = "cohort", cdmSchema = "main") {
+  moduleServer(id, function(input, output, session) {
+    # Get unique cohort IDs from the cohort table
+
+    cohort_choices <- reactive({
+        conn <- connectionHandler$getConnection()
+        sql <- paste0("SELECT DISTINCT cohort_id FROM ", resultsDatabaseSchema, ".tb1_results where study_id = ", studyId, " and dataset_id = ", datasetId, " ;")
+        res <- DatabaseConnector::querySql(conn, sql)
+        return (res$cohort_id)
+    })
+
+    observeEvent(cohort_choices(), {
+      choices <- cohort_choices()
+        updateSelectInput(session, "cohort1", choices = choices, selected = choices[1])
+        updateTextInput(session, "cohort1", value = choices[1])
+    })
+
+    table1_data <- reactive({
+      req(input$cohort1)
+      cohort_id <- input$cohort1
+      sql <- paste0("SELECT table1_json FROM ", resultsDatabaseSchema, ".tb1_results WHERE cohort_id = ", cohort_id, " and study_id = ", studyId, " and dataset_id = ", datasetId, " ;")
+      conn <- connectionHandler$getConnection()
+      res <- DatabaseConnector::querySql(conn, sql)
+      if (nrow(res) == 0) {
+        cat("No Table 1 output found for cohort ID:", cohort_id, "\n")
+        return (NULL)
+      }
+      json_str <- res$table1_json[1]
+      table1 <- ParallelLogger::convertJsonToSettings(json_str)
+      return (table1)
+    })
+    
+    output$table1out <- renderTable({
+      tbl <- table1_data()
+      if (is.data.frame(tbl)) {
+        tbl
+      } else {
+        data.frame(Message = "Invalid Table 1 data - expected a data frame.")
+      }
+    }, striped = TRUE, bordered = TRUE, hover = TRUE, spacing = 'm', align = 'c')
+  })
+}
+
 # ADD OR REMOVE MODULES TAILORED TO YOUR STUDY
 shinyConfig <- initializeModuleConfig() |>
   addModuleConfig(
@@ -206,6 +277,20 @@ shinyConfig <- initializeModuleConfig() |>
       shinyModulePackageVersion = NULL,
       moduleUiFunction = survivalModuleUI,
       moduleServerFunction = survivalModuleServer,
+      moduleInfoBoxFile = function(){},
+      moduleIcon = "info",
+      installSource = "CRAN",
+      gitHubRepo = NULL
+    )
+  ) |>
+  addModuleConfig(
+    createModuleConfig(
+      moduleId = 'table1',
+      tabName = "Table 1",
+      shinyModulePackage = NULL,
+      shinyModulePackageVersion = NULL,
+      moduleUiFunction = table1ModuleUI,
+      moduleServerFunction = table1ModuleServer,
       moduleInfoBoxFile = function(){},
       moduleIcon = "info",
       installSource = "CRAN",
