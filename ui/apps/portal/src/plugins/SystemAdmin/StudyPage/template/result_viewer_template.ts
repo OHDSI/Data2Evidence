@@ -195,7 +195,7 @@ table1ModuleServer <- function(id, connectionHandler, resultDatabaseSettings, co
 
     cohort_choices <- reactive({
         conn <- connectionHandler$getConnection()
-        sql <- paste0("SELECT DISTINCT cohort_id FROM ", resultsDatabaseSchema, ".tb1_results where study_id = ", studyId, " and dataset_id = ", datasetId, " ;")
+        sql <- paste0("SELECT DISTINCT cohort_id FROM ", resultsDatabaseSchema, ".tb1_results where study_id = '", studyId, "' and dataset_id = '", datasetId, "' ;")
         res <- DatabaseConnector::querySql(conn, sql)
         return (res$cohort_id)
     })
@@ -209,7 +209,7 @@ table1ModuleServer <- function(id, connectionHandler, resultDatabaseSettings, co
     table1_data <- reactive({
       req(input$cohort1)
       cohort_id <- input$cohort1
-      sql <- paste0("SELECT table1_json FROM ", resultsDatabaseSchema, ".tb1_results WHERE cohort_id = ", cohort_id, " and study_id = ", studyId, " and dataset_id = ", datasetId, " ;")
+      sql <- paste0("SELECT table1_json FROM ", resultsDatabaseSchema, ".tb1_results WHERE cohort_id = '", cohort_id, "' and study_id = '", studyId, "' and dataset_id = '", datasetId, "' ;")
       conn <- connectionHandler$getConnection()
       res <- DatabaseConnector::querySql(conn, sql)
       if (nrow(res) == 0) {
