@@ -187,6 +187,7 @@ export default {
       'getBookmarks',
       'getCurrentBookmarkHasChanges',
       'getPLRequest',
+      'getWizardConfig',
     ]),
     chartSelection() {
       return this.getChartSelection()
@@ -238,10 +239,7 @@ export default {
         }
       }
 
-      // Extract wizardConfig and conditions from bookmark filter
-      const wizardConfig = bookmarkData?.filter?.configMetadata || null
-      const conditions = bookmarkData?.filter?.cards || null
-
+      const wizardConfig = this.getWizardConfig || null
       // Get mriquery using getPLRequest
       let mriquery = null
       try {
@@ -253,7 +251,6 @@ export default {
 
       return {
         wizardConfig,
-        conditions,
         mriquery,
       }
     },

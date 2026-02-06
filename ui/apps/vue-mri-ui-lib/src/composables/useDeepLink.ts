@@ -52,12 +52,12 @@ export function useDeepLink(dispatch: any) {
       return
     }
 
-    // Decompress and log wizards param if present
+    // Decompress and save wizards param if present
     if (wizardsParam) {
       try {
         const wizardsData = CohortUrlCodec.safeDecompress(wizardsParam)
         if (wizardsData.success) {
-          console.log('[DeepLink] Wizards params:', wizardsData.data)
+          dispatch('setWizardConfig', wizardsData.data)
         } else {
           console.warn('[DeepLink] Failed to decompress wizards param:', wizardsData.error)
         }
