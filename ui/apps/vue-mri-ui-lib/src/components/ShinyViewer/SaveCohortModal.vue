@@ -51,8 +51,8 @@
           @closeEv="resetMessageStrip"
         />
 
-        <!-- Cohort Name Input (FiltersFooter style) -->
-        <div class="save-bookmark">
+        <!-- Cohort Name Input (only show for new cohorts) -->
+        <div class="save-bookmark" v-if="isNewCohort">
           <div class="form-group">
             <div class="name">
               <div class="row">
@@ -95,6 +95,23 @@
                     {{ getText('MRI_PA_COHORT_NAME_DUPLICATE') || 'A cohort with this name already exists' }}
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Show existing cohort name for updates -->
+        <div v-else class="save-bookmark">
+          <div class="form-group">
+            <div class="row">
+              <div class="col-sm-12">
+                <p style="margin-bottom: 1rem;">
+                  <strong>{{ getText('MRI_PA_COHORT_NAME_LABEL') || 'Cohort Name' }}:</strong> 
+                  {{ getActiveBookmark?.bookmarkname }}
+                </p>
+                <p class="text-muted" style="font-size: 0.875rem;">
+                  {{ getText('MRI_PA_UPDATING_EXISTING_COHORT') || 'Updating existing cohort with latest changes' }}
+                </p>
               </div>
             </div>
           </div>
@@ -196,7 +213,16 @@ export default {
       'getBookmarkByNameAndUsername',
       'getBookmarks',
       'getMaterializedCohorts',
+      'getCurrentBookmarkHasChanges',
     ]),
+    hasChanges() {
+      // Check if there are unsaved changes (new bookmark or existing bookmark with changes)
+      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
+    },
+    isNewCohort() {
+      // Check if this is a brand new cohort (not saved yet)
+      return this.getActiveBookmark?.isNew || false
+    },
     hasExceededLength() {
       return this.cohortName.length > this.maxLength
     },
@@ -356,9 +382,15 @@ export default {
       // Refresh bookmarks to get latest data
       await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
       
+      // Determine the bookmark name to search for
+      const activeBookmark = this.getActiveBookmark      
+      const bookmarkName = this.isNewCohort 
+        ? this.cohortName.trim() 
+        : activeBookmark?.bookmarkname
+    
       // Find bookmark by name and username
       const username = getPortalAPI().username
-      const bookmark = this.getBookmarkByNameAndUsername(this.cohortName.trim(), username)
+      const bookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
       
       if (!bookmark) {
         throw new Error('Bookmark not found after refresh')
@@ -371,10 +403,8 @@ export default {
     },
 
     async saveBookmark() {
-      const trimmedName = this.cohortName.trim()
+      const activeBookmark = this.getActiveBookmark
       const username = getPortalAPI().username
-
-      // Get bookmark data from Vuex
       const bookmarkData = this.getBookmarksData
       const selectedDataset = this.getSelectedDataset
 
@@ -382,20 +412,60 @@ export default {
         throw new Error('No dataset selected')
       }
 
-      // Prepare params (always insert for new cohorts)
-      const params = {
-        cmd: 'insert',
-        bookmarkname: trimmedName,
-        bookmark: JSON.stringify(bookmarkData),
-        shareBookmark: false,
-        paConfigId: selectedDataset?.paConfigId,
-        cdmConfigId: selectedDataset?.cdmConfigId,
-        cdmConfigVersion: selectedDataset?.cdmConfigVersion,
-        datasetId: selectedDataset?.id,
+      // Determine the bookmark name to use
+      let bookmarkName
+      if (this.isNewCohort) {
+        // New cohort: must have a name
+        bookmarkName = this.cohortName.trim()
+        if (!bookmarkName) {
+          throw new Error('Cohort name is required for new cohorts')
+        }
+      } else {
+        // Existing cohort with changes: use provided name or keep existing name
+        bookmarkName = this.cohortName.trim() || activeBookmark.bookmarkname
       }
 
-      // API call to save bookmark
-      await this.fireBookmarkQuery({ params, method: 'post' })
+      // Check for duplicate names (only if a new name is provided)
+      if (this.cohortName.trim() && this.cohortName.trim() !== activeBookmark?.bookmarkname) {
+        const duplicate = this.getBookmarks.find(
+          b => b.user_id === username && b.bookmarkname === this.cohortName.trim()
+        )
+        if (duplicate) {
+          throw new Error('A cohort with this name already exists')
+        }
+      }
+
+      // Decide between insert (new) or update (existing with changes)
+      if (this.isNewCohort) {
+        // Insert new bookmark
+        const params = {
+          cmd: 'insert',
+          bookmarkname: bookmarkName,
+          bookmark: JSON.stringify(bookmarkData),
+          shareBookmark: false,
+          paConfigId: selectedDataset?.paConfigId,
+          cdmConfigId: selectedDataset?.cdmConfigId,
+          cdmConfigVersion: selectedDataset?.cdmConfigVersion,
+          datasetId: selectedDataset?.id,
+        }
+        
+        console.log('[SaveCohort] Inserting new bookmark:', bookmarkName)
+        await this.fireBookmarkQuery({ params, method: 'post' })
+      } else {
+        // Update existing bookmark
+        const params = {
+          cmd: 'update',
+          bookmark: JSON.stringify(bookmarkData),
+          shareBookmark: false,
+        }
+        
+        console.log('[SaveCohort] Updating existing bookmark:', activeBookmark.bmkId)
+        await this.fireBookmarkQuery({
+          method: 'put',
+          params,
+          bookmarkId: activeBookmark.bmkId,
+        })
+      }
 
       // Refresh and find saved bookmark
       const savedBookmark = await this.refreshAndFindBookmark()

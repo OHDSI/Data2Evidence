@@ -183,6 +183,7 @@ export default {
       'getCurrentBookmarkHasChanges',
       'getPLRequest',
       'getWizardConfig',
+      'getActiveCohortMaterializedId',
     ]),
     chartSelection() {
       return this.getChartSelection()
@@ -200,6 +201,10 @@ export default {
     isDashboardButtonEnabled() {
       // Button always enabled - we'll handle save/materialize flow in modal
       return true
+    },
+    hasChanges() {
+      // Check if there are unsaved changes (new bookmark or existing bookmark with changes)
+      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isBookmarkSaved() {
       // Check if current bookmark is saved (not new)
@@ -365,15 +370,15 @@ export default {
     async handleOpenDashboard() {
       console.log('[Dashboard Flow] Opening dashboard...')
 
-      // Check if bookmark is saved
-      if (!this.isBookmarkSaved) {
-        console.log('[Dashboard Flow] Bookmark not saved, showing save modal')
+      // Check if there are unsaved changes
+      if (this.hasChanges) {
+        console.log('[Dashboard Flow] Unsaved changes detected, showing save modal')
         this.showSaveCohortModal = true
         return
       }
 
       // Check if cohort needs materialization
-      if (this.needsMaterialization) {
+      if (!this.getActiveCohortMaterializedId) {
         console.log('[Dashboard Flow] Cohort needs materialization, showing save modal')
         this.showSaveCohortModal = true
         return
