@@ -128,7 +128,7 @@
           ]
         },
         {
-          "path": "^/gateway/api/fhir/superadmin/StructureDefinition(.*)",
+          "path": "^/fhir-gateway/superadmin/StructureDefinition(.*)",
           "scopes": [
             "gateway.fhir.forward"
           ],

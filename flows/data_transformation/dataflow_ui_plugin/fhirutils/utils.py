@@ -1,5 +1,8 @@
 from datetime import datetime, date
 import random
+import zlib
+import os
+import json
 
 class omop_transform_utils:
     omop_tables = {
@@ -27,13 +30,14 @@ class omop_transform_utils:
             "race_concept_id": "map",
             "ethnicity_concept_id": "map",
         },
-        "condtion_occurrence": {
+        "condition_occurrence": {
             "condition_occurrence_id": "id",
             "person_id": "referenceToId",
             "condition_start_datetime": "datetime",
             "condition_start_date": "date",
             "condition_end_date": "date",
             "condition_type_concept_id": "map", #To-do: There can be multiple entries in category/coding.
+            "condition_status_concept_id": "map",
         },
         "visit_occurrence": {
             "visit_occurrence_id": "id",
@@ -60,13 +64,13 @@ class omop_transform_utils:
         "measurement":{
             "measurement_id": "id",
             "person_id": "referenceToId",
-            "measurement_concept_id": "copy",
+            "measurement_concept_id": "map",
             "measurement_date": "date",
             "measurement_datetime": "datetime",
-            "measurement_type_concept_id": "copy",
+            "measurement_type_concept_id": "map",
             "measurement_source_value": "string",
-            "unit_concept_id": "copy",
-            "value_as_concept_id": "copy",
+            "unit_concept_id": "map",
+            "value_as_concept_id": "map",
         },
         "procedure_occurrence":{
             "procedure_occurrence_id": "id",
@@ -123,30 +127,74 @@ class omop_transform_utils:
                 elif isinstance(value, datetime):
                     return value
             elif target_type == "id":
+                # Deterministically map source ids/references to 32-bit positive integers
+                def to_int_from_value(v):
+                    # Integers: use directly
+                    if isinstance(v, int):
+                        return int(v) if v != 0 else 1
+                    # Strings: try to extract numeric id or fall back to crc32
+                    if isinstance(v, str):
+                        val = v
+                        if "/" in val:
+                            val = val.split("/")[-1]
+                        if val.isdigit():
+                            num = int(val)
+                            return num if num != 0 else 1
+                            # fallback: crc32 to produce a stable 31-bit positive int (fits signed int)
+                            num = zlib.crc32(val.encode("utf-8")) & 0xffffffff
+                            num = num & 0x7fffffff
+                            return num if num != 0 else 1
+                    # Dicts: prefer 'id' or 'reference' keys
+                    if isinstance(v, dict):
+                        if "id" in v and (isinstance(v["id"], (str, int))):
+                            return to_int_from_value(v["id"])
+                        if "reference" in v and isinstance(v["reference"], str):
+                            return to_int_from_value(v["reference"])
+                        # fallback to stringified dict, then clamp to 31-bit signed int
+                        num = zlib.crc32(json.dumps(v, sort_keys=True).encode("utf-8")) & 0xffffffff
+                        num = num & 0x7fffffff
+                        return num if num != 0 else 1
+                    # Any other type: string-ify and hash
+                    num = zlib.crc32(str(v).encode("utf-8")) & 0xffffffff
+                    num = num & 0x7fffffff
+                    return num if num != 0 else 1
+
                 if isinstance(value, list):
-                    return [random.randint(0, 100) * random.randint(0, 100) for _ in value]
-                random_number = random.randint(0, 100) * random.randint(0, 100)
-                return random_number
+                    return [to_int_from_value(v) for v in value]
+                return to_int_from_value(value)
             elif target_type == "referenceToId":
-                print("Reference value:", value)
+                # Return integer ids when possible. Extract numeric part from references like 'Patient/123'
+                def extract_ref(val):
+                    # dict with 'reference' or 'id'
+                    if isinstance(val, dict):
+                        if "id" in val and isinstance(val["id"], (str, int)):
+                            return extract_ref(val["id"])
+                        if "reference" in val and isinstance(val["reference"], str):
+                            return extract_ref(val["reference"])
+                        # fallback: stringify and attempt to parse
+                        sval = json.dumps(val, sort_keys=True)
+                        return extract_ref(sval)
+                    # string: try to extract after '/'
+                    if isinstance(val, str):
+                        s = val
+                        if "/" in s:
+                            s = s.split("/")[-1]
+                        if s.isdigit():
+                            return int(s)
+                        # not purely digits: return stable small int via crc32 clamped to 31-bit
+                        num = zlib.crc32(s.encode("utf-8")) & 0xffffffff
+                        num = num & 0x7fffffff
+                        return num if num != 0 else 1
+                    if isinstance(val, int):
+                        return int(val) if val != 0 else 1
+                    # fallback for other types
+                    num = zlib.crc32(str(val).encode("utf-8")) & 0xffffffff
+                    num = num & 0x7fffffff
+                    return num if num != 0 else 1
+
                 if isinstance(value, list):
-                    def extract_ref(val):
-                        if isinstance(val, dict) and "reference" in val:
-                            ref_str = val["reference"]
-                            if "/" in ref_str:
-                                return ref_str.split("/")[-1]
-                        if isinstance(val, str) and "/" in val:
-                            return val.split("/")[-1]
-                        return val
                     return [extract_ref(v) for v in value]
-                # Handle dict with "reference" key, e.g. {"reference": "Patient/1234"}
-                if isinstance(value, dict) and "reference" in value:
-                    ref_str = value["reference"]
-                    if "/" in ref_str:
-                        return ref_str.split("/")[-1]
-                # Handle string, e.g. "Patient/1234" or "Patient/example"
-                if isinstance(value, str) and "/" in value:
-                    return value.split("/")[-1]
+                return extract_ref(value)
             elif target_type == "map":
                 if isinstance(value, list):
                     return [38000280 for _ in value]  # Placeholder for mapping logic
