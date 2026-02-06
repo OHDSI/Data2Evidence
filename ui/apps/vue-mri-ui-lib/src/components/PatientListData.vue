@@ -1,6 +1,7 @@
 <template>
   <div>
-    <span>{{ display() }}</span>
+    <a v-if="isPatientLink" href="#" @click.prevent="openPatient">{{ value }}</a>
+    <span v-else>{{ value }}</span>
   </div>
 </template>
 <script lang="ts">
@@ -20,13 +21,20 @@ export default {
   },
   computed: {
     ...mapGetters(['getText']),
-  },
-  methods: {
-    display() {
+    isPatientLink() {
+      return this.meta.path === 'patient.attributes.pid'
+    },
+    value() {
       if (hasProp(this.item, this.meta.path)) {
         return this.item[this.meta.path]
       }
       return null
+    },
+  },
+  methods: {
+    openPatient() {
+      // TODO: Implement navigation to patient detail
+      console.log('Open patient:', this.value)
     },
   },
 }

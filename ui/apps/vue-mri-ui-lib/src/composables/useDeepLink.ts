@@ -40,6 +40,7 @@ export function useDeepLink(dispatch: any) {
     const params = new URLSearchParams(window.location.search)
     const linkType = params.get('linkType')
     const query = params.get('query')
+    const wizardsParam = params.get('wizards')
 
     // Check if this is a cohort definition deep link
     if (linkType !== 'cohort-definition') {
@@ -49,6 +50,20 @@ export function useDeepLink(dispatch: any) {
     // Check if query parameter exists and is not empty
     if (!query || query.trim() === '') {
       return
+    }
+
+    // Decompress and log wizards param if present
+    if (wizardsParam) {
+      try {
+        const wizardsData = CohortUrlCodec.safeDecompress(wizardsParam)
+        if (wizardsData.success) {
+          console.log('[DeepLink] Wizards params:', wizardsData.data)
+        } else {
+          console.warn('[DeepLink] Failed to decompress wizards param:', wizardsData.error)
+        }
+      } catch (err) {
+        console.warn('[DeepLink] Error processing wizards param:', err)
+      }
     }
 
     // Mark as processed to prevent re-processing
@@ -106,12 +121,14 @@ export function useDeepLink(dispatch: any) {
       const cleanUrl = new URL(window.location.href)
       cleanUrl.searchParams.delete('linkType')
       cleanUrl.searchParams.delete('query')
+      cleanUrl.searchParams.delete('wizards')
       window.history.replaceState({}, '', cleanUrl.toString())
 
       // Show success message
       dispatch('setAlertMessage', {
         message: 'Cohort definition loaded successfully from shared link.',
         messageType: 'success',
+        title: 'Success',
       })
     } catch (error) {
       console.error('[DeepLink] Processing error:', error)

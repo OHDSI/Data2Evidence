@@ -1134,6 +1134,7 @@ export const i18nDefault = {
     UI_PLUGIN_SETUP_PATIENT_ANALYTICS_DESCRIPTION: "Configure cohort builder",
     UI_PLUGIN_SETUP_PLUGINS_DESCRIPTION: "Manage plugins",
     UI_PLUGIN_SETUP_GIT_DESCRIPTION: "Allow user to configure the git information",
+    UI_PLUGIN_WIZARDS: "Wizards",
     UPDATE_SCHEMA_DIALOG__CANCEL: "Cancel",
     UPDATE_SCHEMA_DIALOG__CONFIRM: "Are you sure you want to update the schema of this dataset:",
     UPDATE_SCHEMA_DIALOG__ERROR: "Schema for dataset {0} failed to update",
