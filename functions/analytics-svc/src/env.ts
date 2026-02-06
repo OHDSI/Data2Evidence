@@ -8,13 +8,10 @@ const Env = z
             .string()
             .refine((val) => !isNaN(parseInt(val)))
             .transform(Number),
-        DUCKDB__DATA_FOLDER: z.string(),
         IDP__ALP_SVC__CLIENT_ID: z.string(),
         IDP__ALP_SVC__CLIENT_SECRET: z.string(),
         USE_EXTENSION_FOR_COHORT_CREATION: z.string(),
 
-        USE_DUCKDB: z.string(),
-        USE_CACHEDB: z.string(),
         USE_TREX_DB_CONN: z.string(),
 
         PG__IDLE_TIMEOUT_IN_MS: z
@@ -32,12 +29,6 @@ const Env = z
 
         PROJECT_NAME: z.string(),
 
-        CACHEDB__HOST: z.string(),
-        CACHEDB__PORT: z
-            .string()
-            .refine((val) => !isNaN(parseInt(val)))
-            .transform(Number),
-
         LOCAL_DEBUG: z.string(),
         SQL_RETURN_ON: z.string(),
         isHttpTestRun: z.string().optional(),
@@ -50,7 +41,6 @@ const Env = z
         TLS__INTERNAL__CA_CRT: z.string().optional(),
         NODE_ENV: z.string().optional(),
         ENV_MOUNT_PATH: z.string().optional(),
-        TESTSCHEMA: z.string().optional(),
         TREX_CURRENT_USER_FUNCTION_NAME: z.string().optional(),
         //DATABASE_CREDENTIALS: z.array().optional(),
         MINIO__ENDPOINT: z.string().optional(),

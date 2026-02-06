@@ -31,7 +31,6 @@
 /services/alp-fhir                                   @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /services/alp-logto                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /services/alp-db-management                          @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
-/services/cachedb                                    @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/envConverter                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/mri-db                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/trex                                       @p-hoffmann

@@ -51,8 +51,6 @@
     "../_shared/alp-base-utils/src/helpers/hanaTranslation": "../_shared/alp-base-utils/src/helpers/hanaTranslation.ts",
     "../_shared/alp-base-utils/src/helpers/translateHanaToDuckdb.test": "../_shared/alp-base-utils/src/helpers/translateHanaToDuckdb.test.ts",
     "../_shared/alp-base-utils/src/helpers/translateHanaToPostgres.test": "../_shared/alp-base-utils/src/helpers/translateHanaToPostgres.test.ts",
-    "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil": "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil.ts",
-    "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection": "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection.ts",
     "./src/utils/trexConnection": "./src/utils/trexConnection.ts",
     "../_shared/alp-config-utils/src/utils/FFHConfig": "../_shared/alp-config-utils/src/utils/FFHConfig.ts",
     "../_shared/alp-config-utils/src/utils/mriConfigConnection": "../_shared/alp-config-utils/src/utils/mriConfigConnection.ts",
