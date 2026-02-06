@@ -7,7 +7,6 @@ networks:
 
 volumes:
   caddy:
-  cachedb-data-1:
   cdw-config-cachedb-data-1:
   minio-data-1:
   pg-minerva-data-1:
@@ -607,7 +606,6 @@ services:
       PREFECT_FLOW_RUN_CACHE_ENABLED: false
       PREFECT_RESULTS_PERSIST_BY_DEFAULT: false
       PREFECT_EVENTS_ENABLED: false
-
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:

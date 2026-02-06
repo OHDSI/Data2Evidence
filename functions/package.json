@@ -323,9 +323,6 @@
           "MINIO__REGION": "${MINIO__REGION:-ap-southeast-1}",
           "MINIO__SECRET_KEY": "${MINIO__SECRET_KEY}",
           "MINIO__SSL": "${MINIO__SSL:-false}",
-          "CACHEDB__PORT": 41191,
-          "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
-          "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
@@ -349,12 +346,8 @@
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": "${ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS:-20}",
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
-          "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
           "LOCAL_DEBUG": "false",
-          "USE_DUCKDB": "${USE_DUCKDB:-true}",
-          "USE_CACHEDB": "${USE_CACHEDB:-true}",
           "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
@@ -806,6 +799,7 @@
           "portal.dataset.paConfig.read",
           "portal.dataset.resource.read",
           "portal.dataset.read",
+          "parquet.export",
           "portal.dataset.resource.download",
           "portal.notebook.read",
           "portal.notebook.add",
@@ -2013,7 +2007,7 @@
             "POST"
           ]
         },
-                {
+        {
           "path": "^/system-portal/supabase-storage/strategus-results/delete",
           "scopes": [
             "portal.supabaseStorage.delete"
@@ -2973,11 +2967,12 @@
         {
           "path": "^/parquet-export",
           "scopes": [
-            "portal.dataset.read"
+            "parquet.export"
           ],
           "httpMethods": [
             "GET"
-          ]
+          ],
+          "datasetId": "datasetId"
         }
       ]
     }

@@ -2,11 +2,6 @@ import { object, z } from "zod";
 
 const Env = z.object({
   NODE_ENV: z.string().optional(),
-  CACHEDB__HOST: z.string(),
-  CACHEDB__PORT: z
-    .string()
-    .refine((val) => !isNaN(parseInt(val)))
-    .transform(Number),
   SERVICE_ROUTES: z
     .string()
     .transform((str, ctx): z.infer<ReturnType<typeof object>> => {

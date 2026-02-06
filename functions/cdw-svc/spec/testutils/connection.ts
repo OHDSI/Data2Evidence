@@ -1,7 +1,6 @@
 import { DBConnectionUtil as dbConnectionUtil } from "@alp/alp-base-utils";
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
-import { getDuckdbDBConnection } from "../../src/utils/DuckdbConnection";
 
 const hanaSchemaName = process.env.TESTSCHEMA;
 
@@ -25,10 +24,6 @@ export function createConnection(
   dialect: "duckdb" | "hana"
 ): Promise<ConnectionInterface> {
   return new Promise<ConnectionInterface>(async (resolve, reject) => {
-    if(dialect == 'duckdb'){
-      let analyticsConnection = await getDuckdbDBConnection()
-      resolve(analyticsConnection)
-    }else{
       const credentials = credentialsMap[dialect];
       let client;
       dbConnectionUtil.DBConnectionUtil.getDbClient(credentials, (err, c) => {
@@ -52,6 +47,6 @@ export function createConnection(
           );
         }
       });
-    }
+    
   });
 }

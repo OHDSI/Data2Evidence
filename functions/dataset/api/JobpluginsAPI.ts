@@ -48,46 +48,62 @@ export class JobPluginsAPI {
 
   async createDatamodelFlowRun(data: ICreateDatamodelFlowRunDto) {
     this.logger.info("Running create datamodel flow run");
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/datamodel/create_datamodel_run`;
-    const result = await this.channel.post(url, data, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/datamodel/create_datamodel_run`;
+      const result = await this.channel.post(url, data, options);
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed create datamodel flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error("Failed create datamodel flow run");
   }
 
   async createFhirCacheFlowRun(data: ICreateFhirCacheFlowRunDto) {
     this.logger.info("Running create FHIR cache flow run");
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/cachedb/create-fhir-file`;
-    const result = await this.channel.post(url, data, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/cachedb/create-fhir-file`;
+      const result = await this.channel.post(url, data, options);
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed create FHIR cache flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error("Failed create FHIR cache flow run");
   }
 
   async getDatamodels() {
     this.logger.info("Running get datamodel list");
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/datamodel/list`;
-    const result = await this.channel.get(url, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/datamodel/list`;
+      const result = await this.channel.get(url, options);
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed get datamodels: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error("Failed get datamodels");
   }
 
   async getSchemasVersionInformation(): Promise<any> {
     this.logger.info(`Getting schemas version information`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/fetch-version-info`;
-    const result = await this.channel.post(url, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/fetch-version-info`;
+      const result = await this.channel.post(url, options);
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed get schemas version information: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(`Failed get schemas version information`);
   }
 
   async createCDMSchema(
@@ -98,23 +114,25 @@ export class JobPluginsAPI {
     vocabSchema: string
   ): Promise<any> {
     this.logger.info(`Create CDM schema ${schemaName} in ${databaseCode}`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "createCDMSchema",
-      requestType: "post",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}/schema/${schemaName}`,
-      requestBody: {
-        vocabSchema: vocabSchema,
-      },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/run`;
+      const body = {
+        dbSvcOperation: "createCDMSchema",
+        requestType: "post",
+        requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}/schema/${schemaName}`,
+        requestBody: {
+          vocabSchema: vocabSchema,
+        },
+      };
+      const result = await this.channel.post(url, body, options);
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed to create CDM schema ${schemaName} with data model ${dataModel} in ${databaseCode}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(
-      `Failed to create CDM schema ${schemaName} with data model ${dataModel} in ${databaseCode}`
-    );
   }
 
   async copyCDMSchema(
@@ -130,21 +148,23 @@ export class JobPluginsAPI {
       targetSchemaName: targetSchemaName,
     };
     this.logger.info(`Copy CDM schema (${JSON.stringify(data)})`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "copyCDMSchema",
-      requestType: "post",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshot/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
-      requestBody: { snapshotCopyConfig: snapshotCopyConfig },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/run`;
+      const body = {
+        dbSvcOperation: "copyCDMSchema",
+        requestType: "post",
+        requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/omop5-4/schemasnapshot/${targetSchemaName}?sourceschema=${sourceSchemaName}`,
+        requestBody: { snapshotCopyConfig: snapshotCopyConfig },
+      };
+      const result = await this.channel.post(url, body, options);
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed to copy CDM schema ${sourceSchemaName} in ${databaseCode}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(
-      `Failed to copy CDM schema ${sourceSchemaName} in ${databaseCode}`
-    );
   }
 
   async updateSchema(
@@ -155,19 +175,23 @@ export class JobPluginsAPI {
     vocabSchema: string
   ): Promise<any> {
     this.logger.info(`Updating schema for ${schemaName}`);
-    const options = await this.getRequestConfig();
-    const url = `${this.baseURL}/db-svc/run`;
-    const body = {
-      dbSvcOperation: "updateSchema",
-      requestType: "put",
-      requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}?schema=${schemaName}`,
-      requestBody: { vocabSchema },
-    };
-    const result = await this.channel.post(url, body, options);
-    if (result.data) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/db-svc/run`;
+      const body = {
+        dbSvcOperation: "updateSchema",
+        requestType: "put",
+        requestUrl: `/alpdb/${dialect}/database/${databaseCode}/data-model/${dataModel}?schema=${schemaName}`,
+        requestBody: { vocabSchema },
+      };
+      const result = await this.channel.post(url, body, options);
       return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Failed to update schema for ${schemaName}: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
-    throw new Error(`Failed to update schema for ${schemaName}`);
   }
 
   async createDatamartCacheFlowRun(
@@ -190,13 +214,12 @@ export class JobPluginsAPI {
         flowRunName,
       };
       const result = await post(url, body, postOptions);
-
-      if (result.data) {
-        return result.data;
-      }
-    } catch (error) {
-      this.logger.error(`Error running datamart flow run: ${error}`);
-      throw new Error(`Error running datamart flow run: ${error}`);
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Error running datamart flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
     }
   }
 }

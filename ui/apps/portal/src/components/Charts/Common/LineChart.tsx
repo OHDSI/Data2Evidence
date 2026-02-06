@@ -4,6 +4,7 @@ import ReactECharts from "echarts-for-react";
 import { LineChartFormatConfig } from "../../../plugins/SystemAdmin/DQD/types";
 import ChartContainer from "./ChartContainer";
 import { chartColors } from "./chartColors";
+import ZoomPlusIcon from "./icons/zoom-plus.svg";
 import "./LineChart.scss";
 import { getAxisNameGap } from "../util";
 
@@ -56,6 +57,9 @@ const LineChart: FC<LineChartProps> = ({
       feature: {
         dataZoom: {
           yAxisIndex: "none",
+          icon: {
+            zoom: `image://${ZoomPlusIcon}`,
+          },
         },
         dataView: { readOnly: false },
         magicType: { type: ["line", "bar"] },
