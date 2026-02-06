@@ -31,7 +31,6 @@ const props = defineProps<{
   datasetId: string
   cohortId: string
   wizardConfig?: Record<string, any> // Wizard configuration object
-  conditions?: Record<string, any> // Conditions object from active bookmark
   mriquery?: string // MRI query string (JSON stringified)
 }>()
 
@@ -180,34 +179,35 @@ function sendTokenToIframe(source?: MessageEventSource) {
     return
   }
 
-  // Message to send to ALL nested frames (ShinyLive uses nested iframes)
+  // Serialize wizard config to plain object (remove Vue Proxy)
+  // This is needed because postMessage can't clone Proxy objects
+  let serializedWizardConfig = null
+  if (props.wizardConfig) {
+    try {
+      serializedWizardConfig = JSON.parse(JSON.stringify(props.wizardConfig))
+    } catch (e) {
+      console.warn('[Parent] Failed to serialize wizard config:', e)
+      serializedWizardConfig = null
+    }
+  }
+
+
   const message = {
     type: 'AUTH_TOKEN',
     token: bearerToken.value,
     timestamp: Date.now(),
     parentOrigin: CURRENT_ORIGIN,
 
-    // Additional context data
+    // Additional context data (all serialized to plain objects)
     context: {
       datasetId: props.datasetId,
       cohortId: props.cohortId,
-      wizardConfig: props.wizardConfig || null,
-      conditions: props.conditions || null,
+      wizardConfig: serializedWizardConfig,
       mriquery: props.mriquery || null,
     },
   }
 
   try {
-    console.log('[Parent] Sending AUTH_TOKEN to iframe and nested frames:', {
-      datasetId: props.datasetId,
-      cohortId: props.cohortId,
-      hasWizardConfig: !!props.wizardConfig,
-      hasConditions: !!props.conditions,
-      hasMriquery: !!props.mriquery,
-    })
-
-    // Send to iframe with '*' to allow nested frames to receive
-    console.log({ source })
 
     source?.postMessage(message)
 

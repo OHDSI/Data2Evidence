@@ -54,7 +54,6 @@
             :dataset-id="datasetId"
             :cohort-id="cohortId"
             :wizard-config="wizardConfig"
-            :conditions="conditions"
             :mriquery="mriquery"
           />
         </div>
@@ -74,7 +73,6 @@ const props = defineProps<{
   datasetId: string
   cohortId: string
   wizardConfig?: Record<string, any>
-  conditions?: Record<string, any>
   mriquery?: string
 }>()
 
@@ -100,7 +98,7 @@ watch(
   { immediate: true }
 )
 
-async function fetchDashboards() {
+async function fetchDashboards() {  
   loading.value = true
   error.value = null
 
