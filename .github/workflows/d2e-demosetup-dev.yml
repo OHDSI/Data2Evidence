@@ -275,6 +275,7 @@ jobs:
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
+            -e GITHUB_ACTIONS=true \
             d2e-e2e npm test
 
       - name: Upload Error Context

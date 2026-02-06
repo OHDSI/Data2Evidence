@@ -51,9 +51,6 @@ ENV GIT_COMMIT=$GIT_COMMIT_ARG
 
 WORKDIR src/alp-data-node/app
 
-RUN mkdir ./duckdb_data
-RUN chown docker:alp ./duckdb_data
-
 COPY --chown=docker:alp --chmod=711 ./services/analytics-svc/start.sh .
 
 

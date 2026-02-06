@@ -33,6 +33,7 @@ services:
       PLUGINS_SEED: '["d2e-flows", "d2e-ui", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "storage", "fhir"]'
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
       PLUGINS_DEV_PATH: "/usr/src/plugins"
+      SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       TREX_INIT: |-
         {
           "tlsCert": "/usr/src/cert/cert.pem",

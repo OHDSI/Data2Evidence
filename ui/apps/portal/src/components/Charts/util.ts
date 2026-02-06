@@ -141,6 +141,10 @@ export const generateAllMonths = (start: string, end: string): string[] => {
   return result;
 };
 
+export const appendConceptName = (baseTitle: string, conceptName?: string): string => {
+  return conceptName && conceptName.length > 0 ? `${baseTitle} - ${conceptName}` : baseTitle;
+};
+
 /**
  * Format large positive numbers into abbreviated form (K, M, B)
  * Numbers >= 1000 are converted to thousands (K), millions (M), or billions (B)

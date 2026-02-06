@@ -32,7 +32,6 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     sed -i '' 's/^  caddy:$/  http-test-volume-1:/' "docker-compose.yml"
     sed -i '' 's/- caddy:/- http-test-volume-1:/' "docker-compose.yml"
     sed -i '' 's/cdw-config-duckdb-data-1:/http-test-volume-cdw-config:/' "docker-compose.yml"
-    sed -i '' 's/duckdb-data-1:/http-test-volume-2:/' "docker-compose.yml"
     sed -i '' 's/minio-data-1:/http-test-volume-4:/' "docker-compose.yml"
     sed -i '' 's/pg-minerva-data-1:/http-test-volume-5:/' "docker-compose.yml"
     sed -i '' 's/r-libs:/http-test-volume-7:/' "docker-compose.yml"
@@ -45,7 +44,6 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     sed -i 's/^  caddy:$/  http-test-volume-1:/' "docker-compose.yml"
     sed -i 's/- caddy:/- http-test-volume-1:/' "docker-compose.yml"
     sed -i 's/cdw-config-duckdb-data-1:/http-test-volume-cdw-config:/' "docker-compose.yml"
-    sed -i 's/duckdb-data-1:/http-test-volume-2:/' "docker-compose.yml"
     sed -i 's/minio-data-1:/http-test-volume-4:/' "docker-compose.yml"
     sed -i 's/pg-minerva-data-1:/http-test-volume-5:/' "docker-compose.yml"
     sed -i 's/r-libs:/http-test-volume-7:/' "docker-compose.yml"
@@ -84,10 +82,7 @@ docker network create alp
 ########################
 # Get and set logto values
 ########################
-# HTTP tests use hana db, hence USE_DUCKDB and USE_CACHEDB must be false
 # due to logic in analytics service getDBConnections
-echo "USE_DUCKDB=false" >>.env.local
-echo "USE_CACHEDB=false" >>.env.local
 echo "NODE_ENV=production" >>.env.local
 export LOGTO__D2E_APP__CLIENT_ID=$(cat .env.local | grep LOGTO__D2E_APP__CLIENT_ID | cut -d'=' -f2 | head -n 1)
 echo "LOGTO__D2E_APP__CLIENT_ID=$LOGTO__D2E_APP__CLIENT_ID" >>$GITHUB_ENV # Make available to subsequent github actions steps

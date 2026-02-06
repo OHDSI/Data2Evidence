@@ -1,5 +1,6 @@
 from prefect import task
 from prefect.logging import get_run_logger
+from prefect.variables import Variable
 
 from .types import CreateCacheOptions
 
@@ -27,7 +28,7 @@ def update_dataset_metadata(options: CreateCacheOptions):
             get_and_update_attributes(options, dataset)
 
 
-@task(log_prints=True)
+@task(log_prints=True, timeout_seconds=int(Variable.get("cache_task_timeout")))
 def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
     logger = get_run_logger()
 

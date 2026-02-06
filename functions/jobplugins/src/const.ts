@@ -35,6 +35,7 @@ export enum PrefectDeploymentName {
   WHITE_RABBIT = "white_rabbit_plugin",
   SEARCH_EMBEDDING = "search_embedding_plugin",
   PHENOTYPE = "phenotype_plugin",
+  SHINY_LIVE = "shiny_live_plugin",
 }
 
 export enum PrefectFlowName {
@@ -54,6 +55,7 @@ export enum PrefectFlowName {
   WHITE_RABBIT = "white_rabbit_plugin",
   SEARCH_EMBEDDING = "search_embedding_plugin",
   PHENOTYPE = "phenotype_plugin",
+  SHINY_LIVE = "shiny_live_plugin",
 }
 
 export enum FLOW_RUN_STATE_TYPES {
