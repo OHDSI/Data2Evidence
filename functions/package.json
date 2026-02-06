@@ -296,6 +296,12 @@
           "source": "/dockerlogs",
           "service": "docker-logs",
           "rmsrc": false
+        },
+        {
+          "source": "/parquet-export",
+          "function": "/parquet-export",
+          "imports": "/parquet-export/deno.json",
+          "env": "parquet-export"
         }
       ],
       "env": {
@@ -317,9 +323,6 @@
           "MINIO__REGION": "${MINIO__REGION:-ap-southeast-1}",
           "MINIO__SECRET_KEY": "${MINIO__SECRET_KEY}",
           "MINIO__SSL": "${MINIO__SSL:-false}",
-          "CACHEDB__PORT": 41191,
-          "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
-          "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
@@ -333,18 +336,18 @@
           "PG__IDLE_TIMEOUT_IN_MS": 1000,
           "PG__DIALECT": "postgresql",
           "LOCAL_DEBUG": "false",
-          "isHttpTestRun": "${isHttpTestRun}"
+          "isHttpTestRun": "${isHttpTestRun}",
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
+        },
+        "parquet-export": {
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
         },
         "analytics-svc": {
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": "${ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS:-20}",
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
-          "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
           "LOCAL_DEBUG": "false",
-          "USE_DUCKDB": "${USE_DUCKDB:-true}",
-          "USE_CACHEDB": "${USE_CACHEDB:-true}",
           "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
@@ -444,7 +447,8 @@
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
         },
         "dataset": {
-          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -795,6 +799,7 @@
           "portal.dataset.paConfig.read",
           "portal.dataset.resource.read",
           "portal.dataset.read",
+          "parquet.export",
           "portal.dataset.resource.download",
           "portal.notebook.read",
           "portal.notebook.add",
@@ -1390,6 +1395,28 @@
           "httpMethods": [
             "GET",
             "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-codes$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"          
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code-query$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update",
+            "portal.dataset.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT",
+            "DELETE"
           ]
         },
         {
@@ -1999,7 +2026,7 @@
             "POST"
           ]
         },
-                {
+        {
           "path": "^/system-portal/supabase-storage/strategus-results/delete",
           "scopes": [
             "portal.supabaseStorage.delete"
@@ -2731,6 +2758,15 @@
           ]
         },
         {
+          "path": "^/gateway/api/dataset/shiny-live",
+          "scopes": [
+            "gateway.dataset.snapshot.create"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/gateway/api/dataset/dashboard/list$",
           "scopes": [
             "gateway.dataset.dashboards.read"
@@ -2946,6 +2982,16 @@
             "POST",
             "PUT"
           ]
+        },
+        {
+          "path": "^/parquet-export",
+          "scopes": [
+            "parquet.export"
+          ],
+          "httpMethods": [
+            "GET"
+          ],
+          "datasetId": "datasetId"
         }
       ]
     }

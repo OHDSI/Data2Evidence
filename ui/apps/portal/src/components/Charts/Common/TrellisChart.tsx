@@ -3,6 +3,7 @@ import React, { FC } from "react";
 import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import { chartColors } from "./chartColors";
+import ZoomPlusIcon from "./icons/zoom-plus.svg";
 import "./TrellisChart.scss";
 
 interface TrellisChartProps {
@@ -30,6 +31,9 @@ const TrellisChart: FC<TrellisChartProps> = ({ series, grid, gridTitles, title, 
       feature: {
         dataZoom: {
           yAxisIndex: "none",
+          icon: {
+            zoom: `image://${ZoomPlusIcon}`,
+          },
         },
         dataView: { readOnly: false },
         magicType: { type: ["line", "bar"] },

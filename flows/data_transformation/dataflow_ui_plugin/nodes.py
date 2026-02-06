@@ -747,7 +747,7 @@ def generate_nodes_flow(graph, sorted_nodes):
 
         # check if node is a subflow
         if nodetype == NodeType.SUBFLOW:
-            subflow_obj = Flow(node)
+            subflow_obj = Flow(nodename, node)
             graph["nodes"][nodename]["nodeobj"] = subflow_obj
             for subflow_nodename in subflow_obj.sorted_nodes:
                 subflow_nodegraph = subflow_obj.graph["nodes"][subflow_nodename]

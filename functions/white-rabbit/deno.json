@@ -3,9 +3,7 @@
   "nodeModulesDir": "auto",
   "unstable": ["sloppy-imports"],
   "compilerOptions": {
-    "lib": [
-      "deno.window"
-    ],
+    "lib": ["deno.window"],
     "strict": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
@@ -57,8 +55,6 @@
     "../_shared/alp-base-utils/src/QueryObject": "../_shared/alp-base-utils/src/QueryObject.ts",
     "../_shared/alp-base-utils/src/User": "../_shared/alp-base-utils/src/User.ts",
     "../_shared/alp-base-utils/src/helpers/hanaTranslation": "../_shared/alp-base-utils/src/helpers/hanaTranslation.ts",
-    "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil": "../_shared/alp-base-utils/src/cachedb/CachedbDBConnectionUtil.ts",
-    "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection": "../_shared/alp-base-utils/src/cachedb/CachedbNodeHDBConnection.ts",
     "../_shared/alp-config-utils/src/utils/FFHConfig": "../_shared/alp-config-utils/src/utils/FFHConfig.ts",
     "../_shared/alp-config-utils/src/utils/mriConfigConnection": "../_shared/alp-config-utils/src/utils/mriConfigConnection.ts",
     "../_shared/alp-config-utils/src/utils/ruleValidator": "../_shared/alp-config-utils/src/utils/ruleValidator.ts",

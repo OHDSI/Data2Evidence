@@ -59,7 +59,7 @@ export class TrexDAO {
   ): Promise<IWebapiConcept[]> {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
                 select
@@ -94,7 +94,7 @@ export class TrexDAO {
   ): Promise<IAncestorsLookup[]> {
     try {
       // TODO: Move ancestors and descendants as a sql parameter instead of being in the sql statement itself.
-      // ancestors and descendants has to be in sql statement now as cachedb does not support array sql parameter types
+      // ancestors and descendants has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
             select distinct ancestor_concept_id ancestor_id, descendant_concept_id descendant_id
@@ -116,7 +116,7 @@ export class TrexDAO {
   ): Promise<IConceptRecommended[]> {
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
           select concept_id_1, concept_id_2, relationship_id from ${
@@ -142,7 +142,7 @@ export class TrexDAO {
         ? ""
         : `AND invalid_reason = '' `;
       // TODO: Move conceptIds as a sql parameter instead of being in the sql statement itself.
-      // conceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // conceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
           select *
