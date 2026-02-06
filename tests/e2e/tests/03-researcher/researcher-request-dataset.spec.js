@@ -146,6 +146,6 @@ test(TEST_NAME, async ({ page }) => {
   ).toBeVisible()
   // Check that the nav bar contains the cache dataset name (not the parent dataset)
   await expect(page.getByTestId('nav')).toContainText(
-    `${cacheDatasetName}DatasetConceptsCohortsNotebooksAnalysisAccount`
+    `${cacheDatasetName}DatasetConceptsCohortsNotebooksAnalysisDashboardAccount`
   )
 })
