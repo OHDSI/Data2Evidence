@@ -50,6 +50,7 @@ export const env = {
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
+    is_self_managed_roles: _env.IS_SELF_MANAGED_ROLES,
   },
   SECRETS: {
     // Prefect Secrets

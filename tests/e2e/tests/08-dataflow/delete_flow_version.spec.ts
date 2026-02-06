@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 test('Delete specific version of ui-flow', async ({ page }) => {
   await page.goto('/d2e/portal')

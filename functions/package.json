@@ -296,6 +296,12 @@
           "source": "/dockerlogs",
           "service": "docker-logs",
           "rmsrc": false
+        },
+        {
+          "source": "/parquet-export",
+          "function": "/parquet-export",
+          "imports": "/parquet-export/deno.json",
+          "env": "parquet-export"
         }
       ],
       "env": {
@@ -333,7 +339,11 @@
           "PG__IDLE_TIMEOUT_IN_MS": 1000,
           "PG__DIALECT": "postgresql",
           "LOCAL_DEBUG": "false",
-          "isHttpTestRun": "${isHttpTestRun}"
+          "isHttpTestRun": "${isHttpTestRun}",
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
+        },
+        "parquet-export": {
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
         },
         "analytics-svc": {
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
@@ -444,7 +454,8 @@
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
         },
         "dataset": {
-          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -1390,6 +1401,28 @@
           "httpMethods": [
             "GET",
             "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-codes$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"          
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code-query$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update",
+            "portal.dataset.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT",
+            "DELETE"
           ]
         },
         {
@@ -2731,6 +2764,15 @@
           ]
         },
         {
+          "path": "^/gateway/api/dataset/shiny-live",
+          "scopes": [
+            "gateway.dataset.snapshot.create"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/gateway/api/dataset/dashboard/list$",
           "scopes": [
             "gateway.dataset.dashboards.read"
@@ -2945,6 +2987,15 @@
           "httpMethods": [
             "POST",
             "PUT"
+          ]
+        },
+        {
+          "path": "^/parquet-export",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         }
       ]
