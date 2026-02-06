@@ -1,29 +1,67 @@
 <template>
   <MessageBox v-if="isOpen" dim="true" :busy="isSaving" messageType="custom" @close="handleCancel">
-    <template v-slot:header>{{ getText('MRI_PA_SAVE_COHORT_TITLE') }}</template>
+    <template v-slot:header>{{ getText('MRI_PA_TITLE_SAVE_BOOKMARK') }}</template>
     <template v-slot:body>
-      <div>
-        <!-- Save Bookmark Section -->
-        <div class="save-bookmark">
-          <!-- Error/Success Message Strip -->
-          <appMessageStrip
-            v-if="messageStrip.show"
-            :messageType="messageStrip.messageType"
-            :text="messageStrip.message"
-            @closeEv="resetMessageStrip"
-          />
+      <!-- Progress Steps (shown during save/materialize) -->
+      <div v-if="isSaving" class="progress-container">
+        <div class="progress-steps">
+          <div
+            class="progress-step"
+            :class="{ active: steps.save.status === 'loading', complete: steps.save.status === 'success' }"
+          >
+            <div class="step-indicator">
+              <span v-if="steps.save.status === 'loading'" class="spinner">⟳</span>
+              <span v-else-if="steps.save.status === 'success'" class="check">✓</span>
+              <span v-else class="number">1</span>
+            </div>
+            <div class="step-label">{{ getText('MRI_PA_SAVING_COHORT') }}</div>
+          </div>
 
-          <!-- Cohort Name Input -->
+          <div
+            class="progress-step"
+            :class="{
+              active: steps.materialize.status === 'loading',
+              complete: steps.materialize.status === 'success',
+            }"
+          >
+            <div class="step-indicator">
+              <span v-if="steps.materialize.status === 'loading'" class="spinner">⟳</span>
+              <span v-else-if="steps.materialize.status === 'success'" class="check">✓</span>
+              <span v-else class="number">2</span>
+            </div>
+            <div class="step-label">{{ getText('MRI_PA_MATERIALIZING_COHORT') }}</div>
+          </div>
+        </div>
+
+        <appMessageStrip
+          v-if="messageStrip.show"
+          :messageType="messageStrip.messageType"
+          :text="messageStrip.message"
+          @closeEv="resetMessageStrip"
+          style="margin-top: 1rem"
+        />
+      </div>
+
+      <!-- Form (hidden during processing) -->
+      <div v-if="!isSaving">
+        <appMessageStrip
+          v-if="messageStrip.show"
+          :messageType="messageStrip.messageType"
+          :text="messageStrip.message"
+          @closeEv="resetMessageStrip"
+        />
+
+        <!-- Cohort Name Input (FiltersFooter style) -->
+        <div class="save-bookmark">
           <div class="form-group">
             <div class="name">
               <div class="row">
                 <div class="col-sm-12 form-check col-form-label">
-                  <label>{{ getText('MRI_PA_COHORT_NAME_LABEL') }}</label>
+                  <label>{{ getText('MRI_PA_COHORT_NAME_LABEL') || 'Cohort Name' }}</label>
                 </div>
               </div>
               <div class="row">
                 <div class="col">
-                  <!-- maxLength for input is maxLength+1 to allow invalid-feedback to be shown -->
                   <input
                     class="form-control"
                     :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
@@ -33,7 +71,6 @@
                     v-focus
                     required
                     :maxlength="maxLength + 1"
-                    @input="validateCohortName"
                     @keydown.enter="handleSave"
                   />
                   <div
@@ -43,19 +80,19 @@
                     {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
                   </div>
                   <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-                    {{ getText('MRI_PA_COHORT_NAME_TOO_LONG') }}
+                    {{ getText('MRI_PA_COHORT_NAME_TOO_LONG') || 'Filter name must not exceed 255 characters' }}
                   </div>
                   <div
                     class="invalid-feedback"
                     v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']"
                   >
-                    {{ getText('MRI_PA_COHORT_NAME_REQUIRED') }}
+                    {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
                   </div>
                   <div
                     class="invalid-feedback"
                     v-bind:style="[cohortNameValidationState === 'duplicate' && 'display: block;']"
                   >
-                    {{ getText('MRI_PA_COHORT_NAME_DUPLICATE') }}
+                    {{ getText('MRI_PA_COHORT_NAME_DUPLICATE') || 'A cohort with this name already exists' }}
                   </div>
                 </div>
               </div>
@@ -63,9 +100,8 @@
           </div>
         </div>
 
-        <!-- Cohort Dialog Section -->
+        <!-- Description Input (AddCohort style) -->
         <div class="cohort-dialog">
-          <!-- Optional Description Input -->
           <div class="form-group">
             <div class="row">
               <div class="col-sm-4 form-check col-form-label">
@@ -90,24 +126,27 @@
       <div class="flex-spacer"></div>
       <appButton
         :click="handleSave"
-        :text="getText('MRI_PA_BUTTON_SAVE')"
-        :tooltip="getText('MRI_PA_BUTTON_SAVE')"
+        :text="getText('MRI_PA_COLL_BUT_OK')"
+        :tooltip="getText('MRI_PA_COLL_BUT_OK')"
         :disabled="isSaving || hasExceededLength || cohortNameValidationState !== 'valid'"
       />
       <appButton
         :click="handleCancel"
-        :text="getText('MRI_PA_BUTTON_CANCEL')"
-        :tooltip="getText('MRI_PA_BUTTON_CANCEL')"
+        :text="getText('MRI_PA_COLL_BUT_CANCEL')"
+        :tooltip="getText('MRI_PA_COLL_BUT_CANCEL')"
+        :disabled="isSaving"
       />
     </template>
   </MessageBox>
 </template>
 
 <script lang="ts">
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions, mapMutations } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import appMessageStrip from '@/lib/ui/app-message-strip.vue'
+import * as types from '../../store/mutation-types'
+import { getPortalAPI } from '../../utils/PortalUtils'
 
 export default {
   name: 'SaveCohortModal',
@@ -121,9 +160,9 @@ export default {
       type: Boolean,
       required: true,
     },
-    existingBookmarks: {
-      type: Array,
-      default: () => [],
+    wizardConfig: {
+      type: Object,
+      default: null,
     },
   },
   data() {
@@ -133,6 +172,13 @@ export default {
       cohortNameValidationState: 'valid' as 'valid' | 'empty' | 'invalid' | 'duplicate',
       maxLength: 255,
       isSaving: false,
+      processingStep: null as 'saving' | 'materializing' | null,
+      steps: {
+        save: { status: 'pending', message: '' },
+        materialize: { status: 'pending', message: '' },
+      },
+      savedBookmarkId: null,
+      savedCohortId: null,
       messageStrip: {
         show: false,
         message: '',
@@ -141,7 +187,16 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['getText']),
+    ...mapGetters([
+      'getText',
+      'getBookmarksData',
+      'getActiveBookmark',
+      'getSelectedDataset',
+      'getPLRequest',
+      'getBookmarkByNameAndUsername',
+      'getBookmarks',
+      'getMaterializedCohorts',
+    ]),
     hasExceededLength() {
       return this.cohortName.length > this.maxLength
     },
@@ -153,11 +208,18 @@ export default {
         this.cohortName = this.generateDefaultName()
         this.cohortDescription = ''
         this.cohortNameValidationState = 'valid'
+        this.processingStep = null
+        this.steps.save.status = 'pending'
+        this.steps.materialize.status = 'pending'
+        this.savedBookmarkId = null
+        this.savedCohortId = null
         this.resetMessageStrip()
       }
     },
   },
   methods: {
+    ...mapActions(['fireBookmarkQuery', 'onAddCohortOkButtonPress']),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK]),
     generateDefaultName(): string {
       const now = new Date()
       const timestamp = now.toLocaleString('en-US', {
@@ -169,6 +231,19 @@ export default {
         second: '2-digit',
         hour12: false,
       })
+
+      // If wizardConfig exists, use dashboardType for name
+      if (this.wizardConfig && this.wizardConfig.dashboardType) {
+        const dashboardType = this.wizardConfig.dashboardType
+        // Convert 'calculate-incidence' to 'Calculate Incidence'
+        const formattedType = dashboardType
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+
+        return `${formattedType} ${timestamp}`
+      }
+
       return `Untitled Cohort ${timestamp}`
     },
     validateCohortName() {
@@ -186,9 +261,13 @@ export default {
         return false
       }
 
-      // Check for duplicates (case-insensitive)
-      const isDuplicate = this.existingBookmarks.some(
-        bookmark => bookmark.bookmarkname && bookmark.bookmarkname.toLowerCase() === trimmedName.toLowerCase()
+      // Check for duplicates (case-insensitive) using getBookmarks from Vuex
+      const username = getPortalAPI().username
+      const isDuplicate = this.getBookmarks.some(
+        bookmark =>
+          bookmark.user_id === username &&
+          bookmark.bookmarkname &&
+          bookmark.bookmarkname.toLowerCase() === trimmedName.toLowerCase()
       )
 
       if (isDuplicate) {
@@ -197,7 +276,6 @@ export default {
       }
 
       // Check for invalid characters or patterns
-      // You can add more validation rules here if needed
       const isValid = trimmedName.length > 0 && trimmedName.length <= this.maxLength
 
       if (!isValid) {
@@ -208,17 +286,186 @@ export default {
       this.cohortNameValidationState = 'valid'
       return true
     },
-    handleSave() {
+
+    async handleSave() {
       // Validate before saving
       if (!this.validateCohortName() || this.hasExceededLength) {
         return
       }
 
-      // Emit save event with cohort data
-      this.$emit('save', {
+      this.isSaving = true
+      this.resetMessageStrip()
+
+      try {
+        // Step 1: Save bookmark
+        console.log('[SaveCohortModal] Step 1: Saving bookmark')
+        this.processingStep = 'saving'
+        this.steps.save.status = 'loading'
+
+        const savedBookmark = await this.saveBookmark()
+
+        this.steps.save.status = 'success'
+        console.log('[SaveCohortModal] ✓ Bookmark saved')
+
+        // Step 2: Materialize cohort
+        console.log('[SaveCohortModal] Step 2: Materializing cohort')
+        this.processingStep = 'materializing'
+        this.steps.materialize.status = 'loading'
+
+        await this.materializeCohort(savedBookmark)
+
+        this.steps.materialize.status = 'success'
+        console.log('[SaveCohortModal] ✓ Cohort materialized')
+
+        // Step 3: Show success message
+        this.messageStrip = {
+          show: true,
+          message: this.getText('MRI_PA_COHORT_SAVED'),
+          messageType: 'success',
+        }
+
+        // Step 4: Emit success event with cohort details
+        this.$emit('success', {
+          cohortId: this.savedCohortId,
+          bookmarkId: this.savedBookmarkId,
+        })
+
+        // Step 5: Close modal after delay
+        setTimeout(() => {
+          this.handleCancel()
+        }, 1500)
+      } catch (error) {
+        console.error('[SaveCohortModal] Error:', error)
+        const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
+        this.showError(errorMessage)
+
+        // Reset steps on error
+        this.steps.save.status = 'pending'
+        this.steps.materialize.status = 'pending'
+      } finally {
+        this.isSaving = false
+        this.processingStep = null
+      }
+    },
+    
+    /**
+     * Helper method to refresh bookmarks and find the saved/materialized bookmark
+     * Sets the bookmark as active and returns it
+     */
+    async refreshAndFindBookmark() {
+      // Refresh bookmarks to get latest data
+      await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+      
+      // Find bookmark by name and username
+      const username = getPortalAPI().username
+      const bookmark = this.getBookmarkByNameAndUsername(this.cohortName.trim(), username)
+      
+      if (!bookmark) {
+        throw new Error('Bookmark not found after refresh')
+      }
+      
+      // Set as active bookmark
+      this[types.SET_ACTIVE_BOOKMARK](bookmark)
+      
+      return bookmark
+    },
+
+    async saveBookmark() {
+      const trimmedName = this.cohortName.trim()
+      const username = getPortalAPI().username
+
+      // Get bookmark data from Vuex
+      const bookmarkData = this.getBookmarksData
+      const selectedDataset = this.getSelectedDataset
+
+      if (!selectedDataset || !selectedDataset.id) {
+        throw new Error('No dataset selected')
+      }
+
+      // Prepare params (always insert for new cohorts)
+      const params = {
+        cmd: 'insert',
+        bookmarkname: trimmedName,
+        bookmark: JSON.stringify(bookmarkData),
+        shareBookmark: false,
+        paConfigId: selectedDataset?.paConfigId,
+        cdmConfigId: selectedDataset?.cdmConfigId,
+        cdmConfigVersion: selectedDataset?.cdmConfigVersion,
+        datasetId: selectedDataset?.id,
+      }
+
+      // API call to save bookmark
+      await this.fireBookmarkQuery({ params, method: 'post' })
+
+      // Refresh and find saved bookmark
+      const savedBookmark = await this.refreshAndFindBookmark()
+      
+      // Access bookmark ID directly
+      this.savedBookmarkId = savedBookmark.bmkId
+      
+      console.log('[SaveCohort] Saved bookmark ID:', this.savedBookmarkId)
+
+      return savedBookmark.bmkId
+    },
+
+    async materializeCohort() {
+      console.log('[SaveCohort] Materializing with bookmark ID:', this.savedBookmarkId)
+      
+      const selectedDataset = this.getSelectedDataset
+
+      if (!this.savedBookmarkId) {
+        throw new Error('No saved bookmark provided for materialization')
+      }
+
+      // Get mriquery using getPLRequest with primitive bookmark ID
+      const plRequest = this.getPLRequest({ bmkId: this.savedBookmarkId })
+
+      // Prepare materialize params
+      const params = {
+        datasetId: selectedDataset.id,
+        mriquery: JSON.stringify(plRequest),
         name: this.cohortName.trim(),
         description: this.cohortDescription.trim(),
-      })
+        syntax: JSON.stringify({
+          datasetId: selectedDataset.id,
+          bookmarkId: this.savedBookmarkId,
+        }),
+      }
+
+      const url = '/analytics-svc/api/services/cohort'
+
+      // API call to materialize cohort
+      await this.onAddCohortOkButtonPress({ params, url })
+
+      // Refresh and find materialized bookmark (now has cohortDefinitionId)
+      const materializedBookmark = await this.refreshAndFindBookmark()
+
+      if (!materializedBookmark.cohortDefinitionId) {
+        throw new Error('Bookmark does not have cohortDefinitionId after materialization')
+      }
+      
+      // Find the actual materialized cohort using BOTH constraints (same pattern as bookmark.ts)
+      const materializedCohorts = this.getMaterializedCohorts
+      const materializedCohort = materializedCohorts.find(
+        cohort => 
+          materializedBookmark.bookmarkname === cohort?.cohortDefinitionName && 
+          cohort.id === materializedBookmark.cohortDefinitionId
+      )
+      
+      if (!materializedCohort) {
+        console.error('[SaveCohort] Bookmark name:', materializedBookmark.bookmarkname)
+        console.error('[SaveCohort] Bookmark cohortDefinitionId:', materializedBookmark.cohortDefinitionId)
+        console.error('[SaveCohort] Available materialized cohorts:', materializedCohorts)
+        throw new Error('Materialized cohort not found in materializedCohorts array')
+      }
+      
+      // Access cohort ID directly (no toRaw needed)
+      this.savedCohortId = materializedCohort.id
+      
+      console.log('[SaveCohort] Bookmark name:', materializedBookmark.bookmarkname)
+      console.log('[SaveCohort] Cohort definition name:', materializedCohort.cohortDefinitionName)
+      console.log('[SaveCohort] Materialized cohort ID:', this.savedCohortId)
+      console.log('[SaveCohort] Patient count:', materializedCohort.patientCount)
     },
     handleCancel() {
       this.$emit('cancel')
@@ -262,5 +509,126 @@ export default {
 
 .flex-spacer {
   flex-grow: 1;
+}
+
+/* Progress Container */
+.progress-container {
+  padding: 1rem 0;
+}
+
+/* Progress Steps - Modern Stepper Design */
+.progress-steps {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 2rem 1rem;
+  position: relative;
+}
+
+.progress-steps::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 25%;
+  right: 25%;
+  height: 2px;
+  background: #dee2e6;
+  transform: translateY(-50%);
+  z-index: 0;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.step-indicator {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.progress-step.active .step-indicator {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+}
+
+.progress-step.complete .step-indicator {
+  background: #28a745;
+  border-color: #28a745;
+  color: white;
+}
+
+.step-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6c757d;
+  text-align: center;
+  max-width: 120px;
+}
+
+.progress-step.active .step-label {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.progress-step.complete .step-label {
+  color: #28a745;
+}
+
+.spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  font-size: 1.5rem;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.check {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.number {
+  font-size: 1.25rem;
+}
+
+/* Invalid feedback styling */
+.invalid-feedback {
+  display: none;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #dc3545;
+}
+
+.form-control.is-invalid {
+  border-color: #dc3545;
+}
+
+.form-control.is-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 </style>

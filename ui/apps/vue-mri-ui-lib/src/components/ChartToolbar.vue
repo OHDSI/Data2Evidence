@@ -19,7 +19,7 @@
       </button>
     </div>
     <div class="actionButtonGroup">
-      <div class="dashboardButton">
+      <div class="dashboardButton" v-if="getWizardConfig">
         <Button
           :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')"
           :onClick="openDashboardModal"
@@ -98,8 +98,8 @@
   <Teleport to="body">
     <SaveCohortModal
       :is-open="showSaveCohortModal"
-      :existing-bookmarks="getBookmarks"
-      @save="handleSaveCohort"
+      :wizard-config="getWizardConfig"
+      @success="handleSaveCohortSuccess"
       @cancel="handleCancelSaveCohort"
     />
   </Teleport>
@@ -131,12 +131,7 @@ export default {
       toggleFilterCardSummary: false,
       patientCountPopoverPosition: {},
       showDashboardModal: false,
-      // Save & Materialize flow state
       showSaveCohortModal: false,
-      isSavingBookmark: false,
-      isMaterializingCohort: false,
-      processingStep: null,
-      saveError: null,
     }
   },
   watch: {
@@ -203,8 +198,8 @@ export default {
       return false
     },
     isDashboardButtonEnabled() {
-      // Button always enabled - we'll handle save/materialize flow in handleOpenDashboard
-      return !this.isSavingBookmark && !this.isMaterializingCohort
+      // Button always enabled - we'll handle save/materialize flow in modal
+      return true
     },
     isBookmarkSaved() {
       // Check if current bookmark is saved (not new)
@@ -368,182 +363,37 @@ export default {
       this.$emit('drilldown')
     },
     async handleOpenDashboard() {
+      console.log('[Dashboard Flow] Opening dashboard...')
+
+      // Check if bookmark is saved
+      if (!this.isBookmarkSaved) {
+        console.log('[Dashboard Flow] Bookmark not saved, showing save modal')
+        this.showSaveCohortModal = true
+        return
+      }
+
+      // Check if cohort needs materialization
+      if (this.needsMaterialization) {
+        console.log('[Dashboard Flow] Cohort needs materialization, showing save modal')
+        this.showSaveCohortModal = true
+        return
+      }
+
+      // Already saved and materialized, open dashboard directly
+      console.log('[Dashboard Flow] Opening dashboard modal')
       this.showDashboardModal = true
-      // try {
-      //   // Step 1: Check if bookmark is saved
-      //   if (!this.isBookmarkSaved) {
-      //     console.log('[Dashboard Flow] Step 1: Bookmark not saved, showing save modal')
-      //     this.showSaveCohortModal = true
-      //     return // Wait for user to save via modal
-      //   }
-
-      //   // Step 2: Check if cohort needs materialization
-      //   if (this.needsMaterialization) {
-      //     console.log('[Dashboard Flow] Step 2: Cohort needs materialization')
-      //     await this.handleMaterializeCohort()
-      //   }
-
-      //   // Step 3: Open dashboard modal
-      //   console.log('[Dashboard Flow] Step 3: Opening dashboard modal')
-      //   this.showDashboardModal = true
-      // } catch (error) {
-      //   console.error('[Dashboard Flow] Error:', error)
-      //   this.setToastMessage({
-      //     text: error.message || this.getText('MRI_PA_ERROR_GENERIC'),
-      //     type: 'error',
-      //   })
-      // }
     },
     
-    async handleSaveCohort({ name, description }) {
-      this.isSavingBookmark = true
-      this.processingStep = 'saving'
-      this.saveError = null
-
-      try {
-        console.log('[Dashboard Flow] Saving bookmark:', name)
-        
-        // Show progress toast
-        this.setToastMessage({
-          text: this.getText('MRI_PA_SAVING_COHORT'),
-          type: 'information',
-        })
-
-        // Get required params for save
-        const activeBookmark = this.getActiveBookmark
-        const bookmarkData = this.getBookmarksData
-        const selectedDataset = this.getSelectedDataset
-        
-        // Prepare save params
-        const params = {
-          cmd: 'insert',
-          bookmarkname: name,
-          bookmark: JSON.stringify(bookmarkData),
-          shareBookmark: false,
-          paConfigId: activeBookmark?.paConfigId || selectedDataset?.paConfigId,
-          cdmConfigId: selectedDataset?.cdmConfigId,
-          cdmConfigVersion: selectedDataset?.cdmConfigVersion,
-          datasetId: selectedDataset?.id,
-        }
-
-        // Call save action
-        await this.fireBookmarkQuery({ params })
-        
-        console.log('[Dashboard Flow] Bookmark saved successfully')
-        
-        // Close save modal
-        this.showSaveCohortModal = false
-        
-        // Show success toast
-        this.setToastMessage({
-          text: this.getText('MRI_PA_COHORT_SAVED'),
-          type: 'success',
-        })
-
-        // Step 2: Refresh bookmark list to get new bookmarkId
-        console.log('[Dashboard Flow] Refreshing bookmark list')
-        await this.fireBookmarkQuery({ params: { cmd: 'loadAll' } })
-        
-        // Step 3: Continue with materialization
-        await this.handleMaterializeCohort()
-        
-        // Step 4: Open dashboard
-        this.showDashboardModal = true
-
-      } catch (error) {
-        console.error('[Dashboard Flow] Save error:', error)
-        this.saveError = error.message || this.getText('MRI_PA_ERROR_SAVE_BOOKMARK')
-        this.setToastMessage({
-          text: this.saveError,
-          type: 'error',
-        })
-      } finally {
-        this.isSavingBookmark = false
-        this.processingStep = null
-      }
-    },
-    
-    async handleMaterializeCohort() {
-      this.isMaterializingCohort = true
-      this.processingStep = 'materializing'
-
-      try {
-        console.log('[Dashboard Flow] Materializing cohort')
-        
-        // Show progress toast
-        this.setToastMessage({
-          text: this.getText('MRI_PA_MATERIALIZING_COHORT'),
-          type: 'information',
-        })
-
-        const activeBookmark = this.getActiveBookmark
-        const selectedDataset = this.getSelectedDataset
-        
-        if (!activeBookmark || !activeBookmark.id) {
-          throw new Error('No active bookmark found')
-        }
-
-        // Get mriquery using getPLRequest
-        const plRequest = this.getPLRequest({ bmkId: activeBookmark.id })
-        
-        // Prepare materialize params
-        const params = {
-          datasetId: selectedDataset.id,
-          mriquery: JSON.stringify(plRequest),
-          name: activeBookmark.bookmarkname,
-          description: '', // Can be enhanced later
-          syntax: JSON.stringify({ 
-            datasetId: selectedDataset.id, 
-            bookmarkId: activeBookmark.id 
-          }),
-        }
-
-        const url = `/analytics-svc/api/services/cohort`
-
-        // Call materialize action
-        await this.onAddCohortOkButtonPress({ params, url })
-        
-        console.log('[Dashboard Flow] Cohort materialized successfully')
-        
-        // Show success toast
-        this.setToastMessage({
-          text: this.getText('MRI_PA_COHORT_MATERIALIZED'),
-          type: 'success',
-        })
-
-        // Refresh to get materialized cohortId
-        console.log('[Dashboard Flow] Refreshing cohort list')
-        await this.fireBookmarkQuery({ params: { cmd: 'loadAll' } })
-
-      } catch (error) {
-        console.error('[Dashboard Flow] Materialize error:', error)
-        
-        // Handle specific error codes from onAddCohortOkButtonPress
-        let errorMessage = this.getText('MRI_PA_ERROR_MATERIALIZE_COHORT')
-        if (error.code === 'EXISTING_COLLECTION') {
-          errorMessage = error.message
-        } else if (error.code === 'ADD_PATIENT_FAILED') {
-          errorMessage = error.message
-        } else if (error.message) {
-          errorMessage = error.message
-        }
-        
-        this.setToastMessage({
-          text: errorMessage,
-          type: 'error',
-        })
-        
-        throw error // Re-throw to stop dashboard from opening
-      } finally {
-        this.isMaterializingCohort = false
-        this.processingStep = null
-      }
+    handleSaveCohortSuccess({ cohortId, bookmarkId }) {
+      console.log('[Dashboard Flow] Cohort saved and materialized:', { cohortId, bookmarkId })
+      // Modal closes itself after showing success message
+      // Just open the dashboard
+      this.showDashboardModal = true
     },
     
     handleCancelSaveCohort() {
       console.log('[Dashboard Flow] User cancelled save')
       this.showSaveCohortModal = false
-      this.saveError = null
     },
     
     openDashboardModal() {
