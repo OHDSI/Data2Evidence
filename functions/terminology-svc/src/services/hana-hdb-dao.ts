@@ -27,7 +27,7 @@ export class HanaHDBDao {
     this.vocabSchemaName = vocabSchemaName;
     this.databaseCode = databaseCode;
     if (!jwt) {
-      throw new Error("No token passed for CachedbHanaDAO!");
+      throw new Error("No token passed for HanaHDBDao!");
     }
   }
 
@@ -140,7 +140,7 @@ export class HanaHDBDao {
         ${invalidReasonWhereClause}
         `;
       // TODO: Move searchTexts as a sql parameter instead of being in the sql statement itself.
-      // searchTexts has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchTexts has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/alp-os/internal/issues/1411
       const result = (await this.asyncExec(client, sql)) as IHanaConcept[];
       if (result) {
@@ -439,7 +439,7 @@ export class HanaHDBDao {
     const client = await this.getHanaHDBConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/alp-os/internal/issues/1411
       const sql = `
         select concept_id_1, concept_id_2, relationship_id from ${
@@ -466,7 +466,7 @@ export class HanaHDBDao {
   ): Promise<IConceptAncestor[]> {
     const client = await this.getHanaHDBConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-    // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+    // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
     // https://github.com/alp-os/internal/issues/1411
     try {
       const sql = `
@@ -496,7 +496,7 @@ export class HanaHDBDao {
     const client = await this.getHanaHDBConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/alp-os/internal/issues/1411
       const sql = `
         select concept_id_1, concept_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason from ${
@@ -597,7 +597,7 @@ export class HanaHDBDao {
           return [];
         } else {
           // TODO: Move conceptIds as a sql parameter instead of being in the sql statement itself.
-          // conceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+          // conceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
           // https://github.com/alp-os/internal/issues/1411
           const sql = `
                     SELECT

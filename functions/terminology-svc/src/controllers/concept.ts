@@ -4,7 +4,6 @@ import { CachedbService } from "../services/cachedb.ts";
 import * as schemas from "./validators/conceptSchemas.ts";
 import {
   ConceptHierarchyEdge,
-  ConceptHierarchyNodeLevel,
   ConceptHierarchyNode,
   Filters,
 } from "../types.ts";
@@ -37,7 +36,6 @@ export const getConcepts = async (
     const concepts = await cachedbService.getConcepts(
       pageNumber,
       Number(rowsPerPage),
-      datasetId,
       searchText,
       filter
     );
@@ -65,7 +63,6 @@ export const getConceptsCount = async (
     );
 
     const conceptsCount = await cachedbService.getConceptsCount(
-      datasetId,
       searchText,
       filter
     );
@@ -93,7 +90,6 @@ export const searchConceptByName = async (
     );
     const concepts = await cachedbService.getExactConcept(
       conceptName,
-      datasetId,
       "concept_name"
     );
     res.send(concepts);
@@ -120,7 +116,6 @@ export const searchConceptById = async (
     );
     const concepts = await cachedbService.getExactConcept(
       conceptId,
-      datasetId,
       "concept_id"
     );
     res.send(concepts);
@@ -147,7 +142,6 @@ export const searchConceptByCode = async (
     );
     const concepts = await cachedbService.getExactConcept(
       conceptCode,
-      datasetId,
       "concept_code"
     );
     res.send(concepts);
@@ -172,10 +166,7 @@ export const getRecommendedConcepts = async (
       req,
       datasetId
     );
-    const concepts = await cachedbService.getRecommendedConcepts(
-      conceptIds,
-      datasetId
-    );
+    const concepts = await cachedbService.getRecommendedConcepts(conceptIds);
     res.send(concepts);
   } catch (e) {
     console.error(JSON.stringify(e));
@@ -199,7 +190,6 @@ export const getConceptFilterOptions = async (
       datasetId
     );
     const filterOptions = await cachedbService.getConceptFilterOptionsFaceted(
-      datasetId,
       searchText,
       filter
     );
@@ -225,8 +215,7 @@ export const getTerminologyDetailsWithRelationships = async (
       datasetId
     );
     const details = await cachedbService.getTerminologyDetailsWithRelationships(
-      conceptId,
-      datasetId
+      conceptId
     );
     res.send(details);
   } catch (e) {
@@ -250,9 +239,9 @@ export const getConceptHierarchy = async (
 
     const promises = [
       // Get first level descendants of concept
-      cachedbService.getHierarchyDescendants(conceptId, datasetId),
+      cachedbService.getHierarchyDescendants(conceptId),
       // Recursively get ancestors of concept depending on depth
-      cachedbService.getHierarchyAncestors(conceptId, datasetId, depth),
+      cachedbService.getHierarchyAncestors(conceptId, depth),
     ];
     const promiseResults = await Promise.all(promises);
 
@@ -316,7 +305,6 @@ export const getStandardConcepts = async (
           if (domainId) {
             const domainIdFacets = (
               await cachedbService.getConceptFilterOptionsFaceted(
-                datasetId,
                 dataItem.searchText,
                 filters
               )
@@ -334,7 +322,6 @@ export const getStandardConcepts = async (
           const concepts = await cachedbService.getConcepts(
             0,
             1,
-            datasetId,
             searchText,
             filters
           );

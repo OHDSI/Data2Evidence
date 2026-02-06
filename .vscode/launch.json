@@ -52,21 +52,6 @@
       ]
     },
     {
-      "name": "alp-cachedb",
-      "type": "debugpy",
-      "request": "attach",
-      "connect": {
-        "host": "localhost",
-        "port": 9235
-      },
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}/services/cachedb/src",
-          "remoteRoot": "./src"
-        }
-      ]
-    },
-    {
       "name": "alp-fhir-client",
       "type": "node",
       "request": "attach",
