@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddLanguageToDatasetCode1738707600000 implements MigrationInterface {
-  name = "AddLanguageToDatasetCode1738707600000";
+export class AddLanguageToDatasetCode1770345329000 implements MigrationInterface {
+  name = "AddLanguageToDatasetCode1770345329000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
