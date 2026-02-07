@@ -14,33 +14,17 @@ const portalRoutes = [
   "/portal/public/*",
 ];
 
-function _addStatic(app: Hono, url: string, path: string, spaFallbackFile?: string) {
+function _addStatic(app: Hono, url: string, path: string) {
   logger.log(url + "   " + path);
   app.use(
     url + "/*",
-    async (c: Context, next: () => Promise<void>) => {
-      // First try serveStatic for the requested file
-      const middleware = serveStatic({
-        root: path,
-        rewriteRequestPath: (reqPath: string) => {
-          if (reqPath == "/portal/login-callback") return "";
-          else return reqPath.replace(new RegExp(`^${url}`), "");
-        },
-      });
-      await middleware(c, async () => {
-        // Static file not found - serve SPA fallback if configured
-        if (spaFallbackFile) {
-          try {
-            const content = await Deno.readFile(spaFallbackFile);
-            c.header('Content-Type', 'text/html; charset=utf-8');
-            return c.body(content);
-          } catch (e) {
-            logger.log(`SPA fallback ${spaFallbackFile} not found: ${e}`);
-          }
-        }
-        await next();
-      });
-    }
+    serveStatic({
+      root: path,
+      rewriteRequestPath: (reqPath: string) => {
+        if (reqPath == "/portal/login-callback") return "";
+        else return reqPath.replace(new RegExp(`^${url}`), "");
+      },
+    })
   );
 }
 
@@ -49,9 +33,7 @@ export function addPlugin(app: Hono, value: any, dir: string) {
 
   if (value.routes)
     value.routes.forEach((r: any) => {
-      // For the portal route, enable SPA fallback to index.html
-      const spaFallback = r.source === "/portal" ? portalIndexPath : undefined;
-      _addStatic(app, `${r.source}`, `${dir}${r.target}/`, spaFallback);
+      _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
     });
 
   // Redirect root to portal
