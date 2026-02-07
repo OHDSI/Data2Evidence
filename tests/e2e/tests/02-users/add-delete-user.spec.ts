@@ -1,7 +1,7 @@
 import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'add-delete-user'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled - 404 on page reload with WebAPI architecture`)
 
 test(TEST_NAME, async ({ page }) => {
