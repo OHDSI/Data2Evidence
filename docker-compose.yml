@@ -100,7 +100,7 @@ services:
     ports:
       - "8090:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/WebAPI/info || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:33001/_internal/health || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 30
