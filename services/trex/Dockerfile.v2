@@ -4,7 +4,7 @@
 # Based on WebAPI 3.0-dev with all trex dependencies installed
 #
 
-FROM ghcr.io/ohdsi/webapi:3.0-dev AS base
+FROM ghcr.io/ohdsi/webapi@sha256:f46522d23716fb20f2f94be47f639bfa120e438f229d41a482abe7a00740743e AS base
 
 USER root
 
