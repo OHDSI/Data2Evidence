@@ -4,8 +4,13 @@ import { Hono, Context } from "npm:hono";
 
 const portalRoutes = [
   "/portal/login",
+  "/portal/login-callback",
+  "/portal/no-access",
+  "/portal/researcher",
   "/portal/researcher/*",
+  "/portal/systemadmin",
   "/portal/systemadmin/*",
+  "/portal/public",
   "/portal/public/*",
 ];
 
