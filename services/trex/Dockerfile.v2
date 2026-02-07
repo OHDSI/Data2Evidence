@@ -92,6 +92,7 @@ ENV MAIN_PATH=/usr/src/main
 # Also symlink data directory so trex can find duckdb cache files at ./data/cache/
 RUN ln -s /usr/src/node_modules /var/lib/ohdsi/webapi/node_modules && \
     ln -s /usr/src/deno.json /var/lib/ohdsi/webapi/deno.json && \
+    ln -s /usr/src/package.json /var/lib/ohdsi/webapi/package.json && \
     ln -s /usr/src/data /var/lib/ohdsi/webapi/data
 
 # Go back to WebAPI working directory
