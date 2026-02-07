@@ -61,3 +61,102 @@ jobs:
       - name: Run Load UI Plugin Tests
         working-directory: services/trex
         run: deno test --no-check --allow-env ./core/server/plugin/tests/ui.test.ts
+
+  test-integration-no-db:
+    name: Run Integration Tests (No DB)
+    runs-on: ubuntu-latest
+
+    env:
+      LOGTO__ISSUER: https://test-logto.example.com/oidc
+      LOGTO__CLIENT_ID: test-client-id
+      LOGTO__SCOPE: openid profile
+      LOGTO__AUDIENCES: https://test-api.example.com
+      GATEWAY__WO_PROTOCOL_FQDN: localhost
+      GATEWAY__IDP_SUBJECT_PROP: sub
+      SERVICE_ROUTES: '{"usermgmt":"http://mock-usermgmt"}'
+      APP_LOCALE: en
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Show current commit for verification
+        run: |
+          echo "Testing commit:"
+          git rev-parse HEAD
+          git log -1 --format="%an: %s"
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.5.6
+
+      - name: Run Integration Tests (base, portal, log)
+        working-directory: services/trex
+        run: >-
+          deno test --no-check --allow-env --allow-net --allow-read
+          ./core/server/__tests__/routes/base.integration.test.ts
+          ./core/server/__tests__/routes/portal.integration.test.ts
+          ./core/server/__tests__/routes/log.integration.test.ts
+
+  test-integration-with-db:
+    name: Run Integration Tests (With DB)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      LOGTO__ISSUER: https://test-logto.example.com/oidc
+      LOGTO__CLIENT_ID: test-client-id
+      LOGTO__SCOPE: openid profile
+      LOGTO__AUDIENCES: https://test-api.example.com
+      GATEWAY__WO_PROTOCOL_FQDN: localhost
+      GATEWAY__IDP_SUBJECT_PROP: sub
+      SERVICE_ROUTES: '{"usermgmt":"http://mock-usermgmt"}'
+      APP_LOCALE: en
+      PG__HOST: localhost
+      PG__PORT: "5432"
+      PG_MANAGE_USER: postgres
+      PG_MANAGE_PASSWORD: postgres
+      PG__DB_NAME: postgres
+      PG__SSL: "false"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Show current commit for verification
+        run: |
+          echo "Testing commit:"
+          git rev-parse HEAD
+          git log -1 --format="%an: %s"
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.5.6
+
+      - name: Run Integration Tests (dbm)
+        working-directory: services/trex
+        run: >-
+          deno test --no-check --allow-env --allow-net --allow-read --allow-write
+          ./core/server/__tests__/routes/dbm.integration.test.ts

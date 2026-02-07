@@ -11,6 +11,16 @@ export let global = {
         "trex"
       ]
     },{
+      "path": "^/trex/graphql(.*)",
+      "scopes": [
+        "trex"
+      ]
+    },{
+      "path": "^/trex/graphiql(.*)",
+      "scopes": [
+        "trex"
+      ]
+    },{
       "path": "^/trex/log",
       "scopes": [
         "trex.log.write"

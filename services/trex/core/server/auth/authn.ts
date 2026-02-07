@@ -45,13 +45,12 @@ export async function authn(c: Context, next: Function) {
       logger.error("authenticate: no token found");
       return new Response("Unauthorized", { status: 401 });
     }
-    let authError = false;
-    await jwtVerify(token, JWKS).catch((err: any) => {
+    try {
+      const { payload } = await jwtVerify(token, JWKS);
+      c.set("jwtPayload", payload);
+    } catch (err: any) {
       logger.error("authenticate: jwt verify failed");
-      authError = true;
       logger.error(err);
-    });
-    if (authError) {
       logger.error("authenticate: error");
       return new Response("Authentication Token not valid", { status: 401 });
     }

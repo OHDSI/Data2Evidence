@@ -39,8 +39,20 @@ export function addRoutes(app: Hono) {
     });
 
     app.get('/trex/db/', authn, authz, async (c: Context) => {
-        const r = await (await DatabaseManager.get()).getCredentials();
-        return c.json(r);
+        const user = c.get("user");
+        const gqlResponse = await app.fetch(new Request("http://internal/trex/graphql", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": c.req.header("Authorization") || "",
+                "X-User-Roles": JSON.stringify(user?.roles || []),
+            },
+            body: JSON.stringify({
+                query: `{ allDbs { nodes { id host port name dialect credentials vocabSchemas publications dbExtra authenticationMode } } }`,
+            }),
+        }));
+        const { data } = await gqlResponse.json();
+        return c.json(data.allDbs.nodes);
     });
 
     app.get('/trex/db/publications/', authn, authz, async (c: Context) => {

@@ -8,7 +8,10 @@
     "singleQuote": true,
     "proseWrap": "preserve"
   },
-  "imports": {},
+  "imports": {
+    "postgraphile": "npm:postgraphile@5.0.0-rc.6",
+    "postgraphile/": "npm:postgraphile@5.0.0-rc.6/"
+  },
   "compilerOptions": {
     "types": []
   }

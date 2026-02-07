@@ -302,7 +302,7 @@ export async function authz(c: Context, next: any) {
       });
     }
 
-    const token = jwt.decode(bearerToken.split(" ")[1]); //as IToken
+    const token = c.get("jwtPayload") || jwt.decode(bearerToken.split(" ")[1]); //as IToken
     //const { client_id, grant_type } = token
     const sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
     const idpUserId = token["oid"] || sub;
@@ -345,6 +345,17 @@ export async function authz(c: Context, next: any) {
       return next()
     }*/
 
+    const authorizeAndContinue = async () => {
+      c.set("user", {
+        userId: mriUserObj.userId,
+        email: mriUserObj.email,
+        name: mriUserObj.name,
+        roles: mriUserObj.mriRoles,
+        tenantIds: mriUserObj.tenantId,
+      });
+      return next();
+    };
+
     const { scopes } = match;
     // the allowed scopes for a url should be found in the user's assigned scopes
     const assignedScopes = mriUserObj.mriScopes.concat(mriUserObj.studyScopes);
@@ -373,13 +384,13 @@ export async function authz(c: Context, next: any) {
     // check endpoint scopes
     // if Researcher scopes exist, datasetId is required
     if (!requireDatasetId(scopes)) {
-      return next();
+      return authorizeAndContinue();
     }
 
     // when the endpoint is deemed for both Admin and Researcher and the user is Admin
     // datasetId is not mandatory
     if (scopes.some((i) => mriUserObj.mriScopes.includes(i))) {
-      return next();
+      return authorizeAndContinue();
     }
 
     const datasetIdKey = match["datasetId"] ?? "datasetId";
@@ -400,7 +411,7 @@ export async function authz(c: Context, next: any) {
       logger.info(
         `AUTHORIZED STUDY ACCESS: user ${mriUserObj.userId}, url ${originalUrl}`
       );
-      return next();
+      return authorizeAndContinue();
     } else {
       logger.error(`datasetId check: No Access to datasetId ${datasetId}`);
       throw new HTTPException(403, {
