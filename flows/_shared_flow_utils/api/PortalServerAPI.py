@@ -119,9 +119,9 @@ class PortalServerAPI(BaseAPI):
         if not files_to_upload:
             raise ValueError(f"No files found in folder: {folder_path}")
 
+        file_handles = []
         try:
             multipart_files = []
-            file_handles = []
 
             for relative_path, file_full_path in files_to_upload:
                 fh = open(file_full_path, "rb")
@@ -136,12 +136,12 @@ class PortalServerAPI(BaseAPI):
                 verify=self.get_verify_value(),
             )
 
-            for fh in file_handles:
-                fh.close()
-
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
             raise Exception(f"Request failed for folder {folder_path}: {e}")
         except Exception as e:
             raise Exception(f"Failed to upload folder {folder_path}: {e}")
+        finally:
+            for fh in file_handles:
+                fh.close()
