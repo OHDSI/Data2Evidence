@@ -24,10 +24,8 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { getPortalAPI } from '@/utils/PortalUtils'
-import type { Dashboard } from '@/api/DashboardService'
 
 const props = defineProps<{
-  dashboard: Dashboard
   datasetId: string
   cohortId: string
   wizardConfig?: Record<string, any> // Wizard configuration object
@@ -47,12 +45,12 @@ const portalAPI = getPortalAPI()
 
 // Build iframe URL with resourceId format
 // Format: /api/dataset/shiny-live/{datasetId}_{type}_{name}_{language}/
-// Note: datasetId kept in URL for routing, cohortId moved to postMessage context
 const iframeUrl = computed(() => {
-  if (!props.dashboard) return ''
+  if (!props.wizardConfig) return ''
 
   // Construct resourceId
-  const resourceId = `${props.datasetId}_${props.dashboard.type}_${props.dashboard.name}_${props.dashboard.language}`
+  // TODO: Add support for dashboard language selection (python/r) in the future
+  const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
 
   return `/gateway/api/dataset/shiny-live/${resourceId}`
 })
@@ -235,8 +233,8 @@ function handleIframeLoad() {
   position: relative;
   width: 100%;
   height: 100%;
-  background: white;
-  border-radius: 12px;
+  background: var(--color-white, #ffffff);
+  border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
@@ -258,15 +256,15 @@ function handleIframeLoad() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--color-white, #ffffff);
   z-index: 1;
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #3b82f6;
+  border: 4px solid var(--color-ui-light-border, #dddddd);
+  border-top-color: var(--color-primary, #1f425a);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -280,7 +278,7 @@ function handleIframeLoad() {
 .iframe-loading p {
   margin-top: 16px;
   font-size: 16px;
-  color: #6b7280;
+  color: var(--color-neutral, #595757);
 }
 
 .iframe-error {
@@ -296,7 +294,7 @@ function handleIframeLoad() {
 
 .iframe-error p {
   font-size: 16px;
-  color: #dc2626;
+  color: var(--color-feedback-error, #a3293d);
   margin: 0;
 }
 </style>
