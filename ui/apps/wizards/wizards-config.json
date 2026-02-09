@@ -9,35 +9,35 @@
           "id": "age",
           "type": "num",
           "label": "Age Range",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.Age"
         },
         {
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.raceName"
         },
         {
           "id": "height",
           "type": "num",
           "label": "Height",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -52,7 +52,7 @@
           "id": "weight",
           "type": "num",
           "label": "Weight",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -67,7 +67,7 @@
           "id": "bmi",
           "type": "num",
           "label": "BMI",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -82,7 +82,7 @@
           "id": "respRate",
           "type": "num",
           "label": "Resp Rate",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -97,7 +97,7 @@
           "id": "pulseRate",
           "type": "num",
           "label": "Pulse Rate",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -112,7 +112,7 @@
           "id": "systolicBp",
           "type": "num",
           "label": "Systolic Blood Pressure",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -127,7 +127,7 @@
           "id": "diastolicBp",
           "type": "num",
           "label": "Diastolic Blood Pressure",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -142,7 +142,7 @@
           "id": "year",
           "type": "yearRange",
           "label": "Years",
-          "required": false,
+          "required": true,
           "isWizardField": true
         },
         {
@@ -201,35 +201,35 @@
           "id": "age",
           "type": "num",
           "label": "Age Range",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.Age"
         },
         {
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.raceName"
         },
         {
           "id": "height",
           "type": "num",
           "label": "Height",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -244,7 +244,7 @@
           "id": "weight",
           "type": "num",
           "label": "Weight",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -259,7 +259,7 @@
           "id": "bmi",
           "type": "num",
           "label": "BMI",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -274,7 +274,7 @@
           "id": "respRate",
           "type": "num",
           "label": "Resp Rate",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -289,7 +289,7 @@
           "id": "pulseRate",
           "type": "num",
           "label": "Pulse Rate",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -304,7 +304,7 @@
           "id": "systolicBp",
           "type": "num",
           "label": "Systolic Blood Pressure",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -319,7 +319,7 @@
           "id": "diastolicBp",
           "type": "num",
           "label": "Diastolic Blood Pressure",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -334,7 +334,7 @@
           "id": "year",
           "type": "yearRange",
           "label": "Years",
-          "required": false,
+          "required": true,
           "isWizardField": true
         },
         {
@@ -393,35 +393,35 @@
           "id": "age",
           "type": "num",
           "label": "Age Range",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.Age"
         },
         {
           "id": "gender",
           "type": "text",
           "label": "Gender",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.Gender_concept_name"
         },
         {
           "id": "ethnicity",
           "type": "text",
           "label": "Ethnicity",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.ethnicityName"
         },
         {
           "id": "race",
           "type": "text",
           "label": "Race",
-          "required": false,
+          "required": true,
           "configPath": "patient.attributes.raceName"
         },
         {
           "id": "height",
           "type": "num",
           "label": "Height",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -436,7 +436,7 @@
           "id": "weight",
           "type": "num",
           "label": "Weight",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -451,7 +451,7 @@
           "id": "bmi",
           "type": "num",
           "label": "BMI",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -466,7 +466,7 @@
           "id": "respRate",
           "type": "num",
           "label": "Resp Rate",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -481,7 +481,7 @@
           "id": "pulseRate",
           "type": "num",
           "label": "Pulse Rate",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -496,7 +496,7 @@
           "id": "systolicBp",
           "type": "num",
           "label": "Systolic Blood Pressure",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -511,7 +511,7 @@
           "id": "diastolicBp",
           "type": "num",
           "label": "Diastolic Blood Pressure",
-          "required": false,
+          "required": true,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
           "fixedAttributes": [
@@ -526,7 +526,7 @@
           "id": "year",
           "type": "yearRange",
           "label": "Years",
-          "required": false,
+          "required": true,
           "isWizardField": true
         },
         {
