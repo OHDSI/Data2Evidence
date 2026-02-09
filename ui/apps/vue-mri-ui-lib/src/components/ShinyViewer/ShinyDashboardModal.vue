@@ -2,12 +2,13 @@
   <transition name="modal-fade">
     <div v-if="isOpen" class="modal-overlay" @click.self="handleClose">
       <div class="modal-container">
-        <!-- Close Button -->
-        <button class="modal-close-btn" @click="handleClose" :title="'Close'">
-          <span class="icon" style="font-family: app-icons">&#x2715;</span>
-        </button>
+        <div class="modal-title">
+          <div class="modal-title-text">Dashboard</div>
+          <button class="modal-close-btn" @click="handleClose" :title="'Close'">
+            <span class="icon" style="font-family: app-icons">&#x2715;</span>
+          </button>
+        </div>
 
-        <!-- iframe View (directly shown, no card selection) -->
         <div class="iframe-container">
           <ShinyDashboardIframe
             :dataset-id="datasetId"
@@ -28,6 +29,7 @@ const props = defineProps<{
   isOpen: boolean
   datasetId: string
   cohortId: string
+  title?: string
   wizardConfig?: Record<string, any>
   mriquery?: string
 }>()
@@ -61,30 +63,41 @@ function handleClose() {
   background: #f9fafb;
   width: 100%;
   height: 100%;
-  border-radius: 16px;
+  border-radius: 32px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+.modal-title {
+  display: flex;
+  align-items: center;
+  margin: 15px 25px;
+  gap: 16px;
+}
+
+.modal-title-text {
+  flex: 1;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--color-primary, #1e40af);
+}
+
 .modal-close-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 10;
+  position: relative;
   width: 40px;
   height: 40px;
   border: none;
-  background: white;
+  background: transparent;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  color: #6b7280;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: var(--color-primary);
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .modal-close-btn:hover {
