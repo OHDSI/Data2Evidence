@@ -2,48 +2,7 @@
   <MessageBox v-if="isOpen" dim="true" :busy="isSaving" messageType="custom" @close="handleCancel">
     <template v-slot:header>{{ getText('MRI_PA_TITLE_SAVE_BOOKMARK') }}</template>
     <template v-slot:body>
-      <!-- Progress Steps (shown during save/materialize) -->
-      <div v-if="isSaving" class="progress-container">
-        <div class="progress-steps">
-          <div
-            class="progress-step"
-            :class="{ active: steps.save.status === 'loading', complete: steps.save.status === 'success' }"
-          >
-            <div class="step-indicator">
-              <span v-if="steps.save.status === 'loading'" class="spinner">⟳</span>
-              <span v-else-if="steps.save.status === 'success'" class="check">✓</span>
-              <span v-else class="number">1</span>
-            </div>
-            <div class="step-label">{{ getText('MRI_PA_SAVING_COHORT') }}</div>
-          </div>
-
-          <div
-            class="progress-step"
-            :class="{
-              active: steps.materialize.status === 'loading',
-              complete: steps.materialize.status === 'success',
-            }"
-          >
-            <div class="step-indicator">
-              <span v-if="steps.materialize.status === 'loading'" class="spinner">⟳</span>
-              <span v-else-if="steps.materialize.status === 'success'" class="check">✓</span>
-              <span v-else class="number">2</span>
-            </div>
-            <div class="step-label">{{ getText('MRI_PA_MATERIALIZING_COHORT') }}</div>
-          </div>
-        </div>
-
-        <appMessageStrip
-          v-if="messageStrip.show"
-          :messageType="messageStrip.messageType"
-          :text="messageStrip.message"
-          @closeEv="resetMessageStrip"
-          style="margin-top: 1rem"
-        />
-      </div>
-
-      <!-- Form (hidden during processing) -->
-      <div v-if="!isSaving">
+      <div class="input-container">
         <appMessageStrip
           v-if="messageStrip.show"
           :messageType="messageStrip.messageType"
@@ -51,77 +10,67 @@
           @closeEv="resetMessageStrip"
         />
 
-        <!-- Cohort Name Input (only show for new cohorts) -->
         <div class="save-bookmark" v-if="isNewCohort">
           <div class="form-group">
-            <div class="name">
-              <div class="row">
-                <div class="col-sm-12 form-check col-form-label">
-                  <label>{{ getText('MRI_PA_COHORT_NAME_LABEL') || 'Cohort Name' }}</label>
-                </div>
+            <div class="row">
+              <div class="form-check col-form-label">
+                <label class="form-check-label">{{ getText('MRI_PA_COLL_COHORT_NAME') }}</label>
               </div>
-              <div class="row">
-                <div class="col">
-                  <input
-                    class="form-control"
-                    :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
-                    :placeholder="getText('MRI_PA_COLL_ENTER_NAME')"
-                    v-model="cohortName"
-                    tabindex="0"
-                    v-focus
-                    required
-                    :maxlength="maxLength + 1"
-                    @keydown.enter="handleSave"
-                  />
-                  <div
-                    class="invalid-feedback"
-                    v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']"
-                  >
-                    {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
-                  </div>
-                  <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-                    {{ getText('MRI_PA_COHORT_NAME_TOO_LONG') || 'Filter name must not exceed 255 characters' }}
-                  </div>
-                  <div
-                    class="invalid-feedback"
-                    v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']"
-                  >
-                    {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
-                  </div>
-                  <div
-                    class="invalid-feedback"
-                    v-bind:style="[cohortNameValidationState === 'duplicate' && 'display: block;']"
-                  >
-                    {{ getText('MRI_PA_COHORT_NAME_DUPLICATE') || 'A cohort with this name already exists' }}
-                  </div>
+              <div class="col-sm-8">
+                <input
+                  class="form-control"
+                  :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
+                  :placeholder="getText('MRI_PA_COLL_ENTER_NAME')"
+                  v-model="cohortName"
+                  tabindex="0"
+                  v-focus
+                  required
+                  :maxlength="maxLength + 1"
+                />
+                <div
+                  class="invalid-feedback"
+                  v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']"
+                >
+                  {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
+                </div>
+                <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
+                  {{ getText('MRI_PA_COHORT_NAME_TOO_LONG') || 'Filter name must not exceed 255 characters' }}
+                </div>
+                <div
+                  class="invalid-feedback"
+                  v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']"
+                >
+                  {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
+                </div>
+                <div
+                  class="invalid-feedback"
+                  v-bind:style="[cohortNameValidationState === 'duplicate' && 'display: block;']"
+                >
+                  {{ getText('MRI_PA_COHORT_NAME_DUPLICATE') || 'A cohort with this name already exists' }}
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
+
         <!-- Show existing cohort name for updates -->
         <div v-else class="save-bookmark">
           <div class="form-group">
             <div class="row">
-              <div class="col-sm-12">
-                <p style="margin-bottom: 1rem;">
-                  <strong>{{ getText('MRI_PA_COHORT_NAME_LABEL') || 'Cohort Name' }}:</strong> 
-                  {{ getActiveBookmark?.bookmarkname }}
-                </p>
-                <p class="text-muted" style="font-size: 0.875rem;">
-                  {{ getText('MRI_PA_UPDATING_EXISTING_COHORT') || 'Updating existing cohort with latest changes' }}
-                </p>
+              <div class="form-check col-form-label">
+                  <p class="cohort-label">
+                    <strong>{{ getText('MRI_PA_COLL_COHORT_NAME') }}</strong>
+                    {{ getActiveBookmark?.bookmarkname }}
+                  </p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Description Input (AddCohort style) -->
-        <div class="cohort-dialog">
+        <div class="save-bookmark">
           <div class="form-group">
             <div class="row">
-              <div class="col-sm-4 form-check col-form-label">
+              <div class="form-check col-form-label">
                 <label class="form-check-label">{{ getText('MRI_PA_COLL_COHORT_DESCRIPTION') }}</label>
               </div>
               <div class="col-sm-8">
@@ -199,7 +148,7 @@ export default {
       messageStrip: {
         show: false,
         message: '',
-        messageType: '', // 'error', 'success', 'warning', 'information'
+        messageType: '',
       },
     }
   },
@@ -216,11 +165,9 @@ export default {
       'getCurrentBookmarkHasChanges',
     ]),
     hasChanges() {
-      // Check if there are unsaved changes (new bookmark or existing bookmark with changes)
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isNewCohort() {
-      // Check if this is a brand new cohort (not saved yet)
       return this.getActiveBookmark?.isNew || false
     },
     hasExceededLength() {
@@ -230,7 +177,6 @@ export default {
   watch: {
     isOpen(newVal) {
       if (newVal) {
-        // Reset form when modal opens
         this.cohortName = this.generateDefaultName()
         this.cohortDescription = ''
         this.cohortNameValidationState = 'valid'
@@ -373,7 +319,7 @@ export default {
         this.processingStep = null
       }
     },
-    
+
     /**
      * Helper method to refresh bookmarks and find the saved/materialized bookmark
      * Sets the bookmark as active and returns it
@@ -381,24 +327,23 @@ export default {
     async refreshAndFindBookmark() {
       // Refresh bookmarks to get latest data
       await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
-      
+
       // Determine the bookmark name to search for
-      const activeBookmark = this.getActiveBookmark      
-      const bookmarkName = this.isNewCohort 
-        ? this.cohortName.trim() 
-        : activeBookmark?.bookmarkname
-    
+      const activeBookmark = this.getActiveBookmark
+
+      const bookmarkName = this.isNewCohort ? this.cohortName.trim() : activeBookmark?.bookmarkname
+
       // Find bookmark by name and username
       const username = getPortalAPI().username
       const bookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
-      
+
       if (!bookmark) {
         throw new Error('Bookmark not found after refresh')
       }
-      
+
       // Set as active bookmark
       this[types.SET_ACTIVE_BOOKMARK](bookmark)
-      
+
       return bookmark
     },
 
@@ -448,8 +393,7 @@ export default {
           cdmConfigVersion: selectedDataset?.cdmConfigVersion,
           datasetId: selectedDataset?.id,
         }
-        
-        console.log('[SaveCohort] Inserting new bookmark:', bookmarkName)
+
         await this.fireBookmarkQuery({ params, method: 'post' })
       } else {
         // Update existing bookmark
@@ -458,8 +402,7 @@ export default {
           bookmark: JSON.stringify(bookmarkData),
           shareBookmark: false,
         }
-        
-        console.log('[SaveCohort] Updating existing bookmark:', activeBookmark.bmkId)
+
         await this.fireBookmarkQuery({
           method: 'put',
           params,
@@ -469,18 +412,13 @@ export default {
 
       // Refresh and find saved bookmark
       const savedBookmark = await this.refreshAndFindBookmark()
-      
+
       // Access bookmark ID directly
       this.savedBookmarkId = savedBookmark.bmkId
-      
-      console.log('[SaveCohort] Saved bookmark ID:', this.savedBookmarkId)
-
       return savedBookmark.bmkId
     },
 
     async materializeCohort() {
-      console.log('[SaveCohort] Materializing with bookmark ID:', this.savedBookmarkId)
-      
       const selectedDataset = this.getSelectedDataset
 
       if (!this.savedBookmarkId) {
@@ -513,29 +451,24 @@ export default {
       if (!materializedBookmark.cohortDefinitionId) {
         throw new Error('Bookmark does not have cohortDefinitionId after materialization')
       }
-      
+
       // Find the actual materialized cohort using BOTH constraints (same pattern as bookmark.ts)
       const materializedCohorts = this.getMaterializedCohorts
       const materializedCohort = materializedCohorts.find(
-        cohort => 
-          materializedBookmark.bookmarkname === cohort?.cohortDefinitionName && 
+        cohort =>
+          materializedBookmark.bookmarkname === cohort?.cohortDefinitionName &&
           cohort.id === materializedBookmark.cohortDefinitionId
       )
-      
+
       if (!materializedCohort) {
         console.error('[SaveCohort] Bookmark name:', materializedBookmark.bookmarkname)
         console.error('[SaveCohort] Bookmark cohortDefinitionId:', materializedBookmark.cohortDefinitionId)
         console.error('[SaveCohort] Available materialized cohorts:', materializedCohorts)
         throw new Error('Materialized cohort not found in materializedCohorts array')
       }
-      
+
       // Access cohort ID directly (no toRaw needed)
       this.savedCohortId = materializedCohort.id
-      
-      console.log('[SaveCohort] Bookmark name:', materializedBookmark.bookmarkname)
-      console.log('[SaveCohort] Cohort definition name:', materializedCohort.cohortDefinitionName)
-      console.log('[SaveCohort] Materialized cohort ID:', this.savedCohortId)
-      console.log('[SaveCohort] Patient count:', materializedCohort.patientCount)
     },
     handleCancel() {
       this.$emit('cancel')
@@ -559,18 +492,34 @@ export default {
 </script>
 
 <style scoped>
-/* Styles from FiltersFooter save-bookmark class */
+:deep(.modal-body) {
+  min-width: 40rem;
+}
+
+.input-container {
+  display: flex;
+  flex-direction: column;
+}
+
 .save-bookmark .form-group {
   margin-bottom: 1rem;
 }
 
-.save-bookmark .name {
-  margin-bottom: 0.5rem;
+.form-group .row {
+  display: flex;
+  justify-content: space-between;
 }
 
-/* Styles from AddCohort cohort-dialog class */
-.cohort-dialog .form-group {
+.form-group .cohort-label {
   margin-bottom: 1rem;
+}
+
+.form-group .cohort-name {
+  margin-left: 1rem;
+}
+
+.save-bookmark .name {
+  margin-bottom: 0.5rem;
 }
 
 .form-control {
@@ -579,86 +528,6 @@ export default {
 
 .flex-spacer {
   flex-grow: 1;
-}
-
-/* Progress Container */
-.progress-container {
-  padding: 1rem 0;
-}
-
-/* Progress Steps - Modern Stepper Design */
-.progress-steps {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 2rem 1rem;
-  position: relative;
-}
-
-.progress-steps::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 25%;
-  right: 25%;
-  height: 2px;
-  background: #dee2e6;
-  transform: translateY(-50%);
-  z-index: 0;
-}
-
-.progress-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  position: relative;
-  z-index: 1;
-}
-
-.step-indicator {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #f8f9fa;
-  border: 2px solid #dee2e6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #6c757d;
-  transition: all 0.3s ease;
-}
-
-.progress-step.active .step-indicator {
-  background: #007bff;
-  border-color: #007bff;
-  color: white;
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
-}
-
-.progress-step.complete .step-indicator {
-  background: #28a745;
-  border-color: #28a745;
-  color: white;
-}
-
-.step-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6c757d;
-  text-align: center;
-  max-width: 120px;
-}
-
-.progress-step.active .step-label {
-  color: #007bff;
-  font-weight: 600;
-}
-
-.progress-step.complete .step-label {
-  color: #28a745;
 }
 
 .spinner {

@@ -80,8 +80,7 @@
     </div>
   </div>
 
-  <!-- ShinyLive Dashboard Modal - Teleport to body for proper overlay -->
-  <Teleport to="body">
+  <Teleport to="#app">
     <ShinyDashboardModal
       v-if="showDashboardModal"
       :is-open="showDashboardModal"
@@ -94,8 +93,7 @@
     />
   </Teleport>
 
-  <!-- Save Cohort Modal - Teleport to body for proper overlay -->
-  <Teleport to="body">
+  <Teleport to="#app">
     <SaveCohortModal
       :is-open="showSaveCohortModal"
       :wizard-config="getWizardConfig"
