@@ -345,6 +345,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 },
               };
               setFilterOptions(combinedFilterOptions);
+            })
+            .catch((e) => {
+              if (e?.message === "canceled" || e === "canceled") {
+                return;
+              }
+              console.error("Failed to fetch filter options", e);
             });
         }
       } else {
