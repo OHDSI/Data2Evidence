@@ -1,6 +1,7 @@
 import duckdb
 
 from prefect import task
+from prefect.variables import Variable
 from prefect.context import TaskRunContext
 from prefect.logging import get_run_logger
 from prefect.tasks import exponential_backoff
@@ -13,7 +14,8 @@ from .utils import get_tables_for_fts, get_document_identifier, execute_statemen
 @task(retries=3, 
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
       log_prints=True, 
-      task_run_name="create_fts_index_{copy_params.target_schema}")
+      task_run_name="create_fts_index_{copy_params.target_schema}",
+      timeout_seconds=int(Variable.get("cache_task_timeout")))
 def create_fts_index_task(
     use_trex_conn: bool,
     copy_params: CopyParameters,
