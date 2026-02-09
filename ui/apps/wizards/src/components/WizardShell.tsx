@@ -86,24 +86,6 @@ export function WizardShell() {
   return (
     <div className={styles.shell}>
       <main className={styles.content}>
-        <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
-          <ol className={styles.breadcrumbList}>
-            <li>
-              <button type="button" className={styles.breadcrumbLink} onClick={resetWizard}>
-                Home
-              </button>
-            </li>
-            <li>
-              <span className={styles.breadcrumbSeparator} aria-hidden="true">
-                {" "}
-                /{" "}
-              </span>
-              <span className={styles.breadcrumbCurrent} aria-current="page">
-                Cohort Wizards
-              </span>
-            </li>
-          </ol>
-        </nav>
         <ErrorBoundary onReset={resetWizard}>{renderStep()}</ErrorBoundary>
       </main>
     </div>
