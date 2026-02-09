@@ -55,11 +55,11 @@ patternsModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
       res <- DatabaseConnector::querySql(
         conn,
         paste0(
-          "SELECT DISTINCT DATABASE_ID
-              FROM ", resultsDatabaseSchema, ".tp_metadata"
+          "SELECT DISTINCT cdm_source_abbreviation
+              FROM ", resultsDatabaseSchema, ".tp_cdm_source_info"
         )
       )
-      return(res$DATABASE_ID)
+      return(res$cdm_source_abbreviation)
     })
     observeEvent(dataset_choices(), {
       updateSelectInput(
@@ -78,7 +78,7 @@ patternsModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
           paste0(
           "SELECT pathway, freq, index_year, age, sex
               FROM ", resultsDatabaseSchema, ".tp_treatment_pathways
-              WHERE database_id = '", input$dataset, "'"
+              WHERE database_id = (Select database_id from ", resultsDatabaseSchema, ".tp_cdm_source_info WHERE cdm_source_abbreviation = '", input$dataset, "')"
           )
       )
       colnames(tp_data) <- tolower(colnames(tp_data))
@@ -174,7 +174,7 @@ format_table1 <- function(tb) {
     percent_col <- names(tb)[grepl("%", names(tb))][1] # fallback: any column with %
   }
   if (is.na(percent_col) || is.null(percent_col) || percent_col == "") {
-    stop("Could not find percent column in Table 1 data.")
+    stop("Unexpected column name in Table 1 data.")
   }
 
   blank_row <- tibble(
