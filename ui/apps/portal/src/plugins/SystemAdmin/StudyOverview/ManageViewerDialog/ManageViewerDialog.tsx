@@ -137,12 +137,23 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     await execute(
       async () => {
         if (strategy.supportsMultipleCodes) {
+          // Determine language based on templateLanguage
+          let language: string | undefined;
+          if (templateLanguage === ViewerType.Python) {
+            language = "python";
+          } else if (templateLanguage === ViewerType.R) {
+            language = "r";
+          } else if (templateLanguage === ViewerType.SHINY_SERVER) {
+            language = "shiny_server"
+          }
+
           // Save code
           await api.systemPortal.upsertDashboardCode({
             datasetId: config.id,
             code,
             type: codeType,
             name,
+            language,
           });
 
           // Delete removed queries
@@ -174,7 +185,17 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
           markSaved();
         } else {
-          await strategy.saveCode({ id: config.id, code, name, type: codeType });
+          // Determine language based on templateLanguage
+          let language: string | undefined;
+          if (templateLanguage === ViewerType.Python) {
+            language = "python";
+          } else if (templateLanguage === ViewerType.R ) {
+            language = "r";
+          } else if (templateLanguage === ViewerType.SHINY_SERVER) {
+            language = "shiny_server"
+          }
+
+          await strategy.saveCode({ id: config.id, code, name, type: codeType, language });
         }
         setSelectedTemplate("default");
       },
