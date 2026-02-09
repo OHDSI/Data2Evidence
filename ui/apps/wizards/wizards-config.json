@@ -582,6 +582,15 @@
       "description": "Assessment of hypertension and cholesterol levels in post-operative patients.",
       "fields": [
         {
+          "id": "condition1",
+          "type": "text",
+          "label": "Disease/Condition",
+          "required": true,
+          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
+          "isWizardField": true,
+          "allowFreeText": true
+        },
+        {
           "id": "age",
           "type": "num",
           "label": "Age Range",
@@ -608,6 +617,13 @@
           "label": "Race",
           "required": false,
           "configPath": "patient.attributes.raceName"
+        },
+        {
+          "id": "year",
+          "type": "yearRange",
+          "label": "Years",
+          "required": false,
+          "isWizardField": true
         },
         {
           "id": "height",
@@ -713,22 +729,6 @@
               "value": "Diastolic blood pressure"
             }
           ]
-        },
-        {
-          "id": "year",
-          "type": "yearRange",
-          "label": "Years",
-          "required": false,
-          "isWizardField": true
-        },
-        {
-          "id": "condition1",
-          "type": "text",
-          "label": "Disease/Condition",
-          "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_name",
-          "isWizardField": true,
-          "allowFreeText": true
         }
       ]
     }
