@@ -241,10 +241,14 @@ export class DatasetRouter {
           } catch (createError: any) {
             const status = createError.status || createError.response?.status;
             const responseData = createError.response?.data;
-            this.logger.error(`Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+            this.logger.error(
+              `Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
+            );
             // Return 400 for client errors, 500 for server errors
             const httpStatus = status >= 400 && status < 500 ? status : 500;
-            return res.status(httpStatus).json(responseData || { error: createError.message });
+            return res
+              .status(httpStatus)
+              .json(responseData || { error: createError.message });
           }
 
           this.logger.info("Creating cache dataset in Portal");
@@ -473,11 +477,14 @@ export class DatasetRouter {
 
     // resourceId format: datasetId_type_name_language
     this.router.get(
-      "/shiny-live/:resourceId",
+      ["/shiny-live/:resourceId", "/shiny-live/:resourceId/{*subPath}"],
       async (req: Request, res: Response) => {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
-        const subPath = req.path.slice(1) || "index.html";
+        const wildcardParam = (req.params as any).subPath;
+        const subPath = Array.isArray(wildcardParam)
+          ? wildcardParam.join("/")
+          : wildcardParam || "index.html";
 
         try {
           const url = this.shinyLiveService.getPublicUrl(
@@ -487,7 +494,7 @@ export class DatasetRouter {
             language,
             subPath,
           );
-
+          console.log(`Fetching shiny-live resource from URL: ${url}`);
           const response = await fetch(url);
           if (!response.ok) {
             if (response.status == 400 || response.status === 404) {
