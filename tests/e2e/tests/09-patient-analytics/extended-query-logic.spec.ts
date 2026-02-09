@@ -54,12 +54,14 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Click OR to change into AND
   await page.getByRole('button', { name: 'OR ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Click AND to change into OR
@@ -79,6 +81,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('#pane-right').getByText('Condition Start Date').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Click and Drag and press drilldown

@@ -113,6 +113,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // TODO: requires debugging of screenshot hence using maxDiffPixelRatio
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Set Y-axis to month of birth
@@ -121,6 +122,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Set Y-axis to patient count
@@ -147,6 +149,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('#pane-right').getByText('Race concept id').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Set X2-axis to year of birth with bin size of 50
@@ -164,6 +167,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('.modal-wrapper').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Reset X2-axis
@@ -171,6 +175,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('div.dropdownmenu-container').getByText('Reset Selection').nth(1).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Set attribute for stacked chart
@@ -184,6 +189,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('#pane-right').getByText('Month of Birth').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Set month of birth to 11 in filter card
@@ -192,6 +198,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
   await expect(page.getByText('115 / 2,694')).toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Remove condition occurrence filter card
@@ -199,6 +206,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByRole('menuitem').getByText('Remove Filter Card').click()
   await expect(page.getByText('247 / 2,694')).toBeVisible()
   // await expect(page).toHaveScreenshot({ maxDiffPixelRatio: 0.1 })
+  await page.waitForTimeout(1000)
   await takeScreenshot(page, testInfo)
 
   // Switch to list view
