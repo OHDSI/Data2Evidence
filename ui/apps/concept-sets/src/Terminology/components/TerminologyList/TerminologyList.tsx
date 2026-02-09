@@ -376,7 +376,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
         description: getText(i18nKeys.TERMINOLOGY_LIST__ERROR_DESCRIPTION),
       });
     } finally {
-      setIsLoading(false);
+      if (fetchDataAbortControllerRef.current === controller) {
+        setIsLoading(false);
+      }
     }
   }, [
     searchText,

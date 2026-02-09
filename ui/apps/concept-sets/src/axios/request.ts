@@ -62,7 +62,7 @@ const requestNoCache = async <T = any>(
   const onError = function (error: any) {
     // Skip canceled request errors
     if (axios.isCancel(error) || error?.message === "canceled") {
-      return Promise.reject(error.message || error);
+      return Promise.reject(error);
     }
     console.error("Request Failed:", error.config);
 
