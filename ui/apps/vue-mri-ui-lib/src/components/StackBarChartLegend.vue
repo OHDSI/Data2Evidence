@@ -68,15 +68,17 @@ const hideTooltip = () => {
 }
 
 const legendItems = computed(() => {
-  // Reverse to match stacking order
+  const totalTraces = props.traces.length
+  // Reverse to match stacking order (top of stack shown first in legend)
   return [...props.traces].reverse().map((trace, index) => {
+    const originalIndex = totalTraces - 1 - index
     const fullName = trace.meta?.fullName || trace.name
     const displayName = trace.name
     return {
       displayName,
       fullName,
       isTruncated: fullName !== displayName,
-      color: props.colorway[index % props.colorway.length],
+      color: props.colorway[originalIndex % props.colorway.length],
     }
   })
 })
