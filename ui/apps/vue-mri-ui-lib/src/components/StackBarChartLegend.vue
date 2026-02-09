@@ -5,8 +5,12 @@
         v-for="(item, index) in legendItems"
         :key="index"
         class="stackbar-legend-entry"
+        tabindex="0"
+        :aria-label="item.fullName"
         @mouseenter="item.isTruncated && showTooltip($event, item.fullName)"
         @mouseleave="hideTooltip"
+        @focus="item.isTruncated && showTooltip($event, item.fullName)"
+        @blur="hideTooltip"
       >
         <span class="stackbar-legend-entry-box" :style="{ 'background-color': item.color }"></span>
         <span class="stackbar-legend-entry-text">{{ item.displayName }}</span>
@@ -46,7 +50,7 @@ const tooltipStyle = reactive({
   left: '0px',
 })
 
-const showTooltip = async (event: MouseEvent, fullName: string) => {
+const showTooltip = async (event: MouseEvent | FocusEvent, fullName: string) => {
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
 
@@ -105,6 +109,11 @@ const legendItems = computed(() => {
   margin-bottom: 4px;
   cursor: default;
 }
+.stackbar-legend-entry:focus {
+  outline: 2px solid #4d90fe;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 .stackbar-legend-entry:last-child {
   margin-bottom: 0;
 }
@@ -137,7 +146,6 @@ const legendItems = computed(() => {
   overflow-wrap: break-word;
   text-align: left;
   z-index: 10000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   pointer-events: none;
 }
 </style>

@@ -31,11 +31,11 @@ export default {
       errorMessage: '',
       sbChartStyle: {},
       debounceId: 0,
-      layout: Constants.PlotlyConsts.layout,
+      layout: { ...Constants.PlotlyConsts.layout, showlegend: false },
     }
   },
   created() {
-    this.layout = Constants.PlotlyConsts.layout
+    this.layout = { ...Constants.PlotlyConsts.layout, showlegend: false }
     this.config = Constants.PlotlyConsts.config
     this.setupAxes()
     this.setFireRequest()
