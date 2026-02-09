@@ -134,6 +134,9 @@ export class PublicWebapiProxyAPI {
       // Truncate results based on pagination parameters
       return [result, result.length];
     } catch (error) {
+      if (signal?.aborted) {
+        throw error;
+      }
       console.error(error);
       throw new Error(`Error while getting concepts from public webapi`);
     }
