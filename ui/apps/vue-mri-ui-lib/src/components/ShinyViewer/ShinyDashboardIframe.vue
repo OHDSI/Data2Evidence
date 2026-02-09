@@ -233,7 +233,7 @@ function handleIframeLoad() {
   position: relative;
   width: 100%;
   height: 100%;
-  background: white;
+  background: var(--color-white, #ffffff);
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -256,15 +256,15 @@ function handleIframeLoad() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: white;
+  background: var(--color-white, #ffffff);
   z-index: 1;
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #3b82f6;
+  border: 4px solid var(--color-ui-light-border, #dddddd);
+  border-top-color: var(--color-primary, #1f425a);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -278,7 +278,7 @@ function handleIframeLoad() {
 .iframe-loading p {
   margin-top: 16px;
   font-size: 16px;
-  color: #6b7280;
+  color: var(--color-neutral, #595757);
 }
 
 .iframe-error {
@@ -294,7 +294,7 @@ function handleIframeLoad() {
 
 .iframe-error p {
   font-size: 16px;
-  color: #dc2626;
+  color: var(--color-feedback-error, #a3293d);
   margin: 0;
 }
 </style>

@@ -59,7 +59,7 @@ function handleClose() {
 
 .modal-container {
   position: relative;
-  background: #f9fafb;
+  background: var(--color-ui-extra-light-bg, #f9f9f9);
   width: 100%;
   height: 100%;
   border-radius: 32px;
@@ -79,7 +79,7 @@ function handleClose() {
   flex: 1;
   font-size: 18px;
   font-weight: bold;
-  color: var(--color-primary, #1e40af);
+  color: var(--color-primary, #1f425a);
 }
 
 .modal-close-btn {
@@ -94,14 +94,14 @@ function handleClose() {
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  color: var(--color-primary);
+  color: var(--color-primary, #1f425a);
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .modal-close-btn:hover {
-  background: #f3f4f6;
-  color: #1f2937;
+  background: var(--color-neutral-lightest, #f2f0f1);
+  color: var(--color-ui-darkest-text, #1f425a);
   transform: scale(1.05);
 }
 

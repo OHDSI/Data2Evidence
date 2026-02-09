@@ -511,15 +511,15 @@ export default {
   display: none;
   margin-top: 0.25rem;
   font-size: 0.875rem;
-  color: #dc3545;
+  color: var(--color-feedback-error, #a3293d);
 }
 
 .form-control.is-invalid {
-  border-color: #dc3545;
+  border-color: var(--color-feedback-error, #a3293d);
 }
 
 .form-control.is-invalid:focus {
-  border-color: #dc3545;
-  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  border-color: var(--color-feedback-error, #a3293d);
+  box-shadow: 0 0 0 0.2rem rgba(163, 41, 61, 0.25);
 }
 </style>
