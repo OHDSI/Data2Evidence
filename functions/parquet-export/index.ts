@@ -121,11 +121,36 @@ function substituteTemplateParams(
     .replace(/\{\{RESULTS_SCHEMA\}\}/g, params.resultsSchema || "")
     .replace(/\{\{STARTYEAR\}\}/g, additionalParams["STARTYEAR"] || "")
     .replace(/\{\{ENDYEAR\}\}/g, additionalParams["ENDYEAR"] || "")
-    .replace(/\{\{CONCEPT_CODE1\}\}/g, additionalParams["CONCEPT_CODE1"] || "")
-    .replace(/\{\{CONCEPT_CODE2\}\}/g, additionalParams["CONCEPT_CODE2"] || "")
-    .replace(/\{\{CONCEPT_CODE3\}\}/g, additionalParams["CONCEPT_CODE3"] || "")
-    .replace(/\{\{CONCEPT_CODE4\}\}/g, additionalParams["CONCEPT_CODE4"] || "")
-    .replace(/\{\{CONCEPT_CODE5\}\}/g, additionalParams["CONCEPT_CODE5"] || "")
+    .replace(
+      /\{\{CONCEPT_CODE1\}\}/g,
+      additionalParams["CONCEPT_CODE1"]
+        ? `${sanitizeParamValue(additionalParams["CONCEPT_CODE1"])}`
+        : "",
+    )
+    .replace(
+      /\{\{CONCEPT_CODE2\}\}/g,
+      additionalParams["CONCEPT_CODE2"]
+        ? `${sanitizeParamValue(additionalParams["CONCEPT_CODE2"])}`
+        : "",
+    )
+    .replace(
+      /\{\{CONCEPT_CODE3\}\}/g,
+      additionalParams["CONCEPT_CODE3"]
+        ? `${sanitizeParamValue(additionalParams["CONCEPT_CODE3"])}`
+        : "",
+    )
+    .replace(
+      /\{\{CONCEPT_CODE4\}\}/g,
+      additionalParams["CONCEPT_CODE4"]
+        ? `${sanitizeParamValue(additionalParams["CONCEPT_CODE4"])}`
+        : "",
+    )
+    .replace(
+      /\{\{CONCEPT_CODE5\}\}/g,
+      additionalParams["CONCEPT_CODE5"]
+        ? `${sanitizeParamValue(additionalParams["CONCEPT_CODE5"])}`
+        : "",
+    )
     .replace(
       /\{\{WILDCARD_FLAG1\}\}/g,
       additionalParams["WILDCARD_FLAG1"] || "",
@@ -176,6 +201,8 @@ function substituteTemplateParams(
     }
   }
 
+  // Remove any ; in the final SQL to prevent multiple statements
+  result = result.replace(/;/g, "");
   return result;
 }
 
@@ -481,7 +508,6 @@ router.post("/", async (req: Request, res: Response) => {
             },
           );
         });
-
         res.setHeader("Content-Type", "application/json");
         res.setHeader(
           "Content-Disposition",
