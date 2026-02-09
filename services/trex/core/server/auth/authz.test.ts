@@ -42,7 +42,6 @@ Object.defineProperty(axios, "post", {
           alp_role_study_researcher: ["dataset-1"],
           alp_role_system_admin: true,
           alp_role_user_admin: true,
-          alp_role_nifi_admin: true,
           alp_role_dashboard_viewer: true,
         },
       };
@@ -66,7 +65,6 @@ const createMockToken = (payload: Partial<IAppTokenPayload>) => {
       alp_role_study_researcher: ["dataset-1"],
       alp_role_system_admin: true,
       alp_role_user_admin: true,
-      alp_role_nifi_admin: true,
       alp_role_dashboard_viewer: true,
     },
     given_name: "Test",
@@ -157,7 +155,6 @@ Deno.test({
         alp_role_study_researcher: ["dataset-1"],
         alp_role_system_admin: true,
         alp_role_user_admin: true,
-        alp_role_nifi_admin: true,
         alp_role_dashboard_viewer: true,
       },
     } as IAppTokenPayload;
@@ -315,7 +312,6 @@ Deno.test({
         alp_role_study_researcher: ["dataset-1", "dataset-1"], // Ensure dataset-1 is included
         alp_role_system_admin: true,
         alp_role_user_admin: false,
-        alp_role_nifi_admin: false,
         alp_role_dashboard_viewer: false,
       },
     });
@@ -392,7 +388,6 @@ Deno.test({
         alp_role_study_researcher: [],
         alp_role_system_admin: true,
         alp_role_user_admin: false,
-        alp_role_nifi_admin: false,
         alp_role_dashboard_viewer: false,
       },
     });
@@ -439,7 +434,6 @@ Deno.test({
         alpRoleMap: {
           ALP_USER_ADMIN: true,
           ALP_SYSTEM_ADMIN: true,
-          ALP_NIFI_ADMIN: false,
           ALP_DASHBOARD_VIEWER: false,
           TENANT_ADMIN: [],
           TENANT_VIEWER: ["tenant-1"],
@@ -451,7 +445,6 @@ Deno.test({
         alp_role_study_researcher: ["dataset-1"],
         alp_role_system_admin: true,
         alp_role_user_admin: true,
-        alp_role_nifi_admin: false,
         alp_role_dashboard_viewer: false,
         alp_role_study_admin: [],
         alp_role_study_mgr: [],
