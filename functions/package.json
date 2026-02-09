@@ -2971,7 +2971,7 @@
             "parquet.export"
           ],
           "httpMethods": [
-            "GET"
+            "POST"
           ],
           "datasetId": "datasetId"
         }
