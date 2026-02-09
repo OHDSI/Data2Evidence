@@ -108,7 +108,6 @@ function handleClose() {
 
 .iframe-container {
   flex: 1;
-  /* padding: 80px 20px 20px; */
   padding: 1em;
   display: flex;
 }

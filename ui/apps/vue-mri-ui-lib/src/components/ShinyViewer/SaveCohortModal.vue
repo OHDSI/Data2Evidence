@@ -138,11 +138,6 @@ export default {
       cohortNameValidationState: 'valid' as 'valid' | 'empty' | 'invalid' | 'duplicate',
       maxLength: 255,
       isSaving: false,
-      processingStep: null as 'saving' | 'materializing' | null,
-      steps: {
-        save: { status: 'pending', message: '' },
-        materialize: { status: 'pending', message: '' },
-      },
       savedBookmarkId: null,
       savedCohortId: null,
       messageStrip: {
@@ -180,9 +175,6 @@ export default {
         this.cohortName = this.generateDefaultName()
         this.cohortDescription = ''
         this.cohortNameValidationState = 'valid'
-        this.processingStep = null
-        this.steps.save.status = 'pending'
-        this.steps.materialize.status = 'pending'
         this.savedBookmarkId = null
         this.savedCohortId = null
         this.resetMessageStrip()
@@ -260,7 +252,6 @@ export default {
     },
 
     async handleSave() {
-      // Validate before saving
       if (!this.validateCohortName() || this.hasExceededLength) {
         return
       }
@@ -270,38 +261,20 @@ export default {
 
       try {
         // Step 1: Save bookmark
-        console.log('[SaveCohortModal] Step 1: Saving bookmark')
-        this.processingStep = 'saving'
-        this.steps.save.status = 'loading'
-
         const savedBookmark = await this.saveBookmark()
-
-        this.steps.save.status = 'success'
-        console.log('[SaveCohortModal] ✓ Bookmark saved')
-
         // Step 2: Materialize cohort
-        console.log('[SaveCohortModal] Step 2: Materializing cohort')
-        this.processingStep = 'materializing'
-        this.steps.materialize.status = 'loading'
-
         await this.materializeCohort(savedBookmark)
-
-        this.steps.materialize.status = 'success'
-        console.log('[SaveCohortModal] ✓ Cohort materialized')
-
         // Step 3: Show success message
         this.messageStrip = {
           show: true,
           message: this.getText('MRI_PA_COHORT_SAVED'),
           messageType: 'success',
         }
-
         // Step 4: Emit success event with cohort details
         this.$emit('success', {
           cohortId: this.savedCohortId,
           bookmarkId: this.savedBookmarkId,
         })
-
         // Step 5: Close modal after delay
         setTimeout(() => {
           this.handleCancel()
@@ -310,30 +283,17 @@ export default {
         console.error('[SaveCohortModal] Error:', error)
         const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
         this.showError(errorMessage)
-
-        // Reset steps on error
-        this.steps.save.status = 'pending'
-        this.steps.materialize.status = 'pending'
       } finally {
         this.isSaving = false
-        this.processingStep = null
       }
     },
 
-    /**
-     * Helper method to refresh bookmarks and find the saved/materialized bookmark
-     * Sets the bookmark as active and returns it
-     */
     async refreshAndFindBookmark() {
-      // Refresh bookmarks to get latest data
       await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
-
-      // Determine the bookmark name to search for
       const activeBookmark = this.getActiveBookmark
 
       const bookmarkName = this.isNewCohort ? this.cohortName.trim() : activeBookmark?.bookmarkname
 
-      // Find bookmark by name and username
       const username = getPortalAPI().username
       const bookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
 
@@ -341,7 +301,6 @@ export default {
         throw new Error('Bookmark not found after refresh')
       }
 
-      // Set as active bookmark
       this[types.SET_ACTIVE_BOOKMARK](bookmark)
 
       return bookmark
@@ -357,10 +316,8 @@ export default {
         throw new Error('No dataset selected')
       }
 
-      // Determine the bookmark name to use
       let bookmarkName
       if (this.isNewCohort) {
-        // New cohort: must have a name
         bookmarkName = this.cohortName.trim()
         if (!bookmarkName) {
           throw new Error('Cohort name is required for new cohorts')
@@ -382,7 +339,6 @@ export default {
 
       // Decide between insert (new) or update (existing with changes)
       if (this.isNewCohort) {
-        // Insert new bookmark
         const params = {
           cmd: 'insert',
           bookmarkname: bookmarkName,
@@ -410,10 +366,7 @@ export default {
         })
       }
 
-      // Refresh and find saved bookmark
       const savedBookmark = await this.refreshAndFindBookmark()
-
-      // Access bookmark ID directly
       this.savedBookmarkId = savedBookmark.bmkId
       return savedBookmark.bmkId
     },
@@ -467,7 +420,6 @@ export default {
         throw new Error('Materialized cohort not found in materializedCohorts array')
       }
 
-      // Access cohort ID directly (no toRaw needed)
       this.savedCohortId = materializedCohort.id
     },
     handleCancel() {
