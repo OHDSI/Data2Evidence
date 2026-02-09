@@ -409,7 +409,7 @@
       "name": "vue-mri",
       "version": "2.0.0",
       "dependencies": {
-        "@d4l/web-components-library": "^3.20.2",
+        "@d4l/web-components-library": "3.15.1",
         "@vuepic/vue-datepicker": "^11.0.2",
         "axios": ">=0.21.2",
         "bootstrap": "4.6.1",
@@ -8056,6 +8056,8 @@
     "vue-eslint-parser/eslint-visitor-keys": ["eslint-visitor-keys@3.4.3", "", {}, "sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag=="],
 
     "vue-eslint-parser/espree": ["espree@9.6.1", "", { "dependencies": { "acorn": "^8.9.0", "acorn-jsx": "^5.3.2", "eslint-visitor-keys": "^3.4.1" } }, "sha512-oruZaFkjorTpF32kDSI5/75ViwGeZginGGy2NoOSg3Q9bnwlnmDm4HLnkl0RE3n+njDXR037aY1+x58Z/zFdwQ=="],
+
+    "vue-mri/@d4l/web-components-library": ["@d4l/web-components-library@3.15.1", "", {}, "sha512-YX1nb2AxVukGxFwY2pKbqO54e04Lc8Ob5I+DME/U6n47iLZMcmZW1/gtVMK8TVS58EQyKNIXJoWf5nVVe+8RTA=="],
 
     "vue-mri/@types/node": ["@types/node@14.18.63", "", {}, "sha512-fAtCfv4jJg+ExtXhvCkCqUKZ+4ok/JQk01qDKhL5BDDoS3AxKXhV5/MAVUZyQnSEd2GT92fkgZl0pz0Q0AzcIQ=="],
 

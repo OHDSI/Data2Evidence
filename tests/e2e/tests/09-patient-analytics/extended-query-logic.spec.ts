@@ -5,14 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
-let screenshotCounter = 0
-async function takeScreenshot(page: any, testInfo: any) {
-  screenshotCounter++
-  const screenshotPath = testInfo.outputPath(`${TEST_NAME}-${screenshotCounter}-linux.png`)
-  await page.screenshot({ path: screenshotPath })
-}
-
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -53,16 +46,12 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   // This one does the actual change to AND
   await page.getByRole('button', { name: 'AND ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  // await expect(page).toHaveScreenshot()
-  await page.waitForTimeout(1000)
-  await takeScreenshot(page, testInfo)
+  await expect(page).toHaveScreenshot()
 
   // Click OR to change into AND
   await page.getByRole('button', { name: 'OR ' }).first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  // await expect(page).toHaveScreenshot()
-  await page.waitForTimeout(1000)
-  await takeScreenshot(page, testInfo)
+  await expect(page).toHaveScreenshot()
 
   // Click AND to change into OR
   await page.getByRole('button', { name: 'AND ' }).first().click()
@@ -80,9 +69,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.getByText('Condition Occurrence B').nth(1).hover()
   await page.locator('#pane-right').getByText('Condition Start Date').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  // await expect(page).toHaveScreenshot()
-  await page.waitForTimeout(1000)
-  await takeScreenshot(page, testInfo)
+  await expect(page).toHaveScreenshot()
 
   // Click and Drag and press drilldown
   await page.mouse.move(800, 200)

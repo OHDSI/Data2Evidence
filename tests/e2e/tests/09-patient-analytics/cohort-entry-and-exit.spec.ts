@@ -5,14 +5,7 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
-let screenshotCounter = 0
-async function takeScreenshot(page: any, testInfo: any) {
-  screenshotCounter++
-  const screenshotPath = testInfo.outputPath(`${TEST_NAME}-${screenshotCounter}-linux.png`)
-  await page.screenshot({ path: screenshotPath })
-}
-
-test(TEST_NAME, async ({ page }, testInfo) => {
+test(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -61,14 +54,12 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.waitForTimeout(2000) // Wait 2 seconds for "A filter card has been added..." popup in previous action to disappear
-  // await expect(page).toHaveScreenshot()
-  await takeScreenshot(page, testInfo)
+  await expect(page).toHaveScreenshot()
 
   // Change AND to OR, CEE should be removed from filtercards
   await page.getByRole('button', { name: 'AND ' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  // await expect(page).toHaveScreenshot()
-  await takeScreenshot(page, testInfo)
+  await expect(page).toHaveScreenshot()
 
   // Go to PA config and uncheck CEE
   await page.getByRole('link', { name: 'Account' }).click()

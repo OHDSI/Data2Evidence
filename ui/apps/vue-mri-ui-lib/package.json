@@ -15,7 +15,7 @@
     "test:ci": "vitest run --coverage"
   },
   "dependencies": {
-    "@d4l/web-components-library": "^3.20.2",
+    "@d4l/web-components-library": "3.15.1",
     "@vuepic/vue-datepicker": "^11.0.2",
     "axios": ">=0.21.2",
     "bootstrap": "4.6.1",
