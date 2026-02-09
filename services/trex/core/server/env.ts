@@ -31,23 +31,24 @@ export let logger = {
 };
 
 export const publicURLs = [
-    '^/portalsvc/public-graphql$',
-    '^/usermgmt/api/user-group/public$',
-    '^/system-portal/dataset/public/list$',
-    '^/system-portal/feature/list$',
-    '^/system-portal/config/public/types.*$',
-    '^/system-portal/config/public/overview-description$',
-    '^/index.html$',
-    '^/assets/.*$',
-    '^/api/.*$',
-    '^/oidc/.*$',
-    '^/sign-in$',
-    '^/consent$',
-    '^/callback$',
-    '^/prefect/docs$',
-    '^/openapi.json$',
-    '^/fhir-server/healthcheck$'
-  ]
+  "^/portalsvc/public-graphql$",
+  "^/usermgmt/api/user-group/public$",
+  "^/system-portal/dataset/public/list$",
+  "^/system-portal/feature/list$",
+  "^/system-portal/config/public/types.*$",
+  "^/system-portal/config/public/overview-description$",
+  "^/index.html$",
+  "^/assets/.*$",
+  "^/api/.*$",
+  "^/oidc/.*$",
+  "^/sign-in$",
+  "^/consent$",
+  "^/callback$",
+  "^/prefect/docs$",
+  "^/openapi.json$",
+  "^/fhir-server/healthcheck$",
+  "^/gateway/api/dataset/shiny-live/.*$",
+];
 
   export const authz_publicURLs = publicURLs.concat([
     '^/usermgmt/api/user-group/list$'
