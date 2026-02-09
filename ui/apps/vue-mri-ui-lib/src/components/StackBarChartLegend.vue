@@ -86,10 +86,8 @@ const legendItems = computed(() => {
 .stackbar-legend-container {
   position: relative;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.9);
   padding: 8px 12px;
   border-radius: 4px;
-  border: 1px solid #dedede;
   max-height: 100%;
   overflow-y: auto;
   align-self: flex-start;
@@ -123,16 +121,19 @@ const legendItems = computed(() => {
 }
 .stackbar-legend-tooltip {
   position: fixed;
-  background: rgba(51, 51, 51, 0.95);
-  color: white;
+  background: #f9f9f9;
+  color: #000080;
   padding: 6px 10px;
   border-radius: 4px;
+  border: 1px solid #dedede;
   font-size: 12px;
+  font-family: 'GT-America', sans-serif;
   white-space: pre-wrap;
   width: fit-content;
-  max-width: 60ch;
+  max-width: 62ch;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  text-align: left;
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   pointer-events: none;
