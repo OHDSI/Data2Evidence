@@ -121,7 +121,7 @@ export class SupabaseStorageController {
     if (!basePath) {
       throw new HttpException(400, "basePath query parameter is required");
     }
-    console.log("I am hitting the upload folder endpoint");
+
     const formData = await request.formData();
     const files: Array<{
       relativePath: string;
