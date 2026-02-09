@@ -57,7 +57,6 @@ export class ShinyLiveService {
     let client: pg.PoolClient;
 
     try {
-      console.log(env);
       client = await ShinyLiveService.pgPool.connect();
       const query = `
         SELECT name FROM storage.objects

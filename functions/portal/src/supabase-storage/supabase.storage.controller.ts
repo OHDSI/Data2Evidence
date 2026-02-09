@@ -130,7 +130,6 @@ export class SupabaseStorageController {
     }> = [];
 
     for (const [key, value] of formData.entries()) {
-      console.log("Processing key:", key, "value:", value);
       if (value instanceof File) {
         files.push({
           relativePath: key,

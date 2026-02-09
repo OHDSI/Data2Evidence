@@ -150,9 +150,7 @@ def upload_shiny_live_folder(docs_dir: str, dataset_id: str, config_type: str, n
         f"Uploading Shiny Live assets from {docs_dir} to base path {base_path}...")
 
     try:
-        logger.info("about to create portal api")
         portal_api = PortalServerAPI()
-        logger.info("about to call upload graphs folder")
         upload_result = portal_api.upload_graphs_folder(
             folder_path=docs_dir,
             base_path=base_path
