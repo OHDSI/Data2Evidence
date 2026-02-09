@@ -7,6 +7,9 @@ library(omopgenerics)
 library(readr)
 library(shiny)
 library(TreatmentPatterns)
+library(stringr)
+library(tidyr)
+library(tibble)
 
 resultsDatabaseSchema <- "$DATABASE_SCHEMA"
 datasetId <- "$DATASET_ID"
@@ -163,6 +166,148 @@ survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
   })
 }
 
+######### function to reformat and display table 1 ##############
+format_table1 <- function(tb) {
+  # Dynamically detect the percent column name (e.g., '% (n = 1,800)')
+  percent_col <- names(tb)[grepl("^% \\(n = [0-9,]+\\)$", names(tb))]
+  if (length(percent_col) == 0) {
+    percent_col <- names(tb)[grepl("%", names(tb))][1] # fallback: any column with %
+  }
+  if (is.na(percent_col) || is.null(percent_col) || percent_col == "") {
+    stop("Could not find percent column in Table 1 data.")
+  }
+
+  blank_row <- tibble(
+    Characteristic = "",
+    Count = "",
+  )
+  blank_row[[percent_col]] <- ""
+
+  is_blank_row <- function(row_tbl) {
+    if (!is.data.frame(row_tbl) || nrow(row_tbl) == 0) {
+      return(FALSE)
+    }
+    vals <- unlist(row_tbl[1, ], use.names = FALSE)
+    all(trimws(vals) == "")
+  }
+
+  append_partition <- function(out_list) {
+    if (length(out_list) == 0 || !is_blank_row(out_list[[length(out_list)]])) {
+      out_list <- append(out_list, list(blank_row))
+    }
+    out_list
+  }
+
+  partition_before_headers <- c(
+    "Medical history: General",
+    "Medical history: Cardiovascular disease",
+    "Charlson comorbidity index",
+    "CHADS2Vasc"
+  )
+  partition_after_numeric <- c(
+    "Charlson comorbidity index",
+    "CHADS2Vasc"
+  )
+
+  out <- list()
+  i <- 1
+  n <- nrow(tb)
+
+  while (i <= n) {
+    row <- tb[i, ]
+    trimmed_char <- str_trim(ifelse(is.na(row$Characteristic), "", row$Characteristic))
+    trimmed_count <- str_trim(ifelse(is.na(row$Count), "", row$Count))
+    trimmed_percent <- str_trim(ifelse(is.na(row[[percent_col]]), "", row[[percent_col]]))
+
+    if (trimmed_char %in% partition_before_headers) {
+      out <- append_partition(out)
+    }
+
+    if (trimmed_char == "Characteristic" && trimmed_percent == "Value") {
+      out <- append_partition(out)
+    }
+
+    # --- Detect numeric block header ---
+    # A numeric block starts when a row has a name (non-empty), Count empty, Value empty,
+    # and the next row is "Mean"
+    if (
+      trimmed_char != "" &&
+      trimmed_count == "" &&
+      trimmed_percent == "" &&
+      i + 1 <= n &&
+      str_trim(tb$Characteristic[i + 1]) == "Mean"
+    ) {
+      stats_labels <- c(
+        "Mean",
+        "Std. deviation",
+        "Minimum",
+        "25th percentile",
+        "Median",
+        "75th percentile",
+        "Maximum"
+      )
+
+      # Add a blank row before the numeric block to visually separate
+      out <- append_partition(out)
+      out <- append(out, list(row))
+
+      # Extract consecutive numeric stats rows for this characteristic
+      stats_idx <- integer()
+      j <- i + 1
+      while (j <= n) {
+        next_label <- str_trim(ifelse(is.na(tb$Characteristic[j]), "", tb$Characteristic[j]))
+        if (next_label %in% stats_labels) {
+          stats_idx <- c(stats_idx, j)
+          j <- j + 1
+        } else {
+          break
+        }
+      }
+
+      stats <- tibble()
+      if (length(stats_idx) > 0) {
+        stats <- tb[stats_idx, , drop = FALSE] %>%
+          mutate(stat = str_trim(Characteristic)) %>%
+          filter(stat %in% stats_labels)
+      }
+
+      # Extract values
+      mean_val <- stats[[percent_col]][stats$stat == "Mean"]
+      sd_val   <- stats[[percent_col]][stats$stat == "Std. deviation"]
+      min_val  <- stats[[percent_col]][stats$stat == "Minimum"]
+      max_val  <- stats[[percent_col]][stats$stat == "Maximum"]
+      perc_25 <- stats[[percent_col]][stats$stat == "25th percentile"]
+      perc_med <- stats[[percent_col]][stats$stat == "Median"]
+      perc_75 <- stats[[percent_col]][stats$stat == "75th percentile"]
+
+      # Add formatted numeric rows
+      mean_sd_row <- tibble(Characteristic = "    Mean (SD)", Count = "")
+      mean_sd_row[[percent_col]] <- paste0(mean_val, " (", sd_val, ")")
+      min_max_row <- tibble(Characteristic = "    Min, Max", Count = "")
+      min_max_row[[percent_col]] <- paste0("[", min_val, ", ", max_val, "]")
+      perc_row <- tibble(Characteristic = "    Percentiles [25th, Median, 75th]", Count = "")
+      perc_row[[percent_col]] <- paste0("[", perc_25, ", ", perc_med, ", ", perc_75, "]")
+
+      out <- append(out, list(mean_sd_row, min_max_row, perc_row))
+
+      if (trimmed_char %in% partition_after_numeric) {
+        out <- append_partition(out)
+      }
+
+      # Skip the original numeric rows (header + stats block)
+      next_row_index <- if (length(stats_idx) > 0) max(stats_idx) + 1 else (i + 1)
+      i <- next_row_index
+      next
+    }
+
+    # --- Otherwise just append row as-is ---
+    out <- append(out, list(row))
+    i <- i + 1
+  }
+
+  bind_rows(out)
+}
+
 ################### Table 1 Visualization Module (Shiny) ##########################
 table1ModuleUI <- function(id) {
   ns <- NS(id)
@@ -218,6 +363,7 @@ table1ModuleServer <- function(id, connectionHandler, resultDatabaseSettings, co
       }
       json_str <- res$table1_json[1]
       table1 <- ParallelLogger::convertJsonToSettings(json_str)
+      table1 <- format_table1(table1)
       return (table1)
     })
     
