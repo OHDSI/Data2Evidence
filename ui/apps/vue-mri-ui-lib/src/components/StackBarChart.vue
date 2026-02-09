@@ -2,7 +2,7 @@
   <div class="stackbar-wrapper">
     <div class="stackbar-container" id="stacked-chart"></div>
     <StackBarChartLegend
-      v-if="chartData.traces && chartData.traces.length > 0"
+      v-if="chartData.traces && chartData.traces.length > 1"
       :traces="chartData.traces"
       :colorway="layout.colorway"
     />

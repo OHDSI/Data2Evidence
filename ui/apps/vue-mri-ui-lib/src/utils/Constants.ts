@@ -256,7 +256,6 @@ const PlotlyConsts = {
   layout: {
     barmode: 'stack',
     bargap: 0.5,
-    showlegend: false,
     clickmode: 'event+select',
     colorway: [
       '#FDA2A2',
