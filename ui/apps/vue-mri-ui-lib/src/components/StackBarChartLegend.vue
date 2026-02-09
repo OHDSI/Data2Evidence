@@ -12,14 +12,14 @@
         <span class="stackbar-legend-entry-text">{{ item.displayName }}</span>
       </li>
     </ul>
-    <div v-if="tooltipVisible" class="stackbar-legend-tooltip" :style="tooltipStyle">
+    <div v-if="tooltipVisible" ref="tooltipRef" class="stackbar-legend-tooltip" :style="tooltipStyle">
       {{ tooltipText }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, reactive } from 'vue'
+import { computed, ref, reactive, nextTick } from 'vue'
 
 interface Trace {
   name: string
@@ -40,22 +40,27 @@ const props = withDefaults(defineProps<Props>(), {
 
 const tooltipVisible = ref(false)
 const tooltipText = ref('')
+const tooltipRef = ref<HTMLElement | null>(null)
 const tooltipStyle = reactive({
   top: '0px',
   left: '0px',
 })
 
-const showTooltip = (event: MouseEvent, fullName: string) => {
+const showTooltip = async (event: MouseEvent, fullName: string) => {
   const target = event.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
 
-  // Use fixed positioning with viewport coordinates
-  // Position tooltip to the left of the legend item
-  tooltipStyle.top = `${rect.top + rect.height / 2}px`
-  tooltipStyle.left = `${rect.left - 8}px`
-
   tooltipText.value = fullName
   tooltipVisible.value = true
+
+  // Wait for DOM update to get tooltip dimensions after it's rendered
+  await nextTick()
+  if (tooltipRef.value) {
+    const tooltipRect = tooltipRef.value.getBoundingClientRect()
+    // Position tooltip to the left of the legend item, vertically centered
+    tooltipStyle.top = `${rect.top + rect.height / 2 - tooltipRect.height / 2}px`
+    tooltipStyle.left = `${rect.left - tooltipRect.width - 8}px`
+  }
 }
 
 const hideTooltip = () => {
@@ -118,13 +123,16 @@ const legendItems = computed(() => {
 }
 .stackbar-legend-tooltip {
   position: fixed;
-  transform: translate(-100%, -50%);
   background: rgba(51, 51, 51, 0.95);
   color: white;
   padding: 6px 10px;
   border-radius: 4px;
   font-size: 12px;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  width: fit-content;
+  max-width: 60ch;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   z-index: 10000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   pointer-events: none;
