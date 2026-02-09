@@ -126,6 +126,8 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const { setFeedback } = useFeedback();
   const tableRef = useRef<HTMLTableElement>(null);
   const fetchDataAbortControllerRef = useRef<AbortController | null>(null);
+  const selectedConceptsRef = useRef(selectedConcepts);
+  selectedConceptsRef.current = selectedConcepts;
 
   const listData = useMemo(() => {
     const fullListData =
@@ -185,7 +187,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     setPage(0);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     // Abort any in-flight request and set up new abort controller
     if (fetchDataAbortControllerRef.current) {
       fetchDataAbortControllerRef.current.abort();
@@ -348,7 +350,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
       } else {
         // RECOMMENDED tab - fetch recommended concepts
         const response = await terminologyAPI.getRecommendedConcepts(
-          selectedConcepts.map((selectedConcept) => selectedConcept.conceptId),
+          selectedConceptsRef.current.map(
+            (selectedConcept) => selectedConcept.conceptId,
+          ),
           datasetId,
           controller.signal,
         );
@@ -368,7 +372,19 @@ const TerminologyList: FC<TerminologyListProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    searchText,
+    page,
+    rowsPerPage,
+    setFeedback,
+    userId,
+    tab,
+    datasetId,
+    JSON.stringify(columnFilters),
+    allFilterOptionsZeroed,
+    getText,
+    isAtlas,
+  ]);
 
   // clean up abort controller on unmount
   useEffect(() => {
@@ -444,6 +460,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     }
     fetchData();
   }, [
+    fetchData,
     userId,
     searchText,
     tab,
