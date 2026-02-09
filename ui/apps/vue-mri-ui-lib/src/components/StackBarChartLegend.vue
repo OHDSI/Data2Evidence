@@ -82,7 +82,7 @@ const legendItems = computed(() => {
       displayName,
       fullName,
       isTruncated: fullName !== displayName,
-      color: props.colorway[originalIndex % props.colorway.length],
+      color: props.colorway.length > 0 ? props.colorway[originalIndex % props.colorway.length] : '#cccccc',
     }
   })
 })
