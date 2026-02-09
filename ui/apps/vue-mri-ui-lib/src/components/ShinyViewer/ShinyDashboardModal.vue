@@ -29,7 +29,6 @@ const props = defineProps<{
   isOpen: boolean
   datasetId: string
   cohortId: string
-  title?: string
   wizardConfig?: Record<string, any>
   mriquery?: string
 }>()

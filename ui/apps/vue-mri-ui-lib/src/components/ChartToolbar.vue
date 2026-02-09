@@ -23,7 +23,6 @@
         <Button
           :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')"
           :onClick="openDashboardModal"
-          :disabled="!isDashboardButtonEnabled"
         >
         </Button>
       </div>
@@ -196,10 +195,6 @@ export default {
       }
       return false
     },
-    isDashboardButtonEnabled() {
-      // Button always enabled - we'll handle save/materialize flow in modal
-      return true
-    },
     hasChanges() {
       // Check if there are unsaved changes (new bookmark or existing bookmark with changes)
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
@@ -366,36 +361,29 @@ export default {
       this.$emit('drilldown')
     },
     async handleOpenDashboard() {
-      console.log('[Dashboard Flow] Opening dashboard...')
-
       // Check if there are unsaved changes
       if (this.hasChanges) {
-        console.log('[Dashboard Flow] Unsaved changes detected, showing save modal')
         this.showSaveCohortModal = true
         return
       }
 
       // Check if cohort needs materialization
       if (!this.getActiveCohortMaterializedId) {
-        console.log('[Dashboard Flow] Cohort needs materialization, showing save modal')
         this.showSaveCohortModal = true
         return
       }
 
       // Already saved and materialized, open dashboard directly
-      console.log('[Dashboard Flow] Opening dashboard modal')
       this.showDashboardModal = true
     },
     
     handleSaveCohortSuccess({ cohortId, bookmarkId }) {
-      console.log('[Dashboard Flow] Cohort saved and materialized:', { cohortId, bookmarkId })
       // Modal closes itself after showing success message
       // Just open the dashboard
       this.showDashboardModal = true
     },
     
     handleCancelSaveCohort() {
-      console.log('[Dashboard Flow] User cancelled save')
       this.showSaveCohortModal = false
     },
     
