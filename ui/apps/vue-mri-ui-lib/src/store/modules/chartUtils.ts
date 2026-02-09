@@ -24,6 +24,26 @@ const truncateAtWordBoundary = (text: string, maxLength: number): string => {
   return truncated + '...'
 }
 
+// Helper function to wrap text by inserting <br> at word boundaries when exceeding max width
+const wrapText = (text: string | number, maxWidth: number): string => {
+  const str = String(text ?? '')
+  if (str.length <= maxWidth) return str
+  const words = str.split(' ')
+  const lines: string[] = []
+  let currentLine = ''
+  for (const word of words) {
+    const testLine = currentLine ? currentLine + ' ' + word : word
+    if (testLine.length > maxWidth && currentLine) {
+      lines.push(currentLine)
+      currentLine = word
+    } else {
+      currentLine = testLine
+    }
+  }
+  if (currentLine) lines.push(currentLine)
+  return lines.join('<br>')
+}
+
 const getters = {
   /*
     Adds bar chart traces expected by Plotly based on chartData
@@ -66,7 +86,7 @@ const getters = {
 
       const measureId = chartData.measures[0].id
       const toolTipSelected =
-        chartData.measures[0].name +
+        wrapText(chartData.measures[0].name, 62) +
         ': <b>%{y}</b><br><br><b>' +
         (totalSelected > 1 ? totalSelected + ' values selected' : '') +
         '</b><extra></extra>'
@@ -84,7 +104,7 @@ const getters = {
           customdataArray = category.data.map(dataPoint => ({
             x: xAxes,
             y: yAxis,
-            fullLabels: [dataPoint[xAxes[0].id]],
+            fullLabels: [wrapText(dataPoint[xAxes[0].id], 62)],
           }))
           hoverTemplate += '%{customdata.x[0].name}: %{customdata.fullLabels[0]}<br>'
         } else {
@@ -94,7 +114,7 @@ const getters = {
           )
           // Build customdata array with full labels for each data point
           customdataArray = category.data.map(dataPoint => {
-            const fullLabels = xAxes.map(xAxis => dataPoint[xAxis.id])
+            const fullLabels = xAxes.map(xAxis => wrapText(dataPoint[xAxis.id], 62))
             return { x: xAxes, y: yAxis, fullLabels }
           })
           for (let i = 0; i < xAxes.length; i++) {
@@ -102,7 +122,7 @@ const getters = {
           }
         }
         if (category.name !== '') {
-          hoverTemplate += '%{customdata.y[0].name}: ' + category.name + '<br>'
+          hoverTemplate += '%{customdata.y[0].name}: ' + wrapText(category.name, 62) + '<br>'
         }
         hoverTemplate += toolTipSelected
 
