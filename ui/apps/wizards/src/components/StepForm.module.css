@@ -94,7 +94,6 @@
   color: #c00;
   font-size: 13px;
   white-space: nowrap;
-  margin-left: auto;
 }
 
 .required {
@@ -137,7 +136,6 @@
 .errorMessage {
   font-size: 13px;
   color: #c00;
-  margin-left: auto;
 }
 
 .unsupported {
