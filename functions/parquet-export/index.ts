@@ -63,6 +63,24 @@ function isValidParamValue(str: unknown): str is string {
   return true;
 }
 
+function isValidYear(str: string): boolean {
+  // Accepts 4-digit years between 1000 and 2999
+  return (
+    typeof str === "string" &&
+    /^\d{4}$/.test(str) &&
+    +str >= 1000 &&
+    +str <= 2999
+  );
+}
+
+function isValidConceptCode(str: string): boolean {
+  return typeof str === "string" && /^[a-zA-Z0-9.]+$/.test(str);
+}
+
+function isValidWildcardFlag(val: string): boolean {
+  return Number(val) === 1 || Number(val) === 0;
+}
+
 function sanitizeParamValue(value: string): string {
   return value.replace(/'/g, "''");
 }
@@ -112,6 +130,32 @@ function substituteTemplateParams(
   }
   if (params.resultsSchema && !isValidSqlIdentifier(params.resultsSchema)) {
     throw new Error("Invalid results schema name");
+  }
+  if (additionalParams.STARTYEAR && !isValidYear(additionalParams.STARTYEAR)) {
+    throw new Error("Invalid STARTYEAR");
+  }
+  if (additionalParams.ENDYEAR && !isValidYear(additionalParams.ENDYEAR)) {
+    throw new Error("Invalid ENDYEAR");
+  }
+  for (let i = 1; i <= 5; i++) {
+    const conceptCodeKey = `CONCEPT_CODE${i}`;
+    const wildcardFlagKey = `WILDCARD_FLAG${i}`;
+    if (
+      conceptCodeKey in additionalParams &&
+      additionalParams[conceptCodeKey] !== ""
+    ) {
+      if (!isValidConceptCode(additionalParams[conceptCodeKey])) {
+        throw new Error(`Invalid ${conceptCodeKey}`);
+      }
+    }
+    if (
+      wildcardFlagKey in additionalParams &&
+      additionalParams[wildcardFlagKey] !== ""
+    ) {
+      if (!isValidWildcardFlag(additionalParams[wildcardFlagKey])) {
+        throw new Error(`Invalid ${wildcardFlagKey}`);
+      }
+    }
   }
 
   let result = sqlTemplate
@@ -431,14 +475,11 @@ router.post("/", async (req: Request, res: Response) => {
       "format",
       "name",
       "type",
+      "yearRange",
+      "conditions",
     ]);
 
     const additionalParams: Record<string, string> = {};
-    for (const [key, value] of Object.entries(req.body)) {
-      if (!reservedBodyParams.has(key) && typeof value === "string") {
-        additionalParams[key.toUpperCase()] = value;
-      }
-    }
     // Handle 'yearRange' object in body for STARTYEAR and ENDYEAR
     if (req.body.yearRange && typeof req.body.yearRange === "object") {
       const { from, to } = req.body.yearRange;
@@ -456,7 +497,7 @@ router.post("/", async (req: Request, res: Response) => {
         if (typeof obj === "object" && obj !== null) {
           Object.entries(obj).forEach(([key, value]) => {
             if (RESERVED_PLACEHOLDERS.has(key)) {
-              additionalParams[key] = String(value);
+              additionalParams[key.toUpperCase()] = String(value);
             }
           });
         }
