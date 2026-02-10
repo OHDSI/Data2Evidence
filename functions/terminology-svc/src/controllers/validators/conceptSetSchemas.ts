@@ -7,9 +7,9 @@ export const createConceptSetBody = z.object({
       useDescendants: z.boolean(),
       useMapped: z.boolean(),
       isExcluded: z.boolean(),
-    })
+    }),
   ),
-  name: z.string(),
+  name: z.string().trim().min(1, "Concept set name cannot be empty"),
   shared: z.boolean(),
   userName: z.string(),
 });
@@ -41,9 +41,9 @@ export const updateConceptSetBody = z
         useDescendants: z.boolean(),
         useMapped: z.boolean(),
         isExcluded: z.boolean(),
-      })
+      }),
     ),
-    name: z.string(),
+    name: z.string().trim().min(1, "Concept set name cannot be empty"),
     shared: z.boolean(),
     userName: z.string(),
   })
@@ -82,7 +82,7 @@ export const resolveConceptSetExpressionBody = z.object({
       useDescendants: z.boolean(),
       useMapped: z.boolean(),
       isExcluded: z.boolean(),
-    })
+    }),
   ),
 });
 export const resolveConceptSetExpression = z.object({
