@@ -836,7 +836,8 @@
           "jobplugins.dqd.read",
           "jobplugins.dqd.execute",
           "d2e.webapi",
-          "usermgmt.me.jupyter"
+          "usermgmt.me.jupyter",
+          "gateway.dataset.shinylive.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -2753,7 +2754,7 @@
         {
           "path": "^/gateway/api/dataset/shiny-live",
           "scopes": [
-            "gateway.dataset.snapshot.create"
+            "gateway.dataset.shinylive.read"
           ],
           "httpMethods": [
             "GET",

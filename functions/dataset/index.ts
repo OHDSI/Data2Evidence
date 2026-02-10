@@ -11,12 +11,19 @@ import {
   DbDialect,
   SourceDatasetType,
 } from "./const.ts";
-import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
 import { ShinyLiveService } from "./services/shinylive.service.ts";
 
-const GATEWAY_WO_PROTOCOL_FQDN = env.GATEWAY_WO_PROTOCOL_FQDN!;
 const app = express();
+
+interface DashboardCode {
+  id: number;
+  datasetId: string;
+  name: string;
+  type: string;
+  code: string;
+  language?: string;
+}
 
 export class DatasetRouter {
   public router = express.Router();
@@ -461,11 +468,20 @@ export class DatasetRouter {
       try {
         const token = req.headers.authorization!;
         const portalAPI = new PortalAPI(token);
-        const dataset = await portalAPI.getDataset(datasetId);
-        const mapped = dataset.dashboards.map(({ id, name }) => {
-          const url = `https://${GATEWAY_WO_PROTOCOL_FQDN}/dashboard-gate/${id}/content?token=${token}`;
-          return { name, url };
-        });
+        const dashboards = await portalAPI.getDatasetDashboards(datasetId);
+
+        // Map to return id, datasetId, name, and language
+        const mapped = dashboards.map((dashboard: DashboardCode) => ({
+          id: dashboard.id,
+          datasetId: dashboard.datasetId,
+          name: dashboard.name,
+          language: dashboard.language,
+        }));
+
+        this.logger.info(
+          `Found ${mapped.length} dashboards for dataset ${datasetId}`,
+        );
+
         return res.status(200).json(mapped);
       } catch (error) {
         this.logger.error(
@@ -485,6 +501,18 @@ export class DatasetRouter {
         const subPath = Array.isArray(wildcardParam)
           ? wildcardParam.join("/")
           : wildcardParam || "index.html";
+
+        // Validate that we have all parts of the resourceId
+        if (!datasetId || !type || !name || !language) {
+          this.logger.error(
+            `[ShinyLive] Invalid resourceId format: ${resourceId}`,
+          );
+          return res
+            .status(400)
+            .send(
+              "Invalid resource ID format. Expected: datasetId_type_name_language",
+            );
+        }
 
         try {
           const url = this.shinyLiveService.getPublicUrl(

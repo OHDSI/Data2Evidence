@@ -4,6 +4,7 @@ const moduleNames = [
   "mri/PatientAnalytics",
   "mri/Search",
   "Researcher/KaplanMeier",
+  "Researcher/ShinyLive",
   "SystemAdmin/StudyOverview",
   "SystemAdmin/UserOverview",
   "SystemAdmin/DQD",
