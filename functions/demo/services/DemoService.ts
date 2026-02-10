@@ -306,12 +306,14 @@ export class DemoService {
     }
 
     const { id: datasetId } = dataset;
+    const userMgmtAPI = new UserMgmtAPI(token);
+    const user = await userMgmtAPI.getMe();
     const result = await jobPluginsAPI.createPhenotypeFlowRun({
       options: {
         materialize: false,
         cohorts_id: "default",
         dataset_id: datasetId,
-        user_name: null,
+        user_name: user.username,
       },
     });
 
