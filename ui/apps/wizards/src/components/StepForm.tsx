@@ -49,15 +49,16 @@ export function StepForm() {
   const allRequiredFieldsFilled = useCallback(() => {
     if (!selectedWizard) return false;
     for (const field of selectedWizard.fields) {
-      if (field.required) {
-        if (field.type === "yearRange") {
-          const from = formValues[`${field.id}_from`];
-          const to = formValues[`${field.id}_to`];
-          if (!from || from === "" || !to || to === "") return false;
-        } else {
-          const value = formValues[field.id];
-          if (!value || value === "") return false;
-        }
+      if (field.type === "yearRange") {
+        const from = formValues[`${field.id}_from`];
+        const to = formValues[`${field.id}_to`];
+        // If required, both must be filled
+        if (field.required && (!from || from === "" || !to || to === "")) return false;
+        // If either is set, both must be set
+        if ((from && !to) || (!from && to)) return false;
+      } else if (field.required) {
+        const value = formValues[field.id];
+        if (!value || value === "") return false;
       }
     }
     return true;
@@ -183,7 +184,7 @@ export function StepForm() {
               id={`${field.id}_from`}
               className={`${styles.input} ${fromError ? styles.inputError : ""}`}
               {...register(`${field.id}_from`, {
-                required: field.required ? `${field.label} from year is required` : false,
+                required: field.required ? "From year is required" : false,
               })}
             >
               <option value="">From year</option>
@@ -198,7 +199,7 @@ export function StepForm() {
               id={`${field.id}_to`}
               className={`${styles.input} ${toError ? styles.inputError : ""}`}
               {...register(`${field.id}_to`, {
-                required: field.required ? `${field.label} to year is required` : false,
+                required: field.required ? "To year is required" : false,
                 validate: (value) => {
                   if (!value) return true;
                   if (fromYearValue && Number(value) < Number(fromYearValue)) {
@@ -216,16 +217,18 @@ export function StepForm() {
               ))}
             </select>
           </div>
-          {hasYearError && (
+          {(hasYearError || (fromYearValue && !toYearValue) || (!fromYearValue && toYearValue)) && (
             <span className={styles.errorMessage} role="alert">
-              {(fromError?.message || toError?.message) as string}
+              {hasYearError
+                ? ((fromError?.message || toError?.message) as string)
+                : fromYearValue && !toYearValue
+                  ? "To year is required"
+                  : "From year is required"}
             </span>
           )}
         </div>
       );
     }
-
-    const fieldValue = formValues[field.id];
 
     switch (field.type) {
       case "num":
