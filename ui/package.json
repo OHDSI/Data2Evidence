@@ -231,6 +231,16 @@
               "RESEARCHER"
             ],
             "enabled": false
+          },
+          {
+            "name": "Dashboard",
+            "route": "shiny-live",
+            "pluginPath": "plugins/Researcher/ShinyLive/module",
+            "featureFlag": "shinyLive",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "enabled": true
           }
         ],
         "setup": [

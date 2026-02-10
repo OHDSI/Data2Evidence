@@ -81,7 +81,8 @@ def drop_cache_status_table(con, copy_params):
 @task(retries=3, 
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
       log_prints=True, 
-      task_run_name="create_schema_if_not_exists_{copy_params.target_schema}")
+      task_run_name="create_schema_if_not_exists_{copy_params.target_schema}",
+      timeout_seconds=int(Variable.get("cache_task_timeout")))
 def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
 
@@ -124,7 +125,8 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, lo
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
       tags=["flow-level-concurrency"],
       log_prints=True, 
-      task_run_name="create_schema_tables_from_{copy_params.source_schema}")
+      task_run_name="create_schema_tables_from_{copy_params.source_schema}",
+      timeout_seconds=int(Variable.get("cache_task_timeout")))
 def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
 
