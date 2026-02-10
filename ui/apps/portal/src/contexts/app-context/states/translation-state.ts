@@ -1117,6 +1117,7 @@ export const i18nDefault = {
     UI_PLUGIN_HYBRID_SEARCH: "Hybrid search",
     UI_PLUGIN_JOBS: "Jobs",
     UI_PLUGIN_KAPLAN_MEIER: "Kaplan-Meier",
+    UI_PLUGIN_SHINY_LIVE: "Dashboard",
     UI_PLUGIN_METADATA: "Metadata",
     UI_PLUGIN_NOTEBOOKS: "Notebooks",
     UI_PLUGIN_OVERVIEW_DESCRIPTION: "Overview description",
