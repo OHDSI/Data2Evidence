@@ -7,7 +7,7 @@ class PluginsAuthTokenTest():
         self.bearer_token = bearer_token  
 
     def create_flow_run(self):
-        url = f"http://localhost:41120/api/deployments/{self.deployment_id}/create_flow_run"
+        url = f"http://localhost:41120/d2e/api/deployments/{self.deployment_id}/create_flow_run"
         headers = {
             "Content-Type": "application/json"
         }
@@ -41,7 +41,7 @@ class PluginsAuthTokenTest():
             "Content-Type": "application/json",
             "id": flow_run_id
         }
-        url = f"http://localhost:41120/api/flow_runs/{flow_run_id}/input"
+        url = f"http://localhost:41120/d2e/api/flow_runs/{flow_run_id}/input"
         value = {
             "token": self.bearer_token,
             "thirdpartytoken": "",
