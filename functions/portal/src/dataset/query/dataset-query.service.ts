@@ -14,8 +14,8 @@ import { UserMgmtService } from "../../user-mgmt/user-mgmt.service.ts";
 import { DatasetFilterService } from "../dataset-filter.service.ts";
 import { Dataset } from "../entity/index.ts";
 import {
-  DatasetCodeRepository,
   DatasetCodeQueryRepository,
+  DatasetCodeRepository,
   DatasetDashboardRepository,
   DatasetReleaseRepository,
   DatasetRepository,
@@ -365,6 +365,7 @@ export class DatasetQueryService {
       name: code.name,
       code: code.code,
       type: code.type,
+      language: code.language,
       queries: codeQueries
         .filter((q) => q.name === code.name)
         .map((q) => ({

@@ -18,13 +18,13 @@ import {
 import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
 import {
   DatasetAttributeRepository,
+  DatasetCodeQueryRepository,
+  DatasetCodeRepository,
   DatasetDashboardRepository,
   DatasetDetailRepository,
   DatasetReleaseRepository,
   DatasetRepository,
   DatasetTagRepository,
-  DatasetCodeRepository,
-  DatasetCodeQueryRepository,
 } from "../repository/index.ts";
 
 const SWAP_TO = {
@@ -540,10 +540,17 @@ export class DatasetCommandService {
     code: string,
     type: string = "dashboard",
     name: string = "",
+    language?: string,
   ) {
     const updateDashboardCodeFn = async (
       _entityMgr: EntityManager,
-      dto: { datasetId: string; code: string; type: string; name: string },
+      dto: {
+        datasetId: string;
+        code: string;
+        type: string;
+        name: string;
+        language?: string;
+      },
     ) => {
       const datasetCode = await this.datasetCodeRepo.getDatasetCode(
         dto.datasetId,
@@ -558,6 +565,7 @@ export class DatasetCommandService {
           type: dto.type,
           code: dto.code,
           name: dto.name,
+          language: dto.language,
         }),
         isNewEntity,
       );
@@ -580,6 +588,7 @@ export class DatasetCommandService {
       code,
       type,
       name,
+      language,
     });
   }
 
