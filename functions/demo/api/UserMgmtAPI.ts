@@ -48,6 +48,20 @@ export class UserMgmtAPI {
     }
   }
 
+  async getMe(): Promise<{ id: string; username: string }> {
+    try {
+      const options = this.getRequestConfig();
+      const url = `${this.baseURL}/me`;
+      const result = await this.channel.get(url, options);
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting /me: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
+    }
+  }
+
   private getRequestConfig() {
     let options: AxiosRequestConfig = {};
 
