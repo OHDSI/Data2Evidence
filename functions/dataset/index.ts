@@ -1,4 +1,5 @@
-import express, { NextFunction, Request, Response } from "npm:express";
+import express, { Request, Response } from "npm:express";
+import { Buffer } from "node:buffer";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
@@ -247,10 +248,14 @@ export class DatasetRouter {
           } catch (createError: any) {
             const status = createError.status || createError.response?.status;
             const responseData = createError.response?.data;
-            this.logger.error(`Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+            this.logger.error(
+              `Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
+            );
             // Return 400 for client errors, 500 for server errors
             const httpStatus = status >= 400 && status < 500 ? status : 500;
-            return res.status(httpStatus).json(responseData || { error: createError.message });
+            return res
+              .status(httpStatus)
+              .json(responseData || { error: createError.message });
           }
 
           this.logger.info("Creating cache dataset in Portal");
@@ -486,11 +491,15 @@ export class DatasetRouter {
     });
 
     // resourceId format: datasetId_type_name_language
-    this.router.use(
-      "/shiny-live/:resourceId",
-      async (req: Request, res: Response, next: NextFunction) => {
+    this.router.get(
+      ["/shiny-live/:resourceId", "/shiny-live/:resourceId/{*subPath}"],
+      async (req: Request, res: Response) => {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
+        const wildcardParam = (req.params as any).subPath;
+        const subPath = Array.isArray(wildcardParam)
+          ? wildcardParam.join("/")
+          : wildcardParam || "index.html";
 
         // Validate that we have all parts of the resourceId
         if (!datasetId || !type || !name || !language) {
@@ -505,32 +514,66 @@ export class DatasetRouter {
         }
 
         try {
-          // Get the static files directory (downloads and unzips if needed)
-          const staticDir = await this.shinyLiveService.getStaticFilesDir(
+          const url = this.shinyLiveService.getPublicUrl(
+            datasetId,
+            type,
+            name,
+            language,
+            subPath,
+          );
+          console.log(`Fetching shiny-live resource from URL: ${url}`);
+          const response = await fetch(url);
+          if (!response.ok) {
+            if (response.status == 400 || response.status === 404) {
+              return res.status(404).send("Resource not found");
+            }
+
+            return res
+              .status(response.status)
+              .send("Error fetching resource from supabase");
+          }
+
+          res.set(
+            "Content-Type",
+            response.headers.get("content-type") || "application/octet-stream",
+          );
+          res.set(
+            "Cache-Control",
+            response.headers.get("cache-control") || "public, max-age=3600",
+          );
+
+          const data = await response.arrayBuffer();
+          res.send(Buffer.from(data));
+        } catch (error) {
+          this.logger.error(
+            `Error proxying shiny-live: ${JSON.stringify(error)}`,
+          );
+          res.status(500).send("Error loading shiny-live application");
+        }
+      },
+    );
+
+    // resourceId format: datasetId_type_name_language
+    this.router.delete(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response) => {
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
+        this.logger.info(`Deleting shiny-live resources for ${resourceId}`);
+
+        try {
+          await this.shinyLiveService.deleteDatasetShinyLiveResources(
             datasetId,
             type,
             name,
             language,
           );
-
-          if (!staticDir) {
-            return res.status(404).send("Shinylive application not found");
-          }
-
-          this.logger.info(`[ShinyLive] staticDir: ${staticDir}`);
-
-          // Serve static files including index.html
-          const staticMiddleware = express.static(staticDir, {
-            index: "index.html",
-            fallthrough: true,
-          });
-
-          staticMiddleware(req, res, next);
+          return res.status(200).send("Resource deleted successfully");
         } catch (error) {
           this.logger.error(
-            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
+            `Error deleting shiny-live resources: ${JSON.stringify(error)}`,
           );
-          res.status(500).send("Error loading shiny-live application");
+          res.status(500).send("Error deleting shiny-live resources");
         }
       },
     );
