@@ -454,16 +454,11 @@ const TerminologyList: FC<TerminologyListProps> = ({
     if (tab !== tabNames.SELECTED) {
       setPage(0);
     }
-  }, [searchText, tab, JSON.stringify(columnFilters)]);
+  }, [searchText, tab, JSON.stringify(columnFilters), userId]);
 
-  // Fetch data whenever relevant state changes
+  // Fetch data when search criteria change
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
-      return;
-    }
-    // For PA-Atlas, only fetch on search changes (client-side pagination)
-    // For regular app, fetch on any change including pagination
-    if (isAtlas && page !== 0) {
       return;
     }
     fetchData();
@@ -473,10 +468,15 @@ const TerminologyList: FC<TerminologyListProps> = ({
     searchText,
     tab,
     JSON.stringify(columnFilters),
-    page,
-    rowsPerPage,
     isAtlas,
   ]);
+
+  // Fetch data when pagination changes (only for non-Atlas SEARCH tab)
+  useEffect(() => {
+    if (tab === "SEARCH" && !isAtlas) {
+      fetchData();
+    }
+  }, [page, rowsPerPage, isAtlas, tab, fetchData]);
 
   useEffect(() => {
     if (conceptsResult) {
