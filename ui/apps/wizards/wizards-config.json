@@ -650,6 +650,7 @@
           "id": "height",
           "type": "num",
           "label": "Height",
+          "placeholder": "cm",
           "required": false,
           "configPath": "patient.interactions.measurement.attributes.numval",
           "filterCardPath": "patient.interactions.measurement",
