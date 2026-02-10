@@ -20,13 +20,27 @@ export default {
       errorMessage: '',
       sbChartStyle: {},
       debounceId: 0,
+      resizeObserver: null,
     }
   },
   created() {
-    this.layout = Constants.PlotlyConsts.layout
     this.config = Constants.PlotlyConsts.config
     this.setupAxes()
     this.setFireRequest()
+  },
+  mounted() {
+    this.resizeObserver = new ResizeObserver(() => {
+      if (stackBarChart && this.chartData && Object.keys(this.chartData).length !== 0) {
+        clearTimeout(this.debounceId)
+        this.debounceId = setTimeout(() => {
+          Plotly.Plots.resize(stackBarChart)
+        }, 100)
+      }
+    })
+    
+    if (this.$el) {
+      this.resizeObserver.observe(this.$el)
+    }
   },
   watch: {
     'sortProperty.props.value': function sorter(newVal) {
@@ -165,6 +179,9 @@ export default {
     },
     shouldRerenderChart() {
       if (this.shouldRerenderChart) {
+        if (stackBarChart) {
+          Plotly.purge(stackBarChart)
+        }
         this.setupPlotly()
         this.renderChart()
       }
@@ -187,6 +204,11 @@ export default {
     ]),
   },
   beforeUnmount() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+      this.resizeObserver = null
+    }
+    
     if (stackBarChart) {
       Plotly.purge(stackBarChart)
     }
@@ -286,13 +308,20 @@ export default {
         })
 
         this.chartData = this.dataToTraces(data)
-        this.layout.xaxis.type = this.chartData.axisType
-        Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
+        
+        const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+        freshLayout.xaxis.type = this.chartData.axisType
+        
+        Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
       }
     },
     setupPlotly() {
       stackBarChart = this.$el
-      Plotly.newPlot(stackBarChart, this.chartData.traces, this.layout, this.config)
+      
+      const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+      initialLayout.xaxis.type = this.chartData.axisType
+      
+      Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
       const selectionUpdate = () => {
         // Update selection in state to activate drilldown
@@ -332,7 +361,9 @@ export default {
         stackBarChart.removeAllListeners('plotly_selected')
         stackBarChart.removeAllListeners('plotly_deselect')
 
-        Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
+        const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+        selectionLayout.xaxis.type = this.chartData.axisType
+        Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
       stackBarChart.on('plotly_selected', selectionUpdate)
