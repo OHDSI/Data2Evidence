@@ -196,7 +196,6 @@ export default {
         hour12: false,
       })
 
-      // If wizardConfig exists, use dashboardType for name
       if (this.wizardConfig && this.wizardConfig.dashboardType) {
         const dashboardType = this.wizardConfig.dashboardType
         // Convert 'calculate-incidence' to 'Calculate Incidence'
@@ -213,19 +212,16 @@ export default {
     validateCohortName() {
       const trimmedName = this.cohortName.trim()
 
-      // Check if empty
       if (trimmedName.length === 0) {
         this.cohortNameValidationState = 'empty'
         return false
       }
 
-      // Check if too long (handled by hasExceededLength computed)
       if (this.hasExceededLength) {
-        this.cohortNameValidationState = 'valid' // Let hasExceededLength handle this
+        this.cohortNameValidationState = 'valid'
         return false
       }
 
-      // Check for duplicates (case-insensitive) using getBookmarks from Vuex
       const username = getPortalAPI().username
       const isDuplicate = this.getBookmarks.some(
         bookmark =>
@@ -239,7 +235,6 @@ export default {
         return false
       }
 
-      // Check for invalid characters or patterns
       const isValid = trimmedName.length > 0 && trimmedName.length <= this.maxLength
 
       if (!isValid) {
@@ -260,22 +255,17 @@ export default {
       this.resetMessageStrip()
 
       try {
-        // Step 1: Save bookmark
         const savedBookmark = await this.saveBookmark()
-        // Step 2: Materialize cohort
         await this.materializeCohort(savedBookmark)
-        // Step 3: Show success message
         this.messageStrip = {
           show: true,
           message: this.getText('MRI_PA_COHORT_SAVED'),
           messageType: 'success',
         }
-        // Step 4: Emit success event with cohort details
         this.$emit('success', {
           cohortId: this.savedCohortId,
           bookmarkId: this.savedBookmarkId,
         })
-        // Step 5: Close modal after delay
         setTimeout(() => {
           this.handleCancel()
         }, 1500)
@@ -323,11 +313,9 @@ export default {
           throw new Error('Cohort name is required for new cohorts')
         }
       } else {
-        // Existing cohort with changes: use provided name or keep existing name
         bookmarkName = this.cohortName.trim() || activeBookmark.bookmarkname
       }
 
-      // Check for duplicate names (only if a new name is provided)
       if (this.cohortName.trim() && this.cohortName.trim() !== activeBookmark?.bookmarkname) {
         const duplicate = this.getBookmarks.find(
           b => b.user_id === username && b.bookmarkname === this.cohortName.trim()
@@ -337,7 +325,6 @@ export default {
         }
       }
 
-      // Decide between insert (new) or update (existing with changes)
       if (this.isNewCohort) {
         const params = {
           cmd: 'insert',
@@ -352,7 +339,6 @@ export default {
 
         await this.fireBookmarkQuery({ params, method: 'post' })
       } else {
-        // Update existing bookmark
         const params = {
           cmd: 'update',
           bookmark: JSON.stringify(bookmarkData),
@@ -378,10 +364,8 @@ export default {
         throw new Error('No saved bookmark provided for materialization')
       }
 
-      // Get mriquery using getPLRequest with primitive bookmark ID
       const plRequest = this.getPLRequest({ bmkId: this.savedBookmarkId })
 
-      // Prepare materialize params
       const params = {
         datasetId: selectedDataset.id,
         mriquery: JSON.stringify(plRequest),
@@ -395,17 +379,14 @@ export default {
 
       const url = '/analytics-svc/api/services/cohort'
 
-      // API call to materialize cohort
       await this.onAddCohortOkButtonPress({ params, url })
 
-      // Refresh and find materialized bookmark (now has cohortDefinitionId)
       const materializedBookmark = await this.refreshAndFindBookmark()
 
       if (!materializedBookmark.cohortDefinitionId) {
         throw new Error('Bookmark does not have cohortDefinitionId after materialization')
       }
 
-      // Find the actual materialized cohort using BOTH constraints (same pattern as bookmark.ts)
       const materializedCohorts = this.getMaterializedCohorts
       const materializedCohort = materializedCohorts.find(
         cohort =>
@@ -506,7 +487,6 @@ export default {
   font-size: 1.25rem;
 }
 
-/* Invalid feedback styling */
 .invalid-feedback {
   display: none;
   margin-top: 0.25rem;

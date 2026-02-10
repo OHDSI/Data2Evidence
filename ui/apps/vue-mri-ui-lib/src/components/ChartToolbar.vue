@@ -196,19 +196,15 @@ export default {
       return false
     },
     hasChanges() {
-      // Check if there are unsaved changes (new bookmark or existing bookmark with changes)
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isBookmarkSaved() {
-      // Check if current bookmark is saved (not new)
       return this.getActiveBookmark && !this.getActiveBookmark.isNew
     },
     needsMaterialization() {
-      // Check if bookmark needs to be materialized
       return !this.getActiveCohortMaterializedId
     },
     dashboardContext() {
-      // Prepare context data for ShinyLive dashboard
       const activeBookmark = this.$store.getters.getActiveBookmark
 
       if (!activeBookmark) {
@@ -219,21 +215,8 @@ export default {
         }
       }
 
-      // Parse bookmark data
-      let bookmarkData = null
-      try {
-        bookmarkData = JSON.parse(activeBookmark.bookmark || '{}')
-      } catch (e) {
-        console.error('Failed to parse bookmark data:', e)
-        return {
-          wizardConfig: null,
-          conditions: null,
-          mriquery: null,
-        }
-      }
-
       const wizardConfig = this.getWizardConfig || null
-      // Get mriquery using getPLRequest
+
       let mriquery = null
       try {
         const plRequest = this.$store.getters.getPLRequest({ bmkId: activeBookmark.id })
@@ -361,25 +344,18 @@ export default {
       this.$emit('drilldown')
     },
     async handleOpenDashboard() {
-      // Check if there are unsaved changes
       if (this.hasChanges) {
         this.showSaveCohortModal = true
         return
       }
-
-      // Check if cohort needs materialization
       if (!this.getActiveCohortMaterializedId) {
         this.showSaveCohortModal = true
         return
       }
-
-      // Already saved and materialized, open dashboard directly
       this.showDashboardModal = true
     },
     
     handleSaveCohortSuccess({ cohortId, bookmarkId }) {
-      // Modal closes itself after showing success message
-      // Just open the dashboard
       this.showDashboardModal = true
     },
     
@@ -388,7 +364,6 @@ export default {
     },
     
     openDashboardModal() {
-      // Replaced by handleOpenDashboard - kept for backwards compatibility
       this.handleOpenDashboard()
     },
     

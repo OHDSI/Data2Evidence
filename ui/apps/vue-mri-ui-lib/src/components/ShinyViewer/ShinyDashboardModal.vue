@@ -111,7 +111,6 @@ function handleClose() {
   display: flex;
 }
 
-/* Transition animations */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
   transition: opacity 0.3s ease;
