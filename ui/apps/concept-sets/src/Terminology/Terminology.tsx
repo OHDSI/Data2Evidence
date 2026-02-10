@@ -39,7 +39,7 @@ const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
 
 export interface TerminologyProps {
   onConceptIdSelect?: (
-    conceptData: FhirValueSetExpansionContainsWithExt
+    conceptData: FhirValueSetExpansionContainsWithExt,
   ) => void;
   initialInput?: string;
   userId?: string;
@@ -353,7 +353,7 @@ export const Terminology: FC<TerminologyProps> = ({
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
   const [currentConceptSet, setCurrentConceptSet] = useState<ConceptSet | null>(
-    null
+    null,
   );
   const [conceptsResult, setConceptsResult] =
     useState<TerminologyResult | null>(null);
@@ -377,7 +377,7 @@ export const Terminology: FC<TerminologyProps> = ({
   const getDomainContextMessage = useCallback(() => {
     if (isConceptMultiSelect && defaultFilters) {
       const domainFilter = defaultFilters.find(
-        (filter) => filter.id === "domainId"
+        (filter) => filter.id === "domainId",
       );
       if (domainFilter && domainFilter.value.length > 0) {
         const domainName = domainFilter.value[0];
@@ -413,37 +413,37 @@ export const Terminology: FC<TerminologyProps> = ({
       });
       setSelectedConcepts(selectedConceptsCopy);
     },
-    []
+    [],
   );
 
   const checkIfConceptSetExists = async (
     conceptSetId: number,
     conceptSetName: string,
-    datasetId: string
+    datasetId: string,
   ): Promise<number> => {
     const result = await api.d2eWebapi.checkIfConceptSetExists(
       conceptSetId,
       conceptSetName,
-      datasetId
+      datasetId,
     );
     return Number(result);
   };
 
   const createConceptSet = async (
     conceptSet: Omit<ConceptSet, "id">,
-    datasetId: string
+    datasetId: string,
   ): Promise<number> => {
     const conceptSetId = await api.d2eWebapi.createConceptSet(
       conceptSet.name,
       datasetId,
-      conceptSet.shared
+      conceptSet.shared,
     );
 
     if (conceptSet.concepts.length !== 0) {
       await api.d2eWebapi.updateConceptSetItems(
         conceptSetId,
         conceptSet.concepts,
-        datasetId
+        datasetId,
       );
     }
     return conceptSetId;
@@ -452,25 +452,30 @@ export const Terminology: FC<TerminologyProps> = ({
   const updateConceptSet = async (
     conceptSetId: number,
     conceptSet: Partial<ConceptSet>,
-    datasetId: string
+    datasetId: string,
   ): Promise<number> => {
     // Update concept set
     await api.d2eWebapi.updateConceptSet(
       conceptSetId,
       { id: Number(conceptSetId), ...conceptSet },
-      datasetId
+      datasetId,
     );
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
       conceptSetId,
       conceptSetItems,
-      datasetId
+      datasetId,
     );
     return Number(conceptSetId);
   };
 
   const saveConceptSet = useCallback(async () => {
+    if (!conceptSetName.trim().length) {
+      setErrorMsg(getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_EMPTY_ERROR));
+      return;
+    }
+
     const conceptSet = {
       concepts: selectedConcepts.map((concept) => {
         return {
@@ -490,14 +495,14 @@ export const Terminology: FC<TerminologyProps> = ({
       const isNameUsed = await checkIfConceptSetExists(
         conceptSetId || 0,
         conceptSet.name,
-        activeDatasetId
+        activeDatasetId,
       );
 
       if (isNameUsed) {
         setErrorMsg(
           getText(i18nKeys.TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR, [
             `"${conceptSet.name}"`,
-          ])
+          ]),
         );
         return;
       }
@@ -506,7 +511,7 @@ export const Terminology: FC<TerminologyProps> = ({
         ? await updateConceptSet(
             conceptSetId,
             { id: Number(conceptSetId), ...conceptSet },
-            activeDatasetId
+            activeDatasetId,
           )
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
@@ -519,7 +524,7 @@ export const Terminology: FC<TerminologyProps> = ({
           conceptSetId
             ? getText(i18nKeys.TERMINOLOGY__UPDATING)
             : getText(i18nKeys.TERMINOLOGY__CREATING),
-        ])
+        ]),
       );
     } finally {
       setIsConceptSetLoading(false);
@@ -534,7 +539,7 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const getConceptSetWithConceptDetails = async (
     conceptSetId: number,
-    activeDatasetId: string
+    activeDatasetId: string,
   ): Promise<ConceptSetWithConceptDetails> => {
     const [conceptSet, conceptSetExpression] = await Promise.all([
       api.d2eWebapi.getConceptSet(conceptSetId, activeDatasetId),
@@ -567,7 +572,7 @@ export const Terminology: FC<TerminologyProps> = ({
       try {
         const conceptSet = await getConceptSetWithConceptDetails(
           conceptSetId,
-          activeDatasetId
+          activeDatasetId,
         );
         setConceptSetName(conceptSet.name);
         sortAndSetSelectedConcepts(conceptSet.concepts);
@@ -579,7 +584,7 @@ export const Terminology: FC<TerminologyProps> = ({
         setIsConceptSetLoading(false);
       }
     },
-    [activeDatasetId]
+    [activeDatasetId],
   );
   const isDrawer = !!onClose;
 
@@ -604,10 +609,10 @@ export const Terminology: FC<TerminologyProps> = ({
     (concept: FhirValueSetExpansionContainsWithExt) => {
       if (isConceptSet || isConceptMultiSelect) {
         const selectedConceptsCopy = JSON.parse(
-          JSON.stringify(selectedConcepts)
+          JSON.stringify(selectedConcepts),
         ) as FhirValueSetExpansionContainsWithExt[];
         const conceptIndex = selectedConcepts.findIndex(
-          (selectedConcept) => selectedConcept.conceptId === concept.conceptId
+          (selectedConcept) => selectedConcept.conceptId === concept.conceptId,
         );
         if (conceptIndex > -1) {
           selectedConceptsCopy.splice(conceptIndex, 1);
@@ -639,13 +644,13 @@ export const Terminology: FC<TerminologyProps> = ({
       resetState,
       selectedConcepts,
       sortAndSetSelectedConcepts,
-    ]
+    ],
   );
 
   const toggleDescendantsAndMapped = useCallback(
     (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => {
       const selectedConceptsCopy = JSON.parse(
-        JSON.stringify(selectedConcepts)
+        JSON.stringify(selectedConcepts),
       ) as FhirValueSetExpansionContainsWithExt[];
       selectedConceptsCopy.map((concept) => {
         if (concept.conceptId === conceptId) {
@@ -660,7 +665,7 @@ export const Terminology: FC<TerminologyProps> = ({
       });
       sortAndSetSelectedConcepts(selectedConceptsCopy);
     },
-    [selectedConcepts, sortAndSetSelectedConcepts]
+    [selectedConcepts, sortAndSetSelectedConcepts],
   );
 
   const showAddIcon = !!(
