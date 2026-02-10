@@ -7,7 +7,8 @@
 create_options(
   study_id = "",
   upload_results = FALSE,
-  update_results_schema = TRUE
+  update_results_schema = TRUE,
+  run_table1 = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,9 @@ create_options(
 \item{update_results_schema}{boolean value indicating whether to update results schema
 before uploading results (default is TRUE). Any existing results in the schema will be
 dropped before uploading new results.}
+
+\item{run_table1}{boolean value indicating whether to run Table 1 generation
+as part of the flow run (default is FALSE).}
 }
 \value{
 Response object with options for the flow run
