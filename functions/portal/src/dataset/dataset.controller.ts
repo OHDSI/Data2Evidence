@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Head,
   HttpException,
   Middleware,
   Param,
@@ -11,12 +10,12 @@ import {
   Put,
   Query,
 } from "@danet/core";
+import {
+  DATASET_RESEARCHER_ROLE,
+  DATASET_SYSTEM_ADMIN_ROLE,
+} from "../common/const.ts";
 import { RequestContextMiddleware } from "../common/request-context.middleware.ts";
 import { IDataset } from "../types.d.ts";
-import {
-  DATASET_SYSTEM_ADMIN_ROLE,
-  DATASET_RESEARCHER_ROLE,
-} from "../common/const.ts";
 import { DatasetCommandService } from "./command/dataset-command.service.ts";
 import { DatasetFilterService } from "./dataset-filter.service.ts";
 import { DatasetDetailMetadataUpdateDto } from "./dto/dataset-detail-metadata.update.dto.ts";
@@ -25,7 +24,6 @@ import {
   DatasetDto,
   DatasetQueryDto,
   DatasetReleaseDto,
-  DatasetSearchDto,
   DatasetSnapshotDto,
 } from "./dto/index.ts";
 import { DatasetQueryService } from "./query/dataset-query.service.ts";
@@ -148,13 +146,21 @@ export class DatasetController {
 
   @Put("dashboard-code")
   async updateDatasetDashboardCode(
-    @Body() datasetCodeDto: { datasetId: string; code: string; type: string; name: string },
+    @Body()
+    datasetCodeDto: {
+      datasetId: string;
+      code: string;
+      type: string;
+      name: string;
+      language?: string;
+    },
   ) {
     return await this.datasetCommandService.updateDatasetDashboardCode(
       datasetCodeDto.datasetId,
       datasetCodeDto.code,
       datasetCodeDto.type,
       datasetCodeDto.name,
+      datasetCodeDto.language,
     );
   }
 
