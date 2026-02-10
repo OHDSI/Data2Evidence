@@ -1,23 +1,24 @@
 .container {
   padding: 20px;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .header {
-  margin-bottom: 24px;
+  margin-top: 20px;
+  margin-bottom: 48px;
 }
 
 .header h2 {
-  margin: 0 0 8px 0;
+  margin: 0 0 24px 0;
   font-size: 24px;
-  font-weight: 600;
 }
 
 .subtitle {
   margin: 0;
   color: #666;
-  font-size: 14px;
 }
 
 .progress {
@@ -28,7 +29,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 16px;
 }
 
@@ -39,6 +40,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   background: #fff;
+  min-height: 250px;
 }
 
 .card:hover {
@@ -52,15 +54,11 @@
 }
 
 .cardTitle {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
+  margin: 0 0 20px 0;
 }
 
 .cardDescription {
   margin: 0;
-  font-size: 14px;
   color: #666;
   line-height: 1.4;
 }
@@ -71,6 +69,7 @@
   padding: 40px;
   text-align: center;
   color: #666;
+  grid-column: 1 / -1;
 }
 
 .error {

@@ -53,13 +53,15 @@ export function useDeepLink(dispatch: any) {
     }
 
     // Decompress and save wizards param if present
+    let wizardConfigData: Record<string, any> | null = null
     if (wizardsParam) {
       try {
-        const wizardsData = CohortUrlCodec.safeDecompress(wizardsParam)
-        if (wizardsData.success) {
-          dispatch('setWizardConfig', wizardsData.data)
+        const wizardsResult = CohortUrlCodec.safeDecompress(wizardsParam)
+        if (wizardsResult.success) {
+          wizardConfigData = wizardsResult.data as Record<string, any>
+          dispatch('setWizardConfig', wizardConfigData)
         } else {
-          console.warn('[DeepLink] Failed to decompress wizards param:', wizardsData.error)
+          console.warn('[DeepLink] Failed to decompress wizards param:', (wizardsResult as any).error)
         }
       } catch (err) {
         console.warn('[DeepLink] Error processing wizards param:', err)
@@ -124,9 +126,20 @@ export function useDeepLink(dispatch: any) {
       cleanUrl.searchParams.delete('wizards')
       window.history.replaceState({}, '', cleanUrl.toString())
 
-      // Show success message
+      // Show success message, enhanced if wizard config has conditions/years
+      let successMessage = 'Cohort definition loaded successfully from shared link.'
+      if (wizardConfigData) {
+        const hasConditions = Array.isArray(wizardConfigData.conditions) && wizardConfigData.conditions.length > 0
+        const hasYears = wizardConfigData.year && (wizardConfigData.year.from || wizardConfigData.year.to)
+        if (hasConditions || hasYears) {
+          const parts: string[] = []
+          if (hasConditions) parts.push('conditions')
+          if (hasYears) parts.push('years')
+          successMessage += ` Note that ${parts.join(' and ')} do not appear in the filter cards but are used in the dashboard.`
+        }
+      }
       dispatch('setAlertMessage', {
-        message: 'Cohort definition loaded successfully from shared link.',
+        message: successMessage,
         messageType: 'success',
         title: 'Success',
       })

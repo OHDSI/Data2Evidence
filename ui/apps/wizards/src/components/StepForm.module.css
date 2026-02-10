@@ -1,7 +1,9 @@
 .container {
   padding: 20px;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .header {
@@ -66,7 +68,14 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
+  width: 600px;
+  flex: none;
+  box-sizing: border-box;
+}
+
+.groupInputs .input {
   flex: 1;
+  width: auto;
 }
 
 .groupSeparator {
@@ -83,11 +92,9 @@
   text-align: right;
 }
 
-.requiredText {
+.requiredAsterisk {
   color: #c00;
-  font-size: 13px;
-  white-space: nowrap;
-  margin-left: auto;
+  font-weight: bold;
 }
 
 .required {
@@ -103,7 +110,9 @@
   background: #fff;
   color: #333;
   transition: border-color 0.2s ease;
-  flex: 1;
+  width: 600px;
+  flex: none;
+  box-sizing: border-box;
 }
 
 .input:focus {
@@ -128,7 +137,6 @@
 .errorMessage {
   font-size: 13px;
   color: #c00;
-  margin-left: auto;
 }
 
 .unsupported {
@@ -218,7 +226,7 @@
 
 .typeaheadWrapper {
   position: relative;
-  width: 400px;
+  width: 600px;
   flex-shrink: 0;
 }
 

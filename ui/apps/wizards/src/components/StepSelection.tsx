@@ -47,61 +47,37 @@ export function StepSelection() {
     }
   };
 
-  if (loading) {
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className={styles.grid}>
+          <div className={styles.loading} role="status">
+            Loading wizards...
+          </div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <>
+          <div className={styles.error} role="alert">
+            Error: {error}
+          </div>
+          <div style={{ marginTop: "1rem", textAlign: "center" }}>
+            <button onClick={loadWizards} className={styles.retryButton}>
+              Retry
+            </button>
+          </div>
+        </>
+      );
+    }
+
+    if (wizards.length === 0) {
+      return <div className={styles.empty}>No wizards available</div>;
+    }
+
     return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>Getting started</h2>
-          <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
-        </div>
-        <div className={styles.loading} role="status">
-          Loading wizards...
-        </div>
-      </div>
-    );
-  }
-
-  const handleRetry = () => {
-    loadWizards();
-  };
-
-  if (error) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>Getting started</h2>
-          <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
-        </div>
-        <div className={styles.error} role="alert">
-          Error: {error}
-        </div>
-        <div style={{ marginTop: "1rem", textAlign: "center" }}>
-          <button onClick={handleRetry} className={styles.retryButton}>
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (wizards.length === 0) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <h2>Getting started</h2>
-          <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
-        </div>
-        <div className={styles.empty}>No wizards available</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2>Getting started</h2>
-        <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
-      </div>
       <div className={styles.grid}>
         {wizards.map((wizard) => (
           <div
@@ -118,6 +94,16 @@ export function StepSelection() {
           </div>
         ))}
       </div>
+    );
+  };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2>Getting started</h2>
+        <p className={styles.subtitle}>We've built some pre-configured scenarios to get you started</p>
+      </div>
+      {renderContent()}
     </div>
   );
 }

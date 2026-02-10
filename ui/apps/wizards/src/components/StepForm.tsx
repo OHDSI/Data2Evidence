@@ -49,7 +49,14 @@ export function StepForm() {
   const allRequiredFieldsFilled = useCallback(() => {
     if (!selectedWizard) return false;
     for (const field of selectedWizard.fields) {
-      if (field.required) {
+      if (field.type === "yearRange") {
+        const from = formValues[`${field.id}_from`];
+        const to = formValues[`${field.id}_to`];
+        // If required, both must be filled
+        if (field.required && (!from || from === "" || !to || to === "")) return false;
+        // If either is set, both must be set
+        if ((from && !to) || (!from && to)) return false;
+      } else if (field.required) {
         const value = formValues[field.id];
         if (!value || value === "") return false;
       }
@@ -121,7 +128,8 @@ export function StepForm() {
       return (
         <div key={field.id} className={styles.fieldGroup}>
           <label htmlFor={field.id} className={styles.label}>
-            {field.label}:
+            {field.label}
+            {field.required && <span className={styles.requiredAsterisk}>*</span>}:
           </label>
           <div className={styles.inputWithToggle}>
             <TypeaheadField
@@ -146,12 +154,10 @@ export function StepForm() {
               </div>
             )}
           </div>
-          {fieldError ? (
+          {fieldError && (
             <span className={styles.errorMessage} role="alert">
               {fieldError.message as string}
             </span>
-          ) : (
-            field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
           )}
         </div>
       );
@@ -169,13 +175,16 @@ export function StepForm() {
 
       return (
         <div key={field.id} className={styles.fieldGroup}>
-          <label className={styles.label}>{field.label}:</label>
+          <label className={styles.label}>
+            {field.label}
+            {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+          </label>
           <div className={styles.groupInputs}>
             <select
               id={`${field.id}_from`}
               className={`${styles.input} ${fromError ? styles.inputError : ""}`}
               {...register(`${field.id}_from`, {
-                required: field.required ? `${field.label} from year is required` : false,
+                required: field.required ? "From year is required" : false,
               })}
             >
               <option value="">From year</option>
@@ -190,7 +199,7 @@ export function StepForm() {
               id={`${field.id}_to`}
               className={`${styles.input} ${toError ? styles.inputError : ""}`}
               {...register(`${field.id}_to`, {
-                required: field.required ? `${field.label} to year is required` : false,
+                required: field.required ? "To year is required" : false,
                 validate: (value) => {
                   if (!value) return true;
                   if (fromYearValue && Number(value) < Number(fromYearValue)) {
@@ -208,26 +217,26 @@ export function StepForm() {
               ))}
             </select>
           </div>
-          {hasYearError ? (
+          {(hasYearError || (fromYearValue && !toYearValue) || (!fromYearValue && toYearValue)) && (
             <span className={styles.errorMessage} role="alert">
-              {(fromError?.message || toError?.message) as string}
+              {hasYearError
+                ? ((fromError?.message || toError?.message) as string)
+                : fromYearValue && !toYearValue
+                  ? "To year is required"
+                  : "From year is required"}
             </span>
-          ) : (
-            field.required &&
-            (!fromYearValue || !toYearValue) && <span className={styles.requiredText}>This is a required field</span>
           )}
         </div>
       );
     }
-
-    const fieldValue = formValues[field.id];
 
     switch (field.type) {
       case "num":
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
-              {field.label}:
+              {field.label}
+              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
             </label>
             <input
               id={field.id}
@@ -250,12 +259,10 @@ export function StepForm() {
                 },
               })}
             />
-            {fieldError ? (
+            {fieldError && (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
-            ) : (
-              field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
             )}
           </div>
         );
@@ -264,7 +271,8 @@ export function StepForm() {
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
-              {field.label}:
+              {field.label}
+              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
             </label>
             <input
               id={field.id}
@@ -276,12 +284,10 @@ export function StepForm() {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {fieldError ? (
+            {fieldError && (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
-            ) : (
-              field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
             )}
           </div>
         );
@@ -291,7 +297,8 @@ export function StepForm() {
         return (
           <div key={field.id} className={styles.fieldGroup}>
             <label htmlFor={field.id} className={styles.label}>
-              {field.label}:
+              {field.label}
+              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
             </label>
             <input
               id={field.id}
@@ -303,12 +310,10 @@ export function StepForm() {
                 required: field.required ? `${field.label} is required` : false,
               })}
             />
-            {fieldError ? (
+            {fieldError && (
               <span className={styles.errorMessage} role="alert">
                 {fieldError.message as string}
               </span>
-            ) : (
-              field.required && !fieldValue && <span className={styles.requiredText}>This is a required field</span>
             )}
           </div>
         );
@@ -316,7 +321,10 @@ export function StepForm() {
       default:
         return (
           <div key={field.id} className={styles.fieldGroup}>
-            <label className={styles.label}>{field.label}:</label>
+            <label className={styles.label}>
+              {field.label}
+              {field.required && <span className={styles.requiredAsterisk}>*</span>}:
+            </label>
             <div className={styles.unsupported}>Unsupported field type: {field.type}</div>
           </div>
         );
