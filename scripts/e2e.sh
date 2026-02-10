@@ -812,6 +812,7 @@ cmd_test() {
     docker run --rm -it \
         --network=host \
         --ipc=host \
+        --sysctl net.ipv6.conf.all.disable_ipv6=1 \
         -v "$(pwd)/tests:/work/tests" \
         -v "$(pwd)/$temp_results:/work/test-results" \
         -v "$(pwd)/$temp_ctrf:/work/ctrf" \

@@ -254,6 +254,7 @@ jobs:
           docker run --rm \
             --network=host \
             --ipc=host \
+            --sysctl net.ipv6.conf.all.disable_ipv6=1 \
             -v "$(pwd)/test-results:/work/test-results" \
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
