@@ -27,36 +27,51 @@ const moduleCache: { [key: string]: any } = {};
  * This is the original function for backward compatibility with legacy plugin renderers
  * @deprecated Use loadPlugin() for new code - it auto-detects plugin type
  */
-export const importPluginModule = (url: string): Promise<any> => {
-  return new Promise(async (resolve, reject) => {
-    const builtIn = builtInPlugins[url];
-    if (typeof builtIn === "function") {
-      const module = await builtIn();
-      resolve(module.plugin);
-      return;
-    }
+export const importPluginModule = async (url: string): Promise<any> => {
+  const builtIn = builtInPlugins[url];
+  if (typeof builtIn === "function") {
+    const module = await builtIn();
+    return module.plugin;
+  }
 
-    const cached = moduleCache[url];
-    if (cached) {
-      resolve(cached);
-      return;
-    }
+  const cached = moduleCache[url];
+  if (cached) {
+    return cached;
+  }
 
-    SystemJS.import(url)
-      .then((pluginModule: any) => {
-        const plugin = pluginModule.plugin || pluginModule.default.plugin;
-        if (plugin) {
-          moduleCache[url] = plugin;
-          resolve(plugin);
-        } else {
-          reject("Missing export: plugin");
-          console.log("pluginModule", pluginModule);
+  const maxRetries = 3;
+  const retryDelay = 10000;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const pluginModule = await SystemJS.import(url);
+      const plugin = pluginModule.plugin || pluginModule.default.plugin;
+      if (plugin) {
+        moduleCache[url] = plugin;
+        return plugin;
+      } else {
+        throw new Error(`Missing export: plugin in ${url}`);
+      }
+    } catch (error) {
+      if (attempt < maxRetries) {
+        console.warn(
+          `[PluginLoader] ${url} - import failed, retrying in ${retryDelay / 1000}s (attempt ${
+            attempt + 1
+          }/${maxRetries})...`,
+          error
+        );
+        try {
+          SystemJS.delete(url);
+        } catch (_e) {
+          /* ignore */
         }
-      })
-      .catch((err: any) => {
-        console.warn("Error loading plugin: ", url, err);
-      });
-  });
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      } else {
+        console.error(`[PluginLoader] ${url} - import failed after ${maxRetries} retries`, error);
+        throw error;
+      }
+    }
+  }
 };
 
 /**
@@ -90,12 +105,33 @@ export const loadPlugin = async (
     }
 
     let loadedModule;
-    try {
-      const resolvedUrl = resolveModuleUrl(url);
-      loadedModule = await SystemJS.import(resolvedUrl);
-    } catch (error: any) {
-      console.error("[PluginLoader] Failed to load module from:", url, error);
-      throw error;
+    const resolvedUrl = resolveModuleUrl(url);
+    const maxRetries = 3;
+    const retryDelay = 10000;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        loadedModule = await SystemJS.import(resolvedUrl);
+        break;
+      } catch (error: any) {
+        if (attempt < maxRetries) {
+          console.warn(
+            `[PluginLoader] ${url} - import failed, retrying in ${retryDelay / 1000}s (attempt ${
+              attempt + 1
+            }/${maxRetries})...`,
+            error
+          );
+          try {
+            SystemJS.delete(resolvedUrl);
+          } catch (_e) {
+            /* ignore */
+          }
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        } else {
+          console.error(`[PluginLoader] ${url} - import failed after ${maxRetries} retries`, error);
+          throw error;
+        }
+      }
     }
 
     // Auto-detect type if not specified

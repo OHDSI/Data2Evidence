@@ -38,9 +38,40 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
       }
 
       const resolvedUrl = resolveModuleUrl(config.url);
-      const modulePromise = window.System.import(resolvedUrl).then((module: any) => {
-        console.debug(`[singleSpaRegistry] ${config.id} - module loaded`);
-        return module.default || module;
+      const maxRetries = 3;
+      const retryDelay = 10000;
+
+      const importWithRetry = async (): Promise<any> => {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const module = await window.System.import(resolvedUrl);
+            console.debug(`[singleSpaRegistry] ${config.id} - module loaded`);
+            return module.default || module;
+          } catch (error) {
+            if (attempt < maxRetries) {
+              console.warn(
+                `[singleSpaRegistry] ${config.id} - import failed, retrying in ${retryDelay / 1000}s (attempt ${
+                  attempt + 1
+                }/${maxRetries})...`,
+                error
+              );
+              try {
+                window.System.delete(resolvedUrl);
+              } catch (_e) {
+                /* ignore */
+              }
+              await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            } else {
+              console.error(`[singleSpaRegistry] ${config.id} - import failed after ${maxRetries} retries`, error);
+              throw error;
+            }
+          }
+        }
+      };
+
+      const modulePromise = importWithRetry().catch((error) => {
+        moduleCache.delete(config.id);
+        throw error;
       });
 
       moduleCache.set(config.id, modulePromise);

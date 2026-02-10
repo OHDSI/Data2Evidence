@@ -53,7 +53,32 @@ function registerNavigationApps() {
 
         registerApplication({
           name: item.appName,
-          app: () => window.System.import(item.appName).then((module: any) => module.default || module),
+          app: async () => {
+            const maxRetries = 3
+            const retryDelay = 10000
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+              try {
+                const module = await window.System.import(item.appName)
+                return module.default || module
+              } catch (error) {
+                if (attempt < maxRetries) {
+                  console.warn(
+                    `[AppRegistry] ${item.appName} - import failed, retrying in ${retryDelay / 1000}s (attempt ${attempt + 1}/${maxRetries})...`,
+                    error
+                  )
+                  try {
+                    window.System.delete(item.appName)
+                  } catch (_e) {
+                    /* ignore */
+                  }
+                  await new Promise(resolve => setTimeout(resolve, retryDelay))
+                } else {
+                  console.error(`[AppRegistry] ${item.appName} - import failed after ${maxRetries} retries`, error)
+                  throw error
+                }
+              }
+            }
+          },
           activeWhen: location => item.autoMount || location.pathname === item.route,
           customProps: () => {
             const portalAPI = getPortalAPI()
@@ -116,4 +141,3 @@ function initializeApps() {
 }
 
 export { initializeApps, navigateToRoute }
-
