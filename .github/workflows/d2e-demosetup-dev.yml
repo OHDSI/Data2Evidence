@@ -248,13 +248,15 @@ jobs:
           curl -k -s -o /dev/null -w "%{http_code}" https://localhost:443/d2e/portal || echo "App not reachable"
           curl -k -I https://localhost:443/d2e/portal || true
 
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
       - name: e2e tests
         run: |
           cd ./tests/e2e
           docker run --rm \
             --network=host \
             --ipc=host \
-            --sysctl net.ipv6.conf.all.disable_ipv6=1 \
             -v "$(pwd)/test-results:/work/test-results" \
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
