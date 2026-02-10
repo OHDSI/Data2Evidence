@@ -201,12 +201,6 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                 for await (const data of result.data) {
                     rowCount++; //Seems to return 1 object at a time
                 }
-                //Detach Native DB
-                await req.dbConnections.analyticsConnection.deactivate_nativedb_communication(
-                    req.dbConnections.analyticsConnection.conn[
-                        "duckdbNativeDBName"
-                    ]
-                );
                 let response = {
                     entity: result.entity,
                     rowCount: rowCount,
@@ -382,9 +376,7 @@ export async function getRecontactPatientList(req: IMRIRequest, res) {
     };
     let cohortName = body.name;
     try {
-        const study = await new PortalServerAPI().getStudy(
-            body.datasetId
-        );
+        const study = await new PortalServerAPI().getStudy(body.datasetId);
         const { attributes } = study;
         let queryParams = formatQueryParams(
             body.cohortDefinition.cards.content

@@ -3,7 +3,7 @@
   "nodeModulesDir": "auto",
   "tasks": {
     "gen-openapi-doc": "deno run --allow-env --allow-read --allow-write src/openApi/updateOpenApi.ts",
-    "trial-run-server": "CACHEDB__HOST=test CACHEDB__PORT=1234 TLS__INTERNAL__CA_CRT=test SERVICE_ROUTES='{}' deno run --allow-env --allow-read --allow-write --allow-net index.ts"
+    "trial-run-server": "TLS__INTERNAL__CA_CRT=test SERVICE_ROUTES='{}' deno run --allow-env --allow-read --allow-write --allow-net index.ts"
   },
   "compilerOptions": {
     "lib": ["deno.window"],

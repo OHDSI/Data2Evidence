@@ -7,7 +7,6 @@ networks:
 
 volumes:
   caddy:
-  cachedb-data-1:
   cdw-config-cachedb-data-1:
   minio-data-1:
   pg-minerva-data-1:
@@ -252,6 +251,7 @@ services:
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
+      CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -607,7 +607,6 @@ services:
       PREFECT_FLOW_RUN_CACHE_ENABLED: false
       PREFECT_RESULTS_PERSIST_BY_DEFAULT: false
       PREFECT_EVENTS_ENABLED: false
-
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:

@@ -47,10 +47,11 @@ export class JobPluginsAPI {
       const result = await this.channel.post(url, dto, options);
       this.logger.info(`Cache flow run result: ${JSON.stringify(result)}`);
       this.logger.info(`Cache flow run result.data: ${JSON.stringify(result?.data)}`);
-      this.logger.info(`Cache flow run result.status: ${result?.status}`);
       return result.data;
-    } catch (error) {
-      console.error(`Error while creating cache flow run: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while creating cache flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -64,10 +65,10 @@ export class JobPluginsAPI {
       const url = `${this.baseURL}/cachedb/completed/${dto.flowRunId}`;
       const result = await get(url, options);
       return result.data;
-    } catch (error) {
-      console.error(
-        `Error while checking status of create cache flow run: ${error}`
-      );
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while checking status of create cache flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -79,8 +80,10 @@ export class JobPluginsAPI {
       const url = `${this.baseURL}/dqd/data-quality/flow-run`;
       const result = await this.channel.post(url, dto, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while creating DQD flow run: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while creating DQD flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -95,8 +98,10 @@ export class JobPluginsAPI {
       const url = `${this.baseURL}/dqd/data-quality/flow-run/${dto.flowRunId}/overview?datasetId=${dto.datasetId}`;
       const result = await get(url, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while checking results of DQD flow run: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while checking results of DQD flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -108,8 +113,10 @@ export class JobPluginsAPI {
       const url = `${this.baseURL}/dqd/data-characterization/flow-run`;
       const result = await this.channel.post(url, dto, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while creating DC flow run: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while creating DC flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -123,8 +130,10 @@ export class JobPluginsAPI {
       const url = `${this.baseURL}/datamodel/get_version_info`;
       const result = await this.channel.post(url, dto, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while creating data-model version-info: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while creating data-model version-info: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -136,8 +145,10 @@ export class JobPluginsAPI {
       const url = `${this.baseURL}/phenotype/flow-run`;
       const result = await this.channel.post(url, dto, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while creating phenotype flow run: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while creating phenotype flow run: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
