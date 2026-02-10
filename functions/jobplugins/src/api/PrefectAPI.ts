@@ -214,9 +214,8 @@ export class PrefectAPI {
     }
     const response = await fetch(url, options);
     if (!response.ok) {
-      throw new Error(
-        `${errorMessage}: ${response.statusText} - ${response.text()}`,
-      );
+      const body = await response.text();
+      throw new Error(`${errorMessage}: ${response.statusText} - ${body}`);
     }
 
     const result = await response.json();
