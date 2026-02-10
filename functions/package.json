@@ -323,9 +323,6 @@
           "MINIO__REGION": "${MINIO__REGION:-ap-southeast-1}",
           "MINIO__SECRET_KEY": "${MINIO__SECRET_KEY}",
           "MINIO__SSL": "${MINIO__SSL:-false}",
-          "CACHEDB__PORT": 41191,
-          "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
-          "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
@@ -349,12 +346,8 @@
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": "${ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS:-20}",
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
-          "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
           "LOCAL_DEBUG": "false",
-          "USE_DUCKDB": "${USE_DUCKDB:-true}",
-          "USE_CACHEDB": "${USE_CACHEDB:-true}",
           "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
@@ -530,6 +523,7 @@
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
+          "CACHE_TASK_TIMEOUT": "${CACHE_TASK_TIMEOUT:-10800}",
           "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}",
           "CUSTOM_WORK_POOL_CONFIGURATION": "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
@@ -840,7 +834,8 @@
           "jobplugins.dqd.read",
           "jobplugins.dqd.execute",
           "d2e.webapi",
-          "usermgmt.me.jupyter"
+          "usermgmt.me.jupyter",
+          "gateway.dataset.shinylive.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -2014,7 +2009,7 @@
             "POST"
           ]
         },
-                {
+        {
           "path": "^/system-portal/supabase-storage/strategus-results/delete",
           "scopes": [
             "portal.supabaseStorage.delete"
@@ -2748,7 +2743,7 @@
         {
           "path": "^/gateway/api/dataset/shiny-live",
           "scopes": [
-            "gateway.dataset.snapshot.create"
+            "gateway.dataset.shinylive.read"
           ],
           "httpMethods": [
             "GET"

@@ -172,15 +172,3 @@ TLS__INTERNAL__CRT:
 TLS__INTERNAL__KEY:
   comment: Internal Microservice TLS Communication Private
   publish: true
-USE_CACHEDB:
-  comment: boolean
-  publish: false
-  type: string
-USE_DUCKDB:
-  comment: USE_DUCKDB boolean
-  publish: false
-  type: string
-USE_DUCKDB_FTS:
-  comment: USE_DUCKDB_FTS boolean
-  publish: false
-  type: string
