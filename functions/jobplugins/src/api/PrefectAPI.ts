@@ -73,7 +73,7 @@ export class PrefectAPI {
     try {
       const options = this.createOptions("GET");
       const url = `${this.baseURL}/deployments/name/${encodeURIComponent(
-        flowName
+        flowName,
       )}/${encodeURIComponent(deploymentName)}`;
       const response = await fetch(url, options);
       if (!response.ok) {
@@ -86,7 +86,7 @@ export class PrefectAPI {
       };
     } catch (error) {
       console.error(
-        `Error occurred while getting prefect deployment: ${error}`
+        `Error occurred while getting prefect deployment: ${error}`,
       );
       throw error;
     }
@@ -96,7 +96,7 @@ export class PrefectAPI {
     databaseCode: string,
     dataset: string,
     tags: string[] = [],
-    prefix: string
+    prefix: string,
   ) {
     const errorMessage = "Error while getting flow runs by dataset";
     try {
@@ -146,7 +146,7 @@ export class PrefectAPI {
 
       const result = await response.json();
       const filteredResult = result.filter(
-        (item: { task_run_id: string | null }) => item.task_run_id !== null
+        (item: { task_run_id: string | null }) => item.task_run_id !== null,
       ); // Keep only task runs with non-null taskRunId
 
       return filteredResult;
@@ -161,7 +161,7 @@ export class PrefectAPI {
     deploymentName: string,
     flowName: string,
     parameters: object,
-    schedule = null
+    schedule = null,
   ) {
     console.log(`Executing flow run ${name}...`);
     const message = `Flow run '${name}' has started from trex function`;
@@ -186,7 +186,7 @@ export class PrefectAPI {
     const errorMessage = "Error while executing flow run";
     const { deploymentId, infrastructureDocId } = await this.getDeployment(
       deploymentName,
-      flowName
+      flowName,
     );
     const data = {
       state: {
@@ -214,7 +214,8 @@ export class PrefectAPI {
     }
     const response = await fetch(url, options);
     if (!response.ok) {
-      throw new Error(`${errorMessage}: ${response.statusText}`);
+      const body = await response.text();
+      throw new Error(`${errorMessage}: ${response.statusText} - ${body}`);
     }
 
     const result = await response.json();
@@ -223,7 +224,7 @@ export class PrefectAPI {
 
   async getFlowRunsByDeploymentNames(
     deploymentNames: string[],
-    extraFilter?: IFlowRunQueryDto
+    extraFilter?: IFlowRunQueryDto,
   ) {
     const errorMessage =
       "Error while getting prefect flow runs by deployment names";
@@ -342,10 +343,10 @@ export class PrefectAPI {
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
 
     const thirdPartyToken: string | undefined = decode(
-      this.token.replace(/bearer /i, "")
+      this.token.replace(/bearer /i, ""),
     )["thirdPartyToken"];
     const thirdPartyRefreshToken: string | undefined = decode(
-      this.token.replace(/bearer /i, "")
+      this.token.replace(/bearer /i, ""),
     )["thirdPartyRefreshToken"];
 
     const options = this.createOptions("POST", {
@@ -406,7 +407,7 @@ export class PrefectAPI {
     const errorMessage = `Error while cancelling flow run with id: ${id}`;
     try {
       const url = `${this.baseURL}/flow_runs/${encodeURIComponent(
-        id
+        id,
       )}/set_state`;
       const data = { state: { type: "CANCELLED" } };
       const options = this.createOptions("POST", data);
@@ -501,7 +502,7 @@ export class PrefectAPI {
       // Early exit if flowRun enters a failure state
       if (failureStates.includes(flowRun.state_type)) {
         throw new Error(
-          `Flow run failed or was cancelled. Final state: ${flowRun.state_type}`
+          `Flow run failed or was cancelled. Final state: ${flowRun.state_type}`,
         );
       }
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
@@ -516,7 +517,7 @@ export class PrefectAPI {
       return { flowRunId: flowRun.id };
     }
     throw new Error(
-      `Flow run did not complete within the polling window. Final state: ${flowRun.state_type}`
+      `Flow run did not complete within the polling window. Final state: ${flowRun.state_type}`,
     );
   }
 

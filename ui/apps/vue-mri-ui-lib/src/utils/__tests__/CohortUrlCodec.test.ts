@@ -304,9 +304,8 @@ describe('CohortUrlCodec', () => {
       const result = CohortUrlCodec.shareCohortDefinition(mockStore)
 
       expect(result).not.toBeNull()
-      expect(result).toContain('http://localhost:3000/portal/researcher')
+      expect(result).toContain('http://localhost:3000/portal/researcher/cohort')
       expect(result).toContain('datasetId=bookmark-dataset')
-      expect(result).toContain('route=cohort')
       expect(result).toContain('linkType=cohort-definition')
       expect(result).toContain('query=')
     })

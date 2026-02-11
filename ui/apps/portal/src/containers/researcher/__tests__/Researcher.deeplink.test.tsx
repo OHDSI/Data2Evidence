@@ -202,8 +202,8 @@ describe("Researcher - Deep Link Integration", () => {
     expect(feedback?.message).toBe("Unable to Open Dataset");
   });
 
-  it("should route to /cohort when route=cohort and pass PA params", () => {
-    // Setup: URL with route=cohort and PA params (linkType, query)
+  it("should route to /information with all non-datasetId query params when no path stored", () => {
+    // Setup: URL with query params but no stored path
     (window as any).location = {
       href: "http://localhost:3000/researcher?datasetId=dataset-2&route=cohort&linkType=cohort-definition&query=abc",
     };
@@ -228,8 +228,8 @@ describe("Researcher - Deep Link Integration", () => {
     // Verify correct dataset was set
     expect(result.current.activeDataset.activeDataset.id).toBe("dataset-2");
 
-    // Verify navigation routes to /cohort with only PA params (not datasetId/route)
-    expect(mockNavigate).toHaveBeenCalledWith("/researcher/cohort?linkType=cohort-definition&query=abc", {
+    // Without a stored path, defaults to /information with all non-datasetId params
+    expect(mockNavigate).toHaveBeenCalledWith("/researcher/information?route=cohort&linkType=cohort-definition&query=abc", {
       state: { tenantId: "t1" },
     });
   });

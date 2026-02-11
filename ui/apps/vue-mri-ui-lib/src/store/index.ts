@@ -20,6 +20,7 @@ import shared from './modules/shared'
 import dqd from './modules/dqd'
 import cohortDefinition from './modules/cohortDefinition'
 import samples from './modules/samples'
+import wizardConfig from './modules/wizardConfig'
 
 export default createStore({
   // strict: process.env.NODE_ENV !== 'production',
@@ -45,6 +46,7 @@ export default createStore({
     dqd,
     cohortDefinition,
     samples,
+    wizardConfig,
   },
   state: {},
   getters: {},

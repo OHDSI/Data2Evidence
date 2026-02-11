@@ -24,7 +24,7 @@ export class Terminology {
     domainId: string[],
     vocabularyId: string[],
     standardConcept: string[],
-    validity: string[]
+    validity: string[],
   ): Promise<FhirValueSet> {
     const offset = page * rowsPerPage;
 
@@ -41,7 +41,7 @@ export class Terminology {
         vocabularyId,
         standardConcept,
         validity,
-      })
+      }),
     );
 
     return request({
@@ -58,7 +58,8 @@ export class Terminology {
     domainId: string[],
     vocabularyId: string[],
     standardConcept: string[],
-    validity: string[]
+    validity: string[],
+    signal?: AbortSignal,
   ): Promise<number> {
     const params = new URLSearchParams();
     params.append("datasetId", String(datasetId));
@@ -71,19 +72,20 @@ export class Terminology {
         vocabularyId,
         standardConcept,
         validity,
-      })
+      }),
     );
 
     return request({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/concept/count?${params}`,
       method: "GET",
+      signal,
     });
   }
 
   public getStandardConcepts(
     data: RowObject[],
-    datasetId: string
+    datasetId: string,
   ): Promise<StandardConcepts[]> {
     return request({
       baseURL: TERMINOLOGY_BASE_URL,
@@ -95,7 +97,7 @@ export class Terminology {
 
   public getTerminologyConnections(
     conceptId: number,
-    datasetId: string
+    datasetId: string,
   ): Promise<FhirConceptMap> {
     return request({
       baseURL: TERMINOLOGY_BASE_URL,
@@ -104,7 +106,11 @@ export class Terminology {
     });
   }
 
-  public getRecommendedConcepts(conceptIds: number[], datasetId: string) {
+  public getRecommendedConcepts(
+    conceptIds: number[],
+    datasetId: string,
+    signal?: AbortSignal,
+  ) {
     return request<Concept[]>({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/concept/recommended/list`,
@@ -113,6 +119,7 @@ export class Terminology {
         conceptIds,
         datasetId,
       },
+      signal,
     });
   }
 
@@ -122,7 +129,8 @@ export class Terminology {
     conceptClassId: string[],
     domainId: string[],
     vocabularyId: string[],
-    standardConcept: string[]
+    standardConcept: string[],
+    signal?: AbortSignal,
   ): Promise<FilterOptions> {
     const params = new URLSearchParams();
     params.append("datasetId", datasetId);
@@ -134,13 +142,14 @@ export class Terminology {
         domainId,
         vocabularyId,
         standardConcept,
-      })
+      }),
     );
 
     const { filterOptions } = await request<{ filterOptions: FilterOptions }>({
       baseURL: TERMINOLOGY_BASE_URL,
       url: `/concept/filter-options?${params}`,
       method: "GET",
+      signal,
     });
     return filterOptions;
   }
@@ -148,7 +157,7 @@ export class Terminology {
   public async getConceptHierarchy(
     datasetId: string,
     conceptId: number,
-    depth: number
+    depth: number,
   ): Promise<ConceptHierarchyResponse> {
     return await request({
       baseURL: TERMINOLOGY_BASE_URL,
@@ -185,7 +194,7 @@ export class Terminology {
 
   public createConceptSet(
     conceptSet: Omit<ConceptSet, "id">,
-    datasetId: string
+    datasetId: string,
   ) {
     return request<number>({
       baseURL: TERMINOLOGY_BASE_URL,
@@ -198,7 +207,7 @@ export class Terminology {
   public updateConceptSet(
     conceptSetId: number,
     conceptSet: Partial<ConceptSet>,
-    datasetId: string
+    datasetId: string,
   ) {
     return request<number | { statusCode: number }>({
       baseURL: TERMINOLOGY_BASE_URL,
