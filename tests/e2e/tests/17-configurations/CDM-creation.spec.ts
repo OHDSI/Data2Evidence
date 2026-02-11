@@ -196,7 +196,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await expect(page.getByRole('button', { name: 'Add Attribute' })).toBeVisible()
     await page.getByText('Basic Data').dblclick()
     await page.getByRole('button', { name: 'Add Attribute' }).click()
-    await page.waitForTimeout(500) // Wait for the new attribute to be added
+    await expect(page.getByText('New Attribute - 1')).toBeVisible()
     await page.getByText('New Attribute - 1').click()
     await page.locator('[id="__xmlview11--attrName-inner"]').click()
     await page.locator('[id="__xmlview11--attrName-inner"]').fill('Person Id')
@@ -368,7 +368,11 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('button', { name: 'Preview' }).click()
     await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
     await page.waitForTimeout(500) // Wait for UI and star indicator to stabilize
-    await expect(page).toHaveScreenshot()
+    await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
+    const previewDialog = page.getByLabel('JSON Configuration Preview')
+    await expect(previewDialog).toContainText('"patient"')
+    await expect(previewDialog).toContainText('"conditions"')
+    await expect(previewDialog).toContainText('"conditionoccurrence"')
     await page.getByRole('button', { name: 'Close' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
     await page.getByRole('button', { name: 'OK' }).click()
