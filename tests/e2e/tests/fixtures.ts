@@ -2,6 +2,10 @@ import { test as base, Page, BrowserContext } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
+function passedFirstTry(testInfo: { status?: string; retry: number }) {
+  return testInfo.status === 'passed' && testInfo.retry === 0
+}
+
 // Extend the base test to capture console logs, errors, and HAR
 export const test = base.extend<{
   context: BrowserContext
@@ -14,13 +18,31 @@ export const test = base.extend<{
     // Only record HAR when running locally (not in GitHub Actions)
     const context = await browser.newContext({
       ...(isGitHubActions ? {} : { recordHar: { path: harPath, mode: 'minimal' } }),
+      recordVideo: { dir: testInfo.outputDir },
       ignoreHTTPSErrors: true
     })
 
     await use(context)
 
-    // Close context to finalize HAR file
+    // Close context to finalize HAR and video files
     await context.close()
+
+    // Only keep video recording if test did not pass on first try
+    const files = fs.readdirSync(testInfo.outputDir)
+    for (const file of files) {
+      if (file.endsWith('.webm')) {
+        const videoPath = path.join(testInfo.outputDir, file)
+        if (passedFirstTry(testInfo)) {
+          fs.unlinkSync(videoPath)
+        } else {
+          testInfo.attachments.push({
+            name: 'video',
+            path: videoPath,
+            contentType: 'video/webm'
+          })
+        }
+      }
+    }
 
     // Only process HAR file if we recorded it (local runs only)
     if (!isGitHubActions) {
@@ -72,14 +94,8 @@ export const test = base.extend<{
 
     await use(page)
 
-    // After test, save console logs to a file if there were any errors or warnings
-    const hasErrors = logs.some(
-      log => log.includes('[ERROR]') || log.includes('[PAGE ERROR]') || log.includes('[REQUEST FAILED]')
-    )
-
     // Skip saving logs if test passed on first try
-    const passedFirstTry = testInfo.status === 'passed' && testInfo.retry === 0
-    if (!passedFirstTry) {
+    if (!passedFirstTry(testInfo)) {
       const outputDir = testInfo.outputDir
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true })
