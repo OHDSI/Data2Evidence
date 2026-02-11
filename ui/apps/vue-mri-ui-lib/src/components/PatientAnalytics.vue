@@ -2,7 +2,7 @@
   <div :class="['pa-component-wrapper']">
     <div class="fullHeight pa-splitter">
       <splitpanes class="default-theme" @resize="paneSize = $event?.[0]?.size ?? paneSize">
-        <pane :size="paneSize" :min-size="splitterMinWidth">
+        <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
               <div v-if="!isAtlasBookmark">
