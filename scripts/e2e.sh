@@ -770,7 +770,7 @@ cmd_clean_all() {
     npm run stop || true
 
     log_info "Removing containers for ${PROJECT_NAME}..."
-    docker rm $(docker ps -aq --filter "name=^${PROJECT_NAME}-") 2>/dev/null || true
+    docker rm -f $(docker ps -aq --filter "name=^${PROJECT_NAME}-") 2>/dev/null || true
 
     log_info "Removing all volumes for ${PROJECT_NAME}..."
     docker volume rm $(docker volume ls -q | grep "^${PROJECT_NAME}_") 2>/dev/null || true
