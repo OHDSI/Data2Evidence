@@ -11,10 +11,9 @@ const STORAGE_KEY = "deepLinkParams";
 export interface DeepLinkParams {
   // Portal params (used for routing, not restored to URL)
   datasetId?: string;
-  route?: string;
-  // PA params (restored to URL for PA to consume)
-  linkType?: string;
-  query?: string;
+  path?: string; // Full relative path, e.g. "/researcher/wizards" or "/researcher/cohort"
+  // All other query params (restored to URL for downstream apps to consume)
+  queryParams?: Record<string, string>;
 }
 
 /**
@@ -65,21 +64,44 @@ export const clearDeepLinkParams = (): void => {
  * @returns Deep link parameters found in URL
  */
 export const extractDeepLinkParamsFromUrl = (url: string | URLSearchParams): DeepLinkParams => {
+  // Whitelist of path suffixes that support deep linking with query params
+  const DEEP_LINK_SUFFIXES = ["/cohort", "/wizards"];
+  // Params consumed by portal (not restored to URL)
+  const PORTAL_PARAMS = new Set(["datasetId"]);
+
   try {
     const searchParams = typeof url === "string" ? new URL(url).searchParams : url;
     const params: DeepLinkParams = {};
 
-    // Portal params (used for routing)
-    const datasetId = searchParams.get("datasetId");
-    const route = searchParams.get("route");
-    // PA params (restored to URL for PA to consume)
-    const linkType = searchParams.get("linkType");
-    const query = searchParams.get("query");
+    // Check if pathname ends with a whitelisted suffix
+    if (typeof url === "string") {
+      const pathname = new URL(url).pathname;
+      const matchedSuffix = DEEP_LINK_SUFFIXES.find((suffix) => pathname.endsWith(suffix));
+      if (!matchedSuffix) {
+        return {};
+      }
+      // Store the matched path for navigation (e.g., "/researcher/cohort")
+      // Extract everything from /researcher onwards
+      const researcherIndex = pathname.indexOf("/researcher");
+      params.path = researcherIndex >= 0 ? pathname.slice(researcherIndex) : matchedSuffix;
+    } else {
+      // URLSearchParams passed directly - can't check path
+      return {};
+    }
 
+    const datasetId = searchParams.get("datasetId");
     if (datasetId) params.datasetId = datasetId;
-    if (route) params.route = route;
-    if (linkType) params.linkType = linkType;
-    if (query) params.query = query;
+
+    // Collect all non-portal query params for downstream apps
+    const queryParams: Record<string, string> = {};
+    searchParams.forEach((value, key) => {
+      if (!PORTAL_PARAMS.has(key)) {
+        queryParams[key] = value;
+      }
+    });
+    if (Object.keys(queryParams).length > 0) {
+      params.queryParams = queryParams;
+    }
 
     return params;
   } catch (error) {

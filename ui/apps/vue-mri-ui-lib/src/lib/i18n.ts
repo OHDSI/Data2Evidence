@@ -817,6 +817,7 @@ export const i18n = {
     MRI_PA_CREATE_PA_ATLAS_COHORT_TEXT: 'PA-Atlas',
     MRI_PA_COMPARE_D2E_COHORT_TEXT: 'Compare',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Import',
+    MRI_PA_OPEN_DASHBOARD_TEXT: 'Open Dashboard',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Cohort Attribute',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
       'The cohorts listed here are those you created and those shared with you by other users.',
@@ -1731,6 +1732,7 @@ export const i18n = {
     MRI_PA_CREATE_D2E_COHORT_TEXT: 'D2E',
     MRI_PA_CREATE_ATLAS_COHORT_TEXT: 'Atlas',
     MRI_PA_COMPARE_D2E_COHORT_TEXT: 'Vergleichen',
+    MRI_PA_OPEN_DASHBOARD_TEXT: 'Dashboard öffnen',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Einfuhr',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Attribut "Kohorte"',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
@@ -2565,6 +2567,7 @@ export const i18n = {
     MRI_PA_CREATE_D2E_COHORT_TEXT: 'D2E',
     MRI_PA_CREATE_ATLAS_COHORT_TEXT: 'Atlas',
     MRI_PA_COMPARE_D2E_COHORT_TEXT: '比较',
+    MRI_PA_OPEN_DASHBOARD_TEXT: '打开仪表板',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: '进口',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: '群属性',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT: '此处列出的群是您创建的群以及其他用户与您共享的群。',

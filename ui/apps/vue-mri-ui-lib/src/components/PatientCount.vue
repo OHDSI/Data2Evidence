@@ -88,6 +88,7 @@ export default {
       const boundingBox = this.$refs.patientCount.getBoundingClientRect()
       this.showPatientCount = true
       this.popOverPosition.top = `${boundingBox.bottom + 12}px`
+      this.popOverPosition.right = '10px'
     },
   },
   components: {
