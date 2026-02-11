@@ -56,26 +56,19 @@ test(TEST_NAME, async ({ page }, testInfo) => {
       if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
         await page.getByRole('button', { name: 'Back' }).click()
       }
-
       const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
-      // Do a quick existence check without waiting for visibility to avoid flaky timeouts
-      const count = await testConfig.count()
-      if (count === 0) {
-        console.log(`${testConfigname} does not exist, continue creating new one`)
-        return
-      }
-
-      // Scroll the first match into view and proceed with deletion
-      await scrollElementIntoView(testConfig.first())
-      await expect(testConfig.first()).toBeVisible()
-      console.log(`Deleting existing ${testConfigname}`)
-      await testConfig.first().getByText('Delete').click()
+      await scrollElementIntoView(testConfig)
+      await expect(testConfig).toBeVisible()
+      console.log(`Deleting existing ${testConfigname}`, await testConfig.isVisible())
+      await testConfig.getByText('Delete').click()
       await expect(page.getByLabel('Are you sure you want to')).toBeVisible()
       await page.getByLabel('Are you sure you want to').getByRole('button', { name: 'Delete' }).click()
       await page.getByRole('button', { name: 'OK' }).click()
-      await expect(testConfig.first()).not.toBeVisible()
+      await expect(testConfig).not.toBeVisible()
     } catch (error) {
       console.log(`Error when deleting ${testConfigname} found: ${error}`)
+    } finally {
+      console.log(`${testConfigname} does not exist, continue creating new one`)
     }
   }
 
