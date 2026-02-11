@@ -1,4 +1,4 @@
-import { SourceDatasetType, CacheDatasetType, DatasetType, ActionValue, DatasetInfoTab } from "./types";
+import { ActionValue, CacheDatasetType, DatasetInfoTab, DatasetType, SourceDatasetType } from "./types";
 
 export enum DatasetAttribute {
   PATIENT_COUNT = "patient_count",
@@ -86,8 +86,8 @@ export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeature
   non_omop: ["Cohorts", "Notebooks"],
   omop: ["Cohorts", "Notebooks", "Analysis", "Concepts"],
   study: ["Cohorts", "Notebooks", "Results"],
-  hana__omop: ["Cohorts", "Concepts"],
-  hana__non_omop: ["Cohorts"],
+  hana__omop: ["Cohorts", "Notebooks", "Concepts"],
+  hana__non_omop: ["Cohorts", "Notebooks"],
 };
 
 export enum LogResponseType {

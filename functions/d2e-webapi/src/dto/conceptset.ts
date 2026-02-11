@@ -29,7 +29,7 @@ export type IConceptSetCheckResponseDto = z.infer<
 
 export const ConceptSetCreateDto = z.object({
   id: z.number().optional(),
-  name: z.string(),
+  name: z.string().trim().min(1, "Concept set name cannot be empty"),
   shared: z.boolean().optional(),
   description: z.string().optional(),
   hasWriteAccess: z.boolean().optional(),
@@ -135,13 +135,13 @@ export const ConceptSetInUseErrorDto = z.object({
     z.object({
       id: z.number(),
       name: z.string(),
-    })
+    }),
   ),
   bookmarks: z.array(
     z.object({
       id: z.string(),
       name: z.string(),
-    })
+    }),
   ),
 });
 export type IConceptSetInUseErrorDto = z.infer<typeof ConceptSetInUseErrorDto>;

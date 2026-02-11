@@ -120,6 +120,17 @@ const getters = {
   getBookmarkById: modulestate => bmkId =>
     JSON.parse(modulestate.bookmarks.find(b => b.bmkId === bmkId).bookmark || '{}'),
   getActiveBookmark: modulestate => modulestate.activeBookmark,
+  getActiveCohortMaterializedId: modulestate => {
+    // Get materializedCohortId from active bookmark's cohortDefinitionId
+    if (!modulestate.activeBookmark?.cohortDefinitionId) {
+      return null
+    }
+    const materializedCohort = modulestate.materializedCohorts.find(
+      mc => mc.id === modulestate.activeBookmark.cohortDefinitionId
+    )
+    return materializedCohort?.id || null
+  },
+  getMaterializedCohorts: modulestate => modulestate.materializedCohorts,
   getBookmark: modulestate => bmkId => modulestate.bookmarks.find(b => b.bmkId === bmkId),
   getBookmarkByNameAndUsername: modulestate => (name, username) => {
     return modulestate.bookmarks.find(b => b.bookmarkname === name && b.user_id === username)
