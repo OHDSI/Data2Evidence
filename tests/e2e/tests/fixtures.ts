@@ -18,31 +18,13 @@ export const test = base.extend<{
     // Only record HAR when running locally (not in GitHub Actions)
     const context = await browser.newContext({
       ...(isGitHubActions ? {} : { recordHar: { path: harPath, mode: 'minimal' } }),
-      recordVideo: { dir: testInfo.outputDir },
       ignoreHTTPSErrors: true
     })
 
     await use(context)
 
-    // Close context to finalize HAR and video files
+    // Close context to finalize HAR file
     await context.close()
-
-    // Only keep video recording if test did not pass on first try
-    const files = fs.readdirSync(testInfo.outputDir)
-    for (const file of files) {
-      if (file.endsWith('.webm')) {
-        const videoPath = path.join(testInfo.outputDir, file)
-        if (passedFirstTry(testInfo)) {
-          fs.unlinkSync(videoPath)
-        } else {
-          testInfo.attachments.push({
-            name: 'video',
-            path: videoPath,
-            contentType: 'video/webm'
-          })
-        }
-      }
-    }
 
     // Only process HAR file if we recorded it (local runs only)
     if (!isGitHubActions) {
