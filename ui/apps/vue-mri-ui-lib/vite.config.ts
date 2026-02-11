@@ -42,11 +42,12 @@ export default defineConfig(({ command, mode }): UserConfig => {
           },
         },
       }),
-      basicSsl({
-        name: 'vue-mri-ui-lib-localhost',
-        domains: ['localhost'],
-        certDir: './.devServer/cert',
-      }),
+      !isBuild &&
+        basicSsl({
+          name: 'vue-mri-ui-lib-localhost',
+          domains: ['localhost'],
+          certDir: './.devServer/cert',
+        }),
       // Replace %VITE_*% placeholders in HTML with env values
       htmlEnvPlugin(env),
       // Generate assets.json plugin (matching HtmlWebpackPlugin behavior)

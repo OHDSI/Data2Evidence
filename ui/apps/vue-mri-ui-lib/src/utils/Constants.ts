@@ -336,4 +336,3 @@ export default {
   CohortEntryExit,
   XAxisLabelMaxLength,
 }
-
