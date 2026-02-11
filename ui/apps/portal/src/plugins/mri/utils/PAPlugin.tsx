@@ -29,25 +29,38 @@ const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas
   };
 
   useEffect(() => {
-    let callbacks: (() => void)[] = [];
+    let isMounted = true;
+    const callbacks: (() => void)[] = [];
+    const cacheKey = `${studyId || "default"}_${releaseId || "default"}_${Date.now()}`;
     setIsLoading(true);
 
-    // Load vue-mri-ui-lib scripts (D3 v3 is bundled with the app)
     fetch(PA_ASSETS_URL)
       .then((response) => response.json())
       .then(({ css, js }) => {
+        if (!isMounted) return;
+
         loadSapScript(() => {
-          const styleSheetCallbacks = css.map(loadStyleSheet);
-          // Use loadEsModuleScript with empty onLoad callback to load Vite-built ES modules with type="module"
-          const scriptCallbacks = js.map((src: string) => loadEsModuleScript(src, () => {}));
+          if (!isMounted) return;
+
+          css.forEach((href: string) => {
+            callbacks.push(loadStyleSheet(href));
+          });
+
+          js.forEach((src: string) => {
+            const cacheBustedSrc = `${src}?v=${cacheKey}`;
+            callbacks.push(loadEsModuleScript(cacheBustedSrc, () => {}));
+          });
+
           hideLogoutButton();
-          callbacks = [...scriptCallbacks, ...styleSheetCallbacks];
         });
+      })
+      .catch((error) => {
+        console.error("Failed to load Patient Analytics assets:", error);
       });
 
-    //Remove scripts and links upon component unmounting
     return () => {
-      callbacks.forEach((callback) => callback());
+      isMounted = false;
+      callbacks.forEach((cleanup) => cleanup());
     };
   }, [isLocalDev]);
 
