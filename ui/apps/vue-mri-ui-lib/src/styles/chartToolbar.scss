@@ -118,4 +118,20 @@
   .toolbarButton.toolbarButtonDisabled .icon {
     cursor: default;
   }
+  
+  .actionButtonGroup {
+    display: flex;
+    align-items: center;
+    gap: 2em;
+    height: 100%;
+    .dashboardButton {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      .button {
+        height: 80%;
+        padding: 0 1em;
+      }
+    }
+  }
 }
