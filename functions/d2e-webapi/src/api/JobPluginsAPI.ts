@@ -73,11 +73,9 @@ export class JobPluginsAPI {
         return "";
       }
     } catch (error) {
-      if (isAxiosError(error)) {
         // Error 404 means no flow run found for datasetId
-        if (error.status === 404) {
+      if (error.status === 404) {
           return "";
-        }
       }
       console.error(
         `Error getting latest sucucessful data characterization results schema name: ${error}`,

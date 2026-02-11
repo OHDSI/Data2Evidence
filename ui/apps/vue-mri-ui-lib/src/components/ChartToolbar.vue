@@ -18,47 +18,55 @@
         <span class="icon" style="font-family: app-icons">{{ unHideIcon }}</span>
       </button>
     </div>
-    <div class="d-flex">
-      <template v-for="chart in chartConfig" :key="chart.name">
-        <chartButton
-          @clickEv="switchChart(chart)"
-          :name="chart.name"
-          :icon="chart.icon"
-          :iconGroup="chart.iconGroup"
-          :title="getText(chart.tooltip)"
-          :activeChart="getActiveChart"
-        ></chartButton>
-        <span class="separator"></span>
-      </template>
+    <div class="actionButtonGroup">
+      <div class="dashboardButton" v-if="getWizardConfig">
+        <Button
+          :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')"
+          :onClick="openDashboardModal"
+        >
+        </Button>
+      </div>
+      <div class="d-flex">
+        <template v-for="chart in chartConfig" :key="chart.name">
+          <chartButton
+            @clickEv="switchChart(chart)"
+            :name="chart.name"
+            :icon="chart.icon"
+            :iconGroup="chart.iconGroup"
+            :title="getText(chart.tooltip)"
+            :activeChart="getActiveChart"
+          ></chartButton>
+          <span class="separator"></span>
+        </template>
 
-      <button
-        class="toolbarButton"
-        :title="getText('MRI_PA_BUTTON_DRILL_DOWN')"
-        v-bind:class="{ toolbarButtonDisabled: !drilldownEnabled }"
-        :disabled="!drilldownEnabled"
-        @click="drillDownClicked"
-      >
-        <span class="icon" style="font-family: app-icons"></span>
-      </button>
+        <button
+          class="toolbarButton"
+          :title="getText('MRI_PA_BUTTON_DRILL_DOWN')"
+          v-bind:class="{ toolbarButtonDisabled: !drilldownEnabled }"
+          :disabled="!drilldownEnabled"
+          @click="drillDownClicked"
+        >
+          <span class="icon" style="font-family: app-icons"></span>
+        </button>
 
-      <span class="separator" />
+        <span class="separator" />
 
-      <button
-        class="actionButton"
-        @click="showFilterCardSummary"
-        :title="getText('MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP')"
-      >
-        <icon icon="summaryDoc" />
-      </button>
+        <button
+          class="actionButton"
+          @click="showFilterCardSummary"
+          :title="getText('MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP')"
+        >
+          <icon icon="summaryDoc" />
+        </button>
 
-      <span class="separator" />
+        <span class="separator" />
 
-      <downloadMenu></downloadMenu>
+        <downloadMenu></downloadMenu>
 
-      <div class="vertical-spacer"></div>
-      <patientCount :popOverPosition="patientCountPopoverPosition" />
-      <span class="separator" />
-      <!-- <span class="separator" />
+        <div class="vertical-spacer"></div>
+        <patientCount :popOverPosition="patientCountPopoverPosition" />
+        <span class="separator" />
+        <!-- <span class="separator" />
       <button
         id="idConfigSettings"
         class="actionButton"
@@ -67,8 +75,31 @@
       >
         <span class="icon" style="font-family: app-icons"></span>
       </button> -->
+      </div>
     </div>
   </div>
+
+  <Teleport to="#app">
+    <ShinyDashboardModal
+      v-if="showDashboardModal"
+      :is-open="showDashboardModal"
+      :dataset-id="getSelectedDataset.id"
+      :cohort-id="getActiveCohortMaterializedId?.toString() || ''"
+      :wizard-config="dashboardContext.wizardConfig"
+      :conditions="dashboardContext.conditions"
+      :mriquery="dashboardContext.mriquery"
+      @close="closeDashboardModal"
+    />
+  </Teleport>
+
+  <Teleport to="#app">
+    <SaveCohortModal
+      :is-open="showSaveCohortModal"
+      :wizard-config="getWizardConfig"
+      @success="handleSaveCohortSuccess"
+      @cancel="handleCancelSaveCohort"
+    />
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -80,6 +111,9 @@ import Constants from '../utils/Constants'
 import icon from '../lib/ui/app-icon.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import DownloadMenu from './DownloadMenu.vue'
+import ShinyDashboardModal from './ShinyViewer/ShinyDashboardModal.vue'
+import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
+import Button from './Button.vue'
 
 export default {
   name: 'chartToolbar',
@@ -93,6 +127,8 @@ export default {
       hideIconToolTip: '',
       toggleFilterCardSummary: false,
       patientCountPopoverPosition: {},
+      showDashboardModal: false,
+      showSaveCohortModal: false,
     }
   },
   watch: {
@@ -136,6 +172,15 @@ export default {
       'getText',
       'getSelectedDataset',
       'getMriFrontendConfig',
+      'getActiveCohortMaterializedId',
+      'getActiveBookmark',
+      'getBookmarksData',
+      'getMaterializedCohorts',
+      'getBookmarks',
+      'getCurrentBookmarkHasChanges',
+      'getPLRequest',
+      'getWizardConfig',
+      'getActiveCohortMaterializedId',
     ]),
     chartSelection() {
       return this.getChartSelection()
@@ -149,6 +194,41 @@ export default {
         return true
       }
       return false
+    },
+    hasChanges() {
+      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
+    },
+    isBookmarkSaved() {
+      return this.getActiveBookmark && !this.getActiveBookmark.isNew
+    },
+    needsMaterialization() {
+      return !this.getActiveCohortMaterializedId
+    },
+    dashboardContext() {
+      const activeBookmark = this.$store.getters.getActiveBookmark
+
+      if (!activeBookmark) {
+        return {
+          wizardConfig: null,
+          conditions: null,
+          mriquery: null,
+        }
+      }
+
+      const wizardConfig = this.getWizardConfig || null
+
+      let mriquery = null
+      try {
+        const plRequest = this.$store.getters.getPLRequest({ bmkId: activeBookmark.id })
+        mriquery = JSON.stringify(plRequest)
+      } catch (e) {
+        console.error('Failed to generate mriquery:', e)
+      }
+
+      return {
+        wizardConfig,
+        mriquery,
+      }
     },
     getSelectedDatasetText() {
       return this.getSelectedDataset.name == '' ? 'Untitled' : this.getSelectedDataset.name
@@ -164,6 +244,9 @@ export default {
       'requestDatasetVersions',
       'loadValuesForAttributePath',
       'refreshPatientCount',
+      'fireBookmarkQuery',
+      'onAddCohortOkButtonPress',
+      'setToastMessage',
     ]),
     openSettingsConfig() {
       this.toggleConfigSelectionDialog()
@@ -260,6 +343,33 @@ export default {
     drillDownClicked() {
       this.$emit('drilldown')
     },
+    async handleOpenDashboard() {
+      if (this.hasChanges) {
+        this.showSaveCohortModal = true
+        return
+      }
+      if (!this.getActiveCohortMaterializedId) {
+        this.showSaveCohortModal = true
+        return
+      }
+      this.showDashboardModal = true
+    },
+    
+    handleSaveCohortSuccess({ cohortId, bookmarkId }) {
+      this.showDashboardModal = true
+    },
+    
+    handleCancelSaveCohort() {
+      this.showSaveCohortModal = false
+    },
+    
+    openDashboardModal() {
+      this.handleOpenDashboard()
+    },
+    
+    closeDashboardModal() {
+      this.showDashboardModal = false
+    },
   },
   components: {
     ChartButton,
@@ -268,6 +378,9 @@ export default {
     patientCount,
     appIcon,
     DownloadMenu,
+    ShinyDashboardModal,
+    SaveCohortModal,
+    Button,
   },
 }
 </script>
