@@ -49,6 +49,15 @@ export function WizardProvider({
     }
   }, [portalProps.getToken]);
 
+  // Reset wizard state when dataset changes
+  const datasetIdRef = React.useRef(portalProps.datasetId);
+  useEffect(() => {
+    if (portalProps.datasetId !== datasetIdRef.current) {
+      datasetIdRef.current = portalProps.datasetId;
+      setState(getInitialState());
+    }
+  }, [portalProps.datasetId]);
+
   /**
    * Directly set the current step index.
    * @param index - Step index (-1 = selection page, 0+ = wizard step index)
