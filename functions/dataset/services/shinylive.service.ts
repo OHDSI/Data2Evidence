@@ -96,27 +96,8 @@ export class ShinyLiveService {
           throw new Error(`Failed to download ${url}: ${resp.status}`);
         }
         const data = await resp.arrayBuffer();
-        const contentType = resp.headers.get("content-type") || "";
-        const ext = path.extname(localPath).toLowerCase();
 
-        // For text-based resources (HTML/JS/CSS/JSON), strip integrity and crossorigin attributes to avoid SRI blocking
-        if (
-          contentType.startsWith("text/") ||
-          contentType.includes("javascript") ||
-          [".html", ".htm", ".js", ".css", ".json"].includes(ext)
-        ) {
-          try {
-            const text = new TextDecoder().decode(data);
-            const cleaned = text
-              .replace(/\sintegrity=("[^"]+"|'[^']+')/gi, "")
-              .replace(/\scrossorigin=("[^"]+"|'[^']+')/gi, "");
-            await fs.writeFile(localPath, cleaned, { encoding: "utf8" });
-            continue;
-          } catch (e) {
-            // fallback to writing raw bytes
-          }
-        }
-
+        // Write raw bytes to disk WITHOUT modifying content to preserve SRI
         await fs.writeFile(localPath, Buffer.from(data));
       }
 

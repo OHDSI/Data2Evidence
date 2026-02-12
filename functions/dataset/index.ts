@@ -609,22 +609,12 @@ export class DatasetRouter {
               try {
                 // Check if file exists
                 await fs.access(filePath);
-                let html = await fs.readFile(filePath, { encoding: "utf8" });
-                // Remove integrity attributes that can block loading if hashes mismatch
-                html = html.replace(/\sintegrity=("[^"]+"|'[^']+')/gi, "");
-                // Also remove crossorigin attributes commonly paired with SRI
-                html = html.replace(/\scrossorigin=("[^"]+"|'[^']+')/gi, "");
-
-                // Inject absolute base href for this resource so subsequent requests resolve correctly
-                const baseHref = `/gateway/api/dataset/shiny-live/${resourceId}/`;
-                // remove any existing base tag
-                html = html.replace(/<base[^>]*>/i, "");
-                // insert base immediately after opening head tag
-                html = html.replace(/(<head[^>]*>)/i, `$1<base href="${baseHref}">`);
-
-                res.set("Content-Type", "text/html");
-                res.set("Cache-Control", "no-store");
-                return res.send(html);
+                const data = await fs.readFile(filePath);
+                const contentType = MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
+                res.set('Content-Type', contentType);
+                res.set('Cache-Control', 'no-store');
+                res.set('Content-Length', data.length.toString());
+                return res.send(Buffer.from(data));
               } catch (e) {
                 // file doesn't exist or can't be read - try next candidate
                 continue;
@@ -648,24 +638,12 @@ export class DatasetRouter {
             // File exists locally - but if this is a service worker JS file, inject skipWaiting/clients.claim and set strict headers
             const swRegex = /(^|\/)((?:.*-)?sw\.js$)|load-shinylive-sw\.js$/i;
             if (swRegex.test(requestedPath) || /shinylive-sw\.js$/i.test(requestedPath)) {
-              try {
-                let swText = await fs.readFile(localFilePath, { encoding: "utf8" });
-                // ensure skipWaiting and clients.claim are present
-                if (!/skipWaiting\(\)/.test(swText)) {
-                  swText += "\nself.addEventListener('install', (e)=>{self.skipWaiting();});\n";
-                }
-                if (!/clients\.claim\(\)/.test(swText)) {
-                  swText += "\nself.addEventListener('activate', (e)=>{clients.claim();});\n";
-                }
-                res.set("Content-Type", "application/javascript");
-                res.set("Cache-Control", "no-store");
-                // allow SW to be registered at scopes under /gateway/api/
-                res.set("Service-Worker-Allowed", "/gateway/api/");
-                return res.send(swText);
-              } catch (readErr) {
-                this.logger.warn(`[ShinyLive] Failed to read/modify SW file locally: ${readErr}`);
-                // fall back to serving via static middleware
-              }
+              const data = await fs.readFile(localFilePath);
+              res.set('Content-Type', 'application/javascript');
+              res.set('Cache-Control', 'no-store');
+              res.set('Service-Worker-Allowed', '/gateway/api/');
+              res.set('Content-Length', data.length.toString());
+              return res.send(Buffer.from(data));
             }
 
             // File exists locally - serve with static middleware
@@ -694,37 +672,18 @@ export class DatasetRouter {
               const contentLength = response.headers.get("content-length") || "unknown";
               this.logger.info(`[ShinyLive] Proxying response content-type=${contentType} content-length=${contentLength}`);
 
-              // If HTML, decode, strip integrity/crossorigin, inject base, send as text
-              if (contentType.includes("text/html") || contentType.includes("application/xhtml+xml")) {
-                const bodyText = await response.text();
-                let cleaned = bodyText.replace(/\sintegrity=("[^"]+"|'[^']+')/gi, "");
-                cleaned = cleaned.replace(/\scrossorigin=("[^"]+"|'[^']+')/gi, "");
-                const baseHref = `/gateway/api/dataset/shiny-live/${resourceId}/`;
-                cleaned = cleaned.replace(/<base[^>]*>/i, "");
-                cleaned = cleaned.replace(/(<head[^>]*>)/i, `$1<base href="${baseHref}">`);
-
-                res.set("Content-Type", "text/html");
-                res.set("Cache-Control", "no-store");
-
-                // Save cleaned HTML to disk
-                try {
-                  await fs.mkdir(path.dirname(localFilePath), { recursive: true });
-                  await fs.writeFile(localFilePath, cleaned, { encoding: "utf8" });
-                } catch (writeErr) {
-                  this.logger.warn(`[ShinyLive] Failed to write fallback HTML to disk: ${writeErr}`);
-                }
-
-                return res.send(cleaned);
-              }
-
-              res.set("Content-Type", contentType);
-              const cacheControl = response.headers.get("cache-control");
-              if (cacheControl) res.set("Cache-Control", cacheControl);
-
-              // Stream response body to client and also save to local file asynchronously
+              // STREAM RAW BYTES FOR ALL FILES: do not call response.text() or modify contents to preserve SRI
               const arrayBuffer = await response.arrayBuffer();
               const buffer = Buffer.from(arrayBuffer);
-              // Try to write to local path so subsequent requests hit static file
+
+              // Preserve upstream headers when possible
+              const cacheControl = response.headers.get("cache-control");
+              if (cacheControl) res.set("Cache-Control", cacheControl);
+              res.set("Content-Type", contentType);
+              const upstreamLength = response.headers.get("content-length");
+              if (upstreamLength) res.set("Content-Length", upstreamLength);
+
+              // Attempt to cache locally for future static serving
               try {
                 await fs.mkdir(path.dirname(localFilePath), { recursive: true });
                 await fs.writeFile(localFilePath, buffer);
