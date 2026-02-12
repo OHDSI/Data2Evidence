@@ -647,9 +647,14 @@ export class DatasetRouter {
             }
           }
         } catch (error) {
-          this.logger.error(
-            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
-          );
+          // Log full error stack and request context for debugging
+          const reqPath = (typeof req !== 'undefined' && req.path) ? req.path : 'unknown';
+          const resourceIdCtx = (typeof resourceId !== 'undefined') ? resourceId : 'unknown';
+          this.logger.error('[ShinyLive] Error in shiny-live endpoint', {
+            resourceId: resourceIdCtx,
+            requestedPath: reqPath,
+            error: error?.stack || error?.message || String(error),
+          });
           res.status(500).send("Error loading shiny-live application");
         }
       },
