@@ -1,5 +1,6 @@
-import express, { Request, Response } from "npm:express";
+import express, { NextFunction, Request, Response } from "npm:express";
 import { Buffer } from "node:buffer";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
@@ -511,64 +512,92 @@ export class DatasetRouter {
     });
 
     // resourceId format: datasetId_type_name_language
-    this.router.get(
-      ["/shiny-live/:resourceId", "/shiny-live/:resourceId/{*subPath}"],
-      async (req: Request, res: Response) => {
+    this.router.use(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response, next: NextFunction) => {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
-        const wildcardParam = (req.params as any).subPath;
-        const subPath = Array.isArray(wildcardParam)
-          ? wildcardParam.join("/")
-          : wildcardParam || "index.html";
 
         // Validate that we have all parts of the resourceId
         if (!datasetId || !type || !name || !language) {
-          this.logger.error(
-            `[ShinyLive] Invalid resourceId format: ${resourceId}`,
+          this.logger.error(`
+            [ShinyLive] Invalid resourceId format: ${resourceId}`,
           );
           return res
             .status(400)
-            .send(
-              "Invalid resource ID format. Expected: datasetId_type_name_language",
-            );
+            .send("Invalid resource ID format. Expected: datasetId_type_name_language");
         }
 
         try {
-          const url = this.shinyLiveService.getPublicUrl(
+          // Get the static files directory (downloads and writes to tmp if needed)
+          const staticDir = await this.shinyLiveService.getStaticFilesDir(
             datasetId,
             type,
             name,
             language,
-            subPath,
           );
-          console.log(`Fetching shiny-live resource from URL: ${url}`);
-          const response = await fetch(url);
-          if (!response.ok) {
-            if (response.status == 400 || response.status === 404) {
-              return res.status(404).send("Resource not found");
-            }
 
-            return res
-              .status(response.status)
-              .send("Error fetching resource from supabase");
+          if (!staticDir) {
+            return res.status(404).send("Shinylive application not found");
           }
 
-          const ext = path.extname(subPath).toLowerCase();
-          const mimeType =
-            MIME_TYPES[ext] ||
-            response.headers.get("content-type") ||
-            "application/octet-stream";
-          res.set("Content-Type", mimeType);
-          res.set(
-            "Cache-Control",
-            response.headers.get("cache-control") || "public, max-age=3600",
-          );
+          this.logger.info(`[ShinyLive] staticDir: ${staticDir}`);
 
-          const data = await response.arrayBuffer();
-          res.send(Buffer.from(data));
+          // Determine requested path and extension
+          const subPath = req.path === "/" ? "index.html" : req.path.substring(1);
+          const ext = path.extname(subPath).toLowerCase();
+
+          // Only attempt HTML decoding/stripping when the client prefers HTML or the request explicitly targets an HTML file
+          // Only treat as HTML when the request explicitly accepts text/html (avoid '*/*' falling back)
+          const acceptHeader = (req.headers.accept || "").toString();
+          console.log(`[ShinyLive] Accept header: ${acceptHeader}`);
+          const acceptsHtml = acceptHeader.includes("text/html");
+          const isHtmlRequest = ext === ".html" || (subPath === "index.html" && acceptsHtml);
+
+          if (isHtmlRequest) {
+            // Try to locate an HTML file for the requested path, handling directory requests
+            const candidates: string[] = [];
+            if (ext === ".html") {
+              candidates.push(subPath);
+            } else {
+              // no explicit .html extension requested - try common index locations
+              candidates.push(path.join(subPath, "index.html"));
+              candidates.push(subPath + ".html");
+              candidates.push("index.html");
+            }
+
+            for (const candidate of candidates) {
+              const filePath = path.join(staticDir, candidate);
+              try {
+                // Check if file exists
+                await fs.access(filePath);
+                let html = await fs.readFile(filePath, { encoding: "utf8" });
+                // Remove integrity attributes that can block loading if hashes mismatch
+                html = html.replace(/\sintegrity=("[^"]+"|'[^']+')/gi, "");
+                // Also remove crossorigin attributes commonly paired with SRI
+                html = html.replace(/\scrossorigin=("[^"]+"|'[^']+')/gi, "");
+
+                res.set("Content-Type", "text/html");
+                res.set("Cache-Control", "no-store");
+                return res.send(html);
+              } catch (e) {
+                // file doesn't exist or can't be read - try next candidate
+                continue;
+              }
+            }
+          }
+
+
+          // Serve static files including index.html from the downloaded directory
+          const staticMiddleware = express.static(staticDir, {
+            index: "index.html",
+            fallthrough: true,
+          });
+
+          staticMiddleware(req, res, next);
         } catch (error) {
           this.logger.error(
-            `Error proxying shiny-live: ${JSON.stringify(error)}`,
+            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error loading shiny-live application");
         }

@@ -1,5 +1,8 @@
 import pg from "npm:pg";
 import { env, services } from "../env.ts";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { Buffer } from "node:buffer";
 
 export class ShinyLiveService {
   private readonly PUBLIC_BUCKET = "portal-datasets-graphs";
@@ -45,6 +48,61 @@ export class ShinyLiveService {
   ): string {
     const basePath = `${datasetId}/dashboard/${datasetId}_${type}_${name}_${language}`;
     return `${this.baseUrl}/object/public/${this.PUBLIC_BUCKET}/${basePath}/${subPath}`;
+  }
+
+  async getStaticFilesDir(
+    datasetId: string,
+    type: string,
+    name: string,
+    language: string,
+  ): Promise<string | null> {
+    const resourcePrefix = `${datasetId}/dashboard/${datasetId}_${type}_${name}_${language}`;
+    let client: pg.PoolClient;
+
+    try {
+      client = await ShinyLiveService.pgPool.connect();
+      const query = `
+        SELECT name FROM storage.objects
+        WHERE bucket_id = $1 AND name LIKE $2
+      `;
+      const result = await client.query(query, [
+        this.PUBLIC_BUCKET,
+        `${resourcePrefix}%`,
+      ]);
+
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      const tmpDir = path.join(
+        "/tmp",
+        "shinylive",
+        `${datasetId}_${type}_${name}_${language}`,
+      );
+      await fs.mkdir(tmpDir, { recursive: true });
+
+      for (const row of result.rows) {
+        const filePath: string = row.name;
+        // compute relative path under the resourcePrefix
+        const relPath = filePath.startsWith(resourcePrefix + "/")
+          ? filePath.substring(resourcePrefix.length + 1)
+          : filePath;
+        const localPath = path.join(tmpDir, relPath);
+        await fs.mkdir(path.dirname(localPath), { recursive: true });
+
+        const url = `${this.baseUrl}/object/public/${this.PUBLIC_BUCKET}/${filePath}`;
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          throw new Error(`Failed to download ${url}: ${resp.status}`);
+        }
+        const data = await resp.arrayBuffer();
+        await fs.writeFile(localPath, Buffer.from(data));
+      }
+
+      return tmpDir;
+    } finally {
+      client.release();
+    }
   }
 
   async deleteDatasetShinyLiveResources(
