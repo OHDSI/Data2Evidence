@@ -605,18 +605,26 @@ export class DatasetRouter {
             return;
           } catch (e) {
             // File missing locally - fallback to streaming directly from Supabase
-            const url = this.shinyLiveService.getPublicUrl(datasetId, type, name, language, requestedPath);
+            // encode each path segment to preserve slashes and avoid malformed URLs
+            const encodedSubPath = requestedPath.split('/').map(encodeURIComponent).join('/');
+            const url = this.shinyLiveService.getPublicUrl(datasetId, type, name, language, encodedSubPath);
             this.logger.info(`[ShinyLive] File not found locally, proxying from Supabase: ${url}`);
             try {
               const response = await fetch(url);
+              this.logger.info(`[ShinyLive] Proxy fetch status=${response.status} url=${url}`);
+
               if (!response.ok) {
+                const bodyText = await response.text().catch(() => "");
+                this.logger.warn(`[ShinyLive] Supabase fetch failed: status=${response.status} url=${url} body=${bodyText}`);
                 if (response.status === 404) {
                   return res.status(404).send("Resource not found");
                 }
-                return res.status(response.status).send("Error fetching resource from supabase");
+                return res.status(response.status).send(bodyText || "Error fetching resource from supabase");
               }
 
               const contentType = response.headers.get("content-type") || "application/octet-stream";
+              const contentLength = response.headers.get("content-length") || "unknown";
+              this.logger.info(`[ShinyLive] Proxying response content-type=${contentType} content-length=${contentLength}`);
               res.set("Content-Type", contentType);
               const cacheControl = response.headers.get("cache-control");
               if (cacheControl) res.set("Cache-Control", cacheControl);
@@ -634,8 +642,8 @@ export class DatasetRouter {
 
               return res.send(buffer);
             } catch (proxyErr) {
-              this.logger.error(`[ShinyLive] Error proxying missing file: ${proxyErr}`);
-              return res.status(500).send("Error fetching resource from supabase");
+              this.logger.error(`[ShinyLive] Error proxying missing file: ${proxyErr?.stack || proxyErr}`);
+              return res.status(502).send(`Error fetching resource from supabase: ${proxyErr?.message || proxyErr}`);
             }
           }
         } catch (error) {
