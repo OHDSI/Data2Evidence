@@ -1,0 +1,3 @@
+[submodule "functions/mcp-server/d2e-PhenotypeLibrary"]
+	path = functions/mcp-server/d2e-PhenotypeLibrary
+	url = https://github.com/data2evidence/d2e-PhenotypeLibrary.git
