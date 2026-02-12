@@ -645,6 +645,29 @@ export class DatasetRouter {
 
           try {
             await fs.access(localFilePath);
+            // File exists locally - but if this is a service worker JS file, inject skipWaiting/clients.claim and set strict headers
+            const swRegex = /(^|\/)((?:.*-)?sw\.js$)|load-shinylive-sw\.js$/i;
+            if (swRegex.test(requestedPath) || /shinylive-sw\.js$/i.test(requestedPath)) {
+              try {
+                let swText = await fs.readFile(localFilePath, { encoding: "utf8" });
+                // ensure skipWaiting and clients.claim are present
+                if (!/skipWaiting\(\)/.test(swText)) {
+                  swText += "\nself.addEventListener('install', (e)=>{self.skipWaiting();});\n";
+                }
+                if (!/clients\.claim\(\)/.test(swText)) {
+                  swText += "\nself.addEventListener('activate', (e)=>{clients.claim();});\n";
+                }
+                res.set("Content-Type", "application/javascript");
+                res.set("Cache-Control", "no-store");
+                // allow SW to be registered at scopes under /gateway/api/
+                res.set("Service-Worker-Allowed", "/gateway/api/");
+                return res.send(swText);
+              } catch (readErr) {
+                this.logger.warn(`[ShinyLive] Failed to read/modify SW file locally: ${readErr}`);
+                // fall back to serving via static middleware
+              }
+            }
+
             // File exists locally - serve with static middleware
             staticMiddleware(req, res, next);
             return;
