@@ -1,5 +1,6 @@
 import express, { Request, Response } from "npm:express";
 import { Buffer } from "node:buffer";
+import path from "node:path";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
@@ -24,6 +25,23 @@ interface DashboardCode {
   code: string;
   language?: string;
 }
+
+const MIME_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".js": "application/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".wasm": "application/wasm",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".eot": "application/vnd.ms-fontobject",
+};
 
 export class DatasetRouter {
   public router = express.Router();
@@ -131,7 +149,9 @@ export class DatasetRouter {
           cacheDatasetType,
         } = req.body;
 
-        const newCacheSchemaName = schemaName ? schemaName : `CDM${id}`.replace(/-/g, "");
+        const newCacheSchemaName = schemaName
+          ? schemaName
+          : `CDM${id}`.replace(/-/g, "");
         const parsedNewCacheSchemaName = this.schemaCase(
           newCacheSchemaName,
           dialect as DbDialect,
@@ -533,10 +553,12 @@ export class DatasetRouter {
               .send("Error fetching resource from supabase");
           }
 
-          res.set(
-            "Content-Type",
-            response.headers.get("content-type") || "application/octet-stream",
-          );
+          const ext = path.extname(subPath).toLowerCase();
+          const mimeType =
+            MIME_TYPES[ext] ||
+            response.headers.get("content-type") ||
+            "application/octet-stream";
+          res.set("Content-Type", mimeType);
           res.set(
             "Cache-Control",
             response.headers.get("cache-control") || "public, max-age=3600",
