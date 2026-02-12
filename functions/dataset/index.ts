@@ -27,23 +27,6 @@ interface DashboardCode {
   language?: string;
 }
 
-const MIME_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "application/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".wasm": "application/wasm",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".ttf": "font/ttf",
-  ".eot": "application/vnd.ms-fontobject",
-};
-
 export class DatasetRouter {
   public router = express.Router();
   private readonly logger = console;
@@ -518,7 +501,11 @@ export class DatasetRouter {
         const [datasetId, type, name, language] = resourceId.split("_");
 
         if (!datasetId || !type || !name || !language) {
-          return res.status(400).send("Invalid resource ID format. Expected: datasetId_type_name_language");
+          return res
+            .status(400)
+            .send(
+              "Invalid resource ID format. Expected: datasetId_type_name_language",
+            );
         }
 
         try {
@@ -537,9 +524,19 @@ export class DatasetRouter {
             index: "index.html",
             fallthrough: true,
           })(req, res, async () => {
-            const requestedPath = req.path === "/" ? "index.html" : req.path.substring(1);
-            const encodedSubPath = requestedPath.split('/').map(encodeURIComponent).join('/');
-            const url = this.shinyLiveService.getPublicUrl(datasetId, type, name, language, encodedSubPath);
+            const requestedPath =
+              req.path === "/" ? "index.html" : req.path.substring(1);
+            const encodedSubPath = requestedPath
+              .split("/")
+              .map(encodeURIComponent)
+              .join("/");
+            const url = this.shinyLiveService.getPublicUrl(
+              datasetId,
+              type,
+              name,
+              language,
+              encodedSubPath,
+            );
 
             try {
               const response = await fetch(url);
@@ -549,14 +546,18 @@ export class DatasetRouter {
               }
 
               const buffer = Buffer.from(await response.arrayBuffer());
-              const contentType = response.headers.get("content-type") || "application/octet-stream";
-              
+              const contentType =
+                response.headers.get("content-type") ||
+                "application/octet-stream";
+
               res.set("Content-Type", contentType);
               res.send(buffer);
 
               const localFilePath = path.join(staticDir, requestedPath);
               try {
-                await fs.mkdir(path.dirname(localFilePath), { recursive: true });
+                await fs.mkdir(path.dirname(localFilePath), {
+                  recursive: true,
+                });
                 await fs.writeFile(localFilePath, buffer);
               } catch (e) {}
             } catch (err) {
