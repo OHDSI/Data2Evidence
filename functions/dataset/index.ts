@@ -609,9 +609,25 @@ export class DatasetRouter {
               try {
                 // Check if file exists
                 await fs.access(filePath);
+                const extLower = path.extname(filePath).toLowerCase();
+                const contentTypeLocal = MIME_TYPES[extLower] || 'application/octet-stream';
+
+                // If this is an HTML request (explicit accept or index), modify HTML to inject base href
+                if (isHtmlRequest) {
+                  let html = await fs.readFile(filePath, { encoding: 'utf8' });
+                  const baseHref = `/gateway/api/dataset/shiny-live/${resourceId}/`;
+                  // Insert base tag after <head> if not present
+                  if (!/\<base[^>]*\>/i.test(html)) {
+                    html = html.replace(/(<head[^>]*>)/i, `$1<base href="${baseHref}">`);
+                  }
+
+                  res.set('Content-Type', 'text/html');
+                  res.set('Cache-Control', 'no-store');
+                  return res.send(html);
+                }
+
                 const data = await fs.readFile(filePath);
-                const contentType = MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
-                res.set('Content-Type', contentType);
+                res.set('Content-Type', contentTypeLocal);
                 res.set('Cache-Control', 'no-store');
                 res.set('Content-Length', data.length.toString());
                 return res.send(Buffer.from(data));
@@ -672,7 +688,35 @@ export class DatasetRouter {
               const contentLength = response.headers.get("content-length") || "unknown";
               this.logger.info(`[ShinyLive] Proxying response content-type=${contentType} content-length=${contentLength}`);
 
-              // STREAM RAW BYTES FOR ALL FILES: do not call response.text() or modify contents to preserve SRI
+              // If upstream is HTML, fetch text and inject base href; otherwise stream raw bytes (SRI-safe)
+              if (contentType.includes("text/html") || contentType.includes("application/xhtml+xml")) {
+                try {
+                  const bodyText = await response.text();
+                  const baseHref = `/gateway/api/dataset/shiny-live/${resourceId}/`;
+                  let modified = bodyText;
+                  if (!/\<base[^>]*\>/i.test(modified)) {
+                    modified = modified.replace(/(<head[^>]*>)/i, `$1<base href="${baseHref}">`);
+                  }
+
+                  res.set("Content-Type", "text/html");
+                  res.set("Cache-Control", "no-store");
+
+                  // Save modified HTML to disk for future static serving
+                  try {
+                    await fs.mkdir(path.dirname(localFilePath), { recursive: true });
+                    await fs.writeFile(localFilePath, modified, { encoding: "utf8" });
+                  } catch (writeErr) {
+                    this.logger.warn(`[ShinyLive] Failed to write fallback HTML to disk: ${writeErr}`);
+                  }
+
+                  return res.send(modified);
+                } catch (e) {
+                  this.logger.warn(`[ShinyLive] Failed to process upstream HTML as text: ${e}`);
+                  // fallback to streaming bytes if text processing fails
+                }
+              }
+
+              // Non-HTML: stream raw bytes to preserve SRI
               const arrayBuffer = await response.arrayBuffer();
               const buffer = Buffer.from(arrayBuffer);
 
