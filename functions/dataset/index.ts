@@ -594,7 +594,50 @@ export class DatasetRouter {
             fallthrough: true,
           });
 
-          staticMiddleware(req, res, next);
+          // Determine requested subPath and local file path
+          const requestedPath = req.path === "/" ? "index.html" : req.path.substring(1);
+          const localFilePath = path.join(staticDir, requestedPath);
+
+          try {
+            await fs.access(localFilePath);
+            // File exists locally - serve with static middleware
+            staticMiddleware(req, res, next);
+            return;
+          } catch (e) {
+            // File missing locally - fallback to streaming directly from Supabase
+            const url = this.shinyLiveService.getPublicUrl(datasetId, type, name, language, requestedPath);
+            this.logger.info(`[ShinyLive] File not found locally, proxying from Supabase: ${url}`);
+            try {
+              const response = await fetch(url);
+              if (!response.ok) {
+                if (response.status === 404) {
+                  return res.status(404).send("Resource not found");
+                }
+                return res.status(response.status).send("Error fetching resource from supabase");
+              }
+
+              const contentType = response.headers.get("content-type") || "application/octet-stream";
+              res.set("Content-Type", contentType);
+              const cacheControl = response.headers.get("cache-control");
+              if (cacheControl) res.set("Cache-Control", cacheControl);
+
+              // Stream response body to client and also save to local file asynchronously
+              const arrayBuffer = await response.arrayBuffer();
+              const buffer = Buffer.from(arrayBuffer);
+              // Try to write to local path so subsequent requests hit static file
+              try {
+                await fs.mkdir(path.dirname(localFilePath), { recursive: true });
+                await fs.writeFile(localFilePath, buffer);
+              } catch (writeErr) {
+                this.logger.warn(`[ShinyLive] Failed to write fallback file to disk: ${writeErr}`);
+              }
+
+              return res.send(buffer);
+            } catch (proxyErr) {
+              this.logger.error(`[ShinyLive] Error proxying missing file: ${proxyErr}`);
+              return res.status(500).send("Error fetching resource from supabase");
+            }
+          }
         } catch (error) {
           this.logger.error(
             `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
