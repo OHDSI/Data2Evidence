@@ -48,6 +48,9 @@ export class DatasetRouter {
   public router = express.Router();
   private readonly logger = console;
   private readonly shinyLiveService: ShinyLiveService;
+  // simple in-memory cache to avoid repeated downloads and DB pressure
+  private static shinyliveCache: Map<string, { dir: string; expires: number }> = new Map();
+  private static shinyliveInProgress: Map<string, Promise<string | null>> = new Map();
 
   constructor() {
     this.shinyLiveService = new ShinyLiveService();
@@ -529,13 +532,48 @@ export class DatasetRouter {
         }
 
         try {
-          // Get the static files directory (downloads and writes to tmp if needed)
-          const staticDir = await this.shinyLiveService.getStaticFilesDir(
-            datasetId,
-            type,
-            name,
-            language,
-          );
+          // Use cache to avoid repeated downloads during heavy parallel loads
+          const cacheKey = `${datasetId}_${type}_${name}_${language}`;
+          let staticDir: string | null = null;
+
+          // check cache first
+          const cached = DatasetRouter.shinyliveCache.get(cacheKey);
+          if (cached && Date.now() < cached.expires) {
+            try {
+              await fs.access(cached.dir);
+              staticDir = cached.dir;
+            } catch (_) {
+              // cache stale or files removed - fall through to re-download
+              DatasetRouter.shinyliveCache.delete(cacheKey);
+            }
+          }
+
+          if (!staticDir) {
+            // check if a download is already in progress for this resource
+            let inProgress = DatasetRouter.shinyliveInProgress.get(cacheKey);
+            if (!inProgress) {
+              inProgress = this.shinyLiveService.getStaticFilesDir(
+                datasetId,
+                type,
+                name,
+                language,
+              );
+              DatasetRouter.shinyliveInProgress.set(cacheKey, inProgress);
+            }
+
+            try {
+              staticDir = await inProgress;
+              // cache for 5 minutes if succeeded
+              if (staticDir) {
+                DatasetRouter.shinyliveCache.set(cacheKey, {
+                  dir: staticDir,
+                  expires: Date.now() + 5 * 60 * 1000,
+                });
+              }
+            } finally {
+              DatasetRouter.shinyliveInProgress.delete(cacheKey);
+            }
+          }
 
           if (!staticDir) {
             return res.status(404).send("Shinylive application not found");

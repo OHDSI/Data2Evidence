@@ -21,7 +21,7 @@ export class ShinyLiveService {
         host: env.PG__HOST,
         port: parseInt(env.PG__PORT),
         database: env.PG__DB_NAME,
-        max: 1,
+        max: 5,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 2000,
         ssl: (() => {
