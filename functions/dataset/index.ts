@@ -511,7 +511,6 @@ export class DatasetRouter {
       }
     });
 
-    // resourceId format: datasetId_type_name_language
     this.router.use(
       "/shiny-live/:resourceId",
       async (req: Request, res: Response, next: NextFunction) => {
@@ -523,7 +522,6 @@ export class DatasetRouter {
         }
 
         try {
-          // Get static directory (downloads to /tmp if not present)
           const staticDir = await this.shinyLiveService.getStaticFilesDir(
             datasetId,
             type,
@@ -535,12 +533,10 @@ export class DatasetRouter {
             return res.status(404).send("Shinylive application not found");
           }
 
-          // Serve files from /tmp with express.static (handles index.html, MIME types automatically)
           express.static(staticDir, {
             index: "index.html",
             fallthrough: true,
           })(req, res, async () => {
-            // Fallback: file not in /tmp, proxy from Supabase
             const requestedPath = req.path === "/" ? "index.html" : req.path.substring(1);
             const encodedSubPath = requestedPath.split('/').map(encodeURIComponent).join('/');
             const url = this.shinyLiveService.getPublicUrl(datasetId, type, name, language, encodedSubPath);
@@ -552,21 +548,17 @@ export class DatasetRouter {
                 return res.status(response.status).send("Resource not found");
               }
 
-              // Stream raw bytes (SRI-safe)
               const buffer = Buffer.from(await response.arrayBuffer());
               const contentType = response.headers.get("content-type") || "application/octet-stream";
               
               res.set("Content-Type", contentType);
               res.send(buffer);
 
-              // Cache to /tmp for next request
               const localFilePath = path.join(staticDir, requestedPath);
               try {
                 await fs.mkdir(path.dirname(localFilePath), { recursive: true });
                 await fs.writeFile(localFilePath, buffer);
-              } catch (e) {
-                // Silently fail cache write - not critical
-              }
+              } catch (e) {}
             } catch (err) {
               this.logger.error("[ShinyLive] Proxy error:", err);
               return res.status(502).send("Error fetching resource");

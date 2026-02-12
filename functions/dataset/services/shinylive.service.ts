@@ -63,13 +63,10 @@ export class ShinyLiveService {
       `${datasetId}_${type}_${name}_${language}`,
     );
 
-    // Check if already downloaded to /tmp
     try {
       await fs.access(tmpDir);
-      return tmpDir; // Already exists, reuse it
-    } catch {
-      // Not in /tmp, need to download
-    }
+      return tmpDir;
+    } catch {}
 
     let client: pg.PoolClient;
 
@@ -105,7 +102,6 @@ export class ShinyLiveService {
         }
         const data = await resp.arrayBuffer();
 
-        // Write raw bytes to disk WITHOUT modifying content to preserve SRI
         await fs.writeFile(localPath, Buffer.from(data));
       }
 
