@@ -515,6 +515,14 @@ export class DatasetRouter {
     });
 
     // resourceId format: datasetId_type_name_language
+    // Ensure trailing slash for resource root to guarantee correct SW scope
+    this.router.get('/shiny-live/:resourceId', (req: Request, res: Response) => {
+      if (req.path.endsWith('/')) return res.status(200).end();
+      // redirect to same URL with trailing slash
+      const target = req.originalUrl.endsWith('/') ? req.originalUrl : req.originalUrl + '/';
+      return res.redirect(301, target);
+    });
+
     this.router.use(
       "/shiny-live/:resourceId",
       async (req: Request, res: Response, next: NextFunction) => {
