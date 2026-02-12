@@ -615,6 +615,13 @@ export class DatasetRouter {
                 // Also remove crossorigin attributes commonly paired with SRI
                 html = html.replace(/\scrossorigin=("[^"]+"|'[^']+')/gi, "");
 
+                // Inject absolute base href for this resource so subsequent requests resolve correctly
+                const baseHref = `/gateway/api/dataset/shiny-live/${resourceId}/`;
+                // remove any existing base tag
+                html = html.replace(/<base[^>]*>/i, "");
+                // insert base immediately after opening head tag
+                html = html.replace(/(<head[^>]*>)/i, `$1<base href="${baseHref}">`);
+
                 res.set("Content-Type", "text/html");
                 res.set("Cache-Control", "no-store");
                 return res.send(html);
@@ -663,6 +670,30 @@ export class DatasetRouter {
               const contentType = response.headers.get("content-type") || "application/octet-stream";
               const contentLength = response.headers.get("content-length") || "unknown";
               this.logger.info(`[ShinyLive] Proxying response content-type=${contentType} content-length=${contentLength}`);
+
+              // If HTML, decode, strip integrity/crossorigin, inject base, send as text
+              if (contentType.includes("text/html") || contentType.includes("application/xhtml+xml")) {
+                const bodyText = await response.text();
+                let cleaned = bodyText.replace(/\sintegrity=("[^"]+"|'[^']+')/gi, "");
+                cleaned = cleaned.replace(/\scrossorigin=("[^"]+"|'[^']+')/gi, "");
+                const baseHref = `/gateway/api/dataset/shiny-live/${resourceId}/`;
+                cleaned = cleaned.replace(/<base[^>]*>/i, "");
+                cleaned = cleaned.replace(/(<head[^>]*>)/i, `$1<base href="${baseHref}">`);
+
+                res.set("Content-Type", "text/html");
+                res.set("Cache-Control", "no-store");
+
+                // Save cleaned HTML to disk
+                try {
+                  await fs.mkdir(path.dirname(localFilePath), { recursive: true });
+                  await fs.writeFile(localFilePath, cleaned, { encoding: "utf8" });
+                } catch (writeErr) {
+                  this.logger.warn(`[ShinyLive] Failed to write fallback HTML to disk: ${writeErr}`);
+                }
+
+                return res.send(cleaned);
+              }
+
               res.set("Content-Type", contentType);
               const cacheControl = response.headers.get("cache-control");
               if (cacheControl) res.set("Cache-Control", cacheControl);
@@ -680,18 +711,22 @@ export class DatasetRouter {
 
               return res.send(buffer);
             } catch (proxyErr) {
-              this.logger.error(`[ShinyLive] Error proxying missing file: ${proxyErr?.stack || proxyErr}`);
-              return res.status(502).send(`Error fetching resource from supabase: ${proxyErr?.message || proxyErr}`);
+              this.logger.error(
+                `[ShinyLive] Error proxying missing file: ${proxyErr}`,
+              );
+              return res
+                .status(502)
+                .send(`Error fetching resource from supabase: ${proxyErr}`);
             }
           }
         } catch (error) {
           // Log full error stack and request context for debugging
           const reqPath = (typeof req !== 'undefined' && req.path) ? req.path : 'unknown';
           const resourceIdCtx = (typeof resourceId !== 'undefined') ? resourceId : 'unknown';
-          this.logger.error('[ShinyLive] Error in shiny-live endpoint', {
+          this.logger.error("[ShinyLive] Error in shiny-live endpoint", {
             resourceId: resourceIdCtx,
             requestedPath: reqPath,
-            error: error?.stack || error?.message || String(error),
+            error: error,
           });
           res.status(500).send("Error loading shiny-live application");
         }
