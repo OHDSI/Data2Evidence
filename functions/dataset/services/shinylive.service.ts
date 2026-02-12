@@ -63,18 +63,14 @@ export class ShinyLiveService {
       `${datasetId}_${type}_${name}_${language}`,
     );
 
-    try {
-      await fs.access(tmpDir);
-      return tmpDir;
-    } catch {}
-
     let client: pg.PoolClient;
 
     try {
       client = await ShinyLiveService.pgPool.connect();
       const query = `
-        SELECT name FROM storage.objects
+        SELECT name, updated_at FROM storage.objects
         WHERE bucket_id = $1 AND name LIKE $2
+        ORDER BY updated_at DESC
       `;
       const result = await client.query(query, [
         this.PUBLIC_BUCKET,
@@ -85,7 +81,23 @@ export class ShinyLiveService {
         return null;
       }
 
-      await fs.mkdir(tmpDir, { recursive: true });
+      const newestRemote = new Date(result.rows[0].updated_at);
+      let localNewest: Date;
+
+      try {
+        const indexPath = path.join(tmpDir, "index.html");
+        const stat = await fs.stat(indexPath);
+        localNewest = new Date(stat.mtime);
+      } catch {
+        localNewest = new Date(0);
+      }
+
+      if (newestRemote > localNewest) {
+        await fs.rm(tmpDir, { recursive: true, force: true });
+        await fs.mkdir(tmpDir, { recursive: true });
+      } else {
+        return tmpDir;
+      }
 
       for (const row of result.rows) {
         const filePath: string = row.name;
