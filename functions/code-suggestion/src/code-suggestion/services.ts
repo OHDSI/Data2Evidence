@@ -1,6 +1,7 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getModels, initMcpManager } from "../utils/utils";
+import { getModels } from "../utils/utils";
+import { createMcpClient } from "../mcp/mcpManager";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
 import { getRolePrompting } from "./prompts";
@@ -15,7 +16,7 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
           4. Ensure the completion is syntactically correct and logically coherent.
           5. Provide a complete and useful code snippet, not just the given code.
           6. Do not include any explanations, comments, or labels in your response.
-          
+
           Complete the code (your response MUST start with and be longer than the given code)
   `;
 
@@ -63,10 +64,8 @@ export const getChatResponse = async (req: any) => {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
   }
 
-  // Initialize MCP if requested and available
   try {
-    const mcpInstance = await initMcpManager(token, datasetId);
-    const client = mcpInstance.getUnderlyingClient();
+    const client = createMcpClient(token, datasetId);
     const tools = await client.getTools();
     const agent = createAgent({
       model: model,

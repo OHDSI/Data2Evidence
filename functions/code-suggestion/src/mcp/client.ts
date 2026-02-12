@@ -33,7 +33,6 @@ export class MCPClient {
           },
         },
       });
-      await this.client.getTools();
       this.isConnected = true;
       this.reconnectAttempts = 0;
       console.log(`MCP Client connected to ${this.config.serverUrl}`);
