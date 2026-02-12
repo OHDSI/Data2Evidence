@@ -48,9 +48,6 @@ export class DatasetRouter {
   public router = express.Router();
   private readonly logger = console;
   private readonly shinyLiveService: ShinyLiveService;
-  // simple in-memory cache to avoid repeated downloads and DB pressure
-  private static shinyliveCache: Map<string, { dir: string; expires: number }> = new Map();
-  private static shinyliveInProgress: Map<string, Promise<string | null>> = new Map();
 
   constructor() {
     this.shinyLiveService = new ShinyLiveService();
@@ -515,227 +512,68 @@ export class DatasetRouter {
     });
 
     // resourceId format: datasetId_type_name_language
-    // Mount handler for shiny-live; handle index fallback internally (no redirect, no <base> injection)
     this.router.use(
       "/shiny-live/:resourceId",
       async (req: Request, res: Response, next: NextFunction) => {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
 
-        // Validate that we have all parts of the resourceId
         if (!datasetId || !type || !name || !language) {
-          this.logger.error(`
-            [ShinyLive] Invalid resourceId format: ${resourceId}`,
-          );
-          return res
-            .status(400)
-            .send("Invalid resource ID format. Expected: datasetId_type_name_language");
+          return res.status(400).send("Invalid resource ID format. Expected: datasetId_type_name_language");
         }
 
         try {
-          // Use cache to avoid repeated downloads during heavy parallel loads
-          const cacheKey = `${datasetId}_${type}_${name}_${language}`;
-          let staticDir: string | null = null;
-
-          // check cache first
-          const cached = DatasetRouter.shinyliveCache.get(cacheKey);
-          if (cached && Date.now() < cached.expires) {
-            try {
-              await fs.access(cached.dir);
-              staticDir = cached.dir;
-            } catch (_) {
-              // cache stale or files removed - fall through to re-download
-              DatasetRouter.shinyliveCache.delete(cacheKey);
-            }
-          }
-
-          if (!staticDir) {
-            // check if a download is already in progress for this resource
-            let inProgress = DatasetRouter.shinyliveInProgress.get(cacheKey);
-            if (!inProgress) {
-              inProgress = this.shinyLiveService.getStaticFilesDir(
-                datasetId,
-                type,
-                name,
-                language,
-              );
-              DatasetRouter.shinyliveInProgress.set(cacheKey, inProgress);
-            }
-
-            try {
-              staticDir = await inProgress;
-              // cache for 5 minutes if succeeded
-              if (staticDir) {
-                DatasetRouter.shinyliveCache.set(cacheKey, {
-                  dir: staticDir,
-                  expires: Date.now() + 5 * 60 * 1000,
-                });
-              }
-            } finally {
-              DatasetRouter.shinyliveInProgress.delete(cacheKey);
-            }
-          }
+          // Get static directory (downloads to /tmp if not present)
+          const staticDir = await this.shinyLiveService.getStaticFilesDir(
+            datasetId,
+            type,
+            name,
+            language,
+          );
 
           if (!staticDir) {
             return res.status(404).send("Shinylive application not found");
           }
 
-          this.logger.info(`[ShinyLive] staticDir: ${staticDir}`);
-
-          // Determine requested path and extension
-          const subPath = req.path === "/" ? "index.html" : req.path.substring(1);
-          const ext = path.extname(subPath).toLowerCase();
-
-          // Only attempt HTML decoding/stripping when the client prefers HTML or the request explicitly targets an HTML file
-          // Only treat as HTML when the request explicitly accepts text/html (avoid '*/*' falling back)
-          const acceptHeader = (req.headers.accept || "").toString();
-          console.log(`[ShinyLive] Accept header: ${acceptHeader}`);
-          const acceptsHtml = acceptHeader.includes("text/html");
-          const isHtmlRequest = ext === ".html" || (subPath === "index.html" && acceptsHtml);
-
-          if (isHtmlRequest) {
-            // Try to locate an HTML file for the requested path, handling directory requests
-            const candidates: string[] = [];
-            if (ext === ".html") {
-              candidates.push(subPath);
-            } else {
-              // no explicit .html extension requested - try common index locations
-              candidates.push(path.join(subPath, "index.html"));
-              candidates.push(subPath + ".html");
-              candidates.push("index.html");
-            }
-
-            for (const candidate of candidates) {
-              const filePath = path.join(staticDir, candidate);
-              try {
-                // Check if file exists
-                await fs.access(filePath);
-                const extLower = path.extname(filePath).toLowerCase();
-                const contentTypeLocal = MIME_TYPES[extLower] || 'application/octet-stream';
-
-                // If this is an HTML request (explicit accept or index), modify HTML to inject base href
-                if (isHtmlRequest) {
-                  let html = await fs.readFile(filePath, { encoding: 'utf8' });
-                    res.set('Content-Type', 'text/html');
-                  res.set('Cache-Control', 'no-store');
-                  return res.send(html);
-                }
-
-                const data = await fs.readFile(filePath);
-                res.set('Content-Type', contentTypeLocal);
-                res.set('Cache-Control', 'no-store');
-                res.set('Content-Length', data.length.toString());
-                return res.send(Buffer.from(data));
-              } catch (e) {
-                // file doesn't exist or can't be read - try next candidate
-                continue;
-              }
-            }
-          }
-
-
-          // Serve static files including index.html from the downloaded directory
-          const staticMiddleware = express.static(staticDir, {
+          // Serve files from /tmp with express.static (handles index.html, MIME types automatically)
+          express.static(staticDir, {
             index: "index.html",
             fallthrough: true,
-          });
-
-          // Determine requested subPath and local file path
-          const requestedPath = req.path === "/" ? "index.html" : req.path.substring(1);
-          const localFilePath = path.join(staticDir, requestedPath);
-
-          try {
-            await fs.access(localFilePath);
-            // File exists locally - but if this is a service worker JS file, inject skipWaiting/clients.claim and set strict headers
-            const swRegex = /(^|\/)((?:.*-)?sw\.js$)|load-shinylive-sw\.js$/i;
-            if (swRegex.test(requestedPath) || /shinylive-sw\.js$/i.test(requestedPath)) {
-              const data = await fs.readFile(localFilePath);
-              res.set('Content-Type', 'application/javascript');
-              res.set('Cache-Control', 'no-store');
-              res.set('Service-Worker-Allowed', '/gateway/api/');
-              res.set('Content-Length', data.length.toString());
-              return res.send(Buffer.from(data));
-            }
-
-            // File exists locally - serve with static middleware
-            staticMiddleware(req, res, next);
-            return;
-          } catch (e) {
-            // File missing locally - fallback to streaming directly from Supabase
-            // encode each path segment to preserve slashes and avoid malformed URLs
+          })(req, res, async () => {
+            // Fallback: file not in /tmp, proxy from Supabase
+            const requestedPath = req.path === "/" ? "index.html" : req.path.substring(1);
             const encodedSubPath = requestedPath.split('/').map(encodeURIComponent).join('/');
             const url = this.shinyLiveService.getPublicUrl(datasetId, type, name, language, encodedSubPath);
-            this.logger.info(`[ShinyLive] File not found locally, proxying from Supabase: ${url}`);
+
             try {
               const response = await fetch(url);
-              this.logger.info(`[ShinyLive] Proxy fetch status=${response.status} url=${url}`);
 
               if (!response.ok) {
-                const bodyText = await response.text().catch(() => "");
-                this.logger.warn(`[ShinyLive] Supabase fetch failed: status=${response.status} url=${url} body=${bodyText}`);
-                if (response.status === 404) {
-                  return res.status(404).send("Resource not found");
-                }
-                return res.status(response.status).send(bodyText || "Error fetching resource from supabase");
+                return res.status(response.status).send("Resource not found");
               }
 
+              // Stream raw bytes (SRI-safe)
+              const buffer = Buffer.from(await response.arrayBuffer());
               const contentType = response.headers.get("content-type") || "application/octet-stream";
-              const contentLength = response.headers.get("content-length") || "unknown";
-              this.logger.info(`[ShinyLive] Proxying response content-type=${contentType} content-length=${contentLength}`);
-
-              // For HTML upstream: send HTML as raw bytes (no <base> injection)
-              if (contentType.includes("text/html") || contentType.includes("application/xhtml+xml")) {
-                const arrayBufferHtml = await response.arrayBuffer();
-                const bufferHtml = Buffer.from(arrayBufferHtml);
-                res.set("Content-Type", "text/html");
-                res.set("Cache-Control", "no-store");
-                try {
-                  await fs.mkdir(path.dirname(localFilePath), { recursive: true });
-                  await fs.writeFile(localFilePath, bufferHtml);
-                } catch (writeErr) {
-                  this.logger.warn(`[ShinyLive] Failed to write fallback HTML to disk: ${writeErr}`);
-                }
-                return res.send(bufferHtml);
-              }
-
-              // Non-HTML: stream raw bytes to preserve SRI
-              const arrayBuffer = await response.arrayBuffer();
-              const buffer = Buffer.from(arrayBuffer);
-
-              // Preserve upstream headers when possible
-              const cacheControl = response.headers.get("cache-control");
-              if (cacheControl) res.set("Cache-Control", cacheControl);
+              
               res.set("Content-Type", contentType);
-              const upstreamLength = response.headers.get("content-length");
-              if (upstreamLength) res.set("Content-Length", upstreamLength);
+              res.send(buffer);
 
-              // Attempt to cache locally for future static serving
+              // Cache to /tmp for next request
+              const localFilePath = path.join(staticDir, requestedPath);
               try {
                 await fs.mkdir(path.dirname(localFilePath), { recursive: true });
                 await fs.writeFile(localFilePath, buffer);
-              } catch (writeErr) {
-                this.logger.warn(`[ShinyLive] Failed to write fallback file to disk: ${writeErr}`);
+              } catch (e) {
+                // Silently fail cache write - not critical
               }
-
-              return res.send(buffer);
-            } catch (proxyErr) {
-              this.logger.error(
-                `[ShinyLive] Error proxying missing file: ${proxyErr}`,
-              );
-              return res
-                .status(502)
-                .send(`Error fetching resource from supabase: ${proxyErr}`);
+            } catch (err) {
+              this.logger.error("[ShinyLive] Proxy error:", err);
+              return res.status(502).send("Error fetching resource");
             }
-          }
-        } catch (error) {
-          // Log full error stack and request context for debugging
-          const reqPath = (typeof req !== 'undefined' && req.path) ? req.path : 'unknown';
-          const resourceIdCtx = (typeof resourceId !== 'undefined') ? resourceId : 'unknown';
-          this.logger.error("[ShinyLive] Error in shiny-live endpoint", {
-            resourceId: resourceIdCtx,
-            requestedPath: reqPath,
-            error: error,
           });
+        } catch (error) {
+          this.logger.error("[ShinyLive] Error:", { resourceId, error });
           res.status(500).send("Error loading shiny-live application");
         }
       },

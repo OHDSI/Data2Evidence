@@ -57,6 +57,20 @@ export class ShinyLiveService {
     language: string,
   ): Promise<string | null> {
     const resourcePrefix = `${datasetId}/dashboard/${datasetId}_${type}_${name}_${language}`;
+    const tmpDir = path.join(
+      "/tmp",
+      "shinylive",
+      `${datasetId}_${type}_${name}_${language}`,
+    );
+
+    // Check if already downloaded to /tmp
+    try {
+      await fs.access(tmpDir);
+      return tmpDir; // Already exists, reuse it
+    } catch {
+      // Not in /tmp, need to download
+    }
+
     let client: pg.PoolClient;
 
     try {
@@ -74,16 +88,10 @@ export class ShinyLiveService {
         return null;
       }
 
-      const tmpDir = path.join(
-        "/tmp",
-        "shinylive",
-        `${datasetId}_${type}_${name}_${language}`,
-      );
       await fs.mkdir(tmpDir, { recursive: true });
 
       for (const row of result.rows) {
         const filePath: string = row.name;
-        // compute relative path under the resourcePrefix
         const relPath = filePath.startsWith(resourcePrefix + "/")
           ? filePath.substring(resourcePrefix.length + 1)
           : filePath;
