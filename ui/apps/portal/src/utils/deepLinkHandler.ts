@@ -1,6 +1,6 @@
 /**
  * Deep Link Handler - URL parameter detection and dataset sync for deep linking.
- * Portal uses: datasetId, route (for navigation)
+ * Portal uses: datasetId, path (for navigation)
  * PA uses: linkType, query (restored to URL for PA to consume)
  */
 
@@ -71,7 +71,7 @@ export interface SyncDatasetFromUrlResult {
 
 /**
  * Synchronizes Portal's selected dataset based on URL parameter and routes to appropriate page.
- * Uses 'route' param for navigation target, restores 'linkType' and 'query' to URL for PA.
+ * Uses 'path' for navigation target, restores 'linkType' and 'query' to URL for PA.
  */
 export const syncDatasetFromUrl = ({
   url,
@@ -82,9 +82,21 @@ export const syncDatasetFromUrl = ({
   basePath,
 }: SyncDatasetFromUrlParams): SyncDatasetFromUrlResult => {
   const datasetId = extractDatasetIdFromUrl(url);
+  const storedParams = loadDeepLinkParams();
 
-  // No datasetId parameter - normal behavior, no sync needed
+  // No datasetId parameter — check if we have a path-based deep link (e.g., /researcher/wizards)
   if (!isValidDatasetId(datasetId)) {
+    if (storedParams?.path && availableDatasets.length > 0) {
+      // Path-based deep link without datasetId — use first available dataset
+      setActiveDatasetId(availableDatasets[0].id);
+      navigate(storedParams.path);
+      clearDeepLinkParams();
+      return {
+        hasDatasetParam: false,
+        syncSuccess: true,
+        datasetId: availableDatasets[0].id,
+      };
+    }
     return {
       hasDatasetParam: false,
       syncSuccess: false,
@@ -116,24 +128,29 @@ export const syncDatasetFromUrl = ({
   // Valid dataset - set as active
   setActiveDatasetId(datasetId);
 
-  // Get stored params and current URL params
-  const storedParams = loadDeepLinkParams();
+  // Determine target path from stored path (default: basePath/information)
+  const targetPath = storedParams?.path || `${basePath}/information`;
+
+  // Restore all non-portal query params from URL or sessionStorage
   const urlObj = new URL(url);
+  const restoredParams = new URLSearchParams();
 
-  // Determine target route from 'route' param (default: information)
-  const route = urlObj.searchParams.get("route") || storedParams?.route;
-  const targetRoute = route || "information";
-
-  // Build query string with only PA params (linkType, query) - not Portal params (datasetId, route)
-  const paParams = new URLSearchParams();
-  const linkType = urlObj.searchParams.get("linkType") || storedParams?.linkType;
-  const query = urlObj.searchParams.get("query") || storedParams?.query;
-  if (linkType) paParams.set("linkType", linkType);
-  if (query) paParams.set("query", query);
+  // Merge: sessionStorage params first, then URL params override
+  if (storedParams?.queryParams) {
+    for (const [key, value] of Object.entries(storedParams.queryParams)) {
+      restoredParams.set(key, value);
+    }
+  }
+  // URL params take precedence over stored params
+  urlObj.searchParams.forEach((value, key) => {
+    if (key !== "datasetId") {
+      restoredParams.set(key, value);
+    }
+  });
 
   // Build navigation path
-  const queryString = paParams.toString();
-  const navigationPath = queryString ? `${basePath}/${targetRoute}?${queryString}` : `${basePath}/${targetRoute}`;
+  const queryString = restoredParams.toString();
+  const navigationPath = queryString ? `${targetPath}?${queryString}` : targetPath;
 
   // Navigate to target page
   navigate(navigationPath, {

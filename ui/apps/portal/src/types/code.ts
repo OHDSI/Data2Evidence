@@ -3,6 +3,7 @@ export type ViewerCode = {
   code: string;
   type: string;
   name: string;
+  language?: string;
 };
 
 export type ViewerCodeQuery = {
