@@ -92,8 +92,8 @@
       <div class="flex-spacer"></div>
       <appButton
         :click="handleSave"
-        :text="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') || 'Retry' : getText('MRI_PA_COLL_BUT_OK')"
-        :tooltip="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') || 'Retry materialization' : getText('MRI_PA_COLL_BUT_OK')"
+        :text="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') : getText('MRI_PA_COLL_BUT_OK')"
+        :tooltip="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') : getText('MRI_PA_COLL_BUT_OK')"
         :disabled="isSaving || hasExceededLength || cohortNameValidationState !== 'valid'"
       />
       <appButton
