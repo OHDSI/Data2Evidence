@@ -124,23 +124,21 @@ class Table1Generator:
         self.logger.info(f"Saving Table 1 results to database for study_id={self.study_id}")
         with ro.default_converter.context():
                 try:
+                    rDatabaseConnector = importr('DatabaseConnector')
                     conn = rDatabaseConnector.connect(self._get_r_db_connection())
-                    for cohort_id, table1_json_str in self.results.items():
-                        self.logger.info(f"Inserting Table 1 results for cohort_id={cohort_id}")
-                        rDatabaseConnector = importr('DatabaseConnector')
-                        insert_sql = f"""
-                        INSERT INTO results_{self.study_id}.tb1_results (study_id, dataset_id, cohort_id, table1_json)
-                        VALUES ('{self.study_id}', '{self.dataset_id}', {cohort_id}, '{table1_json_str}')
-                        ON CONFLICT (study_id, dataset_id, cohort_id)
-                        DO UPDATE SET table1_json = EXCLUDED.table1_json;
-                        """
                     try:
-                        rDatabaseConnector.executeSql(conn, convert_py_to_R(insert_sql))
-                        self.logger.info(f"Table 1 results saved successfully for cohort_id={cohort_id}")
+                        for cohort_id, table1_json_str in self.results.items():
+                            self.logger.info(f"Inserting Table 1 results for cohort_id={cohort_id}")
+                            insert_sql = f"""
+                            INSERT INTO results_{self.study_id}.tb1_results (study_id, dataset_id, cohort_id, table1_json)
+                            VALUES ('{self.study_id}', '{self.dataset_id}', {cohort_id}, '{table1_json_str}')
+                            ON CONFLICT (study_id, dataset_id, cohort_id)
+                            DO UPDATE SET table1_json = EXCLUDED.table1_json;
+                            """
+                            rDatabaseConnector.executeSql(conn, convert_py_to_R(insert_sql))
+                            self.logger.info(f"Table 1 results saved successfully for cohort_id={cohort_id}")
                     except Exception as e:
                         raise RuntimeError(f"Error saving Table 1 results to DB for cohort_id={cohort_id}: {e}")
-
-                    rDatabaseConnector.disconnect(conn)
 
                 except Exception as e:
                     raise RuntimeError(f"Error in database operations for saving Table 1 results: {e}")
