@@ -1037,13 +1037,14 @@ services:
   calculator:
     build:
       context: ./test-calculator-service
+    image: d2e-calculator:latest
     container_name: ${PROJECT_NAME:-d2e}-calculator
     networks:
       alp:
         priority: 20
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:8000/calculator"]
       interval: 30s
       timeout: 10s
       retries: 3

@@ -879,19 +879,14 @@
       },
       "scopes": [
         {
-          "route": "^/calculator/(.*)",
-          "scope": "calculator.read",
+          "path": "^/calculator/(.*)",
+          "scopes": ["calculator.read"],
           "httpMethods": ["GET"]
         },
         {
-          "route": "^/calculator",
-          "scope": "calculator.read",
+          "path": "^/calculator",
+          "scopes": ["calculator.read"],
           "httpMethods": ["GET"]
-        },
-        {
-          "route": "^/calculator/(.*)",
-          "scope": "calculator.write",
-          "httpMethods": ["POST"]
         },
         {
           "path": "^/gateway/dashboard/(.*)",

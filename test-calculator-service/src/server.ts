@@ -1,15 +1,37 @@
-function handler(req: Request): Response {
-  const url = new URL(req.url);
+import { Hono } from "https://deno.land/x/hono@v4.0.0/mod.ts";
 
-  if (url.pathname === "/") {
-    return new Response("Hello, World!");
-  }
+const app = new Hono();
 
-  if (url.pathname === "/calculator") {
-    return new Response("Calculator route");
-  }
+// Root route
+app.get("/", (c) => {
+  console.log("GET / - Root route called");
+  return c.text("Hello, World!");
+});
 
-  return new Response("Not Found", { status: 404 });
-}
+// Calculator base route
+app.get("/calculator", (c) => {
+  console.log("GET /calculator - Calculator base route called");
+  return c.text("Calculator route");
+});
 
-Deno.serve(handler);
+// Calculator add endpoint - adds two random numbers
+app.get("/calculator/add", (c) => {
+  console.log("GET /calculator/add - Add endpoint called");
+  const num1 = Math.floor(Math.random() * 100);
+  const num2 = Math.floor(Math.random() * 100);
+  const result = num1 + num2;
+  console.log(`Calculation: ${num1} + ${num2} = ${result}`);
+  
+  return c.json({ num1, num2, result });
+});
+
+// Calculator health check endpoint
+app.get("/calculator/health", (c) => {
+  console.log("GET /calculator/health - Health check called");
+  return c.json({ 
+    status: "healthy", 
+    timestamp: new Date().toISOString() 
+  });
+});
+
+Deno.serve(app.fetch);
