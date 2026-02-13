@@ -3,16 +3,11 @@ import ReactDOMClient from "react-dom/client";
 import singleSpaReact from "single-spa-react";
 import App from "./App";
 import { PortalProps } from "./types/portal";
-import { WizardProvider } from "./context/WizardContext";
 
 const lifecycles = singleSpaReact({
   React,
   ReactDOMClient,
-  rootComponent: (props: PortalProps) => (
-    <WizardProvider portalProps={props}>
-      <App {...props} />
-    </WizardProvider>
-  ),
+  rootComponent: (props: PortalProps) => <App {...props} />,
   errorBoundary: (err, info) => {
     console.error("[Wizards] Error:", err, info);
 
