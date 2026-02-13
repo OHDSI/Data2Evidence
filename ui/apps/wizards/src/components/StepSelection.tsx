@@ -30,7 +30,7 @@ export function StepSelection() {
 
   useEffect(() => {
     loadWizards();
-  }, []);
+  }, [portalProps.datasetId]);
 
   const handleWizardSelect = async (wizardId: string) => {
     try {
