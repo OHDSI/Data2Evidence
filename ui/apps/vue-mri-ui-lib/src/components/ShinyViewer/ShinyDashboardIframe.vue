@@ -47,7 +47,7 @@ const iframeUrl = computed(() => {
 
   const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
 
-  return `/gateway/api/dataset/shiny-live/${resourceId}`
+  return `/gateway/api/dataset/shiny-live/${resourceId}/`
 })
 
 window.addEventListener('message', handleIframeMessage)
