@@ -32,7 +32,7 @@ export const EmptyNotebook: FC<EmptyNotebookProps> = ({
         <Button
           className="button-import"
           sx={{
-            "&:hover": {
+            "&&:hover": {
               backgroundColor: "primary.dark",
               color: "white",
             },
