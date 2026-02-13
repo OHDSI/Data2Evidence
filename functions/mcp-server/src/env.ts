@@ -1,4 +1,7 @@
 import { object, z } from "zod";
+import { fileURLToPath } from "node:url";
+import { dirname, normalize, join } from "node:path";
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const _env = Object.assign({}, Deno.env.toObject());
 const Env = z.object({
@@ -13,11 +16,20 @@ const Env = z.object({
       }
     }),
 });
-
 export const env = Env.parse(_env);
 
-export const PHENOTYPE_LIBRARY_COHORT_TEMPLATE =
-  "/usr/src/plugins/d2ef/mcp-server/d2e-PhenotypeLibrary/inst/cohorts";
+const PHENOTYPE_LIBRARY_BASE_PATH = join(
+  __dirname,
+  "..",
+  "d2e-PhenotypeLibrary",
+  "inst",
+).replace(/\/var\/tmp\/sb-compile-trex/, Deno.env.get("TREX_FUNCTION_PATH"));
 
-export const PHENOTYPE_LIBRARY_COHORTS =
-  "/usr/src/plugins/d2ef/mcp-server/d2e-PhenotypeLibrary/inst/Cohorts.csv";
+export const PHENOTYPE_LIBRARY_COHORT_TEMPLATE = join(
+  PHENOTYPE_LIBRARY_BASE_PATH,
+  "cohorts",
+);
+export const PHENOTYPE_LIBRARY_COHORTS = join(
+  PHENOTYPE_LIBRARY_BASE_PATH,
+  "Cohorts.csv",
+);
