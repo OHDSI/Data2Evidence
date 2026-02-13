@@ -884,6 +884,11 @@
           "httpMethods": ["GET"]
         },
         {
+          "route": "^/calculator",
+          "scope": "calculator.read",
+          "httpMethods": ["GET"]
+        },
+        {
           "route": "^/calculator/(.*)",
           "scope": "calculator.write",
           "httpMethods": ["POST"]

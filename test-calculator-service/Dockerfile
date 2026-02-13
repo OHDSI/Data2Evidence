@@ -5,4 +5,4 @@ COPY src/ ./src/
 
 EXPOSE 8080
 
-CMD ["run", "--allow-net", "--allow-env", "src/server.ts"]
+CMD ["deno", "run", "--allow-net", "src/server.ts"]
