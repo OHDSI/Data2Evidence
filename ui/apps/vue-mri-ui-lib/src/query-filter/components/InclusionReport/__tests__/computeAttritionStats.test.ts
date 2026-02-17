@@ -2,6 +2,82 @@ import { computeAttritionStats } from '../computeAttritionStats'
 import type { InclusionReportResponse } from '../../../types/InclusionReportTypes'
 
 describe('Attrition Stats Computation', () => {
+  const multipleRulesReport: InclusionReportResponse = {
+    summary: {
+      baseCount: 230,
+      finalCount: 44,
+      lostCount: 0,
+      percentMatched: '19.13%',
+    },
+    inclusionRuleStats: [
+      {
+        id: 0,
+        name: 'Gender female and gender diverse',
+        percentExcluded: '19.13%',
+        percentSatisfying: '54.35%',
+        countSatisfying: 125,
+      },
+      {
+        id: 1,
+        name: 'Age>30',
+        percentExcluded: '0.87%',
+        percentSatisfying: '98.70%',
+        countSatisfying: 227,
+      },
+      {
+        id: 2,
+        name: 'Age<70',
+        percentExcluded: '34.35%',
+        percentSatisfying: '39.57%',
+        countSatisfying: 91,
+      },
+    ],
+    treemapData: JSON.stringify({
+      name: 'Everyone',
+      children: [
+        {
+          name: 'Group 3',
+          children: [
+            {
+              name: '111',
+              size: 44,
+            },
+            {
+              name: 'Group 2',
+              children: [
+                {
+                  name: '110',
+                  size: 79,
+                },
+                {
+                  name: '101',
+                  size: 2,
+                },
+                {
+                  name: '011',
+                  size: 44,
+                },
+                {
+                  name: 'Group 1',
+                  children: [
+                    {
+                      name: '001',
+                      size: 1,
+                    },
+                    {
+                      name: '010',
+                      size: 60,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }),
+  }
+
   describe('basic functionality', () => {
     it('should return empty array for null/undefined report', () => {
       expect(computeAttritionStats(null as any)).toEqual([])
@@ -47,83 +123,7 @@ describe('Attrition Stats Computation', () => {
     })
 
     it('should compute stats for multiple rules', () => {
-      const report: InclusionReportResponse = {
-        summary: {
-          baseCount: 230,
-          finalCount: 44,
-          lostCount: 0,
-          percentMatched: '19.13%',
-        },
-        inclusionRuleStats: [
-          {
-            id: 0,
-            name: 'Gender female and gender diverse',
-            percentExcluded: '19.13%',
-            percentSatisfying: '54.35%',
-            countSatisfying: 125,
-          },
-          {
-            id: 1,
-            name: 'Age>30',
-            percentExcluded: '0.87%',
-            percentSatisfying: '98.70%',
-            countSatisfying: 227,
-          },
-          {
-            id: 2,
-            name: 'Age<70',
-            percentExcluded: '34.35%',
-            percentSatisfying: '39.57%',
-            countSatisfying: 91,
-          },
-        ],
-        treemapData: JSON.stringify({
-          name: 'Everyone',
-          children: [
-            {
-              name: 'Group 3',
-              children: [
-                {
-                  name: '111',
-                  size: 44,
-                },
-                {
-                  name: 'Group 2',
-                  children: [
-                    {
-                      name: '110',
-                      size: 79,
-                    },
-                    {
-                      name: '101',
-                      size: 2,
-                    },
-                    {
-                      name: '011',
-                      size: 44,
-                    },
-                    {
-                      name: 'Group 1',
-                      children: [
-                        {
-                          name: '001',
-                          size: 1,
-                        },
-                        {
-                          name: '010',
-                          size: 60,
-                        },
-                      ],
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        }),
-      }
-
-      const stats = computeAttritionStats(report)
+      const stats = computeAttritionStats(multipleRulesReport)
 
       expect(stats).toHaveLength(3)
 
@@ -202,6 +202,42 @@ describe('Attrition Stats Computation', () => {
       const stats = computeAttritionStats(report)
 
       expect(stats).toEqual([])
+    })
+  })
+
+  describe('custom order', () => {
+    it('should compute stats with custom rule order', () => {
+      // Apply custom order: [2, 0, 1] instead of [0, 1, 2]
+      const stats = computeAttritionStats(multipleRulesReport, [2, 0, 1])
+
+      expect(stats).toHaveLength(3)
+
+      // Rule 2 first (checking position [2])
+      expect(stats[0]).toEqual({
+        id: 2,
+        name: 'Age<70',
+        countSatisfying: 91,
+        percentSatisfying: '39.57%',
+        pctDiff: '60.43%',
+      })
+
+      // Rule 0 second (checking positions [2, 0])
+      expect(stats[1]).toEqual({
+        id: 0,
+        name: 'Gender female and gender diverse',
+        countSatisfying: 46,
+        percentSatisfying: '20.00%',
+        pctDiff: '19.57%',
+      })
+
+      // Rule 1 third (checking positions [2, 0, 1])
+      expect(stats[2]).toEqual({
+        id: 1,
+        name: 'Age>30',
+        countSatisfying: 44,
+        percentSatisfying: '19.13%',
+        pctDiff: '0.87%',
+      })
     })
   })
 })

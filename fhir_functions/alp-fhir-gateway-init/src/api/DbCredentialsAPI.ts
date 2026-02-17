@@ -31,12 +31,10 @@ export class DbCredentialsAPI {
             };
 
             const options = {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                httpAgent: this.agent,
+              headers: {
+                  "Content-Type": "application/x-www-form-urlencoded",
+              },
             };
-
             const data = Object.keys(params)
                 .map(
                     (key) =>
@@ -61,7 +59,6 @@ export class DbCredentialsAPI {
           Authorization: this.accessToken
         }
       }
-  
       return options;
     }
 

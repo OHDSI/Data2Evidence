@@ -6,9 +6,11 @@ import {
 } from "@reduxjs/toolkit/query/react";
 import { portalProps } from "~/FlowApp";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const createBaseQueryFn =
   (
-    baseUrl: string
+    baseUrl: string,
   ): BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> =>
   async (args, WebApi, extraOptions) => {
     const rawBaseQuery = fetchBaseQuery({
@@ -29,5 +31,29 @@ export const createBaseQueryFn =
         return headers;
       },
     });
+
+    const maxRetries = 3;
+    const retryDelay = 10000;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      const result = await rawBaseQuery(args, WebApi, extraOptions);
+
+      if (
+        result.error &&
+        result.error.status === "FETCH_ERROR" &&
+        attempt < maxRetries
+      ) {
+        console.warn(
+          `[Analysis UI API] ERR_NETWORK_CHANGED, retrying in ${
+            retryDelay / 1000
+          }s (attempt ${attempt + 1}/${maxRetries})...`,
+        );
+        await sleep(retryDelay);
+        continue;
+      }
+
+      return result;
+    }
+
     return rawBaseQuery(args, WebApi, extraOptions);
   };

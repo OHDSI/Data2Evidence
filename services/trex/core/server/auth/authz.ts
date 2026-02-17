@@ -14,7 +14,6 @@ const PUBLIC_API_PATHS = [
 export const ROLES = {
   ALP_USER_ADMIN: "ALP_USER_ADMIN",
   ALP_SYSTEM_ADMIN: "ALP_SYSTEM_ADMIN",
-  ALP_NIFI_ADMIN: "ALP_NIFI_ADMIN",
   ALP_DASHBOARD_VIEWER: "ALP_DASHBOARD_VIEWER",
   TENANT_VIEWER: "TENANT_VIEWER",
   RESEARCHER: "RESEARCHER",
@@ -129,9 +128,6 @@ const buildUserFromToken = (
     }
     if (userMgmtGroups.alp_role_system_admin === true) {
       roles.push(ROLES.ALP_SYSTEM_ADMIN);
-    }
-    if (userMgmtGroups.alp_role_nifi_admin === true) {
-      roles.push(ROLES.ALP_NIFI_ADMIN);
     }
     if (userMgmtGroups.alp_role_dashboard_viewer === true) {
       roles.push(ROLES.ALP_DASHBOARD_VIEWER);

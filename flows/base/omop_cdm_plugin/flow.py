@@ -34,7 +34,6 @@ def omop_cdm_plugin(options: OmopCDMPluginOptions):
         case FlowActionType.CREATE_SEED_SCHEMAS:
             create_seed_schemas_flow(options)
         case _:
-            logger = get_run_logger()
             error_msg = f"Flow action type '{options.flow_action_type}' not supported, only '{[action.value for action in FlowActionType]}'"
             logger.error(error_msg)
             raise ValueError(error_msg)

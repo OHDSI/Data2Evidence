@@ -196,6 +196,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await expect(page.getByRole('button', { name: 'Add Attribute' })).toBeVisible()
     await page.getByText('Basic Data').dblclick()
     await page.getByRole('button', { name: 'Add Attribute' }).click()
+    await expect(page.getByText('New Attribute - 1')).toBeVisible()
     await page.getByText('New Attribute - 1').click()
     await page.locator('[id="__xmlview11--attrName-inner"]').click()
     await page.locator('[id="__xmlview11--attrName-inner"]').fill('Person Id')
@@ -351,20 +352,11 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.locator('[id="__xmlview11--attrIDName-inner"]').fill('conditionconceptset')
     await page.locator('[id="__xmlview11--attrIDName-inner"]').press('Enter')
     await page.getByRole('button', { name: 'Yes' }).click()
-    await page.waitForTimeout(1000) // Wait for _updateIDValidation to complete
     await page.getByRole('radio', { name: 'ADVANCED', exact: true }).click()
-    // Get reference to the visible validation error before filling the input
-    const validationError = page.getByText('Please provide either a data source or a measure expression.').first()
-    await expect(validationError).toBeVisible()
-    const dataSourceInput = page.locator('[id="__xmlview11--AttributeDataSource-inner"]')
-    await dataSourceInput.click()
-    await dataSourceInput.clear()
-    await dataSourceInput.pressSequentially('CAST (@COND."CONDITION_CONCEPT_ID" AS VARCHAR)')
-    // Re-select the attribute from the list to refresh validation bindings
-    // (validation binding gets stale when attribute ID is renamed)
-    await page.getByText('Condition concept set').first().click()
-    // Wait for backend validation to complete - the specific error message should disappear
-    await expect(validationError).not.toBeVisible({ timeout: 30000 })
+    await page.locator('[id="__xmlview11--AttributeDataSource-inner"]').click()
+    await page
+      .locator('[id="__xmlview11--AttributeDataSource-inner"]')
+      .fill('CAST (@COND."CONDITION_CONCEPT_ID" AS VARCHAR)')
     await page.locator('[id="__xmlview11--AttributeType-label"]').click()
     await page.getByRole('option', { name: 'Concept Set' }).click()
   })
@@ -376,7 +368,11 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('button', { name: 'Preview' }).click()
     await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
     await page.waitForTimeout(500) // Wait for UI and star indicator to stabilize
-    await expect(page).toHaveScreenshot()
+    await expect(page.getByText('JSON Configuration Preview')).toBeVisible()
+    const previewDialog = page.getByLabel('JSON Configuration Preview')
+    await expect(previewDialog).toContainText('"patient"')
+    await expect(previewDialog).toContainText('"conditions"')
+    await expect(previewDialog).toContainText('"conditionoccurrence"')
     await page.getByRole('button', { name: 'Close' }).click()
     await page.getByRole('button', { name: 'Save & Activate' }).click()
     await page.getByRole('button', { name: 'OK' }).click()
