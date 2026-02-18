@@ -704,7 +704,7 @@ cmd_mount_ui() {
     local start_time=$(date +%s)
     while [ $attempt -lt $max_attempts ]; do
         # Check if plugin resources directory exists and has files
-        if docker exec ${PROJECT_NAME}-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
+        if docker exec ${PROJECT_NAME}-trex ls /usr/src/data/plugins/d2e-ui/resources/portal >/dev/null 2>&1; then
             local end_time=$(date +%s)
             local elapsed=$((end_time - start_time))
             log_info "d2e-ui plugin is ready (took ${elapsed}s)"
@@ -721,8 +721,8 @@ cmd_mount_ui() {
     fi
 
     log_info "Mounting local UI into container..."
-    docker exec ${PROJECT_NAME}-trex sh -c "rm -rf /usr/src/data/plugins/@data2evidence/d2e-ui/resources"
-    docker exec ${PROJECT_NAME}-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/@data2evidence/d2e-ui/resources"
+    docker exec ${PROJECT_NAME}-trex sh -c "rm -rf /usr/src/data/plugins/d2e-ui/resources"
+    docker exec ${PROJECT_NAME}-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/d2e-ui/resources"
 }
 
 cmd_snapshot() {

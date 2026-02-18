@@ -217,7 +217,7 @@ jobs:
           start_time=$(date +%s)
           while [ $attempt -lt $max_attempts ]; do
             # Check if plugin resources directory exists and has files
-            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
+            if docker exec d2e-trex ls /usr/src/data/plugins/d2e-ui/resources/portal >/dev/null 2>&1; then
               end_time=$(date +%s)
               elapsed=$((end_time - start_time))
               echo "d2e-ui plugin is ready (took ${elapsed}s)"
@@ -235,8 +235,8 @@ jobs:
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
-          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/d2e-ui/resources"
+          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/d2e-ui/resources"
 
       - name: Build e2e Docker image
         run: |
