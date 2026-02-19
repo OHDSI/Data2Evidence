@@ -169,14 +169,11 @@ survivalModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
 ######### function to reformat and display table 1 ##############
 format_table1 <- function(tb) {
   # Dynamically detect the percent column name (e.g., '% (n = 1,800)')
-  percent_col <- names(tb)[grepl("^% \\(n = [0-9,]+\\)$", names(tb))]
-  if (length(percent_col) == 0) {
-    percent_col <- names(tb)[grepl("%", names(tb))][1] # fallback: any column with %
-  }
+  percent_col <- names(tb)[grepl("^%", names(tb))][1]
   if (is.na(percent_col) || is.null(percent_col) || percent_col == "") {
     stop("Unexpected column name in Table 1 data.")
   }
-
+  tb <- as.data.frame(tb[c("Characteristic", "Count", percent_col)])
   blank_row <- tibble(
     Characteristic = "",
     Count = "",
@@ -340,9 +337,9 @@ table1ModuleServer <- function(id, connectionHandler, resultDatabaseSettings, co
 
     cohort_choices <- reactive({
         conn <- connectionHandler$getConnection()
-        sql <- paste0("SELECT DISTINCT cohort_id FROM ", resultsDatabaseSchema, ".tb1_results where study_id = '", studyId, "' and dataset_id = '", datasetId, "' ;")
+        sql <- paste0("SELECT DISTINCT COHORT_ID FROM ", resultsDatabaseSchema, ".tb1_results where study_id = '", studyId, "' and dataset_id = '", datasetId, "' ;")
         res <- DatabaseConnector::querySql(conn, sql)
-        return (res$cohort_id)
+        return (res$COHORT_ID)
     })
 
     observeEvent(cohort_choices(), {
@@ -354,14 +351,14 @@ table1ModuleServer <- function(id, connectionHandler, resultDatabaseSettings, co
     table1_data <- reactive({
       req(input$cohort1)
       cohort_id <- input$cohort1
-      sql <- paste0("SELECT table1_json FROM ", resultsDatabaseSchema, ".tb1_results WHERE cohort_id = '", cohort_id, "' and study_id = '", studyId, "' and dataset_id = '", datasetId, "' ;")
+      sql <- paste0("SELECT TABLE1_JSON FROM ", resultsDatabaseSchema, ".tb1_results WHERE cohort_id = '", cohort_id, "' and study_id = '", studyId, "' and dataset_id = '", datasetId, "' ;")
       conn <- connectionHandler$getConnection()
       res <- DatabaseConnector::querySql(conn, sql)
       if (nrow(res) == 0) {
         cat("No Table 1 output found for cohort ID:", cohort_id, "\n")
         return (NULL)
       }
-      json_str <- res$table1_json[1]
+      json_str <- res[[1]]
       table1 <- ParallelLogger::convertJsonToSettings(json_str)
       table1 <- format_table1(table1)
       return (table1)
@@ -432,7 +429,7 @@ shinyConfig <- initializeModuleConfig() |>
   addModuleConfig(
     createModuleConfig(
       moduleId = 'table1',
-      tabName = "Table 1",
+      tabName = "Table1",
       shinyModulePackage = NULL,
       shinyModulePackageVersion = NULL,
       moduleUiFunction = table1ModuleUI,
