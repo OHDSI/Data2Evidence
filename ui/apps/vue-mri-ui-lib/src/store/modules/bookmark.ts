@@ -23,6 +23,7 @@ const state = {
   activeBookmark: null,
   addNewCohort: false,
   loading: false,
+  canDatasetMaterializeCohorts: false,
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
@@ -32,6 +33,7 @@ const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
 const getters = {
   getBookmarksLoading: modulestate => modulestate.loading,
   getBookmarks: modulestate => modulestate.bookmarks,
+  getCanDatasetMaterializeCohorts: modulestate => modulestate.canDatasetMaterializeCohorts,
   getFilterSummaryVisibility: modulestate => modulestate.filterSummaryVisible,
   getSchemaName: modulestate => modulestate.schemaName,
   getAddNewCohort: modulestate => modulestate.addNewCohort,
@@ -476,6 +478,24 @@ const actions = {
         })
     })
   },
+  fireCheckIfDatasetCanMaterializeCohorts({ commit, dispatch, rootGetters }) {
+    return dispatch('ajaxAuth', {
+      url: `/analytics-svc/api/services/cohort/can-materialize-cohort?datasetId=${rootGetters.getSelectedDataset.id}`,
+      method: 'GET',
+    })
+      .then(response => {
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: response.data })
+      })
+      .catch(error => {
+        const errorMsg = 'An error occurred while checking if dataset can materialize cohorts'
+        console.error(`${errorMsg}: ${error}`)
+        dispatch('setAlertMessage', {
+          message: errorMsg,
+        })
+        // Upon error on api request, disable materialize cohort for dataset
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: false })
+      })
+  },
 }
 
 // mutations
@@ -485,6 +505,9 @@ const mutations = {
   },
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
+  },
+  [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts }) {
+    modulestate.canDatasetMaterializeCohorts = canDatasetMaterializeCohorts
   },
   [types.SET_MATERIALIZED_COHORTS](modulestate, materializedCohorts) {
     modulestate.materializedCohorts = materializedCohorts ?? []

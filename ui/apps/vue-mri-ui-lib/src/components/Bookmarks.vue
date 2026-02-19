@@ -146,6 +146,7 @@
             :bookmarksDisplay="bookmarksDisplay"
             :compareCohortsSelectionList="aSelBookmarkList"
             :useQueryFilterForAtlas="usePaAtlas"
+            :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
             @onSelectBookmark="onSelectBookmark"
             @renameBookmark="renameBookmark"
             @deleteBookmark="deleteBookmark"
@@ -273,6 +274,7 @@ export default {
       'getDisplayBookmarks',
       'getSelectedDataset',
       'getBookmarksLoading',
+      'getCanDatasetMaterializeCohorts',
     ]),
     enableAtlasCohortDefinition() {
       return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.atlasCohortDefinition
@@ -282,6 +284,9 @@ export default {
     },
     usePaAtlas() {
       return this.enableAtlasCohortDefinition && this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
+    },
+    canDatasetMaterializeCohorts() {
+      return this.getCanDatasetMaterializeCohorts;
     },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)

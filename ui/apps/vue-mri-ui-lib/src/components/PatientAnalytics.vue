@@ -309,6 +309,7 @@ export default {
       'setActiveChart',
       'loadbookmarkToState',
       'setAddNewCohort',
+      'fireCheckIfDatasetCanMaterializeCohorts',
     ]),
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
@@ -321,6 +322,7 @@ export default {
       return this.fireBookmarkQuery({ params, method: 'get' })
     },
     initializeBookmarks() {
+      this.fireCheckIfDatasetCanMaterializeCohorts()
       return this.loadAllBookmark().then(() => (this.querystring.bmkId = this.initBookmarkId))
     },
     loadAllSharedBookmark() {
