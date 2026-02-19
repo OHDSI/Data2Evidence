@@ -18,13 +18,12 @@ const Env = z.object({
 });
 export const env = Env.parse(_env);
 
-const PHENOTYPE_LIBRARY_BASE_PATH = join(
-  __dirname,
-  "..",
-  "d2e-PhenotypeLibrary",
-  "inst",
-).replace(/\/var\/tmp\/sb-compile-trex/, Deno.env.get("TREX_FUNCTION_PATH"));
+const PHENOTYPE_LIBRARY_BASE_PATH = join(__dirname, "..", "data").replace(
+  /\/var\/tmp\/sb-compile-trex/,
+  Deno.env.get("TREX_FUNCTION_PATH"),
+);
 
+console.log("PHENOTYPE_LIBRARY_BASE_PATH:", PHENOTYPE_LIBRARY_BASE_PATH);
 export const PHENOTYPE_LIBRARY_COHORT_TEMPLATE = join(
   PHENOTYPE_LIBRARY_BASE_PATH,
   "cohorts",
