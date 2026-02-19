@@ -60,7 +60,7 @@
         </li>
       </ul>
     </div>
-    <div class="download-cohort-definition">
+    <div class="download-cohort-definition" v-if="enableAtlasCohortDefinition">
       <d4l-button
         @click="onClickCreateCohortDefinition"
         :text="getText('MRI_PA_FILTER_SUMMARY_CREATE_ATLAS_COHORT_DEFINITION')"
@@ -223,6 +223,9 @@ export default {
     },
     displayShowCohortEntryExit() {
       return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
+    },
+    enableAtlasCohortDefinition() {
+      return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.atlasCohortDefinition
     },
   },
   methods: {
