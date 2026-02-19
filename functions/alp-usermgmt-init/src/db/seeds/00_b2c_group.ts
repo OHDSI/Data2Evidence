@@ -50,6 +50,11 @@ const getSeeds = (): { [key: string]: any }[] => {
       id: '72b00548-2cbf-48f6-aa68-bbf81864857b',
       role: ROLES.STUDY_RESULTS_READ_RESEARCHER,
       system: ALP_SYSTEM
+    },
+    {
+      id: 'd1c8e5b7-9a0c-4c3b-9c8e-1f2a9e5d6f3a',
+      role: ROLES.ETL_MAPPING_CONTRIBUTOR,
+      system: ALP_SYSTEM
     }
   ]
 
