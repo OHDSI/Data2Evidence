@@ -625,6 +625,7 @@ export const i18n = {
     MRI_PA_RENAME_BMK_SUCCESS: 'Saved filter renamed.',
     MRI_PA_DELETE_BMK_ERROR: "Couldn't delete the saved filter.",
     MRI_PA_DELETE_BMK_SUCCESS: 'Saved filter deleted.',
+    MRI_PA_CHECK_MATERIALIZE_COHORT_ERROR: 'An error occurred while checking if dataset can materialize cohorts',
     MRI_PA_CONFIG_ERROR_ATTRIBUTEID_NOT_UNIQUE_AFTER_TRANSFORMATION:
       'The attribute IDs specified for the interaction are not unique in the configuration:',
     MRI_PA_CONFIG_ERROR_INTERACTIONID_NOT_UNIQUE_AFTER_TRANSFORMATION:

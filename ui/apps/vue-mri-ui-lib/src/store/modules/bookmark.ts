@@ -487,10 +487,9 @@ const actions = {
         commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: response.data })
       })
       .catch(error => {
-        const errorMsg = 'An error occurred while checking if dataset can materialize cohorts'
-        console.error(`${errorMsg}: ${error}`)
+        console.error(error)
         dispatch('setAlertMessage', {
-          message: errorMsg,
+          message: rootGetters.getText('MRI_PA_CHECK_MATERIALIZE_COHORT_ERROR'),
         })
         // Upon error on api request, disable materialize cohort for dataset
         commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: false })
