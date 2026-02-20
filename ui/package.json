@@ -14,7 +14,7 @@
     "build-ui5": "bunx ui5 build -a --clean-dest --dest ./resources/ui5",
     "build-gateway": "cd apps/gateway-proxy && bun run build",
     "build-starboard": "node scripts/build-starboard.js",
-    "build-wizards": "cd apps/wizards && bun run build",
+    "build-wizards": "cd apps/wizards && bun run test && bun run build",
     "mri-vue": "bun install; bunx nx build vue-mri",
     "portal-ui": "bun install; bunx nx build @portal/plugin; bunx nx build @portal/components; bunx nx build portal; bunx nx build-mri portal",
     "flow": "bun install; bunx nx build @portal/plugin; bunx nx build @portal/components; bunx nx build flow",
