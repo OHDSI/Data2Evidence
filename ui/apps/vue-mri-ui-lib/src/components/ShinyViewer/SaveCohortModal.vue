@@ -92,8 +92,8 @@
       <div class="flex-spacer"></div>
       <appButton
         :click="handleSave"
-        :text="getText('MRI_PA_COLL_BUT_OK')"
-        :tooltip="getText('MRI_PA_COLL_BUT_OK')"
+        :text="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') : getText('MRI_PA_COLL_BUT_OK')"
+        :tooltip="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') : getText('MRI_PA_COLL_BUT_OK')"
         :disabled="isSaving || hasExceededLength || cohortNameValidationState !== 'valid'"
       />
       <appButton
@@ -140,6 +140,7 @@ export default {
       isSaving: false,
       savedBookmarkId: null,
       savedCohortId: null,
+      bookmarkSavedButMaterializationFailed: false,
       messageStrip: {
         show: false,
         message: '',
@@ -177,6 +178,7 @@ export default {
         this.cohortNameValidationState = 'valid'
         this.savedBookmarkId = null
         this.savedCohortId = null
+        this.bookmarkSavedButMaterializationFailed = false
         this.resetMessageStrip()
       }
     },
@@ -210,6 +212,11 @@ export default {
       return `Untitled Cohort ${timestamp}`
     },
     validateCohortName() {
+      if (this.bookmarkSavedButMaterializationFailed) {
+        this.cohortNameValidationState = 'valid'
+        return true
+      }
+
       const trimmedName = this.cohortName.trim()
 
       if (trimmedName.length === 0) {
@@ -255,8 +262,15 @@ export default {
       this.resetMessageStrip()
 
       try {
-        const savedBookmark = await this.saveBookmark()
-        await this.materializeCohort(savedBookmark)
+        if (!this.bookmarkSavedButMaterializationFailed) {
+          const savedBookmark = await this.saveBookmark()
+          this.savedBookmarkId = savedBookmark
+        }
+
+        await this.materializeCohort()
+        
+        this.bookmarkSavedButMaterializationFailed = false
+        
         this.messageStrip = {
           show: true,
           message: this.getText('MRI_PA_COHORT_SAVED'),
@@ -271,8 +285,15 @@ export default {
         }, 1500)
       } catch (error) {
         console.error('[SaveCohortModal] Error:', error)
-        const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
-        this.showError(errorMessage)
+        
+        if (this.savedBookmarkId && !this.savedCohortId) {
+          this.bookmarkSavedButMaterializationFailed = true
+          const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
+          this.showError(`${this.getText('MRI_PA_COHORT_SAVED')} but materialization failed: ${errorMessage}. Click Retry to retry materialization.`)
+        } else {
+          const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
+          this.showError(errorMessage)
+        }
       } finally {
         this.isSaving = false
       }
@@ -404,6 +425,7 @@ export default {
       this.savedCohortId = materializedCohort.id
     },
     handleCancel() {
+      this.bookmarkSavedButMaterializationFailed = false
       this.$emit('cancel')
     },
     resetMessageStrip() {
