@@ -1,7 +1,7 @@
 import { StackedBarchartEndpoint } from "../../mri/endpoint/StackedBarchartEndpoint";
 import { PatientCountEndpoint } from "../../mri/endpoint/PatientCountEndpoint";
 import { PatientListEndpoint } from "../../mri/endpoint/PatientListEndpoint";
-import { Settings } from "../../qe/settings/Settings";
+import { InclusionReportEndpoint } from "../../mri/endpoint/InclusionReportEndpoint";
 import { getUser, EnvVarUtils } from "@alp/alp-base-utils";
 import { IMRIRequest } from "../../types";
 
@@ -37,9 +37,9 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
     let filterBase64: string = req.query.mriquery;
     let releaseDate: string = req.query.releaseDate;
 
-    const timestamp = (new Date()).valueOf();
-    console.log(`time-analytics-svc-populationStudyQuery-${timestamp}`)
-    console.time(`time-analytics-svc-populationStudyQuery-${timestamp}`)
+    const timestamp = new Date().valueOf();
+    console.log(`time-analytics-svc-populationStudyQuery-${timestamp}`);
+    console.time(`time-analytics-svc-populationStudyQuery-${timestamp}`);
 
     try {
         let body = filterBase64
@@ -87,7 +87,9 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
                                         })
                                     );
                                 }
-                                console.timeEnd(`time-analytics-svc-populationStudyQuery-${timestamp}`)
+                                console.timeEnd(
+                                    `time-analytics-svc-populationStudyQuery-${timestamp}`
+                                );
                                 res.status(200).send(result);
                             }
 
@@ -113,7 +115,9 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
                                     .catch((err) => _sendResult(err, null));
                             }
                         } catch (err) {
-                            console.timeEnd(`time-query-svc-populationStudyQuery-${timestamp}`)
+                            console.timeEnd(
+                                `time-query-svc-populationStudyQuery-${timestamp}`
+                            );
                             return res
                                 .status(500)
                                 .send(
@@ -144,8 +148,8 @@ export async function populationQuery(req: IMRIRequest, res, next) {
     let filterBase64: string = req.query.mriquery;
     let releaseDate: string = req.query.releaseDate;
 
-    const timestamp = (new Date()).valueOf();
-    console.log(`time-analytics-svc-populationQuery-${timestamp}`)
+    const timestamp = new Date().valueOf();
+    console.log(`time-analytics-svc-populationQuery-${timestamp}`);
 
     try {
         let body = filterBase64
@@ -180,16 +184,23 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                         let configId = req.paConfigId;
                         let configVersion = req.paConfigVersion;
                         //Only for tests choose metadata from the request body
-                        if (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) {
+                        if (
+                            envVarUtils.isTestEnv() ||
+                            envVarUtils.isHttpTestRun()
+                        ) {
                             let configData = Array.isArray(body)
-                                            ? body[0].configData
-                                            : body.configData;
+                                ? body[0].configData
+                                : body.configData;
 
-                            if (configData && (configData.length > 0 || Object.keys(configData).length > 0)) {
+                            if (
+                                configData &&
+                                (configData.length > 0 ||
+                                    Object.keys(configData).length > 0)
+                            ) {
                                 configId = configData.configId;
                                 configVersion = configData.configVersion;
                             } else {
-                                throw new Error("Config metadata undefined!")
+                                throw new Error("Config metadata undefined!");
                             }
                         }
 
@@ -207,7 +218,9 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                         })
                                     );
                                 }
-                                console.timeEnd(`time-analytics-svc-populationQuery-${timestamp}`)
+                                console.timeEnd(
+                                    `time-analytics-svc-populationQuery-${timestamp}`
+                                );
                                 res.status(200).send(result);
                             }
                             function _sendResultCSV(err, result) {
@@ -231,7 +244,9 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                     _sendResult(err, _processResult(result));
                                 }
                             }
-                            console.time(`time-analytics-svc-populationQuery-${timestamp}`)
+                            console.time(
+                                `time-analytics-svc-populationQuery-${timestamp}`
+                            );
                             switch (dataFormat) {
                                 case "csv":
                                     switch (chartType) {
@@ -351,6 +366,30 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                     );
                                             }
                                             break;
+                                        case "inclusionReport":
+                                            const inclusionReportBody =
+                                                body.filter
+                                                    ? body
+                                                    : bookmarkInputStr;
+                                            new InclusionReportEndpoint(
+                                                analyticsConnection
+                                            )
+                                                .processRequest(
+                                                    req,
+                                                    configId,
+                                                    configVersion,
+                                                    datasetId,
+                                                    inclusionReportBody,
+                                                    language
+                                                )
+                                                .then((res) =>
+                                                    _sendResult(null, res)
+                                                )
+                                                .catch((err) =>
+                                                    _sendResult(err, null)
+                                                );
+
+                                            break;
                                         default:
                                             next(
                                                 new Error(
@@ -364,7 +403,9 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                     break;
                             }
                         } catch (err) {
-                            console.timeEnd(`time-analytics-svc-populationQuery-${timestamp}`)
+                            console.timeEnd(
+                                `time-analytics-svc-populationQuery-${timestamp}`
+                            );
                             return res
                                 .status(500)
                                 .send(
