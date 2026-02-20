@@ -69,14 +69,24 @@
         :disabled="chartBusy"
       />
     </div>
-    <div class="download-sql">
-      <d4l-button
-        @click="onClickDownloadSql"
-        :text="getText('MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL')"
-        :title="getText('MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL')"
-        classes="button--block"
-        :disabled="chartBusy"
-      />
+    <div class="sql-actions">
+      <div class="download-sql">
+        <d4l-button
+          @click="onClickDownloadSql"
+          :text="getText('MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL')"
+          :title="getText('MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL')"
+          classes="button--block"
+          :disabled="chartBusy"
+        />
+      </div>
+      <div class="copy-sql">
+        <d4l-button
+          @click="onClickCopySql"
+          :text="getText('MRI_PA_FILTER_SUMMARY_COPY_SQL')"
+          :title="getText('MRI_PA_FILTER_SUMMARY_COPY_SQL')"
+          classes="button--block"
+        />
+      </div>
     </div>
     <create-cohort-definition-dialog
       v-if="showCohortDefinitionDownloadDialog"
@@ -229,7 +239,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions([]),
+    ...mapActions(['setToastMessage']),
     unloadBookmark() {
       this.$emit('unloadFilterCardSummaryEv')
     },
@@ -242,6 +252,11 @@ export default {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+    },
+    async onClickCopySql() {
+      const content = this.getResponse()?.data?.sql || ''
+      await navigator.clipboard.writeText(content)
+      this.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_COPIED') })
     },
     onClickCreateCohortDefinition() {
       this.showCohortDefinitionDownloadDialog = true
@@ -326,8 +341,8 @@ export default {
       return filterCard.isEntry
         ? this.getText('MRI_PA_CHART_ENTRY')
         : filterCard.isExit
-        ? this.getText('MRI_PA_CHART_EXIT')
-        : ''
+          ? this.getText('MRI_PA_CHART_EXIT')
+          : ''
     },
   },
   components: {
@@ -342,6 +357,20 @@ export default {
 </script>
 
 <style scoped>
+.sql-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sql-actions .download-sql,
+.sql-actions .copy-sql {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
 .filter-card-badge {
   color: var(--color-primary, #000080) !important;
 }
