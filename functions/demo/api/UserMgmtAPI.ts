@@ -48,6 +48,22 @@ export class UserMgmtAPI {
     }
   }
 
+  async getMyRoles(): Promise<{
+    datasetRoles: { tenantId: string; datasetId: string; role: string }[];
+  }> {
+    try {
+      const options = this.getRequestConfig();
+      const url = `${this.baseURL}/me/roles`;
+      const result = await this.channel.get(url, options);
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting /me/roles: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
+    }
+  }
+
   async getMe(): Promise<{ id: string; username: string }> {
     try {
       const options = this.getRequestConfig();

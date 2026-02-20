@@ -291,23 +291,29 @@ export class DemoService {
     let dataset = progress?.steps?.find(
       (step) => step.code === "dataset"
     )?.result;
-
+    const userMgmtAPI = new UserMgmtAPI(token);
+    const user = await userMgmtAPI.getMe();
+    const roles = await userMgmtAPI.getMyRoles();
+    const accessibleDatasetIds = new Set(
+      roles.datasetRoles.map((r) => r.datasetId),
+    );
+    console.log("Accessible dataset IDs:", accessibleDatasetIds);
     if (!dataset) {
-      // For standalone phenotype flow, get the first available dataset from portal
+      // For standalone phenotype flow, get the first dataset the user has access to
       const portalAPI = new PortalAPI(token);
       const datasets = await portalAPI.getDatasets();
-      if (datasets.length === 0) {
-        throw new Error("No datasets available");
+      dataset = datasets.find((d) => accessibleDatasetIds.has(d.id));
+      if (!dataset) {
+        throw new Error(
+          "No accessible datasets available for the current user",
+        );
       }
-      dataset = datasets[0];
       this.logger.info(
-        `Using first available dataset: ${JSON.stringify(dataset)}`
+        `Using first accessible dataset: ${JSON.stringify(dataset)}`,
       );
     }
 
     const { id: datasetId } = dataset;
-    const userMgmtAPI = new UserMgmtAPI(token);
-    const user = await userMgmtAPI.getMe();
     const result = await jobPluginsAPI.createPhenotypeFlowRun({
       options: {
         materialize: false,
