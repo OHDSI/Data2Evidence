@@ -40,18 +40,23 @@ export function registerCohortManagementTools(server: McpServer) {
       },
     },
     async ({}, { requestInfo }) => {
+      const toolStart = performance.now();
+      console.log(`[MCP-TIMING] [get_cohort_id_name_list] START`);
       // Extract authorization and datasetId (both required for delete)
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       // Fetch d2e cohort list
+      const t0 = performance.now();
       const data = await d2eWebapi.getAtlasCohortDefinitionList(
         authorization,
         datasetId
       );
+      console.log(`[MCP-TIMING] [get_cohort_id_name_list] API call in ${(performance.now() - t0).toFixed(1)}ms`);
       const cohortData = (data as any[]).map((cohort) => ({
         cohortId: String(cohort.id ?? cohort.bmkId ?? ""),
         cohortName: String(cohort.name ?? cohort.bookmarkname ?? ""),
         cohortDescription: cohort.description || "",
       }));
+      console.log(`[MCP-TIMING] [get_cohort_id_name_list] END total=${(performance.now() - toolStart).toFixed(1)}ms items=${cohortData.length}`);
       return createStructuredResponse(
         "Here is the list of cohort ids and names for all cohort description.",
         { cohortsId: cohortData }
@@ -92,6 +97,8 @@ export function registerCohortManagementTools(server: McpServer) {
       { cohortDefinitionExpression, cohortInfo, isValidCohortDefinition },
       { requestInfo }
     ) => {
+      const toolStart = performance.now();
+      console.log(`[MCP-TIMING] [create_atlas_cohort_definition] START`);
       if (!isValidCohortDefinition) {
         throw new Error(
           "Cohort definition must be validated before creation. Use validate_atlas_cohort_definition tool first and set isValidCohortDefinition=true"
@@ -106,14 +113,17 @@ export function registerCohortManagementTools(server: McpServer) {
         cohortInfo: cohortInfo,
       };
 
+      const t0 = performance.now();
       const res = await d2eWebapi.createAtlasCohortDefinition(
         cohortDefinition,
         authorization
       );
+      console.log(`[MCP-TIMING] [create_atlas_cohort_definition] API call in ${(performance.now() - t0).toFixed(1)}ms`);
       if (!res) {
         throw new Error("Failed to create cohort definition in D2E");
       }
 
+      console.log(`[MCP-TIMING] [create_atlas_cohort_definition] END total=${(performance.now() - toolStart).toFixed(1)}ms`);
       return createTextResponse(
         `Successfully created cohort definition with ID: ${res.id}, Name: ${res.name}`
       );

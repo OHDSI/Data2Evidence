@@ -25,7 +25,12 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
       inputSchema: SearchPhenotypeLibraryInput,
     },
     async () => {
+      const toolStart = performance.now();
+      console.log(`[MCP-TIMING] [search_phenotype_library] START`);
+      const t0 = performance.now();
       const phenotypeData = await fetchPhenotypeData();
+      console.log(`[MCP-TIMING] [search_phenotype_library] fetchPhenotypeData in ${(performance.now() - t0).toFixed(1)}ms items=${phenotypeData.length}`);
+      console.log(`[MCP-TIMING] [search_phenotype_library] END total=${(performance.now() - toolStart).toFixed(1)}ms`);
       return createStructuredResponse(
         "Retrieved phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.",
         { phenotypes: phenotypeData }
@@ -43,8 +48,13 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
       inputSchema: FetchTemplatesInput,
     },
     async ({ phenotypeId, userCohortDescription }) => {
+      const toolStart = performance.now();
+      console.log(`[MCP-TIMING] [fetch_templates_for_cohort_generation] START phenotypeId=${phenotypeId}`);
+      const t0 = performance.now();
       // Fetch templates for the selected phenotype ID
       const template = await fetchCohortDefinitionTemplate(phenotypeId);
+      console.log(`[MCP-TIMING] [fetch_templates_for_cohort_generation] file read in ${(performance.now() - t0).toFixed(1)}ms`);
+      console.log(`[MCP-TIMING] [fetch_templates_for_cohort_generation] END total=${(performance.now() - toolStart).toFixed(1)}ms`);
       return createStructuredResponse(
         `Fetched cohort definition template. User Requirements: ${userCohortDescription} Example Templates Retrieved: - Phenotype ID ${phenotypeId}. Continue to generate a complete ATLAS cohort definition JSON using these templates as structural examples.`,
         {

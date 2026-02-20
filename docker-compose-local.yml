@@ -12,9 +12,9 @@ services:
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
-      - ./plugins/chat_functions:/usr/src/plugins/chat
-      - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
-      - ./ui/resources:/usr/src/local-resources # For local ui development only
+      # - ./plugins/chat_functions:/usr/src/plugins/chat
+      # - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
+      # - ./ui/resources:/usr/src/local-resources # For local ui development only
       # - ./services/trex/core:/usr/src/core # For debugging trex with local code
       # - ./services/trex/deno.json:/usr/src/deno.json 
       # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
@@ -44,7 +44,7 @@ services:
           "alpdb": false,
           "concept-mapping": false,
           "terminology-svc": false,
-          "code-suggestion": false,
+          "code-suggestion": true,
           "data-mapping": false,
           "portal": false,
           "files-manager": false,
@@ -53,7 +53,7 @@ services:
           "perseus": false,
           "white-rabbit": false,
           "strategus-analysis": false,
-          "mcp-server": false
+          "mcp-server": true
         }
 
   alp-caddy:
