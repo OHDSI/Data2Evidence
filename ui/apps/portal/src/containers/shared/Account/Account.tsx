@@ -54,6 +54,10 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
     navigate(portalType === "researcher" ? config.ROUTES.systemadmin : config.ROUTES.researcher);
   }, [navigate, portalType]);
 
+  const handleSwitchToEtl = useCallback(() => {
+    navigate(config.ROUTES.etl);
+  }, [navigate]);
+
   const handleLogout = useCallback(() => {
     navigate(config.ROUTES.logout);
   }, [navigate]);
@@ -89,6 +93,9 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                   )}
                   {portalType === "researcher" && user.canAccessSystemAdminPortal && (
                     <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitch} />
+                  )}
+                  {(portalType === "system_admin" || portalType === "researcher") && user.canAccessEtlPortal && (
+                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ETL_PORTAL)} onClick={handleSwitchToEtl} />
                   )}
                   <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
                   <Button

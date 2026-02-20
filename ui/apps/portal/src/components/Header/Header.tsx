@@ -35,6 +35,8 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
         ? config.ROUTES.researcher
         : portalType === "systemadmin"
         ? config.ROUTES.systemadmin
+        : portalType === "etl"
+        ? config.ROUTES.etl
         : "",
     [portalType]
   );

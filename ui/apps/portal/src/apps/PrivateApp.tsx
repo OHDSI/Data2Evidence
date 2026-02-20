@@ -2,6 +2,7 @@ import React, { FC, useMemo } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Researcher } from "../containers/researcher/Researcher";
 import SystemAdmin from "../containers/systemadmin/SystemAdmin";
+import Etl from "../containers/etl/Etl";
 import NoAccess from "../containers/shared/NoAccess/NoAccess";
 import { Logout } from "../containers/auth/Logout";
 import { LoginSilent } from "../containers/auth/LoginSilent";
@@ -41,6 +42,7 @@ export const PrivateApp: FC = () => {
           <Route path={`${config.ROUTES.systemadmin}/*`} element={<SystemAdmin />} />
         )}
         {user?.canAccessResearcherPortal && <Route path={`${config.ROUTES.researcher}/*`} element={<Researcher />} />}
+        {user?.canAccessEtlPortal && <Route path={`${config.ROUTES.etl}/*`} element={<Etl />} />}
         <Route path={config.ROUTES.logout} element={<Logout />} />
         <Route path={config.ROUTES.noAccess} element={<NoAccess />} />
         <Route path="/" element={<Navigate to={defaultRoute} />}>
