@@ -29,7 +29,7 @@ interface Option {
  * Filter and sort options: exact matches first, then starts-with, then contains.
  * Case-insensitive. Returns all options if query is empty.
  */
-function filterAndSort(items: Option[], query: string): Option[] {
+export function filterAndSort(items: Option[], query: string): Option[] {
   if (!query) return items;
   const q = query.toLowerCase();
   const exact: Option[] = [];
@@ -38,9 +38,10 @@ function filterAndSort(items: Option[], query: string): Option[] {
 
   for (const item of items) {
     const label = item.label.toLowerCase();
-    if (label === q) exact.push(item);
-    else if (label.startsWith(q)) startsWith.push(item);
-    else if (label.includes(q)) contains.push(item);
+    const value = item.value.toLowerCase();
+    if (label === q || value === q) exact.push(item);
+    else if (label.startsWith(q) || value.startsWith(q)) startsWith.push(item);
+    else if (label.includes(q) || value.includes(q)) contains.push(item);
   }
 
   return [...exact, ...startsWith, ...contains];
@@ -228,7 +229,7 @@ export function TypeaheadField({
                       }}
                       onMouseEnter={() => setHighlightIndex(i)}
                     >
-                      {option.label}
+                      {option.label !== option.value ? `${option.label} (${option.value})` : option.label}
                     </li>
                   ))}
               </ul>
