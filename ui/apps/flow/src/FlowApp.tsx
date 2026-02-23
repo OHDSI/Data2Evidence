@@ -7,12 +7,14 @@ import { store } from "./store";
 import { theme } from "./theme/theme";
 import { FlowLayout } from "./features/flow/containers/FlowLayout";
 import { FlowMetadataParams } from ".";
+import { PortalProps } from "./types";
 import "./monaco";
 import "./theme/main.scss";
 import "reactflow/dist/style.css";
 
 export interface FlowAppProps
-  extends PageProps<SystemAdminPageMetadata<FlowMetadataParams>> {
+  extends PageProps<SystemAdminPageMetadata<FlowMetadataParams>>,
+    PortalProps {
   isStandalone: boolean;
 }
 
@@ -20,7 +22,7 @@ export let pluginMetadata:
   | SystemAdminPageMetadata<FlowMetadataParams>
   | undefined;
 
-export const FlowApp: FC<FlowAppProps> = ({
+const FlowApp: FC<FlowAppProps> = ({
   metadata,
   isStandalone,
 }: FlowAppProps) => {
@@ -37,3 +39,5 @@ export const FlowApp: FC<FlowAppProps> = ({
     </Provider>
   );
 };
+
+export default FlowApp;
