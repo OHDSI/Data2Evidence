@@ -274,6 +274,16 @@ const PlotlyConsts = {
       '#9FC5E8',
       '#FFD9A5',
     ],
+    // colorway: ['#9c9a9a', '#a559aa', '#59a89c', '#f0c571', '#e02b64', '#082a54'].reverse(),
+    // colorway: ['#9c9a9a', '#a559aa', '#54A095', '#FD5E5E', '#000066'].reverse(),
+    // colorway: ['#000080', '#FB9F9D', '#196D76', '#FFD9A5'], // option 3
+    // colorway: ['#000080', '#2599a7', '#baf5ce', '#fff0d9', '#ffd9a5', '#fa948F', '#ce7aeb', '#9215bc'],
+    // colorway: ['#000080', '#2599a7', '#A192CEFF', '#D87CAFFF', '#ea807b', '#AB3329FF', '#E78429FF'],
+    // colorway: ['#DC7490', '#8E24AA', '#0097A7', '#000066'].reverse(),
+    // colorway: ['#000080', '#008B8B', '#1E7BD6', '#8E51E0', '#ea2379'],
+    // colorway: ['#000080', '#5d2085', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'], // option 2
+    // colorway: ['#000080', '#540982', '#821d80', '#ab3478', '#d04d64', '#eb7100'], // option 1
+
     dragmode: 'select',
     font: PlotlyFont,
     hoverlabel: {

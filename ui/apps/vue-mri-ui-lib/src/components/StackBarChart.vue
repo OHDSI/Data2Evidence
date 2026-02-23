@@ -4,7 +4,7 @@
     <StackBarChartLegend
       v-if="chartData.traces && chartData.traces.length > 1"
       :traces="chartData.traces"
-      :colorway="layout.colorway"
+      :colorway="chartColorway"
     />
   </div>
 </template>
@@ -223,6 +223,41 @@ export default {
       'processResponse',
       'getChartProperty',
     ]),
+    // Dynamically select colorway based on number of traces
+    chartColorway() {
+      const numTraces = this.chartData?.traces?.length || 0
+
+      if (numTraces === 2) {
+        // High contrast palette for binary comparisons
+        return ['#000080', '#EC6E41']
+      } else if (numTraces === 3) {
+        return ['#000080', '#9e3688', '#EC6E41']
+      } else if (numTraces === 4) {
+        return ['#000080', '#5d2085', '#de4b8b', '#EC6E41']
+      } else {
+        // Full palette for 5+ traces
+        return ['#000080', '#5d2085', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
+        // return ['#000080', '#540982', '#821d80', '#ab3478', '#d04d64', '#eb7100'] // option 2
+        // return ['#000080', '#FB9F9D', '#196D76', '#FFD9A5'] // option 3
+        // return [
+        //   '#FDA2A2',
+        //   '#000E7E',
+        //   '#A2FDCD',
+        //   '#FF5E59',
+        //   '#CCDEF1',
+        //   '#2599A7',
+        //   '#FFC4AD',
+        //   '#999FCB',
+        //   '#EBF0C8',
+        //   '#CE7AEB',
+        //   '#69BBF6',
+        //   '#FDEEA2',
+        //   '#9215BC',
+        //   '#9FC5E8',
+        //   '#FFD9A5',
+        // ] // original
+      }
+    },
   },
   beforeUnmount() {
     if (this.resizeObserver) {
@@ -333,6 +368,7 @@ export default {
         const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         freshLayout.showlegend = false
         freshLayout.xaxis.type = this.chartData.axisType
+        freshLayout.colorway = this.chartColorway
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
@@ -348,6 +384,7 @@ export default {
       const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
       initialLayout.showlegend = false
       initialLayout.xaxis.type = this.chartData.axisType
+      initialLayout.colorway = this.chartColorway
 
       Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
@@ -397,6 +434,7 @@ export default {
         const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         selectionLayout.showlegend = false
         selectionLayout.xaxis.type = this.chartData.axisType
+        selectionLayout.colorway = this.chartColorway
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 

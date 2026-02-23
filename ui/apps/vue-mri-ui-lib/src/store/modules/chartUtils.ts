@@ -138,6 +138,12 @@ const getters = {
           selectedpoints: selection ? selection[index] : [],
           name: truncatedName,
           meta: { fullName },
+          marker: {
+            line: {
+              color: 'white',
+              width: 0.7,
+            },
+          },
         }
       })
       return chartData
