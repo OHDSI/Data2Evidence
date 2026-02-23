@@ -51,7 +51,7 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin, isEtl }) => {
 
   const isResearcherPluginAllowed = useCallback(() => {
     let allowed = (requiredRoles.length || 0) === 0;
-    if (isSysAdmin) {
+    if (isSysAdmin || isEtl) {
       if (featureFlag != "" && !featureFlags.includes(featureFlag)) {
         allowed = false;
       }
