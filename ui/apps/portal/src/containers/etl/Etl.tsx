@@ -16,8 +16,6 @@ const CURRENT_SYSTEM = env.REACT_APP_CURRENT_SYSTEM;
 
 const ROUTES = {
   account: "account",
-  info: "information",
-  legal: "legal",
   logout: "/logout",
 };
 
@@ -45,10 +43,10 @@ export const Etl: FC = () => {
   useEffect(() => {
     initializeImportMap(singleSpaApps);
   }, [singleSpaApps]);
-  console.log(singleSpaApps);
+
   return (
     <div className="etl__container">
-      <Header portalType="etl" plugins={plugins} />
+      <Header portalType="etl" etlPlugins={etlPluginsFlat} />
       <main>
         {singleSpaApps.map((item: IPluginItem) => {
           const isActiveRoute = location.pathname.includes(`/etl/${item.route}`);

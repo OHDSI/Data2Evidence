@@ -97,6 +97,16 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                   {(portalType === "system_admin" || portalType === "researcher") && user.canAccessEtlPortal && (
                     <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ETL_PORTAL)} onClick={handleSwitchToEtl} />
                   )}
+                  {portalType === "etl" && user.canAccessSystemAdminPortal && (
+                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitch} />
+                  )}
+                  {portalType === "etl" && user.canAccessResearcherPortal && (
+                    <Button
+                      block
+                      text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
+                      onClick={handleSwitch}
+                    />
+                  )}
                   <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />
                   <Button
                     block

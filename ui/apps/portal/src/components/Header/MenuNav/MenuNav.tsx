@@ -19,13 +19,14 @@ interface MenuNavProps {
   type: MenuType;
   plugin?: Plugins;
   isSysAdmin?: boolean;
+  isEtl?: boolean;
 }
 
 const toCamelCase = (string: string) => {
   return string.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase());
 };
 
-const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
+const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin, isEtl }) => {
   const { getText, i18nKeys } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,15 +72,27 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
       allowed = featureFlags.includes(featureFlag);
     }
     return allowed;
-  }, [activeDataset.id, featureFlag, featureFlags, isSysAdmin, clonedPlugin?.children, requiredRoles, type, user]);
+  }, [
+    activeDataset.id,
+    featureFlag,
+    featureFlags,
+    isSysAdmin,
+    isEtl,
+    clonedPlugin?.children,
+    requiredRoles,
+    type,
+    user,
+  ]);
 
   const portalTypePath = useMemo(() => {
     if (isSysAdmin) {
       return config.ROUTES.systemadmin;
+    } else if (isEtl) {
+      return config.ROUTES.etl;
     } else {
       return config.ROUTES.researcher;
     }
-  }, [isSysAdmin]);
+  }, [isSysAdmin, isEtl]);
 
   const menuLink = useMemo(() => {
     if (type === MenuType.Plugin && plugin) {

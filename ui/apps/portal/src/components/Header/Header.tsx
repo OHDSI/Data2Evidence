@@ -19,9 +19,10 @@ interface HeaderProps {
   portalType: string;
   plugins?: IPlugin;
   systemAdminPlugins?: Plugins[];
+  etlPlugins?: Plugins[];
 }
 
-export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminPlugins }) => {
+export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminPlugins, etlPlugins }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuth = isAuthenticated();
@@ -98,6 +99,12 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
             portalType === "systemadmin" &&
             systemAdminPlugins?.map((plugin) => (
               <MenuNav type={MenuType.Plugin} plugin={plugin} isSysAdmin={true} key={plugin.name} />
+            ))}
+
+          {isAuth &&
+            portalType === "etl" &&
+            etlPlugins?.map((plugin) => (
+              <MenuNav type={MenuType.Plugin} plugin={plugin} isEtl={true} key={plugin.name} />
             ))}
 
           {nav &&
