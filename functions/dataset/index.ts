@@ -1,5 +1,7 @@
-import express, { Request, Response } from "npm:express";
+import express, { NextFunction, Request, Response } from "npm:express";
 import { Buffer } from "node:buffer";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
@@ -131,7 +133,9 @@ export class DatasetRouter {
           cacheDatasetType,
         } = req.body;
 
-        const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
+        const newCacheSchemaName = schemaName
+          ? schemaName
+          : `CDM${id}`.replace(/-/g, "");
         const parsedNewCacheSchemaName = this.schemaCase(
           newCacheSchemaName,
           dialect as DbDialect,
@@ -372,8 +376,7 @@ export class DatasetRouter {
       const id = uuidv4();
 
       // Use parent schema names if provided, otherwise generate new ones
-      const newSchemaName =
-        cdmSchemaValue || (sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "");
+      const newSchemaName = `CDM${id}`.replace(/-/g, "");
       const newVocabSchemaName = vocabSchemaValue || vocabSchemaName;
       const newResultsSchemaName = resultsSchemaValue || resultsSchemaName;
 
@@ -491,22 +494,13 @@ export class DatasetRouter {
       }
     });
 
-    // resourceId format: datasetId_type_name_language
-    this.router.get(
-      ["/shiny-live/:resourceId", "/shiny-live/:resourceId/{*subPath}"],
-      async (req: Request, res: Response) => {
+    this.router.use(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response, next: NextFunction) => {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
-        const wildcardParam = (req.params as any).subPath;
-        const subPath = Array.isArray(wildcardParam)
-          ? wildcardParam.join("/")
-          : wildcardParam || "index.html";
 
-        // Validate that we have all parts of the resourceId
         if (!datasetId || !type || !name || !language) {
-          this.logger.error(
-            `[ShinyLive] Invalid resourceId format: ${resourceId}`,
-          );
           return res
             .status(400)
             .send(
@@ -515,40 +509,64 @@ export class DatasetRouter {
         }
 
         try {
-          const url = this.shinyLiveService.getPublicUrl(
+          const staticDir = await this.shinyLiveService.getStaticFilesDir(
             datasetId,
             type,
             name,
             language,
-            subPath,
           );
-          console.log(`Fetching shiny-live resource from URL: ${url}`);
-          const response = await fetch(url);
-          if (!response.ok) {
-            if (response.status == 400 || response.status === 404) {
-              return res.status(404).send("Resource not found");
-            }
 
-            return res
-              .status(response.status)
-              .send("Error fetching resource from supabase");
+          if (!staticDir) {
+            return res.status(404).send("Shinylive application not found");
           }
 
-          res.set(
-            "Content-Type",
-            response.headers.get("content-type") || "application/octet-stream",
-          );
-          res.set(
-            "Cache-Control",
-            response.headers.get("cache-control") || "public, max-age=3600",
-          );
+          express.static(staticDir, {
+            index: "index.html",
+            fallthrough: true,
+          })(req, res, async () => {
+            const requestedPath =
+              req.path === "/" ? "index.html" : req.path.substring(1);
+            const encodedSubPath = requestedPath
+              .split("/")
+              .map(encodeURIComponent)
+              .join("/");
+            const url = this.shinyLiveService.getPublicUrl(
+              datasetId,
+              type,
+              name,
+              language,
+              encodedSubPath,
+            );
 
-          const data = await response.arrayBuffer();
-          res.send(Buffer.from(data));
+            try {
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                return res.status(response.status).send("Resource not found");
+              }
+
+              const buffer = Buffer.from(await response.arrayBuffer());
+              const contentType =
+                response.headers.get("content-type") ||
+                "application/octet-stream";
+
+              res.set("Content-Type", contentType);
+              res.send(buffer);
+
+              const localFilePath = path.join(staticDir, requestedPath);
+              try {
+                await fs.mkdir(path.dirname(localFilePath), {
+                  recursive: true,
+                });
+                await fs.writeFile(localFilePath, buffer);
+              } catch (e) {}
+            } catch (err) {
+              this.logger.error("[ShinyLive] Proxy error:", err);
+              return res.status(502).send("Error fetching resource");
+            }
+          });
         } catch (error) {
-          this.logger.error(
-            `Error proxying shiny-live: ${JSON.stringify(error)}`,
-          );
+          this.logger.error("[ShinyLive] Error:", { resourceId, error });
           res.status(500).send("Error loading shiny-live application");
         }
       },
