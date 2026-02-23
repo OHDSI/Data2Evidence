@@ -52,7 +52,7 @@ export class UserMgmtAPI {
     datasetRoles: { tenantId: string; datasetId: string; role: string }[];
   }> {
     try {
-      const options = this.getRequestConfig();
+      const options = await this.getRequestConfig();
       const url = `${this.baseURL}/me/roles`;
       const result = await this.channel.get(url, options);
       return result.data;
@@ -66,7 +66,7 @@ export class UserMgmtAPI {
 
   async getMe(): Promise<{ id: string; username: string }> {
     try {
-      const options = this.getRequestConfig();
+      const options = await this.getRequestConfig();
       const url = `${this.baseURL}/me`;
       const result = await this.channel.get(url, options);
       return result.data;
