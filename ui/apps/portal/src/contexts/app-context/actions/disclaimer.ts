@@ -1,4 +1,5 @@
 import { AppState, initialState } from "../states";
+import { clearDisclaimerAcceptance } from "../../../utils/disclaimerStorage";
 
 export const setDisclaimerAccepted = (state: AppState, payload: boolean): AppState => ({
   ...state,
@@ -16,7 +17,11 @@ export const setShouldDisplayDisclaimer = (state: AppState, payload: boolean): A
   },
 });
 
-export const clearDisclaimer = (state: AppState): AppState => ({
-  ...state,
-  disclaimer: initialState.disclaimer,
-});
+export const clearDisclaimer = (state: AppState): AppState => {
+  // Clear localStorage when clearing disclaimer state
+  clearDisclaimerAcceptance();
+  return {
+    ...state,
+    disclaimer: initialState.disclaimer,
+  };
+};
