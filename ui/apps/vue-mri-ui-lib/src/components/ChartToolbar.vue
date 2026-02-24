@@ -303,6 +303,8 @@ export default {
       'updateDateConstraintValue',
       'setWizardConfig',
       'clearWizardConfig',
+      'holdFireRequest',
+      'releaseFireRequest',
     ]),
     openSettingsConfig() {
       this.toggleConfigSelectionDialog()
@@ -634,7 +636,10 @@ export default {
 
       return candidateCardIds.find(filterCardId => this.cardMatchesFixedAttributes(filterCardId, fixedAttributes)) || null
     },
-    applyMissingRequiredFilters(formValues, displayValues) {
+    async applyMissingRequiredFilters(formValues, displayValues) {
+      // Hold fire requests to prevent intermediate chart updates during batch operations
+      this.holdFireRequest()
+
       const filterCardPromises = []
       const operations = []
       const wizardOnlyValues = {}
@@ -762,12 +767,15 @@ export default {
 
         return Promise.all(valuePromises)
       }).then(() => {
-        // Small delay to allow all state updates to settle before triggering chart refresh
-        // This prevents intermediate updates from causing cancelled requests
-        setTimeout(() => {
-          this.setFireRequest()
-          this.refreshPatientCount()
-        }, 100)
+        // Release fire hold and trigger a single chart refresh
+        // This ensures all batch updates complete before any chart requests are made
+        this.releaseFireRequest()
+        this.setFireRequest()
+        this.refreshPatientCount()
+      }).catch(error => {
+        // Ensure fire is released even if an error occurs
+        this.releaseFireRequest()
+        throw error
       })
     },
     applyConstraintValue(constraint, rawInput, operator = '=', displayValue) {

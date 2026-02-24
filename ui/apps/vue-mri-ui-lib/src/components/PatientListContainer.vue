@@ -65,6 +65,10 @@ export default {
       this.setFireRequest()
     },
     getFireRequest() {
+      // Skip if fire requests are being held (during batch updates like applying required filters)
+      if (this.isFireRequestHeld) {
+        return
+      }
       if (Object.keys(this.getSelectedAttributes).length === 0) {
         return (this.errorMessage = this.getText('MRI_PA_PATIENT_LIT_NO_COLUMNS_SELECTED_MESSAGE'))
       }
@@ -142,6 +146,7 @@ export default {
       'getZipFireDownload',
       'getText',
       'getFireRequest',
+      'isFireRequestHeld',
       'getPLRequest',
       'getPLRequestZIP',
       'getPLModel',
