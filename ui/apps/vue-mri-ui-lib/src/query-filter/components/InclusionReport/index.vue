@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
 import plotly from '@/lib/CustomPlotly'
-import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
 import { computeAttritionStats } from './computeAttritionStats'
 import { convertTreemapData, formatTreemapTooltip } from './computeTreemapStats'
 import { shouldIncludeRect, calculateFilteredSummary } from './ruleSelectionFilter'
@@ -17,13 +16,27 @@ import GroupButtons from '../GroupButtons.vue'
 import ChevronButton from '@/components/ChevronButton.vue'
 import * as echarts from 'echarts'
 import { VueDraggable } from 'vue-draggable-plus'
+import { getInclusionReportMockResponse } from '@/mocks/inclusionReportMockResponse'
 
-const props = defineProps<{
-  cohortDefinitionId: string
-  sourceKey: string
-  patientCount: number | null
-  generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
-}>()
+const props = withDefaults(
+  defineProps<{
+    cohortDefinitionId: string
+    sourceKey: string
+    patientCount: number | null
+    generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
+    showPersonEventSwitch?: boolean
+    useMockData?: boolean
+    fetchInclusionReport: (
+      cohortDefinitionId: string,
+      sourceKey: string,
+      modeId: number
+    ) => Promise<InclusionReportResponse>
+  }>(),
+  {
+    showPersonEventSwitch: true,
+    useMockData: false,
+  }
+)
 
 const isLoadingInclusionReport = ref<boolean>(false)
 const funnelChartRef = ref<HTMLElement | null>(null)
@@ -157,7 +170,7 @@ const renderFunnelChart = () => {
     },
     name: FUNNEL_LEGEND_LABELS[index],
     showlegend: true,
-  })).filter((trace, index) => usedColors.has(COLORS_ARRAY[index]))
+  })).filter((_trace, index) => usedColors.has(COLORS_ARRAY[index]))
 
   const layout = {
     height: 800,
@@ -359,7 +372,7 @@ function handlePersonEventViewChange(newView: 'PERSON' | 'EVENT') {
   // Clean up chart and ResizeObserver before switching views
   selectedPersonEventView.value = newView
   if (shouldFetchInclusionReport.value) {
-    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey)
+    fetchInclusionReportInternal(props.cohortDefinitionId, props.sourceKey)
   }
 }
 
@@ -406,23 +419,25 @@ function toggleAllRules() {
   }
 }
 
-const fetchInclusionReport = async (cohortDefinitionId: string, sourceKey: string) => {
+const fetchInclusionReportInternal = async (cohortDefinitionId: string, sourceKey: string) => {
   isLoadingInclusionReport.value = true
 
   const modeId = selectedPersonEventView.value === 'PERSON' ? 1 : 0
   try {
+    if (props.useMockData) {
+      const mockResponse = getInclusionReportMockResponse(modeId)
+      if (selectedPersonEventView.value === 'PERSON') {
+        inclusionReportPersonResponse.value = mockResponse
+      } else {
+        inclusionReportEventResponse.value = mockResponse
+      }
+      return
+    }
+
     if (selectedPersonEventView.value === 'PERSON' && !inclusionReportPersonResponse.value) {
-      inclusionReportPersonResponse.value = await d2eWebapiService.getInclusionReport(
-        cohortDefinitionId,
-        sourceKey,
-        modeId
-      )
+      inclusionReportPersonResponse.value = await props.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
     } else if (selectedPersonEventView.value === 'EVENT' && !inclusionReportEventResponse.value) {
-      inclusionReportEventResponse.value = await d2eWebapiService.getInclusionReport(
-        cohortDefinitionId,
-        sourceKey,
-        modeId
-      )
+      inclusionReportEventResponse.value = await props.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
     }
   } catch (error) {
     console.error('Error fetching inclusion report:', error)
@@ -468,7 +483,7 @@ onMounted(() => {
   isLoadingInclusionReport.value = false
 
   if (shouldFetchInclusionReport.value) {
-    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey)
+    fetchInclusionReportInternal(props.cohortDefinitionId, props.sourceKey)
   }
 })
 
@@ -495,7 +510,7 @@ watch(
     inclusionReportEventResponse.value = null
     disposeTreemap()
     if (shouldFetchInclusionReport.value) {
-      fetchInclusionReport(props.cohortDefinitionId, newSourceKey)
+      fetchInclusionReportInternal(props.cohortDefinitionId, newSourceKey)
     }
   }
 )
@@ -503,7 +518,7 @@ watch(
 // Watch for changes in shouldFetchInclusionReport and decide whether to fetch inclusion report
 watch(shouldFetchInclusionReport, shouldFetch => {
   if (shouldFetch) {
-    fetchInclusionReport(props.cohortDefinitionId, props.sourceKey)
+    fetchInclusionReportInternal(props.cohortDefinitionId, props.sourceKey)
   } else {
     inclusionReportPersonResponse.value = null
     inclusionReportEventResponse.value = null
@@ -544,7 +559,7 @@ watch(
 </script>
 
 <template>
-  <div class="group-buttons-container">
+  <div v-if="showPersonEventSwitch" class="group-buttons-container">
     <group-buttons
       :options="personEventOptions"
       :limit-value="selectedPersonEventView"

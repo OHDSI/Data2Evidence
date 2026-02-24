@@ -30,6 +30,9 @@
           :disabled="!canOpenDashboard"
         />
       </div>
+      <div class="dashboardButton">
+        <VButton @click="openInclusionReportModal" variant="outlined">Inclusion Report</VButton>
+      </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
           <chartButton
@@ -130,6 +133,34 @@
       @cancel="dashboardFlow.handleCancelSaveCohort"
     />
   </Teleport>
+
+  <Teleport to="#app">
+    <VDialog
+      :model-value="showInclusionReportModal"
+      @update:modelValue="showInclusionReportModal = $event"
+      max-width="1400"
+    >
+      <div class="pa-inclusion-report-dialog">
+        <div class="pa-inclusion-report-dialog__title">
+          <div class="pa-inclusion-report-dialog__title-text">Inclusion Report</div>
+          <button class="pa-inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
+            <span class="icon" style="font-family: app-icons">&#x2715;</span>
+          </button>
+        </div>
+        <div class="pa-inclusion-report-dialog__content">
+          <InclusionReport
+            :cohort-definition-id="inclusionReportCohortDefinitionId"
+            :source-key="inclusionReportSourceKey"
+            :patient-count="inclusionReportPatientCount"
+            generation-status="complete"
+            :fetch-inclusion-report="fetchInclusionReportNoop"
+            :show-person-event-switch="false"
+            :use-mock-data="true"
+          />
+        </div>
+      </div>
+    </VDialog>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -164,6 +195,9 @@ function getBookmarkKey(bookmark) {
     null
   )
 }
+import VButton from './vuetify/VButton.vue'
+import VDialog from './vuetify/VDialog.vue'
+import InclusionReport from '../query-filter/components/InclusionReport/index.vue'
 
 export default {
   name: 'chartToolbar',
@@ -182,6 +216,9 @@ export default {
       toggleFilterCardSummary: false,
       patientCountPopoverPosition: {},
       dashboardFlow,
+      showDashboardModal: false,
+      showSaveCohortModal: false,
+      showInclusionReportModal: false,
     }
   },
   watch: {
@@ -263,6 +300,15 @@ export default {
     },
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
+    },
+    inclusionReportCohortDefinitionId() {
+      return this.getActiveCohortMaterializedId?.toString() || 'mock-cohort-id'
+    },
+    inclusionReportSourceKey() {
+      return this.getSelectedDataset?.id || 'mock-source-key'
+    },
+    inclusionReportPatientCount() {
+      return 1000
     },
   },
   methods: {
@@ -383,6 +429,42 @@ export default {
     drillDownClicked() {
       this.$emit('drilldown')
     },
+    async handleOpenDashboard() {
+      if (this.hasChanges) {
+        this.showSaveCohortModal = true
+        return
+      }
+      if (!this.getActiveCohortMaterializedId) {
+        this.showSaveCohortModal = true
+        return
+      }
+      this.showDashboardModal = true
+    },
+
+    handleSaveCohortSuccess({ cohortId, bookmarkId }) {
+      this.showDashboardModal = true
+    },
+
+    handleCancelSaveCohort() {
+      this.showSaveCohortModal = false
+    },
+
+    openDashboardModal() {
+      this.handleOpenDashboard()
+    },
+
+    closeDashboardModal() {
+      this.showDashboardModal = false
+    },
+    openInclusionReportModal() {
+      this.showInclusionReportModal = true
+    },
+    closeInclusionReportModal() {
+      this.showInclusionReportModal = false
+    },
+    fetchInclusionReportNoop() {
+      return Promise.resolve(null)
+    },
   },
   components: {
     ChartButton,
@@ -396,6 +478,9 @@ export default {
     DashboardSelectionModal,
     CompleteRequiredFiltersModal,
     Button,
+    VButton,
+    VDialog,
+    InclusionReport,
   },
 }
 </script>
