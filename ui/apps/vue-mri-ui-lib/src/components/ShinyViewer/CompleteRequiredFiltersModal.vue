@@ -133,14 +133,14 @@ import { computed, reactive, watch } from 'vue'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
-import type { WizardFieldDefinition } from '@/utils/dashboardFlowUtils'
+import type { WizardFieldDefinition, MissingRequiredField } from '@/utils/dashboardFlowUtils'
 import { isConditionField } from '@/utils/dashboardFlowUtils'
 
 export interface RequiredFieldItem extends WizardFieldDefinition {}
 
 const props = defineProps<{
   isOpen: boolean
-  fields: RequiredFieldItem[]
+  fields: MissingRequiredField[]
   loading: boolean
   error: string
 }>()
@@ -271,7 +271,7 @@ function isDateType(type?: string) {
   return type === 'time' || type === 'datetime' || type === 'date'
 }
 
-function shouldUseTypeahead(field: RequiredFieldItem): boolean {
+function shouldUseTypeahead(field: MissingRequiredField): boolean {
   if (field.type === 'conceptSet') {
     return true
   }

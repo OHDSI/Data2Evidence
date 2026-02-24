@@ -68,10 +68,10 @@
 
   <Teleport to="#app">
     <DashboardSelectionModal
-      :is-open="dashboardFlow.showDashboardSelectionModal.value"
-      :dashboards="dashboardFlow.dashboardCodes.value"
-      :loading="dashboardFlow.dashboardMetadataLoading.value"
-      :error="dashboardFlow.dashboardSelectionError.value"
+      :is-open="dashboardFlow.showDashboardSelectionModal"
+      :dashboards="dashboardFlow.dashboardCodes"
+      :loading="dashboardFlow.dashboardMetadataLoading"
+      :error="dashboardFlow.dashboardSelectionError"
       @close="dashboardFlow.closeDashboardSelectionModal"
       @select="dashboardFlow.handleDashboardSelected"
     />
@@ -79,10 +79,10 @@
 
   <Teleport to="#app">
     <CompleteRequiredFiltersModal
-      :is-open="dashboardFlow.showRequiredFiltersModal.value"
-      :fields="dashboardFlow.missingRequiredFields.value"
-      :loading="dashboardFlow.applyingRequiredFilters.value"
-      :error="dashboardFlow.requiredFiltersError.value"
+      :is-open="dashboardFlow.showRequiredFiltersModal"
+      :fields="dashboardFlow.missingRequiredFields"
+      :loading="dashboardFlow.applyingRequiredFilters"
+      :error="dashboardFlow.requiredFiltersError"
       @cancel="dashboardFlow.handleRequiredFiltersCancel"
       @submit="dashboardFlow.handleRequiredFiltersSubmit"
     />
@@ -90,21 +90,21 @@
 
   <Teleport to="#app">
     <ShinyDashboardModal
-      v-if="dashboardFlow.showDashboardModal.value"
-      :is-open="dashboardFlow.showDashboardModal.value"
+      v-if="dashboardFlow.showDashboardModal"
+      :is-open="dashboardFlow.showDashboardModal"
       :dataset-id="getSelectedDataset.id"
       :cohort-id="getActiveCohortMaterializedId?.toString() || ''"
-      :wizard-config="dashboardFlow.dashboardContext.value.wizardConfig"
-      :conditions="dashboardFlow.dashboardContext.value.conditions"
-      :mriquery="dashboardFlow.dashboardContext.value.mriquery"
+      :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
+      :conditions="dashboardFlow.dashboardContext.conditions"
+      :mriquery="dashboardFlow.dashboardContext.mriquery"
       @close="dashboardFlow.closeDashboardModal"
     />
   </Teleport>
 
   <Teleport to="#app">
     <SaveCohortModal
-      :is-open="dashboardFlow.showSaveCohortModal.value"
-      :wizard-config="dashboardFlow.dashboardContext.value.wizardConfig"
+      :is-open="dashboardFlow.showSaveCohortModal"
+      :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       @success="dashboardFlow.handleSaveCohortSuccess"
       @cancel="dashboardFlow.handleCancelSaveCohort"
     />
@@ -146,13 +146,10 @@ function getBookmarkKey(bookmark) {
 export default {
   name: 'chartToolbar',
   props: ['hideEv', 'config', 'collectionEv', 'showUnHideFilters'],
-  setup() {
-    // Dashboard flow composable will be initialized in data() with access to component instance
-    return {}
-  },
   data() {
     // Initialize dashboard flow composable with dispatch and getters
-    const dashboardFlow = useDashboardFlow(this.$store.dispatch, this.$store.getters)
+    const store = (this as any).$store
+    const dashboardFlow = useDashboardFlow(store.dispatch, store.getters)
 
     return {
       chartConfig: [],

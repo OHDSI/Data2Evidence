@@ -703,7 +703,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   async function handleOpenDashboard() {
     const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
     const isNew = activeBookmark?.isNew || false
-    const hasLocalChanges = false // Note: getCurrentBookmarkHasChanges would need to be passed in
+    const hasLocalChanges = getters.getCurrentBookmarkHasChanges?.value || getters.getCurrentBookmarkHasChanges || false
     if (isNew || hasLocalChanges) {
       showSaveCohortModal.value = true
       return
@@ -713,10 +713,15 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       showSaveCohortModal.value = true
       return
     }
+    // Ensure wizardConfig is set before opening, wait for reactivity if needed
     if (!activeDashboardWizardConfig.value) {
-      console.warn('[Dashboard] wizardConfig not ready')
-      dispatch('setToastMessage', { text: 'Dashboard configuration not ready. Please try again.' })
-      return
+      console.warn('[Dashboard] wizardConfig not ready, waiting...')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      if (!activeDashboardWizardConfig.value) {
+        console.error('[Dashboard] wizardConfig still not ready after wait')
+        dispatch('setToastMessage', { text: 'Dashboard configuration not ready. Please try again.' })
+        return
+      }
     }
     console.log('[Dashboard] Opening dashboard with config:', activeDashboardWizardConfig.value)
     showDashboardModal.value = true
