@@ -42,15 +42,22 @@ async function callMcpTool(
     );
   }
 
-  const content = data.result?.content;
-  if (Array.isArray(content)) {
-    return content
-      .filter((c: any) => c.type === "text")
-      .map((c: any) => c.text)
-      .join("\n");
+  const result = data.result;
+  const parts: string[] = [];
+
+  // Extract text from content array
+  if (Array.isArray(result?.content)) {
+    for (const c of result.content) {
+      if (c.type === "text" && c.text) parts.push(c.text);
+    }
   }
 
-  return JSON.stringify(data.result);
+  // Extract structuredContent (contains the actual tool data)
+  if (result?.structuredContent) {
+    parts.push(JSON.stringify(result.structuredContent));
+  }
+
+  return parts.length > 0 ? parts.join("\n") : JSON.stringify(result);
 }
 
 /**
