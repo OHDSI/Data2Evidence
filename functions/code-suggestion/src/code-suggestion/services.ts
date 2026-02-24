@@ -1,7 +1,7 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModels } from "../utils/utils";
-import { createMcpClient } from "../mcp/mcpManager";
+import { createStaticMcpTools } from "../mcp/staticTools";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
 import { getRolePrompting } from "./prompts";
@@ -68,12 +68,8 @@ export const getChatResponse = async (req: any) => {
     const chatStart = performance.now();
 
     const t0 = performance.now();
-    const client = createMcpClient(token, datasetId);
-    console.log(`[MCP-TIMING] [code-suggestion] createMcpClient in ${(performance.now() - t0).toFixed(1)}ms`);
-
-    const t1 = performance.now();
-    const tools = await client.getTools();
-    console.log(`[MCP-TIMING] [code-suggestion] client.getTools() in ${(performance.now() - t1).toFixed(1)}ms tools=${tools.length}`);
+    const tools = createStaticMcpTools(token, datasetId);
+    console.log(`[MCP-TIMING] [code-suggestion] createStaticMcpTools in ${(performance.now() - t0).toFixed(1)}ms tools=${tools.length}`);
 
     const t2 = performance.now();
     const agent = createAgent({

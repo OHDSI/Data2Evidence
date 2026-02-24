@@ -13,7 +13,9 @@ export class mcpServerRouter {
     this.router.post("/chat", async (req: Request, res: Response) => {
       const reqStart = performance.now();
       const method = req.body?.method || "unknown";
-      console.log(`[MCP-TIMING] === REQUEST START === method=${method}`);
+      console.log(
+        `[MCP-TIMING] === REQUEST START === method=${method} body=${JSON.stringify(req.body)} `,
+      );
 
       // Notifications are fire-and-forget. In stateless Trex (no session persistence),
       // return 200 to prevent the client from attempting a GET SSE stream.
@@ -47,6 +49,35 @@ export class mcpServerRouter {
         console.log(
           `[MCP-TIMING] server.connect() in ${(performance.now() - t1).toFixed(1)}ms`,
         );
+
+        // Auto-initialize for non-initialize requests (e.g., direct tools/call
+        // from static client). Trex is stateless — each request is a fresh process,
+        // so the SDK transport is never pre-initialized.
+        if (method !== "initialize") {
+          const noOp: any = {
+            writeHead() { return this; },
+            setHeader() { return this; },
+            getHeader() {},
+            write() { return true; },
+            end() {},
+            on() { return this; },
+            once() { return this; },
+            status() { return this; },
+            json() { return this; },
+            headersSent: false,
+            statusCode: 200,
+          };
+          await transport.handleRequest(req, noOp, {
+            jsonrpc: "2.0",
+            method: "initialize",
+            id: "auto-init",
+            params: {
+              protocolVersion: "2025-03-26",
+              capabilities: {},
+              clientInfo: { name: "d2e-static-client", version: "1.0.0" },
+            },
+          });
+        }
 
         const t2 = performance.now();
         await transport.handleRequest(req, res, req.body);
