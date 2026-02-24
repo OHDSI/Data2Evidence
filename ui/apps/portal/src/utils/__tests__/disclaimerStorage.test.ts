@@ -39,9 +39,15 @@ describe("disclaimerStorage", () => {
       expect(localStorage.getItem(DISCLAIMER_ACCEPTED_KEY)).toBe("true");
     });
 
-    it("should set localStorage value to 'false' when passed false", () => {
+    it("should not set localStorage value when passed false", () => {
       setDisclaimerAccepted(false);
-      expect(localStorage.getItem(DISCLAIMER_ACCEPTED_KEY)).toBe("false");
+      expect(localStorage.getItem(DISCLAIMER_ACCEPTED_KEY)).toBeNull();
+    });
+
+    it("should not overwrite existing value when passed false", () => {
+      localStorage.setItem(DISCLAIMER_ACCEPTED_KEY, "true");
+      setDisclaimerAccepted(false);
+      expect(localStorage.getItem(DISCLAIMER_ACCEPTED_KEY)).toBe("true");
     });
   });
 

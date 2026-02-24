@@ -8,7 +8,7 @@ import { ConfigTypes } from "../constant";
 export const useDisclaimerHook = () => {
   const { disclaimer, setShouldDisplayDisclaimer, setIsDisclaimerAccepted } = useDisclaimer();
 
-  const fetchDisclaimerConfig = useCallback(async () => {
+  const initializeDisclaimerState = useCallback(async () => {
     // First check if the user has already accepted the disclaimer in localStorage
     const hasAccepted = hasDisclaimerBeenAccepted();
     
@@ -27,6 +27,6 @@ export const useDisclaimerHook = () => {
     if (disclaimer.shouldDisplay !== undefined) {
       return;
     }
-    fetchDisclaimerConfig();
+    initializeDisclaimerState();
   }, []);
 };

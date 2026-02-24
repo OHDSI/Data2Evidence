@@ -19,11 +19,15 @@ export const hasDisclaimerBeenAccepted = (): boolean => {
 
 /**
  * Save the disclaimer acceptance status to local storage
+ * Note: This function should only be called with `true` to persist acceptance.
+ * Not accepting (declining) doesn't need persistence - absence means not accepted.
  * @param accepted - true if the disclaimer was accepted
  */
 export const setDisclaimerAccepted = (accepted: boolean): void => {
   try {
-    localStorage.setItem(DISCLAIMER_ACCEPTED_KEY, String(accepted));
+    if (accepted) {
+      localStorage.setItem(DISCLAIMER_ACCEPTED_KEY, String(accepted));
+    }
   } catch (error) {
     console.error("Error saving disclaimer acceptance to localStorage:", error);
   }
