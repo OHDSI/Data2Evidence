@@ -13,6 +13,7 @@ export class App {
 
   async start() {
     const port = 10000;
+    this.app.use(express.json());
     this.app.use("/mcp", new mcpServerRouter().router);
     this.app.listen(port, () => {
       this.logger.log(`Server is listening on port ${port}`);
