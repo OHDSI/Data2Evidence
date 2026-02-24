@@ -497,14 +497,19 @@ export default {
       this.requiredFiltersError = ''
       this.showRequiredFiltersModal = false
     },
-    handleRequiredFiltersSubmit(formValues, displayValues) {
+    async handleRequiredFiltersSubmit(formValues, displayValues) {
       this.requiredFiltersError = ''
       this.applyingRequiredFilters = true
 
       try {
-        this.applyMissingRequiredFilters(formValues, displayValues)
+        const wizardOnlyValues = await this.applyMissingRequiredFilters(formValues, displayValues)
         this.showRequiredFiltersModal = false
-        this.prepareWizardConfigAndContinue(this.selectedWizardDefinition)
+        await this.prepareWizardConfigAndContinue(
+          this.selectedWizardDefinition,
+          wizardOnlyValues,
+          formValues,
+          displayValues
+        )
       } catch (error) {
         console.error(error)
         this.requiredFiltersError = error?.message || 'Failed to apply required filters'
@@ -514,6 +519,83 @@ export default {
     },
     getCurrentFilterCards() {
       return this.getBookmarkFromIFR?.cards || null
+    },
+    /**
+     * Extract form values from existing filter cards for wizard fields with configPath.
+     * Used when there are no missing fields to still populate conditions in wizardConfig.
+     */
+    extractFormValuesFromFilterCards(selectedWizardDefinition): { formValues: Record<string, any>; displayValues: Record<string, string> } {
+      const formValues: Record<string, any> = {}
+      const displayValues: Record<string, string> = {}
+
+      // Process ALL fields from the wizard definition
+      for (const field of selectedWizardDefinition.fields || []) {
+        // For fields WITH configPath, try to extract from existing filter cards
+        if (field.configPath) {
+          const extracted = this.extractFieldValueFromFilterCards(field)
+          if (extracted) {
+            formValues[field.id] = extracted.value
+            if (extracted.displayValue) {
+              displayValues[field.id] = extracted.displayValue
+            }
+            if (extracted.useDescendants !== undefined) {
+              formValues[`${field.id}_wildcard`] = extracted.useDescendants
+            }
+          }
+        }
+      }
+
+      return { formValues, displayValues }
+    },
+    /**
+     * Extract a single field's value from filter cards.
+     * Tries to find a matching filter card and extract the constraint value.
+     */
+    extractFieldValueFromFilterCards(field): { value: any; displayValue?: string; useDescendants?: boolean } | null {
+      if (!field.configPath) {
+        return null
+      }
+
+      const filterCardPath = getFieldFilterCardPathForField(field)
+      const matchingCardIds = this.getNonExcludedFilterCardIdsByPath(filterCardPath)
+
+      for (const filterCardId of matchingCardIds) {
+        // Get the constraint for this field's attribute
+        const attrKey = getFieldAttrKey(field.configPath)
+        const constraint = this.getConstraintForAttribute({ filterCardId, key: attrKey })
+
+        if (!constraint) {
+          continue
+        }
+
+        // Extract value from constraint
+        const constraintType = constraint.props?.type
+        const constraintValue = constraint.props?.value
+
+        if (constraintType === 'text' || constraintType === 'conceptSet') {
+          const values = Array.isArray(constraintValue) ? constraintValue : []
+          if (values.length > 0) {
+            const firstValue = values[0]
+            const value = typeof firstValue === 'object' ? firstValue.value : firstValue
+            const displayValue = typeof firstValue === 'object'
+              ? (firstValue.display_value || firstValue.text || firstValue.value)
+              : firstValue
+            const useDescendants = values[0]?.includeDescendants
+
+            return { value, displayValue, useDescendants }
+          }
+        } else if (constraintType === 'num') {
+          const values = Array.isArray(constraintValue) ? constraintValue : []
+          if (values.length > 0) {
+            return { value: values[0].value }
+          }
+        }
+
+        // Only process the first matching card
+        break
+      }
+
+      return null
     },
     async handleDashboardSelected(dashboard) {
       this.dashboardSelectionError = ''
@@ -532,7 +614,9 @@ export default {
 
       if (!this.missingRequiredFields.length) {
         this.showDashboardSelectionModal = false
-        await this.prepareWizardConfigAndContinue(selectedWizardDefinition)
+        // Extract form values from existing filter cards to populate conditions
+        const { formValues, displayValues } = this.extractFormValuesFromFilterCards(selectedWizardDefinition)
+        await this.prepareWizardConfigAndContinue(selectedWizardDefinition, {}, formValues, displayValues)
         return
       }
 
@@ -540,9 +624,81 @@ export default {
       this.requiredFiltersError = ''
       this.showRequiredFiltersModal = true
     },
-    async prepareWizardConfigAndContinue(selectedWizardDefinition) {
-      const wizardConfig = {
+    collectWizardConfigData(selectedWizardDefinition, formValues: Record<string, any>, displayValues?: Record<string, string>) {
+      const wizardConfig: Record<string, any> = {}
+      const conditions: Array<{ value: string; displayName: string; useDescendants: boolean }> = []
+
+      // Process ALL fields from the wizard definition (not just missing ones)
+      for (const field of selectedWizardDefinition.fields || []) {
+        // Handle yearRange fields
+        if (field.type === 'yearRange') {
+          const from = formValues[`${field.id}_from`]
+          const to = formValues[`${field.id}_to`]
+          if (from || to) {
+            wizardConfig.year = { from: from || null, to: to || null }
+          }
+          continue
+        }
+
+        // Check if this is a condition field
+        if (field.id.toLowerCase().startsWith('condition')) {
+          const value = formValues[field.id]
+          if (value !== undefined && value !== null && value !== '') {
+            conditions.push({
+              value,
+              displayName: displayValues?.[field.id] || value,
+              useDescendants: formValues[`${field.id}_wildcard`] === true,
+            })
+          }
+          continue
+        }
+
+        // For fields without configPath (wizard-only), add their values
+        if (!field.configPath) {
+          const value = formValues[field.id]
+          if (value !== undefined && value !== null && value !== '') {
+            if (displayValues?.[field.id]) {
+              wizardConfig[field.id] = { value, displayName: displayValues[field.id] }
+            } else {
+              wizardConfig[field.id] = value
+            }
+          }
+        }
+      }
+
+      // Add conditions array if not empty
+      if (conditions.length > 0) {
+        wizardConfig.conditions = conditions
+      }
+
+      return wizardConfig
+    },
+    async prepareWizardConfigAndContinue(selectedWizardDefinition, wizardOnlyValues?: Record<string, any>, formValues?: Record<string, any>, displayValues?: Record<string, string>) {
+      const wizardConfig: Record<string, any> = {
         dashboardType: selectedWizardDefinition.id,
+      }
+
+      // Include wizard-only values from applyMissingRequiredFilters (for backward compatibility)
+      if (wizardOnlyValues && Object.keys(wizardOnlyValues).length > 0) {
+        Object.assign(wizardConfig, wizardOnlyValues)
+      }
+
+      // If formValues provided, collect data from ALL fields (this includes conditions from satisfied fields too)
+      if (formValues) {
+        const fullWizardConfig = this.collectWizardConfigData(selectedWizardDefinition, formValues, displayValues)
+        // Merge, with fullWizardConfig taking precedence for conditions
+        if (fullWizardConfig.conditions) {
+          wizardConfig.conditions = fullWizardConfig.conditions
+        }
+        if (fullWizardConfig.year) {
+          wizardConfig.year = fullWizardConfig.year
+        }
+        // Add any other wizard-only fields
+        Object.keys(fullWizardConfig).forEach(key => {
+          if (key !== 'conditions' && key !== 'year' && !wizardConfig[key]) {
+            wizardConfig[key] = fullWizardConfig[key]
+          }
+        })
       }
 
       this.activeDashboardWizardConfig = wizardConfig
@@ -642,7 +798,8 @@ export default {
 
       const filterCardPromises = []
       const operations = []
-      const wizardOnlyValues = {}
+      const wizardOnlyValues: Record<string, any> = {}
+      const conditions: Array<{ value: string; displayName: string; useDescendants: boolean }> = []
 
       for (const field of this.missingRequiredFields) {
         // Handle yearRange fields with _from and _to suffixes
@@ -658,10 +815,30 @@ export default {
         const displayValue = displayValues?.[field.id]
         const includeDescendants = formValues[`${field.id}_wildcard`]
 
+        // Check if this is a condition field (id starts with "condition")
+        // Condition fields are collected for wizardConfig regardless of configPath
+        if (field.id.toLowerCase().startsWith('condition')) {
+          const value = formValues[field.id]
+          if (value !== undefined && value !== null && value !== '') {
+            conditions.push({
+              value,
+              displayName: displayValue || value,
+              useDescendants: formValues[`${field.id}_wildcard`] === true,
+            })
+          }
+        }
+
         // Fields without configPath are wizard-only fields (like yearRange)
         // They don't create MRI filter cards but their values are passed to the dashboard
         if (!field.configPath) {
-          wizardOnlyValues[field.id] = fieldInputValue
+          // Map yearRange fields to 'year' key to match useDeepLink.ts format
+          if (field.type === 'yearRange') {
+            wizardOnlyValues.year = fieldInputValue
+          } else if (!field.id.toLowerCase().startsWith('condition')) {
+            // Only add non-condition fields to wizardOnlyValues
+            // Conditions are handled separately above
+            wizardOnlyValues[field.id] = fieldInputValue
+          }
           continue
         }
 
@@ -772,6 +949,14 @@ export default {
         this.releaseFireRequest()
         this.setFireRequest()
         this.refreshPatientCount()
+
+        // Add conditions array if not empty
+        if (conditions.length > 0) {
+          wizardOnlyValues.conditions = conditions
+        }
+
+        // Return wizard-only values (e.g., yearRange, conditions) to be included in wizardConfig
+        return wizardOnlyValues
       }).catch(error => {
         // Ensure fire is released even if an error occurs
         this.releaseFireRequest()
@@ -881,6 +1066,21 @@ export default {
         this.showSaveCohortModal = true
         return
       }
+
+      // Ensure wizardConfig is set before opening the modal
+      // Use nextTick to wait for Vue reactivity to update dashboardContext
+      if (!this.activeDashboardWizardConfig) {
+        console.warn('[Dashboard] wizardConfig not ready, waiting...')
+        await this.$nextTick()
+        // After nextTick, check again
+        if (!this.activeDashboardWizardConfig) {
+          console.error('[Dashboard] wizardConfig still not ready after nextTick')
+          this.setToastMessage({ text: 'Dashboard configuration not ready. Please try again.' })
+          return
+        }
+      }
+
+      console.log('[Dashboard] Opening dashboard with config:', this.activeDashboardWizardConfig)
       this.showDashboardModal = true
     },
     handleSaveCohortSuccess() {
