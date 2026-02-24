@@ -24,6 +24,13 @@ export interface WizardDefinitionLike {
   fields: WizardFieldDefinition[]
 }
 
+export interface WizardDefinition {
+  id: string
+  name: string
+  description?: string
+  fields: WizardFieldDefinition[]
+}
+
 export interface BookmarkExpression {
   type: 'Expression'
   operator: string

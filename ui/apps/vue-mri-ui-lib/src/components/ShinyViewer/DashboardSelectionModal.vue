@@ -9,17 +9,23 @@
         <p v-if="loading" class="status-text">Loading dashboards...</p>
         <p v-else-if="error" class="error-text">{{ error }}</p>
         <p v-else-if="dashboards.length === 0" class="status-text">No dashboards available for this dataset.</p>
+        <p v-else-if="availableDashboards.length === 0 && dashboards.length > 0" class="status-text">
+          No configured dashboards available for this dataset.
+        </p>
 
         <ul v-else class="dashboard-list">
-          <li v-for="(dashboard, index) in dashboards" :key="`${dashboard.name}-${index}`" class="dashboard-item">
+          <li v-for="dashboard in availableDashboards" :key="dashboard.id" class="dashboard-item">
             <label class="dashboard-option">
               <input
                 type="radio"
                 name="dashboard-selection"
-                :value="dashboard.name"
-                v-model="selectedDashboardName"
+                :value="dashboard.id"
+                v-model="selectedDashboardId"
               />
-              <span>{{ dashboard.name }}</span>
+              <div class="dashboard-info">
+                <span class="dashboard-name">{{ dashboard.name }}</span>
+                <span v-if="dashboard.description" class="dashboard-description">{{ dashboard.description }}</span>
+              </div>
             </label>
           </li>
         </ul>
@@ -28,16 +34,17 @@
 
     <template #footer>
       <div class="flex-spacer"></div>
-      <appButton :click="handleContinue" text="Continue" :disabled="loading || !selectedDashboardName" />
+      <appButton :click="handleContinue" text="Continue" :disabled="loading || !selectedDashboardId" />
       <appButton :click="handleClose" text="Cancel" :disabled="loading" />
     </template>
   </MessageBox>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type PropType } from 'vue'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
+import type { WizardDefinition } from '@/utils/dashboardFlowUtils'
 
 interface DashboardCode {
   name: string
@@ -52,6 +59,7 @@ const props = defineProps<{
   dashboards: DashboardCode[]
   loading: boolean
   error: string
+  wizardDefinitions: WizardDefinition[]
 }>()
 
 const emit = defineEmits<{
@@ -59,17 +67,28 @@ const emit = defineEmits<{
   (e: 'select', dashboard: DashboardCode): void
 }>()
 
-const selectedDashboardName = ref('')
+const selectedDashboardId = ref('')
+
+const availableDashboards = computed(() => {
+  // Config-first: only show dashboards that exist in BOTH config AND API
+  return props.wizardDefinitions
+    .filter(wizard => props.dashboards.some(api => api.name === wizard.id))
+    .map(wizard => ({
+      id: wizard.id,
+      name: wizard.name,
+      description: wizard.description
+    }))
+})
 
 const selectedDashboard = computed(() => {
-  return props.dashboards.find(dashboard => dashboard.name === selectedDashboardName.value)
+  return props.dashboards.find(dashboard => dashboard.name === selectedDashboardId.value)
 })
 
 watch(
   () => props.isOpen,
   isOpen => {
     if (isOpen) {
-      selectedDashboardName.value = ''
+      selectedDashboardId.value = ''
     }
   }
 )
@@ -115,10 +134,25 @@ function handleContinue() {
 
 .dashboard-option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
   cursor: pointer;
+}
+
+.dashboard-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dashboard-name {
+  font-weight: 500;
+}
+
+.dashboard-description {
+  font-size: 0.875rem;
+  color: var(--color-neutral, #595757);
 }
 
 .status-text {
