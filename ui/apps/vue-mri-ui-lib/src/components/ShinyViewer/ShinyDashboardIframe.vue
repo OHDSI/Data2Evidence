@@ -13,6 +13,7 @@
     <iframe
       v-show="!loading && !error"
       ref="iframeRef"
+      :key="iframeUrl"
       :src="iframeUrl"
       class="shiny-iframe"
       frameborder="0"
@@ -43,11 +44,34 @@ const error = ref<string | null>(null)
 const portalAPI = getPortalAPI()
 
 const iframeUrl = computed(() => {
-  if (!props.wizardConfig) return ''
+  if (!props.wizardConfig?.dashboardType) {
+    console.log('[Parent] iframeUrl: wizardConfig or dashboardType not available', props.wizardConfig)
+    return ''
+  }
 
   const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
+  const url = `/gateway/api/dataset/shiny-live/${resourceId}/`
+  console.log('[Parent] iframeUrl computed:', url, 'wizardConfig:', props.wizardConfig)
+  return url
+})
 
-  return `/gateway/api/dataset/shiny-live/${resourceId}/`
+// Watch for wizardConfig changes and reset state when it changes
+watch(() => props.wizardConfig, (newConfig, oldConfig) => {
+  if (newConfig !== oldConfig) {
+    console.log('[Parent] wizardConfig changed, resetting iframe state')
+    // Reset state for new dashboard
+    isIframeReady.value = false
+    tokenSent.value = false
+    loading.value = true
+    error.value = null
+  }
+}, { deep: true })
+
+// Watch for iframeUrl changes - if it becomes valid, ensure loading state is correct
+watch(iframeUrl, (newUrl) => {
+  if (newUrl && !props.wizardConfig) {
+    console.log('[Parent] iframeUrl is valid but wizardConfig missing')
+  }
 })
 
 window.addEventListener('message', handleIframeMessage)
