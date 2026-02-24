@@ -175,7 +175,10 @@ export default {
     },
     getActiveBookmark(newBookmark, oldBookmark) {
       if (getBookmarkKey(newBookmark) !== getBookmarkKey(oldBookmark)) {
-        this.dashboardFlow.resetDashboardFlowState()
+        // Don't reset if we're in the middle of a dashboard flow
+        if (!this.dashboardFlow.isProcessingDashboardFlow()) {
+          this.dashboardFlow.resetDashboardFlowState()
+        }
       }
     },
   },

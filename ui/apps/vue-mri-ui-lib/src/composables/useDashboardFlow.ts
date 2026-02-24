@@ -49,6 +49,7 @@ export interface UseDashboardFlowReturn {
   handleSaveCohortSuccess: () => void
   handleCancelSaveCohort: () => void
   closeDashboardModal: () => void
+  isProcessingDashboardFlow: () => boolean
 }
 
 export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowReturn {
@@ -67,6 +68,8 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   const selectedWizardDefinition = ref<WizardDefinition | null>(null)
   const missingRequiredFields = ref<MissingRequiredField[]>([])
   const activeDashboardWizardConfig = ref<Record<string, any> | null>(null)
+  // Flag to prevent bookmark watcher from resetting state during flow
+  let isProcessingDashboardFlow = false
 
   // Computed
   const dashboardContext = computed(() => {
@@ -74,7 +77,9 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     if (!activeBookmark) {
       return { wizardConfig: null, conditions: null, mriquery: null }
     }
-    const wizardConfig = activeDashboardWizardConfig.value || getters.getWizardConfig?.value || null
+    const localConfig = activeDashboardWizardConfig.value
+    const storeConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
+    const wizardConfig = localConfig || storeConfig || null
     let mriquery = null
     try {
       const plRequest = getters.getPLRequest?.({ bmkId: activeBookmark.id })
@@ -175,11 +180,13 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
   function closeDashboardSelectionModal() {
     showDashboardSelectionModal.value = false
+    isProcessingDashboardFlow = false
   }
 
   function handleRequiredFiltersCancel() {
     requiredFiltersError.value = ''
     showRequiredFiltersModal.value = false
+    isProcessingDashboardFlow = false
   }
 
   function getCurrentFilterCards() {
@@ -313,13 +320,22 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     return null
   }
 
-  function extractFormValuesFromFilterCards(selectedWizardDefinition: WizardDefinition): {
+  function extractFormValuesFromFilterCards(
+    selectedWizardDefinition: WizardDefinition,
+    excludeFieldIds?: Set<string>
+  ): {
     formValues: Record<string, any>
     displayValues: Record<string, string>
   } {
     const formValues: Record<string, any> = {}
     const displayValues: Record<string, string> = {}
+    // Process ALL fields from the wizard definition
     for (const field of selectedWizardDefinition.fields || []) {
+      // Skip fields in the exclude list (e.g., fields that were just submitted in the modal)
+      if (excludeFieldIds?.has(field.id)) {
+        continue
+      }
+      // For fields WITH configPath, try to extract from existing filter cards
       if (field.configPath) {
         const extracted = extractFieldValueFromFilterCards(field)
         if (extracted) {
@@ -332,6 +348,8 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
           }
         }
       }
+      // For condition fields (without configPath), check if there's a value in wizardOnlyValues
+      // These are collected separately in collectWizardConfigData
     }
     return { formValues, displayValues }
   }
@@ -416,8 +434,17 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     }
     if (formValues) {
       const fullWizardConfig = collectWizardConfigData(wizardDefinition, formValues, displayValues)
-      if (fullWizardConfig.conditions) {
-        wizardConfig.conditions = fullWizardConfig.conditions
+      // Merge conditions: combine wizardOnlyValues.conditions with fullWizardConfig.conditions
+      // Use a Map to deduplicate by value to avoid duplicates when condition was in missing fields
+      const conditionMap = new Map<string, any>()
+      const allConditions = [...(wizardConfig.conditions || []), ...(fullWizardConfig.conditions || [])]
+      allConditions.forEach((cond) => {
+        if (cond.value && !conditionMap.has(cond.value)) {
+          conditionMap.set(cond.value, cond)
+        }
+      })
+      if (conditionMap.size > 0) {
+        wizardConfig.conditions = Array.from(conditionMap.values())
       }
       if (fullWizardConfig.year) {
         wizardConfig.year = fullWizardConfig.year
@@ -681,63 +708,86 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   ) {
     requiredFiltersError.value = ''
     applyingRequiredFilters.value = true
+    isProcessingDashboardFlow = true
     try {
       const wizardOnlyValues = await applyMissingRequiredFilters(formValues, displayValues)
       showRequiredFiltersModal.value = false
       if (selectedWizardDefinition.value) {
+        // Get IDs of missing fields that were just submitted - these are already in wizardOnlyValues
+        const missingFieldIds = new Set(missingRequiredFields.value.map((f) => f.id))
+        // Extract values from existing filter cards for fields that were NOT missing
+        // (missing fields are already handled by wizardOnlyValues from applyMissingRequiredFilters)
+        const { formValues: existingFormValues, displayValues: existingDisplayValues } =
+          extractFormValuesFromFilterCards(selectedWizardDefinition.value, missingFieldIds)
+        // Merge: modal form values take precedence for missing fields
+        const mergedFormValues = { ...existingFormValues, ...formValues }
+        const mergedDisplayValues = { ...existingDisplayValues, ...displayValues }
         await prepareWizardConfigAndContinue(
           selectedWizardDefinition.value,
           wizardOnlyValues,
-          formValues,
-          displayValues
+          mergedFormValues,
+          mergedDisplayValues
         )
       }
     } catch (error) {
-      console.error(error)
       requiredFiltersError.value = (error as Error)?.message || 'Failed to apply required filters'
+      isProcessingDashboardFlow = false
     } finally {
       applyingRequiredFilters.value = false
+      // Note: isProcessingDashboardFlow is NOT cleared here - it's cleared after the flow completes
+      // in handleSaveCohortSuccess or if an error occurs above
     }
   }
 
   async function handleOpenDashboard() {
     const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
     const isNew = activeBookmark?.isNew || false
-    const hasLocalChanges = getters.getCurrentBookmarkHasChanges?.value || getters.getCurrentBookmarkHasChanges || false
+    let hasLocalChanges = false
+    try {
+      hasLocalChanges = getters.getCurrentBookmarkHasChanges?.value || getters.getCurrentBookmarkHasChanges || false
+    } catch (e) {
+      hasLocalChanges = false
+    }
+
     if (isNew || hasLocalChanges) {
       showSaveCohortModal.value = true
       return
     }
     const materializedId = getters.getActiveCohortMaterializedId?.value || getters.getActiveCohortMaterializedId
+
     if (!materializedId) {
       showSaveCohortModal.value = true
       return
     }
     // Ensure wizardConfig is set before opening, wait for reactivity if needed
     if (!activeDashboardWizardConfig.value) {
-      console.warn('[Dashboard] wizardConfig not ready, waiting...')
-      await new Promise(resolve => setTimeout(resolve, 0))
+      await new Promise(resolve => setTimeout(resolve, 50))
       if (!activeDashboardWizardConfig.value) {
-        console.error('[Dashboard] wizardConfig still not ready after wait')
         dispatch('setToastMessage', { text: 'Dashboard configuration not ready. Please try again.' })
         return
       }
     }
-    console.log('[Dashboard] Opening dashboard with config:', activeDashboardWizardConfig.value)
     showDashboardModal.value = true
+    isProcessingDashboardFlow = false
   }
 
   function handleSaveCohortSuccess() {
     showSaveCohortModal.value = false
     showDashboardModal.value = true
+    isProcessingDashboardFlow = false
   }
 
   function handleCancelSaveCohort() {
     showSaveCohortModal.value = false
+    isProcessingDashboardFlow = false
   }
 
   function closeDashboardModal() {
     showDashboardModal.value = false
+  }
+
+  function isProcessingDashboardFlowFn() {
+    return isProcessingDashboardFlow
   }
 
   return {
@@ -765,5 +815,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     handleSaveCohortSuccess,
     handleCancelSaveCohort,
     closeDashboardModal,
+    isProcessingDashboardFlow: isProcessingDashboardFlowFn,
   }
 }
