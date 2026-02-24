@@ -20,7 +20,7 @@
     </div>
     <div class="actionButtonGroup">
       <div class="dashboardButton" v-if="getActiveBookmark">
-        <Button :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')" :onClick="openDashboardModal"> </Button>
+        <Button :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')" :onClick="dashboardFlow.openDashboardModal"> </Button>
       </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
@@ -68,45 +68,45 @@
 
   <Teleport to="#app">
     <DashboardSelectionModal
-      :is-open="showDashboardSelectionModal"
-      :dashboards="dashboardCodes"
-      :loading="dashboardMetadataLoading"
-      :error="dashboardSelectionError"
-      @close="closeDashboardSelectionModal"
-      @select="handleDashboardSelected"
+      :is-open="dashboardFlow.showDashboardSelectionModal.value"
+      :dashboards="dashboardFlow.dashboardCodes.value"
+      :loading="dashboardFlow.dashboardMetadataLoading.value"
+      :error="dashboardFlow.dashboardSelectionError.value"
+      @close="dashboardFlow.closeDashboardSelectionModal"
+      @select="dashboardFlow.handleDashboardSelected"
     />
   </Teleport>
 
   <Teleport to="#app">
     <CompleteRequiredFiltersModal
-      :is-open="showRequiredFiltersModal"
-      :fields="missingRequiredFields"
-      :loading="applyingRequiredFilters"
-      :error="requiredFiltersError"
-      @cancel="handleRequiredFiltersCancel"
-      @submit="handleRequiredFiltersSubmit"
+      :is-open="dashboardFlow.showRequiredFiltersModal.value"
+      :fields="dashboardFlow.missingRequiredFields.value"
+      :loading="dashboardFlow.applyingRequiredFilters.value"
+      :error="dashboardFlow.requiredFiltersError.value"
+      @cancel="dashboardFlow.handleRequiredFiltersCancel"
+      @submit="dashboardFlow.handleRequiredFiltersSubmit"
     />
   </Teleport>
 
   <Teleport to="#app">
     <ShinyDashboardModal
-      v-if="showDashboardModal"
-      :is-open="showDashboardModal"
+      v-if="dashboardFlow.showDashboardModal.value"
+      :is-open="dashboardFlow.showDashboardModal.value"
       :dataset-id="getSelectedDataset.id"
       :cohort-id="getActiveCohortMaterializedId?.toString() || ''"
-      :wizard-config="dashboardContext.wizardConfig"
-      :conditions="dashboardContext.conditions"
-      :mriquery="dashboardContext.mriquery"
-      @close="closeDashboardModal"
+      :wizard-config="dashboardFlow.dashboardContext.value.wizardConfig"
+      :conditions="dashboardFlow.dashboardContext.value.conditions"
+      :mriquery="dashboardFlow.dashboardContext.value.mriquery"
+      @close="dashboardFlow.closeDashboardModal"
     />
   </Teleport>
 
   <Teleport to="#app">
     <SaveCohortModal
-      :is-open="showSaveCohortModal"
-      :wizard-config="dashboardContext.wizardConfig"
-      @success="handleSaveCohortSuccess"
-      @cancel="handleCancelSaveCohort"
+      :is-open="dashboardFlow.showSaveCohortModal.value"
+      :wizard-config="dashboardFlow.dashboardContext.value.wizardConfig"
+      @success="dashboardFlow.handleSaveCohortSuccess"
+      @cancel="dashboardFlow.handleCancelSaveCohort"
     />
   </Teleport>
 </template>
@@ -125,13 +125,7 @@ import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
 import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
 import Button from './Button.vue'
-import {
-  getFieldAttrKey,
-  getFieldFilterCardPathForField,
-  parseNumericInput,
-  validateRequiredFields,
-  type MissingRequiredField,
-} from '../utils/dashboardFlowUtils'
+import { useDashboardFlow } from '../composables/useDashboardFlow'
 
 function getBookmarkKey(bookmark) {
   if (!bookmark) {
@@ -149,22 +143,17 @@ function getBookmarkKey(bookmark) {
   )
 }
 
-function normalizeResponseArray(payload) {
-  if (Array.isArray(payload)) {
-    return payload
-  }
-
-  if (Array.isArray(payload?.data)) {
-    return payload.data
-  }
-
-  return []
-}
-
 export default {
   name: 'chartToolbar',
   props: ['hideEv', 'config', 'collectionEv', 'showUnHideFilters'],
+  setup() {
+    // Dashboard flow composable will be initialized in data() with access to component instance
+    return {}
+  },
   data() {
+    // Initialize dashboard flow composable with dispatch and getters
+    const dashboardFlow = useDashboardFlow(this.$store.dispatch, this.$store.getters)
+
     return {
       chartConfig: [],
       disableCensoring: true,
@@ -173,21 +162,7 @@ export default {
       hideIconToolTip: '',
       toggleFilterCardSummary: false,
       patientCountPopoverPosition: {},
-      showDashboardModal: false,
-      showSaveCohortModal: false,
-      showDashboardSelectionModal: false,
-      showRequiredFiltersModal: false,
-      dashboardMetadataLoading: false,
-      applyingRequiredFilters: false,
-      dashboardSelectionError: '',
-      requiredFiltersError: '',
-      dashboardCodes: [],
-      wizardDefinitions: [],
-      selectedDashboard: null,
-      selectedWizardDefinition: null,
-      missingRequiredFields: [] as MissingRequiredField[],
-      dashboardValidationBreakdown: [],
-      activeDashboardWizardConfig: null,
+      dashboardFlow,
     }
   },
   watch: {
@@ -202,7 +177,7 @@ export default {
     },
     getActiveBookmark(newBookmark, oldBookmark) {
       if (getBookmarkKey(newBookmark) !== getBookmarkKey(oldBookmark)) {
-        this.resetDashboardFlowState()
+        this.dashboardFlow.resetDashboardFlowState()
       }
     },
   },
@@ -255,32 +230,6 @@ export default {
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
-    },
-    dashboardContext() {
-      const activeBookmark = this.$store.getters.getActiveBookmark
-
-      if (!activeBookmark) {
-        return {
-          wizardConfig: null,
-          conditions: null,
-          mriquery: null,
-        }
-      }
-
-      const wizardConfig = this.activeDashboardWizardConfig || this.getWizardConfig || null
-
-      let mriquery = null
-      try {
-        const plRequest = this.$store.getters.getPLRequest({ bmkId: activeBookmark.id })
-        mriquery = JSON.stringify(plRequest)
-      } catch (e) {
-        console.error('Failed to generate mriquery:', e)
-      }
-
-      return {
-        wizardConfig,
-        mriquery,
-      }
     },
   },
   methods: {
@@ -400,698 +349,6 @@ export default {
     },
     drillDownClicked() {
       this.$emit('drilldown')
-    },
-    resetDashboardFlowState() {
-      this.showDashboardSelectionModal = false
-      this.showRequiredFiltersModal = false
-      this.dashboardMetadataLoading = false
-      this.applyingRequiredFilters = false
-      this.dashboardSelectionError = ''
-      this.requiredFiltersError = ''
-      this.dashboardCodes = []
-      this.wizardDefinitions = []
-      this.selectedDashboard = null
-      this.selectedWizardDefinition = null
-      this.missingRequiredFields = []
-      this.dashboardValidationBreakdown = []
-      this.activeDashboardWizardConfig = null
-    },
-    async fetchDashboardCodes(datasetId) {
-      const response = await this.ajaxAuth({
-        method: 'get',
-        url: `/system-portal/dataset/dashboard-codes?datasetId=${encodeURIComponent(datasetId)}&type=cohort`,
-      })
-
-      return normalizeResponseArray(response.data)
-    },
-    async fetchWizardDefinitions(datasetId) {
-      const query = `datasetId=${encodeURIComponent(datasetId)}`
-      const urls = [`/pa-config-svc/wizards/config?${query}`, `/d2e/pa-config-svc/wizards/config?${query}`]
-
-      let lastError = null
-      for (const url of urls) {
-        try {
-          const response = await this.ajaxAuth({ method: 'get', url })
-          return Array.isArray(response.data?.wizards) ? response.data.wizards : []
-        } catch (error) {
-          lastError = error
-        }
-      }
-
-      throw lastError || new Error('Failed to fetch wizard definitions')
-    },
-    resolveMissingFields(missingFields: MissingRequiredField[]) {
-      return missingFields.map(field => ({
-        ...field,
-        label: field.label || field.id,
-      }))
-    },
-    async loadDashboardMetadata() {
-      this.dashboardMetadataLoading = true
-      this.dashboardSelectionError = ''
-
-      try {
-        const datasetId = this.getSelectedDataset?.id
-        if (!datasetId) {
-          throw new Error('No dataset selected')
-        }
-
-        const [dashboardCodes, wizardDefinitions] = await Promise.all([
-          this.fetchDashboardCodes(datasetId),
-          this.fetchWizardDefinitions(datasetId),
-        ])
-
-        this.dashboardCodes = dashboardCodes
-        this.wizardDefinitions = wizardDefinitions
-      } catch (error) {
-        this.dashboardSelectionError = error?.message || 'Failed to load dashboard configuration'
-      } finally {
-        this.dashboardMetadataLoading = false
-      }
-    },
-    async openDashboardModal() {
-      if (!this.getActiveBookmark) {
-        this.setToastMessage({ text: 'Open or create a cohort before opening dashboards.' })
-        return
-      }
-
-      this.dashboardSelectionError = ''
-      this.requiredFiltersError = ''
-      this.showDashboardSelectionModal = true
-      this.showRequiredFiltersModal = false
-      this.dashboardCodes = []
-      this.wizardDefinitions = []
-      this.selectedDashboard = null
-      this.selectedWizardDefinition = null
-      this.missingRequiredFields = []
-      this.dashboardValidationBreakdown = []
-      this.activeDashboardWizardConfig = null
-      this.clearWizardConfig()
-
-      await this.loadDashboardMetadata()
-    },
-    closeDashboardSelectionModal() {
-      this.showDashboardSelectionModal = false
-    },
-    handleRequiredFiltersCancel() {
-      this.requiredFiltersError = ''
-      this.showRequiredFiltersModal = false
-    },
-    async handleRequiredFiltersSubmit(formValues, displayValues) {
-      this.requiredFiltersError = ''
-      this.applyingRequiredFilters = true
-
-      try {
-        const wizardOnlyValues = await this.applyMissingRequiredFilters(formValues, displayValues)
-        this.showRequiredFiltersModal = false
-        await this.prepareWizardConfigAndContinue(
-          this.selectedWizardDefinition,
-          wizardOnlyValues,
-          formValues,
-          displayValues
-        )
-      } catch (error) {
-        console.error(error)
-        this.requiredFiltersError = error?.message || 'Failed to apply required filters'
-      } finally {
-        this.applyingRequiredFilters = false
-      }
-    },
-    getCurrentFilterCards() {
-      return this.getBookmarkFromIFR?.cards || null
-    },
-    /**
-     * Extract form values from existing filter cards for wizard fields with configPath.
-     * Used when there are no missing fields to still populate conditions in wizardConfig.
-     */
-    extractFormValuesFromFilterCards(selectedWizardDefinition): { formValues: Record<string, any>; displayValues: Record<string, string> } {
-      const formValues: Record<string, any> = {}
-      const displayValues: Record<string, string> = {}
-
-      // Process ALL fields from the wizard definition
-      for (const field of selectedWizardDefinition.fields || []) {
-        // For fields WITH configPath, try to extract from existing filter cards
-        if (field.configPath) {
-          const extracted = this.extractFieldValueFromFilterCards(field)
-          if (extracted) {
-            formValues[field.id] = extracted.value
-            if (extracted.displayValue) {
-              displayValues[field.id] = extracted.displayValue
-            }
-            if (extracted.useDescendants !== undefined) {
-              formValues[`${field.id}_wildcard`] = extracted.useDescendants
-            }
-          }
-        }
-      }
-
-      return { formValues, displayValues }
-    },
-    /**
-     * Extract a single field's value from filter cards.
-     * Tries to find a matching filter card and extract the constraint value.
-     */
-    extractFieldValueFromFilterCards(field): { value: any; displayValue?: string; useDescendants?: boolean } | null {
-      if (!field.configPath) {
-        return null
-      }
-
-      const filterCardPath = getFieldFilterCardPathForField(field)
-      const matchingCardIds = this.getNonExcludedFilterCardIdsByPath(filterCardPath)
-
-      for (const filterCardId of matchingCardIds) {
-        // Get the constraint for this field's attribute
-        const attrKey = getFieldAttrKey(field.configPath)
-        const constraint = this.getConstraintForAttribute({ filterCardId, key: attrKey })
-
-        if (!constraint) {
-          continue
-        }
-
-        // Extract value from constraint
-        const constraintType = constraint.props?.type
-        const constraintValue = constraint.props?.value
-
-        if (constraintType === 'text' || constraintType === 'conceptSet') {
-          const values = Array.isArray(constraintValue) ? constraintValue : []
-          if (values.length > 0) {
-            const firstValue = values[0]
-            const value = typeof firstValue === 'object' ? firstValue.value : firstValue
-            const displayValue = typeof firstValue === 'object'
-              ? (firstValue.display_value || firstValue.text || firstValue.value)
-              : firstValue
-            const useDescendants = values[0]?.includeDescendants
-
-            return { value, displayValue, useDescendants }
-          }
-        } else if (constraintType === 'num') {
-          const values = Array.isArray(constraintValue) ? constraintValue : []
-          if (values.length > 0) {
-            return { value: values[0].value }
-          }
-        }
-
-        // Only process the first matching card
-        break
-      }
-
-      return null
-    },
-    async handleDashboardSelected(dashboard) {
-      this.dashboardSelectionError = ''
-      this.selectedDashboard = dashboard
-
-      const selectedWizardDefinition = this.wizardDefinitions.find(wizard => wizard.id === dashboard.name)
-      if (!selectedWizardDefinition) {
-        this.dashboardSelectionError = `Dashboard '${dashboard.name}' is not mapped to a wizard definition.`
-        return
-      }
-
-      const validation = validateRequiredFields(selectedWizardDefinition, this.getCurrentFilterCards())
-      this.dashboardValidationBreakdown = validation.breakdown
-      this.selectedWizardDefinition = selectedWizardDefinition
-      this.missingRequiredFields = this.resolveMissingFields(validation.missingFields)
-
-      if (!this.missingRequiredFields.length) {
-        this.showDashboardSelectionModal = false
-        // Extract form values from existing filter cards to populate conditions
-        const { formValues, displayValues } = this.extractFormValuesFromFilterCards(selectedWizardDefinition)
-        await this.prepareWizardConfigAndContinue(selectedWizardDefinition, {}, formValues, displayValues)
-        return
-      }
-
-      this.showDashboardSelectionModal = false
-      this.requiredFiltersError = ''
-      this.showRequiredFiltersModal = true
-    },
-    collectWizardConfigData(selectedWizardDefinition, formValues: Record<string, any>, displayValues?: Record<string, string>) {
-      const wizardConfig: Record<string, any> = {}
-      const conditions: Array<{ value: string; displayName: string; useDescendants: boolean }> = []
-
-      // Process ALL fields from the wizard definition (not just missing ones)
-      for (const field of selectedWizardDefinition.fields || []) {
-        // Handle yearRange fields
-        if (field.type === 'yearRange') {
-          const from = formValues[`${field.id}_from`]
-          const to = formValues[`${field.id}_to`]
-          if (from || to) {
-            wizardConfig.year = { from: from || null, to: to || null }
-          }
-          continue
-        }
-
-        // Check if this is a condition field
-        if (field.id.toLowerCase().startsWith('condition')) {
-          const value = formValues[field.id]
-          if (value !== undefined && value !== null && value !== '') {
-            conditions.push({
-              value,
-              displayName: displayValues?.[field.id] || value,
-              useDescendants: formValues[`${field.id}_wildcard`] === true,
-            })
-          }
-          continue
-        }
-
-        // For fields without configPath (wizard-only), add their values
-        if (!field.configPath) {
-          const value = formValues[field.id]
-          if (value !== undefined && value !== null && value !== '') {
-            if (displayValues?.[field.id]) {
-              wizardConfig[field.id] = { value, displayName: displayValues[field.id] }
-            } else {
-              wizardConfig[field.id] = value
-            }
-          }
-        }
-      }
-
-      // Add conditions array if not empty
-      if (conditions.length > 0) {
-        wizardConfig.conditions = conditions
-      }
-
-      return wizardConfig
-    },
-    async prepareWizardConfigAndContinue(selectedWizardDefinition, wizardOnlyValues?: Record<string, any>, formValues?: Record<string, any>, displayValues?: Record<string, string>) {
-      const wizardConfig: Record<string, any> = {
-        dashboardType: selectedWizardDefinition.id,
-      }
-
-      // Include wizard-only values from applyMissingRequiredFilters (for backward compatibility)
-      if (wizardOnlyValues && Object.keys(wizardOnlyValues).length > 0) {
-        Object.assign(wizardConfig, wizardOnlyValues)
-      }
-
-      // If formValues provided, collect data from ALL fields (this includes conditions from satisfied fields too)
-      if (formValues) {
-        const fullWizardConfig = this.collectWizardConfigData(selectedWizardDefinition, formValues, displayValues)
-        // Merge, with fullWizardConfig taking precedence for conditions
-        if (fullWizardConfig.conditions) {
-          wizardConfig.conditions = fullWizardConfig.conditions
-        }
-        if (fullWizardConfig.year) {
-          wizardConfig.year = fullWizardConfig.year
-        }
-        // Add any other wizard-only fields
-        Object.keys(fullWizardConfig).forEach(key => {
-          if (key !== 'conditions' && key !== 'year' && !wizardConfig[key]) {
-            wizardConfig[key] = fullWizardConfig[key]
-          }
-        })
-      }
-
-      this.activeDashboardWizardConfig = wizardConfig
-      this.setWizardConfig(wizardConfig)
-
-      await this.handleOpenDashboard()
-    },
-    getNonExcludedFilterCardIdsByPath(filterCardPath) {
-      const filterCards = this.getFilterCards()
-      return Object.keys(filterCards).filter(filterCardId => {
-        const filterCard = filterCards[filterCardId]
-        return filterCard?.props?.key === filterCardPath && !filterCard?.props?.excludeFilter
-      })
-    },
-    getConstraintExpressions(constraint) {
-      const constraintType = constraint?.props?.type
-      if (!constraintType) {
-        return []
-      }
-
-      if (constraintType === 'text' || constraintType === 'conceptSet') {
-        const values = Array.isArray(constraint.props.value) ? constraint.props.value : []
-        return values.map(item => ({
-          operator: '=',
-          value: typeof item === 'object' && item !== null ? item.value : item,
-        }))
-      }
-
-      if (constraintType === 'num') {
-        const values = Array.isArray(constraint.props.value) ? constraint.props.value : []
-        const expressions = []
-        values.forEach(item => {
-          if (Array.isArray(item?.and)) {
-            item.and.forEach(andExpression => {
-              expressions.push({ operator: andExpression.op, value: andExpression.value })
-            })
-            return
-          }
-
-          expressions.push({ operator: item?.op, value: item?.value })
-        })
-        return expressions
-      }
-
-      if (constraintType === 'time' || constraintType === 'datetime') {
-        const expressions = []
-        if (constraint.props.fromDate?.value) {
-          expressions.push({ operator: '>=', value: constraint.props.fromDate.value })
-        }
-        if (constraint.props.toDate?.value) {
-          expressions.push({ operator: '<=', value: constraint.props.toDate.value })
-        }
-        return expressions
-      }
-
-      return []
-    },
-    constraintContainsExpression(constraint, operator, value) {
-      const expectedOperator = String(operator || '=').trim()
-      const expectedValue = String(value).trim()
-
-      return this.getConstraintExpressions(constraint).some(expression => {
-        const expressionOperator = String(expression.operator || '').trim()
-        const expressionValue = String(expression.value ?? '').trim()
-        return expressionOperator === expectedOperator && expressionValue === expectedValue
-      })
-    },
-    cardMatchesFixedAttributes(filterCardId, fixedAttributes = []) {
-      if (!fixedAttributes.length) {
-        return true
-      }
-
-      return fixedAttributes.every(fixedAttribute => {
-        const attrKey = getFieldAttrKey(fixedAttribute.configPath)
-        const constraint = this.getConstraintForAttribute({
-          filterCardId,
-          key: attrKey,
-        })
-
-        if (!constraint) {
-          return false
-        }
-
-        return this.constraintContainsExpression(constraint, fixedAttribute.operator, fixedAttribute.value)
-      })
-    },
-    findFilterCardIdForField(field) {
-      const filterCardPath = getFieldFilterCardPathForField(field)
-      const candidateCardIds = this.getNonExcludedFilterCardIdsByPath(filterCardPath)
-      const fixedAttributes = field.fixedAttributes || []
-
-      return candidateCardIds.find(filterCardId => this.cardMatchesFixedAttributes(filterCardId, fixedAttributes)) || null
-    },
-    async applyMissingRequiredFilters(formValues, displayValues) {
-      // Hold fire requests to prevent intermediate chart updates during batch operations
-      this.holdFireRequest()
-
-      const filterCardPromises = []
-      const operations = []
-      const wizardOnlyValues: Record<string, any> = {}
-      const conditions: Array<{ value: string; displayName: string; useDescendants: boolean }> = []
-
-      for (const field of this.missingRequiredFields) {
-        // Handle yearRange fields with _from and _to suffixes
-        let fieldInputValue
-        if (field.type === 'yearRange') {
-          fieldInputValue = {
-            from: formValues[`${field.id}_from`],
-            to: formValues[`${field.id}_to`],
-          }
-        } else {
-          fieldInputValue = formValues[field.id]
-        }
-        const displayValue = displayValues?.[field.id]
-        const includeDescendants = formValues[`${field.id}_wildcard`]
-
-        // Check if this is a condition field (id starts with "condition")
-        // Condition fields are collected for wizardConfig regardless of configPath
-        if (field.id.toLowerCase().startsWith('condition')) {
-          const value = formValues[field.id]
-          if (value !== undefined && value !== null && value !== '') {
-            conditions.push({
-              value,
-              displayName: displayValue || value,
-              useDescendants: formValues[`${field.id}_wildcard`] === true,
-            })
-          }
-        }
-
-        // Fields without configPath are wizard-only fields (like yearRange)
-        // They don't create MRI filter cards but their values are passed to the dashboard
-        if (!field.configPath) {
-          // Map yearRange fields to 'year' key to match useDeepLink.ts format
-          if (field.type === 'yearRange') {
-            wizardOnlyValues.year = fieldInputValue
-          } else if (!field.id.toLowerCase().startsWith('condition')) {
-            // Only add non-condition fields to wizardOnlyValues
-            // Conditions are handled separately above
-            wizardOnlyValues[field.id] = fieldInputValue
-          }
-          continue
-        }
-
-        const filterCardId = this.findFilterCardIdForField(field)
-
-        if (filterCardId) {
-          operations.push({
-            type: 'existingCard',
-            filterCardId,
-            field,
-            fieldInputValue,
-            displayValue,
-            includeDescendants,
-          })
-        } else {
-          filterCardPromises.push(
-            this.addFilterCard({ configPath: getFieldFilterCardPathForField(field) }).then((newCardId) => {
-              operations.push({
-                type: 'newCard',
-                filterCardId: newCardId,
-                field,
-                fieldInputValue,
-                displayValue,
-                includeDescendants,
-              })
-            })
-          )
-        }
-      }
-
-      return Promise.all(filterCardPromises).then(() => {
-        const constraintPromises: Promise<any>[] = []
-
-        for (const op of operations) {
-          const { filterCardId, field } = op
-
-          if (field.fixedAttributes?.length) {
-            for (const fixedAttr of field.fixedAttributes) {
-              const attrKey = getFieldAttrKey(fixedAttr.configPath)
-              let constraint = this.getConstraintForAttribute({ filterCardId, key: attrKey })
-
-              if (!constraint) {
-                constraintPromises.push(
-                  this.addFilterCardConstraint({
-                    filterCardId,
-                    key: attrKey,
-                  }).then(() => {
-                    return { filterCardId, fixedAttr }
-                  })
-                )
-              }
-            }
-          }
-        }
-
-        return Promise.all(constraintPromises)
-      }).then(() => {
-        const valuePromises = []
-
-        for (const op of operations) {
-          const { filterCardId, field, fieldInputValue, displayValue, includeDescendants } = op
-
-          if (field.fixedAttributes?.length) {
-            for (const fixedAttr of field.fixedAttributes) {
-              const attrKey = getFieldAttrKey(fixedAttr.configPath)
-              const constraint = this.getConstraintForAttribute({ filterCardId, key: attrKey })
-
-              if (constraint) {
-                valuePromises.push(this.applyConstraintValue(constraint, fixedAttr.value, fixedAttr.operator))
-              }
-            }
-          }
-
-          const attrKey = getFieldAttrKey(field.configPath)
-          const constraint = this.getConstraintForAttribute({ filterCardId, key: attrKey })
-
-          // Prepare value with wildcard for condition fields
-          let valueToApply = fieldInputValue
-          if (field.type === 'text' && includeDescendants !== undefined) {
-            // Pass includeDescendants as part of the value object
-            valueToApply = {
-              value: fieldInputValue,
-              includeDescendants: !!includeDescendants,
-            }
-          }
-
-          if (constraint) {
-            valuePromises.push(this.applyConstraintValue(constraint, valueToApply, '=', displayValue))
-          } else {
-            valuePromises.push(
-              this.addFilterCardConstraint({
-                filterCardId,
-                key: attrKey,
-              }).then(() => {
-                const newConstraint = this.getConstraintForAttribute({ filterCardId, key: attrKey })
-                if (newConstraint) {
-                  return this.applyConstraintValue(newConstraint, valueToApply, '=', displayValue)
-                }
-              })
-            )
-          }
-        }
-
-        return Promise.all(valuePromises)
-      }).then(() => {
-        // Release fire hold and trigger a single chart refresh
-        // This ensures all batch updates complete before any chart requests are made
-        this.releaseFireRequest()
-        this.setFireRequest()
-        this.refreshPatientCount()
-
-        // Add conditions array if not empty
-        if (conditions.length > 0) {
-          wizardOnlyValues.conditions = conditions
-        }
-
-        // Return wizard-only values (e.g., yearRange, conditions) to be included in wizardConfig
-        return wizardOnlyValues
-      }).catch(error => {
-        // Ensure fire is released even if an error occurs
-        this.releaseFireRequest()
-        throw error
-      })
-    },
-    applyConstraintValue(constraint, rawInput, operator = '=', displayValue) {
-      const constraintType = constraint.props.type
-
-      if (constraintType === 'num') {
-        let parsedValues = []
-
-        if (typeof rawInput === 'string') {
-          parsedValues = parseNumericInput(rawInput)
-          if (
-            operator &&
-            operator !== '=' &&
-            /^-?\d+(?:\.\d+)?$/.test(rawInput.trim()) &&
-            parsedValues.length === 1 &&
-            parsedValues[0].op === '='
-          ) {
-            parsedValues[0].op = operator
-          }
-        } else if (typeof rawInput === 'number') {
-          parsedValues = [{ op: operator || '=', value: rawInput }]
-        } else if (rawInput !== null && typeof rawInput !== 'undefined') {
-          const numericValue = Number(rawInput)
-          if (!Number.isNaN(numericValue)) {
-            parsedValues = [{ op: operator || '=', value: numericValue }]
-          }
-        }
-
-        if (!parsedValues.length) {
-          return Promise.reject(new Error(`Invalid numeric value for ${constraint.props.name || constraint.id}`))
-        }
-
-        return this.updateConstraintValue({
-          constraintId: constraint.id,
-          value: parsedValues,
-        })
-      }
-
-      // Handle yearRange - convert years to dates (start of from year to end of to year)
-      if (rawInput && typeof rawInput === 'object' && 'from' in rawInput && 'to' in rawInput) {
-        const fromYear = rawInput.from
-        const toYear = rawInput.to
-
-        if (!fromYear && !toYear) {
-          return Promise.reject(new Error(`Missing year value for ${constraint.props.name || constraint.id}`))
-        }
-
-        // Convert years to dates: Jan 1 of from year to Dec 31 of to year
-        const fromDate = fromYear ? new Date(`${fromYear}-01-01`) : new Date(`${toYear}-01-01`)
-        const toDate = toYear ? new Date(`${toYear}-12-31`) : new Date(`${fromYear}-12-31`)
-
-        return this.updateDateConstraintValue({
-          constraintId: constraint.id,
-          fromDateValue: fromDate,
-          toDateValue: toDate,
-          isUTC: false,
-        })
-      }
-
-      if (constraintType === 'time' || constraintType === 'datetime') {
-        const fromDateRaw = rawInput?.from || rawInput?.value || rawInput
-        const toDateRaw = rawInput?.to || rawInput?.value || rawInput
-
-        if (!fromDateRaw && !toDateRaw) {
-          return Promise.reject(new Error(`Missing date value for ${constraint.props.name || constraint.id}`))
-        }
-
-        const fromDate = new Date(fromDateRaw || toDateRaw)
-        const toDate = new Date(toDateRaw || fromDateRaw)
-
-        return this.updateDateConstraintValue({
-          constraintId: constraint.id,
-          fromDateValue: fromDate,
-          toDateValue: toDate,
-          isUTC: false,
-        })
-      }
-
-      const rawValue = rawInput?.value ?? rawInput
-      if (rawValue === null || typeof rawValue === 'undefined' || String(rawValue).trim() === '') {
-        return Promise.reject(new Error(`Missing value for ${constraint.props.name || constraint.id}`))
-      }
-      const finalDisplayValue = displayValue || rawInput?.displayName || String(rawValue)
-
-      return this.updateConstraintValue({
-        constraintId: constraint.id,
-        value: [
-          {
-            value: String(rawValue),
-            score: 1,
-            display_value: finalDisplayValue,
-            text: finalDisplayValue,
-          },
-        ],
-      })
-    },
-    async handleOpenDashboard() {
-      if (this.hasChanges) {
-        this.showSaveCohortModal = true
-        return
-      }
-      if (!this.getActiveCohortMaterializedId) {
-        this.showSaveCohortModal = true
-        return
-      }
-
-      // Ensure wizardConfig is set before opening the modal
-      // Use nextTick to wait for Vue reactivity to update dashboardContext
-      if (!this.activeDashboardWizardConfig) {
-        console.warn('[Dashboard] wizardConfig not ready, waiting...')
-        await this.$nextTick()
-        // After nextTick, check again
-        if (!this.activeDashboardWizardConfig) {
-          console.error('[Dashboard] wizardConfig still not ready after nextTick')
-          this.setToastMessage({ text: 'Dashboard configuration not ready. Please try again.' })
-          return
-        }
-      }
-
-      console.log('[Dashboard] Opening dashboard with config:', this.activeDashboardWizardConfig)
-      this.showDashboardModal = true
-    },
-    handleSaveCohortSuccess() {
-      this.showSaveCohortModal = false
-      this.showDashboardModal = true
-    },
-    handleCancelSaveCohort() {
-      this.showSaveCohortModal = false
-    },
-    closeDashboardModal() {
-      this.showDashboardModal = false
     },
   },
   components: {
