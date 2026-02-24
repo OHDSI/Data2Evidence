@@ -156,11 +156,7 @@ export default createVuetify({
       color: 'primary',
       rounded: 'sm', // Matches $border-radius: 0.25rem
       elevation: 0, // Matches $enable-shadows: false
-      style: {
-        textTransform: 'none', // Matches existing button styles
-        fontWeight: 400, // Matches $font-weight-normal
-        fontSize: '0.875rem', // Matches $font-size-base
-      },
+      style: {},
     },
 
     // Card defaults matching existing dialog/card styles
