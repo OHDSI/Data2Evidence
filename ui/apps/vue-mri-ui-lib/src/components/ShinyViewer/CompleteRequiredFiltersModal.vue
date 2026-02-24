@@ -324,8 +324,9 @@ function handleSubmit() {
 
 <style scoped>
 .required-filters-modal {
-  max-height: 420px;
+  max-height: 520px;
   overflow: auto;
+  padding-right: 8px;
 }
 
 .description {
@@ -375,8 +376,18 @@ function handleSubmit() {
   align-items: center;
 }
 
+.date-range-group > span,
+.year-range-group > span {
+  text-align: center;
+  line-height: 1;
+}
+
 .year-range-group select {
   width: 100%;
+  height: 38px;
+  padding: 6px 10px;
+  font-size: 0.9375rem;
+  line-height: 1.4;
 }
 
 .form-control.is-invalid {

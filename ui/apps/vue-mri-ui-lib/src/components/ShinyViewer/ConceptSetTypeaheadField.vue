@@ -13,41 +13,42 @@
         @keydown="handleKeyDown"
         @focus="handleFocus"
         @input="handleInput"
+        @blur="handleBlur"
       />
       <span v-if="loading" class="loading-indicator">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </span>
+      <button
+        v-else-if="selectedItem"
+        class="clear-btn"
+        @click="clearSelection"
+        title="Clear selection"
+        type="button"
+      >
+        ×
+      </button>
     </div>
 
-    <div v-if="isOpen" class="suggestions-dropdown">
-      <ul ref="suggestionsListRef" class="suggestions-list">
-        <li v-if="loading" class="suggestion-message">Loading...</li>
-        <li v-else-if="filteredOptions.length === 0" class="suggestion-message">No results</li>
+    <Teleport to="body">
+      <div v-if="isOpen" class="concept-typeahead-dropdown" :style="dropdownStyle">
+      <ul ref="suggestionsListRef" class="concept-typeahead-list">
+        <li v-if="loading" class="concept-typeahead-message">Loading...</li>
+        <li v-else-if="filteredOptions.length === 0" class="concept-typeahead-message">No results</li>
         <li
           v-for="(item, index) in filteredOptions"
           :key="item.value"
-          :class="['suggestion-item', { highlighted: index === highlightedIndex }]"
+          :class="['concept-typeahead-item', { highlighted: index === highlightedIndex }]"
           @mousedown.prevent="selectItem(item)"
           @mouseenter="highlightedIndex = index"
         >
-          <span class="suggestion-text">{{ item.label }}</span>
-          <span v-if="item.label !== item.value" class="suggestion-value">({{ item.value }})</span>
+          <span class="concept-typeahead-text">{{ item.label }}</span>
+          <span v-if="item.label !== item.value" class="concept-typeahead-value">({{ item.value }})</span>
         </li>
       </ul>
     </div>
+    </Teleport>
 
-    <div v-if="allowFreeText" class="free-text-toggle">
-      <label class="checkbox-label">
-        <input type="checkbox" v-model="isFreeText" @change="handleFreeTextToggle" />
-        <span>Enter custom value</span>
-      </label>
-    </div>
 
-    <div v-if="selectedItem && !isFreeText" class="selected-item">
-      <span class="selected-label">Selected:</span>
-      <span class="selected-value">{{ selectedItem.label }}</span>
-      <button class="clear-button" @click="clearSelection" title="Clear selection">×</button>
-    </div>
   </div>
 </template>
 
@@ -84,13 +85,15 @@ const emit = defineEmits<{
 const store = useStore()
 
 const searchText = ref('')
+const dropdownStyle = ref<Record<string, string>>({})
 const highlightedIndex = ref(-1)
 const isOpen = ref(false)
-const isFreeText = ref(false)
+const isCustomValue = ref(false)
 const loading = ref(false)
 const options = ref<Option[]>([])
 const suggestionsListRef = ref<HTMLUListElement | null>(null)
 const wrapperRef = ref<HTMLDivElement | null>(null)
+const inputRef = ref<HTMLInputElement | null>(null)
 const debounceTimer = ref<number | null>(null)
 const selectedItem = ref<Option | null>(null)
 const lastQuery = ref<string | null>(null)
@@ -150,17 +153,34 @@ function debouncedFetch(query: string) {
 
 function handleFocus() {
   isOpen.value = true
+  updateDropdownPosition()
   fetchOptions(searchText.value)
+}
+
+function updateDropdownPosition() {
+  nextTick(() => {
+    const input = inputRef.value
+    if (!input) return
+
+    const rect = input.getBoundingClientRect()
+    dropdownStyle.value = {
+      position: 'fixed',
+      top: `${rect.bottom}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      'z-index': '9999',
+    }
+  })
 }
 
 function handleInput() {
   selectedItem.value = null
-  if (!isFreeText.value) {
-    emit('update:modelValue', null)
-    emit('update:displayValue', null)
-  }
+  isCustomValue.value = false
+  emit('update:modelValue', null)
+  emit('update:displayValue', null)
   isOpen.value = true
   highlightedIndex.value = -1
+  updateDropdownPosition()
   debouncedFetch(searchText.value)
 }
 
@@ -189,7 +209,8 @@ function handleKeyDown(event: KeyboardEvent) {
       event.preventDefault()
       if (highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length) {
         selectItem(filteredOptions.value[highlightedIndex.value])
-      } else if (props.allowFreeText && searchText.value.trim()) {
+      } else if (searchText.value.trim()) {
+        // Allow custom value on Enter when no suggestion is highlighted
         selectFreeText(searchText.value.trim())
       }
       break
@@ -214,6 +235,7 @@ function scrollToHighlighted() {
 
 function selectItem(item: Option) {
   selectedItem.value = item
+  isCustomValue.value = false
   searchText.value = item.label
   isOpen.value = false
   highlightedIndex.value = -1
@@ -222,31 +244,27 @@ function selectItem(item: Option) {
 }
 
 function selectFreeText(value: string) {
+  isCustomValue.value = true
+  selectedItem.value = { value, label: value }
   isOpen.value = false
+  highlightedIndex.value = -1
   emit('update:modelValue', value)
   emit('update:displayValue', value)
 }
 
 function clearSelection() {
   selectedItem.value = null
+  isCustomValue.value = false
   searchText.value = ''
   emit('update:modelValue', null)
   emit('update:displayValue', null)
 }
 
-function handleFreeTextToggle() {
-  if (isFreeText.value) {
-    isOpen.value = false
-    if (selectedItem.value) {
-      searchText.value = selectedItem.value.value
-      emit('update:modelValue', selectedItem.value.value)
-      emit('update:displayValue', selectedItem.value.value)
-    }
-  } else {
-    searchText.value = ''
-    selectedItem.value = null
-    emit('update:modelValue', null)
-    emit('update:displayValue', null)
+function handleBlur() {
+  // If user typed something but didn't select from dropdown,
+  // treat it as a custom value
+  if (searchText.value.trim() && !selectedItem.value && !isCustomValue.value) {
+    selectFreeText(searchText.value.trim())
   }
 }
 
@@ -256,13 +274,23 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+function handleScroll() {
+  if (isOpen.value) {
+    updateDropdownPosition()
+  }
+}
+
 onMounted(() => {
   fetchOptions('')
   document.addEventListener('mousedown', handleClickOutside)
+  window.addEventListener('scroll', handleScroll, true)
+  window.addEventListener('resize', handleScroll)
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside)
+  window.removeEventListener('scroll', handleScroll, true)
+  window.removeEventListener('resize', handleScroll)
   if (debounceTimer.value) clearTimeout(debounceTimer.value)
 })
 
@@ -271,9 +299,8 @@ watch(
   (newValue) => {
     if (!newValue) {
       selectedItem.value = null
-      if (!isFreeText.value) {
-        searchText.value = ''
-      }
+      isCustomValue.value = false
+      searchText.value = ''
     }
   },
   { immediate: true }
@@ -297,35 +324,57 @@ watch(
   transform: translateY(-50%);
 }
 
-.suggestions-dropdown {
+.clear-btn {
   position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #adb5bd;
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.clear-btn:hover {
+  background: #6c757d;
+}
+
+/* Dropdown styles are global because Teleport moves element to body */
+:global(.concept-typeahead-dropdown) {
   max-height: 200px;
   overflow-y: auto;
   background: white;
   border: 1px solid #ced4da;
   border-top: none;
   border-radius: 0 0 4px 4px;
-  z-index: 1000;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: var(--color-ui-darkest-text, #1f425a);
+  font-size: 0.8125rem;
 }
 
-.suggestions-list {
+:global(.concept-typeahead-list) {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.suggestion-message {
+:global(.concept-typeahead-message) {
   padding: 8px 12px;
-  color: #6c757d;
-  font-size: 0.875rem;
+  color: var(--color-neutral, #595757);
+  font-size: 0.8125rem;
   text-align: center;
 }
 
-.suggestion-item {
+:global(.concept-typeahead-item) {
   padding: 8px 12px;
   cursor: pointer;
   display: flex;
@@ -333,70 +382,20 @@ watch(
   align-items: center;
 }
 
-.suggestion-item:hover,
-.suggestion-item.highlighted {
-  background-color: #f8f9fa;
+:global(.concept-typeahead-item:hover),
+:global(.concept-typeahead-item.highlighted) {
+  background-color: var(--color-mri-dropdown-list-item-selected, #ebf2f9);
 }
 
-.suggestion-text {
+:global(.concept-typeahead-text) {
   flex: 1;
+  color: var(--color-ui-darkest-text, #1f425a);
 }
 
-.suggestion-value {
-  color: #6c757d;
-  font-size: 0.875rem;
+:global(.concept-typeahead-value) {
+  color: var(--color-neutral, #595757);
+  font-size: 0.8125rem;
   margin-left: 8px;
-}
-
-.free-text-toggle {
-  margin-top: 6px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
-  color: #495057;
-  cursor: pointer;
-}
-
-.checkbox-label input[type='checkbox'] {
-  margin: 0;
-}
-
-.selected-item {
-  margin-top: 8px;
-  padding: 6px 10px;
-  background-color: #e9ecef;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.875rem;
-}
-
-.selected-label {
-  color: #6c757d;
-}
-
-.selected-value {
-  flex: 1;
-  font-weight: 500;
-}
-
-.clear-button {
-  background: none;
-  border: none;
-  color: #dc3545;
-  cursor: pointer;
-  font-size: 1.25rem;
-  line-height: 1;
-  padding: 0 4px;
-}
-
-.clear-button:hover {
-  color: #a71d2a;
 }
 
 .spinner-border {
