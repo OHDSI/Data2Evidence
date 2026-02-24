@@ -70,6 +70,7 @@
     <DashboardSelectionModal
       :is-open="dashboardFlow.showDashboardSelectionModal"
       :dashboards="dashboardFlow.dashboardCodes"
+      :wizard-definitions="dashboardFlow.wizardDefinitions"
       :loading="dashboardFlow.dashboardMetadataLoading"
       :error="dashboardFlow.dashboardSelectionError"
       @close="dashboardFlow.closeDashboardSelectionModal"
