@@ -29,7 +29,7 @@ COPY deno.json package.json package-lock.json .npmrc ./
 RUN npm install
 
 # Pre-install DuckDB extensions for offline use
-ENV DUCKDB_VERSION=1.4.0
+ENV DUCKDB_VERSION=1.4.4
 RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
     cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
     for lib in autocomplete avro aws azure fts httpfs icu inet json mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner ui vss; do \
