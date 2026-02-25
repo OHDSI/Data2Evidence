@@ -8,13 +8,14 @@ export const AppDispatchContext = createContext<Dispatch<DispatchType>>(() => un
 
 const storageKey = "d2e_app";
 const whitelist: (keyof AppState)[] = ["activeDataset", "postLoginRedirectUri"];
+const whitelistBySession: (keyof AppState)[] = ["disclaimer"];
 
 interface AppProviderProps {
   children?: React.ReactNode;
 }
 
 export const AppProvider: FC<AppProviderProps> = ({ children }) => {
-  const { state, dispatch } = usePersistedReducer(reducer, initialState, storageKey, whitelist);
+  const { state, dispatch } = usePersistedReducer(reducer, initialState, storageKey, whitelist, whitelistBySession);
 
   return (
     <AppContext.Provider value={state}>

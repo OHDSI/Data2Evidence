@@ -13,31 +13,51 @@ export function usePersistedReducer<State extends object, Action>(
   reducer: (state: State, action: Action) => State,
   initialState: State,
   storageKey: string,
-  whitelist: (keyof State)[]
+  whitelist: (keyof State)[],
+  whitelistBySession?: (keyof State)[]
 ) {
+  const sessionKeys = whitelistBySession ?? [];
+
   const [state, dispatch] = useReducer(reducer, initialState, init);
   const prevState = usePrevious(state);
 
   function init(): State {
-    const stringState = localStorage.getItem(storageKey);
-    if (stringState) {
+    let persisted: Partial<State> = {};
+
+    const localState = localStorage.getItem(storageKey);
+    if (localState) {
       try {
-        return { ...initialState, ...JSON.parse(stringState) };
-      } catch (error) {
-        return initialState;
+        persisted = { ...persisted, ...JSON.parse(localState) };
+      } catch {
+        // ignore corrupt data
       }
-    } else {
-      return initialState;
     }
+
+    const sessionState = sessionStorage.getItem(storageKey);
+    if (sessionState) {
+      try {
+        persisted = { ...persisted, ...JSON.parse(sessionState) };
+      } catch {
+        // ignore corrupt data
+      }
+    }
+
+    return Object.keys(persisted).length > 0 ? { ...initialState, ...persisted } : initialState;
   }
 
   useEffect(() => {
     const stateEqual = deepEqual(prevState, state);
     if (!stateEqual) {
-      const stringifiedState = stringifyWithWhitelist(state, whitelist);
-      localStorage.setItem(storageKey, stringifiedState);
+      if (whitelist.length > 0) {
+        const stringifiedLocal = stringifyWithWhitelist(state, whitelist);
+        localStorage.setItem(storageKey, stringifiedLocal);
+      }
+      if (sessionKeys.length > 0) {
+        const stringifiedSession = stringifyWithWhitelist(state, sessionKeys);
+        sessionStorage.setItem(storageKey, stringifiedSession);
+      }
     }
-  }, [state, whitelist]);
+  }, [state, whitelist, sessionKeys]);
 
   return { state, dispatch };
 }
