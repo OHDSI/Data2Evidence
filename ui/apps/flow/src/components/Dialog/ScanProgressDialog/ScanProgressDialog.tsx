@@ -44,7 +44,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
   const [scanCompleted, setScanCompleted] = useState(false);
   const [scanFailed, setScanFailed] = useState(false);
   const [log, setLog] = useState<string>("");
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const updateNodeInternals = useUpdateNodeInternals();
   // setTableSourceHandles
   // setScannedSchema
@@ -66,7 +66,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
       handleClear();
       typeof onClose === "function" && onClose(type);
     },
-    [onClose]
+    [onClose],
   );
 
   const handleSaveReport = useCallback(async () => {
@@ -90,7 +90,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
           id: `C.${index + 1}`,
           data: { label: table.table_name, type: "input" },
           sourcePosition: Position.Right,
-        })
+        }),
       );
       onFormDataChange({ sourceHandles: sourceHandles });
       setLoading(false);
@@ -124,7 +124,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
       setLog(status.state_name);
       if (status.state_name in FLOW_STATE_MAP) {
         setProgress(
-          FLOW_STATE_MAP[status.state_name as keyof typeof FLOW_STATE_MAP]
+          FLOW_STATE_MAP[status.state_name as keyof typeof FLOW_STATE_MAP],
         );
       }
     } catch (e) {
