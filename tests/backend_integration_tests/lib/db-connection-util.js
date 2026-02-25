@@ -29,7 +29,7 @@ function getSystemCredentials(hostConfig) {
   return credentials
 }
 
-class DBConnection {
+module.exports = class DBConnection {
   constructor(user, password, host, port) {
     this.user = user
     this.password = password
@@ -75,4 +75,4 @@ class DBConnection {
   endConnection() {}
 }
 
-module.exports = { createDBConnection, getSystemCredentials, DBConnection }
+module.exports = { createDBConnection, getSystemCredentials }

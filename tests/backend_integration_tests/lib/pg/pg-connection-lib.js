@@ -2,10 +2,10 @@ const pg = require('pg')
 const format = require('pg-format')
 const { Pool } = pg
 var assert = require('assert')
-var dbConnectionUtil = require('../db-connection-util')
+const DBConnection = require('../db-connection-util')
 
 
-class PGConnection extends dbConnectionUtil.DBConnection {
+module.exports = class PGConnection extends DBConnection {
   constructor(user, password, host, port, database) {
     super(user, password, host, port)
     this.database = database
