@@ -53,8 +53,9 @@ export function registerCohortInstructionTools(server: McpServer) {
           cohort description: ${cohortDescription}
 
           Strictly follow to-do list below for update of ATLAS cohort definition:
-            1. Validate the updated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed. Print the final JSON cohort definition after validation, make sure it's valid and ready for creation in D2E.
-            2. Wait for user's confirmation for next action, your question of "update in D2E" with "y" or "yes". If proceed to update the cohort definition in D2E, set parameter "isValidCohortDefinition" to true and call tool **update_atlas_cohort_definition**`);
+            1. Validate the updated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed. 
+            2. You MUST output the complete final JSON cohort definition in a JSON code block.
+            3. Wait for user's confirmation for next action, your question of "update in D2E" with "y" or "yes". If proceed to update the cohort definition in D2E, set parameter "isValidCohortDefinition" to true and call tool **update_atlas_cohort_definition**`);
     },
   );
 }

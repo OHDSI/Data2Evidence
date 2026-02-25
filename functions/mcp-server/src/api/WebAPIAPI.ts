@@ -31,7 +31,7 @@ export class WebAPIAPI {
 
   async getAtlasCohortDefinitionList(
     authorization: string,
-    datasetId: string,
+    datasetId: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -62,7 +62,7 @@ export class WebAPIAPI {
 
   async createAtlasCohortDefinition(
     cohortDefinition: any,
-    authorization: string,
+    authorization: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -99,7 +99,7 @@ export class WebAPIAPI {
   async checkAtlasCohortDefinition(
     cohortDefinitionExpression: any,
     authorization: string,
-    datasetId: string,
+    datasetId: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -123,7 +123,6 @@ export class WebAPIAPI {
         modifiedDate: currentTime, // Dummy modification date for validation
         tags: [],
       };
-      
       const response = await this.channel.post(url, payload, options);
       return response.status === 200 ? response.data : null;
     } catch (error) {
@@ -134,7 +133,7 @@ export class WebAPIAPI {
 
   async updateAtlasCohortDefinition(
     cohortDefinition: any,
-    authorization: string,
+    authorization: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -170,7 +169,7 @@ export class WebAPIAPI {
   async deleteAtlasCohortDefinition(
     cohortId: number,
     authorization: string,
-    datasetId: string,
+    datasetId: string
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
