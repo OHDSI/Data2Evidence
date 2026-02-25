@@ -1,6 +1,7 @@
 var hdb = require('hdb')
+var dbConnectionUtil = require('../db-connection-util')
 
-class HDBConnection extends DBConnection {
+class HDBConnection extends dbConnectionUtil.DBConnection {
   constructor(credentials) {
     this.credentials = credentials
     this.hdbClient = hdb.createClient(credentials)
