@@ -15,6 +15,11 @@ const Env = z.object({
         return z.never();
       }
     }),
+  AUTO_GENERATE_EMBEDDINGS: z
+    .string()
+    .optional()
+    .default("true")
+    .transform((val) => val === "true"),
 });
 export const env = Env.parse(_env);
 
@@ -30,4 +35,8 @@ export const PHENOTYPE_LIBRARY_COHORT_TEMPLATE = join(
 export const PHENOTYPE_LIBRARY_COHORTS = join(
   PHENOTYPE_LIBRARY_BASE_PATH,
   "Cohorts.csv",
+);
+export const PHENOTYPE_EMBEDDINGS_CACHE = join(
+  PHENOTYPE_LIBRARY_BASE_PATH,
+  "phenotype-embeddings.json",
 );

@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
-  fetchPhenotypeData,
   fetchCohortDefinitionTemplate,
+  searchPhenotypes,
 } from "../utils/phenotype-helpers";
 import {
   SearchPhenotypeLibraryInput,
@@ -21,21 +21,57 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
     {
       title: "Search OHDSI Phenotype Library",
       description:
-        "Return phenotypes from OHDSI Phenotype Library with IDs, names, and logic descriptions. Use this to find phenotype IDs that are relevant to the user's cohort requirements.",
+        "Search for phenotypes by medical condition name to find their IDs and definitions. When user asks for a phenotype ID (e.g., 'phenotype ID of diabetes'), extract the condition name ('diabetes') and use it as searchTerm. Returns phenotype IDs, names, and logic descriptions from OHDSI Phenotype Library. Supports semantic search for finding conceptually similar phenotypes.",
       inputSchema: SearchPhenotypeLibraryInput,
     },
-    async () => {
+    async ({ searchTerm, useSemanticSearch = true, topK = 5 }) => {
       const toolStart = performance.now();
-      console.log(`[MCP-TIMING] [search_phenotype_library] START`);
-      const t0 = performance.now();
-      const phenotypeData = await fetchPhenotypeData();
-      console.log(`[MCP-TIMING] [search_phenotype_library] fetchPhenotypeData in ${(performance.now() - t0).toFixed(1)}ms items=${phenotypeData.length}`);
-      console.log(`[MCP-TIMING] [search_phenotype_library] END total=${(performance.now() - toolStart).toFixed(1)}ms`);
-      return createStructuredResponse(
-        "Retrieved phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.",
-        { phenotypes: phenotypeData }
+      console.log(
+        `[MCP-TIMING] [search_phenotype_library] START searchTerm=${searchTerm || "(all)"} semantic=${useSemanticSearch}`,
       );
-    }
+      const t0 = performance.now();
+
+      try {
+        const phenotypeData = await searchPhenotypes(
+          searchTerm,
+          useSemanticSearch,
+          topK,
+        );
+
+        console.log(
+          `[MCP-TIMING] [search_phenotype_library] search in ${(performance.now() - t0).toFixed(1)}ms items=${phenotypeData.length}`,
+        );
+        console.log(
+          `[MCP-TIMING] [search_phenotype_library] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
+        );
+
+        const message = searchTerm
+          ? `Found ${phenotypeData.length} phenotype(s) ${useSemanticSearch ? "semantically similar to" : "matching"} "${searchTerm}". Analyze this list to identify relevant phenotype IDs for the cohort definition.`
+          : "Retrieved all phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.";
+
+        console.log(
+          `[search_phenotype_library] ${message} Phenotypes: ${JSON.stringify(phenotypeData)}`,
+        );
+        return createStructuredResponse(message, { phenotypes: phenotypeData });
+      } catch (error) {
+        // If semantic search fails (no embeddings), fallback to substring search
+        if (
+          useSemanticSearch &&
+          error instanceof Error &&
+          error.message.includes("cache not found")
+        ) {
+          console.warn(
+            "[search_phenotype_library] Embeddings not found, falling back to substring search",
+          );
+          const phenotypeData = await searchPhenotypes(searchTerm, false, topK);
+          return createStructuredResponse(
+            `Found ${phenotypeData.length} phenotype(s) using substring matching. For better results, configure semantic search by generating embeddings (developer task).`,
+            { phenotypes: phenotypeData },
+          );
+        }
+        throw error;
+      }
+    },
   );
 
   // ==================== FETCH TEMPLATES FOR COHORT GENERATION ====================
@@ -49,19 +85,25 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
     },
     async ({ phenotypeId, userCohortDescription }) => {
       const toolStart = performance.now();
-      console.log(`[MCP-TIMING] [fetch_templates_for_cohort_generation] START phenotypeId=${phenotypeId}`);
+      console.log(
+        `[MCP-TIMING] [fetch_templates_for_cohort_generation] START phenotypeId=${phenotypeId}`,
+      );
       const t0 = performance.now();
       // Fetch templates for the selected phenotype ID
       const template = await fetchCohortDefinitionTemplate(phenotypeId);
-      console.log(`[MCP-TIMING] [fetch_templates_for_cohort_generation] file read in ${(performance.now() - t0).toFixed(1)}ms`);
-      console.log(`[MCP-TIMING] [fetch_templates_for_cohort_generation] END total=${(performance.now() - toolStart).toFixed(1)}ms`);
+      console.log(
+        `[MCP-TIMING] [fetch_templates_for_cohort_generation] file read in ${(performance.now() - t0).toFixed(1)}ms`,
+      );
+      console.log(
+        `[MCP-TIMING] [fetch_templates_for_cohort_generation] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
+      );
       return createStructuredResponse(
         `Fetched cohort definition template. User Requirements: ${userCohortDescription} Example Templates Retrieved: - Phenotype ID ${phenotypeId}. Continue to generate a complete ATLAS cohort definition JSON using these templates as structural examples.`,
         {
           userRequirements: userCohortDescription,
           exampleTemplates: template,
-        }
+        },
       );
-    }
+    },
   );
 }

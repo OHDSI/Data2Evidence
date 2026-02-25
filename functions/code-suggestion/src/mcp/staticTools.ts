@@ -17,7 +17,7 @@ async function callMcpTool(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Accept": "application/json, text/event-stream",
+      Accept: "application/json, text/event-stream",
       ...headers,
     },
     body: JSON.stringify({
@@ -161,7 +161,28 @@ export function createStaticMcpTools(
     mcpTool(
       "search_phenotype_library",
       "Return phenotypes from OHDSI Phenotype Library with IDs, names, and logic descriptions. Use this to find phenotype IDs that are relevant to the user's cohort requirements.",
-      z.object({}),
+      z.object({
+        searchTerm: z
+          .string()
+          .optional()
+          .describe(
+            "The phenotype name or medical condition to search for (e.g., 'bronchiolitis', 'diabetes'). Leave empty only to return all phenotypes.",
+          ),
+        useSemanticSearch: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe(
+            "If true, use embedding-based semantic search (finds conceptually similar phenotypes). If false, use simple substring matching. Default: true.",
+          ),
+        topK: z
+          .number()
+          .optional()
+          .default(5)
+          .describe(
+            "Number of top results to return for semantic search. Default: 5.",
+          ),
+      }),
     ),
 
     mcpTool(
@@ -170,14 +191,10 @@ export function createStaticMcpTools(
       z.object({
         phenotypeId: z
           .number()
-          .describe(
-            "Most relevant phenotype ID to use as template examples",
-          ),
+          .describe("Most relevant phenotype ID to use as template examples"),
         userCohortDescription: z
           .string()
-          .describe(
-            "The user's description of the cohort they want to create",
-          ),
+          .describe("The user's description of the cohort they want to create"),
       }),
     ),
 
@@ -191,9 +208,7 @@ export function createStaticMcpTools(
           .describe(
             "Atlas cohort definition in json to be validated, include concept sets and expression",
           ),
-        userName: z
-          .string()
-          .describe("User name creating/updating the cohort"),
+        userName: z.string().describe("User name creating/updating the cohort"),
       }),
     ),
 
