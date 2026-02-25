@@ -236,9 +236,24 @@ export default {
         return ['#000080', '#5d2085', '#de4b8b', '#EC6E41']
       } else {
         // Full palette for 5+ traces
-        return ['#000080', '#5d2085', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
+        // return ['#000080', '#144187', '#23718c', '#529f70', '#8bcb48', '#fee727']
+        // return ['#000080', '#5d2085', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
+        return ['#000080', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
+
         // return ['#000080', '#540982', '#821d80', '#ab3478', '#d04d64', '#eb7100'] // option 2
         // return ['#000080', '#FB9F9D', '#196D76', '#FFD9A5'] // option 3
+        // return ['#007FFFFF', '#4CC3FFFF', '#99EDFFFF', '#CCFFFFFF', '#FFFFCCFF', '#FFEE99FF', '#FFC34CFF', '#FF7F00FF']
+        // return [
+        //   '#212E52FF',
+        //   '#444E7EFF',
+        //   '#8087AAFF',
+        //   '#B7ABBCFF',
+        //   '#F9ECE8FF',
+        //   '#FCC893FF',
+        //   '#FEB424FF',
+        //   '#FD8700FF',
+        //   '#D8511DFF',
+        // ]
         // return [
         //   '#FDA2A2',
         //   '#000E7E',
