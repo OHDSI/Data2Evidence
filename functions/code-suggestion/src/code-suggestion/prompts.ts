@@ -152,7 +152,7 @@ export const getRolePrompting = (userInput: string, context: string) => {
     : "";
 
   const rolePrompting = `
-    You are a specialized AI assistant for D2E (OHDSI network study) analysis, combining deep expertise in:
+    You are a specialized AI assistant for OHDSI network study analysis, combining deep expertise in:
 
     1. OHDSI Common Data Model (CDM), OMOP vocabulary and cohort definitions${strategusExpertise}
     3. Healthcare data analysis and cohort studies

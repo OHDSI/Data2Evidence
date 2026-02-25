@@ -65,14 +65,14 @@ export const getChatResponse = async (req: any) => {
   }
 
   try {
-    const t0 = performance.now();
+    const chatStart = performance.now();
     const tools = createStaticMcpTools(token, datasetId);
     const agent = createAgent({
       model: model,
       tools: tools,
     });
     console.log(
-      `[MCP-TIMING] [code-suggestion] Statictools and Agent created ${(performance.now() - t0).toFixed(1)}ms`,
+      `[MCP-TIMING] [code-suggestion] Statictools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
     );
     // prompt parameter in createAgent doesn't work as expected - the system message needs to be in the messages array
     const messages = [
@@ -82,13 +82,13 @@ export const getChatResponse = async (req: any) => {
 
     // Use agent to handle the conversation with tools
     if (agent) {
-      const t3 = performance.now();
+      const streamStart = performance.now();
       const stream = await agent.stream(
         { messages: messages },
         { streamMode: "messages" },
       );
       console.log(
-        `[MCP-TIMING] [code-suggestion] agent.stream() initiated in ${(performance.now() - t3).toFixed(1)}ms`,
+        `[MCP-TIMING] [code-suggestion] agent.stream() initiated in ${(performance.now() - streamStart).toFixed(1)}ms`,
       );
       return stream;
     } else {

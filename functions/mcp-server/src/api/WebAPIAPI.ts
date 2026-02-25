@@ -31,7 +31,7 @@ export class WebAPIAPI {
 
   async getAtlasCohortDefinitionList(
     authorization: string,
-    datasetId: string
+    datasetId: string,
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -55,14 +55,14 @@ export class WebAPIAPI {
     } catch (error) {
       console.error(error);
       throw new Error(
-        `Error while get info of atlas cohort definition: ${error}`,
+        `Error while get info of atlas cohort definition: ${error}`
       );
     }
   }
 
   async createAtlasCohortDefinition(
     cohortDefinition: any,
-    authorization: string
+    authorization: string,
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -99,7 +99,7 @@ export class WebAPIAPI {
   async checkAtlasCohortDefinition(
     cohortDefinitionExpression: any,
     authorization: string,
-    datasetId: string
+    datasetId: string,
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -123,6 +123,7 @@ export class WebAPIAPI {
         modifiedDate: currentTime, // Dummy modification date for validation
         tags: [],
       };
+      
       const response = await this.channel.post(url, payload, options);
       return response.status === 200 ? response.data : null;
     } catch (error) {
@@ -133,7 +134,7 @@ export class WebAPIAPI {
 
   async updateAtlasCohortDefinition(
     cohortDefinition: any,
-    authorization: string
+    authorization: string,
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();
@@ -169,7 +170,7 @@ export class WebAPIAPI {
   async deleteAtlasCohortDefinition(
     cohortId: number,
     authorization: string,
-    datasetId: string
+    datasetId: string,
   ): Promise<any> {
     try {
       const options = await this.getRequestConfig();

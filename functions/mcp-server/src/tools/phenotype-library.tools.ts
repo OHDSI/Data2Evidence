@@ -26,6 +26,7 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
     },
     async ({ searchTerm, useSemanticSearch = true, topK = 5 }) => {
       try {
+        const toolStart = performance.now();
         const phenotypeData = await searchPhenotypes(
           searchTerm,
           useSemanticSearch,
@@ -36,6 +37,9 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
           ? `Found ${phenotypeData.length} phenotype(s) ${useSemanticSearch ? "semantically similar to" : "matching"} "${searchTerm}". Analyze this list to identify relevant phenotype IDs for the cohort definition.`
           : "Retrieved all phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.";
 
+        console.log(
+          `[MCP-TIMING] [search_phenotype_library] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
+        );
         return createStructuredResponse(message, { phenotypes: phenotypeData });
       } catch (error) {
         // If semantic search fails (no embeddings), fallback to substring search
@@ -69,7 +73,6 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
     },
     async ({ phenotypeId, userCohortDescription }) => {
       const toolStart = performance.now();
-      const t0 = performance.now();
       // Fetch templates for the selected phenotype ID
       const template = await fetchCohortDefinitionTemplate(phenotypeId);
       console.log(

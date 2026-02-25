@@ -44,7 +44,6 @@ export function registerCohortManagementTools(server: McpServer) {
       // Extract authorization and datasetId (both required for delete)
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       // Fetch d2e cohort list
-      const t0 = performance.now();
       const data = await d2eWebapi.getAtlasCohortDefinitionList(
         authorization,
         datasetId
@@ -113,7 +112,6 @@ export function registerCohortManagementTools(server: McpServer) {
         cohortInfo: cohortInfo,
       };
 
-      const t0 = performance.now();
       const res = await d2eWebapi.createAtlasCohortDefinition(
         cohortDefinition,
         authorization
