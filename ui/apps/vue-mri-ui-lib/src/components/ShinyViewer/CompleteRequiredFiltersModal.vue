@@ -22,19 +22,9 @@
             <!-- Date types -->
             <template v-if="isDateType(field.type)">
               <div class="date-range-group">
-                <input
-                  :id="`${field.id}_from`"
-                  class="form-control"
-                  type="date"
-                  v-model="formValues[field.id].from"
-                />
+                <input :id="`${field.id}_from`" class="form-control" type="date" v-model="formValues[field.id].from" />
                 <span>to</span>
-                <input
-                  :id="`${field.id}_to`"
-                  class="form-control"
-                  type="date"
-                  v-model="formValues[field.id].to"
-                />
+                <input :id="`${field.id}_to`" class="form-control" type="date" v-model="formValues[field.id].to" />
               </div>
             </template>
 
@@ -73,10 +63,14 @@
               <input
                 :id="field.id"
                 class="form-control"
+                :class="{ 'is-invalid': numericErrors[field.id] }"
                 type="text"
                 :placeholder="field.placeholder || 'e.g. >=65, [50-80], 72'"
                 v-model="formValues[field.id]"
+                @input="validateNumericField(field.id, formValues[field.id])"
+                @blur="validateNumericField(field.id, formValues[field.id])"
               />
+              <p v-if="numericErrors[field.id]" class="field-error">{{ numericErrors[field.id] }}</p>
             </template>
 
             <!-- Typeahead for conceptSet or text with configPath -->
@@ -90,15 +84,17 @@
                   :allow-free-text="field.allowFreeText"
                   :placeholder="field.placeholder"
                   :model-value="formValues[field.id]"
-                  @update:model-value="(val: string | null) => { formValues[field.id] = val; handleDisplayValueChange(field.id, val) }"
+                  @update:model-value="
+                    (val: string | null) => {
+                      formValues[field.id] = val
+                      handleDisplayValueChange(field.id, val)
+                    }
+                  "
                 />
                 <!-- Condition field wildcard toggle - matches Wizards -->
                 <div v-if="isConditionField(field.id) && formValues[field.id]" class="wildcard-toggle">
                   <label class="checkbox-label">
-                    <input
-                      type="checkbox"
-                      v-model="formValues[`${field.id}_wildcard` as string]"
-                    />
+                    <input type="checkbox" v-model="formValues[`${field.id}_wildcard` as string]" />
                     <span>Include descendants</span>
                   </label>
                 </div>
@@ -135,6 +131,9 @@ import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
 import type { WizardFieldDefinition, MissingRequiredField } from '@/utils/dashboardFlowUtils'
 import { isConditionField } from '@/utils/dashboardFlowUtils'
+import InputParser from '@/lib/utils/InputParser'
+import RangeConstraintTokenDefinition from '@/lib/utils/RangeConstraintTokenDefinition'
+import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPatternDefinition'
 
 export interface RequiredFieldItem extends WizardFieldDefinition {}
 
@@ -153,6 +152,13 @@ const emit = defineEmits<{
 const formValues = reactive<Record<string, any>>({})
 const displayValues = reactive<Record<string, string>>({})
 const yearErrors = reactive<Record<string, string>>({})
+const numericErrors = reactive<Record<string, string>>({})
+
+// Initialize InputParser for numeric field validation
+const numericParser = new InputParser(
+  RangeConstraintTokenDefinition.tokenDefinitions,
+  RangeConstraintPatternDefinition.acceptedPatterns
+)
 
 const currentYear = new Date().getFullYear()
 const yearOptions = computed(() => {
@@ -170,7 +176,7 @@ const isFormValid = computed(() => {
   }
 
   // Clear year errors
-  Object.keys(yearErrors).forEach((key) => delete yearErrors[key])
+  Object.keys(yearErrors).forEach(key => delete yearErrors[key])
 
   for (const field of props.fields) {
     // yearRange validation - matches Wizards
@@ -222,6 +228,14 @@ const isFormValid = computed(() => {
       continue
     }
 
+    // Numeric types - validate if field has value
+    if (field.type === 'num' && value) {
+      if (!validateNumericValue(value)) {
+        return false
+      }
+      continue
+    }
+
     // Other types - check for non-empty value
     const stringValue = typeof value === 'string' ? value.trim() : value
     if (!stringValue && stringValue !== 0) {
@@ -241,12 +255,13 @@ watch(
     }
 
     // Clear all form values
-    Object.keys(formValues).forEach((key) => delete formValues[key])
-    Object.keys(displayValues).forEach((key) => delete displayValues[key])
-    Object.keys(yearErrors).forEach((key) => delete yearErrors[key])
+    Object.keys(formValues).forEach(key => delete formValues[key])
+    Object.keys(displayValues).forEach(key => delete displayValues[key])
+    Object.keys(yearErrors).forEach(key => delete yearErrors[key])
+    Object.keys(numericErrors).forEach(key => delete numericErrors[key])
 
     // Initialize each field
-    props.fields.forEach((field) => {
+    props.fields.forEach(field => {
       if (isDateType(field.type)) {
         // Date range uses object structure
         formValues[field.id] = { from: '', to: '' }
@@ -300,7 +315,7 @@ function handleSubmit() {
 
   // Build payload with all form values
   const payload: Record<string, any> = {}
-  props.fields.forEach((field) => {
+  props.fields.forEach(field => {
     if (field.type === 'yearRange') {
       // yearRange: include _from and _to values
       payload[`${field.id}_from`] = formValues[`${field.id}_from`]
@@ -319,6 +334,50 @@ function handleSubmit() {
   })
 
   emit('submit', payload, { ...displayValues })
+}
+
+/**
+ * Validates a numeric expression value using the InputParser
+ * @param value - The value to validate
+ * @returns boolean indicating if the value is valid
+ */
+function validateNumericValue(value: string): boolean {
+  if (!value || !value.trim()) {
+    return true // Empty values are handled separately by required check
+  }
+
+  let isValid = true
+  numericParser.parseInput(
+    value,
+    () => {
+      // Success callback - parsing succeeded
+      isValid = true
+    },
+    () => {
+      // Fail callback - parsing failed
+      isValid = false
+    }
+  )
+  return isValid
+}
+
+/**
+ * Validates a numeric field and sets/clears error message
+ * Called on input and blur events
+ */
+function validateNumericField(fieldId: string, value: string): void {
+  if (!value || !value.trim()) {
+    // Clear error if field is empty
+    delete numericErrors[fieldId]
+    return
+  }
+
+  const isValid = validateNumericValue(value)
+  if (isValid) {
+    delete numericErrors[fieldId]
+  } else {
+    numericErrors[fieldId] = 'Invalid numeric expression. Examples: >=65, [50-80], 72'
+  }
 }
 </script>
 
