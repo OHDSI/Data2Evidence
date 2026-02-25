@@ -9,14 +9,14 @@ const logger = Logger.CreateLogger("analytics-log");
 
 export async function getCDMVersion(req, res, next) {
     const datasetId = req.query.datasetId;
-    const { dialect, schemaName } = await new PortalServerAPI().getStudy(
+    const { dialect, schemaName, databaseCode } = await new PortalServerAPI().getStudy(
         datasetId
     );
 
     try {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
-        const cdmVersion = await dbDao.getCDMVersion(schemaName);
+        const cdmVersion = await dbDao.getCDMVersion(databaseCode, schemaName);
 
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =

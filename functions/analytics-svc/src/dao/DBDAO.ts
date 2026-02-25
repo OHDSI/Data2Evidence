@@ -25,10 +25,10 @@ export class DBDAO {
         this.connection = conn;
     }
 
-    public getCDMVersion = async (schemaName: string): Promise<string> => {
+    public getCDMVersion = async (databaseCode: string, schemaName: string): Promise<string> => {
         return new Promise((resolve, reject) => {
             this.connection.executeQuery(
-                `SELECT CDM_VERSION FROM ${schemaName}.CDM_SOURCE`,
+                `SELECT CDM_VERSION FROM ${databaseCode}.${schemaName}.CDM_SOURCE`,
                 [],
                 (err: any, result: string) => {
                     if (err) {
