@@ -27,6 +27,7 @@ import {
   useUploadNodeCsvFileMutation,
   useCreateScanReportMutation,
   useCreateDBScanReportMutation,
+  useGetDatabasesQuery,
 } from "~/features/flow/slices";
 import "./ScanDataDialog.scss";
 
@@ -99,6 +100,9 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   const hiddenFileInput = useRef<HTMLInputElement>(null);
   const intervalRef = useRef<number | null>(null);
 
+  const { data: databases = [], isLoading: isLoadingDatabases } =
+    useGetDatabasesQuery();
+
   const [testDBConnection] = useTestDBConnectionMutation();
   const [uploadNodeCsvFile] = useUploadNodeCsvFileMutation();
   const [createDBScanReport] = useCreateDBScanReportMutation();
@@ -125,7 +129,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     (type: CloseDialogType) => {
       typeof onClose === "function" && onClose(type);
     },
-    [onClose]
+    [onClose],
   );
 
   const handleApply = useCallback(async () => {
@@ -133,7 +137,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
       setLoading(true);
       if (dataType === "csv") {
         await Promise.all(
-          uploadedFiles.map((file) => uploadNodeCsvFile({ file, nodeId }))
+          uploadedFiles.map((file) => uploadNodeCsvFile({ file, nodeId })),
         );
         await scanData();
       } else {
@@ -156,7 +160,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
         data_type: event.target.value,
       });
     },
-    [dataType]
+    [dataType],
   );
 
   const handleSelectFile = useCallback((_event: any) => {
@@ -172,7 +176,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     (event: SelectChangeEvent<string>) => {
       setDelimiter(event.target.value as string);
     },
-    []
+    [],
   );
 
   const handlePostgresFormChange = useCallback(
@@ -183,7 +187,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
         [name]: value,
       }));
     },
-    []
+    [],
   );
 
   const handleTestConnection = useCallback(async () => {
@@ -239,7 +243,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
         setSelectedTables((prev) => prev.filter((f) => f !== file));
       }
     },
-    []
+    [],
   );
 
   const handleSelectedFileAll = useCallback(
@@ -254,13 +258,13 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
         setSelectedTables([]);
       }
     },
-    [dataType, uploadedFiles, availableTables]
+    [dataType, uploadedFiles, availableTables],
   );
 
   const checkSelectedFile = useCallback(
     (file: string): boolean | undefined =>
       selectedTables.some((selectedFile) => selectedFile === file),
-    [selectedTables]
+    [selectedTables],
   );
 
   const scanData = useCallback(async () => {
@@ -304,7 +308,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
 
   const fileNames = useMemo(
     () => uploadedFiles.map((file) => file.name).join(", "),
-    [uploadedFiles]
+    [uploadedFiles],
   );
 
   const isFormValid = (formData: ScanDataDBConnectionForm) => {
@@ -462,13 +466,23 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
                     variant="standard"
                     className="scan-data-dialog__form-control"
                   >
-                    <TextField
-                      name="database"
-                      label="Database Name"
+                    <InputLabel>Database Name</InputLabel>
+                    <Select
                       value={dbConnectionForm.database}
-                      onChange={handlePostgresFormChange}
-                      variant="standard"
-                    />
+                      onChange={(e: SelectChangeEvent<string>) =>
+                        setDbConnectionForm((prev) => ({
+                          ...prev,
+                          database: e.target.value,
+                        }))
+                      }
+                      disabled={isLoadingDatabases}
+                    >
+                      {databases.map((db) => (
+                        <MenuItem key={db.code} value={db.code}>
+                          {db.code} - {db.dialect}
+                        </MenuItem>
+                      ))}
+                    </Select>
                   </FormControl>
                   {dataType !== "mysql" && dataType !== "ms access" && (
                     <FormControl
