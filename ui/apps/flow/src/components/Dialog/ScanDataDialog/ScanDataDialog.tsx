@@ -128,20 +128,14 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     [onClose]
   );
 
-  const uploadCsvData = useCallback(async () => {
-    if (uploadedFiles && nodeId) {
-      await Promise.all(
-        uploadedFiles.map((file) => uploadNodeCsvFile({ file, nodeId }))
-      );
-    }
-  }, [uploadedFiles]);
-
   const handleApply = useCallback(async () => {
     try {
       setLoading(true);
       if (dataType === "csv") {
+        await Promise.all(
+          uploadedFiles.map((file) => uploadNodeCsvFile({ file, nodeId }))
+        );
         await scanData();
-        await uploadCsvData();
       } else {
         await scanDBData();
       }
@@ -151,7 +145,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [selectedTables, dataType]);
+  }, [selectedTables, dataType, uploadedFiles, nodeId]);
 
   const handleDataTypeChange = useCallback(
     (event: SelectChangeEvent<string>) => {
@@ -272,21 +266,22 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   const scanData = useCallback(async () => {
     try {
       setLoading(true);
-      if (uploadedFiles) {
+      if (selectedTables.length > 0) {
         const response = await createScanReport({
-          files: uploadedFiles,
+          nodeId,
+          fileNames: selectedTables,
           delimiter,
         }).unwrap();
         const flowRunId = response.flowRunId;
         setScanId(flowRunId);
       } else {
-        console.error("No file was uploaded");
+        console.error("No tables selected");
       }
     } catch (error) {
       console.error("Failed to create scan report from CSV", error);
       setLoading(false);
     }
-  }, [uploadedFiles, delimiter]);
+  }, [selectedTables, delimiter, nodeId]);
 
   const scanDBData = useCallback(async () => {
     try {

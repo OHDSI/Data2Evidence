@@ -2,9 +2,6 @@ import express, { Request, Response, Router } from "express";
 import { param, validationResult } from "express-validator";
 import { validateWhiteRabbitFlowRunDto } from "../middlewares/WhiteRabbitValidatorMiddlewares.ts";
 import { WhiteRabbitService } from "../services/WhiteRabbitService.ts";
-import { Buffer } from "buffer";
-import pako from "npm:pako";
-
 export class WhiteRabbitController {
   private whiteRabbitService: WhiteRabbitService;
   public router = Router();
@@ -15,27 +12,6 @@ export class WhiteRabbitController {
   }
 
   private registerRoutes() {
-    // Compress the uploaded csv files when scanning
-    this.router.use(async (req, res, next) => {
-      if (
-        req.body?.options?.run_type === "SCAN_REPORT_FILES" &&
-        req.body?.options?.data
-      ) {
-        try {
-          // Convert base64 to buffer
-          const compressed = Buffer.from(req.body.options.data, "base64");
-          // Use pako to decompress
-          const decompressed = pako.ungzip(compressed, { to: "string" });
-          // Parse the JSON string
-          req.body.options.data = JSON.parse(decompressed);
-        } catch (error) {
-          console.error("Error processing request:", error);
-          return res.status(400).send("Invalid compressed data");
-        }
-      }
-      next();
-    });
-
     // POST /white-rabbit/flow-run
     this.router.post(
       "/flow-run",
