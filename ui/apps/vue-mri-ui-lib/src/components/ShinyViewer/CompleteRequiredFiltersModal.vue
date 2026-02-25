@@ -443,10 +443,10 @@ function validateNumericField(fieldId: string, value: string): void {
 
 .year-range-group select {
   width: 100%;
-  height: 38px;
-  padding: 6px 10px;
-  font-size: 0.9375rem;
-  line-height: 1.4;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 0.8125rem;
+  line-height: 32px;
 }
 
 .form-control.is-invalid {
