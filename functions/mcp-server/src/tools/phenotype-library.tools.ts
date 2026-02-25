@@ -26,10 +26,6 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
     },
     async ({ searchTerm, useSemanticSearch = true, topK = 5 }) => {
       const toolStart = performance.now();
-      console.log(
-        `[MCP-TIMING] [search_phenotype_library] START searchTerm=${searchTerm || "(all)"} semantic=${useSemanticSearch}`,
-      );
-      const t0 = performance.now();
 
       try {
         const phenotypeData = await searchPhenotypes(
@@ -39,9 +35,6 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
         );
 
         console.log(
-          `[MCP-TIMING] [search_phenotype_library] search in ${(performance.now() - t0).toFixed(1)}ms items=${phenotypeData.length}`,
-        );
-        console.log(
           `[MCP-TIMING] [search_phenotype_library] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
         );
 
@@ -49,9 +42,6 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
           ? `Found ${phenotypeData.length} phenotype(s) ${useSemanticSearch ? "semantically similar to" : "matching"} "${searchTerm}". Analyze this list to identify relevant phenotype IDs for the cohort definition.`
           : "Retrieved all phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.";
 
-        console.log(
-          `[search_phenotype_library] ${message} Phenotypes: ${JSON.stringify(phenotypeData)}`,
-        );
         return createStructuredResponse(message, { phenotypes: phenotypeData });
       } catch (error) {
         // If semantic search fails (no embeddings), fallback to substring search
@@ -85,15 +75,9 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
     },
     async ({ phenotypeId, userCohortDescription }) => {
       const toolStart = performance.now();
-      console.log(
-        `[MCP-TIMING] [fetch_templates_for_cohort_generation] START phenotypeId=${phenotypeId}`,
-      );
       const t0 = performance.now();
       // Fetch templates for the selected phenotype ID
       const template = await fetchCohortDefinitionTemplate(phenotypeId);
-      console.log(
-        `[MCP-TIMING] [fetch_templates_for_cohort_generation] file read in ${(performance.now() - t0).toFixed(1)}ms`,
-      );
       console.log(
         `[MCP-TIMING] [fetch_templates_for_cohort_generation] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
       );

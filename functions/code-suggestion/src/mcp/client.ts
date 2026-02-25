@@ -1,5 +1,5 @@
 import { MultiServerMCPClient } from "@langchain/mcp-adapters";
-
+import { env } from "../env";
 export interface MCPClientConfig {
   serverUrl: string;
   headers?: Record<string, string>;
@@ -69,4 +69,20 @@ export class MCPClient {
     }
     return this.client;
   }
+}
+
+export function createMcpClient(
+  token?: string,
+  datasetId?: string,
+): MultiServerMCPClient {
+  return new MultiServerMCPClient({
+    "d2e-mcp": {
+      transport: "http",
+      url: `${env.SERVICE_ROUTES["mcp-server"]}`,
+      headers: {
+        Authorization: token || "",
+        datasetId: datasetId || "",
+      },
+    },
+  });
 }

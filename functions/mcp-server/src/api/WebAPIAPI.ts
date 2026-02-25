@@ -38,9 +38,7 @@ export class WebAPIAPI {
       const url = `${this.baseURL}/cohortdefinition?source=pa`;
       options.headers["Authorization"] = authorization;
       options.headers["datasetId"] = datasetId;
-      const t0 = performance.now();
       const response = await this.channel.get(url, options);
-      console.log(`[MCP-TIMING] [WebAPIAPI] getAtlasCohortDefinitionList in ${(performance.now() - t0).toFixed(1)}ms`);
       return response.data;
     } catch (error) {
       console.error(error);
@@ -52,14 +50,12 @@ export class WebAPIAPI {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cohortdefinition/${cohortId}`;
-      const t0 = performance.now();
       const response = await this.channel.get(url, options);
-      console.log(`[MCP-TIMING] [WebAPIAPI] getAtlasCohortDefinition(${cohortId}) in ${(performance.now() - t0).toFixed(1)}ms`);
       return response.status === 200 ? response.data : null;
     } catch (error) {
       console.error(error);
       throw new Error(
-        `Error while get info of atlas cohort definition: ${error}`
+        `Error while get info of atlas cohort definition: ${error}`,
       );
     }
   }
@@ -74,9 +70,7 @@ export class WebAPIAPI {
       const url = `${this.baseURL}/cohortdefinition`;
 
       const currentTime = Date.now();
-      const t0 = performance.now();
       const userName = await getUserName(authorization);
-      console.log(`[MCP-TIMING] [WebAPIAPI] createAtlas getUserName in ${(performance.now() - t0).toFixed(1)}ms`);
       const expression =
         typeof cohortDefinition.expression === "string"
           ? JSON.parse(cohortDefinition.expression)
@@ -94,9 +88,7 @@ export class WebAPIAPI {
         modifiedDate: currentTime,
         tags: [],
       };
-      const t1 = performance.now();
       const response = await this.channel.post(url, payload, options);
-      console.log(`[MCP-TIMING] [WebAPIAPI] createAtlasCohortDefinition POST in ${(performance.now() - t1).toFixed(1)}ms`);
       return response.status === 200 ? response.data : null;
     } catch (error) {
       console.error(error);
@@ -131,10 +123,7 @@ export class WebAPIAPI {
         modifiedDate: currentTime, // Dummy modification date for validation
         tags: [],
       };
-
-      const t0 = performance.now();
       const response = await this.channel.post(url, payload, options);
-      console.log(`[MCP-TIMING] [WebAPIAPI] checkAtlasCohortDefinition POST in ${(performance.now() - t0).toFixed(1)}ms`);
       return response.status === 200 ? response.data : null;
     } catch (error) {
       console.error(error);
@@ -151,9 +140,7 @@ export class WebAPIAPI {
       const url = `${this.baseURL}/cohortdefinition/${cohortDefinition.cohortId}`;
 
       const currentTime = Date.now();
-      const t0 = performance.now();
       const userName = await getUserName(authorization);
-      console.log(`[MCP-TIMING] [WebAPIAPI] updateAtlas getUserName in ${(performance.now() - t0).toFixed(1)}ms`);
       const expression =
         typeof cohortDefinition.expression === "string"
           ? JSON.parse(cohortDefinition.expression)
@@ -171,9 +158,7 @@ export class WebAPIAPI {
         modifiedDate: currentTime,
         tags: [],
       };
-      const t1 = performance.now();
       const response = await this.channel.put(url, payload, options);
-      console.log(`[MCP-TIMING] [WebAPIAPI] updateAtlasCohortDefinition PUT in ${(performance.now() - t1).toFixed(1)}ms`);
       return response.status === 200 ? response.data : null;
     } catch (error) {
       console.error(error);
@@ -191,9 +176,7 @@ export class WebAPIAPI {
       options.headers["Authorization"] = authorization;
       options.headers["datasetId"] = datasetId;
       const url = `${this.baseURL}/cohortdefinition/${cohortId}`;
-      const t0 = performance.now();
       const res = await axios.delete(url, options);
-      console.log(`[MCP-TIMING] [WebAPIAPI] deleteAtlasCohortDefinition DELETE in ${(performance.now() - t0).toFixed(1)}ms`);
       return res.status === 204;
     } catch (error) {
       console.error("DELETE Error:", error);

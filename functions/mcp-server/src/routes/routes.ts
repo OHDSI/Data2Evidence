@@ -14,7 +14,7 @@ export class mcpServerRouter {
       const reqStart = performance.now();
       const method = req.body?.method || "unknown";
       console.log(
-        `[MCP-TIMING] === REQUEST START === method=${method} body=${JSON.stringify(req.body)} `,
+        `[MCP-TIMING] === REQUEST START === method=${method} } === body=${JSON.stringify(req.body)} `,
       );
 
       // Notifications are fire-and-forget. In stateless Trex (no session persistence),
@@ -28,14 +28,10 @@ export class mcpServerRouter {
       }
 
       try {
-        const t0 = performance.now();
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: undefined,
           enableJsonResponse: true,
         });
-        console.log(
-          `[MCP-TIMING] Transport created in ${(performance.now() - t0).toFixed(1)}ms`,
-        );
 
         res.on("close", () => {
           transport.close();
@@ -44,14 +40,9 @@ export class mcpServerRouter {
           );
         });
 
-        const t1 = performance.now();
         await server.connect(transport);
-        console.log(
-          `[MCP-TIMING] server.connect() in ${(performance.now() - t1).toFixed(1)}ms`,
-        );
 
-        // Auto-initialize for non-initialize requests (e.g., direct tools/call
-        // from static client). Trex is stateless — each request is a fresh process,
+        // Auto-initialize for non-initialize requests (e.g., direct tools/call from static client). Trex is stateless — each request is a fresh process,
         // so the SDK transport is never pre-initialized.
         if (method !== "initialize") {
           const noOp: any = {

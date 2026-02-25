@@ -65,18 +65,11 @@ export const getChatResponse = async (req: any) => {
   }
 
   try {
-    const chatStart = performance.now();
-
-    const t0 = performance.now();
     const tools = createStaticMcpTools(token, datasetId);
-    console.log(`[MCP-TIMING] [code-suggestion] createStaticMcpTools in ${(performance.now() - t0).toFixed(1)}ms tools=${tools.length}`);
-
-    const t2 = performance.now();
     const agent = createAgent({
       model: model,
       tools: tools,
     });
-    console.log(`[MCP-TIMING] [code-suggestion] createAgent in ${(performance.now() - t2).toFixed(1)}ms`);
 
     // prompt parameter in createAgent doesn't work as expected - the system message needs to be in the messages array
     const messages = [
@@ -89,10 +82,11 @@ export const getChatResponse = async (req: any) => {
       const t3 = performance.now();
       const stream = await agent.stream(
         { messages: messages },
-        { streamMode: "messages" }
+        { streamMode: "messages" },
       );
-      console.log(`[MCP-TIMING] [code-suggestion] agent.stream() initiated in ${(performance.now() - t3).toFixed(1)}ms`);
-      console.log(`[MCP-TIMING] [code-suggestion] getChatResponse setup total=${(performance.now() - chatStart).toFixed(1)}ms`);
+      console.log(
+        `[MCP-TIMING] [code-suggestion] agent.stream() initiated in ${(performance.now() - t3).toFixed(1)}ms`,
+      );
       return stream;
     } else {
       console.log("Agent not available, using direct model invocation.");
@@ -100,7 +94,6 @@ export const getChatResponse = async (req: any) => {
       const outputParser = new StringOutputParser();
       const streamingChain = model.pipe(outputParser);
       const stream = await streamingChain.stream(messages);
-      console.log(`[MCP-TIMING] [code-suggestion] fallback stream setup total=${(performance.now() - chatStart).toFixed(1)}ms`);
       return stream;
     }
   } catch (error) {

@@ -55,8 +55,6 @@ export class CodeSuggestionRouter {
             metadata.langgraph_node === "model_request" &&
             token.contentBlocks?.[0]?.text
           ) {
-            console.log("Sending token:", token.contentBlocks[0].text);
-            console.log("With metadata:", metadata);
             res.write(token.contentBlocks[0].text);
           }
         }

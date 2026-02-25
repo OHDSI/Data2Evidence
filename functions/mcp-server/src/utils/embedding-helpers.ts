@@ -1,8 +1,3 @@
-/**
- * Embedding utilities for semantic search
- * Uses Supabase.ai GTE-small model (requires Supabase/Trex runtime)
- */
-
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,22 +23,15 @@ export interface PhenotypeWithEmbedding extends PhenotypeData {
   embedding?: number[];
 }
 
-/**
- * Initialize embeddings: load from cache or auto-generate if missing
- * @param autoGenerate - If true, generates embeddings if cache doesn't exist
- * @returns true if embeddings are available, false otherwise
- */
 export async function initializeEmbeddings(
   autoGenerate: boolean = true,
 ): Promise<boolean> {
   // Check if cache exists
   if (existsSync(PHENOTYPE_EMBEDDINGS_CACHE)) {
-    console.log("Embedding cache found, using cached embeddings");
     return true;
   }
 
   if (!autoGenerate) {
-    console.log("Embedding cache not found and auto-generation disabled");
     return false;
   }
 
@@ -89,12 +77,6 @@ export function loadEmbeddingCache(): PhenotypeWithEmbedding[] | null {
   }
 }
 
-/**
- * Calculate cosine similarity between two vectors
- * @param a - First vector
- * @param b - Second vector
- * @returns Similarity score between 0 and 1 (1 = identical, 0 = orthogonal)
- */
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
     throw new Error("Vectors must have same length");
@@ -146,10 +128,6 @@ export async function semanticSearch(
 // Batch Embedding Generation (for use in Supabase/Trex runtime only)
 // ============================================================================
 
-/**
- * Generate embeddings for all phenotypes from CSV file
- * NOTE: Must run in Supabase/Trex environment (requires Supabase.ai global)
- */
 export async function generateEmbeddingsFromCSV(
   csvPath: string,
   outputPath: string,
@@ -171,10 +149,6 @@ export async function generateEmbeddingsFromCSV(
   console.log(`Loaded ${phenotypes.length} phenotypes from CSV`);
 
   // Generate embeddings in batches
-  console.log(
-    `Generating embeddings for ${phenotypes.length} phenotypes (estimated 2-5 minutes)...`,
-  );
-
   const withEmbeddings: PhenotypeWithEmbedding[] = [];
   const batchSize = 10;
   const totalBatches = Math.ceil(phenotypes.length / batchSize);
@@ -227,5 +201,4 @@ export async function generateEmbeddingsFromCSV(
   if (failCount > 0) {
     console.warn(`Failed to generate ${failCount} embeddings`);
   }
-  console.log("\nEmbedding generation complete.");
 }
