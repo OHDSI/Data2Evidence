@@ -3,7 +3,7 @@
   "appport": "41100",
   "sysappport": "41100",
   "dbhost": "${HANASERVER}",
-  "dbport": "${HDIPORT}",
+  "dbport": "${HDIPORT}",  
   "database": "${DATABASE}",
   "instance_no": 90,
   "system_user": "${HDIUSER}",

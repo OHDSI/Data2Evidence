@@ -7,13 +7,12 @@
 /* eslint-env node */
 /* global __dirname */
 'use strict'
-var pgConnLib = require('./pg-connection-lib.js')
-const { PGConn } = pgConnLib
+
 var TestEnvironment = require('./hdb_testenvironment')
 var HostConfig = require('./host_config')
+var dbConnectionUtil = require('./db-connection-util')
 var utils = require('./utils')
 
-var hdb = require('hdb')
 var async = require('async')
 
 /**
@@ -26,9 +25,9 @@ var async = require('async')
 function DbSetupManager(sEnvironmentPath, configName) {
   var oHostConfig = new HostConfig(sEnvironmentPath)
   // Set up database connection
-  this.pgConn = PGConn.createPGConn(oHostConfig.getPGSystemCredentials())
+  this.dbConnection = dbConnectionUtil.createDBConnection(oHostConfig.getSystemCredentials())
   this.log = utils.getLogger(oHostConfig.getLogStatus(), 'In db_setup_manager: ')
-  this.testEnvironment = new TestEnvironment(this.pgConn, oHostConfig.getTestSchemaName(), false)
+  this.testEnvironment = new TestEnvironment(this.dbConnection, oHostConfig.getTestSchemaName(), false)
   this.mriAssignmentId = null
   this.patientAssignmentId = null
   this.creationConfigName = oHostConfig.getCreationConfigName(configName)
@@ -47,18 +46,21 @@ DbSetupManager.prototype.getTestSchemaName = function () {
 
 /**
  * Clear the test schema.
+ *
+ * @param {Function} cb - callback
  */
-DbSetupManager.prototype.clearTestSchema = async () => {
-  await this.testEnvironment.clearSchema()
+DbSetupManager.prototype.clearTestSchema = function (cb) {
+  this.testEnvironment.clearSchema(cb)
 }
 
 /**
  * Set up the internal test environment.
  *
  * @param {String} testSchemaName - name of test schema
+ * @param {Function} cb - callback
  */
-DbSetupManager.prototype.setUpTestEnvironment = async () => {
-  await this.testEnvironment.envSetup()
+DbSetupManager.prototype.setUpTestEnvironment = function (testSchemaName, cb) {
+  this.testEnvironment.envSetup(cb)
 }
 
 /**
@@ -67,17 +69,34 @@ DbSetupManager.prototype.setUpTestEnvironment = async () => {
 * Create an organisation
 *
 * @param {String} org - name of the organisation
+* @param {Function} cb - callback
 */
-DbSetupManager.prototype.createOrg = async org => {
-  await this.testEnvironment.insertIntoTable('legacy.cdw.db.models::Config.Org', {
-    OrgID: org,
-    ValidFrom: '1950-01-02T00:00:00.000Z'
-  })
-  await this.testEnvironment.insertIntoTable('legacy.cdw.db.models::Config.OrgAncestors', {
-    OrgID: org,
-    AncestorOrgID: org,
-    Distance: 0
-  })
+DbSetupManager.prototype.createOrg = function (org, cb) {
+  var that = this
+  function createOrg(callback) {
+    that.testEnvironment.insertIntoTable(
+      'legacy.cdw.db.models::Config.Org',
+      {
+        OrgID: org,
+        ValidFrom: '1950-01-02T00:00:00.000Z'
+      },
+      callback
+    )
+  }
+  function createOrgAncestor(callback) {
+    that.testEnvironment.insertIntoTable(
+      'legacy.cdw.db.models::Config.OrgAncestors',
+      {
+        OrgID: org,
+        AncestorOrgID: org,
+        Distance: 0
+      },
+      callback
+    )
+  }
+
+  // Do the actual work here
+  async.series([createOrg, createOrgAncestor], cb)
 }
 
 /**
@@ -85,43 +104,60 @@ DbSetupManager.prototype.createOrg = async org => {
  *
  * @param {String} user - name of the user
  * @param {String} org - name of the organisation
+ * @param {Function} cb - callback
  */
-DbSetupManager.prototype.assignUserToOrg = async (user, org) => {
-  await this.testEnvironment.insertIntoTable('legacy.cdw.db.models::Config.UserOrgMapping', {
-    OrgID: org,
-    UserName: user
-  })
+DbSetupManager.prototype.assignUserToOrg = function (user, org, cb) {
+  this.testEnvironment.insertIntoTable(
+    'legacy.cdw.db.models::Config.UserOrgMapping',
+    {
+      OrgID: org,
+      UserName: user
+    },
+    cb
+  )
 }
 
 /**
  * Do a complete teardown of the test DB setup.
  *
+ * @param {Function} callback - callback
  */
-DbSetupManager.prototype.teardownDb = async () => {
+DbSetupManager.prototype.teardownDb = function (callback) {
   // Define async tasks to be carried out
-  this.log('Revoking test schema access rights')
-  await this.testEnvironment.revokeUserTestSchemaRights(that.technicalUserName)
-
-  this.log('Tearing down test environment')
-  await this.testEnvironment.envTeardown()
-
+  var that = this
+  var revokeAccessRightsTask = function (cb) {
+    that.log('Revoking test schema access rights')
+    that.testEnvironment.revokeUserTestSchemaRights(that.technicalUserName, cb)
+  }
+  var tearDownTestEnvTask = function (cb) {
+    that.log('Tearing down test environment')
+    that.testEnvironment.envTeardown(cb)
+  }
   // This will be called when all the async tasks are completed
+  var stopHdbClientCallback = function (err) {
+    console.log(`stopHdbClientCallback: ${err}`)
 
-  await this.releasePGClient()
+    that.stopHdbClient()
+    callback(err)
+  }
+  // Do the actual work here
+  async.series([revokeAccessRightsTask, tearDownTestEnvTask], stopHdbClientCallback)
 }
 
 /**
  * Truncate all the tables from the schema
+ *
+ * @param {Function} callback - callback
  */
-DbSetupManager.prototype.truncateTestSchema = async () => {
-  await this.testEnvironment.truncateSchema()
+DbSetupManager.prototype.truncateTestSchema = function (callback) {
+  this.testEnvironment.truncateSchema(callback)
 }
 
 /**
- * Release the PG client to the coonection pool.
+ * Shut down the HDB client.
  */
-DbSetupManager.prototype.releasePGClient = async () => {
-  await this.pgConn.releaseClient()
+DbSetupManager.prototype.stopHdbClient = function () {
+  this.hdbClient.end()
 }
 
 module.exports = DbSetupManager

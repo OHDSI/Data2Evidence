@@ -46,11 +46,11 @@ BackendUplink._areNonEmptyGlobalSettings = function (globalSettings) {
  * 2: Take the returned settings and define a new setting JSON which is the same but with all schemas flipped to the test schema
  * 3. Call /hc/hph/config/services/global.xsjs with {action: 'setGlobalSettings', settings: [settings object]}
  */
-BackendUplink.prototype.redirectQueriesToTestSchema = async function (schemaName) {
+BackendUplink.prototype.redirectQueriesToTestSchema = function (schemaName, cb) {
   var that = this
 
   // Retrieve stored settings
-  async function getCurrentSettingsTask() {
+  function getCurrentSettingsTask(callback) {
     var retrieveQuery = {
       method: 'POST',
       path: '/hc/hph/config/services/global.xsjs',
@@ -61,19 +61,19 @@ BackendUplink.prototype.redirectQueriesToTestSchema = async function (schemaName
       }
     }
     that.log('Retriving stored global configuration')
-    try {
-      const res = await that.hanaRequest.request(retrieveQuery)
-      if (res.response.statusCode !== 200) {
-        return new Error('Failed to retrieve global settings!\nBody:\n' + JSON.stringify(res.data))
+    that.hanaRequest.request(retrieveQuery, function (err, response, body) {
+      if (err) {
+        return callback(err)
       }
-      return res.data
-    } catch (err) {
-      return err
-    }
+      if (response.statusCode !== 200) {
+        return callback(new Error('Failed to retrieve global settings!\nBody:\n' + JSON.stringify(body)))
+      }
+      return callback(null, body)
+    })
   }
 
   // Load the default if the current setting don't look correct
-  async function getDefaultSettingIfNeededTask(body) {
+  function getDefaultSettingIfNeededTask(body, callback) {
     if (BackendUplink._areNonEmptyGlobalSettings(body)) {
       that.log('Found stored global settings')
       return process.nextTick(callback, null, body)
@@ -87,20 +87,19 @@ BackendUplink.prototype.redirectQueriesToTestSchema = async function (schemaName
           authorization: process.env.BEARER_TOKEN
         }
       }
-      try {
-        const res = await that.hanaRequest.request(retrieveDefaultQuery)
-        if (res.response.statusCode !== 200) {
-          return new Error('Failed to retrieve default global settings!\nBody:\n' + res.data)
+      that.hanaRequest.request(retrieveDefaultQuery, function (err, response, body2) {
+        if (err) {
+          return callback(err)
+        } else if (response.statusCode !== 200) {
+          return callback(new Error('Failed to retrieve default global settings!\nBody:\n' + body2))
         }
-        return res.data
-      } catch (err) {
-        return err
-      }
+        return callback(null, body2)
+      })
     }
   }
 
   // Store the current settings and activate the test settings
-  async function activateTestSettings(baseSettings) {
+  function activateTestSettings(baseSettings, callback) {
     that.previousGlobalSettings = JSON.parse(JSON.stringify(baseSettings))
     // Generate new (independent!) settings which redirect to test schema everywhere
     var newGlobalSettings = that._replaceSchemaName(baseSettings, schemaName)
@@ -116,26 +115,25 @@ BackendUplink.prototype.redirectQueriesToTestSchema = async function (schemaName
       }
     }
     that.log('Activating modified global settings')
-    try {
-      const res = await that.hanaRequest.request(setQuery)
-      if (res.response.statusCode !== 200) {
-        return 
+    that.hanaRequest.request(setQuery, function (err, response, body) {
+      if (err) {
+        return callback(err)
+      }
+      if (response.statusCode !== 200) {
+        return callback(
           new Error(
             'redirectQueriesToTestSchema - Failed to set global settings! Response code: ' +
               response.statusCode +
               '\nBody:\n' +
-              JSON.stringify(res.data)
+              JSON.stringify(body)
           )
+        )
       }
-      return null
-    } catch (err) {
-      return err
-    }
+      return callback(err)
+    })
   }
 
-  const body = await getCurrentSettingsTask()
-  const baseSettings = await getDefaultSettingIfNeededTask(body)
-  return await activateTestSettings(baseSettings)
+  async.waterfall([getCurrentSettingsTask, getDefaultSettingIfNeededTask, activateTestSettings], cb)
 }
 
 /*
@@ -164,7 +162,7 @@ BackendUplink.prototype._replaceSchemaName = function (previousGlobalSettings, s
 /*
  * Restore old schema settings, if available, otherwise reset to default values.
  */
-BackendUplink.prototype.redirectQueriesBackToStandardSchema = async function () {
+BackendUplink.prototype.redirectQueriesBackToStandardSchema = function (cb) {
   var oldGlobalSettings = this.previousGlobalSettings
   oldGlobalSettings.configId = 'GlobalSettings'
   delete oldGlobalSettings.others
@@ -182,28 +180,29 @@ BackendUplink.prototype.redirectQueriesBackToStandardSchema = async function () 
     }
   }
   this.log('Reverting global settings to state before tests')
-  try {
-    const res = await this.hanaRequest.request(setQuery)
-    if (res.response.statusCode !== 200) {
-      return 
+  this.hanaRequest.request(setQuery, function (err, response, body) {
+    if (err) {
+      return cb(err)
+    }
+    if (response.statusCode !== 200) {
+      return cb(
         new Error(
           'redirectQueriesBackToStandardSchema - Failed to set global settings! Response code: ' +
             response.statusCode +
             '\nBody:\n' +
-            JSON.stringify(res.data)
+            JSON.stringify(body)
         )
+      )
     }
     that.previousGlobalSettings = null
-    return null
-  } catch (err) { 
-    return err
-  }
+    return cb(err)
+  })
 }
 
 /*
  * Add a new CDW configuration.
  */
-BackendUplink.prototype.addCdwConfiguration = async function (config, configId, configName) {
+BackendUplink.prototype.addCdwConfiguration = function (config, configId, configName, cb) {
   var reqBody = {
     action: 'activate',
     configVersion: '1',
@@ -223,13 +222,14 @@ BackendUplink.prototype.addCdwConfiguration = async function (config, configId, 
 
   this.log('Storing and activating test CDW configuration')
   var that = this
-    try {
-    const res = await this.hanaRequest.request(setQuery)
-
-    if (res.response.statusCode !== 200) {
-      that.log('Non-200 reponse!', res.data)
-      return new Error('Failed to activate CDW configuration!')
-    } else if (res.data) {
+  this.hanaRequest.request(setQuery, function (err, response, body) {
+    if (err) {
+      return cb(err)
+    }
+    if (response.statusCode !== 200) {
+      that.log('Non-200 reponse!', body)
+      return cb(new Error('Failed to activate CDW configuration!'))
+    } else if (body) {
       var fnPrintError = function (errors) {
         if (typeof errors === 'undefined') {
           return false
@@ -239,24 +239,22 @@ BackendUplink.prototype.addCdwConfiguration = async function (config, configId, 
         })
         return errors.length > 0
       }
-      console.log(JSON.stringify(res.data.validationResult))
+      console.log(JSON.stringify(body.validationResult))
       if (
-        fnPrintError(res.data.validationResult.cdmConfigValidationResult.errors) ||
-        fnPrintError(res.data.validationResult.advancedConfigValidationResult.errors)
+        fnPrintError(body.validationResult.cdmConfigValidationResult.errors) ||
+        fnPrintError(body.validationResult.advancedConfigValidationResult.errors)
       ) {
-        return new Error('Failed to activate CDW configuration!')
+        return cb(new Error('Failed to activate CDW configuration!'))
       }
     }
-    return null
-  } catch (err) {
-    return err
-  }
+    cb(err)
+  })
 }
 
 /*
  * Remove a CDW configuration.
  */
-BackendUplink.prototype.removeCdwConfiguration = async function (configId) {
+BackendUplink.prototype.removeCdwConfiguration = function (configId, cb) {
   var reqBody = {
     action: 'delete',
     configId: configId
@@ -272,22 +270,22 @@ BackendUplink.prototype.removeCdwConfiguration = async function (configId) {
   }
   this.log('Removing test CDW configuration')
   var that = this
-  try {
-    const res = await this.hanaRequest.request(setQuery)
-    if (res.response.statusCode !== 200) {
-      that.log('Non-200 reponse!', body)
-      return new Error('Failed to delete CDW configuration!')
+  this.hanaRequest.request(setQuery, function (err, response, body) {
+    if (err) {
+      return cb(err)
     }
-    return null
-  } catch (err) {
-    return err
-  }
+    if (response.statusCode !== 200) {
+      that.log('Non-200 reponse!', body)
+      return cb(new Error('Failed to delete CDW configuration!'))
+    }
+    cb(err)
+  })
 }
 
 /*
  * Add a new MRI configuration.
  */
-BackendUplink.prototype.addMriConfiguration = async function (mriConfig, mriConfigId, configName, cdwConfigId) {
+BackendUplink.prototype.addMriConfiguration = function (mriConfig, mriConfigId, configName, cdwConfigId, cb) {
   var reqBody = {
     action: 'activate',
     config: mriConfig,
@@ -309,24 +307,24 @@ BackendUplink.prototype.addMriConfiguration = async function (mriConfig, mriConf
   }
   this.log('Storing and activating test MRI configuration')
   var that = this
-  try {
-    const res = await this.hanaRequest.request(setQuery)
-    if (res.response.statusCode !== 200) {
-      that.log('Non-200 reponse!', res.data)
-      return new Error('Failed to activate MRI configuration!')
-    } else if (res.data && res.data.errors && Array.isArray(res.data.errors) && res.data.errors.length !== 0) {
+  this.hanaRequest.request(setQuery, function (err, response, body) {
+    if (err) {
+      return cb(err)
+    }
+    if (response.statusCode !== 200) {
+      that.log('Non-200 reponse!', body)
+      return cb(new Error('Failed to activate MRI configuration!'))
+    } else if (body && body.errors && Array.isArray(body.errors) && body.errors.length !== 0) {
       that.log('MRI Config validation failed!')
     }
-    return null
-  } catch (err) {
-    return err
-  }
+    cb(err)
+  })
 }
 
 /*
  * Remove an MRI configuration.
  */
-BackendUplink.prototype.removeMriConfiguration = async function (configId) {
+BackendUplink.prototype.removeMriConfiguration = function (configId, cb) {
   var reqBody = {
     action: 'delete',
     configId: configId,
@@ -343,27 +341,27 @@ BackendUplink.prototype.removeMriConfiguration = async function (configId) {
   }
   this.log('Removing test MRI configuration')
   var that = this
-  try {
-    const res = await this.hanaRequest.request(setQuery)
-
-    if (res.response.statusCode !== 200) {
-      that.log('Non-200 reponse!', res.data)
-      return new Error('Failed to delete MRI configuration!')
+  this.hanaRequest.request(setQuery, function (err, response, body) {
+    if (err) {
+      return cb(err)
     }
-    return null
-  } catch (err) {
-    return err
-  }
+    if (response.statusCode !== 200) {
+      that.log('Non-200 reponse!', body)
+      return cb(new Error('Failed to delete MRI configuration!'))
+    }
+    cb(err)
+  })
 }
 
 /*
  * Add a new Patient Summary configuration.
  */
-BackendUplink.prototype.addPatientConfiguration = async function (
+BackendUplink.prototype.addPatientConfiguration = function (
   patientConfig,
   patientConfigId,
   configName,
-  cdwConfigId
+  cdwConfigId,
+  cb
 ) {
   var reqBody = {
     action: 'activate',
@@ -385,24 +383,21 @@ BackendUplink.prototype.addPatientConfiguration = async function (
   }
   this.log('Storing and activating test Patient Summary configuration')
   var that = this
-  try {
-    const res = await this.hanaRequest.request(setQuery)
-    if (res.response.statusCode !== 200) {
-      that.log('Non-200 reponse!', res.data)
-      return new Error('Failed to activate Patient Summary configuration!')
-    } else if (res.data && res.data.errors && Array.isArray(res.data.errors) && res.data.errors.length !== 0) {
+  this.hanaRequest.request(setQuery, function (err, response, body) {
+    if (response.statusCode !== 200) {
+      that.log('Non-200 reponse!', body)
+      return cb(new Error('Failed to activate Patient Summary configuration!'))
+    } else if (body && body.errors && Array.isArray(body.errors) && body.errors.length !== 0) {
       that.log('Patient Summary Config validation failed!')
     }
-    return null
-  } catch (err) {
-    return err
-  }
+    cb(err)
+  })
 }
 
 /*
  * Remove an Patient Summary configuration.
  */
-BackendUplink.prototype.removePatientConfiguration = async function (configId) {
+BackendUplink.prototype.removePatientConfiguration = function (configId, cb) {
   var reqBody = {
     action: 'delete',
     configId: configId,
@@ -418,16 +413,13 @@ BackendUplink.prototype.removePatientConfiguration = async function (configId) {
   }
   this.log('Removing test Patient Summary configuration')
   var that = this
-  try {
-    const res = await his.hanaRequest.request(setQuery)
-    if (res.response.statusCode !== 200) {
-      that.log('Non-200 reponse!', res.data)
-      return new Error('Failed to delete Patient Summary configuration!')
+  this.hanaRequest.request(setQuery, function (err, response, body) {
+    if (response.statusCode !== 200) {
+      that.log('Non-200 reponse!', body)
+      return cb(new Error('Failed to delete Patient Summary configuration!'))
     }
-    return null
-  } catch (err) {
-    return err
-  }
+    cb(err)
+  })
 }
 
 module.exports = BackendUplink

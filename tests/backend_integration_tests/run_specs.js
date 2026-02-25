@@ -221,6 +221,7 @@ function exitCallback(err, failures, logger) {
  * @param {String[]} cmdLineArgs - passed commandline args (e.g. process.argv.slice(2))
  */
 function runSpecs(cmdLineArgs) {
+  console.log(`DB_DIALECT: ${process.env.DB_DIALECT}`)
   var testDir = path.join(__dirname, '/specs')
   var defaultConfig = getDefaultConfig(testDir, 'environment.json')
   var mergedConfig = mergeArguments(defaultConfig, cmdLineArgs)

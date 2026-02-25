@@ -259,12 +259,14 @@ PatientBuilder.prototype.buildJsonArray = function () {
  * Persist the patient in the current patient set.
  *
  * @param {Object} patientCreator - patient creator object
+ * @param {function} callback - callback
  */
-PatientBuilder.prototype.persistAll = async function (patientCreator) {
+PatientBuilder.prototype.persistAll = function (patientCreator, callback) {
   var patientJsonArray = this.buildJsonArray()
-  for (const patientJson of patientJsonArray) {
-    await patientCreator.addPatient(patientJson, null)  
+  var addPatientWithNoCondId = function (patientJson, cb) {
+    patientCreator.addPatient(patientJson, null, cb)
   }
+  async.map(patientJsonArray, addPatientWithNoCondId, callback)
 }
 
 module.exports = PatientBuilder

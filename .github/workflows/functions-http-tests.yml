@@ -1,4 +1,4 @@
-name: d2e-functions/pa Run HTTP tests
+name: HTTP Tests HANA
 permissions:
   contents: read
 
@@ -10,10 +10,6 @@ on:
     branches:
       - develop
   workflow_dispatch:
-
-env:
-  VERSION: develop
-  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
 
 jobs:
   pick_runner:
@@ -54,6 +50,7 @@ jobs:
               - ".github/workflows/functions-http-tests.yml"
               - "package.json"
               - "docker-compose.yml"
+              - "scripts/**"
 
   run-http-tests:
     needs: [pick_runner, check_file_changes]
@@ -64,23 +61,19 @@ jobs:
       TESTSCHEMA: HTTP_${{github.run_id}}
       isTestEnv: "true"
       isHttpTestRun: "true"
-      # HANASERVER: localhost # az-hn-db/SG_FQDN
-      # HANASERVER_INT: hana
-      # HDIPORT: 39041 # az-hn-db/DB Port
-      # HDIPW: TestPW1234 # az-hn-db/Admin password
-      # HDIUSER: SYSTEM # az-hn-db/Admin user
+      HANASERVER: localhost # az-hn-db/SG_FQDN
+      HANASERVER_INT: hana
+      HDIPORT: 39041 # az-hn-db/DB Port
+      HDIPW: TestPW1234 # az-hn-db/Admin password
+      HDIUSER: SYSTEM # az-hn-db/Admin user
       TESTPORT: 39041 # az-hn-db/DB Port
       TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
-      PROJECT_NAME: d2e
+      PROJECT_NAME: alp
       CADDY__CONFIG: ./deploy/caddy-config
       ENV_TYPE: local
       DOTENV_FILE: .env.local
       D2E_RESOURCE_LIMIT: 1.0
-      PGUSER: postgres
-      PGPASSWORD: mypass
-      PGHOST: localhost
-      PGPORT: 5432
-      PGDATABASE: postgres
+      DB_DIALECT: HDB
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -103,6 +96,18 @@ jobs:
         with:
           submodules: recursive
           clean: false
+
+      - name: Print env vars
+        run: |
+          echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
+          echo "HDIPORT: ${HDIPORT}"
+          echo "HDIPW: ${HDIPW}"
+          echo "HDIUSER: ${HDIUSER}"
+          echo "HANASERVER: ${HANASERVER}"
+          echo "isHttpTestRun: ${isHttpTestRun}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+          echo "DB_DIALECT: ${DB_DIALECT}"
 
       - uses: actions/setup-node@v4
         with:
@@ -130,12 +135,9 @@ jobs:
           sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
           sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
           grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+          echo >> $DOTENV_FILE
           echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
-          echo "USE_DUCKDB=false" >> $DOTENV_FILE
-          echo "USE_CACHEDB=false" >> $DOTENV_FILE
           echo "NODE_ENV=production" >> $DOTENV_FILE
-          USE_TREX_DB_CONN=true
-          NODE_ENV=production
 
       - name: Build system services
         run: |
@@ -144,7 +146,6 @@ jobs:
       - name: Manipulate configuration
         run: |
           yq -i '.networks.alp.external=true' docker-compose.yml
-          # as not required for http tests omit cachedb to limit memory requirements
           yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
 
       - name: Create network for external to use
@@ -154,46 +155,20 @@ jobs:
       - name: Start system services
         run: |
           node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
-          echo "Waiting 120 secs for services to start..."
-          sleep 120
-          
-      - name: Setupdemo
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: setupdemo
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 1
-          retry_on: any
-          command: |
-            cp .env.local .env
-            ls -al
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config ./scripts/cli.sh -e -v ${{ env.VERSION }}  -d ./functions setupdemo
-            DC_EXIT_CODE=$?
-            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
-            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+          echo "Waiting 160 secs for services to start..."
+          sleep 160
+          echo "Trex Health check..."
+          curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
+
 
       - name: Check status of docker containers
         run: |
           docker ps -a
 
-      # - name: Print alp-trex container env vars
-      #   run: |
-      #     docker exec alp-trex printenv
-
-      # - name: Print alp-minerva-postgres-1 container env vars
-      #   run: |
-      #     docker exec alp-minerva-postgres-1 printenv
-
-      - name: Print DEMO__DB_USER & DEMO__DB_PASSWORD
+      - name: Setup Test DB
         run: |
-          sudo apt install -y jq
-          USERNAME=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
-          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
-          echo "DEMO__DB_USER: $USERNAME"
-          echo "DEMO__DB_PASSWORD: $PGPASSWORD"
+          yarn --prefer-offline
+          yarn inittestdb
 
       - name: Login to logto and get Bearer token and sub
         run: |
@@ -340,62 +315,13 @@ jobs:
               --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
 
 
-      # - name: Seed dummy dataset
-      #   run: |
-      #     docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect) VALUES
-      #     ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana') ON CONFLICT DO NOTHING"
-
-      #     docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
-      #     ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
-
-      #     curl -ik 'https://localhost:41100/usermgmt/api/user-group/register-study-roles' \
-      #         -H 'accept: application/json, text/plain, */*' \
-      #         -H "authorization: Bearer $BEARER_TOKEN" \
-      #         -H 'content-type: application/json' \
-      #         -H 'origin: https://localhost:41100' \
-      #         -H 'referer: https://localhost:41100/portal/systemadmin/dataset-overview' \
-      #         --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
-
-      - name: Print alp-trex env vars
+      - name: Seed dummy dataset
         run: |
-          echo "$(docker exec alp-trex printenv)"
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
           ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
 
-      - name: Print alp-demodb env vars
-        run: |
-          echo "$(docker exec alp-demodb printenv)"
-      - name: Print env vars
-        run: |
-          sudo apt install -y jq
-          USERNAME=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
-          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
-          echo "DEMO__DB_USER: $USERNAME"
-          echo "DEMO__DB_PASSWORD: $PGPASSWORD"
-          echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
-          echo "PGPORT: ${PGPORT}"
-          echo "PGPASSWORD: ${PGPASSWORD}"
-          echo "PGUSER: ${PGUSER}"
-          echo "PGHOST: ${PGHOST}"
-          echo "PGDATABASE: ${PGDATABASE}"
-          echo "isHttpTestRun: ${isHttpTestRun}"
-          echo "isTestEnv: ${isTestEnv:-false}"
-          echo "TESTSCHEMA: ${TESTSCHEMA}"
-          echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
-          
-      - name: Check PG DB connection
-        run: |
-          sudo apt install -y jq
-          PGUSER=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_USER')
-          PGPASSWORD=$(echo $(docker exec alp-trex printenv SERVICE_ENV) | jq -r '.demo' | jq -r '.DEMO__DB_PASSWORD')
-          echo "PGPORT: ${PGPORT}"
-          echo "PGPASSWORD: ${PGPASSWORD}"
-          echo "PGUSER: ${PGUSER}"
-          echo "PGHOST: ${PGHOST}"
-          echo "PGDATABASE: ${PGDATABASE}"
-          sudo apt install -y postgresql-client
-          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
-          psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
+          ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
 
       # Restart is required for alp-trex container after seeding database credentials into the db table
       - name: Restart alp-trex service
@@ -464,6 +390,10 @@ jobs:
         if: ${{ always() || cancelled() || failure() }}
         run: |
           docker logs alp-logto-post-init-1 -t
+      - name: print logs for hana
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs hana -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}

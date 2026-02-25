@@ -32,12 +32,12 @@ var insertPholderTableMap = {
  *
  * @constructor
  * @param {string} schemaName - name of schema to write to
- * @param {Client} hdbClient - a HDB client to the DB
+ * @param {DBConnection} dbConnection - a db connection
  * @param {Object} config - JSON object giving the data configuration
  */
-function PatientCreator(schemaName, pgConn, config) {
+function PatientCreator(schemaName, dbConnection, config) {
   this.schemaName = schemaName
-  this.pgConn = pgConn
+  this.dbConnection = dbConnection
   this.config = config
 }
 
@@ -60,54 +60,65 @@ PatientCreator.getValue = function (infoValue, requestValue) {
  *
  * This was pulled out of the constructor to avoid have an asynchronous
  * constructor.
+ *
+ * @param {Function} cb - callback
  */
-PatientCreator.prototype.init = async function () {
-  this.tables = await this.getTables(this.schemaName)
+PatientCreator.prototype.init = function (cb) {
+  this.getTables(this.schemaName, function (err, tables) {
+    if (err) {
+      return process.nextTick(cb, err)
+    }
+    this.tables = tables
+    cb()
+  })
 }
 
 /**
  * Retrieve information about tables in a given schema.
  *
  * @param {String} schemaName - name of schema
+ * @param {Function} cb - callback
  */
-PatientCreator.prototype.getTables = async function (schemaName) {
-  column_name, data_type, ordinal_position
-  var sqlCommand = `SELECT table_name, column_name, udt_name, ordinal_position
-    FROM information_schema.columns
-    WHERE table_schema = '${schemaName}'
-    GROUP BY table_name, column_name, udt_name, ordinal_position`
-  // var dataTypeMap = {
-  //   NVARCHAR: 'character varying',
-  //   TEXT: 'text',
-  //   DATE: 'time',
-  //   TIMESTAMP: 'time',
-  //   SECONDDATE: 'time',
-  //   DECIMAL: 'num',
-  //   INTEGER: 'num',
-  //   BIGINT: 'num',
-  //   VARBINARY: 'binary'
-  // }
-  const rows = await this.pgConn.executeSqlCommand(sqlCommand)
-
-  var result = {}
-  var tableName
-  var columnName
-  var dataType
-  var position
-  rows.forEach((row) => {
-    tableName = row.table_name
-    columnName = row.column_name
-    dataType = row.udt_name
-    position = row.ordinal_position
-    if (!(tableName in result)) {
-      result[tableName] = {}
+PatientCreator.prototype.getTables = function (schemaName, cb) {
+  var sqlCommand = `SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE_NAME, POSITION
+        FROM TABLE_COLUMNS WHERE SCHEMA_NAME='${schemaName}'
+        GROUP BY TABLE_NAME, COLUMN_NAME, DATA_TYPE_NAME, POSITION`
+  var dataTypeMap = {
+    NVARCHAR: 'text',
+    TEXT: 'text',
+    DATE: 'time',
+    TIMESTAMP: 'time',
+    SECONDDATE: 'time',
+    DECIMAL: 'num',
+    INTEGER: 'num',
+    BIGINT: 'num',
+    VARBINARY: 'binary'
+  }
+  var innerCb = function (err, rows) {
+    if (err) {
+      return cb(err)
     }
-    result[tableName][columnName] = {
-      position: position,
-      dataType: dataType
-    }
-  });
-  return result;
+    var result = {}
+    var tableName
+    var columnName
+    var dataType
+    var position
+    rows.forEach(function (row) {
+      tableName = row.TABLE_NAME
+      columnName = row.COLUMN_NAME
+      dataType = row.DATA_TYPE_NAME
+      position = row.POSITION
+      if (!(tableName in result)) {
+        result[tableName] = {}
+      }
+      result[tableName][columnName] = {
+        position: position,
+        dataType: dataTypeMap[dataType]
+      }
+    })
+    cb(null, result)
+  }
+  this.dbConnection.executeSqlCommand(sqlCommand, innerCb)
 }
 
 /**
@@ -147,9 +158,11 @@ PatientCreator.prototype.extractPholderTableFieldValue = function (configExpress
  *
  * @param {String} tableName - name of table to write to
  * @param {Object} jsonData - JSON object holding data to be written
+ * @param {Function} cb - callback
  */
-PatientCreator.prototype.insertIntoTable = async function (tableName, jsonData) {
+PatientCreator.prototype.insertIntoTable = function (tableName, jsonData, cb) {
   if (Object.keys(jsonData).length === 0) {
+    process.nextTick(cb)
     return
   }
   // special cases to avoid not-null errors
@@ -175,25 +188,25 @@ PatientCreator.prototype.insertIntoTable = async function (tableName, jsonData) 
   }
   var stmtParameters = fieldNames.map(getValueForField)
   // Required to handle CamelCase column names
-  // var joinedFieldNames =
-  //   '(' +
-  //   fieldNames
-  //     .map(function (fieldName) {
-  //       return '"' + fieldName + '"'
-  //     })
-  //     .join(', ') +
-  //   ')'
-  // var joinedValuePlaceholders =
-  //   '(' +
-  //   Array.apply(null, Array(fieldNames.length))
-  //     .map(function () {
-  //       return '?'
-  //     })
-  //     .join(',') +
-  //   ')'
-  // var fullTableName = this.schemaName + '."' + tableName + '"'
-  // var sqlCommand = ['INSERT INTO', fullTableName, joinedFieldNames, 'VALUES', joinedValuePlaceholders].join(' ')
-  await this.pgConn.executeSqlStatement(this.schemaName, this.tableName, fieldNames, stmtParameters)
+  var joinedFieldNames =
+    '(' +
+    fieldNames
+      .map(function (fieldName) {
+        return '"' + fieldName + '"'
+      })
+      .join(', ') +
+    ')'
+  var joinedValuePlaceholders =
+    '(' +
+    Array.apply(null, Array(fieldNames.length))
+      .map(function () {
+        return '?'
+      })
+      .join(',') +
+    ')'
+  var fullTableName = this.schemaName + '."' + tableName + '"'
+  var sqlCommand = ['INSERT INTO', fullTableName, joinedFieldNames, 'VALUES', joinedValuePlaceholders].join(' ')
+  this.dbConnection.executeSqlStatement(sqlCommand, stmtParameters, cb)
 }
 
 /**
@@ -209,10 +222,11 @@ PatientCreator.prototype.insertIntoTable = async function (tableName, jsonData) 
  *                               config objects.
  * @param   {String} condId      (optional) A conditionID used for interactions
  *                               under "patient.conditions.acme".
+ * @param {Function} cb - callback
  */
-PatientCreator.prototype.addPatient = async function (patientJson, condId) {
+PatientCreator.prototype.addPatient = function (patientJson, condId, cb) {
   var requestIterator = utils.getRequestIterator(patientJson, this.config)
-  await this.addPatientFromRequestIterator(requestIterator, condId)
+  this.addPatientFromRequestIterator(requestIterator, condId, cb)
 }
 
 /**
@@ -228,8 +242,9 @@ PatientCreator.prototype.addPatient = async function (patientJson, condId) {
                                     config elemements.
 * @param   {String} condId      (optional) A conditionID used for interactions
 *                               under "patient.conditions.acme".
+* @param {Function} cb - callback
 */
-PatientCreator.prototype.addPatientFromRequestIterator = async function (requestIterator, condId) {
+PatientCreator.prototype.addPatientFromRequestIterator = function (requestIterator, condId, cb) {
   var patientId = utils.createDWID()
   // Generate a condition ID if none is passed
   var conditionId = condId || utils.createDWID()
@@ -240,32 +255,62 @@ PatientCreator.prototype.addPatientFromRequestIterator = async function (request
   var that = this
   // --- Async stuff below here.... ---
   // Function for writing observation patient attributes
-  log.debug('Writing patient observations')
-  var obsTable = PatientCreator.insertPholderTableMap['@OBS'][0]
-  for (patientsObsData of patientsObsDataArray) {
-    await that.insertIntoTable(obsTable, patientsObsData)
+  var writePatientObsAttrib = function (cb4) {
+    log.debug('Writing patient observations')
+    var obsTable = PatientCreator.insertPholderTableMap['@OBS'][0]
+    async.each(
+      patientsObsDataArray,
+      function (curObsData, icb4) {
+        that.insertIntoTable(obsTable, curObsData, icb4)
+      },
+      cb4
+    )
   }
-
   // Function for writing normal (non-observation) patient attributes
-  log.debug('Writing patient attributes')
-  var tableList = Object.keys(patientData)
-  for (table of tableList) {
-    await that.insertIntoTable(table, patientData[table])
+  var writePatientAtrib = function (cb3) {
+    log.debug('Writing patient attributes')
+    var tableList = Object.keys(patientData)
+    async.each(
+      tableList,
+      function (table, icb3) {
+        that.insertIntoTable(table, patientData[table], icb3)
+      },
+      cb3
+    )
   }
-
   // Function for writing patient interactions
-  log.debug('Writing patient interactions')
-  var patientInteractions = requestIterator.get('patient.interactions.*.*')
-  for (interaction of patientInteractions) {
-    await that.createInteraction(requestIterator, interaction, patientId, null)
+  var writePatientInteraction = function (cb2) {
+    log.debug('Writing patient interactions')
+    var patientInteractions = requestIterator.get('patient.interactions.*.*')
+    async.each(
+      patientInteractions,
+      function (interaction, icb2) {
+        that.createInteraction(requestIterator, interaction, patientId, null, icb2)
+      },
+      cb2
+    )
   }
-
   // Function for writing condition interactions
-  log.debug('Writing patient condition interactions')
-  var conditionInteractions = requestIterator.get('patient.conditions.*.interactions.*.*')
-  for (interaction of conditionInteractions) {
-    await that.createInteraction(requestIterator, interaction, patientId, conditionId)
+  var writeConditionInteraction = function (cb1) {
+    log.debug('Writing patient condition interactions')
+    var conditionInteractions = requestIterator.get('patient.conditions.*.interactions.*.*')
+    async.each(
+      conditionInteractions,
+      function (interaction, icb1) {
+        that.createInteraction(requestIterator, interaction, patientId, conditionId, icb1)
+      },
+      cb1
+    )
   }
+  // This callback is called when everything is done, passing the patient ID
+  var finalCb = function (err) {
+    cb(err, patientId)
+  }
+  // THIS IS WERE THE ACTUAL WORK HAPPENS
+  async.parallel(
+    [writePatientObsAttrib, writePatientAtrib, writePatientInteraction, writeConditionInteraction],
+    finalCb
+  )
 }
 
 /*
@@ -345,8 +390,9 @@ PatientCreator.prototype._getPatientData = function (patientAttributes, patientI
  *
  * @param {Object} attr - JSON object holding attribute information,
  * @param {String} interactionId - ID of associated interaction
+ * @param {Function} cb - callback
  */
-PatientCreator.prototype.createInteractionAttribute = async function (attr, interactionId) {
+PatientCreator.prototype.createInteractionAttribute = function (attr, interactionId, cb) {
   var that = this
   var attrData = {
     DWID: interactionId,
@@ -364,8 +410,9 @@ PatientCreator.prototype.createInteractionAttribute = async function (attr, inte
       attrData[info.field] = PatientCreator.getValue(info.value, attr.requestValue)
     })
     if (table) {
-      await that.insertIntoTable(table, attrData)
+      that.insertIntoTable(table, attrData, cb)
     } else {
+      process.nextTick(cb)
       return
     }
   }
@@ -378,8 +425,9 @@ PatientCreator.prototype.createInteractionAttribute = async function (attr, inte
  * @param {Object} interaction - JSOn object holding interaction data
  * @param {String} patientId - ID of associated patient
  * @param {String} conditionId - ID of associated condition
+ * @param {Function} cb - callback
  */
-PatientCreator.prototype.createInteraction = async function (requestIterator, interaction, patientId, conditionId) {
+PatientCreator.prototype.createInteraction = function (requestIterator, interaction, patientId, conditionId, cb) {
   var that = this
   var interactionId = utils.createDWID()
   var interactionData = {
@@ -405,30 +453,18 @@ PatientCreator.prototype.createInteraction = async function (requestIterator, in
     interactionData.PeriodEnd = interaction.requestValue._end
   }
   var table = PatientCreator.insertPholderTableMap['@INTERACTION'][0]
-
-  // Get a list of all attributes
-  var attributeList = requestIterator.get(interaction.requestPath + '.attributes.*')
-  for (const attr of attributeList) {
-    that.createInteractionAttribute(attr, interactionId)
+  var innerCb = function () {
+    // Get a list of all attributes
+    var attributeList = requestIterator.get(interaction.requestPath + '.attributes.*')
+    async.each(
+      attributeList,
+      function (attr, someOtherCb) {
+        that.createInteractionAttribute(attr, interactionId, someOtherCb)
+      },
+      cb
+    )
   }
-
-  await this.insertIntoTable(table, interactionData)
+  this.insertIntoTable(table, interactionData, innerCb)
 }
-
-/**
- * Prepare an SQL statement and execute it with the passed paramters.
- *
- * @param {string}
- *            sqlCmd SQL command with value parameterPlaceholders
- * @param {Arrax} parameterArray - array of parameters (in correct order)
- * @param {Function} cb - callback
- */
-// PatientCreator.prototype.executeSqlStatement = function (sqlCmd, parameterArray, cb) {
-//   this.hdbClient.prepare(sqlCmd, function (err, statement) {
-//     statement.exec(parameterArray, function (err, rows) {
-//       cb(err, rows)
-//     })
-//   })
-// }
 
 module.exports = PatientCreator

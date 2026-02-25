@@ -9,6 +9,7 @@
 'user strict'
 
 var fs = require('fs')
+var dbConnectionUtil = require('./db-connection-util')
 const APPROUTER_PORT = 8888
 /**
  * Simple object to hold an access config
@@ -25,19 +26,12 @@ function HostConfig(accessConfigPath) {
 }
 
 /**
- * Get the PD DB SYSTEM login data for the PG connection
+ * Get the HDB SYSTEM login data for the HDB connection
  *
  * @returns {Object} - JSON object with the login details
  */
-HostConfig.prototype.getPGSystemCredentials = function () {
-  var credentials = {}
-  credentials.host = this.dbhost
-  credentials.port = this.dbport
-  credentials.database = this.database
-  credentials.user = this.system_user
-  credentials.password = this.system_password
-
-  return credentials
+HostConfig.prototype.getSystemCredentials = function () {
+  return dbConnectionUtil.getSystemCredentials(this)
 }
 
 /**
