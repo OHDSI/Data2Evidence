@@ -66,6 +66,24 @@ export class PortalServerAPI {
     }
   }
 
+  async createDataset(datasetPayload: any) {
+    try {
+      const url = `${this.baseURL}/dataset`;
+      const options = {
+        ...this.createOptions("POST"),
+        body: JSON.stringify(datasetPayload),
+      };
+      const result = await fetch(url, options);
+      if (!result.ok) {
+        throw new Error(`Error while creating dataset: ${result.status} ${result.statusText}`);
+      }
+      return await result.json();
+    } catch (error) {
+      console.error(`Error while creating dataset: ${error}`);
+      throw error;
+    }
+  }
+
   private createOptions(method: string, token = this.token): RequestInit {
     return {
       method,

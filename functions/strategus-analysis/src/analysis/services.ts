@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { decode, JwtPayload } from "jsonwebtoken";
 import dataSource from "../db/datasource.ts";
+import { PortalServerAPI } from "../strategus-results/api/PortalServerAPI.ts";
 
 export default class StrategusAnalysisService {
 
@@ -43,13 +44,51 @@ export default class StrategusAnalysisService {
                 // throw new Error("Missing required fields: notebookName or mode");
                 throw new Error("Missing required fields: mode");
             }
-            // Create new analysisSpec
+
+            // Create dataset via portal API
+            const portalAPI = new PortalServerAPI(token);
+            const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
+            
+            // Generate random token code for dataset
+            const randomSuffix = Math.random().toString(36).substring(2, 10);
+            const tokenDatasetCode = `strategus_${randomSuffix}`;
+            
+            const datasetId = uuidv4();
+            const datasetPayload = {
+                id: datasetId,
+                type: "study",
+                tokenDatasetCode: tokenDatasetCode,
+                tenantId: decodedToken.tenant_id,
+                schemaOption: "no_cdm",
+                resultsSchemaName: "public",
+                paConfigId: "00000000-0000-0000-0000-000000000000", // Default UUID
+                visibilityStatus: "DEFAULT",
+                detail: {
+                    name: `Strategus Analysis ${studyId}`,
+                    summary: "",
+                    description: "",
+                    showRequestAccess: false
+                },
+                dashboards: [],
+                attributes: [],
+                tags: []
+            };
+
+            try {
+                await portalAPI.createDataset(datasetPayload);
+            } catch (error) {
+                console.error("Error creating dataset:", error);
+                throw new Error(`Failed to create dataset: ${error.message}`);
+            }
+
+            // Create new analysisSpec with datasetId
             const newAnalysis = {
                 id: analysisId,
                 analysisSpec,
                 studyId,
                 mode,
-                notebookName
+                notebookName,
+                datasetId
             };
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(newAnalysis, true));
         }
