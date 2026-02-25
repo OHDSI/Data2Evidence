@@ -13,7 +13,7 @@ interface CreateDatasetInput {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
   dataModel: string;
   visibilityStatus: string;
   detail: {
@@ -39,7 +39,7 @@ interface CopyDatasetInput {
   newDatasetName: string;
   schemaName?: string;
   vocabSchemaName?: string;
-  resultSchemaName?: string;
+  resultsSchemaName?: string;
   timestamp: Date;
   type: string;
   flowParameters?: Record<string, unknown>;
@@ -163,6 +163,27 @@ export class PortalAPI {
     } catch (error) {
       this.logger.error(`Error copying dataset. ${error}`);
       throw new Error("Error copying dataset");
+    }
+  }
+
+  async getDatasetDashboards(datasetId: string) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset/dashboard-codes?datasetId=${datasetId}&type=dashboard`;
+      const result = await this.channel.get(url, options);
+
+      if (result?.status === 404) {
+        return [];
+      }
+
+      return result.data || [];
+    } catch (error) {
+      this.logger.error(
+        `Error while getting dashboards for dataset ${datasetId}: ${error}`,
+      );
+      throw new Error(
+        `Error while getting dashboards for dataset ${datasetId}`,
+      );
     }
   }
 }

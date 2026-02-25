@@ -46,7 +46,8 @@ export const publicURLs = [
     '^/callback$',
     '^/prefect/docs$',
     '^/openapi.json$',
-    '^/fhir-server/healthcheck$'
+    '^/fhir-server/healthcheck$',
+    '^/gateway/api/dataset/shiny-live/.*$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([
@@ -64,6 +65,7 @@ export const env = {
     LOGTO_SCOPE: _env.LOGTO__SCOPE,
     APP_LOCALE: _env.APP_LOCALE,
     IDP_RELYING_PARTY: _env.IDP__RELYING_PARTY,
+    IDP_REQUIRED_CLAIM: _env.IDP__REQUIRED_CLAIM,
     DB_CREDENTIALS_PUBLIC_KEYS: _env.DB_CREDENTIALS__PUBLIC_KEYS,
     GATEWAY_IDP_AUTH_TYPE: _env.GATEWAY__IDP_AUTH_TYPE,
     LOGTO_ISSUER: _env.LOGTO__ISSUER,
@@ -123,6 +125,6 @@ export const env = {
     D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
     D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
 
-    CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1',
-    CACHE_FLOW_LEVEL_CONCURRENCY: _env.CACHE_FLOW_LEVEL_CONCURRENCY || '1'
+    CACHE_FLOW_LEVEL_CONCURRENCY: _env.CACHE_FLOW_LEVEL_CONCURRENCY || '1',
+    CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1'
 }

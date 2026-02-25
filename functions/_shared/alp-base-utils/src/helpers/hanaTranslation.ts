@@ -8,7 +8,7 @@ const hanaCommonTranslation = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string,
+  resultsSchemaName: string,
 ): string => {
   // The first few queries to replace are very specific query which does not require further string replacements
   // subsequent lines, hence early return is used.
@@ -233,7 +233,7 @@ const hanaCommonTranslation = (
 
   temp = temp.replace(/\$\$SCHEMA\$\$./g, `"${schemaName}".`);
   temp = temp.replace(/\$\$VOCAB_SCHEMA\$\$./g, `"${vocabSchemaName}".`);
-  temp = temp.replace(/\$\$RESULT_SCHEMA\$\$./g, `"${resultSchemaName}".`);
+  temp = temp.replace(/\$\$RESULT_SCHEMA\$\$./g, `"${resultsSchemaName}".`);
 
   return temp;
 };
@@ -242,13 +242,13 @@ export const translateHanaToPostgres = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string,
+  resultsSchemaName: string,
 ) => {
   temp = hanaCommonTranslation(
     temp,
     schemaName,
     vocabSchemaName,
-    resultSchemaName,
+    resultsSchemaName,
   );
   temp = temp.replace(/LIKE_REGEXPR/gi, "~*"); // ~* short for regex, case insensitive matching
   temp = temp.replace(
@@ -269,32 +269,18 @@ export const translateHanaToDuckdb = (
   temp: string,
   schemaName: string,
   vocabSchemaName: string,
-  resultSchemaName: string,
+  resultsSchemaName: string,
   parameters?: ParameterInterface[],
 ): string => {
-  temp = temp.replace(
-    /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
-    `direct_db_conn.${schemaName}.COHORT_DEFINITION`,
-  );
-  temp = temp.replace(
-    /\$\$SCHEMA\$\$.COHORT/g,
-    `direct_db_conn.${schemaName}.COHORT`,
-  );
-
   temp = hanaCommonTranslation(
     temp,
     schemaName,
     vocabSchemaName,
-    resultSchemaName,
+    resultsSchemaName,
   );
 
   // Cast left comparator to varchar which is required by duckdb
   temp = temp.replace(/LIKE_REGEXPR/gi, "::VARCHAR ILIKE");
-
-  temp = temp.replace(
-    /\$\$SCHEMA_DIRECT_CONN\$\$./g,
-    `direct_db_conn.${schemaName}.`,
-  ); // Used when using cachedb connection connecting to duckdb, but additionally requires direct connection to database schema
 
   temp = temp.replace(/DAYS_BETWEEN \(/gi, `date_diff ('day', `);
   temp = temp.replace(

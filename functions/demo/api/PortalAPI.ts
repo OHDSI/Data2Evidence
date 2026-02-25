@@ -37,8 +37,10 @@ export class PortalAPI {
       )}`;
       const result = await get(url, options);
       return result.data;
-    } catch (error) {
-      this.logger.error(`Error while getting dataset: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(`Error while getting dataset: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }
@@ -49,8 +51,10 @@ export class PortalAPI {
       const url = `${this.baseURL}/dataset/list/systemadmin`;
       const result = await this.channel.get(url, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while getting datasets: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting datasets: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }

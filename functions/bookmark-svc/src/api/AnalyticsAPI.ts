@@ -92,7 +92,7 @@ export class AnalyticsSvcAPI {
       const options = this.getRequestConfig()
       url.searchParams.set('datasetId', datasetId)
       url.searchParams.set('cohortId', cohortDefinitionId.toString())
-      await this.analyticsapi.delete(url, options)
+      await this.analyticsapi.delete(url.toString(), options)
     } catch (error) {
       console.error(`Error while deleting cohort: ${error}`)
       throw error

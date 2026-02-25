@@ -58,7 +58,7 @@ run_strategus_flow <- function(analysisSpecification, executionSettings = NULL, 
 get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "strategus_plugin") {
   error_message <- "Error while getting prefect deployment"
   host <- Sys.getenv("TREX__ENDPOINT_URL")
-  url <- paste0(host, "/prefect/api/deployments/name/", flow_name, "/", deployment_name)
+  url <- paste0(host, "/prefect/d2e/api/deployments/name/", flow_name, "/", deployment_name)
   auth_token <- Sys.getenv("TREX__AUTHORIZATION_TOKEN")
   
   response <- tryCatch(
@@ -93,15 +93,18 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
 #' @param update_results_schema boolean value indicating whether to update results schema
 #'  before uploading results (default is TRUE). Any existing results in the schema will be
 #'  dropped before uploading new results. 
+#' @param run_table1 boolean value indicating whether to run Table 1 generation
+#' as part of the flow run (default is FALSE).
 #' @return Response object with options for the flow run
 #' @export
-create_options <- function(study_id = '', upload_results = FALSE, update_results_schema = TRUE) {
+create_options <- function(study_id = '', upload_results = FALSE, update_results_schema = TRUE, run_table1 = FALSE) {
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
   return(list(
       mode = 'kernel',
       datasetId = dataset_id,
       uploadResults = upload_results,
       updateResultsSchema = update_results_schema,
-      studyId = study_id
+      studyId = study_id,
+      runTable1 = run_table1
   ))
 }

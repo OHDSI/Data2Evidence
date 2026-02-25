@@ -106,7 +106,7 @@ export class DemoService {
       databaseCode: env.DEMO_DB_CODE,
       cdmSchemaValue: env.DEMO_DB_CDM_SCHEMA,
       vocabSchemaValue: env.DEMO_DB_CDM_SCHEMA,
-      resultSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
+      resultsSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
     };
 
     const result = await datasetAPI.createDataset(dataset);
@@ -306,12 +306,14 @@ export class DemoService {
     }
 
     const { id: datasetId } = dataset;
+    const userMgmtAPI = new UserMgmtAPI(token);
+    const user = await userMgmtAPI.getMe();
     const result = await jobPluginsAPI.createPhenotypeFlowRun({
       options: {
         materialize: false,
         cohorts_id: "default",
         dataset_id: datasetId,
-        user_name: null,
+        user_name: user.username,
       },
     });
 

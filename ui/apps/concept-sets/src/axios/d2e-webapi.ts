@@ -22,7 +22,8 @@ export class D2eWebapi {
     domainId: string[],
     vocabularyId: string[],
     standardConcept: string[],
-    validity: string[]
+    validity: string[],
+    signal?: AbortSignal,
   ): Promise<IWebapiConcept[]> {
     const data = {
       QUERY: searchText,
@@ -42,16 +43,22 @@ export class D2eWebapi {
       method: "POST",
       data,
       headers: { datasetid: datasetId },
+      signal,
     });
   }
 
-  public getConceptRecordCounts(datasetId: string, conceptIds: number[]) {
+  public getConceptRecordCounts(
+    datasetId: string,
+    conceptIds: number[],
+    signal?: AbortSignal,
+  ) {
     return request<IWebapiConceptRecordCount[]>({
       baseURL: D2E_WEBAPI_BASE_URL,
       url: `/cdmresults/${datasetId}/conceptRecordCount`,
       method: "POST",
       data: conceptIds,
       headers: { datasetid: datasetId },
+      signal,
     });
   }
 
@@ -98,19 +105,19 @@ export class D2eWebapi {
   public checkIfConceptSetExists(
     conceptSetId: number,
     conceptSetName: string,
-    datasetId: string
+    datasetId: string,
   ) {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.checkIfConceptSetExists(
         conceptSetId,
-        conceptSetName
+        conceptSetName,
       );
     }
 
     return request({
       baseURL: D2E_WEBAPI_BASE_URL,
       url: `/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(
-        conceptSetName
+        conceptSetName,
       )}`,
       method: "GET",
       headers: { datasetid: datasetId },
@@ -120,11 +127,11 @@ export class D2eWebapi {
   public async createConceptSet(
     name: string,
     datasetId: string,
-    shared?: boolean
+    shared?: boolean,
   ): Promise<number> {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       const conceptSetId = await api.publicWebapiProxyAPI.createConceptSet(
-        name
+        name,
       );
       return conceptSetId;
     } else {
@@ -143,12 +150,12 @@ export class D2eWebapi {
   public updateConceptSet(
     conceptSetId: number,
     conceptSet: Partial<ConceptSet>,
-    datasetId: string
+    datasetId: string,
   ) {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.updateConceptSet(
         conceptSetId,
-        conceptSet
+        conceptSet,
       );
     } else {
       return request<number | { statusCode: number }>({
@@ -164,12 +171,12 @@ export class D2eWebapi {
   public updateConceptSetItems(
     conceptSetId: number,
     conceptSetConcepts: ConceptSetConcept[],
-    datasetId: string
+    datasetId: string,
   ) {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.updateConceptSetItems(
         conceptSetId,
-        conceptSetConcepts
+        conceptSetConcepts,
       );
     } else {
       const data = conceptSetConcepts.map((concept) => ({

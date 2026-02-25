@@ -3,6 +3,24 @@
 import {env, logger} from "../env.ts"
 import {waitfor} from "./utils.ts"
 
+// Retry fetch with exponential backoff for transient errors
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+	let lastError: unknown = null;
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			return await fetch(url, options);
+		} catch (e) {
+			lastError = e;
+			if (attempt < maxRetries) {
+				const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+				logger.log(`Fetch failed (attempt ${attempt}/${maxRetries}), retrying in ${delay}ms: ${e}`);
+				await new Promise(resolve => setTimeout(resolve, delay));
+			}
+		}
+	}
+	throw lastError;
+}
+
 export async function addPlugin(value: any) {
 	try {
 		if(!env.PREFECT_API_URL) {
@@ -16,7 +34,7 @@ export async function addPlugin(value: any) {
 		const custom_image_repo_config = env.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG;
 		if(value.flows)
 			value.flows.forEach(async (f: any) => {
-				const res = await fetch(`${env.PREFECT_API_URL}/flows/`, {
+				const res = await fetchWithRetry(`${env.PREFECT_API_URL}/flows/`, {
 					method: "POST",
 					headers: {
 						"Content-Type": "application/json"
@@ -57,7 +75,7 @@ export async function addPlugin(value: any) {
 						work_pool_name: env.PREFECT_POOL,
 						work_queue_name: "default",
 						entrypoint: f.entrypoint,
-						enforce_parameter_schema: false,
+						enforce_parameter_schema: !!f.parameter_openapi_schema,
 						job_variables: {
 							image: getFinalImageName(value.image, f.image),
 							image_pull_policy: env.PLUGINS_PULL_POLICY,
@@ -73,7 +91,7 @@ export async function addPlugin(value: any) {
 							"collision_strategy": "ENQUEUE", 
 						};
 					}
-					const res2 = await fetch(`${env.PREFECT_API_URL}/deployments/`, {
+					const res2 = await fetchWithRetry(`${env.PREFECT_API_URL}/deployments/`, {
 					method: "POST",
 					headers: { 
 						"Content-Type": "application/json"

@@ -16,7 +16,6 @@ export interface IMRIRequest extends Request {
     };
     studiesDbMetadata: {
         studies: any;
-        cachedAt: number;
     };
     selectedstudyDbMetadata: StudyDbMetadata;
     swagger: any;
@@ -370,7 +369,7 @@ export interface StudyAnalyticsCredential {
     encrypt: boolean;
     probeSchema: string;
     vocabSchema: string;
-    resultSchema: string;
+    resultsSchemaName: string;
     dialect: string;
     schema: string;
     max?: number;
@@ -383,14 +382,13 @@ export interface StudyDbMetadata {
     schemaName: string;
     databaseName: string;
     vocabSchemaName: string;
-    resultSchemaName: string;
+    resultsSchemaName: string;
     dialect: string;
     databaseCode: string;
 }
 
 export interface StudiesDbMetadata {
     studies: StudyDbMetadata[];
-    cachedAt: number;
 }
 
 export type QuerySvcResultType = {

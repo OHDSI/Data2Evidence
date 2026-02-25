@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByTestId('button').nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await expect(page.getByText('Demo dataset')).toBeVisible();
+  await expect(page.getByText('Demo dataset')).toBeVisible()
   // Get the dataset ID
   await page.locator('div.alp-text__copy-button-container').nth(2).locator('button.alp-icon-button--icon-only').click()
   const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
@@ -42,7 +42,7 @@ test(TEST_NAME, async ({ page, context }) => {
   await page
     .locator('div:nth-child(3) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .click()
-  // Fill up Schemaname field 
+  // Fill up Schemaname field
   await page
     .locator('div:nth-child(3) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill(schema_name)
@@ -105,7 +105,7 @@ test(TEST_NAME, async ({ page, context }) => {
   await expect(page.getByText("Worker 'prefect-docker-worker")).toBeVisible()
 
   // Jobs: View Results - View results for job dqd_demo
-  await page.getByText('Job RunsJobsBlocksVariables', { timeout: 1000 }).scrollIntoViewIfNeeded()
+  await page.getByText('Job RunsJobsBlocksVariables').scrollIntoViewIfNeeded()
   await page.getByText('Completed', { exact: true }).waitFor({ state: 'visible', timeout: 300000 })
   await page.getByRole('button', { name: 'View Results' }).waitFor({ state: 'visible', timeout: 300000 })
   await page.getByRole('button', { name: 'View Results' }).click()

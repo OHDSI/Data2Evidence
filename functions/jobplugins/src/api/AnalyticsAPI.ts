@@ -84,15 +84,12 @@ export class AnalyticsSvcAPI {
       console.log(`Calling ${url} for conceptId ${conceptId}`);
       const options = this.createOptions("GET");
       const result = await this.channel.get(url, options);
-      if (result.status !== 200) {
-        throw new Error(
-          "Error while getting data characterization results drilldown"
-        );
-      }
-      return await result.data;
-    } catch (error) {
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
       console.error(
-        `Error while getting data characterization drilldown: ${error}`
+        `Error while getting data characterization drilldown: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`
       );
       throw error;
     }

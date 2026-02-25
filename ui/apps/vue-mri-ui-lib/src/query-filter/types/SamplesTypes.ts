@@ -31,7 +31,7 @@ export interface Sample {
   name: string
   size: number
   createdDate: number
-  cohortDefinitionId: number
+  cohortDefinitionId: string
   sourceId: number
   age?: AgeFilter
   gender: GenderFilter
@@ -39,7 +39,7 @@ export interface Sample {
 }
 
 export interface FetchSamplesResponse {
-  cohortDefinitionId: number
+  cohortDefinitionId: string
   sourceId: number
   generationStatus: 'COMPLETE' | 'PENDING' | 'FAILED' | string
   samples: Sample[]

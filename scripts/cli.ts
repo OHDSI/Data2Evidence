@@ -765,16 +765,12 @@ class D2ECli {
           return;
         }
         const cwd = process.cwd();
-        const hanapw =
-          process.env.HANAPW || `${this.generate_random_password(16)}`;
+        const hanapw = process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
         const envVariables = {
           HANA_SYSTEM_PASSWORD: this.hanapw,
-          INSTALL_SQLALCHEMY:
-            "\"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'\"",
-          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${
-            this.PROJECT_NAME || "d2e"
-          }_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
+          INSTALL_SQLALCHEMY: `"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"`,
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
@@ -1015,6 +1011,8 @@ class D2ECli {
         "Load d2e services. Requires d2e init and d2e setup to be run."
       )
       .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
         this.setupdemo();
       });
 

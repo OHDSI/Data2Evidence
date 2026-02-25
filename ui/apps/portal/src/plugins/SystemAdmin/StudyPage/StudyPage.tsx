@@ -32,6 +32,10 @@ export const StudyPage: FC<StudyPageProps> = () => {
   const [loadingStudies, setLoadingStudies] = useState<boolean>(false);
   const [studiesError, setStudiesError] = useState<string | null>(null);
 
+  const handleUpdateStudyViewerCode = useCallback((studyId: string, newCode: string) => {
+    setStrategusStudies((prev) => prev.map((s) => (s.id === studyId ? { ...s, viewerCode: newCode } : s)));
+  }, []);
+
   const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
     setSelectedDatasetId(event.target.value);
   }, []);
@@ -163,6 +167,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
                   study={study}
                   selectedDatasetId={selectedDatasetId}
                   setFeedback={setFeedback}
+                  onUpdateStudyViewerCode={handleUpdateStudyViewerCode}
                 />
               ))
             ) : (
