@@ -223,7 +223,7 @@ export function resolveFieldType(field: WizardFieldDefinition, cdwConfig?: CdwCo
   }
 
   if (!field.configPath || !cdwConfig) {
-    return field.type as WizardFieldType || 'text'
+    return (field.type as WizardFieldType) || 'text'
   }
 
   const attr = getAttributeByPath(cdwConfig, field.configPath)
@@ -234,7 +234,7 @@ export function resolveFieldType(field: WizardFieldDefinition, cdwConfig?: CdwCo
   if (attrType === 'num' || attrType === 'number') return 'num'
   if (attrType === 'date' || attrType === 'datetime' || attrType === 'time') return attrType as WizardFieldType
 
-  return field.type as WizardFieldType || 'text'
+  return (field.type as WizardFieldType) || 'text'
 }
 
 function getFieldLabel(field: WizardFieldDefinition): string {
@@ -246,10 +246,14 @@ function isMriBackedRequiredField(field: WizardFieldDefinition): boolean {
   // 1. Are required
   // 2. Either have a configPath (map to MRI filters), OR are yearRange type
   //    (yearRange fields like "year" don't have configPath but need to be shown)
+  // Note: isWizardField fields (like condition fields) ARE included here to appear in missing fields modal
+  // Filter card creation for isWizardField fields is handled separately in useDashboardFlow.ts
   return !!field.required && (!!field.configPath || field.type === 'yearRange')
 }
 
-export function extractFilterCards(cardsContainer: BookmarkBooleanContainer | BookmarkFilterCard | null): BookmarkFilterCard[] {
+export function extractFilterCards(
+  cardsContainer: BookmarkBooleanContainer | BookmarkFilterCard | null
+): BookmarkFilterCard[] {
   if (!cardsContainer || typeof cardsContainer !== 'object') {
     return []
   }
@@ -295,95 +299,93 @@ export function validateRequiredFields(
 
   const allCards = extractFilterCards(cardsContainer)
 
-  selectedWizard.fields
-    .filter(isMriBackedRequiredField)
-    .forEach(field => {
-      const filterCardPath = getFieldFilterCardPath(field)
-      const cardsByPath = allCards.filter(card => card.configPath === filterCardPath)
-      const fixedAttributes = field.fixedAttributes || []
-      const cardsAfterFixedAttributes = cardsByPath.filter(card => {
-        return fixedAttributes.every(fixedAttribute => fixedAttributeMatches(card, fixedAttribute))
-      })
-
-      const breakdownItem: FieldComparisonBreakdown = {
-        fieldId: field.id,
-        filterCardPath,
-        required: true,
-        candidateCardsByPath: cardsByPath.length,
-        candidateCardsAfterFixedAttributes: cardsAfterFixedAttributes.length,
-        hasAttributeConstraint: false,
-        hasAttributeValue: false,
-        satisfied: false,
-      }
-
-      if (!cardsByPath.length) {
-        breakdownItem.reason = 'NO_MATCHING_CARD'
-        breakdown.push(breakdownItem)
-        missingFields.push({
-          ...field,
-          label: getFieldLabel(field),
-          type: getFieldType(field),
-          configPath: field.configPath as string,
-          filterCardPath,
-          reason: 'NO_MATCHING_CARD',
-        })
-        return
-      }
-
-      if (!cardsAfterFixedAttributes.length) {
-        breakdownItem.reason = 'MISSING_FIXED_ATTRIBUTES'
-        breakdown.push(breakdownItem)
-        missingFields.push({
-          ...field,
-          label: getFieldLabel(field),
-          type: getFieldType(field),
-          configPath: field.configPath as string,
-          filterCardPath,
-          reason: 'MISSING_FIXED_ATTRIBUTES',
-        })
-        return
-      }
-
-      const attributes = cardsAfterFixedAttributes
-        .map(card => getAttributeByConfigPath(card, field.configPath as string))
-        .filter(Boolean) as BookmarkAttribute[]
-
-      if (!attributes.length) {
-        breakdownItem.reason = 'NO_ATTRIBUTE_CONSTRAINT'
-        breakdown.push(breakdownItem)
-        missingFields.push({
-          ...field,
-          label: getFieldLabel(field),
-          type: getFieldType(field),
-          configPath: field.configPath as string,
-          filterCardPath,
-          reason: 'NO_ATTRIBUTE_CONSTRAINT',
-        })
-        return
-      }
-
-      breakdownItem.hasAttributeConstraint = true
-
-      const hasAnyValue = attributes.some(attributeHasValue)
-      breakdownItem.hasAttributeValue = hasAnyValue
-
-      if (!hasAnyValue) {
-        breakdownItem.reason = 'EMPTY_CONSTRAINT'
-        breakdown.push(breakdownItem)
-        missingFields.push({
-          ...field,
-          label: getFieldLabel(field),
-          type: getFieldType(field),
-          configPath: field.configPath as string,
-          filterCardPath,
-          reason: 'EMPTY_CONSTRAINT',
-        })
-        return
-      }
-
-      breakdownItem.satisfied = true
-      breakdown.push(breakdownItem)
+  selectedWizard.fields.filter(isMriBackedRequiredField).forEach(field => {
+    const filterCardPath = getFieldFilterCardPath(field)
+    const cardsByPath = allCards.filter(card => card.configPath === filterCardPath)
+    const fixedAttributes = field.fixedAttributes || []
+    const cardsAfterFixedAttributes = cardsByPath.filter(card => {
+      return fixedAttributes.every(fixedAttribute => fixedAttributeMatches(card, fixedAttribute))
     })
+
+    const breakdownItem: FieldComparisonBreakdown = {
+      fieldId: field.id,
+      filterCardPath,
+      required: true,
+      candidateCardsByPath: cardsByPath.length,
+      candidateCardsAfterFixedAttributes: cardsAfterFixedAttributes.length,
+      hasAttributeConstraint: false,
+      hasAttributeValue: false,
+      satisfied: false,
+    }
+
+    if (!cardsByPath.length) {
+      breakdownItem.reason = 'NO_MATCHING_CARD'
+      breakdown.push(breakdownItem)
+      missingFields.push({
+        ...field,
+        label: getFieldLabel(field),
+        type: getFieldType(field),
+        configPath: field.configPath as string,
+        filterCardPath,
+        reason: 'NO_MATCHING_CARD',
+      })
+      return
+    }
+
+    if (!cardsAfterFixedAttributes.length) {
+      breakdownItem.reason = 'MISSING_FIXED_ATTRIBUTES'
+      breakdown.push(breakdownItem)
+      missingFields.push({
+        ...field,
+        label: getFieldLabel(field),
+        type: getFieldType(field),
+        configPath: field.configPath as string,
+        filterCardPath,
+        reason: 'MISSING_FIXED_ATTRIBUTES',
+      })
+      return
+    }
+
+    const attributes = cardsAfterFixedAttributes
+      .map(card => getAttributeByConfigPath(card, field.configPath as string))
+      .filter(Boolean) as BookmarkAttribute[]
+
+    if (!attributes.length) {
+      breakdownItem.reason = 'NO_ATTRIBUTE_CONSTRAINT'
+      breakdown.push(breakdownItem)
+      missingFields.push({
+        ...field,
+        label: getFieldLabel(field),
+        type: getFieldType(field),
+        configPath: field.configPath as string,
+        filterCardPath,
+        reason: 'NO_ATTRIBUTE_CONSTRAINT',
+      })
+      return
+    }
+
+    breakdownItem.hasAttributeConstraint = true
+
+    const hasAnyValue = attributes.some(attributeHasValue)
+    breakdownItem.hasAttributeValue = hasAnyValue
+
+    if (!hasAnyValue) {
+      breakdownItem.reason = 'EMPTY_CONSTRAINT'
+      breakdown.push(breakdownItem)
+      missingFields.push({
+        ...field,
+        label: getFieldLabel(field),
+        type: getFieldType(field),
+        configPath: field.configPath as string,
+        filterCardPath,
+        reason: 'EMPTY_CONSTRAINT',
+      })
+      return
+    }
+
+    breakdownItem.satisfied = true
+    breakdown.push(breakdownItem)
+  })
 
   return {
     missingFields,

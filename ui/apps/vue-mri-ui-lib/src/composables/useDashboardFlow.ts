@@ -139,7 +139,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   }
 
   function resolveMissingFields(fields: MissingRequiredField[]): MissingRequiredField[] {
-    return fields.map((field) => ({
+    return fields.map(field => ({
       ...field,
       label: field.label || field.id,
     }))
@@ -197,7 +197,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   function getNonExcludedFilterCardIdsByPath(filterCardPath: string): string[] {
     const getFilterCards = getters.getFilterCards
     const filterCards = typeof getFilterCards === 'function' ? getFilterCards() : getFilterCards?.value
-    return Object.keys(filterCards || {}).filter((filterCardId) => {
+    return Object.keys(filterCards || {}).filter(filterCardId => {
       const filterCard = filterCards[filterCardId]
       return filterCard?.props?.key === filterCardPath && !filterCard?.props?.excludeFilter
     })
@@ -245,7 +245,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   function constraintContainsExpression(constraint: any, operator: string, value: string): boolean {
     const expectedOperator = String(operator || '=').trim()
     const expectedValue = String(value).trim()
-    return getConstraintExpressions(constraint).some((expression) => {
+    return getConstraintExpressions(constraint).some(expression => {
       const expressionOperator = String(expression.operator || '').trim()
       const expressionValue = String(expression.value ?? '').trim()
       return expressionOperator === expectedOperator && expressionValue === expectedValue
@@ -256,7 +256,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     if (!fixedAttributes.length) {
       return true
     }
-    return fixedAttributes.every((fixedAttribute) => {
+    return fixedAttributes.every(fixedAttribute => {
       const attrKey = getFieldAttrKey(fixedAttribute.configPath)
       const getConstraintForAttribute = getters.getConstraintForAttribute
       const constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
@@ -271,11 +271,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     const filterCardPath = getFieldFilterCardPathForField(field)
     const candidateCardIds = getNonExcludedFilterCardIdsByPath(filterCardPath)
     const fixedAttributes = field.fixedAttributes || []
-    return (
-      candidateCardIds.find((filterCardId) =>
-        cardMatchesFixedAttributes(filterCardId, fixedAttributes)
-      ) || null
-    )
+    return candidateCardIds.find(filterCardId => cardMatchesFixedAttributes(filterCardId, fixedAttributes)) || null
   }
 
   function extractFieldValueFromFilterCards(field: any): {
@@ -357,7 +353,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   async function handleDashboardSelected(dashboard: DashboardCode) {
     dashboardSelectionError.value = ''
     selectedDashboard.value = dashboard
-    const wizardDef = wizardDefinitions.value.find((wizard) => wizard.id === dashboard.name)
+    const wizardDef = wizardDefinitions.value.find(wizard => wizard.id === dashboard.name)
     if (!wizardDef) {
       dashboardSelectionError.value = `Dashboard '${dashboard.name}' is not mapped to a wizard definition.`
       return
@@ -438,7 +434,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       // Use a Map to deduplicate by value to avoid duplicates when condition was in missing fields
       const conditionMap = new Map<string, any>()
       const allConditions = [...(wizardConfig.conditions || []), ...(fullWizardConfig.conditions || [])]
-      allConditions.forEach((cond) => {
+      allConditions.forEach(cond => {
         if (cond.value && !conditionMap.has(cond.value)) {
           conditionMap.set(cond.value, cond)
         }
@@ -449,7 +445,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       if (fullWizardConfig.year) {
         wizardConfig.year = fullWizardConfig.year
       }
-      Object.keys(fullWizardConfig).forEach((key) => {
+      Object.keys(fullWizardConfig).forEach(key => {
         if (key !== 'conditions' && key !== 'year' && !wizardConfig[key]) {
           wizardConfig[key] = fullWizardConfig[key]
         }
@@ -489,9 +485,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
         }
       }
       if (!parsedValues.length) {
-        return Promise.reject(
-          new Error(`Invalid numeric value for ${constraint.props.name || constraint.id}`)
-        )
+        return Promise.reject(new Error(`Invalid numeric value for ${constraint.props.name || constraint.id}`))
       }
       return dispatch('updateConstraintValue', {
         constraintId: constraint.id,
@@ -502,9 +496,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       const fromYear = rawInput.from
       const toYear = rawInput.to
       if (!fromYear && !toYear) {
-        return Promise.reject(
-          new Error(`Missing year value for ${constraint.props.name || constraint.id}`)
-        )
+        return Promise.reject(new Error(`Missing year value for ${constraint.props.name || constraint.id}`))
       }
       const fromDate = fromYear ? new Date(`${fromYear}-01-01`) : new Date(`${toYear}-01-01`)
       const toDate = toYear ? new Date(`${toYear}-12-31`) : new Date(`${fromYear}-12-31`)
@@ -519,9 +511,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       const fromDateRaw = rawInput?.from || rawInput?.value || rawInput
       const toDateRaw = rawInput?.to || rawInput?.value || rawInput
       if (!fromDateRaw && !toDateRaw) {
-        return Promise.reject(
-          new Error(`Missing date value for ${constraint.props.name || constraint.id}`)
-        )
+        return Promise.reject(new Error(`Missing date value for ${constraint.props.name || constraint.id}`))
       }
       const fromDate = new Date(fromDateRaw || toDateRaw)
       const toDate = new Date(toDateRaw || fromDateRaw)
@@ -534,9 +524,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     }
     const rawValue = rawInput?.value ?? rawInput
     if (rawValue === null || typeof rawValue === 'undefined' || String(rawValue).trim() === '') {
-      return Promise.reject(
-        new Error(`Missing value for ${constraint.props.name || constraint.id}`)
-      )
+      return Promise.reject(new Error(`Missing value for ${constraint.props.name || constraint.id}`))
     }
     const finalDisplayValue = displayValue || rawInput?.displayName || String(rawValue)
     return dispatch('updateConstraintValue', {
@@ -583,7 +571,10 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
           })
         }
       }
-      if (!field.configPath) {
+      // Skip filter card creation for:
+      // 1. Fields without configPath (wizard-only fields like yearRange)
+      // 2. Fields marked as isWizardField (like condition fields - they only populate wizardConfig)
+      if (!field.configPath || field.isWizardField) {
         if (field.type === 'yearRange') {
           wizardOnlyValues.year = fieldInputValue
         } else if (!field.id.toLowerCase().startsWith('condition')) {
@@ -653,9 +644,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
               const getConstraintForAttribute = getters.getConstraintForAttribute
               const constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
               if (constraint) {
-                valuePromises.push(
-                  applyConstraintValue(constraint, fixedAttr.value, fixedAttr.operator)
-                )
+                valuePromises.push(applyConstraintValue(constraint, fixedAttr.value, fixedAttr.operator))
               }
             }
           }
@@ -696,16 +685,13 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
         }
         return wizardOnlyValues
       })
-      .catch((error) => {
+      .catch(error => {
         dispatch('releaseFireRequest')
         throw error
       })
   }
 
-  async function handleRequiredFiltersSubmit(
-    formValues: Record<string, any>,
-    displayValues: Record<string, string>
-  ) {
+  async function handleRequiredFiltersSubmit(formValues: Record<string, any>, displayValues: Record<string, string>) {
     requiredFiltersError.value = ''
     applyingRequiredFilters.value = true
     isProcessingDashboardFlow = true
@@ -714,7 +700,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       showRequiredFiltersModal.value = false
       if (selectedWizardDefinition.value) {
         // Get IDs of missing fields that were just submitted - these are already in wizardOnlyValues
-        const missingFieldIds = new Set(missingRequiredFields.value.map((f) => f.id))
+        const missingFieldIds = new Set(missingRequiredFields.value.map(f => f.id))
         // Extract values from existing filter cards for fields that were NOT missing
         // (missing fields are already handled by wizardOnlyValues from applyMissingRequiredFilters)
         const { formValues: existingFormValues, displayValues: existingDisplayValues } =
