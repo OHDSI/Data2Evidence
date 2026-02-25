@@ -65,12 +65,15 @@ export const getChatResponse = async (req: any) => {
   }
 
   try {
+    const t0 = performance.now();
     const tools = createStaticMcpTools(token, datasetId);
     const agent = createAgent({
       model: model,
       tools: tools,
     });
-
+    console.log(
+      `[MCP-TIMING] [code-suggestion] Statictools and Agent created ${(performance.now() - t0).toFixed(1)}ms`,
+    );
     // prompt parameter in createAgent doesn't work as expected - the system message needs to be in the messages array
     const messages = [
       new SystemMessage(getRolePrompting(uiChat.userInput, uiChat.context)),

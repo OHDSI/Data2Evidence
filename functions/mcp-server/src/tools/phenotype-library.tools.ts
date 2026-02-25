@@ -25,17 +25,11 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
       inputSchema: SearchPhenotypeLibraryInput,
     },
     async ({ searchTerm, useSemanticSearch = true, topK = 5 }) => {
-      const toolStart = performance.now();
-
       try {
         const phenotypeData = await searchPhenotypes(
           searchTerm,
           useSemanticSearch,
           topK,
-        );
-
-        console.log(
-          `[MCP-TIMING] [search_phenotype_library] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
         );
 
         const message = searchTerm

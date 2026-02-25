@@ -17,14 +17,7 @@ export class App {
     const port = 10000;
 
     // Initialize embeddings on startup
-    const embeddingsReady = await initializeEmbeddings(
-      env.AUTO_GENERATE_EMBEDDINGS,
-    );
-    if (embeddingsReady) {
-      this.logger.log("Semantic search enabled");
-    } else {
-      this.logger.log("Semantic search disabled (using substring search only)");
-    }
+    await initializeEmbeddings(env.MCP_GENERATE_EMBEDDINGS);
 
     this.app.use(express.json());
     this.app.use("/mcp", new mcpServerRouter().router);

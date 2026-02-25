@@ -15,7 +15,7 @@ const Env = z.object({
         return z.never();
       }
     }),
-  AUTO_GENERATE_EMBEDDINGS: z
+  MCP_GENERATE_EMBEDDINGS: z
     .string()
     .optional()
     .default("true")

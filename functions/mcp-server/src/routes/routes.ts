@@ -70,11 +70,7 @@ export class mcpServerRouter {
           });
         }
 
-        const t2 = performance.now();
         await transport.handleRequest(req, res, req.body);
-        console.log(
-          `[MCP-TIMING] handleRequest() in ${(performance.now() - t2).toFixed(1)}ms`,
-        );
       } catch (error) {
         console.error("Error in MCP server:", error);
         if (!res.headersSent) {

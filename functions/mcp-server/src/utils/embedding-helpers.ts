@@ -1,23 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import Papa from "npm:papaparse@^5.4.1";
 import type { PhenotypeData } from "../types/tool-schemas";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// Calculate cache path directly (same logic as env.ts but without validation)
-const PHENOTYPE_LIBRARY_BASE_PATH = join(__dirname, "..", "..", "data").replace(
-  /\/var\/tmp\/sb-compile-trex/,
-  Deno.env.get("TREX_FUNCTION_PATH") || "",
-);
-
-const PHENOTYPE_EMBEDDINGS_CACHE = join(
-  PHENOTYPE_LIBRARY_BASE_PATH,
-  "phenotype-embeddings.json",
-);
-
-const COHORTS_CSV = join(PHENOTYPE_LIBRARY_BASE_PATH, "Cohorts.csv");
+import { PHENOTYPE_LIBRARY_COHORTS, PHENOTYPE_EMBEDDINGS_CACHE } from "../env";
 
 export interface PhenotypeWithEmbedding extends PhenotypeData {
   embedding?: number[];
@@ -26,7 +10,6 @@ export interface PhenotypeWithEmbedding extends PhenotypeData {
 export async function initializeEmbeddings(
   autoGenerate: boolean = true,
 ): Promise<boolean> {
-  // Check if cache exists
   if (existsSync(PHENOTYPE_EMBEDDINGS_CACHE)) {
     return true;
   }
@@ -35,10 +18,12 @@ export async function initializeEmbeddings(
     return false;
   }
 
-  // Auto-generate embeddings
   console.log("Embedding cache not found, generating embeddings...");
   try {
-    await generateEmbeddingsFromCSV(COHORTS_CSV, PHENOTYPE_EMBEDDINGS_CACHE);
+    await generateEmbeddingsFromCSV(
+      PHENOTYPE_LIBRARY_COHORTS,
+      PHENOTYPE_EMBEDDINGS_CACHE,
+    );
     return true;
   } catch (error) {
     console.error("Failed to generate embeddings:", error);
@@ -160,6 +145,7 @@ export async function generateEmbeddingsFromCSV(
     );
     const currentBatch = Math.floor(i / batchSize) + 1;
 
+    // Generate embeddings for the batch in parallel
     const batchPromises = batch.map(async (phenotype) => {
       try {
         const embedding = await generateEmbedding(phenotype.cohortName);
@@ -186,7 +172,7 @@ export async function generateEmbeddingsFromCSV(
     }
   }
 
-  // Save to file
+  // Save to file, current size is around 12MB for 1100+ phenotypes
   const content = JSON.stringify(withEmbeddings, null, 2);
   writeFileSync(outputPath, content, "utf-8");
 

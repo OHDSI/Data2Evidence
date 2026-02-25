@@ -2,11 +2,6 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { env } from "../env";
 
-/**
- * Direct JSON-RPC call to MCP server's tools/call endpoint.
- * Bypasses the MCP handshake (initialize/notifications/tools-list)
- * and sends a single POST per tool invocation.
- */
 async function callMcpTool(
   toolName: string,
   args: Record<string, any>,
@@ -62,9 +57,7 @@ async function callMcpTool(
 
 /**
  * Creates all 13 MCP tools as static DynamicStructuredTool instances.
- * Schemas and descriptions match mcp-server/src/types/tool-schemas.ts
- * and mcp-server/src/tools/*.tools.ts exactly.
- *
+ * Schemas and descriptions match mcp-server/src/types/tool-schemas.ts and mcp-server/src/tools/*.tools.ts exactly.
  * This eliminates the 3-request MCP handshake (~3s) that getTools() requires.
  */
 export function createStaticMcpTools(
@@ -99,7 +92,6 @@ export function createStaticMcpTools(
           .describe("The cohort description extracted from user query"),
       }),
     ),
-
     mcpTool(
       "get_atlas_cohort_definition",
       "Retrieve an existing ATLAS cohort definition from D2E by its ID.",
@@ -107,7 +99,6 @@ export function createStaticMcpTools(
         cohortId: z.number().describe("The cohort ID to retrieve"),
       }),
     ),
-
     mcpTool(
       "create_atlas_cohort_definition",
       "Create a new ATLAS cohort definition in D2E. The cohort definition must be validated first using validate_atlas_cohort_definition tool.",
@@ -126,7 +117,6 @@ export function createStaticMcpTools(
           .default(false),
       }),
     ),
-
     mcpTool(
       "update_atlas_cohort_definition",
       "The cohort definition must be validated first using validate_atlas_cohort_definition tool. Update an existing ATLAS cohort definition in D2E, and creation metadata is preserved.",
@@ -148,7 +138,6 @@ export function createStaticMcpTools(
           .describe("The cohort description to update"),
       }),
     ),
-
     mcpTool(
       "delete_atlas_cohort_definition",
       "Delete an ATLAS cohort definition from D2E by its ID. This action cannot be undone.",
@@ -156,7 +145,6 @@ export function createStaticMcpTools(
         cohortId: z.number().describe("The cohort ID to delete"),
       }),
     ),
-
     // ==================== Phenotype Library Tools ====================
     mcpTool(
       "search_phenotype_library",
@@ -184,7 +172,6 @@ export function createStaticMcpTools(
           ),
       }),
     ),
-
     mcpTool(
       "fetch_templates_for_cohort_generation",
       "Fetches ATLAS cohort definition templates from OHDSI Phenotype Library for specified phenotype ID. The template serve as example to create a new cohort definition.",
@@ -197,7 +184,6 @@ export function createStaticMcpTools(
           .describe("The user's description of the cohort they want to create"),
       }),
     ),
-
     // ==================== Validation Tool ====================
     mcpTool(
       "validate_atlas_cohort_definition",
@@ -211,28 +197,25 @@ export function createStaticMcpTools(
         userName: z.string().describe("User name creating/updating the cohort"),
       }),
     ),
-
     // ==================== Instruction Tools ====================
     mcpTool(
       "before_cohort_definition_generation",
-      "Must follow this instruction before generate/create cohort definition.",
+      "You MUST call this tool before creating a cohort definition. It provides the mandatory instructions for cohort definition generation.",
       z.object({
         cohortDescription: z
           .string()
           .describe("User's description of the desired cohort"),
       }),
     ),
-
     mcpTool(
       "before_cohort_definition_update",
-      "Must follow this instruction before update cohort definition.",
+      "MANDATORY first step when user wants to update an existing cohort definition. Returns the required step-by-step workflow (validate, confirm, update). You MUST call this tool BEFORE calling update_atlas_cohort_definition.",
       z.object({
         cohortDescription: z
           .string()
           .describe("User's description of the desired cohort"),
       }),
     ),
-
     // ==================== Strategus Tools ====================
     mcpTool(
       "strategus_list_modules",
@@ -242,7 +225,6 @@ export function createStaticMcpTools(
     Returns each module's name and a brief description.`,
       z.object({}),
     ),
-
     mcpTool(
       "strategus_initial_instructions",
       `This tool provides the mandatory initial system instructions to be used for any Strategus-related
@@ -250,7 +232,6 @@ export function createStaticMcpTools(
     guidelines and context for generating R code using OHDSI's Strategus framework.`,
       z.object({}),
     ),
-
     mcpTool(
       "strategus_reference_code_template",
       ` This template contains sample code for many Strategus modules and their settings.

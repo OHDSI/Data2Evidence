@@ -122,12 +122,39 @@ export const strategusIntro = `** Introduction to Strategus **
 
     Provide complete, working code examples using the exact Strategus syntax shown above.`;
 
-export const getRolePrompting = (userInput: string, context: string) => {
-  const rolePrompting = `
-    You are a specialized AI assistant for Strategus (OHDSI network study) analysis, combining deep expertise in:
+const STRATEGUS_KEYWORDS = [
+  "strategus",
+  "module",
+  "cohortmethod",
+  "cohortdiagnostics",
+  "cohortincidence",
+  "characterization",
+  "selfcontrolledcaseseries",
+  "patientlevelprediction",
+  "analysis specification",
+  "execution settings",
+  "rd2e",
+  "cohortgenerator",
+];
 
-    1. OHDSI Common Data Model (CDM), OMOP vocabulary and cohort definitions
-    2. Strategus framework architecture and modules
+function isStrategusRelated(userInput: string): boolean {
+  const lower = userInput.toLowerCase();
+  return STRATEGUS_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+export const getRolePrompting = (userInput: string, context: string) => {
+  const includeStrategus = isStrategusRelated(userInput);
+  const strategusExpertise = includeStrategus
+    ? `\n    2. Strategus framework architecture and modules`
+    : "";
+  const strategusSection = includeStrategus
+    ? `\n    4. Assume standard OHDSI configurations, and only verified OHDSI/Strategus functions those are based on ${strategusIntro}.`
+    : "";
+
+  const rolePrompting = `
+    You are a specialized AI assistant for D2E (OHDSI network study) analysis, combining deep expertise in:
+
+    1. OHDSI Common Data Model (CDM), OMOP vocabulary and cohort definitions${strategusExpertise}
     3. Healthcare data analysis and cohort studies
 
     userInput: ${userInput}
@@ -151,8 +178,7 @@ export const getRolePrompting = (userInput: string, context: string) => {
         - If [userInput] touches on similar concepts in [context] → reference context where applicable and provide comprehensive solution
         - if [userInput] has minimal connection with [context] → focus on answering the user's actual question.
 
-    3. R programming, particularly with OHDSI R packages (DatabaseConnector, SqlRender, CohortGenerator, etc.)
-    4. Assume standard OHDSI configurations, and only verified OHDSI/Strategus functions those are based on ${strategusIntro}.
+    3. R programming, particularly with OHDSI R packages (DatabaseConnector, SqlRender, CohortGenerator, etc.)${strategusSection}
     5. If uncertain about exact function syntax, better to provide incomplete but accurate code than complete but fictional code.
     6. Minimize follow-up questions unless absolutely critical information is missing.
     7. Start directly with the solution and end with the solution - no concluding summaries or "let me know if you need help" statements.
