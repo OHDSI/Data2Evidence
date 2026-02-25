@@ -27,7 +27,6 @@ import {
   useUploadNodeCsvFileMutation,
   useCreateScanReportMutation,
   useCreateDBScanReportMutation,
-  useGetDatabasesQuery,
 } from "~/features/flow/slices";
 import "./ScanDataDialog.scss";
 
@@ -99,9 +98,6 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     useState<string>("");
   const hiddenFileInput = useRef<HTMLInputElement>(null);
   const intervalRef = useRef<number | null>(null);
-
-  const { data: databases = [], isLoading: isLoadingDatabases } =
-    useGetDatabasesQuery();
 
   const [testDBConnection] = useTestDBConnectionMutation();
   const [uploadNodeCsvFile] = useUploadNodeCsvFileMutation();
@@ -466,23 +462,13 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
                     variant="standard"
                     className="scan-data-dialog__form-control"
                   >
-                    <InputLabel>Database Name</InputLabel>
-                    <Select
+                    <TextField
+                      name="database"
+                      label="Database Name"
                       value={dbConnectionForm.database}
-                      onChange={(e: SelectChangeEvent<string>) =>
-                        setDbConnectionForm((prev) => ({
-                          ...prev,
-                          database: e.target.value,
-                        }))
-                      }
-                      disabled={isLoadingDatabases}
-                    >
-                      {databases.map((db) => (
-                        <MenuItem key={db.code} value={db.code}>
-                          {db.code} - {db.dialect}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                      onChange={handlePostgresFormChange}
+                      variant="standard"
+                    />
                   </FormControl>
                   {dataType !== "mysql" && dataType !== "ms access" && (
                     <FormControl
