@@ -669,8 +669,7 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0} for negative values',
     MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT: 'Invalid input. Use a number, comparison, or interval.',
     MRI_PA_REQUIRED_FILTERS_TITLE: 'Complete Required Filters',
-    MRI_PA_REQUIRED_FILTERS_DESC:
-      'Fill in the required dashboard fields that are not present in the current MRI filters.',
+    MRI_PA_REQUIRED_FILTERS_DESC: 'Fill in the required dashboard fields that are not present in the current filters.',
     MRI_PA_APPLY_FILTERS_BUTTON: 'Apply Filters',
     MRI_PA_YEAR_FROM_PLACEHOLDER: 'From year',
     MRI_PA_YEAR_TO_PLACEHOLDER: 'To year',
@@ -1607,7 +1606,7 @@ export const i18n = {
       'Ungültige Eingabe. Verwenden Sie eine Zahl, einen Vergleich oder ein Intervall.',
     MRI_PA_REQUIRED_FILTERS_TITLE: 'Erforderliche Filter vervollständigen',
     MRI_PA_REQUIRED_FILTERS_DESC:
-      'Füllen Sie die erforderlichen Dashboard-Felder aus, die in den aktuellen MRI-Filtern nicht vorhanden sind.',
+      'Füllen Sie die erforderlichen Dashboard-Felder aus, die in den aktuellen Filtern nicht vorhanden sind.',
     MRI_PA_APPLY_FILTERS_BUTTON: 'Filter anwenden',
     MRI_PA_YEAR_FROM_PLACEHOLDER: 'Von Jahr',
     MRI_PA_YEAR_TO_PLACEHOLDER: 'Bis Jahr',
@@ -2476,8 +2475,7 @@ export const i18n = {
     MRI_PA_RANGE_CONSTRAINT_HELP_NEGATIVE: '{0}，表示负值',
     MRI_PA_RANGE_CONSTRAINT_INVALID_INPUT: '无效输入。请使用数字、比较或区间。',
     MRI_PA_REQUIRED_FILTERS_TITLE: '完成必填过滤器',
-    MRI_PA_REQUIRED_FILTERS_DESC:
-      '填写当前 MRI 过滤器中不存在的必填仪表板字段。',
+    MRI_PA_REQUIRED_FILTERS_DESC: '填写当前过滤器中不存在的必填仪表板字段。',
     MRI_PA_APPLY_FILTERS_BUTTON: '应用过滤器',
     MRI_PA_YEAR_FROM_PLACEHOLDER: '从年份',
     MRI_PA_YEAR_TO_PLACEHOLDER: '到年份',
