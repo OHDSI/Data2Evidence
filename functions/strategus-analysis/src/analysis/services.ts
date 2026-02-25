@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { decode, JwtPayload } from "jsonwebtoken";
 import dataSource from "../db/datasource.ts";
 import { PortalServerAPI } from "../strategus-results/api/PortalServerAPI.ts";
+import { env } from "../env.ts";
 
 export default class StrategusAnalysisService {
 
@@ -47,7 +48,6 @@ export default class StrategusAnalysisService {
 
             // Create dataset via portal API
             const portalAPI = new PortalServerAPI(token);
-            const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
             
             // Generate random token code for dataset
             const randomSuffix = Math.random().toString(36).substring(2, 10);
@@ -58,7 +58,7 @@ export default class StrategusAnalysisService {
                 id: datasetId,
                 type: "study",
                 tokenDatasetCode: tokenDatasetCode,
-                tenantId: decodedToken.tenant_id,
+                tenantId: env.APP__TENANT_ID,
                 schemaOption: "no_cdm",
                 resultsSchemaName: "public",
                 paConfigId: "00000000-0000-0000-0000-000000000000", // Default UUID
