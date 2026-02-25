@@ -1,11 +1,11 @@
 <template>
   <MessageBox v-if="isOpen" :busy="loading" messageType="custom" dialogWidth="700px" @close="handleCancel">
-    <template #header>Complete Required Filters</template>
+    <template #header>{{ getText('MRI_PA_REQUIRED_FILTERS_TITLE') }}</template>
 
     <template #body>
       <div class="required-filters-modal">
         <p class="description">
-          Fill in the required dashboard fields that are not present in the current MRI filters.
+          {{ getText('MRI_PA_REQUIRED_FILTERS_DESC') }}
         </p>
 
         <p v-if="error" class="error-text">{{ error }}</p>
@@ -36,8 +36,9 @@
                   v-model="formValues[`${field.id}_from` as string]"
                   class="form-control"
                   :class="{ 'is-invalid': yearErrors[field.id] }"
+                  @blur="validateYearRange(field.id)"
                 >
-                  <option value="">From year</option>
+                  <option value="">{{ getText('MRI_PA_YEAR_FROM_PLACEHOLDER') }}</option>
                   <option v-for="year in yearOptions" :key="`from-${year}`" :value="String(year)">
                     {{ year }}
                   </option>
@@ -48,8 +49,9 @@
                   v-model="formValues[`${field.id}_to` as string]"
                   class="form-control"
                   :class="{ 'is-invalid': yearErrors[field.id] }"
+                  @blur="validateYearRange(field.id)"
                 >
-                  <option value="">To year</option>
+                  <option value="">{{ getText('MRI_PA_YEAR_TO_PLACEHOLDER') }}</option>
                   <option v-for="year in yearOptions" :key="`to-${year}`" :value="String(year)">
                     {{ year }}
                   </option>
@@ -65,7 +67,7 @@
                 class="form-control"
                 :class="{ 'is-invalid': numericErrors[field.id] }"
                 type="text"
-                :placeholder="field.placeholder || 'e.g. >=65, [50-80], 72'"
+                :placeholder="field.placeholder || getText('MRI_PA_NUMERIC_INPUT_PLACEHOLDER')"
                 v-model="formValues[field.id]"
                 @input="validateNumericField(field.id, formValues[field.id])"
                 @blur="validateNumericField(field.id, formValues[field.id])"
@@ -95,7 +97,7 @@
                 <div v-if="isConditionField(field.id) && formValues[field.id]" class="wildcard-toggle">
                   <label class="checkbox-label">
                     <input type="checkbox" v-model="formValues[`${field.id}_wildcard` as string]" />
-                    <span>Include descendants</span>
+                    <span>{{ getText('MRI_PA_INCLUDE_DESCENDANTS') }}</span>
                   </label>
                 </div>
               </div>
@@ -107,7 +109,7 @@
                 :id="field.id"
                 class="form-control"
                 type="text"
-                :placeholder="field.placeholder || `Enter ${field.label}`"
+                :placeholder="field.placeholder || getText('MRI_PA_SEARCH_PLACEHOLDER', field.label)"
                 v-model="formValues[field.id]"
               />
             </template>
@@ -118,14 +120,15 @@
 
     <template #footer>
       <div class="flex-spacer"></div>
-      <appButton :click="handleSubmit" text="Apply Filters" :disabled="loading || !isFormValid" />
-      <appButton :click="handleCancel" text="Cancel" :disabled="loading" />
+      <appButton :click="handleSubmit" :text="getText('MRI_PA_APPLY_FILTERS_BUTTON')" :disabled="loading || !isFormValid" />
+      <appButton :click="handleCancel" :text="getText('MRI_PA_BUTTON_CANCEL')" :disabled="loading" />
     </template>
   </MessageBox>
 </template>
 
 <script lang="ts" setup>
 import { computed, reactive, watch } from 'vue'
+import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
@@ -134,6 +137,9 @@ import { isConditionField } from '@/utils/dashboardFlowUtils'
 import InputParser from '@/lib/utils/InputParser'
 import RangeConstraintTokenDefinition from '@/lib/utils/RangeConstraintTokenDefinition'
 import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPatternDefinition'
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
 export interface RequiredFieldItem extends WizardFieldDefinition {}
 
@@ -194,9 +200,9 @@ const isFormValid = computed(() => {
       // If either is set, both must be set
       if ((from && !to) || (!from && to)) {
         if (from && !to) {
-          yearErrors[field.id] = 'To year is required'
+          yearErrors[field.id] = getText('MRI_PA_TO_YEAR_REQUIRED')
         } else {
-          yearErrors[field.id] = 'From year is required'
+          yearErrors[field.id] = getText('MRI_PA_FROM_YEAR_REQUIRED')
         }
         return false
       }
@@ -206,7 +212,7 @@ const isFormValid = computed(() => {
         const fromNum = Number(from)
         const toNum = Number(to)
         if (toNum < fromNum) {
-          yearErrors[field.id] = 'To year must be greater than or equal to from year'
+          yearErrors[field.id] = getText('MRI_PA_YEAR_RANGE_INVALID')
           return false
         }
       }
@@ -376,7 +382,28 @@ function validateNumericField(fieldId: string, value: string): void {
   if (isValid) {
     delete numericErrors[fieldId]
   } else {
-    numericErrors[fieldId] = 'Invalid numeric expression. Examples: >=65, [50-80], 72'
+    numericErrors[fieldId] = getText('MRI_PA_NUMERIC_EXPRESSION_INVALID')
+  }
+}
+
+/**
+ * Validates a year range field and sets/clears error message
+ * Called on blur event from either year select
+ */
+function validateYearRange(fieldId: string): void {
+  const from = formValues[`${fieldId}_from`]
+  const to = formValues[`${fieldId}_to`]
+
+  // Clear existing error
+  delete yearErrors[fieldId]
+
+  // Only validate if both values are present
+  if (from && to) {
+    const fromNum = Number(from)
+    const toNum = Number(to)
+    if (toNum < fromNum) {
+      yearErrors[fieldId] = getText('MRI_PA_YEAR_RANGE_INVALID')
+    }
   }
 }
 </script>

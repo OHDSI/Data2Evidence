@@ -2,7 +2,7 @@
   <div class="shiny-iframe-wrapper">
     <div v-if="loading" class="iframe-loading">
       <div class="spinner"></div>
-      <p>Loading dashboard...</p>
+      <p>{{ getText('MRI_PA_LOADING_DASHBOARD') }}</p>
     </div>
 
     <div v-if="error" class="iframe-error">
@@ -24,6 +24,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useStore } from 'vuex'
 import { getPortalAPI } from '@/utils/PortalUtils'
 
 const props = defineProps<{
@@ -32,6 +33,9 @@ const props = defineProps<{
   wizardConfig?: Record<string, any>
   mriquery?: string
 }>()
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
 const CURRENT_ORIGIN = window.location.origin
 const iframeRef = ref<HTMLIFrameElement | null>(null)

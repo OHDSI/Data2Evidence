@@ -17,7 +17,7 @@
       <span v-if="loading" class="loading-indicator">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </span>
-      <button v-else-if="selectedItem" class="clear-btn" @click="clearSelection" title="Clear selection" type="button">
+      <button v-else-if="selectedItem" class="clear-btn" @click="clearSelection" :title="getText('MRI_PA_CLEAR_SELECTION')" type="button">
         ×
       </button>
     </div>
@@ -25,8 +25,8 @@
     <Teleport to="body">
       <div v-if="isOpen" class="concept-typeahead-dropdown" :style="dropdownStyle">
         <ul ref="suggestionsListRef" class="concept-typeahead-list">
-          <li v-if="loading" class="concept-typeahead-message">Loading...</li>
-          <li v-else-if="filteredOptions.length === 0" class="concept-typeahead-message">No results</li>
+          <li v-if="loading" class="concept-typeahead-message">{{ getText('MRI_PA_LOADING') }}</li>
+          <li v-else-if="filteredOptions.length === 0" class="concept-typeahead-message">{{ getText('MRI_PA_NO_RESULTS') }}</li>
           <li
             v-for="(item, index) in filteredOptions"
             :key="item.value"
@@ -74,6 +74,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
 const searchText = ref('')
 const dropdownStyle = ref<Record<string, string>>({})
@@ -89,7 +90,7 @@ const debounceTimer = ref<number | null>(null)
 const selectedItem = ref<Option | null>(null)
 const lastQuery = ref<string | null>(null)
 
-const placeholder = computed(() => props.placeholder || `Search ${props.label}...`)
+const placeholder = computed(() => props.placeholder || getText('MRI_PA_SEARCH_PLACEHOLDER', props.label))
 
 // Filter and sort options: exact matches first, then starts-with, then contains
 const filteredOptions = computed(() => {

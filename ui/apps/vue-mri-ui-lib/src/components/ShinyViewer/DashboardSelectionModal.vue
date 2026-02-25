@@ -1,16 +1,16 @@
 <template>
   <MessageBox v-if="isOpen" messageType="custom" dialogWidth="640px" @close="handleClose">
-    <template #header>Select Dashboard</template>
+    <template #header>{{ getText('MRI_PA_SELECT_DASHBOARD_TITLE') }}</template>
 
     <template #body>
       <div class="dashboard-selection-modal">
-        <p class="description">Select a dashboard to open for the current cohort.</p>
+        <p class="description">{{ getText('MRI_PA_SELECT_DASHBOARD_DESC') }}</p>
 
-        <p v-if="loading" class="status-text">Loading dashboards...</p>
+        <p v-if="loading" class="status-text">{{ getText('MRI_PA_LOADING_DASHBOARDS') }}</p>
         <p v-else-if="error" class="error-text">{{ error }}</p>
-        <p v-else-if="dashboards.length === 0" class="status-text">No dashboards available for this dataset.</p>
+        <p v-else-if="dashboards.length === 0" class="status-text">{{ getText('MRI_PA_NO_DASHBOARDS_AVAILABLE') }}</p>
         <p v-else-if="availableDashboards.length === 0 && dashboards.length > 0" class="status-text">
-          No configured dashboards available for this dataset.
+          {{ getText('MRI_PA_NO_CONFIGURED_DASHBOARDS') }}
         </p>
 
         <ul v-else class="dashboard-list">
@@ -34,17 +34,21 @@
 
     <template #footer>
       <div class="flex-spacer"></div>
-      <appButton :click="handleContinue" text="Continue" :disabled="loading || !selectedDashboardId" />
-      <appButton :click="handleClose" text="Cancel" :disabled="loading" />
+      <appButton :click="handleContinue" :text="getText('MRI_PA_BUTTON_CONTINUE')" :disabled="loading || !selectedDashboardId" />
+      <appButton :click="handleClose" :text="getText('MRI_PA_BUTTON_CANCEL')" :disabled="loading" />
     </template>
   </MessageBox>
 </template>
 
 <script lang="ts" setup>
 import { computed, ref, watch, type PropType } from 'vue'
+import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import type { WizardDefinition } from '@/utils/dashboardFlowUtils'
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
 interface DashboardCode {
   name: string
