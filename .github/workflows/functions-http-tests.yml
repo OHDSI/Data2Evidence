@@ -168,7 +168,7 @@ jobs:
       - name: Setup Test DB
         run: |
           yarn --prefer-offline
-          yarn inittestdb
+          yarn inittestdb-hana
 
       - name: Login to logto and get Bearer token and sub
         run: |
@@ -397,7 +397,7 @@ jobs:
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
-        run: yarn removetestdb
+        run: yarn removetestdb-hana
 
       - name: Prune system
         if: always()
