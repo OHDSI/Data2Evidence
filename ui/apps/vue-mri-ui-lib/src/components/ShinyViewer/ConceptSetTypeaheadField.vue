@@ -8,7 +8,6 @@
         class="form-control"
         type="text"
         :placeholder="placeholder"
-        :disabled="loading"
         autocomplete="off"
         @keydown="handleKeyDown"
         @focus="handleFocus"
@@ -18,37 +17,29 @@
       <span v-if="loading" class="loading-indicator">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </span>
-      <button
-        v-else-if="selectedItem"
-        class="clear-btn"
-        @click="clearSelection"
-        title="Clear selection"
-        type="button"
-      >
+      <button v-else-if="selectedItem" class="clear-btn" @click="clearSelection" title="Clear selection" type="button">
         ×
       </button>
     </div>
 
     <Teleport to="body">
       <div v-if="isOpen" class="concept-typeahead-dropdown" :style="dropdownStyle">
-      <ul ref="suggestionsListRef" class="concept-typeahead-list">
-        <li v-if="loading" class="concept-typeahead-message">Loading...</li>
-        <li v-else-if="filteredOptions.length === 0" class="concept-typeahead-message">No results</li>
-        <li
-          v-for="(item, index) in filteredOptions"
-          :key="item.value"
-          :class="['concept-typeahead-item', { highlighted: index === highlightedIndex }]"
-          @mousedown.prevent="selectItem(item)"
-          @mouseenter="highlightedIndex = index"
-        >
-          <span class="concept-typeahead-text">{{ item.label }}</span>
-          <span v-if="item.label !== item.value" class="concept-typeahead-value">({{ item.value }})</span>
-        </li>
-      </ul>
-    </div>
+        <ul ref="suggestionsListRef" class="concept-typeahead-list">
+          <li v-if="loading" class="concept-typeahead-message">Loading...</li>
+          <li v-else-if="filteredOptions.length === 0" class="concept-typeahead-message">No results</li>
+          <li
+            v-for="(item, index) in filteredOptions"
+            :key="item.value"
+            :class="['concept-typeahead-item', { highlighted: index === highlightedIndex }]"
+            @mousedown.prevent="selectItem(item)"
+            @mouseenter="highlightedIndex = index"
+          >
+            <span class="concept-typeahead-text">{{ item.label }}</span>
+            <span v-if="item.label !== item.value" class="concept-typeahead-value">({{ item.value }})</span>
+          </li>
+        </ul>
+      </div>
     </Teleport>
-
-
   </div>
 </template>
 
@@ -176,8 +167,10 @@ function updateDropdownPosition() {
 function handleInput() {
   selectedItem.value = null
   isCustomValue.value = false
-  emit('update:modelValue', null)
-  emit('update:displayValue', null)
+  // Emit empty string instead of null to prevent parent watch from clearing searchText
+  // Parent initializes with '', so keeping it as '' avoids triggering the watch
+  emit('update:modelValue', '')
+  emit('update:displayValue', '')
   isOpen.value = true
   highlightedIndex.value = -1
   updateDropdownPosition()
@@ -296,7 +289,7 @@ onUnmounted(() => {
 
 watch(
   () => props.modelValue,
-  (newValue) => {
+  newValue => {
     if (!newValue) {
       selectedItem.value = null
       isCustomValue.value = false
