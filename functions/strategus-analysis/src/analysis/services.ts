@@ -83,8 +83,9 @@ export default class StrategusAnalysisService {
             try {
                 await portalAPI.createDataset(datasetInput);
             } catch (error) {
-                console.error("Error creating dataset for strategus analysis:", error);
-                throw new Error(`Failed to create dataset: ${error.message}`);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error("Error creating dataset for strategus analysis:", errorMessage);
+                throw new Error(`Failed to create dataset: ${errorMessage}`);
             }
 
             // Create new analysisSpec with datasetId
