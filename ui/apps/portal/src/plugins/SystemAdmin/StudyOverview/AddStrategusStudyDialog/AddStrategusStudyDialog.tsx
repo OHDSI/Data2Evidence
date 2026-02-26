@@ -4,6 +4,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import { Dialog, Button, TextField } from "@portal/components";
 import { Feedback } from "../../../../types";
 import { api } from "../../../../axios/api";
+import { useTenant } from "../../../../hooks";
 import "./AddStrategusStudyDialog.scss";
 
 interface AddStrategusStudyDialogProps {
@@ -12,9 +13,13 @@ interface AddStrategusStudyDialogProps {
 }
 
 interface FormError {
-  studyId: {
+  studyName: {
     required: boolean;
     invalid: boolean;
+  };
+  tokenStudyCode: {
+    required: boolean;
+    valid: boolean;
   };
   analysisSpec: {
     invalid: boolean;
@@ -22,37 +27,58 @@ interface FormError {
 }
 
 const EMPTY_FORM_ERROR: FormError = {
-  studyId: { required: false, invalid: false },
+  studyName: { required: false, invalid: false },
+  tokenStudyCode: { required: false, valid: false },
   analysisSpec: { invalid: false },
 };
 
 const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClose }) => {
-  const [studyId, setStudyId] = useState("");
+  const [tenant] = useTenant();
+  const [studyName, setStudyName] = useState("");
+  const [tokenStudyCode, setTokenStudyCode] = useState("");
   const [analysisSpec, setAnalysisSpec] = useState("{}");
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
   const [feedback, setFeedback] = useState<Feedback>({});
 
   const handleClose = useCallback(() => {
-    setStudyId("");
+    setStudyName("");
+    setTokenStudyCode("");
     setAnalysisSpec("{}");
     setFormError(EMPTY_FORM_ERROR);
     setFeedback({});
     onClose(false);
   }, [onClose]);
 
+  const tokenIsValid = useCallback((token: string) => {
+    const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
+    if (token.match(tokenFormat)) {
+      return true;
+    }
+  }, []);
+
   const validateForm = useCallback(() => {
     let error: FormError = EMPTY_FORM_ERROR;
     let hasError = false;
 
-    if (!studyId.trim()) {
-      error = { ...error, studyId: { required: true, invalid: false } };
+    if (!studyName.trim()) {
+      error = { ...error, studyName: { required: true, invalid: false } };
       hasError = true;
     }
 
-    const studyIdPattern = /^[a-zA-Z0-9_-]+$/;
-    if (studyId && !studyIdPattern.test(studyId)) {
-      error = { ...error, studyId: { required: false, invalid: true } };
+    const studyNamePattern = /^[a-zA-Z0-9_-]+$/;
+    if (studyName && !studyNamePattern.test(studyName)) {
+      error = { ...error, studyName: { required: false, invalid: true } };
+      hasError = true;
+    }
+
+    if (!tokenStudyCode) {
+      error = { ...error, tokenStudyCode: { required: true, valid: false } };
+      hasError = true;
+    }
+
+    if (tokenStudyCode && !tokenIsValid(tokenStudyCode)) {
+      error = { ...error, tokenStudyCode: { required: false, valid: true } };
       hasError = true;
     }
 
@@ -68,7 +94,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
       return false;
     }
     return true;
-  }, [studyId, analysisSpec]);
+  }, [studyName, tokenStudyCode, analysisSpec, tokenIsValid]);
 
   const handleSubmit = useCallback(async () => {
     if (!validateForm()) {
@@ -81,13 +107,16 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
 
     try {
       await api.strategusAnalysis.createStrategusAnalysis({
-        studyId: studyId.trim(),
+        studyId: studyName.trim(),
+        tokenStudyCode: tokenStudyCode.trim(),
         analysisSpec,
         mode: "notebook",
-        notebookName: studyId.trim(),
+        notebookName: studyName.trim(),
+        tenantId: tenant?.id || "",
       });
 
-      setStudyId("");
+      setStudyName("");
+      setTokenStudyCode("");
       setAnalysisSpec("{}");
       onClose(true);
     } catch (err: any) {
@@ -99,7 +128,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
     } finally {
       setLoading(false);
     }
-  }, [studyId, analysisSpec, onClose, validateForm]);
+  }, [studyName, tokenStudyCode, analysisSpec, tenant, onClose, validateForm]);
 
   return (
     <Dialog
@@ -119,19 +148,42 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
           <TextField
             fullWidth
             variant="standard"
-            label="Study ID"
-            value={studyId}
-            onChange={(event) => setStudyId(event.target.value)}
-            error={formError.studyId.required}
+            label="Study Name"
+            value={studyName}
+            onChange={(event) => setStudyName(event.target.value)}
+            error={formError.studyName.required || formError.studyName.invalid}
             disabled={loading}
           />
-          {formError.studyId.required && <FormHelperText error={true}>Study ID is required</FormHelperText>}
-          {formError.studyId.invalid && (
+          {formError.studyName.required && <FormHelperText error={true}>Study Name is required</FormHelperText>}
+          {formError.studyName.invalid && (
             <FormHelperText error={true}>
-              Study ID can only contain letters, numbers, underscores, and hyphens
+              Study Name can only contain letters, numbers, underscores, and hyphens
             </FormHelperText>
           )}
-          <FormHelperText>Enter a unique identifier for your study</FormHelperText>
+          <FormHelperText>Enter a unique name for your study</FormHelperText>
+        </div>
+        <div style={{ marginBottom: "32px" }}>
+          <TextField
+            fullWidth
+            variant="standard"
+            label="Token Dataset Code"
+            value={tokenStudyCode}
+            onChange={(event) => setTokenStudyCode(event.target.value)}
+            inputProps={{ maxLength: 48 }}
+            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+            disabled={loading}
+          />
+          {formError.tokenStudyCode.required && (
+            <FormHelperText error={true}>Token Dataset Code is required</FormHelperText>
+          )}
+          {formError.tokenStudyCode.valid && (
+            <FormHelperText error={true}>
+              Token Dataset Code must contain only alphanumeric characters and underscores (max 80 characters)
+            </FormHelperText>
+          )}
+          <FormHelperText>
+            Enter a unique identifier that can contain alphanumeric characters and underscores only
+          </FormHelperText>
         </div>
         <div style={{ marginBottom: "32px" }}>
           <TextField
