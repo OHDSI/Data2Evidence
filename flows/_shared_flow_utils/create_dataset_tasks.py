@@ -187,4 +187,5 @@ def create_results_tables(sql_script: str, dbdao):
                 conn.close()
 
 def is_safe_schema_name(schema: str) -> bool:
-    return match(r"^[a-zA-Z][a-zA-Z0-9_]*$", schema) is not None
+    # Allow dot-separated identifiers (e.g. 'demo_cdm.demo_cdm')
+    return match(r"^[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z][a-zA-Z0-9_]*)*$", schema) is not None
