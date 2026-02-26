@@ -866,6 +866,18 @@ class D2ECli {
         });
       });
     (status_cmd as any)._hidden = true;
+
+    this.program
+      .command("version")
+      .description("Displays d2e CLI version")
+      .action(() => {
+        const pkgPath = path.join(this.node_modules_path, "package.json");
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+        console.log(`d2e CLI version:    ${pkg.version}`);
+        console.log(`Docker Image tag:   ${this.DOCKER_TAG_NAME}`);
+        console.log(`Plugins API version: ${this.PLUGINS_API_VERSION}`);
+      });
+
     const logs_cmd = this.program
       .command("logs")
       .description("View logs of d2e services")
