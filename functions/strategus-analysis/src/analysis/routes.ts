@@ -56,17 +56,19 @@ export default class StrategusAnalysisRouter {
 
   private async createStrategusAnalysis(req: Request, res: Response) {
     try {
-      const { studyId, analysisSpec, mode, notebookName } = req.body;
+      const { studyId, tokenStudyCode, tenantId, analysisSpec, mode, notebookName } = req.body;
       const token = req.headers["authorization"];
-      if (!studyId || !analysisSpec) {
+      if (!studyId || !tokenStudyCode || !tenantId || !analysisSpec) {
         return res.status(400).json({
-          message: "Missing required fields: studyId, or analysisSpec",
+          message: "Missing required fields: studyId, tokenStudyCode, tenantId, or analysisSpec",
         });
       }
 
       const result = await this.strategusAnalysisService.createAnalysisSpec(
         token,
         studyId,
+        tokenStudyCode,
+        tenantId,
         notebookName,
         analysisSpec,
         mode

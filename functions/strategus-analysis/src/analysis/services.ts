@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { decode, JwtPayload } from "jsonwebtoken";
 import dataSource from "../db/datasource.ts";
+import { PortalAPI } from "../api/PortalAPI.ts";
 
 export default class StrategusAnalysisService {
 
@@ -25,7 +26,15 @@ export default class StrategusAnalysisService {
         return analysis;
     }
 
-    async createAnalysisSpec(token, studyId: string, notebookName: string, analysisSpec: string, mode: string) {
+    async createAnalysisSpec(
+        token: string,
+        studyId: string,
+        tokenStudyCode: string,
+        tenantId: string,
+        notebookName: string,
+        analysisSpec: string,
+        mode: string
+    ) {
         this.token = token;
         let analysisId = uuidv4();
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
@@ -43,13 +52,49 @@ export default class StrategusAnalysisService {
                 // throw new Error("Missing required fields: notebookName or mode");
                 throw new Error("Missing required fields: mode");
             }
-            // Create new analysisSpec
+
+            // Create dataset first before creating strategus analysis
+            const portalAPI = new PortalAPI(token);
+            const datasetId = uuidv4();
+            
+            const datasetInput = {
+                id: datasetId,
+                type: "strategus_analysis",
+                tokenDatasetCode: tokenStudyCode,
+                tenantId: tenantId,
+                dialect: "",
+                databaseCode: "",
+                schemaName: "",
+                vocabSchemaName: "",
+                resultsSchemaName: "",
+                dataModel: "",
+                visibilityStatus: "DEFAULT",
+                detail: {
+                    name: studyId,
+                    summary: "",
+                    description: "",
+                    showRequestAccess: false,
+                },
+                dashboards: [],
+                attributes: [],
+                tags: [],
+            };
+
+            try {
+                await portalAPI.createDataset(datasetInput);
+            } catch (error) {
+                console.error("Error creating dataset for strategus analysis:", error);
+                throw new Error(`Failed to create dataset: ${error.message}`);
+            }
+
+            // Create new analysisSpec with datasetId
             const newAnalysis = {
                 id: analysisId,
                 analysisSpec,
                 studyId,
                 mode,
-                notebookName
+                notebookName,
+                datasetId: datasetId,
             };
             await this.strategusAnalysisRepository.save(this.addOwnerInfo(newAnalysis, true));
         }
