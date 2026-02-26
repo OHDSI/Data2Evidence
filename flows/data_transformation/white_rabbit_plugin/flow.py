@@ -58,6 +58,6 @@ def scan_report_flow(options: WhiteRabbitRequestType):
 def generate_etl_report_flow(options: WhiteRabbitRequestType):
     data_mapping_file_name = "datamapping.json"
 
-    data_mapping_file_path = generate_data_json(options.data, data_mapping_file_name)
+    data_mapping_file_path = generate_data_json(options.data.model_dump(), data_mapping_file_name)
     
     generate_etl_word_document(data_mapping_file_path)
