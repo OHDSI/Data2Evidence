@@ -47,6 +47,8 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
 
   before(function (done) {
     dbConnection = dbConnectionUtil.createDBConnection(hostConfig.getSystemCredentials())
+    console.log(`dbConnection: ${dbConnection}`)
+    console.log(`dbConnection.hdbClient: ${dbConnection.hdbClient}`)
     var MIN_COHORT_SIZE = 0
     params = {
       hostConfig: hostConfig,

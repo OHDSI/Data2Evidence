@@ -12,6 +12,9 @@ function HDBConnection(credentials) {
  * Initialize HDB connection
  */
 HDBConnection.prototype.initConnection = cb => {
+  console.log(`>>this.credentials: ${this.credentials}`)
+  console.log(`>>this.hdbClient: ${this.hdbClient}`)
+
   this.hdbClient.connect(err => {
     if (err) {
       process.nextTick(cb, err)
