@@ -288,6 +288,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
       setLoading(true);
       if (canConnect) {
         const response = await createDBScanReport({
+          nodeId,
           postgresqlForm: dbConnectionForm,
           tablesToScan: selectedTables,
         }).unwrap();

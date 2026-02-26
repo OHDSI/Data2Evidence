@@ -128,11 +128,11 @@ export class WhiteRabbit {
     });
   }
 
-  public createEtlReport(etlModel: EtlModel) {
+  public createEtlReport(etlModel: EtlModel, nodeId: string) {
     const data = {
       options: {
         run_type: "GENERATE_ETL_REPORT",
-        data: etlModel,
+        data: { ...etlModel, node_id: nodeId },
       },
     };
 

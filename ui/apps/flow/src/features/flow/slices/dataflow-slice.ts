@@ -269,9 +269,13 @@ export const dataflowApiSlice = createApi({
     }),
     createDBScanReport: builder.mutation<
       any,
-      { postgresqlForm: ScanDataDBConnectionForm; tablesToScan: string[] }
+      {
+        postgresqlForm: ScanDataDBConnectionForm;
+        tablesToScan: string[];
+        nodeId: string;
+      }
     >({
-      query: ({ postgresqlForm, tablesToScan }) => {
+      query: ({ postgresqlForm, tablesToScan, nodeId }) => {
         const iniSettings = {
           ...postgresqlForm,
           server_location: `${postgresqlForm.server}:${postgresqlForm.port}/${postgresqlForm.database}`,
@@ -281,6 +285,7 @@ export const dataflowApiSlice = createApi({
         const data = {
           options: {
             data: iniSettings,
+            node_id: nodeId,
             run_type: "SCAN_REPORT_DB",
           },
         };
