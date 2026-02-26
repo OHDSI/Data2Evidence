@@ -34,7 +34,7 @@ export class PortalAPI {
   private readonly baseURL: string;
   private readonly logger = console;
   private readonly token: string;
-  private readonly channel;
+  private readonly channel: any;
 
   constructor(token: string) {
     this.token = token;
