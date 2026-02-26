@@ -55,6 +55,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
     if (token.match(tokenFormat)) {
       return true;
     }
+    return false;
   }, []);
 
   const validateForm = useCallback(() => {
@@ -78,7 +79,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
     }
 
     if (tokenStudyCode && !tokenIsValid(tokenStudyCode)) {
-      error = { ...error, tokenStudyCode: { required: false, valid: true } };
+      error = { ...error, tokenStudyCode: { required: false, valid: false } };
       hasError = true;
     }
 
@@ -169,14 +170,14 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
             label="Token Dataset Code"
             value={tokenStudyCode}
             onChange={(event) => setTokenStudyCode(event.target.value)}
-            inputProps={{ maxLength: 48 }}
-            error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
+            inputProps={{ maxLength: 80 }}
+            error={formError.tokenStudyCode.required || !formError.tokenStudyCode.valid}
             disabled={loading}
           />
           {formError.tokenStudyCode.required && (
             <FormHelperText error={true}>Token Dataset Code is required</FormHelperText>
           )}
-          {formError.tokenStudyCode.valid && (
+          {!formError.tokenStudyCode.valid && (
             <FormHelperText error={true}>
               Token Dataset Code must contain only alphanumeric characters and underscores (max 80 characters)
             </FormHelperText>
