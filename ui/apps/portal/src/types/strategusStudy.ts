@@ -18,6 +18,7 @@ export interface NetworkStrategusStudy {
   viewerCode?: string;
   createdAt: string;
   updatedAt: string;
+  datasetId: string;
 }
 
 export enum StrategusStudyType {
