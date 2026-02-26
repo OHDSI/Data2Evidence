@@ -286,9 +286,12 @@ const StudyOverview: FC = () => {
 
       try {
         // Fetch analysis data for each strategus_analysis dataset
+        // Note: This makes parallel API calls. If the number of strategus studies becomes large,
+        // consider implementing batching or rate limiting.
         const analysisPromises = strategusAnalysisDatasets.map(async (dataset) => {
           try {
-            // The studyId in the analysis table should match the dataset's studyDetail.name
+            // The studyId in the analysis table matches the dataset's studyDetail.name (set during creation).
+            // Fallback to dataset.id for legacy datasets that may not have studyDetail.name set.
             const studyId = dataset.studyDetail?.name || dataset.id;
             const analysis = await api.strategusAnalysis.getStrategusAnalysis(studyId);
             return analysis;
