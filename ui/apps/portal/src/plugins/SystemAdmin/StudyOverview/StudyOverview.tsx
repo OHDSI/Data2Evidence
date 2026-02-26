@@ -87,6 +87,7 @@ const StudyOverview: FC = () => {
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [strategusStudies, setStrategusStudies] = useState<NetworkStrategusStudy[]>([]);
+  const [loadingStrategusStudies, setLoadingStrategusStudies] = useState(false);
 
   const handleSourceInformation = useCallback(
     (dataset: Study) => {
@@ -276,42 +277,25 @@ const StudyOverview: FC = () => {
     }));
   }, []);
 
-  // Fetch strategus analysis data for strategus_analysis datasets
+  // Fetch strategus analysis data and merge with strategus_analysis datasets
   useEffect(() => {
-    const fetchStrategusAnalysisData = async () => {
-      if (strategusAnalysisDatasets.length === 0) {
-        setStrategusStudies([]);
-        return;
-      }
-
+    const fetchStrategusStudies = async () => {
+      if (!datasets) return;
+      
+      setLoadingStrategusStudies(true);
       try {
-        // Fetch analysis data for each strategus_analysis dataset
-        // Note: This makes parallel API calls. If the number of strategus studies becomes large,
-        // consider implementing batching or rate limiting.
-        const analysisPromises = strategusAnalysisDatasets.map(async (dataset) => {
-          try {
-            // The studyId in the analysis table matches the dataset's studyDetail.name (set during creation).
-            // Fallback to dataset.id for legacy datasets that may not have studyDetail.name set.
-            const studyId = dataset.studyDetail?.name || dataset.id;
-            const analysis = await api.strategusAnalysis.getStrategusAnalysis(studyId);
-            return analysis;
-          } catch (error) {
-            console.error(`Error fetching analysis for dataset ${dataset.id}:`, error);
-            return null;
-          }
-        });
-
-        const analysisResults = await Promise.all(analysisPromises);
-        const validAnalyses = analysisResults.filter((analysis): analysis is NetworkStrategusStudy => analysis !== null);
-        setStrategusStudies(validAnalyses);
+        const studies = await api.strategusAnalysis.getAllStrategusAnalysis();
+        setStrategusStudies(studies);
       } catch (error) {
-        console.error("Error fetching strategus analysis data:", error);
+        console.error("Error fetching strategus studies:", error);
         setStrategusStudies([]);
+      } finally {
+        setLoadingStrategusStudies(false);
       }
     };
 
-    fetchStrategusAnalysisData();
-  }, [strategusAnalysisDatasets]);
+    fetchStrategusStudies();
+  }, [refetch, datasets]);
 
   // Organize datasets into parent-child structure for source/omop/hana and fhir, and separate lists for studies and strategus_analysis
   const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets, strategusAnalysisDatasets } = useMemo(() => {
@@ -379,13 +363,22 @@ const StudyOverview: FC = () => {
       children: fhirChildrenMap.get(dataset.id) || [],
     }));
 
+    // Merge strategusStudies into strategusAnalysisDatasets
+    const strategusAnalysisWithData = strategusAnalysis.map((dataset) => {
+      const matchingStudy = strategusStudies.find((study) => study.datasetId === dataset.id);
+      return {
+        ...dataset,
+        strategusAnalysis: matchingStudy || null,
+      };
+    });
+
     return {
       sourceOmopHanaDatasets: cdmDatasetsWithChildren,
       studyDatasets: studies,
       fhirDatasets: fhirDatasetsWithChildren,
-      strategusAnalysisDatasets: strategusAnalysis,
+      strategusAnalysisDatasets: strategusAnalysisWithData,
     };
-  }, [datasets]);
+  }, [datasets, strategusStudies]);
 
   // Initialize expandedRows to have all parent datasets expanded by default
   useEffect(() => {
@@ -803,19 +796,19 @@ const StudyOverview: FC = () => {
               </h4>
               <Button text="Add Study" onClick={openAddStrategusStudyDialog} />
             </div>
-            {loadingDatasets ? (
+            {loadingStrategusStudies ? (
               <TableContainer className="studyoverview__list">
                 <Table>
                   <TableBody>
                     <TableRow>
-                      <TableCell colSpan={9} align="center">
+                      <TableCell colSpan={5} align="center">
                         <Loader />
                       </TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
               </TableContainer>
-            ) : strategusStudies.length > 0 ? (
+            ) : strategusAnalysisDatasets.length > 0 ? (
               <TableContainer className="studyoverview__list">
                 <Table>
                   <colgroup>
@@ -825,50 +818,52 @@ const StudyOverview: FC = () => {
                     <col />
                     <col />
                     <col />
-                    <col />
-                    <col />
                   </colgroup>
                   <TableHead>
                     <TableRow>
                       <TableCell></TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__STUDY_ID)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ANALYSIS_ID)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__MODE)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NOTEBOOK_NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__NAME)}</TableCell>
+                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__SCHEMA_NAME)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__CREATED_AT)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__UPDATED_AT)}</TableCell>
-                      <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__TYPE)}</TableCell>
                       <TableCell>{getText(i18nKeys.STUDY_OVERVIEW__ACTIONS)}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {strategusStudies.map((study: NetworkStrategusStudy) => (
-                      <TableRow key={study.analysisId || study.studyId}>
+                    {strategusAnalysisDatasets.map((dataset: Study) => (
+                      <TableRow key={dataset.id}>
                         <TableCell className="icon-cell icon-cell--no-children"></TableCell>
                         <TableCell>
-                          <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
-                            {study.studyId}
+                          <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
+                            {dataset.studyDetail?.name || getText(i18nKeys.STUDY_OVERVIEW__UNTITLED)}
                           </Text>
                         </TableCell>
                         <TableCell>
-                          <Text textFormat="wrap" textStyle={{ paddingTop: "5px" }}>
-                            {study.analysisId || "-"}
+                          <Text textFormat="wrap" showCopy textStyle={{ paddingTop: "5px" }}>
+                            {dataset.schemaName || "-"}
                           </Text>
                         </TableCell>
-                        <TableCell>{study.mode || "-"}</TableCell>
-                        <TableCell>{study.notebookName || "-"}</TableCell>
-                        <TableCell>{study.createdAt ? new Date(study.createdAt).toLocaleDateString() : "-"}</TableCell>
-                        <TableCell>{study.updatedAt ? new Date(study.updatedAt).toLocaleDateString() : "-"}</TableCell>
-                        <TableCell>study</TableCell>
+                        <TableCell>
+                          {dataset.strategusAnalysis?.createdAt
+                            ? new Date(dataset.strategusAnalysis.createdAt).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {dataset.strategusAnalysis?.updatedAt
+                            ? new Date(dataset.strategusAnalysis.updatedAt).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
                         <TableCell className="col-action">
-                          <StudyActionSelector
-                            study={study}
-                            handleRunStrategusStudy={handleRunStrategusStudy}
-                            handleCleanupStrategusStudy={handleCleanupStrategusStudy}
-                            handleManageStrategusResultViewer={handleManageStrategusResultViewer}
-                            handleUploadStrategusResults={handleUploadStrategusResults}
-                            handleDownloadStrategusResults={handleDownloadStrategusResults}
-                          />
+                          {dataset.strategusAnalysis && (
+                            <StudyActionSelector
+                              study={dataset.strategusAnalysis}
+                              handleRunStrategusStudy={handleRunStrategusStudy}
+                              handleCleanupStrategusStudy={handleCleanupStrategusStudy}
+                              handleManageStrategusResultViewer={handleManageStrategusResultViewer}
+                              handleUploadStrategusResults={handleUploadStrategusResults}
+                              handleDownloadStrategusResults={handleDownloadStrategusResults}
+                            />
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
