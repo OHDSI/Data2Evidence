@@ -32,7 +32,7 @@ const mutations = {
   },
   // Wizard config is cleared when bookmark changes
   // This is handled by subscribing to bookmark mutations
-  [types.SET_ACTIVE_BOOKMARK](modulestate, _bookmark, _rootState) {
+  [types.SET_ACTIVE_BOOKMARK](modulestate) {
     // Clear wizard config when any bookmark change occurs
     // The bookmark module handles the actual bookmark switch detection
     modulestate.wizardConfig = null

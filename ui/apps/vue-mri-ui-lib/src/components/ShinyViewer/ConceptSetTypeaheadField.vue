@@ -112,10 +112,11 @@ const filteredOptions = computed(() => {
 })
 
 function domainValueToOption(item: DomainValueItem): Option {
-  const label = item.display_value || item.text
+  // Return the display value as-is; the template will append the value in parentheses if needed
+  const label = item.display_value || item.text || item.value
   return {
     value: item.value,
-    label: label !== item.value ? `${label} (${item.value})` : label,
+    label,
   }
 }
 

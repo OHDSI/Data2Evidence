@@ -71,13 +71,6 @@ watch(() => props.wizardConfig, (newConfig, oldConfig) => {
   }
 }, { deep: true })
 
-// Watch for iframeUrl changes - if it becomes valid, ensure loading state is correct
-watch(iframeUrl, (newUrl) => {
-  if (newUrl && !props.wizardConfig) {
-    console.log('[Parent] iframeUrl is valid but wizardConfig missing')
-  }
-})
-
 window.addEventListener('message', handleIframeMessage)
 
 onMounted(async () => {

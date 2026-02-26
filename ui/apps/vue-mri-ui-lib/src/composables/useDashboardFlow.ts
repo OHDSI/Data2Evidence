@@ -5,6 +5,7 @@ import {
   parseNumericInput,
   validateRequiredFields,
   type MissingRequiredField,
+  type NumericFilterValue,
   type WizardDefinition,
 } from '../utils/dashboardFlowUtils'
 
@@ -464,7 +465,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   ): Promise<any> {
     const constraintType = constraint.props.type
     if (constraintType === 'num') {
-      let parsedValues: Array<{ op: string; value: number }> = []
+      let parsedValues: NumericFilterValue[] = []
       if (typeof rawInput === 'string') {
         parsedValues = parseNumericInput(rawInput)
         if (

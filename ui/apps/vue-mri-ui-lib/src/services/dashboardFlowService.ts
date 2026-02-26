@@ -1,4 +1,4 @@
-import type { WizardFieldDefinition, WizardFixedAttribute } from '../utils/dashboardFlowUtils'
+import type { WizardFixedAttribute } from '../utils/dashboardFlowUtils'
 
 export interface Constraint {
   id: string
@@ -100,8 +100,6 @@ export function constraintContainsExpression(
  * Check if a filter card matches all fixed attributes
  */
 export function cardMatchesFixedAttributes(
-  filterCard: FilterCard,
-  constraints: Record<string, Constraint>,
   fixedAttributes: WizardFixedAttribute[],
   getConstraintForAttribute: (key: string) => Constraint | undefined
 ): boolean {
@@ -139,8 +137,6 @@ export function findFilterCardIdForField(
   return (
     candidateCardIds.find((filterCardId) => {
       return cardMatchesFixedAttributes(
-        filterCards[filterCardId],
-        constraints,
         fixedAttributes,
         (key) => getConstraintForAttribute(filterCardId, key)
       )

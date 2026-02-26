@@ -2,10 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   getConstraintExpressions,
   constraintContainsExpression,
-  cardMatchesFixedAttributes,
-  findFilterCardIdForField,
   type Constraint,
-  type FilterCard,
 } from '../dashboardFlowService'
 
 describe('dashboardFlowService', () => {

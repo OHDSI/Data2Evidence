@@ -175,14 +175,89 @@ const yearOptions = computed(() => {
   return years
 })
 
-// Check if all required fields are filled correctly
+// Validate all fields and set error messages - call this before checking isFormValid
+function validateAllFields(): boolean {
+  // Clear year errors
+  Object.keys(yearErrors).forEach(key => delete yearErrors[key])
+
+  let isValid = true
+
+  for (const field of props.fields) {
+    // yearRange validation - matches Wizards
+    if (field.type === 'yearRange') {
+      const from = formValues[`${field.id}_from`]
+      const to = formValues[`${field.id}_to`]
+
+      // If required, both must be filled
+      if (field.required !== false) {
+        if (!from || !to) {
+          isValid = false
+          continue
+        }
+      }
+
+      // If either is set, both must be set
+      if ((from && !to) || (!from && to)) {
+        if (from && !to) {
+          yearErrors[field.id] = getText('MRI_PA_TO_YEAR_REQUIRED')
+        } else {
+          yearErrors[field.id] = getText('MRI_PA_FROM_YEAR_REQUIRED')
+        }
+        isValid = false
+        continue
+      }
+
+      // Validate range
+      if (from && to) {
+        const fromNum = Number(from)
+        const toNum = Number(to)
+        if (toNum < fromNum) {
+          yearErrors[field.id] = getText('MRI_PA_YEAR_RANGE_INVALID')
+          isValid = false
+          continue
+        }
+      }
+      continue
+    }
+
+    // Skip validation for non-required fields
+    if (field.required === false) {
+      continue
+    }
+
+    const value = formValues[field.id]
+
+    // Date types
+    if (isDateType(field.type)) {
+      if (!value || (!value.from && !value.to)) {
+        isValid = false
+      }
+      continue
+    }
+
+    // Numeric types - validate if field has value
+    if (field.type === 'num' && value) {
+      if (!validateNumericValue(value)) {
+        isValid = false
+      }
+      continue
+    }
+
+    // Other types - check for non-empty value
+    const stringValue = typeof value === 'string' ? value.trim() : value
+    if (!stringValue && stringValue !== 0) {
+      isValid = false
+    }
+  }
+
+  return isValid
+}
+
+// Check if all required fields are filled correctly (pure computed, no side effects)
 const isFormValid = computed(() => {
   if (!props.fields.length) {
     return true
   }
-
-  // Clear year errors
-  Object.keys(yearErrors).forEach(key => delete yearErrors[key])
 
   for (const field of props.fields) {
     // yearRange validation - matches Wizards
@@ -199,11 +274,6 @@ const isFormValid = computed(() => {
 
       // If either is set, both must be set
       if ((from && !to) || (!from && to)) {
-        if (from && !to) {
-          yearErrors[field.id] = getText('MRI_PA_TO_YEAR_REQUIRED')
-        } else {
-          yearErrors[field.id] = getText('MRI_PA_FROM_YEAR_REQUIRED')
-        }
         return false
       }
 
@@ -212,7 +282,6 @@ const isFormValid = computed(() => {
         const fromNum = Number(from)
         const toNum = Number(to)
         if (toNum < fromNum) {
-          yearErrors[field.id] = getText('MRI_PA_YEAR_RANGE_INVALID')
           return false
         }
       }
@@ -315,6 +384,8 @@ function handleCancel() {
 }
 
 function handleSubmit() {
+  // Run validation to set error messages, then check if form is valid
+  validateAllFields()
   if (!isFormValid.value) {
     return
   }
