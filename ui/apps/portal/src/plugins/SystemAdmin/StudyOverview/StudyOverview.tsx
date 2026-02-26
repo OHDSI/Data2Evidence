@@ -87,7 +87,6 @@ const StudyOverview: FC = () => {
   const [loading, setLoading] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [strategusStudies, setStrategusStudies] = useState<NetworkStrategusStudy[]>([]);
-  const [loadingStrategusStudies, setLoadingStrategusStudies] = useState(false);
 
   const handleSourceInformation = useCallback(
     (dataset: Study) => {
@@ -277,30 +276,48 @@ const StudyOverview: FC = () => {
     }));
   }, []);
 
+  // Fetch strategus analysis data for strategus_analysis datasets
   useEffect(() => {
-    const fetchStrategusStudies = async () => {
-      setLoadingStrategusStudies(true);
-      try {
-        const studies = await api.strategusAnalysis.getAllStrategusAnalysis();
-        setStrategusStudies(studies);
-      } catch (error) {
-        console.error("Error fetching strategus studies:", error);
+    const fetchStrategusAnalysisData = async () => {
+      if (strategusAnalysisDatasets.length === 0) {
         setStrategusStudies([]);
-      } finally {
-        setLoadingStrategusStudies(false);
+        return;
+      }
+
+      try {
+        // Fetch analysis data for each strategus_analysis dataset
+        const analysisPromises = strategusAnalysisDatasets.map(async (dataset) => {
+          try {
+            // The studyId in the analysis table should match the dataset's studyDetail.name
+            const studyId = dataset.studyDetail?.name || dataset.id;
+            const analysis = await api.strategusAnalysis.getStrategusAnalysis(studyId);
+            return analysis;
+          } catch (error) {
+            console.error(`Error fetching analysis for dataset ${dataset.id}:`, error);
+            return null;
+          }
+        });
+
+        const analysisResults = await Promise.all(analysisPromises);
+        const validAnalyses = analysisResults.filter((analysis): analysis is NetworkStrategusStudy => analysis !== null);
+        setStrategusStudies(validAnalyses);
+      } catch (error) {
+        console.error("Error fetching strategus analysis data:", error);
+        setStrategusStudies([]);
       }
     };
 
-    fetchStrategusStudies();
-  }, [refetch]);
+    fetchStrategusAnalysisData();
+  }, [strategusAnalysisDatasets]);
 
-  // Organize datasets into parent-child structure for source/omop/hana and fhir, and separate lists for studies
-  const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets } = useMemo(() => {
-    if (!datasets) return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [] };
+  // Organize datasets into parent-child structure for source/omop/hana and fhir, and separate lists for studies and strategus_analysis
+  const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets, strategusAnalysisDatasets } = useMemo(() => {
+    if (!datasets) return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [], strategusAnalysisDatasets: [] };
 
     const sourceOmopHana: Study[] = [];
     const studies: Study[] = [];
     const fhir: Study[] = [];
+    const strategusAnalysis: Study[] = [];
     const cdmChildrenMap = new Map<string, Study[]>();
     const fhirChildrenMap = new Map<string, Study[]>();
 
@@ -311,6 +328,9 @@ const StudyOverview: FC = () => {
       if (type === "study") {
         // Only study type datasets go to studies table
         studies.push(dataset);
+      } else if (type === "strategus_analysis") {
+        // Strategus analysis datasets
+        strategusAnalysis.push(dataset);
       } else if (type === "fhir" || type === "non_omop") {
         // FHIR and non_omop datasets go to FHIR table
         // Check if this is a child dataset (has source_dataset_id attribute)
@@ -360,6 +380,7 @@ const StudyOverview: FC = () => {
       sourceOmopHanaDatasets: cdmDatasetsWithChildren,
       studyDatasets: studies,
       fhirDatasets: fhirDatasetsWithChildren,
+      strategusAnalysisDatasets: strategusAnalysis,
     };
   }, [datasets]);
 
@@ -779,7 +800,7 @@ const StudyOverview: FC = () => {
               </h4>
               <Button text="Add Study" onClick={openAddStrategusStudyDialog} />
             </div>
-            {loadingStrategusStudies ? (
+            {loadingDatasets ? (
               <TableContainer className="studyoverview__list">
                 <Table>
                   <TableBody>
