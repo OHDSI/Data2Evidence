@@ -3,7 +3,7 @@ var hdb = require('hdb')
 function HDBConnection(credentials) {
   this.credentials = credentials
   this.hdbClient = hdb.createClient(credentials)
-  hdbClient.on('error', err => {
+  this.hdbClient.on('error', err => {
     throw err
   })
 }
