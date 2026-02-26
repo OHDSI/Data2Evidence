@@ -93,8 +93,8 @@ export class DBConnectionUtil {
                     }
 
                     //Set APPLICATIONUSER
-                    if (userObj && userObj.getUser()) {
-                        connection.setCurrentUserToDbSession(userObj.getUser(), () => {
+                    if (userObj && (userObj.getEmail() || userObj.getUser())) {
+                        connection.setCurrentUserToDbSession(userObj.getEmail() ?? userObj.getUser(), () => {
                             callback(null, connection);
                         })
                     } else {
