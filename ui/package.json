@@ -210,7 +210,7 @@
             ]
           },
           {
-            "enabled": true,
+            "enabled": false,
             "type": "app",
             "name": "Wizards",
             "nameI18nKey": "UI_PLUGIN_WIZARDS",
