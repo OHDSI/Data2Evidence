@@ -10,7 +10,7 @@
 
         <p v-if="error" class="error-text">{{ error }}</p>
 
-        <div v-for="field in fields" :key="field.id" class="field-row">
+        <div v-for="field in allFields" :key="field.id" class="field-row">
           <div class="field-label-wrapper">
             <label class="field-label" :for="field.id">
               {{ field.label }}
@@ -22,9 +22,9 @@
             <!-- Date types -->
             <template v-if="isDateType(field.type)">
               <div class="date-range-group">
-                <input :id="`${field.id}_from`" class="form-control" type="date" v-model="formValues[field.id].from" />
+                <input :id="`${field.id}_from`" class="form-control" type="date" v-model="formValues[field.id].from" @change="markFieldDirty(field.id)" />
                 <span>to</span>
-                <input :id="`${field.id}_to`" class="form-control" type="date" v-model="formValues[field.id].to" />
+                <input :id="`${field.id}_to`" class="form-control" type="date" v-model="formValues[field.id].to" @change="markFieldDirty(field.id)" />
               </div>
             </template>
 
@@ -37,6 +37,7 @@
                   class="form-control"
                   :class="{ 'is-invalid': yearErrors[field.id] }"
                   @blur="validateYearRange(field.id)"
+                  @change="markFieldDirty(`${field.id}_from`)"
                 >
                   <option value="">{{ getText('MRI_PA_YEAR_FROM_PLACEHOLDER') }}</option>
                   <option v-for="year in yearOptions" :key="`from-${year}`" :value="String(year)">
@@ -50,6 +51,7 @@
                   class="form-control"
                   :class="{ 'is-invalid': yearErrors[field.id] }"
                   @blur="validateYearRange(field.id)"
+                  @change="markFieldDirty(`${field.id}_to`)"
                 >
                   <option value="">{{ getText('MRI_PA_YEAR_TO_PLACEHOLDER') }}</option>
                   <option v-for="year in yearOptions" :key="`to-${year}`" :value="String(year)">
@@ -69,7 +71,7 @@
                 type="text"
                 :placeholder="field.placeholder || getText('MRI_PA_NUMERIC_INPUT_PLACEHOLDER')"
                 v-model="formValues[field.id]"
-                @input="validateNumericField(field.id, formValues[field.id])"
+                @input="validateNumericField(field.id, formValues[field.id]); markFieldDirty(field.id)"
                 @blur="validateNumericField(field.id, formValues[field.id])"
               />
               <p v-if="numericErrors[field.id]" class="field-error">{{ numericErrors[field.id] }}</p>
@@ -90,6 +92,7 @@
                     (val: string | null) => {
                       formValues[field.id] = val
                       handleDisplayValueChange(field.id, val)
+                      markFieldDirty(field.id)
                     }
                   "
                 />
@@ -111,6 +114,7 @@
                 type="text"
                 :placeholder="field.placeholder || getText('MRI_PA_SEARCH_PLACEHOLDER', field.label)"
                 v-model="formValues[field.id]"
+                @input="markFieldDirty(field.id)"
               />
             </template>
           </div>
@@ -132,7 +136,7 @@ import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
-import type { WizardFieldDefinition, MissingRequiredField } from '@/utils/dashboardFlowUtils'
+import type { WizardFieldDefinition } from '@/utils/dashboardFlowUtils'
 import { isConditionField } from '@/utils/dashboardFlowUtils'
 import InputParser from '@/lib/utils/InputParser'
 import RangeConstraintTokenDefinition from '@/lib/utils/RangeConstraintTokenDefinition'
@@ -141,24 +145,26 @@ import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPattern
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
-export interface RequiredFieldItem extends WizardFieldDefinition {}
-
 const props = defineProps<{
   isOpen: boolean
-  fields: MissingRequiredField[]
+  allFields: WizardFieldDefinition[]
+  initialValues: Record<string, any>
+  initialDisplayValues: Record<string, string>
   loading: boolean
   error: string
 }>()
 
 const emit = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', formValues: Record<string, any>, displayValues: Record<string, string>): void
+  (e: 'submit', formValues: Record<string, any>, displayValues: Record<string, string>, dirtyFieldIds: Set<string>): void
 }>()
 
 const formValues = reactive<Record<string, any>>({})
 const displayValues = reactive<Record<string, string>>({})
 const yearErrors = reactive<Record<string, string>>({})
 const numericErrors = reactive<Record<string, string>>({})
+const dirtyFields = reactive<Set<string>>(new Set())
+const initialSnapshot = reactive<Record<string, any>>({})
 
 // Initialize InputParser for numeric field validation
 const numericParser = new InputParser(
@@ -182,7 +188,7 @@ function validateAllFields(): boolean {
 
   let isValid = true
 
-  for (const field of props.fields) {
+  for (const field of props.allFields) {
     // yearRange validation - matches Wizards
     if (field.type === 'yearRange') {
       const from = formValues[`${field.id}_from`]
@@ -255,11 +261,11 @@ function validateAllFields(): boolean {
 
 // Check if all required fields are filled correctly (pure computed, no side effects)
 const isFormValid = computed(() => {
-  if (!props.fields.length) {
+  if (!props.allFields.length) {
     return true
   }
 
-  for (const field of props.fields) {
+  for (const field of props.allFields) {
     // yearRange validation - matches Wizards
     if (field.type === 'yearRange') {
       const from = formValues[`${field.id}_from`]
@@ -323,34 +329,55 @@ const isFormValid = computed(() => {
 
 // Initialize form values when modal opens
 watch(
-  () => [props.isOpen, props.fields],
+  () => [props.isOpen, props.allFields, props.initialValues],
   ([isOpen]) => {
     if (!isOpen) {
       return
     }
 
-    // Clear all form values
+    console.log('[RequiredFiltersModal] Initialize form', {
+      fieldCount: props.allFields.length,
+      conditionFields: props.allFields.filter(f => isConditionField(f.id)).map(f => f.id),
+      initialValuesCount: Object.keys(props.initialValues).length,
+    })
+
+    // Clear all form values and tracking
     Object.keys(formValues).forEach(key => delete formValues[key])
     Object.keys(displayValues).forEach(key => delete displayValues[key])
     Object.keys(yearErrors).forEach(key => delete yearErrors[key])
     Object.keys(numericErrors).forEach(key => delete numericErrors[key])
+    Object.keys(initialSnapshot).forEach(key => delete initialSnapshot[key])
+    dirtyFields.clear()
 
-    // Initialize each field
-    props.fields.forEach(field => {
+    // Copy initial display values
+    Object.assign(displayValues, props.initialDisplayValues)
+
+    // Initialize each field from initialValues or with empty value
+    props.allFields.forEach(field => {
+      const initialValue = props.initialValues[field.id]
+
       if (isDateType(field.type)) {
         // Date range uses object structure
-        formValues[field.id] = { from: '', to: '' }
+        formValues[field.id] = initialValue || { from: '', to: '' }
+        initialSnapshot[field.id] = formValues[field.id]
       } else if (field.type === 'yearRange') {
         // Year range uses separate _from and _to fields
-        formValues[`${field.id}_from`] = ''
-        formValues[`${field.id}_to`] = ''
+        const fromValue = props.initialValues[`${field.id}_from`] || ''
+        const toValue = props.initialValues[`${field.id}_to`] || ''
+        formValues[`${field.id}_from`] = fromValue
+        formValues[`${field.id}_to`] = toValue
+        initialSnapshot[`${field.id}_from`] = fromValue
+        initialSnapshot[`${field.id}_to`] = toValue
       } else {
-        formValues[field.id] = ''
+        formValues[field.id] = initialValue !== undefined ? initialValue : ''
+        initialSnapshot[field.id] = formValues[field.id]
       }
 
       // Initialize wildcard for condition fields
       if (isConditionField(field.id)) {
-        formValues[`${field.id}_wildcard`] = false
+        const wildcardValue = props.initialValues[`${field.id}_wildcard`]
+        formValues[`${field.id}_wildcard`] = wildcardValue === true
+        initialSnapshot[`${field.id}_wildcard`] = formValues[`${field.id}_wildcard`]
       }
     })
   },
@@ -361,7 +388,7 @@ function isDateType(type?: string) {
   return type === 'time' || type === 'datetime' || type === 'date'
 }
 
-function shouldUseTypeahead(field: MissingRequiredField): boolean {
+function shouldUseTypeahead(field: WizardFieldDefinition): boolean {
   if (field.type === 'conceptSet') {
     return true
   }
@@ -379,6 +406,40 @@ function handleDisplayValueChange(fieldId: string, displayValue: string | null) 
   }
 }
 
+function markFieldDirty(fieldId: string) {
+  const currentValue = formValues[fieldId]
+  const initialValue = initialSnapshot[fieldId]
+
+  // For yearRange, check both _from and _to
+  if (fieldId.includes('_from') || fieldId.includes('_to')) {
+    const baseId = fieldId.replace(/_(from|to)$/, '')
+    const currentFrom = formValues[`${baseId}_from`]
+    const currentTo = formValues[`${baseId}_to`]
+    const initialFrom = initialSnapshot[`${baseId}_from`]
+    const initialTo = initialSnapshot[`${baseId}_to`]
+
+    const hasChanged = currentFrom !== initialFrom || currentTo !== initialTo
+
+    if (hasChanged) {
+      dirtyFields.add(baseId)
+      console.log('[RequiredFiltersModal] Marked dirty (yearRange):', baseId)
+    } else {
+      dirtyFields.delete(baseId)
+    }
+    return
+  }
+
+  // For regular fields
+  const hasChanged = currentValue !== initialValue
+
+  if (hasChanged) {
+    dirtyFields.add(fieldId)
+    console.log('[RequiredFiltersModal] Marked dirty:', { fieldId, from: initialValue, to: currentValue })
+  } else {
+    dirtyFields.delete(fieldId)
+  }
+}
+
 function handleCancel() {
   emit('cancel')
 }
@@ -390,9 +451,14 @@ function handleSubmit() {
     return
   }
 
+  console.log('[RequiredFiltersModal] Submit', {
+    dirtyFieldCount: dirtyFields.size,
+    dirtyFields: Array.from(dirtyFields),
+  })
+
   // Build payload with all form values
   const payload: Record<string, any> = {}
-  props.fields.forEach(field => {
+  props.allFields.forEach(field => {
     if (field.type === 'yearRange') {
       // yearRange: include _from and _to values
       payload[`${field.id}_from`] = formValues[`${field.id}_from`]
@@ -410,7 +476,7 @@ function handleSubmit() {
     }
   })
 
-  emit('submit', payload, { ...displayValues })
+  emit('submit', payload, { ...displayValues }, new Set(dirtyFields))
 }
 
 /**

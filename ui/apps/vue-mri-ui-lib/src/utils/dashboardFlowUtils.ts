@@ -64,7 +64,6 @@ export type MissingRequiredReason =
   | 'EMPTY_CONSTRAINT'
 
 export interface MissingRequiredField extends WizardFieldDefinition {
-  type: string
   label: string
   configPath: string
   filterCardPath: string
@@ -324,7 +323,7 @@ export function validateRequiredFields(
       missingFields.push({
         ...field,
         label: getFieldLabel(field),
-        type: getFieldType(field),
+        type: getFieldType(field) as WizardFieldType,
         configPath: field.configPath as string,
         filterCardPath,
         reason: 'NO_MATCHING_CARD',
@@ -338,7 +337,7 @@ export function validateRequiredFields(
       missingFields.push({
         ...field,
         label: getFieldLabel(field),
-        type: getFieldType(field),
+        type: getFieldType(field) as WizardFieldType,
         configPath: field.configPath as string,
         filterCardPath,
         reason: 'MISSING_FIXED_ATTRIBUTES',
@@ -356,7 +355,7 @@ export function validateRequiredFields(
       missingFields.push({
         ...field,
         label: getFieldLabel(field),
-        type: getFieldType(field),
+        type: getFieldType(field) as WizardFieldType,
         configPath: field.configPath as string,
         filterCardPath,
         reason: 'NO_ATTRIBUTE_CONSTRAINT',
@@ -375,7 +374,7 @@ export function validateRequiredFields(
       missingFields.push({
         ...field,
         label: getFieldLabel(field),
-        type: getFieldType(field),
+        type: getFieldType(field) as WizardFieldType,
         configPath: field.configPath as string,
         filterCardPath,
         reason: 'EMPTY_CONSTRAINT',

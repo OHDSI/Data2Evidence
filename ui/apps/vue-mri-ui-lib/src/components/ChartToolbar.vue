@@ -81,7 +81,9 @@
   <Teleport to="#app">
     <CompleteRequiredFiltersModal
       :is-open="dashboardFlow.showRequiredFiltersModal"
-      :fields="dashboardFlow.missingRequiredFields"
+      :all-fields="dashboardFlow.allWizardFields"
+      :initial-values="dashboardFlow.initialFormValues"
+      :initial-display-values="dashboardFlow.initialDisplayValues"
       :loading="dashboardFlow.applyingRequiredFilters"
       :error="dashboardFlow.requiredFiltersError"
       @cancel="dashboardFlow.handleRequiredFiltersCancel"
