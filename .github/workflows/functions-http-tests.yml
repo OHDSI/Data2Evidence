@@ -73,7 +73,7 @@ jobs:
       ENV_TYPE: local
       DOTENV_FILE: .env.local
       D2E_RESOURCE_LIMIT: 1.0
-      DB_DIALECT: HDB
+      # DB_DIALECT: HDB
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -107,7 +107,7 @@ jobs:
           echo "isHttpTestRun: ${isHttpTestRun}"
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
-          echo "DB_DIALECT: ${DB_DIALECT}"
+          # echo "DB_DIALECT: ${DB_DIALECT}"
 
       - uses: actions/setup-node@v4
         with:
@@ -351,11 +351,11 @@ jobs:
 
       - name: Install dependencies in backend integration tests
         run: |
-          cd ./tests/backend_integration_tests
+          cd ./tests/backend_integration_tests/hana
           yarn
 
       - name: Run HTTP tests
-        working-directory: ./tests/backend_integration_tests
+        working-directory: ./tests/backend_integration_tests/hana
         run: yarn test-specs --test_schema_name=$TESTSCHEMA
 
       - name: print logs for alp-dataflow-gen-1
