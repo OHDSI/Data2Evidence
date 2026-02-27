@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from re import match
+from re import match, fullmatch
 from sqlalchemy import text
 from string import Template
 from typing import TYPE_CHECKING
@@ -187,5 +187,12 @@ def create_results_tables(sql_script: str, dbdao):
                 conn.close()
 
 def is_safe_schema_name(schema: str) -> bool:
-    # Allow dot-separated identifiers (e.g. 'demo_cdm.demo_cdm')
-    return match(r"^[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z][a-zA-Z0-9_]*)*$", schema) is not None
+    """Return True if `schema` is a safe identifier or a single dotted pair (e.g. 'demo_cdm' or 'demo_cdm.demo_cdm')"""
+    if not isinstance(schema, str):
+        return False
+    s = schema.strip()
+    if not s:
+        return False
+
+    pattern = r"^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)?$"
+    return match(pattern, s) is not None

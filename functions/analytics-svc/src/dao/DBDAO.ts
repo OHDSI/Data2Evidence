@@ -25,10 +25,15 @@ export class DBDAO {
         this.connection = conn;
     }
 
-    public getCDMVersion = async (databaseCode: string, schemaName: string): Promise<string> => {
+    public getCDMVersion = async (databaseCode: string, schemaName: string, dialect: string): Promise<string> => {
+        let sqlQuery;
+        if (dialect === ANALYTICS_DB_DIALECTS.HANA)
+            sqlQuery = `SELECT CDM_VERSION FROM ${schemaName}.CDM_SOURCE`;
+        else
+            sqlQuery = `SELECT CDM_VERSION FROM ${databaseCode}.${schemaName}.CDM_SOURCE`;
         return new Promise((resolve, reject) => {
             this.connection.executeQuery(
-                `SELECT CDM_VERSION FROM ${databaseCode}.${schemaName}.CDM_SOURCE`,
+                sqlQuery,
                 [],
                 (err: any, result: string) => {
                     if (err) {

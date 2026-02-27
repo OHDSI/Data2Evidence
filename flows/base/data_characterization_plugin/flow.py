@@ -76,10 +76,11 @@ def data_characterization_plugin(options: DCOptionsType):
     )
     # For TREX connections, set vocabSchemaName to schemaName
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
-        achilles_params.vocabSchemaName = options.schemaName
+        achilles_params.schemaName = f"{options.databaseCode}.{options.schemaName}"
+        achilles_params.vocabSchemaName = achilles_params.schemaName
 
     dc_schema = create_results_schema(
-        achilles_params.resultsSchema, f"{achilles_params.databaseCode}.{achilles_params.vocabSchemaName}", dbdao, logger
+        achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
     )
 
     if dc_schema:
@@ -105,7 +106,7 @@ def data_characterization_plugin(options: DCOptionsType):
             )
             execute_concept_record_count_wo(
                 achilles_params.resultsSchema,
-                f"{achilles_params.databaseCode}.{achilles_params.vocabSchemaName}",
+                achilles_params.vocabSchemaName,
                 dbdao,
                 logger,
             )
@@ -242,8 +243,8 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 setDBDriverEnv=achilles_params.setDBDriverEnv,
                 connectionDetailsString=achilles_params.connectionDetails,
                 cdmVersion=achilles_params.cdmVersionNumber,
-                cdmDatabaseSchema=f"{achilles_params.databaseCode}.{achilles_params.schemaName}",
-                vocabDatabaseSchema=f"{achilles_params.databaseCode}.{achilles_params.vocabSchemaName}",
+                cdmDatabaseSchema=achilles_params.schemaName,
+                vocabDatabaseSchema=achilles_params.vocabSchemaName,
                 createTable=achilles_params.createTable,
                 resultsDatabaseSchema=achilles_params.resultsSchema,
                 outputFolder=achilles_params.outputFolder,

@@ -16,7 +16,7 @@ export async function getCDMVersion(req, res, next) {
     try {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
-        const cdmVersion = await dbDao.getCDMVersion(databaseCode, schemaName);
+        const cdmVersion = await dbDao.getCDMVersion(databaseCode, schemaName, dialect);
 
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =
