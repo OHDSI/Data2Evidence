@@ -59,7 +59,7 @@ patternsModuleServer <- function(id, resultDatabaseSettings, connectionHandler) 
               FROM ", resultsDatabaseSchema, ".tp_cdm_source_info"
         )
       )
-      return(res$cdm_source_abbreviation)
+      return(res$CDM_SOURCE_ABBREVIATION)
     })
     observeEvent(dataset_choices(), {
       updateSelectInput(
