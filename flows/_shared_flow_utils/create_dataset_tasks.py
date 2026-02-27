@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from re import match, fullmatch
+from re import match
 from sqlalchemy import text
 from string import Template
 from typing import TYPE_CHECKING

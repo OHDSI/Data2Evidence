@@ -145,7 +145,7 @@ export class DataCharacterizationService {
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
     // Handle case where CDM version is not found for the dataset, as CDM version is required to run DC flow
-    if (!cdmVersionNumber){
+    if (!cdmVersionNumber) {
       throw new Error(`CDM version not found for dataset ${datasetId}`);
     }
 
