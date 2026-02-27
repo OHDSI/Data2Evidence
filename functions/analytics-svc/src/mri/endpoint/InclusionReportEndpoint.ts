@@ -1,46 +1,42 @@
 /**
  * Request processor for the aggregation endpoint (e.g. for the bar-chart).
  */
-import {
-    QueryObject as qo,
-    DBConnectionUtil as dbConnectionUtil,
-    getUser,
-    User,
-    Logger,
-} from "@alp/alp-base-utils";
+import { QueryObject as qo, Logger } from "@alp/alp-base-utils";
 import QueryObject = qo.QueryObject;
 import { QuerySvcResultType } from "../../types";
 import { BaseQueryEngineEndpoint } from "./BaseQueryEngineEndpoint";
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
-import * as utilsLib from "@alp/alp-base-utils";
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
 const log = Logger.CreateLogger("analytics-log");
+
+interface BaseInclusionRuleStat {
+    countSatisfying: number;
+    countExcluded: number;
+    name: string;
+    id: number;
+}
+interface InclusionRuleStat {
+    countSatisfying: number;
+    percentSatisfying: string;
+    percentExcluded: string;
+    name: string;
+    id: number;
+}
+interface InterfaceReportResults {
+    treemapData: string;
+    inclusionRuleStats: InclusionRuleStat[];
+    summary: {
+        percentMatched: string;
+        lostCount: number;
+        finalCount: number;
+        baseCount: number;
+    };
+}
 
 export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     constructor(connection: ConnectionInterface, unitTestMode?: boolean) {
         super(connection, unitTestMode ? unitTestMode : false);
-    }
-
-    public getAnnotationPath(config, annotation) {
-        let jsonWalker = utilsLib.getJsonWalkFunction(config);
-        let elements = jsonWalker("**.interactions.*.attributes.*");
-        let path;
-        elements.forEach((element) => {
-            if (
-                element.obj.annotations &&
-                element.obj.annotations.indexOf(annotation) !== -1
-            ) {
-                path = element.path.split(".attributes.").join(".attributes.");
-            }
-        });
-        if (path) {
-            return path;
-        } else {
-            throw new Error(
-                "Error finding annotation in MRI PA configuration."
-            );
-        }
     }
 
     public processRequest(
@@ -48,22 +44,179 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         configId,
         configVersion,
         datasetId,
-        bookmarkInputStr: string,
+        mriquery,
         language
-    ) {
+    ): Promise<InterfaceReportResults> {
         log.addRequestCorrelationID(req);
         return new Promise(async (resolve, reject) => {
             try {
-                const querySvcParams = {
-                    queryParams: {
-                        configId,
-                        configVersion,
-                        datasetId,
-                        queryType: "totalpcount",
-                        bookmarkInputStr,
-                        language,
-                    },
+                // Get mriquery filtercards
+                const filtercards = mriquery.filter.cards.content;
+
+                // TODO: Find out if basic data works with exclusion criteria
+                // const basicDataFilters =
+                //     this.splitBasicDataIntoDistinctFiltercards(filtercards);
+                const basicDataFilters = []; //TODO: REMOVE [ Currently ignores basicDataFilters as basic data is not supporting exclusions]
+
+                const inclusionReportFiltercards = [
+                    ...basicDataFilters,
+                    ...filtercards.filter(
+                        (e) => e.content[0].name !== "Basic Data"
+                    ),
+                ];
+
+                // Construct base inclusionRuleStats based on filtercard names
+                const baseInclusionRuleStats = this.getBaseInclusionRuleStats(
+                    inclusionReportFiltercards
+                );
+                // Construct bitmask filters
+                const bitmapMasks = this.getBitmapMasks(
+                    inclusionReportFiltercards.length
+                );
+
+                const promises = bitmapMasks.map((bitmapMask) => {
+                    const bitmapMriquery = structuredClone(mriquery);
+                    bitmapMriquery.filter.cards.content = [];
+
+                    for (const [idx, op] of bitmapMask.split("").entries()) {
+                        const bitmaskContent = structuredClone(
+                            inclusionReportFiltercards[idx]
+                        );
+
+                        // Set filter to an exclusion filtercard if op is 0
+                        if (op === "0") {
+                            bitmaskContent["op"] = "NOT";
+                            bitmapMriquery.filter.cards.content.push({
+                                content: [bitmaskContent],
+                                type: "BooleanContainer",
+                                op: "OR",
+                            });
+                        } else {
+                            bitmapMriquery.filter.cards.content.push(
+                                bitmaskContent
+                            );
+                        }
+                    }
+
+                    return this.formulateQuery(req, {
+                        queryParams: {
+                            configId,
+                            configVersion,
+                            datasetId,
+                            bookmarkInputStr: bitmapMriquery,
+                            queryType: "totalpcount",
+                            language,
+                        },
+                    });
+                });
+
+                const queryResults = await Promise.all(promises);
+                const results = this.formulateInclusionReportResults(
+                    bitmapMasks,
+                    queryResults,
+                    inclusionReportFiltercards,
+                    baseInclusionRuleStats
+                );
+                resolve(results);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    private formulateInclusionReportResults(
+        bitmapMasks: string[],
+        queryResults,
+        inclusionReportFiltercards,
+        baseInclusionRuleStats: BaseInclusionRuleStat[]
+    ): InterfaceReportResults {
+        let baseCount = 0;
+        let finalCount = 0;
+        let lostCount = 0; // TODO: Check how this is calculated
+
+        // Initialize treemapData
+        const treemapData = {
+            name: "Everyone",
+            children: [],
+        };
+        for (let i = 0; i < inclusionReportFiltercards.length + 1; i++) {
+            treemapData.children.push({
+                name: `Group ${i}`,
+                children: [],
+            });
+        }
+
+        bitmapMasks.forEach((bitmapMask, idx) => {
+            const pcount =
+                queryResults[idx]["data"][0]["patient.attributes.pcount"];
+            // Count number of ones occuring in the bitmapMask
+            const countOfOnes = (bitmapMask.match(/1/g) || []).length;
+
+            // summary
+            baseCount += pcount;
+            if (countOfOnes === inclusionReportFiltercards.length) {
+                finalCount = pcount;
+            }
+
+            // baseInclusionRuleStats
+            for (const [bmIdx, bmEle] of bitmapMask.split("").entries()) {
+                if (bmEle === "1") {
+                    baseInclusionRuleStats[bmIdx].countSatisfying += pcount;
+                }
+
+                // Get percentExcluded
+                // If Current filter is excluded and all other filters are included
+                if (
+                    bmEle === "0" &&
+                    countOfOnes === inclusionReportFiltercards.length - 1
+                ) {
+                    baseInclusionRuleStats[bmIdx].countExcluded = pcount;
+                }
+            }
+
+            // Treemap
+            // Push count accordingly into group's children based on countOfOnes
+            treemapData.children[countOfOnes].children.push({
+                name: bitmapMask,
+                size: pcount,
+            });
+        });
+
+        // Construct inclusionRuleStats
+        const inclusionRuleStats: InclusionRuleStat[] =
+            baseInclusionRuleStats.map((e) => {
+                return {
+                    id: e.id,
+                    name: e.name,
+                    percentExcluded: this.formatNumToPercentageString(
+                        e.countExcluded / baseCount
+                    ),
+                    percentSatisfying: this.formatNumToPercentageString(
+                        e.countSatisfying / baseCount
+                    ),
+                    countSatisfying: e.countSatisfying,
                 };
+            });
+
+        const inclusionReportData = {
+            summary: {
+                baseCount,
+                finalCount,
+                lostCount,
+                percentMatched: this.formatNumToPercentageString(
+                    finalCount / baseCount
+                ),
+            },
+            inclusionRuleStats,
+            treemapData: JSON.stringify(treemapData),
+        };
+
+        return inclusionReportData;
+    }
+
+    private formulateQuery(req, querySvcParams) {
+        return new Promise(async (resolve, reject) => {
+            try {
                 let queryResponse: QuerySvcResultType = await generateQuery(
                     req,
                     querySvcParams
@@ -99,121 +252,69 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         });
     }
 
-    // Theres a chance that this might be done by unauth user
-    public async processMultipleStudyRequest(
-        req,
-        datasetIds: string[],
-        bookmarkInputStr: string,
-        language
-    ) {
-        log.addRequestCorrelationID(req);
-        const promises = [];
+    private splitBasicDataIntoDistinctFiltercards(filtercards) {
+        const basicDataFiltercard = filtercards.find(
+            (e) => e.content[0].name === "Basic Data"
+        );
 
-        const configId = req.paConfigId;
-        const configVersion = req.paConfigVersion;
+        if (!basicDataFiltercard) {
+            return [];
+        }
 
-        // Generate DB Credentials for each datasetId
-        const dbCreds = {};
-        const analyticsCredentials = req.dbCredentials.analyticsCredentials;
+        const basicDataFilters =
+            basicDataFiltercard.content[0].attributes.content;
+        if (basicDataFilters.length === 1) {
+            return [basicDataFiltercard];
+        }
 
-        let userObj: User;
-        userObj = getUser(req);
+        // Split Basic Data into distinct filtercards
+        return basicDataFilters.map((e) => {
+            // Clone overall structure of Basic Data filter card and replace attributes.content with individual Basic Data attributes.content
+            const basicDataFiltercardClone =
+                structuredClone(basicDataFiltercard);
+            basicDataFiltercardClone.content[0].attributes.content = [e];
 
-        datasetIds.forEach(async (datasetId) => {
-            // Get metadata for datasetId
-            const currMetadata = req.studiesDbMetadata.studies.find(
-                (metadata) => metadata.id === datasetId
-            );
-            // Retrieve dbName from metadata or default to first db
-            const currStudyDBname: string =
-                currMetadata?.databaseName ||
-                analyticsCredentials[Object.keys(analyticsCredentials)[0]]
-                    .databaseName;
-            // Retrieve schema from metadata or default to empty string
-            const currStudySchemaName: string = currMetadata
-                ? currMetadata.schemaName
-                : "";
-
-            // Create StudyAnalyticsCredential for study
-            const studyAnalyticsCredential = {
-                ...analyticsCredentials[currStudyDBname],
-            };
-            studyAnalyticsCredential.schema = currStudySchemaName
-                ? currStudySchemaName.toUpperCase()
-                : studyAnalyticsCredential.probeSchema.toUpperCase();
-
-            dbCreds[datasetId] = studyAnalyticsCredential;
+            return basicDataFiltercardClone;
         });
+    }
 
-        // Get Config
-        datasetIds.forEach((datasetId) => {
-            promises.push(
-                new Promise(async (resolve, reject) => {
-                    try {
-                        const querySvcParams = {
-                            queryParams: {
-                                configId,
-                                configVersion,
-                                datasetId,
-                                queryType: "totalpcount",
-                                bookmarkInputStr,
-                                language,
-                            },
-                        };
+    /**
+     * Generates all possible bitmap masks for a set of size n.
+     * Example if n === 3, output is ['000', '001', '010', '011', '100', '101', '110', '111']
+     * @param n The number of elements (bits)
+     * @returns An array of strings representing every bitmap mask
+     */
+    private getBitmapMasks(n: number): string[] {
+        // Total combinations = 2^n
+        const totalCombinations = 1 << n;
+        const bitmapMasks: string[] = [];
 
-                        let queryResponse: QuerySvcResultType =
-                            await generateQuery(req, querySvcParams);
-                        let finalQueryObject = queryResponse.queryObject;
-                        let nql: QueryObject = new QueryObject(
-                            finalQueryObject.queryString,
-                            finalQueryObject.parameterPlaceholders,
-                            finalQueryObject.sqlReturnOn
-                        );
+        for (let i = 0; i < totalCombinations; i++) {
+            bitmapMasks.push(i.toString(2).padStart(n, "0"));
+        }
+        return bitmapMasks;
+    }
 
-                        let fast: any = queryResponse.fast;
-                        const ac = dbCreds[datasetId];
-                        const analyticsConnection =
-                            await dbConnectionUtil.DBConnectionUtil.getDBConnection(
-                                {
-                                    credentials: ac,
-                                    schemaName: ac.schemaName,
-                                    vocabSchemaName: ac.vocabSchemaName,
-                                    userObj,
-                                }
-                            );
+    private getBaseInclusionRuleStats(
+        inclusionReportFiltercards
+    ): BaseInclusionRuleStat[] {
+        let inclusionRuleStats = [];
+        for (const [idx, { content }] of inclusionReportFiltercards.entries()) {
+            inclusionRuleStats.push({
+                id: idx,
+                name: content.map((e) => e.name).join(" OR "),
+                countSatisfying: 0,
+                countExcluded: 0,
+            });
+        }
+        return inclusionRuleStats;
+    }
 
-                        nql.executeQuery(analyticsConnection, (err, result) => {
-                            if (err) {
-                                log.enrichErrorWithRequestCorrelationID(
-                                    err,
-                                    req
-                                );
-                                reject(err);
-                            } else {
-                                // if nothing is returned set the result to 0
-                                if (result.data.length !== 1) {
-                                    result.data = [
-                                        { "patient.attributes.pcount": 0 },
-                                    ];
-                                }
-
-                                this.responseDbgInfo(result, {
-                                    FAST: fast.statement,
-                                    nql,
-                                });
-
-                                // Attach studyID to result
-                                result.datasetId = datasetId;
-
-                                resolve(result);
-                            }
-                        });
-                    } catch (err) {
-                        reject(err);
-                    }
-                })
-            );
-        });
-        return Promise.all(promises);
+    /**
+     * Format float into percentage string
+     * Example 0.123456 returns "12.34%"
+     */
+    private formatNumToPercentageString(value: number): string {
+        return `${(value * 100).toFixed(2)}%`;
     }
 }
