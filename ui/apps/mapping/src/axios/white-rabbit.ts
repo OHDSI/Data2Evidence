@@ -1,8 +1,6 @@
 import { ScanDataDBConnectionForm } from "../types/scanDataDialog";
 import { EtlModel } from "../utils/etl-transformer";
 import request from "./request";
-import pako from "pako";
-import { Buffer } from "buffer";
 
 const WHITE_RABBIT_BASE_ENDPOINT = `white-rabbit/api/`;
 const JOBPLUGINS_BASE_ENDPOINT = `jobplugins/white-rabbit/`;
@@ -13,52 +11,14 @@ export interface WhiteRabbitJobStatus {
 }
 
 export class WhiteRabbit {
-  public async createScanReport(files: File[], delimiter: string = ",") {
-    const csvToJSON = async (file: File): Promise<any[]> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsText(file);
-        reader.onload = () => {
-          const csvText = reader.result as string;
-          const lines = csvText.split("\n");
-          const headers = lines[0].split(delimiter).map((header) => header.trim());
-
-          const jsonArray = lines
-            .slice(1)
-            .filter((line) => line.trim() !== "") // Skip empty lines
-            .map((line) => {
-              const values = line.split(delimiter);
-              return headers.reduce((obj, header, index) => {
-                obj[header] = values[index]?.trim() || "";
-                return obj;
-              }, {} as any);
-            });
-
-          resolve(jsonArray);
-        };
-        reader.onerror = (error) => reject(error);
-      });
-    };
-
-    const fileContents = await Promise.all(
-      files.map(async (file) => ({
-        fileName: file.name,
-        fileContent: await csvToJSON(file),
-      }))
-    );
-
-    const jsonString = JSON.stringify({
-      files: fileContents,
-      settings: {
-        delimiter,
-      },
-    });
-    const compressed = pako.gzip(jsonString);
-    const base64Compressed = Buffer.from(compressed).toString("base64");
-
+  public createScanReport(nodeId: string, fileNames: string[], delimiter: string = ",") {
     const data = {
       options: {
-        data: base64Compressed,
+        data: {
+          node_id: nodeId,
+          files: fileNames,
+          settings: { delimiter },
+        },
         run_type: "SCAN_REPORT_FILES",
       },
     };

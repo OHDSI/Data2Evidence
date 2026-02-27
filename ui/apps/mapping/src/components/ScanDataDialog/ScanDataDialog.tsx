@@ -106,8 +106,8 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     try {
       setLoading(true);
       if (dataType === "csv") {
-        await scanData();
         await uploadCsvData();
+        await scanData();
       } else {
         await scanDBData();
       }
@@ -219,8 +219,9 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const scanData = useCallback(async () => {
     try {
       setLoading(true);
-      if (uploadedFiles) {
-        const response = await api.whiteRabbit.createScanReport(uploadedFiles, delimiter);
+      if (uploadedFiles && nodeId) {
+        const fileNames = uploadedFiles.map((file) => file.name);
+        const response = await api.whiteRabbit.createScanReport(nodeId, fileNames, delimiter);
         const flowRunId = response.flowRunId;
         setScanId(flowRunId);
       } else {
@@ -230,7 +231,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
       console.error("Failed to create scan report from CSV", error);
       setLoading(false);
     }
-  }, [uploadedFiles, delimiter]);
+  }, [uploadedFiles, delimiter, nodeId]);
 
   const scanDBData = useCallback(async () => {
     try {
