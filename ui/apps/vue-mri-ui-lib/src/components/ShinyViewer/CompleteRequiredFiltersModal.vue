@@ -181,6 +181,13 @@ const yearOptions = computed(() => {
   return years
 })
 
+function normalizeInputValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return ''
+  }
+  return typeof value === 'string' ? value : String(value)
+}
+
 // Validate all fields and set error messages - call this before checking isFormValid
 function validateAllFields(): boolean {
   // Clear year errors
@@ -362,14 +369,19 @@ watch(
         initialSnapshot[field.id] = formValues[field.id]
       } else if (field.type === 'yearRange') {
         // Year range uses separate _from and _to fields
-        const fromValue = props.initialValues[`${field.id}_from`] || ''
-        const toValue = props.initialValues[`${field.id}_to`] || ''
-        formValues[`${field.id}_from`] = fromValue
-        formValues[`${field.id}_to`] = toValue
-        initialSnapshot[`${field.id}_from`] = fromValue
-        initialSnapshot[`${field.id}_to`] = toValue
+        const fromValue = normalizeInputValue(props.initialValues[`${field.id}_from`])
+        const toValue = normalizeInputValue(props.initialValues[`${field.id}_to`])
+        formValues[`${field.id}_from`] = String(fromValue)
+        formValues[`${field.id}_to`] = String(toValue)
+        initialSnapshot[`${field.id}_from`] = formValues[`${field.id}_from`]
+        initialSnapshot[`${field.id}_to`] = formValues[`${field.id}_to`]
+      } else if (field.type === 'num') {
+        // Numeric fields are rendered/validated as text expressions in this modal.
+        const normalizedValue = normalizeInputValue(initialValue)
+        formValues[field.id] = String(normalizedValue)
+        initialSnapshot[field.id] = formValues[field.id]
       } else {
-        formValues[field.id] = initialValue !== undefined ? initialValue : ''
+        formValues[field.id] = initialValue !== undefined ? String(initialValue) : ''
         initialSnapshot[field.id] = formValues[field.id]
       }
 
@@ -484,14 +496,16 @@ function handleSubmit() {
  * @param value - The value to validate
  * @returns boolean indicating if the value is valid
  */
-function validateNumericValue(value: string): boolean {
-  if (!value || !value.trim()) {
+function validateNumericValue(value: unknown): boolean {
+  const normalizedValue = normalizeInputValue(value).trim()
+
+  if (!normalizedValue) {
     return true // Empty values are handled separately by required check
   }
 
   let isValid = true
   numericParser.parseInput(
-    value,
+    normalizedValue,
     () => {
       // Success callback - parsing succeeded
       isValid = true
@@ -508,14 +522,16 @@ function validateNumericValue(value: string): boolean {
  * Validates a numeric field and sets/clears error message
  * Called on input and blur events
  */
-function validateNumericField(fieldId: string, value: string): void {
-  if (!value || !value.trim()) {
+function validateNumericField(fieldId: string, value: unknown): void {
+  const normalizedValue = normalizeInputValue(value).trim()
+
+  if (!normalizedValue) {
     // Clear error if field is empty
     delete numericErrors[fieldId]
     return
   }
 
-  const isValid = validateNumericValue(value)
+  const isValid = validateNumericValue(normalizedValue)
   if (isValid) {
     delete numericErrors[fieldId]
   } else {

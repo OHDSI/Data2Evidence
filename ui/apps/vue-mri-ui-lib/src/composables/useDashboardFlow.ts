@@ -284,9 +284,9 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
         fixedAttributes: field.fixedAttributes,
       })
 
-      // SKIP condition fields - wizard-only
-      if (isConditionField(field.id)) {
-        console.log('[DashboardFlow] Skipping condition field (wizard-only):', field.id)
+      // Skip wizard-only fields (they store data in wizardConfig, not in filter cards)
+      if (field.isWizardField) {
+        console.log('[DashboardFlow] Skipping wizard-only field:', field.id)
         continue
       }
 
@@ -302,9 +302,19 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       if (cardId) {
         const extracted = extractValueFromCard(cardId, field.configPath)
         if (extracted) {
-          formValues[field.id] = extracted.value
+          // Convert value to string for proper v-model binding
+          let stringValue: string
+          if (typeof extracted.value === 'object' && extracted.value !== null && 'value' in extracted.value) {
+            stringValue = String(extracted.value.value)
+          } else if (typeof extracted.value === 'object' && extracted.value !== null && 'text' in extracted.value) {
+            stringValue = String(extracted.value.text)
+          } else {
+            stringValue = String(extracted.value)
+          }
+          
+          formValues[field.id] = stringValue
           if (extracted.displayValue) {
-            displayValues[field.id] = extracted.displayValue
+            displayValues[field.id] = String(extracted.displayValue)
           }
           if (extracted.useDescendants !== undefined) {
             formValues[`${field.id}_wildcard`] = extracted.useDescendants
@@ -313,12 +323,84 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
           console.log('[DashboardFlow] Extracted value for', field.id, ':', {
             value: extracted.value,
+            stringValue,
             displayValue: extracted.displayValue,
             filterCardId: cardId,
           })
         }
       } else {
         console.log('[DashboardFlow] No matching card for field:', field.id)
+      }
+    }
+
+    // Extract condition field values from wizardConfig.conditions array
+    // Condition fields are wizard-only (isWizardField: true) and stored in wizardConfig.conditions
+    const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
+    const localConfig = activeDashboardWizardConfig.value
+    const storeConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
+    const wizardConfig = localConfig || storeConfig || null
+    const conditions: Array<{ value: string | object; displayName?: string; useDescendants?: boolean }> = 
+      wizardConfig?.conditions || []
+
+    for (const field of wizardDef.fields) {
+      if (!field.id.toLowerCase().startsWith('condition')) {
+        continue
+      }
+
+      // Get condition index (condition1 -> 0, condition2 -> 1, etc.)
+      const conditionIndex = parseInt(field.id.replace(/^condition/i, ''), 10) - 1
+      if (conditionIndex >= 0 && conditionIndex < conditions.length) {
+        const condition = conditions[conditionIndex]
+        if (condition && condition.value) {
+          // Extract numeric/non-numeric condition value
+          let extractedValue: string
+          let extractedDisplayValue: string
+
+          if (typeof condition.value === 'object' && condition.value !== null) {
+            const val = condition.value as any
+            extractedValue = String(val.value || val.text || '')
+            extractedDisplayValue = val.display_value || val.text || extractedValue
+          } else {
+            extractedValue = String(condition.value)
+            extractedDisplayValue = condition.displayName || extractedValue
+          }
+
+          formValues[field.id] = extractedValue
+          if (extractedDisplayValue) {
+            displayValues[field.id] = extractedDisplayValue
+          }
+          if (condition.useDescendants !== undefined) {
+            formValues[`${field.id}_wildcard`] = condition.useDescendants
+          }
+
+          console.log('[DashboardFlow] Extracted condition value for', field.id, ':', {
+            value: extractedValue,
+            displayValue: extractedDisplayValue,
+            useDescendants: condition.useDescendants,
+          })
+        }
+      }
+    }
+
+    // Extract yearRange values from wizardConfig.year
+    // YearRange fields are wizard-only (isWizardField: true) and stored in wizardConfig.year
+    const yearRange = wizardConfig?.year
+    for (const field of wizardDef.fields) {
+      if (field.type !== 'yearRange') {
+        continue
+      }
+
+      if (yearRange) {
+        const fromValue = yearRange.from !== undefined ? String(yearRange.from) : ''
+        const toValue = yearRange.to !== undefined ? String(yearRange.to) : ''
+        
+        formValues[`${field.id}_from`] = fromValue
+        formValues[`${field.id}_to`] = toValue
+        
+        console.log('[DashboardFlow] Extracted yearRange value for', field.id, ':', {
+          from: fromValue,
+          to: toValue,
+        })
       }
     }
 
@@ -697,12 +779,15 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
               ? firstValue.display_value || firstValue.text || firstValue.value
               : firstValue
           const useDescendants = values[0]?.includeDescendants
-          return { value, displayValue, useDescendants }
+          // Convert value to string for proper v-model binding
+          const stringValue = String(value)
+          return { value: stringValue, displayValue: String(displayValue), useDescendants }
         }
       } else if (constraintType === 'num') {
         const values = Array.isArray(constraintValue) ? constraintValue : []
         if (values.length > 0) {
-          return { value: values[0].value }
+          const numValue = values[0].value
+          return { value: String(numValue) }
         }
       }
       break
@@ -729,7 +814,10 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       if (field.configPath) {
         const extracted = extractFieldValueFromFilterCards(field)
         if (extracted) {
-          formValues[field.id] = extracted.value
+          // Ensure all values are strings for proper v-model binding
+          if (extracted.value !== null && extracted.value !== undefined) {
+            formValues[field.id] = String(extracted.value)
+          }
           if (extracted.displayValue) {
             displayValues[field.id] = extracted.displayValue
           }
