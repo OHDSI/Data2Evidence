@@ -29,7 +29,7 @@
       :loading="isLoading"
       :close-on-select="componentType === 'conceptSet' && maxSelections === 1"
       @search-change="handleSearchChange"
-      @select="componentType === 'conceptSet' && maxSelections === 1 ? null : openControl"
+      @select="handleSelectOption"
       :preserveSearch="true"
       ref="multiselect"
       :clear-on-select="true"
@@ -157,6 +157,7 @@ export default {
       selectedValuesTimeout: null,
       tagRefs: {},
       isDropdownOpen: false,
+      skipNextEmptySearch: false,
     }
   },
   mounted() {
@@ -260,6 +261,24 @@ export default {
       // For other types, use normal behavior
       this.openControl()
     },
+    handleSelectOption() {
+      if (this.componentType !== 'conceptSet') {
+        // Skip the empty search triggered by clear-on-select to retain previous results
+        this.skipNextEmptySearch = true
+      }
+      if (!(this.componentType === 'conceptSet' && this.maxSelections === 1)) {
+        this.openControl()
+      }
+      this.$nextTick(() => {
+        if (this.allOptionsSelected) {
+          // Close dropdown if all options are now selected (nothing left to show)
+          this.$refs.multiselect?.deactivate()
+        } else {
+          // Recalculate dropdown height for remaining visible options
+          this.adjustDropdownHeight()
+        }
+      })
+    },
     async openControl() {
       await this.$nextTick()
       if (this.$refs.multiselect?.activate) {
@@ -348,6 +367,11 @@ export default {
     },
     close() {
       this.isDropdownOpen = false
+      // Reset dropdown height constraints set by adjustDropdownHeight
+      const dropdown = this.$refs.multiselect?.$el?.querySelector('.multiselect__content-wrapper')
+      if (dropdown) {
+        dropdown.style.minHeight = ''
+      }
       if (this.selectedValues.length) {
         this.currentPlaceholder = this.texts.enterSearchTerm
       } else {
@@ -398,6 +422,12 @@ export default {
     handleSearchChange(searchQuery) {
       if (this.searchQuery !== searchQuery) {
         this.searchQuery = searchQuery
+        // After selecting a tag, clear-on-select resets search to ''.
+        // Skip the API call to retain previous results in the dropdown.
+        if (searchQuery === '' && this.skipNextEmptySearch) {
+          this.skipNextEmptySearch = false
+          return
+        }
         this.$emit('search-change', searchQuery)
       } else if (searchQuery === '' && this.filteredList.length === 0) {
         this.$emit('search-change', '')
@@ -456,7 +486,7 @@ export default {
           if (content) {
             // Calculate expected height based on filteredList (each item is 40px)
             const expectedHeight = (this.filteredList.length - this.selectedValues.length) * 40
-            const minHeight = Math.min(expectedHeight, 200)
+            const minHeight = Math.max(0, Math.min(expectedHeight, 200))
             dropdown.style.minHeight = `${minHeight}px`
           } else {
             dropdown.style.minHeight = '200px'
