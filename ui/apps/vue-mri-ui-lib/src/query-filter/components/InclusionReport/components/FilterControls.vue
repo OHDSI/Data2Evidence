@@ -49,7 +49,8 @@ function handlePassedFailedChange(event: Event) {
   }
 
   select {
-    padding: 0.5rem 0.75rem;
+    appearance: auto;
+    padding: 0.5rem 0.8rem;
     border: 1px solid var(--color-ui-light-border, #ddd);
     border-radius: 4px;
     cursor: pointer;

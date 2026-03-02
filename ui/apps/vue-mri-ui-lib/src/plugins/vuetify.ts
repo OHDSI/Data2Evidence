@@ -154,7 +154,7 @@ export default createVuetify({
     VBtn: {
       variant: 'flat',
       color: 'primary',
-      rounded: 'sm', // Matches $border-radius: 0.25rem
+      rounded: '6px', // Matches $border-radius: 0.25rem
       elevation: 0, // Matches $enable-shadows: false
       style: {},
     },
