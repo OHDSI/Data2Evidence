@@ -1,6 +1,6 @@
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
 
-type AttritionStat = {
+export type AttritionStat = {
   id: number
   name: string
   countSatisfying: number
