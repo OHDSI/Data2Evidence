@@ -153,7 +153,8 @@ services:
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
-        "calculator": "http://${PROJECT_NAME:-d2e}-calculator:8000"
+        "calculator": "http://${PROJECT_NAME:-d2e}-calculator:8000",
+        "python-calculator": "http://${PROJECT_NAME:-d2e}-python-calculator:8000"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -1049,3 +1050,19 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  python-calculator:
+      build:
+        context: ./python-calculator-service
+      image: d2e-python-calculator:latest
+      container_name: ${PROJECT_NAME:-d2e}-python-calculator
+      networks:
+        alp:
+          priority: 20
+      restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
+      healthcheck:
+        test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:8000/python-calculator/health"]
+        interval: 30s
+        timeout: 10s
+        retries: 3
+        start_period: 10s

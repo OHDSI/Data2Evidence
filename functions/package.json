@@ -74,6 +74,10 @@
       ],
       "api": [
         {
+          "source": "/python-calculator",
+          "service": "python-calculator"
+        },
+        {
           "source": "/calculator",
           "service": "calculator"
         },
@@ -626,6 +630,8 @@
           "nifimgmt.userAdmin"
         ],
         "ALP_SYSTEM_ADMIN": [
+          "python-calculator.read",
+          "python-calculator.write",
           "calculator.read",
           "calculator.write",
           "PAConfig.ui",
@@ -795,6 +801,8 @@
           "d2e.webapi.public"
         ],
         "RESEARCHER": [
+          "python-calculator.read",
+          "python-calculator.write",
           "calculator.read",
           "calculator.write",
           "PA.svc",
@@ -878,6 +886,16 @@
         ]
       },
       "scopes": [
+        {
+          "path": "^/python-calculator/(.*)",
+          "scopes": ["python-calculator.read", "python-calculator.write"],
+          "httpMethods": ["GET", "POST"]
+        },
+        {
+          "path": "^/python-calculator",
+          "scopes": ["python-calculator.read", "python-calculator.write"],
+          "httpMethods": ["GET", "POST"]
+        },
         {
           "path": "^/calculator/(.*)",
           "scopes": ["calculator.read"],
