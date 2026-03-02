@@ -696,6 +696,9 @@ class D2ECli {
           return;
         }
         this.load_env_variables();
+        if (this.DOCKER_TAG_NAME !== "develop") {
+          this.DOCKER_TAG_NAME = this.LATEST_DOCKER_TAG_NAME;
+        }
         this.write_env_file_variable(this.program.opts());
       });
     this.program
