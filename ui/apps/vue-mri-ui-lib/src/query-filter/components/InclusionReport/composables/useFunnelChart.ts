@@ -36,8 +36,8 @@ export function useFunnelChart(
 
     // Add each inclusion rule with calculated statistics
     stats.forEach(stat => {
-      const name = stat.name.length > 30 ? stat.name.slice(0, 30) + '...' : stat.name
-      labels.push(`${stat.id + 1} - ${name}`)
+      const name = stat.name.length > 35 ? stat.name.slice(0, 35) + '...' : stat.name
+      labels.push(`${name}`)
       values.push(stat.countSatisfying)
       hoverTexts.push(
         `${stat.name}<br>Count: ${stat.countSatisfying.toLocaleString()}<br>Percent: ${stat.percentSatisfying}`
@@ -68,16 +68,28 @@ export function useFunnelChart(
       text: funnelChartData.value.hoverTexts,
       hoverinfo: 'text',
       textposition: 'inside',
-      texttemplate: 'N: %{x}<br> % remain: %{percentInitial:.2%}',
+      texttemplate: 'N: %{x} (%{percentInitial:.2%})',
       constraintext: 'outside',
       textinfo: 'value+percent initial',
       marker: {
         color: layerColors,
+        line: {
+          color: '#949494',
+          width: 1,
+        },
       },
       hoverlabel: {
         bgcolor: '#f9f9f9', // css var doesn't work here
       },
       showlegend: false, // Hide legend for main trace
+      connector: {
+        fillcolor: 'transparent',
+        line: {
+          color: '#949494',
+          width: 1,
+        },
+        visible: true,
+      },
     }
 
     // Create dummy traces for legend - only for colors actually used
@@ -96,6 +108,9 @@ export function useFunnelChart(
     })).filter((_trace, index) => usedColors.has(COLORS_ARRAY[index]))
 
     const layout = {
+      font: {
+        size: 16,
+      },
       height: 800,
       yaxis: {
         automargin: true,
@@ -117,6 +132,15 @@ export function useFunnelChart(
         y: 1,
         xanchor: 'left',
         yanchor: 'top',
+        title: {
+          text: 'Attrition',
+          pad: {
+            // t: 20, // Top padding in pixels
+            // b: 10, // Bottom padding in pixels
+            // l: 30, // Left padding in pixels
+            r: 30, // Right padding in pixels},
+          },
+        },
       },
     }
 
@@ -126,6 +150,39 @@ export function useFunnelChart(
     }
 
     plotly.newPlot(funnelChartRef.value, [trace, ...legendTraces], layout, chartConfig)
+  }
+
+  const downloadFunnelChart = () => {
+    if (!funnelChartRef.value) return
+    plotly
+      .toImage(funnelChartRef.value, { format: 'png', width: 1200, height: 800, scale: 2 })
+      .then((dataUrl: string) => {
+        const link = document.createElement('a')
+        link.download = 'attrition-plot.png'
+        link.href = dataUrl
+        link.click()
+      })
+  }
+
+  const downloadFunnelChartCSV = () => {
+    if (!inclusionReportResponse.value || draggableAttritionStats.value.length === 0) return
+
+    const summary = inclusionReportResponse.value.summary
+    const stats = draggableAttritionStats.value
+
+    const headers = ['Rule', 'Count', 'Percent of Total', 'Percent Difference']
+    const rows = [
+      ['Total', summary.baseCount.toString(), '100.00%', ''],
+      ...stats.map(stat => [stat.name, stat.countSatisfying.toString(), stat.percentSatisfying, stat.pctDiff]),
+    ]
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+    const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = 'attrition-plot.csv'
+    link.click()
+    URL.revokeObjectURL(link.href)
   }
 
   // Watch for changes in funnelChartData to render funnel chart
@@ -139,5 +196,7 @@ export function useFunnelChart(
 
   return {
     funnelChartRef,
+    downloadFunnelChart,
+    downloadFunnelChartCSV,
   }
 }

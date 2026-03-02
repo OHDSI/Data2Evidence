@@ -203,8 +203,60 @@ export function useTreemapChart(
     { deep: true }
   )
 
+  const downloadTreemapImage = () => {
+    if (!echartsTreemap.value) return
+    const dataUrl = echartsTreemap.value.getDataURL({
+      type: 'png',
+      pixelRatio: 2,
+      backgroundColor: '#fff',
+    })
+    const link = document.createElement('a')
+    link.download = 'population-treemap.png'
+    link.href = dataUrl
+    link.click()
+  }
+
+  const collectLeafData = (node: any): Array<{ count: number; passed: string[]; failed: string[] }> => {
+    const leaves: Array<{ count: number; passed: string[]; failed: string[] }> = []
+    const traverse = (n: any) => {
+      const isLeaf = !n.children || n.children.length === 0
+      if (isLeaf && n.tooltip) {
+        leaves.push({
+          count: n.value,
+          passed: n.tooltip.passed || [],
+          failed: n.tooltip.failed || [],
+        })
+      }
+      if (n.children) {
+        n.children.forEach(traverse)
+      }
+    }
+    traverse(node)
+    return leaves
+  }
+
+  const downloadTreemapCSV = () => {
+    if (!treemapData.value) return
+
+    const filteredData = applyFiltering(treemapData.value)
+    const leaves = collectLeafData(filteredData)
+
+    const headers = ['Count', 'Passed Criteria', 'Failed Criteria']
+    const rows = leaves.map(leaf => [leaf.count.toString(), leaf.passed.join('; '), leaf.failed.join('; ')])
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+    const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = 'population-treemap.csv'
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
+
   return {
     treemapChartRef,
     disposeTreemap,
+    downloadTreemapImage,
+    downloadTreemapCSV,
   }
 }
