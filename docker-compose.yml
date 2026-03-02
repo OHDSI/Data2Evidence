@@ -835,6 +835,9 @@ services:
       start_period: 40s
     # Use custom image with postgresql-client pre-installed for offline capability
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-supabase-storage:${DOCKER_TAG_NAME:-develop}
+    build:
+      context: ./services/supabase-storage
+      dockerfile: Dockerfile
     logging:
       options:
         tag: *c19
