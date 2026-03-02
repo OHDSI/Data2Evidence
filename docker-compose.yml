@@ -768,8 +768,6 @@ services:
       echo "PostgreSQL is ready on localhost:5432.";
       echo "Attempting to change password for user postgres...";
       psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '\''${DEMO__DB_PASSWORD:-mypass}'\'';";
-      echo "Adding table cohort_definition to demo_cdm_results schema...";
-      psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -c "CREATE TABLE IF NOT EXISTS demo_cdm_results.cohort_definition ( cohort_definition_id integer NOT NULL, cohort_definition_name varchar(255) NOT NULL, cohort_definition_description text NULL, definition_type_concept_id integer NOT NULL, cohort_definition_syntax text NULL, subject_concept_id integer NOT NULL, cohort_initiation_date date NULL );";
       echo "PostgreSQL setup complete. Bringing PostgreSQL process (PID $PG_PID) to foreground...";
       wait $PG_PID;
       echo "PostgreSQL process (PID $PG_PID) has exited.";
