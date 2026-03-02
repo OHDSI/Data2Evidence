@@ -366,7 +366,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                     );
                                             }
                                             break;
-                                        case "inclusionReport":
+                                        case "inclusionreport":
                                             const inclusionReportBody =
                                                 body.filter
                                                     ? body
