@@ -448,7 +448,9 @@
         },
         "dataset": {
           "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
-          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}"
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -834,7 +836,8 @@
           "jobplugins.dqd.read",
           "jobplugins.dqd.execute",
           "d2e.webapi",
-          "usermgmt.me.jupyter"
+          "usermgmt.me.jupyter",
+          "gateway.dataset.shinylive.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -1093,6 +1096,25 @@
           "path": "^/pa-config-svc/db/(.*)",
           "scopes": [
             "PAConfig.svc"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/wizards/config$",
+          "scopes": [
+            "PAConfig.svc/read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/wizards/config$",
+          "scopes": [
+            "PAConfig.svc"
+          ],
+          "httpMethods": [
+            "PUT",
+            "DELETE"
           ]
         },
         {
@@ -1964,6 +1986,15 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/upload/folder",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/supabase-storage/get/file",
           "scopes": [
             "portal.supabaseStorage.read"
@@ -2587,7 +2618,7 @@
           ]
         },
         {
-          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/tag/[0-9a-zA-z]+(.*)",
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/tag/[0-9a-zA-Z]+(.*)",
           "scopes": [
             "dbSvc.schema.delete.rollbackTag"
           ],
@@ -2742,10 +2773,11 @@
         {
           "path": "^/gateway/api/dataset/shiny-live",
           "scopes": [
-            "gateway.dataset.snapshot.create"
+            "gateway.dataset.shinylive.read"
           ],
           "httpMethods": [
-            "GET"
+            "GET",
+            "DELETE"
           ]
         },
         {
@@ -2971,7 +3003,7 @@
             "parquet.export"
           ],
           "httpMethods": [
-            "GET"
+            "POST"
           ],
           "datasetId": "datasetId"
         }

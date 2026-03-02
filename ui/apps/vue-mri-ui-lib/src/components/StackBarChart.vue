@@ -1,5 +1,12 @@
 <template>
-  <div class="stackbar-container" id="stacked-chart" style="width: 100%; height: 100%"></div>
+  <div class="stackbar-wrapper">
+    <div class="stackbar-container" id="stacked-chart"></div>
+    <StackBarChartLegend
+      v-if="chartData.traces && chartData.traces.length > 1"
+      :traces="chartData.traces"
+      :colorway="layout.colorway"
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -8,25 +15,47 @@ import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
+import StackBarChartLegend from './StackBarChartLegend.vue'
+import { init } from 'echarts'
+import { initial } from 'underscore'
 
 let stackBarChart
 
 export default {
   name: 'stackBarChart',
+  components: {
+    StackBarChartLegend,
+  },
   props: ['busyEv', 'shouldRerenderChart'],
   data() {
     return {
-      chartData: {},
+      chartData: {} as { traces?: any[]; axisType?: string; categories?: any[]; measures?: any[]; data?: any[] },
       errorMessage: '',
       sbChartStyle: {},
       debounceId: 0,
+      layout: { ...Constants.PlotlyConsts.layout, showlegend: false },
+      resizeObserver: null,
     }
   },
   created() {
-    this.layout = Constants.PlotlyConsts.layout
+    this.layout = { ...Constants.PlotlyConsts.layout, showlegend: false }
     this.config = Constants.PlotlyConsts.config
     this.setupAxes()
     this.setFireRequest()
+  },
+  mounted() {
+    this.resizeObserver = new ResizeObserver(() => {
+      if (stackBarChart && this.chartData && Object.keys(this.chartData).length !== 0) {
+        clearTimeout(this.debounceId)
+        this.debounceId = setTimeout(() => {
+          Plotly.Plots.resize(stackBarChart)
+        }, 100)
+      }
+    })
+
+    if (this.$el) {
+      this.resizeObserver.observe(this.$el)
+    }
   },
   watch: {
     'sortProperty.props.value': function sorter(newVal) {
@@ -165,6 +194,9 @@ export default {
     },
     shouldRerenderChart() {
       if (this.shouldRerenderChart) {
+        if (stackBarChart) {
+          Plotly.purge(stackBarChart)
+        }
         this.setupPlotly()
         this.renderChart()
       }
@@ -187,6 +219,11 @@ export default {
     ]),
   },
   beforeUnmount() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+      this.resizeObserver = null
+    }
+
     if (stackBarChart) {
       Plotly.purge(stackBarChart)
     }
@@ -286,13 +323,32 @@ export default {
         })
 
         this.chartData = this.dataToTraces(data)
-        this.layout.xaxis.type = this.chartData.axisType
-        Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
+
+        const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+        freshLayout.showlegend = false
+        freshLayout.xaxis.type = this.chartData.axisType
+
+        Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
+
+        // Resize chart after DOM updates to account for legend space
+        this.$nextTick(() => {
+          Plotly.Plots.resize(stackBarChart)
+        })
       }
     },
     setupPlotly() {
-      stackBarChart = this.$el
-      Plotly.newPlot(stackBarChart, this.chartData.traces, this.layout, this.config)
+      stackBarChart = this.$el.querySelector('.stackbar-container')
+
+      const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+      initialLayout.showlegend = false
+      initialLayout.xaxis.type = this.chartData.axisType
+
+      Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
+
+      // Resize chart after DOM updates to account for legend space
+      this.$nextTick(() => {
+        Plotly.Plots.resize(stackBarChart)
+      })
 
       const selectionUpdate = () => {
         // Update selection in state to activate drilldown
@@ -332,7 +388,10 @@ export default {
         stackBarChart.removeAllListeners('plotly_selected')
         stackBarChart.removeAllListeners('plotly_deselect')
 
-        Plotly.react(stackBarChart, this.chartData.traces, this.layout, this.config)
+        const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+        selectionLayout.showlegend = false
+        selectionLayout.xaxis.type = this.chartData.axisType
+        Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
       stackBarChart.on('plotly_selected', selectionUpdate)
@@ -342,3 +401,17 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.stackbar-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 8px;
+}
+.stackbar-container {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+</style>

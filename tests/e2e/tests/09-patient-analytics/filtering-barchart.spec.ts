@@ -35,6 +35,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: '+' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Sinusitis')
   await page.getByRole('button', { name: 'Search' }).click()
+
+  // Wait for search results to settle to exactly 4 data rows
+  await expect(page.locator('tr.MuiTableRow-root:not(.MuiTableRow-head)')).toHaveCount(4)
+
   await page
     .getByRole('row', { name: /40055000.*Chronic/ })
     .locator('td')

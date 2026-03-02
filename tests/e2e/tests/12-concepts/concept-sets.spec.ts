@@ -24,7 +24,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Concept set
   const conceptSetName = `Concept Set Test 1`
-  // If the concept set already exists (retry), remove the second conept set we added last time
+  // If the concept set already exists (retry), remove the second concept set we added last time
   if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
     await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').first().click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
@@ -57,6 +57,9 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('row')).toHaveCount(2) // including the header row
     await page.getByRole('tab', { name: 'Related concepts' }).click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill('')
+    await page.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByText('Please enter a name.')).toBeVisible()
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()

@@ -14,6 +14,7 @@ from pandas.api.types import is_list_like, is_dict_like
 from rpy2 import robjects as ro
 from rpy2.robjects.packages import importr
 from rpy2.rinterface_lib import callbacks
+
 import traceback as tb
 from functools import partial
 from typing import List, Dict
@@ -1341,6 +1342,19 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                     resultsDataModelSettings = resultsDataModelSettings,
                     resultsConnectionDetails = rConnectionDetails
                 )
+
+                print(f'Creating table tb1_results in schema {results_schema}')
+                # create sql to create table tb1_results
+                create_table_sql = f"""
+                CREATE TABLE IF NOT EXISTS {results_schema}.tb1_results (
+                    study_id VARCHAR(100),
+                    dataset_id VARCHAR(100),
+                    cohort_id VARCHAR(100),
+                    table1_json TEXT,
+                    PRIMARY KEY (study_id, dataset_id, cohort_id)
+                );
+                """
+                dbdao.execute_sql(create_table_sql)
 
             # uploadResults logs are not captured by default
             # so we override the consolewrite_print callback to capture the logs

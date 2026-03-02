@@ -14,38 +14,52 @@ def copy_schema_to_cache(con, dbdao: any, options: CreateDuckdbDatabaseFileType)
     try:
         con.execute(f'''CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";''')
         table_names = dbdao.get_table_names(options.schemaName)
+        logger.info(f"Found {len(table_names)} tables to copy.")
         chunk_size = 10000
         for table in table_names:
             try:
                 logger.info(f"Copying table: {table}")
                 columns = dbdao.get_columns(options.schemaName, table)
                 
+                # Helper to safely quote identifiers and escape embedded quotes
+                def qi(name: str) -> str:
+                    if name is None:
+                        return '""'
+                    return '"' + name.replace('"', '""') + '"'
+
                 casted_columns = []
                 for col in columns:
                     # if col.lower().endswith('text') or col.lower().endswith('_text'):
                     if col.lower() == 'content':
-                        casted_columns.append(f"CAST({col} AS JSON) AS {col}")
+                        casted_columns.append(f"CAST({qi(col)} AS JSON) AS {qi(col)}")
                     else:
-                        casted_columns.append(col)
+                        casted_columns.append(qi(col))
                 select_columns = ', '.join(casted_columns)
+                # Use unescaped quoted identifiers for database/schema/table (only columns are escaped)
                 count_sql = f'SELECT COUNT(*) FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}"'
                 con.execute(count_sql)
                 total_rows = con.fetchone()[0]
+                logger.info(f"Total rows in table {table}: {total_rows}")
                 offset = 0
                 first_chunk = True
                 # Drop table if exists to ensure fresh copy
                 con.execute(f'DROP TABLE IF EXISTS "{options.databaseCode}"."{options.cacheSchemaName}"."{table}"')
-                while offset < total_rows:
-                    limit_clause = f"LIMIT {chunk_size} OFFSET {offset}"
-                    if first_chunk:
-                        logger.info(f"Creating table: {table}")
-                        create_sql = f'CREATE TABLE IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS FROM (SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" {limit_clause})'
-                    else:
-                        logger.info(f"Inserting chunk into table: {table}")
-                        create_sql = f'INSERT INTO "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" {limit_clause}'
+                if (total_rows == 0):
+                    logger.info(f"Table {table} is empty. Creating empty table.")
+                    create_sql = f'CREATE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS FROM (SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" LIMIT 0)'
                     con.execute(create_sql)
-                    offset += chunk_size
-                    first_chunk = False
+                else:
+                    while offset < total_rows:
+                        limit_clause = f"LIMIT {chunk_size} OFFSET {offset}"
+                        if first_chunk:
+                            logger.info(f"Creating table: {table}")
+                            create_sql = f'CREATE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS FROM (SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" {limit_clause})'
+                        else:
+                            logger.info(f"Inserting chunk into table: {table}")
+                            create_sql = f'INSERT INTO "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" {limit_clause}'
+                        con.execute(create_sql)
+                        offset += chunk_size
+                        first_chunk = False
                 created_tables.append(table)
             except Exception as e:
                 logger.error(
