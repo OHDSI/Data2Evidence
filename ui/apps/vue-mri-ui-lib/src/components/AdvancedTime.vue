@@ -132,6 +132,7 @@ import appLabel from '../lib/ui/app-label.vue'
 import helpPopover from './HelpPopover.vue'
 import { mapActions, mapGetters, mapMutations } from 'vuex'
 import { ADVANCEDTIME_SET_TIMEFILTER_TITLE } from '../store/mutation-types'
+import AdvancedTimeFilterModel from '../lib/models/AdvancedTimeFilterModel'
 
 export default {
   name: 'advancedtime',
@@ -281,7 +282,8 @@ export default {
       })
     },
     updateDays(e, index) {
-      const days = String(parseFloat(e.target.value) || 0)
+      const value = e.target.value.trim()
+      const days = AdvancedTimeFilterModel.validateText(value) ? value : String(parseFloat(value) || 0)
       this.advancedTimeLayout.props.timeFilterModel.timeFilters[index].days = days
       this.model.props.timeFilterModel.timeFilters[index].days = days
       this.updateFilterCardTimeFilter({
