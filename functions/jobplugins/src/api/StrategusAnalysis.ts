@@ -31,7 +31,7 @@ export class StrategusAnalysisApi {
       mode: "kernel",
     });
 
-    const response = await this.channel.post(
+    const response = await this.channel.put(
       `${this.baseUrl}/strategus/analysis`,
       body,
       { headers }

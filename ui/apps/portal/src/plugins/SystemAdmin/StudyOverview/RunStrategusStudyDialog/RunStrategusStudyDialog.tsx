@@ -108,7 +108,10 @@ const RunStrategusStudyDialog: FC<RunStrategusStudyDialogProps> = ({ study, open
             <MenuItem value="" disabled>
               {getText(i18nKeys.RUN_STRATEGUS_DIALOG__CHOOSE_DATASET)}
             </MenuItem>
-            {datasets.map((dataset) => (
+            {/* Filter out source and strategus_analysis datasets */}
+            {datasets.
+            filter((dataset) => dataset.type !== "source" && dataset.type !== "strategus_analysis").
+            map((dataset) => (
               <MenuItem key={dataset.id} value={dataset.id}>
                 {dataset.studyDetail?.name || dataset.tokenStudyCode}
               </MenuItem>
