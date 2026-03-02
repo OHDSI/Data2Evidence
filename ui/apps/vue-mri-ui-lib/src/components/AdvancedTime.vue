@@ -283,7 +283,7 @@ export default {
     },
     updateDays(e, index) {
       const value = e.target.value.trim()
-      const days = AdvancedTimeFilterModel.validateText(value) ? value : String(parseFloat(value) || 0)
+      const days = value && AdvancedTimeFilterModel.validateText(value) ? value : String(parseFloat(value) || 0)
       this.advancedTimeLayout.props.timeFilterModel.timeFilters[index].days = days
       this.model.props.timeFilterModel.timeFilters[index].days = days
       this.updateFilterCardTimeFilter({
