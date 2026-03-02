@@ -81,7 +81,6 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                         const bitmaskContent = structuredClone(
                             inclusionReportFiltercards[idx]
                         );
-
                         // Set filter to an exclusion filtercard if op is 0
                         if (op === "0") {
                             bitmaskContent["op"] = "NOT";
