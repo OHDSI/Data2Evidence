@@ -9,6 +9,9 @@ import { useInclusionReportData } from './composables/useInclusionReportData'
 import { useRuleManagement } from './composables/useRuleManagement'
 import { useFunnelChart } from './composables/useFunnelChart'
 import { useTreemapChart } from './composables/useTreemapChart'
+import VButton from '@/components/vuetify/VButton.vue'
+import bsDropdown from '@/lib/ui/bs-dropdown.vue'
+import bsDropdownItem from '@/lib/ui/bs-dropdown-item.vue'
 
 const props = withDefaults(
   defineProps<{
@@ -86,9 +89,12 @@ const {
   filteredSummary,
 } = useRuleManagement(inclusionReportResponse, treemapData)
 
-const { funnelChartRef } = useFunnelChart(inclusionReportResponse, draggableAttritionStats)
+const { funnelChartRef, downloadFunnelChart, downloadFunnelChartCSV } = useFunnelChart(
+  inclusionReportResponse,
+  draggableAttritionStats
+)
 
-const { treemapChartRef, disposeTreemap } = useTreemapChart(
+const { treemapChartRef, disposeTreemap, downloadTreemapImage, downloadTreemapCSV } = useTreemapChart(
   treemapData,
   checkedRulesIds,
   allAnyOption,
@@ -183,11 +189,29 @@ onUnmounted(() => {
 
         <!-- Charts -->
         <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
-          <h4>Attrition visualization</h4>
+          <div class="chart-header">
+            <h4>Attrition plot</h4>
+            <bs-dropdown variant="link" size="sm" no-caret align="right">
+              <template v-slot:button-content>
+                <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
+              </template>
+              <bs-dropdown-item @click="downloadFunnelChartCSV">Export to CSV File</bs-dropdown-item>
+              <bs-dropdown-item @click="downloadFunnelChart">Export to PNG File</bs-dropdown-item>
+            </bs-dropdown>
+          </div>
           <div ref="funnelChartRef" class="funnel-chart"></div>
         </div>
         <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
-          <h4>Population visualization</h4>
+          <div class="chart-header">
+            <h4>Population treemap</h4>
+            <bs-dropdown variant="link" size="sm" no-caret align="right">
+              <template v-slot:button-content>
+                <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
+              </template>
+              <bs-dropdown-item @click="downloadTreemapCSV">Export to CSV File</bs-dropdown-item>
+              <bs-dropdown-item @click="downloadTreemapImage">Export to PNG File</bs-dropdown-item>
+            </bs-dropdown>
+          </div>
           <div ref="treemapChartRef" class="treemap-chart"></div>
         </div>
       </div>
@@ -256,6 +280,23 @@ h4 {
     font-size: 0.95rem;
     color: #333;
   }
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h4 {
+    margin: 0;
+  }
+}
+
+.download-btn {
+  width: fit-content;
+  color: var(--color-ui-darkest-text);
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
 }
 
 .chart-section {
