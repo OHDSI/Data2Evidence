@@ -53,7 +53,6 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 // Get mriquery filtercards
                 const filtercards = mriquery.filter.cards.content;
 
-                // TODO: Find out if basic data works with exclusion criteria
                 // const basicDataFilters =
                 //     this.splitBasicDataIntoDistinctFiltercards(filtercards);
                 const basicDataFilters = []; //TODO: REMOVE [ Currently ignores basicDataFilters as basic data is not supporting exclusions]
