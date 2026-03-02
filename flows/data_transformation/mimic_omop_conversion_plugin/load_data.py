@@ -19,7 +19,7 @@ def create_table(conn, sql_file, schema_name=None):
 
 def make_table_name(file_path):
     basename = os.path.basename(file_path)
-    table_name = os.path.splitext(basename)[0]
+    table_name = basename.split('.')[0]
     pathname = os.path.dirname(file_path)
     dirname = os.path.basename(pathname)
     return f"mimiciv_{dirname}.{table_name}", dirname
