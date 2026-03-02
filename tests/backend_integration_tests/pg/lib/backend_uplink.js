@@ -308,6 +308,10 @@ BackendUplink.prototype.addMriConfiguration = function (mriConfig, mriConfigId, 
   this.log('Storing and activating test MRI configuration')
   var that = this
   this.hanaRequest.request(setQuery, function (err, response, body) {
+    console.log(`err:${err}`)
+    console.log(`response:${response}`)
+    console.log(`body:${body}`)
+
     if (err) {
       return cb(err)
     }
@@ -317,6 +321,7 @@ BackendUplink.prototype.addMriConfiguration = function (mriConfig, mriConfigId, 
     } else if (body && body.errors && Array.isArray(body.errors) && body.errors.length !== 0) {
       that.log('MRI Config validation failed!')
     }
+    console.log(`success response...`)
     cb(err)
   })
 }

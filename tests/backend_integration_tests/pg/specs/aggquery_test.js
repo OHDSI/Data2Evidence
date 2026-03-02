@@ -15,7 +15,7 @@ var specUtils = require('./spec_utils')
 
 // Standard modules
 var path = require('path')
-var {Client} = require('pg')
+var { Client } = require('pg')
 var defaultBarChartParameters = {
   dataFormat: 'json',
   chartType: 'barchart',
@@ -79,6 +79,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
           },
           configSetupManager: params.configSetupManager
         }
+        console.log(`calling within before()...`)
         specUtils.adaptMriConfiguration(newParams, done)
       })
     })
@@ -90,6 +91,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
         var newParams = {
           configSetupManager: params.configSetupManager
         }
+        console.log(`calling within after()...`)
         specUtils.resetMriConfigurationToDefault(newParams, done)
       })
     })
@@ -105,10 +107,14 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
         .xaxis('basicdata', 'smoker')
         .yaxis('basicdata', 'pcount')
       requestBuilder.submit(aliceHanaRequest, PATH, defaultBarChartParameters, function (err, response, body) {
+        console.log(`>>>err:${err}`)
+        console.log(`>>>response:${response}`)
+        console.log(`>>>body:${body}`)
         specUtils.checkAnalyticsResult(body, {
           'patient.attributes.smoker': ['no'],
           'patient.attributes.pcount': [2]
         })
+        console.log(`--------------`)
         done(err)
       })
     })
