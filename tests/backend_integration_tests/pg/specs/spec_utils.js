@@ -51,7 +51,7 @@ function truncateSchema(pgClient, schemaName, cb) {
       tableNames,
       function (tableName, errCallback) {
         var testTable = '"' + schemaName + '"."' + tableName + '"'
-        var sqlCommand = 'TRUNCATE TABLE ' + testTable
+        var sqlCommand = 'TRUNCATE TABLE ' + testTable + ' CASCADE'
         pgClient.query(sqlCommand, errCallback)
       },
       function (err) {
@@ -103,7 +103,7 @@ function truncatePatientData(pgClient, schemaName, cb) {
  */
 function getAllTableNamesInSchema(pgClient, schemaName, cb, tablePrefixArray) {
   // get list of all tables within schema
-  var sqlCommand = `SELECT TABLE_NAME FROM M_TABLES WHERE SCHEMA_NAME = '${schemaName}' AND TABLE_TYPE = 'COLUMN'`
+  var sqlCommand = `SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = '${schemaName}' AND TABLE_TYPE = 'BASE TABLE'`
   if (
     tablePrefixArray !== undefined &&
     typeof tablePrefixArray === 'object' &&
@@ -116,13 +116,13 @@ function getAllTableNamesInSchema(pgClient, schemaName, cb, tablePrefixArray) {
     sqlCommand += ` AND (${subQueryArray.join(' OR ')})`
   }
 
-  var collectTableNames = function (err, rows) {
+  var collectTableNames = function (err, res) {
     if (err) {
       return cb(err)
     }
     var tableNames = []
-    rows.forEach(function (row) {
-      tableNames.push(row['TABLE_NAME'])
+    res.rows.forEach(function (row) {
+      tableNames.push(row['table_name'])
     })
     cb(null, tableNames)
   }
