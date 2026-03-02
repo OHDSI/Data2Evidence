@@ -66,7 +66,6 @@ export const Etl: FC = () => {
                   type={item.type}
                   system={CURRENT_SYSTEM}
                   data={item?.data}
-                  autoMount={item.autoMount}
                   basePath="etl"
                 />
               </ErrorBoundary>
