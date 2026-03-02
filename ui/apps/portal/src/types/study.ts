@@ -4,6 +4,7 @@ import { StrategusStudy, NetworkStrategusStudy } from "./strategusStudy";
 export enum SourceDatasetType {
   SOURCE = "source",
   FHIR = "fhir",
+  STRATEGUS_ANALYSIS = "strategus_analysis",
 }
 
 export enum CacheDatasetType {

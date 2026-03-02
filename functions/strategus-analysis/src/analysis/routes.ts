@@ -11,7 +11,7 @@ export default class StrategusAnalysisRouter {
 
   private registerRoutes() {
     this.router.post("/", this.createStrategusAnalysis.bind(this));
-    this.router.put("/", this.createStrategusAnalysis.bind(this));
+    this.router.put("/", this.updateStrategusAnalysis.bind(this));
     this.router.get("/:studyId", this.getStrategusAnalysis.bind(this));
     this.router.get("/", this.getAllStrategusAnalysis.bind(this));
     this.router.post("/code", this.saveStudyAnalysisViewerCode.bind(this));
@@ -50,6 +50,38 @@ export default class StrategusAnalysisRouter {
       console.error("Error fetching strategus analysis specification:", error);
       res.status(500).json({
         message: "An error occurred while fetching the analysis specification",
+      });
+    }
+  }
+
+  private async updateStrategusAnalysis(req: Request, res: Response) {
+    try {
+      const { studyId, analysisSpec } = req.body;
+      const token = req.headers["authorization"];
+      if (!studyId || !analysisSpec) {
+        return res.status(400).json({
+          message: "Missing required fields: studyId or analysisSpec",
+        });
+      }
+
+      const result = await this.strategusAnalysisService.createAnalysisSpec(
+        token,
+        studyId,
+        "", // tokenStudyCode is not needed for update
+        "", // tenantId is not needed for update
+        "", // notebookName is not needed for update
+        analysisSpec,
+        "" // mode is not needed for update
+      );
+
+      res.status(200).json({
+        message: result.message,
+        analysisId: result.analysisId,
+      });
+    } catch (error) {
+      console.error("Error updating strategus analysis specification:", error);
+      res.status(500).json({
+        message: `An error occurred while updating the analysis specification: ${error.message}`,
       });
     }
   }
