@@ -21,7 +21,7 @@ services:
     environment:
       RUST_LOG: info
       RUST_BACKTRACE: full
-      TREX_DEBUG_GC: 1
+      TREX_DEBUG_GC: 0
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage", "fhir"]}
@@ -141,8 +141,6 @@ services:
       - ./services/enterprise-gateway/kernels/R_ohdsi_docker:/usr/local/share/jupyter/kernels/R_ohdsi_docker
 
   logging:
-    ports:
-      - 8080:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
