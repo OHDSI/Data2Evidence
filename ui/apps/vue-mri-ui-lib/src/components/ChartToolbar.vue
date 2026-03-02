@@ -138,7 +138,7 @@
     <VDialog
       :model-value="showInclusionReportModal"
       @update:modelValue="showInclusionReportModal = $event"
-      max-width="1400"
+      max-width="90%"
     >
       <div class="pa-inclusion-report-dialog">
         <div class="pa-inclusion-report-dialog__title">

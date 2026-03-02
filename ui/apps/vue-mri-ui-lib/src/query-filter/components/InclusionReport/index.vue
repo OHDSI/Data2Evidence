@@ -1,22 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
-import plotly from '@/lib/CustomPlotly'
-import { computeAttritionStats } from './computeAttritionStats'
-import { convertTreemapData, formatTreemapTooltip } from './computeTreemapStats'
-import { shouldIncludeRect, calculateFilteredSummary } from './ruleSelectionFilter'
-import {
-  COLORS_ARRAY,
-  FUNNEL_THRESHOLDS,
-  FUNNEL_LEGEND_LABELS,
-  TREEMAP_LEGEND_ITEMS,
-  EXCLUDED_COLOR,
-} from './constants'
 import GroupButtons from '../GroupButtons.vue'
-import ChevronButton from '@/components/ChevronButton.vue'
-import * as echarts from 'echarts'
-import { VueDraggable } from 'vue-draggable-plus'
-import { getInclusionReportMockResponse } from '@/mocks/inclusionReportMockResponse'
+import SummaryTable from './components/SummaryTable.vue'
+import FilterControls from './components/FilterControls.vue'
+import RulesTable from './components/RulesTable.vue'
+import { useInclusionReportData } from './composables/useInclusionReportData'
+import { useRuleManagement } from './composables/useRuleManagement'
+import { useFunnelChart } from './composables/useFunnelChart'
+import { useTreemapChart } from './composables/useTreemapChart'
 
 const props = withDefaults(
   defineProps<{
@@ -38,18 +30,9 @@ const props = withDefaults(
   }
 )
 
-const isLoadingInclusionReport = ref<boolean>(false)
-const funnelChartRef = ref<HTMLElement | null>(null)
-const treemapChartRef = ref<HTMLElement | null>(null)
+// View state
 const selectedPersonEventView = ref<'PERSON' | 'EVENT'>('PERSON')
 const selectedVisualization = ref<'ATTRITION' | 'INTERSECT'>('ATTRITION')
-const inclusionReportPersonResponse = ref<InclusionReportResponse | null>(null)
-const inclusionReportEventResponse = ref<InclusionReportResponse | null>(null)
-const echartsTreemap = ref<any>(null)
-const allAnyOption = ref<'ALL' | 'ANY'>('ANY')
-const passedFailedOption = ref<'PASSED' | 'FAILED'>('PASSED')
-const checkedRulesIds = ref<number[]>([])
-const draggableAttritionStats = ref<ReturnType<typeof computeAttritionStats>>([])
 
 const personEventOptions = [
   { value: 'PERSON', label: 'By person' },
@@ -60,316 +43,61 @@ const visualizationOptions = [
   { value: 'INTERSECT', label: 'Intersect' },
 ]
 
-const inclusionReportResponse = computed(() => {
-  return selectedPersonEventView.value === 'PERSON'
-    ? inclusionReportPersonResponse.value
-    : inclusionReportEventResponse.value
-})
+// Use composables - order matters here!
+// First, get the data fetching composable (without filtered summary initially)
+const dataComposable = useInclusionReportData(
+  {
+    cohortDefinitionId: props.cohortDefinitionId,
+    sourceKey: props.sourceKey,
+    patientCount: props.patientCount,
+    generationStatus: props.generationStatus,
+    useMockData: props.useMockData,
+    fetchInclusionReport: props.fetchInclusionReport,
+  },
+  selectedPersonEventView
+)
 
-const hasInclusionRules = computed(() => {
-  return inclusionReportResponse.value?.inclusionRuleStats.length > 0
-})
+const {
+  isLoadingInclusionReport,
+  inclusionReportResponse,
+  hasInclusionRules,
+  treemapData,
+  shouldFetchInclusionReport,
+  fetchInclusionReportInternal,
+  resetData,
+} = dataComposable
 
-const treemapData = computed(() => {
-  if (!inclusionReportResponse.value) return null
-  const data = JSON.parse(inclusionReportResponse.value.treemapData)
-  return convertTreemapData(data, inclusionReportResponse.value)
-})
+// Then get rule management which depends on inclusionReportResponse
+const {
+  checkedRulesIds,
+  draggableAttritionStats,
+  allAnyOption,
+  passedFailedOption,
+  toggleRuleSelection,
+  isRuleChecked,
+  areAllRulesChecked,
+  toggleAllRules,
+  handleDragEnd,
+  getRowIndex,
+  moveRowUp,
+  moveRowDown,
+  handleAllAnyChange,
+  handlePassedFailedChange,
+  filteredSummary,
+} = useRuleManagement(inclusionReportResponse, treemapData)
 
-const filteredSummary = computed(() => {
-  if (!treemapData.value || checkedRulesIds.value.length === 0) {
-    return { value: 0, percent: '0%' }
-  }
+const { funnelChartRef } = useFunnelChart(inclusionReportResponse, draggableAttritionStats)
 
-  const { value } = calculateFilteredSummary(
-    treemapData.value,
-    checkedRulesIds.value,
-    allAnyOption.value,
-    passedFailedOption.value
-  )
-  const baseCount = inclusionReportResponse.value?.summary.baseCount || 1
-  const percent = ((value / baseCount) * 100).toFixed(2) + '%'
+const { treemapChartRef, disposeTreemap } = useTreemapChart(
+  treemapData,
+  checkedRulesIds,
+  allAnyOption,
+  passedFailedOption,
+  selectedVisualization
+)
 
-  return { value, percent }
-})
-
-const shouldFetchInclusionReport = computed(() => {
-  return props.patientCount !== null && !(props.generationStatus === 'pending' || props.generationStatus === 'failed')
-})
-
-const funnelChartData = computed(() => {
-  if (!inclusionReportResponse.value || draggableAttritionStats.value.length === 0) return null
-
-  const summary = inclusionReportResponse.value.summary
-  const stats = draggableAttritionStats.value
-
-  // Build funnel data with base count as first level
-  const labels = ['Total']
-  const values = [summary.baseCount]
-  const hoverTexts = ['Total: ' + summary.baseCount.toLocaleString()]
-
-  // Add each inclusion rule with calculated statistics
-  stats.forEach(stat => {
-    const name = stat.name.length > 30 ? stat.name.slice(0, 30) + '...' : stat.name
-    labels.push(`${stat.id + 1} - ${name}`)
-    values.push(stat.countSatisfying)
-    hoverTexts.push(
-      `${stat.name}<br>Count: ${stat.countSatisfying.toLocaleString()}<br>Percent: ${stat.percentSatisfying}`
-    )
-  })
-  return {
-    labels,
-    values,
-    hoverTexts,
-  }
-})
-
-const renderFunnelChart = () => {
-  if (!funnelChartRef.value || !funnelChartData.value) return
-
-  // Compute ratios relative to previous layer
-  const ratios = funnelChartData.value.values.map((v, i) => (i === 0 ? 1 : v / funnelChartData.value.values[i - 1]))
-
-  // Map each ratio to a color based on thresholds
-  const layerColors = ratios.map(ratio => {
-    for (let i = 0; i < FUNNEL_THRESHOLDS.length; i++) {
-      if (ratio <= FUNNEL_THRESHOLDS[i]) return COLORS_ARRAY[i]
-    }
-    return COLORS_ARRAY[COLORS_ARRAY.length - 1]
-  })
-
-  const trace = {
-    type: 'funnel',
-    y: funnelChartData.value.labels,
-    x: funnelChartData.value.values,
-    text: funnelChartData.value.hoverTexts,
-    hoverinfo: 'text',
-    textposition: 'inside',
-    texttemplate: 'N: %{x}<br> % remain: %{percentInitial:.2%}',
-    constraintext: 'outside',
-    textinfo: 'value+percent initial',
-    marker: {
-      color: layerColors,
-    },
-    hoverlabel: {
-      bgcolor: '#f9f9f9', // css var doesn't work here
-    },
-    showlegend: false, // Hide legend for main trace
-  }
-
-  // Create dummy traces for legend - only for colors actually used
-  const usedColors = new Set(layerColors)
-  const legendTraces = COLORS_ARRAY.map((color, index) => ({
-    type: 'scatter',
-    x: [null],
-    y: [null],
-    mode: 'markers',
-    marker: {
-      size: 10,
-      color: color,
-    },
-    name: FUNNEL_LEGEND_LABELS[index],
-    showlegend: true,
-  })).filter((_trace, index) => usedColors.has(COLORS_ARRAY[index]))
-
-  const layout = {
-    height: 800,
-    yaxis: {
-      automargin: true,
-      autorange: 'reversed',
-      showgrid: false,
-      zeroline: false,
-    },
-    xaxis: {
-      automargin: true,
-      showgrid: false,
-      showline: false,
-      showticklabels: false,
-      zeroline: false,
-    },
-    showlegend: true,
-    legend: {
-      orientation: 'v',
-      x: 1.02,
-      y: 1,
-      xanchor: 'left',
-      yanchor: 'top',
-    },
-  }
-
-  const chartConfig = {
-    responsive: true,
-    displayModeBar: false,
-  }
-
-  plotly.newPlot(funnelChartRef.value, [trace, ...legendTraces], layout, chartConfig)
-}
-
-const disposeTreemap = () => {
-  if (echartsTreemap.value) {
-    echartsTreemap.value.dispose()
-    echartsTreemap.value = null
-  }
-}
-
-// get colors used in the treemap data, except the EXCLUDED_COLOR (gray) used for filtered out rectangles
-const collectUsedColors = (node: any): Set<string> => {
-  const usedColors = new Set<string>()
-
-  const collect = (n: any) => {
-    const isLeafNode = !n.children || n.children.length === 0
-    if (isLeafNode && n.itemStyle?.color && n.itemStyle.color !== EXCLUDED_COLOR) {
-      usedColors.add(n.itemStyle.color)
-    }
-    if (n.children) {
-      n.children.forEach(collect)
-    }
-  }
-
-  collect(node)
-  return usedColors
-}
-
-// filter legend items to only include colors that are actually used in the data
-const getActiveLegendItems = (usedColors: Set<string>) => {
-  return TREEMAP_LEGEND_ITEMS.filter(item => usedColors.has(item.color))
-}
-
-// create ECharts graphic for legend at the bottom center of the chart
-const createLegendGraphics = (legendItems: Array<{ name: string; color: string }>, chartWidth: number) => {
-  const ITEM_WIDTH = 180 // Approximate width per legend item
-  const LEGEND_BOTTOM = 17.5
-  const CIRCLE_RADIUS = 7.5
-  const TEXT_OFFSET = 20
-
-  const totalLegendWidth = legendItems.length * ITEM_WIDTH
-  const legendStartX = (chartWidth - totalLegendWidth) / 2
-
-  return legendItems
-    .map((item, index) => {
-      const xPos = legendStartX + index * ITEM_WIDTH
-      return [
-        {
-          type: 'circle',
-          id: `legend-circle-${index}`,
-          left: xPos,
-          bottom: LEGEND_BOTTOM,
-          z: 100,
-          shape: {
-            r: CIRCLE_RADIUS,
-          },
-          style: {
-            fill: item.color,
-          },
-        },
-        {
-          type: 'text',
-          id: `legend-text-${index}`,
-          left: xPos + TEXT_OFFSET,
-          bottom: LEGEND_BOTTOM,
-          z: 100,
-          style: {
-            text: item.name,
-            fontSize: 16,
-            fill: '#333',
-            textAlign: 'left',
-            textVerticalAlign: 'middle',
-          },
-        },
-      ]
-    })
-    .flat()
-}
-
-const createTreemapOption = (dataToRender: any, legendGraphics: any[]): echarts.EChartsOption => {
-  return {
-    tooltip: {
-      show: true,
-      formatter: (params: any) => formatTreemapTooltip(params.data?.tooltip),
-      backgroundColor: 'var(--color-ui-extra-light-bg)',
-      textStyle: {
-        color: 'var(--color-text-primary)',
-        fontSize: 16,
-      },
-      confine: true,
-      padding: [8, 12],
-    },
-    graphic: legendGraphics,
-    series: [
-      {
-        type: 'treemap',
-        data: [dataToRender],
-        roam: 'move',
-        nodeClick: false,
-        breadcrumb: {
-          show: false,
-        },
-        label: {
-          show: false,
-        },
-        itemStyle: {
-          borderColor: '#000', // css var doesn't work here
-          borderWidth: 0.3,
-        },
-        bottom: 40, // Reserve space for legend at the bottom
-      },
-    ],
-  }
-}
-
-const renderTreemap = async () => {
-  if (!treemapChartRef.value || !treemapData.value) return
-
-  await nextTick()
-  availableWidth.value = treemapChartRef.value.clientWidth
-
-  // Dispose and reinitialize chart
-  disposeTreemap()
-  echartsTreemap.value = echarts.init(treemapChartRef.value)
-
-  // Apply filtering to treemap data
-  const dataToRender = applyFiltering(treemapData.value)
-
-  // Collect colors and create legend
-  const usedColors = collectUsedColors(dataToRender)
-  const legendItems = getActiveLegendItems(usedColors)
-  const legendGraphics = createLegendGraphics(legendItems, treemapChartRef.value.clientWidth)
-
-  // Create and apply chart option
-  const option = createTreemapOption(dataToRender, legendGraphics)
-  echartsTreemap.value.setOption(option)
-}
-
-const applyFiltering = (node: any): any => {
-  const newNode: any = {
-    name: node.name,
-    value: node.value,
-    tooltip: node.tooltip,
-    itemStyle: node.itemStyle ? { ...node.itemStyle } : {},
-  }
-
-  // Process children first
-  if (node.children && node.children.length > 0) {
-    newNode.children = node.children.map((child: any) => applyFiltering(child))
-  }
-
-  // Check if this node should be included based on filtering criteria
-  // Only apply gray color to leaf nodes (nodes without children)
-  const isLeafNode = !node.children || node.children.length === 0
-  const isIncluded = shouldIncludeRect(node.name, checkedRulesIds.value, allAnyOption.value, passedFailedOption.value)
-
-  if (isLeafNode && !isIncluded) {
-    // Gray out excluded leaf nodes
-    newNode.itemStyle = {
-      color: EXCLUDED_COLOR,
-    }
-  }
-
-  return newNode
-}
-
+// Event handlers
 function handlePersonEventViewChange(newView: 'PERSON' | 'EVENT') {
-  // Clean up chart and ResizeObserver before switching views
   selectedPersonEventView.value = newView
   if (shouldFetchInclusionReport.value) {
     fetchInclusionReportInternal(props.cohortDefinitionId, props.sourceKey)
@@ -380,182 +108,16 @@ function handleVisualizationChange(newView: 'ATTRITION' | 'INTERSECT') {
   selectedVisualization.value = newView
 }
 
-function handleAllAnyChange(newValue: 'ALL' | 'ANY') {
-  allAnyOption.value = newValue
-}
-
-function handlePassedFailedChange(newValue: 'PASSED' | 'FAILED') {
-  passedFailedOption.value = newValue
-}
-
-function toggleRuleSelection(ruleId: number) {
-  const index = checkedRulesIds.value.indexOf(ruleId)
-  if (index > -1) {
-    checkedRulesIds.value.splice(index, 1)
-  } else {
-    checkedRulesIds.value.push(ruleId)
-  }
-}
-
-function isRuleChecked(ruleId: number): boolean {
-  return checkedRulesIds.value.includes(ruleId)
-}
-
-function areAllRulesChecked(): boolean {
-  if (!inclusionReportResponse.value || !inclusionReportResponse.value.inclusionRuleStats) return false
-  const totalRules = inclusionReportResponse.value.inclusionRuleStats.length
-  return checkedRulesIds.value.length === totalRules
-}
-
-function toggleAllRules() {
-  if (!inclusionReportResponse.value || !inclusionReportResponse.value.inclusionRuleStats) return
-
-  if (areAllRulesChecked()) {
-    // Uncheck all
-    checkedRulesIds.value = []
-  } else {
-    // Check all
-    checkedRulesIds.value = inclusionReportResponse.value.inclusionRuleStats.map(r => r.id)
-  }
-}
-
-const fetchInclusionReportInternal = async (cohortDefinitionId: string, sourceKey: string) => {
-  isLoadingInclusionReport.value = true
-
-  const modeId = selectedPersonEventView.value === 'PERSON' ? 1 : 0
-  try {
-    if (props.useMockData) {
-      const mockResponse = getInclusionReportMockResponse(modeId)
-      if (selectedPersonEventView.value === 'PERSON') {
-        inclusionReportPersonResponse.value = mockResponse
-      } else {
-        inclusionReportEventResponse.value = mockResponse
-      }
-      return
-    }
-
-    if (selectedPersonEventView.value === 'PERSON' && !inclusionReportPersonResponse.value) {
-      inclusionReportPersonResponse.value = await props.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
-    } else if (selectedPersonEventView.value === 'EVENT' && !inclusionReportEventResponse.value) {
-      inclusionReportEventResponse.value = await props.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
-    }
-  } catch (error) {
-    console.error('Error fetching inclusion report:', error)
-  } finally {
-    isLoadingInclusionReport.value = false
-  }
-}
-
-function handleDragEnd() {
-  const newOrder = draggableAttritionStats.value.map(stat => stat.id)
-  draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
-}
-
-function getRowIndex(statId: number): number {
-  return draggableAttritionStats.value.findIndex(s => s.id === statId)
-}
-
-function moveRowUp(statId: number) {
-  const index = getRowIndex(statId)
-  if (index > 0) {
-    const newStats = [...draggableAttritionStats.value]
-    ;[newStats[index - 1], newStats[index]] = [newStats[index], newStats[index - 1]]
-    const newOrder = newStats.map(s => s.id)
-    draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
-  }
-}
-
-function moveRowDown(statId: number) {
-  const index = getRowIndex(statId)
-  if (index < draggableAttritionStats.value.length - 1) {
-    const newStats = [...draggableAttritionStats.value]
-    ;[newStats[index], newStats[index + 1]] = [newStats[index + 1], newStats[index]]
-    const newOrder = newStats.map(s => s.id)
-    draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
-  }
-}
-
-const availableWidth = ref(0)
-
+// Lifecycle hooks
 onMounted(() => {
-  inclusionReportPersonResponse.value = null
-  inclusionReportEventResponse.value = null
-  isLoadingInclusionReport.value = false
-
   if (shouldFetchInclusionReport.value) {
     fetchInclusionReportInternal(props.cohortDefinitionId, props.sourceKey)
   }
 })
 
-watch(
-  () => inclusionReportResponse.value,
-  newResponse => {
-    if (newResponse && newResponse.inclusionRuleStats) {
-      // Initialize checkedRulesIds with all rule IDs
-      checkedRulesIds.value = newResponse.inclusionRuleStats.map(r => r.id)
-      draggableAttritionStats.value = computeAttritionStats(newResponse)
-    }
-  }
-)
-
 onUnmounted(() => {
   disposeTreemap()
 })
-
-// Watch for changes in sourceKey and decide whether to fetch inclusion report
-watch(
-  () => props.sourceKey,
-  newSourceKey => {
-    inclusionReportPersonResponse.value = null
-    inclusionReportEventResponse.value = null
-    disposeTreemap()
-    if (shouldFetchInclusionReport.value) {
-      fetchInclusionReportInternal(props.cohortDefinitionId, newSourceKey)
-    }
-  }
-)
-
-// Watch for changes in shouldFetchInclusionReport and decide whether to fetch inclusion report
-watch(shouldFetchInclusionReport, shouldFetch => {
-  if (shouldFetch) {
-    fetchInclusionReportInternal(props.cohortDefinitionId, props.sourceKey)
-  } else {
-    inclusionReportPersonResponse.value = null
-    inclusionReportEventResponse.value = null
-  }
-})
-
-// Watch for changes in funnelChartData to render funnel chart
-watch(
-  () => funnelChartData.value,
-  () => {
-    renderFunnelChart()
-  },
-  { flush: 'post' } // Ensure <div ref="funnelChartRef"> exists
-)
-
-watch(
-  () => [treemapData.value, selectedVisualization.value],
-  () => {
-    // Only render if we're in INTERSECT view
-    if (selectedVisualization.value !== 'INTERSECT' || !treemapData.value) {
-      return
-    }
-    renderTreemap()
-  },
-  { flush: 'post' } // Ensure <div ref="treemapChartRef"> exists
-)
-
-watch(
-  () => [allAnyOption.value, passedFailedOption.value, checkedRulesIds.value],
-  () => {
-    // Re-render treemap when filtering options change
-    if (selectedVisualization.value === 'INTERSECT' && treemapData.value) {
-      renderTreemap()
-    }
-  },
-  { deep: true }
-)
 </script>
 
 <template>
@@ -569,31 +131,15 @@ watch(
     <p v-if="selectedPersonEventView === 'PERSON'">using 1 event per person</p>
     <p v-else>using all events</p>
   </div>
+
   <div v-if="isLoadingInclusionReport" class="status-message loading">Loading inclusion report...</div>
+
   <div v-else-if="inclusionReportResponse" class="inclusion-report-container">
     <!-- Summary Table -->
-    <div class="summary-section">
-      <h4>Summary</h4>
-      <table class="summary-table">
-        <thead>
-          <tr>
-            <th>Match rate</th>
-            <th>Matches</th>
-            <th>Total events</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>{{ inclusionReportResponse.summary.percentMatched }}</td>
-            <td>{{ inclusionReportResponse.summary.finalCount }}</td>
-            <td>{{ inclusionReportResponse.summary.baseCount }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <SummaryTable :summary="inclusionReportResponse.summary" />
 
     <div v-if="hasInclusionRules" class="inclusion-rules-detail">
-      <!-- Inclusion Rule Stats Table -->
+      <!-- Visualization Type Selector -->
       <div class="group-buttons-container">
         <group-buttons
           :options="visualizationOptions"
@@ -603,109 +149,43 @@ watch(
         />
       </div>
 
-      <!-- Any/All Rule Selector (only show in INTERSECT view) -->
-      <div v-if="selectedVisualization === 'INTERSECT'" class="all-any-selector">
-        <span>Having</span>
-        <select v-model="allAnyOption" @change="handleAllAnyChange(allAnyOption)">
-          <option value="ALL">ALL</option>
-          <option value="ANY">ANY</option>
-        </select>
-        <span>of selected criteria</span>
-        <select v-model="passedFailedOption" @change="handlePassedFailedChange(passedFailedOption)">
-          <option value="PASSED">PASSED</option>
-          <option value="FAILED">FAILED</option>
-        </select>
-      </div>
+      <!-- Filter Controls (only show in INTERSECT view) -->
+      <FilterControls
+        v-if="selectedVisualization === 'INTERSECT'"
+        :all-any-option="allAnyOption"
+        :passed-failed-option="passedFailedOption"
+        @update:all-any-option="handleAllAnyChange"
+        @update:passed-failed-option="handlePassedFailedChange"
+      />
 
       <div class="rules-section">
-        <VueDraggable
-          :key="`${selectedPersonEventView}-${selectedVisualization}`"
-          v-model="draggableAttritionStats"
-          target=".rules-table tbody"
-          :disabled="selectedVisualization === 'INTERSECT'"
-          :animation="150"
-          @end="handleDragEnd"
-        >
-          <table class="rules-table">
-            <thead>
-              <tr>
-                <th v-if="selectedVisualization === 'INTERSECT'">
-                  <input
-                    type="checkbox"
-                    :checked="areAllRulesChecked()"
-                    @change="toggleAllRules()"
-                    title="Select/unselect all rules"
-                  />
-                </th>
-                <th v-if="selectedVisualization === 'ATTRITION'"></th>
-                <th v-if="selectedVisualization === 'ATTRITION'"></th>
-                <th class="rule-id">ID</th>
-                <th class="rule-name">Inclusion rule</th>
-                <!-- count satisfying -->
-                <th>N</th>
-                <!-- percent satisfying -->
-                <th v-if="selectedVisualization === 'ATTRITION'">% remain</th>
-                <th v-else>% satisfied</th>
-                <!-- percent excluded -->
-                <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
-                <th v-else>% to-gain</th>
-              </tr>
-            </thead>
-            <tbody v-if="selectedVisualization === 'ATTRITION'">
-              <tr v-for="stat in draggableAttritionStats" :key="stat.id">
-                <td class="drag-icon">⋮</td>
-                <td class="reorder-buttons">
-                  <ChevronButton
-                    direction="up"
-                    :disabled="getRowIndex(stat.id) === 0"
-                    title="Move up"
-                    @click="moveRowUp(stat.id)"
-                  />
-                  <ChevronButton
-                    direction="down"
-                    :disabled="getRowIndex(stat.id) === draggableAttritionStats.length - 1"
-                    title="Move down"
-                    @click="moveRowDown(stat.id)"
-                  />
-                </td>
-                <td class="rule-id">{{ stat.id + 1 }}</td>
-                <td class="rule-name">{{ stat.name }}</td>
-                <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-                <td>{{ stat.percentSatisfying }}</td>
-                <td>{{ stat.pctDiff }}</td>
-              </tr>
-            </tbody>
-            <tbody v-else>
-              <tr
-                v-for="stat in inclusionReportResponse.inclusionRuleStats"
-                :key="stat.id"
-                :class="{ 'grayed-out': !isRuleChecked(stat.id) }"
-              >
-                <td>
-                  <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="toggleRuleSelection(stat.id)" />
-                </td>
-                <td class="rule-id">{{ stat.id + 1 }}</td>
-                <td class="rule-name">
-                  {{ stat.name }}
-                </td>
-                <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-                <td>{{ stat.percentSatisfying }}</td>
-                <td>{{ stat.percentExcluded }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </VueDraggable>
+        <!-- Rules Table -->
+        <RulesTable
+          :selected-visualization="selectedVisualization"
+          :selected-person-event-view="selectedPersonEventView"
+          :draggable-attrition-stats="draggableAttritionStats"
+          :inclusion-rule-stats="inclusionReportResponse.inclusionRuleStats"
+          :are-all-rules-checked="areAllRulesChecked()"
+          :is-rule-checked="isRuleChecked"
+          :get-row-index="getRowIndex"
+          @toggle-all-rules="toggleAllRules"
+          @toggle-rule-selection="toggleRuleSelection"
+          @drag-end="handleDragEnd"
+          @move-row-up="moveRowUp"
+          @move-row-down="moveRowDown"
+          @update:draggable-attrition-stats="draggableAttritionStats = $event"
+        />
 
+        <!-- Filtered Summary (only show in INTERSECT view) -->
         <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
           <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
         </div>
 
-        <!-- Plotly Funnel chart -->
+        <!-- Charts -->
         <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
           <h4>Attrition visualization</h4>
           <div ref="funnelChartRef" class="funnel-chart"></div>
         </div>
-        <!-- Echarts Treemap chart -->
         <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
           <h4>Population visualization</h4>
           <div ref="treemapChartRef" class="treemap-chart"></div>
@@ -717,6 +197,87 @@ watch(
   <div v-else class="no-data">No inclusion report data available</div>
 </template>
 
-<style scoped>
-@import '../../styles/InclusionReport.scss';
+<style scoped lang="scss">
+.inclusion-rules-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.group-buttons-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+
+  .group-button {
+    width: 80%;
+  }
+}
+
+.inclusion-report-container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.rules-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.status-message,
+.no-data {
+  padding: 2rem;
+  text-align: center;
+  color: var(--color-neutral);
+}
+
+.filtered-summary {
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #333;
+  }
+}
+
+.chart-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  min-height: 400px;
+  width: 100%;
+
+  .funnel-chart {
+    width: 100%;
+    height: fit-content;
+    border: 1px solid var(--color-ui-light-border, #ddd);
+    border-radius: 4px;
+  }
+
+  .treemap-chart {
+    height: 500px;
+    width: 100%;
+    border: 1px solid var(--color-ui-light-border, #ddd);
+    border-radius: 4px;
+  }
+}
 </style>
