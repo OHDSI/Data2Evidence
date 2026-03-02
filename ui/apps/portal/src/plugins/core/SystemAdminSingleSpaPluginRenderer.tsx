@@ -23,7 +23,6 @@ interface SystemAdminSingleSpaPluginRendererProps<T = any> {
   data: T;
   route?: string;
   type?: string;
-  autoMount?: boolean;
 }
 
 export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRendererProps> = ({
@@ -33,7 +32,6 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
   data,
   route,
   type: configType,
-  autoMount,
 }) => {
   const { userId } = useUser();
 
@@ -57,7 +55,6 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
             url: path,
             customProps: {
               appId,
-              autoMount,
               getToken: getAuthToken,
               userId,
               system,
@@ -81,7 +78,7 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
       };
       registerApp();
     }
-  }, [path, route, configType, isRegistered, autoMount, userId, system, data]);
+  }, [path, route, configType, isRegistered, userId, system, data]);
 
   useEffect(() => {
     if (configType === "app" && isRegistered) {
