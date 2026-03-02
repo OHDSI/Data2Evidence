@@ -44,7 +44,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
   var params = null
 
   before(function (done) {
-    pgClient = Client(hostConfig.getPGSystemCredentials())
+    pgClient = new Client(hostConfig.getPGSystemCredentials())
     var MIN_COHORT_SIZE = 0
     params = {
       hostConfig: hostConfig,
