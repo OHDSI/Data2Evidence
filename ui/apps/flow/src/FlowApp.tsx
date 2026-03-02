@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useState, useEffect, useMemo } from "react";
 import { Provider } from "react-redux";
 import { ReactFlowProvider } from "reactflow";
 import { ThemeProvider } from "@mui/material";
@@ -22,18 +22,41 @@ export let pluginMetadata:
   | SystemAdminPageMetadata<FlowMetadataParams>
   | undefined;
 
-const FlowApp: FC<FlowAppProps> = ({
-  metadata,
-  isStandalone,
-}: FlowAppProps) => {
-  pluginMetadata = metadata;
-  if (!pluginMetadata) return;
+const FlowApp: FC<FlowAppProps> = (props: FlowAppProps) => {
+  const [customProps, setCustomProps] = useState<Partial<PortalProps>>({});
+
+  useEffect(() => {
+    const handlePropsChange = (event: Event) => {
+      const { appId, ...newProps } = (event as CustomEvent).detail || {};
+      if (appId === props.appId) {
+        setCustomProps(newProps);
+      }
+    };
+
+    window.addEventListener("custom-props-changed", handlePropsChange);
+    return () => {
+      window.removeEventListener("custom-props-changed", handlePropsChange);
+    };
+  }, [props.appId]);
+
+  const mergedProps = useMemo(
+    () => ({
+      ...props,
+      ...customProps,
+    }),
+    [props, customProps],
+  );
+
+  pluginMetadata =
+    mergedProps as unknown as SystemAdminPageMetadata<FlowMetadataParams>;
+
+  if (!pluginMetadata) return null;
 
   return (
     <Provider store={store}>
       <ReactFlowProvider>
         <ThemeProvider theme={theme}>
-          <FlowLayout isStandalone={isStandalone} />
+          <FlowLayout isStandalone={mergedProps.isStandalone} />
         </ThemeProvider>
       </ReactFlowProvider>
     </Provider>

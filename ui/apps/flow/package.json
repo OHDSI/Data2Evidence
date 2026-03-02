@@ -2,13 +2,14 @@
   "name": "flow",
   "version": "1.0.0",
   "description": "Dataflow UI",
-  "main": "dist/module.js",
+  "main": "dist/lifecycles.js",
   "types": "dist/module.d.ts",
   "scripts": {
     "start": "webpack serve --config webpack.config.js --mode=development --open",
     "start:plugin": "webpack serve --config webpack.config.js --mode=development --env build",
-    "build:dev": "webpack --config webpack.config.js --mode=development --env build",
-    "build": "webpack --config webpack.config.js --mode=production --env build",
+    "build": "vite build",
+    "build:dev": "vite build --mode=development",
+    "build:watch": "vite build --mode=development --watch",
     "clean": "rimraf ./dist"
   },
   "dependencies": {

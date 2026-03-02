@@ -38,7 +38,7 @@
           "target": "/resources/portal"
         },
         {
-          "source": "/flow",
+          "source": "/resources/flow",
           "target": "/resources/flow"
         },
         {
@@ -147,6 +147,21 @@
         }
       ],
       "uiplugins": {
+        "etl": {
+          "enabled": true,
+          "name": "ETL",
+          "nameI18nKey": "UI_PLUGIN_ETL",
+          "route": "etl",
+          "pluginPath": "/resources/flow/lifecycles.js",
+          "featureFlag": "etl",
+          "requiredRoles": [
+            "SYSTEM_ADMIN"
+          ],
+          "data": {
+            "dnBaseUrl": "https://$$FQDN$$/",
+            "mappingSuggestion": true
+          }
+        },
         "researcher": [
           {
             "enabled": true,

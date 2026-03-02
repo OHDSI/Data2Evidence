@@ -58,7 +58,7 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
               getToken: getAuthToken,
               userId,
               system,
-              ...data,
+              data,
             },
           });
 
