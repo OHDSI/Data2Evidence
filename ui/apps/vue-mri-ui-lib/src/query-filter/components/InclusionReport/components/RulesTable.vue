@@ -74,16 +74,16 @@ function handleMoveRowDown(statId: number) {
           </th>
           <th v-if="selectedVisualization === 'ATTRITION'"></th>
           <th v-if="selectedVisualization === 'ATTRITION'"></th>
-          <th class="rule-id">ID</th>
+          <!-- <th class="rule-id">ID</th> -->
           <th class="rule-name">Inclusion rule</th>
           <!-- count satisfying -->
-          <th>N</th>
+          <th>No. of Persons</th>
           <!-- percent satisfying -->
-          <th v-if="selectedVisualization === 'ATTRITION'">% remain</th>
+          <th v-if="selectedVisualization === 'ATTRITION'">%</th>
           <th v-else>% satisfied</th>
           <!-- percent excluded -->
-          <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
-          <th v-else>% to-gain</th>
+          <!-- <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
+          <th v-else>% to-gain</th> -->
         </tr>
       </thead>
       <tbody v-if="selectedVisualization === 'ATTRITION'">
@@ -103,11 +103,20 @@ function handleMoveRowDown(statId: number) {
               @click="handleMoveRowDown(stat.id)"
             />
           </td>
-          <td class="rule-id">{{ stat.id + 1 }}</td>
-          <td class="rule-name">{{ stat.name }}</td>
+          <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
+          <td class="rule-name">
+            <!-- bold 'OR' -->
+            <template v-for="(part, i) in stat.name.split(/\b(OR)\b/)" :key="i">
+              <b v-if="part === 'OR'">OR</b>
+              <template v-else>{{ part }}</template>
+            </template>
+          </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-          <td>{{ stat.percentSatisfying }}</td>
-          <td>{{ stat.pctDiff }}</td>
+          <td v-if="selectedVisualization === 'ATTRITION'">
+            {{ (100 - parseFloat(stat.percentSatisfying)).toFixed(2) }}%
+          </td>
+          <td v-else>{{ stat.percentSatisfying }}</td>
+          <!-- <td>{{ stat.pctDiff }}</td> -->
         </tr>
       </tbody>
       <tbody v-else>
@@ -115,30 +124,24 @@ function handleMoveRowDown(statId: number) {
           <td>
             <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="handleToggleRuleSelection(stat.id)" />
           </td>
-          <td class="rule-id">{{ stat.id + 1 }}</td>
+          <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
           <td class="rule-name">
             {{ stat.name }}
           </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td>{{ stat.percentSatisfying }}</td>
-          <td>{{ stat.percentExcluded }}</td>
+          <!-- <td>{{ stat.percentExcluded }}</td> -->
         </tr>
       </tbody>
     </table>
   </VueDraggable>
 </template>
-
 <style scoped lang="scss">
 table {
   font-size: 16px;
 
   .rule-name {
     max-width: 70ch;
-    text-align: left;
-  }
-
-  .rule-id {
-    text-align: left;
   }
 }
 
@@ -146,7 +149,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid var(--color-ui-light-border, #ddd);
-  text-align: right;
+  text-align: left;
   color: var(--color-ui-medium-text);
 
   .rule-name {
