@@ -15,6 +15,7 @@ from .flowutils import get_node_list, get_incoming_edges, install_r_packages_fro
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
+from .table1 import Table1Generator
 
 
 @flow(log_prints=True)
@@ -206,7 +207,7 @@ def runStrategus(json_graph, options):
     logger = Logger()
     try:
         root_flow_run_context = FlowRunContext.get().flow_run.dict()
-    except:
+    except Exception:
         root_flow_run_context = {"id":uuid4()}
     flow_run_id = str(root_flow_run_context.get("id"))
     
@@ -216,6 +217,7 @@ def runStrategus(json_graph, options):
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
     update_results_schema = options.get('updateResultsSchema', True)
+    runTable1 = options.get('runTable1', False)
 
     if(not study_id):
        raise Exception('StudyId is missing')
@@ -262,6 +264,27 @@ def runStrategus(json_graph, options):
             "study_id": study_id
         }
         upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
+
+    if(runTable1):
+        # Extract cohort IDs from analysis specification
+        cohort_ids = []
+        shared_resources = json.loads(analysisSpec).get('sharedResources', [])
+        for resource in shared_resources:
+            cohort_definitions = resource.get('cohortDefinitions', [])
+            for cohort in cohort_definitions:
+                cohort_id = cohort.get('cohortId', None)
+                if cohort_id is not None:
+                    cohort_ids.append(cohort_id)
+
+        table1_generator = Table1Generator(
+            study_id=study_id,
+            dataset_id=datasetId,
+            cohort_ids=cohort_ids,
+            database_code=database_code,
+            cdm_schema_name=schema_name
+        )
+
+        table1_generator.generate_and_save_table1()
 
 def drop_strategus_results(options):
     """

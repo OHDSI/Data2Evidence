@@ -7,3 +7,4 @@ export * from "./dataset-tag-config.repository.ts";
 export * from "./dataset-tag.repository.ts";
 export * from "./dataset.repository.ts";
 export * from "./dataset-code.repository.ts";
+export * from "./dataset-code-query.repository.ts";

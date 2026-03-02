@@ -1,4 +1,7 @@
-import express, { Request, Response } from "npm:express";
+import express, { NextFunction, Request, Response } from "npm:express";
+import { Buffer } from "node:buffer";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
@@ -10,17 +13,27 @@ import {
   DbDialect,
   SourceDatasetType,
 } from "./const.ts";
-import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
+import { ShinyLiveService } from "./services/shinylive.service.ts";
 
-const GATEWAY_WO_PROTOCOL_FQDN = env.GATEWAY_WO_PROTOCOL_FQDN!;
 const app = express();
+
+interface DashboardCode {
+  id: number;
+  datasetId: string;
+  name: string;
+  type: string;
+  code: string;
+  language?: string;
+}
 
 export class DatasetRouter {
   public router = express.Router();
   private readonly logger = console;
+  private readonly shinyLiveService: ShinyLiveService;
 
   constructor() {
+    this.shinyLiveService = new ShinyLiveService();
     this.registerRoutes();
   }
 
@@ -51,21 +64,20 @@ export class DatasetRouter {
         const analyticsSvcAPI = new AnalyticsSvcAPI(token);
 
         try {
-          const metadata = await analyticsSvcAPI.getCdmSchemaSnapshotMetadata(
-            datasetId
-          );
+          const metadata =
+            await analyticsSvcAPI.getCdmSchemaSnapshotMetadata(datasetId);
           return res.status(200).json(metadata);
         } catch (error) {
           this.logger.error(
             `Error when getting CDM schema snapshot metadata: ${JSON.stringify(
-              error
-            )}`
+              error,
+            )}`,
           );
           res
             .status(500)
             .send("Error when getting CDM schema snapshot metadata");
         }
-      }
+      },
     );
 
     this.router.get("/cohorts", async (req: Request, res: Response) => {
@@ -83,7 +95,7 @@ export class DatasetRouter {
         return res.status(200).json(result);
       } catch (error) {
         this.logger.error(
-          `Error when getting cohorts: ${JSON.stringify(error)}`
+          `Error when getting cohorts: ${JSON.stringify(error)}`,
         );
         res.status(500).send("Error when getting cohorts");
       }
@@ -121,22 +133,24 @@ export class DatasetRouter {
           cacheDatasetType,
         } = req.body;
 
-        const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
+        const newCacheSchemaName = schemaName
+          ? schemaName
+          : `CDM${id}`.replace(/-/g, "");
         const parsedNewCacheSchemaName = this.schemaCase(
           newCacheSchemaName,
-          dialect as DbDialect
+          dialect as DbDialect,
         );
 
         // Token study code validation
         const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
         if (!tokenStudyCode.match(tokenFormat)) {
           this.logger.error(
-            `Token dataset code ${tokenStudyCode} has invalid format`
+            `Token dataset code ${tokenStudyCode} has invalid format`,
           );
           return res.status(400).send("Token dataset code format is invalid");
         } else if (await portalAPI.hasDataset(tokenStudyCode)) {
           this.logger.error(
-            `Provided token dataset code ${tokenStudyCode} is already used`
+            `Provided token dataset code ${tokenStudyCode} is already used`,
           );
           return res.status(400).send("Token dataset code is already used");
         }
@@ -156,7 +170,7 @@ export class DatasetRouter {
             ) {
               try {
                 this.logger.info(
-                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`
+                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`,
                 );
 
                 const options = {
@@ -178,7 +192,7 @@ export class DatasetRouter {
                 await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
               } catch (error) {
                 this.logger.error(
-                  `Error while creating new CDM schema! ${error}`
+                  `Error while creating new CDM schema! ${error}`,
                 );
                 return res.status(500).send("Error while creating CDM schema");
               }
@@ -192,14 +206,14 @@ export class DatasetRouter {
 
             if (!db) {
               this.logger.error(
-                `Database with code ${databaseCode} does not exist`
+                `Database with code ${databaseCode} does not exist`,
               );
               return res.status(400).send("Database does not exist");
             }
 
             if (!db.vocab_schemas.includes(schemaName)) {
               this.logger.info(
-                `Vocab schema ${schemaName} does not exist in database ${databaseCode}. Appending it to the database`
+                `Vocab schema ${schemaName} does not exist in database ${databaseCode}. Appending it to the database`,
               );
 
               await dbAPI.updateDbDetails({
@@ -232,10 +246,20 @@ export class DatasetRouter {
             fhir_project_id: fhirProjectId,
           };
 
-          const newDataset = await portalAPI.createDataset(newDatasetInput);
-
-          if (newDataset.error) {
-            return res.status(400).json(newDataset);
+          let newDataset;
+          try {
+            newDataset = await portalAPI.createDataset(newDatasetInput);
+          } catch (createError: any) {
+            const status = createError.status || createError.response?.status;
+            const responseData = createError.response?.data;
+            this.logger.error(
+              `Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
+            );
+            // Return 400 for client errors, 500 for server errors
+            const httpStatus = status >= 400 && status < 500 ? status : 500;
+            return res
+              .status(httpStatus)
+              .json(responseData || { error: createError.message });
           }
 
           this.logger.info("Creating cache dataset in Portal");
@@ -248,7 +272,7 @@ export class DatasetRouter {
           ) {
             try {
               this.logger.info(
-                `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`
+                `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
               );
 
               const fhirCacheFlowRunDto = {
@@ -259,7 +283,7 @@ export class DatasetRouter {
               await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
             } catch (error) {
               this.logger.error(
-                `Error while creating FHIR cache schema! ${error}`
+                `Error while creating FHIR cache schema! ${error}`,
               );
               return res
                 .status(500)
@@ -285,12 +309,12 @@ export class DatasetRouter {
             ) {
               try {
                 this.logger.info(
-                  `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`
+                  `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`,
                 );
 
                 const dataModels = await jobpluginsAPI.getDatamodels();
                 const dataModelInfo = dataModels.find(
-                  (model) => model.datamodel === dataModel
+                  (model) => model.datamodel === dataModel,
                 );
 
                 await jobpluginsAPI.createDatamartCacheFlowRun(
@@ -298,11 +322,11 @@ export class DatasetRouter {
                   newCacheDataset.id,
                   {},
                   dataModelInfo?.flowId,
-                  `datamart-cache-${schemaName}`
+                  `datamart-cache-${schemaName}`,
                 );
               } catch (error) {
                 this.logger.error(
-                  `Error while creating cache for existing schema! ${error}`
+                  `Error while creating cache for existing schema! ${error}`,
                 );
                 return res
                   .status(500)
@@ -316,11 +340,11 @@ export class DatasetRouter {
             .json({ id: newDataset.id, cacheId: newCacheDataset.id });
         } catch (error) {
           this.logger.error(
-            `Error while creating dataset: ${JSON.stringify(error)}`
+            `Error while creating dataset: ${JSON.stringify(error)}`,
           );
           res.status(500).send("Error while creating dataset");
         }
-      }
+      },
     );
 
     this.router.post("/snapshot", async (req: Request, res: Response) => {
@@ -352,14 +376,13 @@ export class DatasetRouter {
       const id = uuidv4();
 
       // Use parent schema names if provided, otherwise generate new ones
-      const newSchemaName =
-        cdmSchemaValue || (sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "");
+      const newSchemaName = `CDM${id}`.replace(/-/g, "");
       const newVocabSchemaName = vocabSchemaValue || vocabSchemaName;
       const newResultsSchemaName = resultsSchemaValue || resultsSchemaName;
 
       const parsedNewSchemaName = this.schemaCase(
         newSchemaName,
-        dialect as DbDialect
+        dialect as DbDialect,
       );
 
       try {
@@ -387,7 +410,7 @@ export class DatasetRouter {
             sourceType === SourceDatasetType.FHIR
           ) {
             this.logger.info(
-              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`
+              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`,
             );
             try {
               const fhirCacheFlowRunDto = {
@@ -403,14 +426,14 @@ export class DatasetRouter {
           } else {
             this.logger.info(
               `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
-                snapshotCopyConfig
-              )})`
+                snapshotCopyConfig,
+              )})`,
             );
 
             try {
               const dataModels = await jobpluginsAPI.getDatamodels();
               const dataModelInfo = dataModels.find(
-                (model) => model.datamodel === dataModel
+                (model) => model.datamodel === dataModel,
               );
 
               await jobpluginsAPI.createDatamartCacheFlowRun(
@@ -418,7 +441,7 @@ export class DatasetRouter {
                 newDataset.id,
                 snapshotCopyConfig,
                 dataModelInfo.flowId,
-                `datamart-snapshot-${schemaName}`
+                `datamart-snapshot-${schemaName}`,
               );
             } catch (error) {
               this.logger.error(`Error copying CDM schema! ${error}`);
@@ -430,7 +453,7 @@ export class DatasetRouter {
         return res.status(200).json(newDataset);
       } catch (error) {
         this.logger.error(
-          `Error when copying dataset: ${JSON.stringify(error)}`
+          `Error when copying dataset: ${JSON.stringify(error)}`,
         );
         res.status(500).send(`Error when copying dataset: ${error}`);
       }
@@ -448,19 +471,131 @@ export class DatasetRouter {
       try {
         const token = req.headers.authorization!;
         const portalAPI = new PortalAPI(token);
-        const dataset = await portalAPI.getDataset(datasetId);
-        const mapped = dataset.dashboards.map(({ id, name }) => {
-          const url = `https://${GATEWAY_WO_PROTOCOL_FQDN}/dashboard-gate/${id}/content?token=${token}`;
-          return { name, url };
-        });
+        const dashboards = await portalAPI.getDatasetDashboards(datasetId);
+
+        // Map to return id, datasetId, name, and language
+        const mapped = dashboards.map((dashboard: DashboardCode) => ({
+          id: dashboard.id,
+          datasetId: dashboard.datasetId,
+          name: dashboard.name,
+          language: dashboard.language,
+        }));
+
+        this.logger.info(
+          `Found ${mapped.length} dashboards for dataset ${datasetId}`,
+        );
+
         return res.status(200).json(mapped);
       } catch (error) {
         this.logger.error(
-          `Error when getting dashboards: ${JSON.stringify(error)}`
+          `Error when getting dashboards: ${JSON.stringify(error)}`,
         );
         res.status(500).send("Error when getting dashboards");
       }
     });
+
+    this.router.use(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response, next: NextFunction) => {
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
+
+        if (!datasetId || !type || !name || !language) {
+          return res
+            .status(400)
+            .send(
+              "Invalid resource ID format. Expected: datasetId_type_name_language",
+            );
+        }
+
+        try {
+          const staticDir = await this.shinyLiveService.getStaticFilesDir(
+            datasetId,
+            type,
+            name,
+            language,
+          );
+
+          if (!staticDir) {
+            return res.status(404).send("Shinylive application not found");
+          }
+
+          express.static(staticDir, {
+            index: "index.html",
+            fallthrough: true,
+          })(req, res, async () => {
+            const requestedPath =
+              req.path === "/" ? "index.html" : req.path.substring(1);
+            const encodedSubPath = requestedPath
+              .split("/")
+              .map(encodeURIComponent)
+              .join("/");
+            const url = this.shinyLiveService.getPublicUrl(
+              datasetId,
+              type,
+              name,
+              language,
+              encodedSubPath,
+            );
+
+            try {
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                return res.status(response.status).send("Resource not found");
+              }
+
+              const buffer = Buffer.from(await response.arrayBuffer());
+              const contentType =
+                response.headers.get("content-type") ||
+                "application/octet-stream";
+
+              res.set("Content-Type", contentType);
+              res.send(buffer);
+
+              const localFilePath = path.join(staticDir, requestedPath);
+              try {
+                await fs.mkdir(path.dirname(localFilePath), {
+                  recursive: true,
+                });
+                await fs.writeFile(localFilePath, buffer);
+              } catch (e) {}
+            } catch (err) {
+              this.logger.error("[ShinyLive] Proxy error:", err);
+              return res.status(502).send("Error fetching resource");
+            }
+          });
+        } catch (error) {
+          this.logger.error("[ShinyLive] Error:", { resourceId, error });
+          res.status(500).send("Error loading shiny-live application");
+        }
+      },
+    );
+
+    // resourceId format: datasetId_type_name_language
+    this.router.delete(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response) => {
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
+        this.logger.info(`Deleting shiny-live resources for ${resourceId}`);
+
+        try {
+          await this.shinyLiveService.deleteDatasetShinyLiveResources(
+            datasetId,
+            type,
+            name,
+            language,
+          );
+          return res.status(200).send("Resource deleted successfully");
+        } catch (error) {
+          this.logger.error(
+            `Error deleting shiny-live resources: ${JSON.stringify(error)}`,
+          );
+          res.status(500).send("Error deleting shiny-live resources");
+        }
+      },
+    );
   }
 }
 app.use(express.json({ limit: "50mb" }));

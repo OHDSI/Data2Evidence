@@ -1,4 +1,5 @@
 import { GraphData } from "./types";
+import ZoomPlusIcon from "../../../../components/Charts/Common/icons/zoom-plus.svg";
 
 // Colors for different cohort lines
 const colors = [
@@ -202,6 +203,9 @@ export const getKaplanMeierGraphOption = (data: GraphData | null, isCompetingRis
       feature: {
         dataZoom: {
           yAxisIndex: "none",
+          icon: {
+            zoom: `image://${ZoomPlusIcon}`,
+          },
         },
         restore: {},
         saveAsImage: {},

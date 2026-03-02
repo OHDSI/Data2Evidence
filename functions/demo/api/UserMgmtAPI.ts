@@ -40,8 +40,24 @@ export class UserMgmtAPI {
       console.log("Registering study roles with params:", params);
       const result = await this.channel.post(url, params, options);
       return result.data;
-    } catch (error) {
-      console.error(`Error while getting datasets: ${error}`);
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while registering study roles: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
+    }
+  }
+
+  async getMe(): Promise<{ id: string; username: string }> {
+    try {
+      const options = this.getRequestConfig();
+      const url = `${this.baseURL}/me`;
+      const result = await this.channel.get(url, options);
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting /me: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
       throw error;
     }
   }

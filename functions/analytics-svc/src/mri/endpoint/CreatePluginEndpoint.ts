@@ -43,10 +43,6 @@ export async function createEndpointFromRequest(req: IMRIRequest): Promise<{
                 if (analyticsConnection.dialect === "DUCKDB") {
                     analyticsConnection.conn["studyAnalyticsCredential"] =
                         req.dbCredentials.studyAnalyticsCredential;
-                    analyticsConnection.conn["duckdbNativeDBName"] =
-                        await analyticsConnection.activate_nativedb_communication(
-                            analyticsConnection.conn["studyAnalyticsCredential"]
-                        );
                 }
             }
         }

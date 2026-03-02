@@ -3,9 +3,9 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  Unique,
   PrimaryGeneratedColumn,
-} from 'typeorm';
+  Unique,
+} from "typeorm";
 import { Audit } from "../../common/entity/audit.entity.ts";
 
 @Entity("dataset_code")
@@ -19,6 +19,12 @@ export class DatasetCode extends Audit {
 
   @Column()
   code: string;
+
+  @Column({ nullable: true })
+  name?: string;
+
+  @Column({ nullable: true })
+  language?: string;
 
   // Required for creation
   @Column({ name: "dataset_id" })

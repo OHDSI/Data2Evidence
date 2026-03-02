@@ -7,7 +7,6 @@ networks:
 
 volumes:
   caddy:
-  cachedb-data-1:
   cdw-config-cachedb-data-1:
   minio-data-1:
   pg-minerva-data-1:
@@ -253,7 +252,9 @@ services:
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
+      CACHE_FLOW_LEVEL_CONCURRENCY: ${CACHE_FLOW_LEVEL_CONCURRENCY:-1}
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
+      CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
@@ -610,7 +611,6 @@ services:
       PREFECT_RESULTS_PERSIST_BY_DEFAULT: false
       PREFECT_EVENTS_ENABLED: false
 
-
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
   #   depends_on:
@@ -874,7 +874,7 @@ services:
         - *x-tls
       PROJECT_REF: ${PROJECT_REF:-default}
       PORT: 9000
-      FILE_SIZE_LIMIT: 52428800
+      FILE_SIZE_LIMIT: 1048576000
       DATABASE_URL: postgres://${PG_SUPER_USER:-postgres}:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}
       PGRST_JWT_SECRET: ${SUPABASE_STORAGE_JWT_SECRET:-mysecret}
       SERVICE_KEY: ${SUPABASE_STORAGE_JWT_TOKEN:-mytoken}
