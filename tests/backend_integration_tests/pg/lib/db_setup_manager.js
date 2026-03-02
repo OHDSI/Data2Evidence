@@ -12,8 +12,8 @@ var TestEnvironment = require('./pg_testenvironment')
 var HostConfig = require('./host_config')
 var utils = require('./utils')
 // var {PGConnection} = require('./pg-lib-connection')
-const pg = require('pg')
-const { Client } = pg
+const { Client } = require('pg')
+// const { Client } = pg
 var async = require('async')
 
 /**
@@ -26,7 +26,7 @@ var async = require('async')
 function DbSetupManager(sEnvironmentPath, configName) {
   var oHostConfig = new HostConfig(sEnvironmentPath)
   // Set up database connection
-  this.pgClient = New Client(oHostConfig.getPGSystemCredentials())
+  this.pgClient = new Client(oHostConfig.getPGSystemCredentials())
   this.log = utils.getLogger(oHostConfig.getLogStatus(), 'In db_setup_manager: ')
   var that = this
   this.pgClient.on('error', function (err) {
