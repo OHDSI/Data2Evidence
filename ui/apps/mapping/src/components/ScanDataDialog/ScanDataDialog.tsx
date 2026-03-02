@@ -220,8 +220,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     try {
       setLoading(true);
       if (uploadedFiles && nodeId) {
-        const fileNames = uploadedFiles.map((file) => file.name);
-        const response = await api.whiteRabbit.createScanReport(nodeId, fileNames, delimiter);
+        const response = await api.whiteRabbit.createScanReport(nodeId, selectedTables, delimiter);
         const flowRunId = response.flowRunId;
         setScanId(flowRunId);
       } else {

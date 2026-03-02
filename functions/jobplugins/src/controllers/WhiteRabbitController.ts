@@ -2,6 +2,7 @@ import express, { Request, Response, Router } from "express";
 import { param, validationResult } from "express-validator";
 import { validateWhiteRabbitFlowRunDto } from "../middlewares/WhiteRabbitValidatorMiddlewares.ts";
 import { WhiteRabbitService } from "../services/WhiteRabbitService.ts";
+import { Buffer } from "buffer";
 export class WhiteRabbitController {
   private whiteRabbitService: WhiteRabbitService;
   public router = Router();
@@ -22,7 +23,7 @@ export class WhiteRabbitController {
           res.status(400).json({ errors: errors.array() });
         }
         await this.createWhiteRabbitFlowRun(req, res);
-      }
+      },
     );
 
     // GET /white-rabbit/results/:flowRunId
@@ -35,7 +36,7 @@ export class WhiteRabbitController {
           return res.status(400).json({ errors: errors.array() });
         }
         await this.getWhiteRabbitFlowRunResults(req, res);
-      }
+      },
     );
 
     // GET /white-rabbit/artifacts/:flowRunId
@@ -48,7 +49,7 @@ export class WhiteRabbitController {
           return res.status(400).json({ errors: errors.array() });
         }
         await this.getWhiteRabbitFlowRunArtifacts(req, res);
-      }
+      },
     );
 
     // GET /white-rabbit/etl-report/:flowRunId
@@ -61,7 +62,7 @@ export class WhiteRabbitController {
           return res.status(400).json({ errors: errors.array() });
         }
         await this.getETLReportFromArtifacts(req, res);
-      }
+      },
     );
   }
 
@@ -74,7 +75,7 @@ export class WhiteRabbitController {
       const result = await this.whiteRabbitService.createFlowRun(
         params,
         username,
-        token
+        token,
       );
       res.send(result);
     } catch (error) {
@@ -108,7 +109,7 @@ export class WhiteRabbitController {
 
       const result = await this.whiteRabbitService.getFlowRunArtifacts(
         flowRunId,
-        token
+        token,
       );
       const scanIdResponse = {
         scan_id: result[0].key,
@@ -128,7 +129,7 @@ export class WhiteRabbitController {
 
       const result = await this.whiteRabbitService.getFlowRunArtifacts(
         flowRunId,
-        token
+        token,
       );
       const encodedWordFile = result[0].data;
 
@@ -139,7 +140,7 @@ export class WhiteRabbitController {
       res.setHeader("Content-Disposition", "attachment; filename=report.docx");
       res.setHeader(
         "Content-Type",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       );
       res.setHeader("Content-Length", buffer.length);
 

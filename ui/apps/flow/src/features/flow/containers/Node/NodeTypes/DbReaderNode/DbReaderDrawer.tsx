@@ -54,7 +54,6 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
     useFormData<FormData>(EMPTY_FORM_DATA);
   const { data: databases = [], isLoading: isLoadingDatabases } =
     useGetDatabasesQuery();
-  console.log("Databases:", databases);
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id),
   );
