@@ -1,11 +1,11 @@
-import React, { FC, useCallback, useState } from "react";
-import { Button, Dialog } from "@portal/components";
+import { Divider } from "@mui/material";
 import TextField from "@mui/material/TextField";
+import { Button, Dialog } from "@portal/components";
+import React, { FC, useCallback, useState } from "react";
+import { i18nKeys, useTranslation } from "../../../../contexts";
 import { CloseDialogType } from "../../../../types";
 import { StarboardNotebook } from "../../../../types/notebook";
 import "./EditTitleDialog.scss";
-import { Divider } from "@mui/material";
-import { useTranslation, i18nKeys } from "../../../../contexts";
 
 interface EditTitleDialogProps {
   title?: string;
@@ -15,7 +15,13 @@ interface EditTitleDialogProps {
   notebooks: StarboardNotebook[] | undefined;
 }
 
-export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose, renameNotebook, notebooks }) => {
+export const EditTitleDialog: FC<EditTitleDialogProps> = ({
+  title,
+  open,
+  onClose,
+  renameNotebook,
+  notebooks,
+}) => {
   const { getText } = useTranslation();
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [notebookTitle, setNotebookTitle] = useState(title);
@@ -28,13 +34,17 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
     (type: CloseDialogType) => {
       typeof onClose === "function" && onClose(type);
     },
-    [onClose]
+    [onClose],
   );
 
   const handleRename = useCallback(async () => {
     try {
       if (notebookTitle) {
-        if (notebooks?.some((nb) => nb.name.toUpperCase() === notebookTitle.toUpperCase())) {
+        if (
+          notebooks?.some(
+            (nb) => nb.name.toUpperCase() === notebookTitle.toUpperCase(),
+          )
+        ) {
           setShowErrorMessage(true);
           return;
         }
@@ -62,9 +72,17 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
           defaultValue={notebookTitle}
           variant="standard"
           onChange={handleNotebookChanges}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleRename();
+            }
+          }}
         />
         {showErrorMessage && (
-          <div className="edit-title-dialog__content__error">{getText(i18nKeys.EDIT_TITLE_DIALOG__ALREADY_EXISTS)}</div>
+          <div className="edit-title-dialog__content__error">
+            {getText(i18nKeys.EDIT_TITLE_DIALOG__ALREADY_EXISTS)}
+          </div>
         )}
       </div>
       <Divider />
@@ -75,7 +93,11 @@ export const EditTitleDialog: FC<EditTitleDialogProps> = ({ title, open, onClose
           variant="outlined"
           block
         />
-        <Button text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)} onClick={handleRename} block />
+        <Button
+          text={getText(i18nKeys.EDIT_TITLE_DIALOG__SAVE)}
+          onClick={handleRename}
+          block
+        />
       </div>
     </Dialog>
   );
