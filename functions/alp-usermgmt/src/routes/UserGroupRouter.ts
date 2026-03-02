@@ -38,17 +38,21 @@ export class UserGroupRouter {
           return res.status(400).send({ message: `Param 'userId' is required` })
         }
 
-        const user = await this.userService.getUserByIdpUserId(userId)
-        if (!user) {
-          this.logger.error(`IDP user ID ${userId} not found`)
-          return res.status(400).send({ message: `IDP user ID ${userId} not found` })
-        }
-
-        this.logger.info(`Get membership of ${userId}${tenantId ? ` for tenant ${tenantId}` : ''}`)
+        this.logger.info(`Get membership of ${userId}`)
 
         try {
-          const groups = await this.userGroupService.getUserGroupsMetadata(user.id, tenantId, system)
-          return res.status(200).json(groups)
+          if (env.USER_MGMT_ROLE_SOURCE === 'logto') {
+            const groups = await this.userGroupService.getUserGroupsMetadataFromLogto(userId)
+            return res.status(200).json(groups)
+          } else {
+            const user = await this.userService.getUserByIdpUserId(userId)
+            if (!user) {
+              this.logger.error(`IDP user ID ${userId} not found`)
+              return res.status(400).send({ message: `IDP user ID ${userId} not found` })
+            }
+            const groups = await this.userGroupService.getUserGroupsMetadata(user.id, tenantId, system)
+            return res.status(200).json(groups)
+          }
         } catch (err) {
           this.logger.error(`Error when getting membership metadata ${userId}: ${JSON.stringify(err)}`)
           return next(err)
@@ -62,25 +66,42 @@ export class UserGroupRouter {
       async (req: IAppRequest, res: Response, next: NextFunction) => {
         this.logger.info(`Get memberships ${JSON.stringify(req.query)}`)
 
-        const criteria: Partial<UserGroupExtCriteria> = {}
-        Object.keys(req.query || {}).map((k: string) => {
-          const field = camelToSnakeCase(k) as keyof UserGroupExtCriteria
-          if (UserGroupExtCriteriaKeys.includes(field)) {
-            const value = req.query[k]
-            if (typeof value === 'string') {
-              if (value.includes(',')) {
-                criteria[field] = value.split(',')
-              } else {
-                criteria[field] = value
-              }
-            }
-            // else: ignore non-string values for security
-          }
-        })
-
         try {
-          const userGroups = await this.userGroupService.getUserGroupExtList(criteria)
-          return res.status(200).json(userGroups)
+          if (env.USER_MGMT_ROLE_SOURCE === 'logto') {
+            const allGroups = await this.userGroupService.getUserOverviewFromLogto()
+
+            // Filter by query params (studyId, tenantId, role, username, system)
+            const query = (req as express.Request).query as Record<string, string | undefined>
+            const userGroups = allGroups.filter((entry: any) => {
+              return ['studyId', 'tenantId', 'role', 'username', 'system'].every(key => {
+                const value = query[key]
+                if (!value) return true
+                const values = value.includes(',') ? value.split(',') : [value]
+                return values.includes(entry[key])
+              })
+            })
+
+            return res.status(200).json(userGroups)
+          } else {
+            const query = (req as express.Request).query
+            const criteria: Partial<UserGroupExtCriteria> = {}
+            Object.keys(query || {}).map((k: string) => {
+              const field = camelToSnakeCase(k) as keyof UserGroupExtCriteria
+              if (UserGroupExtCriteriaKeys.includes(field)) {
+                const value = query[k]
+                if (typeof value === 'string') {
+                  if (value.includes(',')) {
+                    criteria[field] = value.split(',')
+                  } else {
+                    criteria[field] = value
+                  }
+                }
+              }
+            })
+
+            const userGroups = await this.userGroupService.getUserGroupExtList(criteria)
+            return res.status(200).json(userGroups)
+          }
         } catch (err) {
           this.logger.error(`Error when getting membership ${JSON.stringify(req.query)}: ${JSON.stringify(err)}`)
           return next(err)
@@ -92,18 +113,20 @@ export class UserGroupRouter {
       '/overview',
       permittedUserCheck({ isReadAccess: true }),
       async (req: IAppRequest, res: Response, next: NextFunction) => {
-        const { tenantId } = req.query
-
-        this.logger.info(`Get user overview ${tenantId ? `by tenant ${tenantId}` : ''}`)
-        const criteria = tenantId ? { tenant_id: tenantId as string } : undefined
+        this.logger.info('Get user overview')
 
         try {
-          const userGroups = await this.userGroupService.getUserGroupExtList(criteria)
-          return res.status(200).json(userGroups)
+          if (env.USER_MGMT_ROLE_SOURCE === 'logto') {
+            const userGroups = await this.userGroupService.getUserOverviewFromLogto()
+            return res.status(200).json(userGroups)
+          } else {
+            const { tenantId } = req.query
+            const criteria = tenantId ? { tenant_id: tenantId as string } : undefined
+            const userGroups = await this.userGroupService.getUserGroupExtList(criteria)
+            return res.status(200).json(userGroups)
+          }
         } catch (err) {
-          this.logger.error(
-            `Error when getting overview ${tenantId ? `by tenant ${tenantId}` : ''}: ${JSON.stringify(err)}`
-          )
+          this.logger.error(`Error when getting overview: ${JSON.stringify(err)}`)
           return next(err)
         }
       }

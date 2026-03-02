@@ -15,6 +15,31 @@ export const ROLES = {
   ALP_SHARED: 'ALP_SHARED'
 }
 
+export const LOGTO_ROLES = {
+  USER_ADMIN: 'role.useradmin',
+  SYSTEM_ADMIN: 'role.systemadmin',
+  DASHBOARD_VIEWER: 'role.dashboardviewer',
+  TENANT_VIEWER: 'role.viewer',
+  RESEARCHER: 'role.researcher',
+  JOB_RUNNER: 'role.jobrunner',
+  STUDY_RESULTS_READER: 'role.studyresultsreader'
+} as const
+
+export const LOGTO_ROLE_NAMES: Record<string, string> = {
+  [ROLES.ALP_USER_ADMIN]: LOGTO_ROLES.USER_ADMIN,
+  [ROLES.ALP_SYSTEM_ADMIN]: LOGTO_ROLES.SYSTEM_ADMIN,
+  [ROLES.ALP_DASHBOARD_VIEWER]: LOGTO_ROLES.DASHBOARD_VIEWER,
+  [ROLES.TENANT_VIEWER]: LOGTO_ROLES.TENANT_VIEWER,
+  [ROLES.STUDY_RESEARCHER]: LOGTO_ROLES.RESEARCHER,
+  [ROLES.STUDY_WRITE_DQD_RESEARCHER]: LOGTO_ROLES.JOB_RUNNER,
+  [ROLES.STUDY_RESULTS_READ_RESEARCHER]: LOGTO_ROLES.STUDY_RESULTS_READER
+}
+
+// Reverse mapping: Logto role name → internal role name
+export const LOGTO_TO_INTERNAL_ROLES: Record<string, string> = Object.fromEntries(
+  Object.entries(LOGTO_ROLE_NAMES).map(([internal, logto]) => [logto, internal])
+)
+
 export const GROUP_NAME_PARTS = {
   TID: 'TID',
   STUDYID: 'SID',
