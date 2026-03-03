@@ -1,4 +1,3 @@
-import { create } from "domain";
 import { Knex } from "knex";
 
 const env = Deno.env.toObject();
