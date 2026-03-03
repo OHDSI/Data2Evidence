@@ -11,6 +11,12 @@ import {
   type WizardDefinition,
   type WizardFieldDefinition,
 } from '../utils/dashboardFlowUtils'
+import {
+  getConstraintExpressions,
+  constraintContainsExpression,
+  cardMatchesFixedAttributes,
+  type Constraint,
+} from '../services/dashboardFlowService'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -48,7 +54,7 @@ export interface Getters {
   getActiveBookmark: { value: unknown }
   getWizardConfig: { value: WizardConfig | null }
   getPLRequest: (_params: { bmkId: string }) => unknown
-  getConstraintForAttribute: (_params: { filterCardId: string; key: string }) => Constraint | undefined
+  getConstraintForAttribute: (_params: { filterCardId: string; key: string }) => LocalConstraint | undefined
   getSelectedDataset: { value: { id: string } | null }
   getBookmarkFromIFR: { value: { cards: unknown[] } | null }
   getFilterCards: { value: Record<string, unknown> }
@@ -56,7 +62,7 @@ export interface Getters {
   getActiveCohortMaterializedId: { value: string | null }
 }
 
-export interface Constraint {
+export interface LocalConstraint {
   id: string
   props?: {
     type?: string
@@ -212,7 +218,11 @@ export function useDashboardFlow(
           key: attrKey,
         })
 
-        const matches = constraintContainsExpression(constraint, fixedAttr.operator, String(fixedAttr.value))
+        const matches = constraintContainsExpression(
+          constraint as Constraint,
+          fixedAttr.operator,
+          String(fixedAttr.value)
+        )
 
         return matches
       })
@@ -668,75 +678,18 @@ export function useDashboardFlow(
     })
   }
 
-  function getConstraintExpressions(constraint: any): Array<{ operator: string; value: string }> {
-    const constraintType = constraint?.props?.type
-    if (!constraintType) {
-      return []
-    }
-    if (constraintType === 'text' || constraintType === 'conceptSet') {
-      const values = Array.isArray(constraint.props.value) ? constraint.props.value : []
-      return values.map((item: any) => ({
-        operator: '=',
-        value: typeof item === 'object' && item !== null ? item.value : item,
-      }))
-    }
-    if (constraintType === 'num') {
-      const values = Array.isArray(constraint.props.value) ? constraint.props.value : []
-      const expressions: Array<{ operator: string; value: string }> = []
-      values.forEach((item: any) => {
-        if (Array.isArray(item?.and)) {
-          item.and.forEach((andExpression: any) => {
-            expressions.push({ operator: andExpression.op, value: String(andExpression.value) })
-          })
-          return
-        }
-        expressions.push({ operator: item?.op, value: String(item?.value) })
-      })
-      return expressions
-    }
-    if (constraintType === 'time' || constraintType === 'datetime') {
-      const expressions: Array<{ operator: string; value: string }> = []
-      if (constraint.props.fromDate?.value) {
-        expressions.push({ operator: '>=', value: constraint.props.fromDate.value })
-      }
-      if (constraint.props.toDate?.value) {
-        expressions.push({ operator: '<=', value: constraint.props.toDate.value })
-      }
-      return expressions
-    }
-    return []
-  }
-
-  function constraintContainsExpression(constraint: any, operator: string, value: string): boolean {
-    const expectedOperator = String(operator || '=').trim()
-    const expectedValue = String(value).trim()
-    return getConstraintExpressions(constraint).some(expression => {
-      const expressionOperator = String(expression.operator || '').trim()
-      const expressionValue = String(expression.value ?? '').trim()
-      return expressionOperator === expectedOperator && expressionValue === expectedValue
-    })
-  }
-
-  function cardMatchesFixedAttributes(filterCardId: string, fixedAttributes: any[] = []): boolean {
-    if (!fixedAttributes.length) {
-      return true
-    }
-    return fixedAttributes.every(fixedAttribute => {
-      const attrKey = getFieldAttrKey(fixedAttribute.configPath)
-      const getConstraintForAttribute = getters.getConstraintForAttribute
-      const constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
-      if (!constraint) {
-        return false
-      }
-      return constraintContainsExpression(constraint, fixedAttribute.operator, fixedAttribute.value)
-    })
-  }
-
   function findFilterCardIdForField(field: MissingRequiredField): string | null {
     const filterCardPath = getFieldFilterCardPathForField(field)
     const candidateCardIds = getNonExcludedFilterCardIdsByPath(filterCardPath)
     const fixedAttributes = field.fixedAttributes || []
-    return candidateCardIds.find(filterCardId => cardMatchesFixedAttributes(filterCardId, fixedAttributes)) || null
+    return (
+      candidateCardIds.find(filterCardId => {
+        return cardMatchesFixedAttributes(fixedAttributes, (attrKey: string) => {
+          const getConstraintForAttribute = getters.getConstraintForAttribute
+          return getConstraintForAttribute?.({ filterCardId, key: attrKey }) as Constraint
+        })
+      }) || null
+    )
   }
 
   function extractFieldValueFromFilterCards(field: any): {
