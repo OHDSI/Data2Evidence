@@ -47,6 +47,11 @@
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 
+function generateComponentUid(): string {
+  return `component_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+}
+
+
 interface Option {
   value: string
   label: string
@@ -75,6 +80,11 @@ const emit = defineEmits<{
 
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
+
+const componentUid = ref<string>(generateComponentUid())
+const attributePathUid = computed(() => {
+  return `${props.configPath}__${componentUid.value}`
+})
 
 const searchText = ref('')
 const dropdownStyle = ref<Record<string, string>>({})
@@ -127,7 +137,7 @@ async function fetchOptions(query: string) {
   loading.value = true
   try {
     const data = await store.dispatch('loadValuesForAttributePath', {
-      attributePathUid: props.configPath,
+      attributePathUid: attributePathUid.value,
       searchQuery: query,
       attributeType: 'text',
     })
