@@ -42,3 +42,8 @@ export const env = {
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
+
+export const getAutoGrantDatasetCodes = (): string[] => {
+  if (!env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES) return []
+  return env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES.split(',').map(c => c.trim()).filter(c => c)
+}

@@ -10,7 +10,7 @@ import { UserService } from './UserService'
 import { IPortalDataset, ITokenUser, RoleMap, UserGroupMetadata } from '../types'
 import { createLogger } from '../Logger'
 import { LogtoAPI, PortalAPI } from '../api'
-import { env } from '../env'
+import { env, getAutoGrantDatasetCodes } from '../env'
 
 @Service()
 export class UserGroupService {
@@ -337,6 +337,25 @@ export class UserGroupService {
             }
           }
           break
+      }
+    }
+
+    // Auto-grant researcher datasets (mirrors grant-roles-by-scopes.ts)
+    const autoGrantCodes = getAutoGrantDatasetCodes()
+    if (autoGrantCodes.length > 0) {
+      const datasets = await this.portalAPI.getDatasets()
+      for (const code of autoGrantCodes) {
+        const dataset = datasets.find(d => d.tokenStudyCode === code)
+        if (dataset?.id && !roleMap.alp_role_study_researcher.includes(dataset.id)) {
+          roleMap.alp_role_study_researcher.push(dataset.id)
+        }
+      }
+
+      if (roleMap.alp_role_study_researcher.length > 0) {
+        roleMap.alp_role_study_write_dqd_researcher = true
+        if (!roleMap.alp_role_tenant_viewer.includes(env.APP_TENANT_ID)) {
+          roleMap.alp_role_tenant_viewer.push(env.APP_TENANT_ID)
+        }
       }
     }
 
