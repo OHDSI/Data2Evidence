@@ -1,15 +1,14 @@
 <template>
-  <MessageBox v-if="isOpen" messageType="custom" dialogWidth="640px" @close="handleClose">
+  <MessageBox v-if="isOpen" messageType="custom" dialogWidth="640px" :busy="loading" @close="handleClose">
     <template #header>{{ getText('MRI_PA_SELECT_DASHBOARD_TITLE') }}</template>
 
     <template #body>
       <div class="dashboard-selection-modal">
-        <p class="description">{{ getText('MRI_PA_SELECT_DASHBOARD_DESC') }}</p>
+        <p v-if="!loading" class="description">{{ getText('MRI_PA_SELECT_DASHBOARD_DESC') }}</p>
 
-        <p v-if="loading" class="status-text">{{ getText('MRI_PA_LOADING_DASHBOARDS') }}</p>
-        <p v-else-if="error" class="error-text">{{ error }}</p>
-        <p v-else-if="dashboards.length === 0" class="status-text">{{ getText('MRI_PA_NO_DASHBOARDS_AVAILABLE') }}</p>
-        <p v-else-if="availableDashboards.length === 0 && dashboards.length > 0" class="status-text">
+        <p v-if="!loading && error" class="error-text">{{ error }}</p>
+        <p v-else-if="!loading && dashboards.length === 0" class="status-text">{{ getText('MRI_PA_NO_DASHBOARDS_AVAILABLE') }}</p>
+        <p v-else-if="!loading && availableDashboards.length === 0 && dashboards.length > 0" class="status-text">
           {{ getText('MRI_PA_NO_CONFIGURED_DASHBOARDS') }}
         </p>
 
