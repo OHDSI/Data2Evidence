@@ -53,9 +53,8 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 // Get mriquery filtercards
                 const filtercards = mriquery.filter.cards.content;
 
-                // const basicDataFilters =
-                //     this.splitBasicDataIntoDistinctFiltercards(filtercards);
-                const basicDataFilters = []; //TODO: REMOVE [ Currently ignores basicDataFilters as basic data is not supporting exclusions]
+                const basicDataFilters =
+                    this.splitBasicDataIntoDistinctFiltercards(filtercards);
 
                 const inclusionReportFiltercards = [
                     ...basicDataFilters,
@@ -264,19 +263,42 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
 
         const basicDataFilters =
             basicDataFiltercard.content[0].attributes.content;
+        let basicDataInclusionReportFilters;
         if (basicDataFilters.length === 1) {
-            return [basicDataFiltercard];
+            basicDataInclusionReportFilters = [
+                structuredClone(basicDataFiltercard),
+            ];
+        } else {
+            // Split Basic Data into distinct filtercards
+            basicDataInclusionReportFilters = basicDataFilters.map((e) => {
+                // Clone overall structure of Basic Data filter card and replace attributes.content with individual Basic Data attributes.content
+                const basicDataFiltercardClone =
+                    structuredClone(basicDataFiltercard);
+                basicDataFiltercardClone.content[0].attributes.content = [e];
+
+                return basicDataFiltercardClone;
+            });
         }
 
-        // Split Basic Data into distinct filtercards
-        return basicDataFilters.map((e) => {
-            // Clone overall structure of Basic Data filter card and replace attributes.content with individual Basic Data attributes.content
-            const basicDataFiltercardClone =
-                structuredClone(basicDataFiltercard);
-            basicDataFiltercardClone.content[0].attributes.content = [e];
+        // Update basic data to use dynamically generated interactions.basicdata in cdm config
+        basicDataInclusionReportFilters.forEach((e, idx) => {
+            const cur = e.content[0];
+            const name = cur.attributes.content[0].configPath.split(".").at(-1);
 
-            return basicDataFiltercardClone;
+            // Update content
+            cur.configPath = `patient.interactions.basicdata${idx + 1}`;
+            cur.instanceNumber = idx + 1;
+            cur.instanceID = `patient.interactions.basicdata.${idx + 1}`;
+            cur.name = name;
+
+            // Update content attributes
+            cur.attributes.content[0].configPath = `patient.interactions.basicdata.attributes.${name}`;
+            cur.attributes.content[0].instanceID = `patient.interactions.basicdata.${
+                idx + 1
+            }.attributes.${name}`;
         });
+
+        return basicDataInclusionReportFilters;
     }
 
     /**
