@@ -4,13 +4,6 @@ const TEST_NAME = 'e2e PA and Cohorts'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-// Set to true when results schema tables (cohort, cohort_definition) are created during demo setup.
-// Currently false because Broadsea demo datasets don't go through omop_cdm_plugin's create_datamodel
-// flow, so the results schema tables are never created.
-// See: omop_cdm_plugin/flow.py - guard `schema_name != options.vocab_schema` skips results schema
-// creation when cdm and vocab schemas are the same (demo case).
-const MATERIALIZATION_ENABLED = false
-
 const PASSWORD = 'Updatepassword12345'
 const RUN_ID = Date.now().toString(36)
 const RESEARCHER_1 = `researcher1_${RUN_ID}`
@@ -194,6 +187,13 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText(COHORT_2)
   await expect(page.locator('#pane-left')).toContainText(COHORT_1)
 
+  // Verify rename and delete are disabled on shared cohorts not owned by researcher_2
+  const cohort1Card = page.locator('div:nth-child(2) > .footer')
+  const renameButton = cohort1Card.locator('div:nth-child(2)')
+  const deleteButton = cohort1Card.locator('div:last-child')
+  await expect(renameButton).toHaveClass(/icon-button-disabled/)
+  await expect(deleteButton).toHaveClass(/icon-button-disabled/)
+
   // === TEST: Materialize cohort (add patients) ===
   await page.locator('div:nth-child(2) > .footer > div:nth-child(3) > svg').click()
   await expect(page.locator('#pane-left')).toContainText('Add Patients to Cohort')
@@ -204,30 +204,19 @@ test(TEST_NAME, async ({ page }) => {
     .click()
   await page.getByRole('textbox', { name: 'Enter description' }).fill(COHORT_1)
   await page.getByRole('button', { name: 'OK' }).click()
+  await expect(page.getByText('Patients added to cohort.').first()).toBeVisible()
+  // Wait for the success dialog to auto-close
+  await expect(page.getByText('Patients added to cohort.').first()).not.toBeVisible({ timeout: 10000 })
 
-  if (!MATERIALIZATION_ENABLED) {
-    // Materialization fails because results schema tables don't exist in demo setup.
-    // Dismiss the failure modal and clean up.
-    // Remove this block when MATERIALIZATION_ENABLED is set to true.
-    await page.waitForTimeout(3000)
-    await page.getByRole('button', { name: 'Cancel' }).click({ timeout: 5000 })
-    await page.waitForTimeout(500)
-
-    // Cleanup: delete users as admin
-    await logout(page)
-    await loginAs(page, 'admin')
-    await expect(page.getByText('Demo dataset').first()).toBeVisible()
-    await page.getByRole('button', { name: 'Account' }).nth(1).click()
-    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-    await deleteUser(page, RESEARCHER_1)
-    await deleteUser(page, RESEARCHER_2)
-    return
-  }
-
-  await expect(page.getByText('Patients added to cohort.')).toBeVisible()
+  // === TEST: Researcher 1 renames and deletes own cohort ===
+  // (Only the owner can modify cohorts, so switch back to researcher_1)
+  await logout(page)
+  await loginAs(page, RESEARCHER_1)
+  await page.getByText('Demo dataset').first().click()
+  await navigateToCohorts(page)
 
   // Rename cohort
-  await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click()
+  await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click({ force: true })
   await expect(page.locator('#pane-left')).toContainText('Rename Saved Filter')
   await expect(page.locator('#pane-left')).toContainText('Specify a new name for bookmark')
   await page.getByRole('textbox').fill(COHORT_1_RENAMED)
@@ -249,7 +238,7 @@ test(TEST_NAME, async ({ page }) => {
   await logout(page)
   await loginAs(page, 'admin')
   await expect(page.getByText('Demo dataset').first()).toBeVisible()
-  await page.getByRole('button', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Account' }).nth(1).click()
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await deleteUser(page, RESEARCHER_1)
   await deleteUser(page, RESEARCHER_2)
