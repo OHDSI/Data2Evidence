@@ -171,13 +171,13 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
             value={tokenStudyCode}
             onChange={(event) => setTokenStudyCode(event.target.value)}
             inputProps={{ maxLength: 80 }}
-            error={formError.tokenStudyCode.required || !formError.tokenStudyCode.valid}
+            error={formError.tokenStudyCode.required || formError.tokenStudyCode.invalid}
             disabled={loading}
           />
           {formError.tokenStudyCode.required && (
             <FormHelperText error={true}>Token Dataset Code is required</FormHelperText>
           )}
-          {!formError.tokenStudyCode.valid && (
+          {formError.tokenStudyCode.invalid && (
             <FormHelperText error={true}>
               Token Dataset Code must contain only alphanumeric characters and underscores (max 80 characters)
             </FormHelperText>
