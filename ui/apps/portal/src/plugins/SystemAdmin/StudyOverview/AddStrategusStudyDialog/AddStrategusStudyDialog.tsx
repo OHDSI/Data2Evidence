@@ -111,7 +111,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
         studyId: studyName.trim(),
         tokenStudyCode: tokenStudyCode.trim(),
         analysisSpec,
-        mode: "notebook",
+        mode: "kernel",
         notebookName: studyName.trim(),
         tenantId: tenant?.id || "",
       });
