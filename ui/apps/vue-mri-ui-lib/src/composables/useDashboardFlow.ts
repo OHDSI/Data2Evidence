@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, no-unused-vars */
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import {
   getFieldAttrKey,
@@ -11,15 +12,59 @@ import {
   type WizardFieldDefinition,
 } from '../utils/dashboardFlowUtils'
 
+export interface WizardFieldValue {
+  value: string | number | boolean | object
+  text?: string
+  display_value?: string
+  includeDescendants?: boolean
+}
+
+export interface ConditionValue {
+  value: string | WizardFieldValue
+  displayName?: string
+  useDescendants?: boolean
+}
+
+export interface WizardConfig {
+  year?: { from: number | string | null; to: number | string | null }
+  conditions?: ConditionValue[]
+  dashboardType?: string
+  [key: string]: unknown
+}
+
 export interface DashboardCode {
   name: string
-  [key: string]: any
+  [key: string]: string | number | boolean | null | object
 }
 
 export interface DashboardContext {
-  wizardConfig: Record<string, any> | null
-  conditions: any[] | null
+  wizardConfig: WizardConfig | null
+  conditions: ConditionValue[] | null
   mriquery: string | null
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface Getters {
+  getActiveBookmark: { value: unknown }
+  getWizardConfig: { value: WizardConfig | null }
+  getPLRequest: (_params: { bmkId: string }) => unknown
+  getConstraintForAttribute: (_params: { filterCardId: string; key: string }) => Constraint | undefined
+  getSelectedDataset: { value: { id: string } | null }
+  getBookmarkFromIFR: { value: { cards: unknown[] } | null }
+  getFilterCards: { value: Record<string, unknown> }
+  getCurrentBookmarkHasChanges: { value: boolean }
+  getActiveCohortMaterializedId: { value: string | null }
+}
+
+export interface Constraint {
+  id: string
+  props?: {
+    type?: string
+    value?: unknown
+    name?: string
+    fromDate?: { value: Date | string }
+    toDate?: { value: Date | string }
+  }
 }
 
 export interface UseDashboardFlowReturn {
@@ -37,10 +82,10 @@ export interface UseDashboardFlowReturn {
   selectedDashboard: Ref<DashboardCode | null>
   selectedWizardDefinition: Ref<WizardDefinition | null>
   missingRequiredFields: Ref<MissingRequiredField[]>
-  activeDashboardWizardConfig: Ref<Record<string, any> | null>
+  activeDashboardWizardConfig: Ref<WizardConfig | null>
   // New state for mini wizards form
   allWizardFields: Ref<WizardFieldDefinition[]>
-  initialFormValues: Ref<Record<string, any>>
+  initialFormValues: Ref<Record<string, string | number | object>>
   initialDisplayValues: Ref<Record<string, string>>
 
   // Computed
@@ -50,12 +95,12 @@ export interface UseDashboardFlowReturn {
   resetDashboardFlowState: () => void
   openDashboardModal: () => Promise<void>
   closeDashboardSelectionModal: () => void
-  handleDashboardSelected: (dashboard: DashboardCode) => Promise<void>
+  handleDashboardSelected: (_dashboard: DashboardCode) => Promise<void>
   handleRequiredFiltersCancel: () => void
   handleRequiredFiltersSubmit: (
-    formValues: Record<string, any>,
-    displayValues: Record<string, string>,
-    dirtyFieldIds: Set<string>
+    _formValues: Record<string, string | number | object>,
+    _displayValues: Record<string, string>,
+    _dirtyFieldIds: Set<string>
   ) => Promise<void>
   handleSaveCohortSuccess: () => void
   handleCancelSaveCohort: () => void
@@ -63,7 +108,10 @@ export interface UseDashboardFlowReturn {
   isProcessingDashboardFlow: () => boolean
 }
 
-export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowReturn {
+export function useDashboardFlow(
+  dispatch: (action: string, _payload?: unknown) => Promise<unknown>,
+  getters: Getters
+): UseDashboardFlowReturn {
   // State
   const showDashboardModal = ref(false)
   const showSaveCohortModal = ref(false)
@@ -149,13 +197,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     const filterCardPath = field.filterCardPath || getFieldFilterCardPathForField(field)
     const candidateCards = getNonExcludedFilterCardIdsByPath(filterCardPath)
 
-    console.log('[DashboardFlow] Finding card for field:', {
-      fieldId: field.id,
-      candidateCount: candidateCards.length,
-      filterCardPath,
-      fixedAttributes: field.fixedAttributes,
-    })
-
     // Filter by fixedAttributes
     const matchingCards = candidateCards.filter(cardId => {
       if (!field.fixedAttributes?.length) {
@@ -171,20 +212,11 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
         const matches = constraintContainsExpression(constraint, fixedAttr.operator, String(fixedAttr.value))
 
-        console.log('[DashboardFlow] Checking fixedAttribute:', {
-          cardId,
-          attrKey,
-          expectedValue: fixedAttr.value,
-          actualConstraint: constraint?.props?.value,
-          matches,
-        })
-
         return matches
       })
     })
 
     if (matchingCards.length === 0) {
-      console.log('[DashboardFlow] No cards match fixedAttributes for:', field.id)
       return null
     }
 
@@ -213,10 +245,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     const constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
 
     if (!constraint) {
-      console.log('[DashboardFlow] No constraint found for:', {
-        filterCardId,
-        attrKey,
-      })
       return null
     }
 
@@ -232,13 +260,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
         const displayValue =
           typeof firstValue === 'object' ? firstValue.display_value || firstValue.text || firstValue.value : firstValue
         const useDescendants = values[0]?.includeDescendants
-
-        console.log('[DashboardFlow] Extracted text/concept value:', {
-          filterCardId,
-          value,
-          displayValue,
-          useDescendants,
-        })
 
         return { value, displayValue, useDescendants }
       }
@@ -259,22 +280,12 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
           formattedValue = String(firstValue.value)
         }
 
-        console.log('[DashboardFlow] Extracted numeric value:', {
-          filterCardId,
-          fieldId,
-          value: formattedValue,
-        })
         return { value: formattedValue }
       }
     } else if (constraintType === 'time' || constraintType === 'datetime') {
       const fromDate = constraint.props?.fromDate?.value
       const toDate = constraint.props?.toDate?.value
       if (fromDate || toDate) {
-        console.log('[DashboardFlow] Extracted date range:', {
-          filterCardId,
-          fromDate,
-          toDate,
-        })
         return { value: { from: fromDate, to: toDate } }
       }
     }
@@ -287,33 +298,18 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     displayValues: Record<string, string>
     fieldToCardMap: Record<string, string>
   } {
-    console.log('[DashboardFlow] Step 1: Extracting initial values', {
-      wizardId: wizardDef.id,
-      totalFields: wizardDef.fields.length,
-    })
-
     const formValues: Record<string, any> = {}
     const displayValues: Record<string, string> = {}
     const cardMap: Record<string, string> = {}
 
     for (const field of wizardDef.fields) {
-      console.log('[DashboardFlow] Processing field:', {
-        fieldId: field.id,
-        type: field.type,
-        configPath: field.configPath,
-        filterCardPath: field.filterCardPath || getFieldFilterCardPathForField(field),
-        fixedAttributes: field.fixedAttributes,
-      })
-
       // Skip wizard-only fields (they store data in wizardConfig, not in filter cards)
       if (field.isWizardField) {
-        console.log('[DashboardFlow] Skipping wizard-only field:', field.id)
         continue
       }
 
       // Skip fields without configPath (yearRange, etc.)
       if (!field.configPath) {
-        console.log('[DashboardFlow] Skipping field without configPath:', field.id)
         continue
       }
 
@@ -341,16 +337,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
             formValues[`${field.id}_wildcard`] = extracted.useDescendants
           }
           cardMap[field.id] = cardId
-
-          console.log('[DashboardFlow] Extracted value for', field.id, ':', {
-            value: extracted.value,
-            stringValue,
-            displayValue: extracted.displayValue,
-            filterCardId: cardId,
-          })
         }
-      } else {
-        console.log('[DashboardFlow] No matching card for field:', field.id)
       }
     }
 
@@ -393,12 +380,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
           if (condition.useDescendants !== undefined) {
             formValues[`${field.id}_wildcard`] = condition.useDescendants
           }
-
-          console.log('[DashboardFlow] Extracted condition value for', field.id, ':', {
-            value: extractedValue,
-            displayValue: extractedDisplayValue,
-            useDescendants: condition.useDescendants,
-          })
         }
       }
     }
@@ -417,18 +398,8 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
         formValues[`${field.id}_from`] = fromValue
         formValues[`${field.id}_to`] = toValue
-
-        console.log('[DashboardFlow] Extracted yearRange value for', field.id, ':', {
-          from: fromValue,
-          to: toValue,
-        })
       }
     }
-
-    console.log('[DashboardFlow] Step 2: Extraction complete', {
-      populatedFields: Object.keys(formValues).length,
-      fieldToCardMap: cardMap,
-    })
 
     return { formValues, displayValues, fieldToCardMap: cardMap }
   }
@@ -436,11 +407,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   async function applyFieldChanges(
     changedFields: Array<{ field: WizardFieldDefinition; value: any; displayValue?: string }>
   ): Promise<void> {
-    console.log('[DashboardFlow] Step 3: Applying changes', {
-      changedCount: changedFields.length,
-      fields: changedFields.map(f => f.field.id),
-    })
-
     dispatch('holdFireRequest')
     const operations: Array<{
       type: 'update' | 'create'
@@ -453,7 +419,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     for (const { field, value, displayValue } of changedFields) {
       // Skip wizard-only fields (condition fields and fields without configPath)
       if (isConditionField(field.id) || !field.configPath) {
-        console.log('[DashboardFlow] Skipping wizard-only field:', field.id)
         continue
       }
 
@@ -461,10 +426,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
       if (existingCardId) {
         // UPDATE existing card
-        console.log('[DashboardFlow] Will update existing card:', {
-          fieldId: field.id,
-          filterCardId: existingCardId,
-        })
         operations.push({
           type: 'update',
           filterCardId: existingCardId,
@@ -474,7 +435,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
         })
       } else {
         // CREATE new card
-        console.log('[DashboardFlow] Will create new filter card for:', field.id)
         operations.push({
           type: 'create',
           field,
@@ -502,11 +462,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
           })
 
           await applyConstraintValue(constraint, op.value, '=', op.displayValue)
-          console.log('[DashboardFlow] Updated constraint:', {
-            fieldId: op.field.id,
-            filterCardId: op.filterCardId,
-            newValue: op.value,
-          })
         }
       } else if (op.type === 'create') {
         // Create new card with fixedAttributes
@@ -515,10 +470,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
         })
 
         createdCards.value.push(newCardId)
-        console.log('[DashboardFlow] Created new filter card:', {
-          fieldId: op.field.id,
-          newCardId,
-        })
 
         // Apply fixedAttributes first
         if (op.field.fixedAttributes?.length) {
@@ -536,12 +487,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
             if (constraint) {
               await applyConstraintValue(constraint, fixedAttr.value, fixedAttr.operator)
-              console.log('[DashboardFlow] Applied fixedAttribute:', {
-                fieldId: op.field.id,
-                newCardId,
-                attrKey: fixedAttrKey,
-                value: fixedAttr.value,
-              })
             }
           }
         }
@@ -560,11 +505,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
         if (constraint) {
           await applyConstraintValue(constraint, op.value, '=', op.displayValue)
-          console.log('[DashboardFlow] Applied field value to new card:', {
-            fieldId: op.field.id,
-            newCardId,
-            value: op.value,
-          })
         }
       }
     }
@@ -572,19 +512,9 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     dispatch('releaseFireRequest')
     dispatch('setFireRequest')
     dispatch('refreshPatientCount')
-
-    console.log('[DashboardFlow] Step 4: Changes applied successfully', {
-      updatedConstraints: originalConstraintValues.value.length,
-      createdCards: createdCards.value.length,
-    })
   }
 
   async function revertFieldChanges(): Promise<void> {
-    console.log('[DashboardFlow] Reverting changes', {
-      modifiedConstraints: originalConstraintValues.value.length,
-      createdCards: createdCards.value.length,
-    })
-
     // Restore original constraint values
     for (const { constraintId, oldValue } of originalConstraintValues.value) {
       if (oldValue) {
@@ -592,22 +522,18 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
           constraintId,
           value: oldValue,
         })
-        console.log('[DashboardFlow] Restored constraint:', { constraintId })
       }
     }
 
     // Delete created filter cards
     for (const cardId of createdCards.value) {
       await dispatch('removeFilterCard', { filterCardId: cardId })
-      console.log('[DashboardFlow] Deleted created card:', { cardId })
     }
 
     // Clear tracking
     originalConstraintValues.value = []
     createdCards.value = []
     fieldToCardMap.value = {}
-
-    console.log('[DashboardFlow] Revert complete')
   }
 
   async function fetchDashboardCodes(datasetId: string): Promise<DashboardCode[]> {
@@ -679,7 +605,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   }
 
   async function handleRequiredFiltersCancel() {
-    console.log('[DashboardFlow] Cancel clicked - reverting changes')
     await revertFieldChanges()
     requiredFiltersError.value = ''
     showRequiredFiltersModal.value = false
@@ -829,45 +754,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     return null
   }
 
-  function extractFormValuesFromFilterCards(
-    selectedWizardDefinition: WizardDefinition,
-    excludeFieldIds?: Set<string>
-  ): {
-    formValues: Record<string, any>
-    displayValues: Record<string, string>
-  } {
-    const formValues: Record<string, any> = {}
-    const displayValues: Record<string, string> = {}
-    // Process ALL fields from the wizard definition
-    for (const field of selectedWizardDefinition.fields || []) {
-      // Skip fields in the exclude list (e.g., fields that were just submitted in the modal)
-      if (excludeFieldIds?.has(field.id)) {
-        continue
-      }
-      // For fields WITH configPath, try to extract from existing filter cards
-      if (field.configPath) {
-        const extracted = extractFieldValueFromFilterCards(field)
-        if (extracted) {
-          // Ensure all values are strings for proper v-model binding
-          if (extracted.value !== null && extracted.value !== undefined) {
-            formValues[field.id] = String(extracted.value)
-          }
-          if (extracted.displayValue) {
-            displayValues[field.id] = extracted.displayValue
-          }
-          if (extracted.useDescendants !== undefined) {
-            formValues[`${field.id}_wildcard`] = extracted.useDescendants
-          }
-        }
-      }
-      // For condition fields (without configPath), check if there's a value in wizardOnlyValues
-      // These are collected separately in collectWizardConfigData
-    }
-    return { formValues, displayValues }
-  }
-
   async function handleDashboardSelected(dashboard: DashboardCode) {
-    console.log('[DashboardFlow] Dashboard selected:', dashboard.name)
     dashboardSelectionError.value = ''
     selectedDashboard.value = dashboard
     const wizardDef = wizardDefinitions.value.find(wizard => wizard.id === dashboard.name)
@@ -889,12 +776,6 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     // Also calculate missing fields for display purposes
     const validation = validateRequiredFields(wizardDef, getCurrentFilterCards())
     missingRequiredFields.value = resolveMissingFields(validation.missingFields)
-
-    console.log('[DashboardFlow] Opening modal with:', {
-      fieldCount: wizardDef.fields.length,
-      prePopulatedCount: Object.keys(formValues).length,
-      missingRequiredCount: missingRequiredFields.value.length,
-    })
 
     showDashboardSelectionModal.value = false
     requiredFiltersError.value = ''
@@ -1069,167 +950,11 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     })
   }
 
-  async function applyMissingRequiredFilters(
-    formValues: Record<string, any>,
-    displayValues: Record<string, string>
-  ): Promise<Record<string, any>> {
-    dispatch('holdFireRequest')
-    const filterCardPromises: Promise<any>[] = []
-    const operations: any[] = []
-    const wizardOnlyValues: Record<string, any> = {}
-    const conditions: Array<{ value: string; displayName: string; useDescendants: boolean }> = []
-    for (const field of missingRequiredFields.value) {
-      let fieldInputValue
-      if (field.type === 'yearRange') {
-        fieldInputValue = {
-          from: formValues[`${field.id}_from`],
-          to: formValues[`${field.id}_to`],
-        }
-      } else {
-        fieldInputValue = formValues[field.id]
-      }
-      const displayValue = displayValues?.[field.id]
-      const includeDescendants = formValues[`${field.id}_wildcard`]
-      if (field.id.toLowerCase().startsWith('condition')) {
-        const value = formValues[field.id]
-        if (value !== undefined && value !== null && value !== '') {
-          conditions.push({
-            value,
-            displayName: displayValue || value,
-            useDescendants: formValues[`${field.id}_wildcard`] === true,
-          })
-        }
-      }
-      // Skip filter card creation for:
-      // 1. Fields without configPath (wizard-only fields like yearRange)
-      // 2. Fields marked as isWizardField (like condition fields - they only populate wizardConfig)
-      if (!field.configPath || field.isWizardField) {
-        if (field.type === 'yearRange') {
-          wizardOnlyValues.year = fieldInputValue
-        } else if (!field.id.toLowerCase().startsWith('condition')) {
-          wizardOnlyValues[field.id] = fieldInputValue
-        }
-        continue
-      }
-      const filterCardId = findFilterCardIdForField(field)
-      if (filterCardId) {
-        operations.push({
-          type: 'existingCard',
-          filterCardId,
-          field,
-          fieldInputValue,
-          displayValue,
-          includeDescendants,
-        })
-      } else {
-        filterCardPromises.push(
-          dispatch('addFilterCard', {
-            configPath: getFieldFilterCardPathForField(field),
-          }).then((newCardId: string) => {
-            operations.push({
-              type: 'newCard',
-              filterCardId: newCardId,
-              field,
-              fieldInputValue,
-              displayValue,
-              includeDescendants,
-            })
-          })
-        )
-      }
-    }
-    return Promise.all(filterCardPromises)
-      .then(() => {
-        const constraintPromises: Promise<any>[] = []
-        for (const op of operations) {
-          const { filterCardId, field } = op
-          if (field.fixedAttributes?.length) {
-            for (const fixedAttr of field.fixedAttributes) {
-              const attrKey = getFieldAttrKey(fixedAttr.configPath)
-              const getConstraintForAttribute = getters.getConstraintForAttribute
-              let constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
-              if (!constraint) {
-                constraintPromises.push(
-                  dispatch('addFilterCardConstraint', {
-                    filterCardId,
-                    key: attrKey,
-                  }).then(() => {
-                    return { filterCardId, fixedAttr }
-                  })
-                )
-              }
-            }
-          }
-        }
-        return Promise.all(constraintPromises)
-      })
-      .then(() => {
-        const valuePromises: Promise<any>[] = []
-        for (const op of operations) {
-          const { filterCardId, field, fieldInputValue, displayValue, includeDescendants } = op
-          if (field.fixedAttributes?.length) {
-            for (const fixedAttr of field.fixedAttributes) {
-              const attrKey = getFieldAttrKey(fixedAttr.configPath)
-              const getConstraintForAttribute = getters.getConstraintForAttribute
-              const constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
-              if (constraint) {
-                valuePromises.push(applyConstraintValue(constraint, fixedAttr.value, fixedAttr.operator))
-              }
-            }
-          }
-          const attrKey = getFieldAttrKey(field.configPath!)
-          const getConstraintForAttribute = getters.getConstraintForAttribute
-          const constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
-          let valueToApply = fieldInputValue
-          if (field.type === 'text' && includeDescendants !== undefined) {
-            valueToApply = {
-              value: fieldInputValue,
-              includeDescendants: !!includeDescendants,
-            }
-          }
-          if (constraint) {
-            valuePromises.push(applyConstraintValue(constraint, valueToApply, '=', displayValue))
-          } else {
-            valuePromises.push(
-              dispatch('addFilterCardConstraint', {
-                filterCardId,
-                key: attrKey,
-              }).then(() => {
-                const newConstraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
-                if (newConstraint) {
-                  return applyConstraintValue(newConstraint, valueToApply, '=', displayValue)
-                }
-              })
-            )
-          }
-        }
-        return Promise.all(valuePromises)
-      })
-      .then(() => {
-        dispatch('releaseFireRequest')
-        dispatch('setFireRequest')
-        dispatch('refreshPatientCount')
-        if (conditions.length > 0) {
-          wizardOnlyValues.conditions = conditions
-        }
-        return wizardOnlyValues
-      })
-      .catch(error => {
-        dispatch('releaseFireRequest')
-        throw error
-      })
-  }
-
   async function handleRequiredFiltersSubmit(
     formValues: Record<string, any>,
     displayValues: Record<string, string>,
     dirtyFieldIds: Set<string>
   ) {
-    console.log('[DashboardFlow] Submit clicked', {
-      dirtyFieldCount: dirtyFieldIds.size,
-      dirtyFields: Array.from(dirtyFieldIds),
-    })
-
     requiredFiltersError.value = ''
     applyingRequiredFilters.value = true
     isProcessingDashboardFlow = true

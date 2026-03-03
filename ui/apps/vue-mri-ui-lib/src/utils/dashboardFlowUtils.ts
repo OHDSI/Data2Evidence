@@ -422,7 +422,7 @@ export function parseNumericInput(rawValue: string): NumericFilterValue[] {
     return values
   }
 
-  const rangeMatch = input.match(/^([\[\]])\s*(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)\s*([\[\]])$/)
+  const rangeMatch = input.match(/^([[\]])\s*(-?\d+(?:\.\d+)?)\s*-\s*(-?\d+(?:\.\d+)?)\s*([[\]])$/)
   if (rangeMatch) {
     const lowerOp = rangeMatch[1] === '[' ? '>=' : '>'
     const upperOp = rangeMatch[4] === ']' ? '<=' : '<'

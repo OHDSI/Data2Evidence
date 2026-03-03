@@ -364,12 +364,6 @@ watch(
       return
     }
 
-    console.log('[RequiredFiltersModal] Initialize form', {
-      fieldCount: props.allFields.length,
-      conditionFields: props.allFields.filter(f => isConditionField(f.id)).map(f => f.id),
-      initialValuesCount: Object.keys(props.initialValues).length,
-    })
-
     // Clear all form values and tracking
     Object.keys(formValues).forEach(key => delete formValues[key])
     Object.keys(displayValues).forEach(key => delete displayValues[key])
@@ -456,7 +450,6 @@ function markFieldDirty(fieldId: string) {
 
     if (hasChanged) {
       dirtyFields.add(baseId)
-      console.log('[RequiredFiltersModal] Marked dirty (yearRange):', baseId)
     } else {
       dirtyFields.delete(baseId)
     }
@@ -468,7 +461,6 @@ function markFieldDirty(fieldId: string) {
 
   if (hasChanged) {
     dirtyFields.add(fieldId)
-    console.log('[RequiredFiltersModal] Marked dirty:', { fieldId, from: initialValue, to: currentValue })
   } else {
     dirtyFields.delete(fieldId)
   }
@@ -484,11 +476,6 @@ function handleSubmit() {
   if (!isFormValid.value) {
     return
   }
-
-  console.log('[RequiredFiltersModal] Submit', {
-    dirtyFieldCount: dirtyFields.size,
-    dirtyFields: Array.from(dirtyFields),
-  })
 
   // Build payload with all form values
   const payload: Record<string, any> = {}
