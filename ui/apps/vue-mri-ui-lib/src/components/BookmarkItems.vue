@@ -47,6 +47,7 @@ const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
   compareCohortsSelectionList: Bookmark[]
   useQueryFilterForAtlas: boolean
+  canDatasetMaterializeCohorts: boolean
 }>()
 
 const bookmarksDisplaySorted = computed(() => {
@@ -584,7 +585,7 @@ onErrorCaptured((err, instance, info) => {
 
           <div
             :class="`icon-button ${
-              ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
+              ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts ? '' : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
             @click.stop="addCohort(bookmarkDisplay)"
