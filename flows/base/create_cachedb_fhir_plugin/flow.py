@@ -1,64 +1,53 @@
 import os
-from psycopg2 import connect
 
 from prefect import flow
 from prefect.variables import Variable
-from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
 
-from .duckdb_postgres import copy_schema_to_cache
 from .config import CreateDuckdbDatabaseFileType
-from .utils import check_supported_duckdb_dialects
+from .duckdb_postgres import create_schema_if_not_exists_task, create_schema_tables_task
+from .fhir_export import (
+    trigger_fhir_export_task,
+    poll_export_status_task,
+    stream_and_load_ndjson_task,
+)
+from _shared_flow_utils.dao.sqlalchemydao import SqlAlchemyDao
 
-from _shared_flow_utils.dao.DBDao import DBDao
 
+os.environ["plugin_name"] = "create_cachedb_fhir_plugin"
 
-
-os.environ['plugin_name'] = 'create_cachedb_fhir_plugin'
 
 @flow(log_prints=True)
 def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
-
-    dbdao = DBDao(use_cache_db=False,
-                  database_code=options.databaseCode)
-
-    # Check if dialect is supported by duckdb
-    check_supported_duckdb_dialects(dbdao.dialect, logger)
-    
-    # Connect to Trex Sql Interface
-    trex_conn = connect(
-        host=Variable.get("trex_sql_host"),
-        port=Variable.get("trex_sql_port"),
-        user=Variable.get("trex_sql_user"),
-        password=Secret.load("trex-sql-password").get(),
-        dbname=options.databaseCode
+    logger.info(
+        f"Starting FHIR cache creation from medplum for database "
+        f"'{options.databaseCode}' → schema '{options.cacheSchemaName}'"
     )
 
-    # Turn off transactions
-    trex_conn.autocommit = True
-    pg_cursor = None
-    
-    try:
-        logger.info(f"Copying source FHIR schema '{options.schemaName}' to cache as schema '{options.cacheSchemaName}'...")
-        pg_cursor = trex_conn.cursor()
+    # ── Step 1: Trigger bulk export scoped to this dataset's FHIR project ───
+    polling_url = trigger_fhir_export_task(study_code=options.studyCode)
 
-        # Update cache information
-        pg_cursor.execute("CALL pg_clear_cache();")
+    # ── Step 2: Poll until the export job finishes ───────────────────────────
+    manifest = poll_export_status_task(polling_url)
 
-        copy_schema_to_cache(pg_cursor, dbdao, options)
-    except Exception as e:
-        logger.error(
-                f"Error while creating cache for source FHIR schema '{options.schemaName}' for '{options.databaseCode}': {e}"
-            )
-        # trex_conn.rollback()
-        raise
-    else:
-        trex_conn.commit()
-        logger.info(
-                f"Cached schema '{options.schemaName}' successfully created for '{options.databaseCode}'."
-            )
-    finally:
-        if pg_cursor:
-            pg_cursor.close()
-        trex_conn.close()
+    # ── Step 3: Create schema if not exists and create empty target tables ─
+    # Read-side DAO used to inspect source schema
+    src_dao = SqlAlchemyDao(False, options.databaseCode)
+
+    # DuckDB file path (used only if not using Trex connection)
+    duckdb_file_path = Variable.get("duckdb_data_folder")
+
+    # Use Trex connection for writes (create schema + tables in Trex)
+    use_trex = True
+
+    create_schema_if_not_exists_task(use_trex, options, duckdb_file_path)
+    create_schema_tables_task(use_trex, src_dao, options, duckdb_file_path)
+
+    # ── Step 4: Stream ndjson outputs directly into trex (no temp files) ──
+    stream_and_load_ndjson_task(manifest, options, resource_types=options.resourceTypes)
+
+    logger.info(
+        f"FHIR cache '{options.cacheSchemaName}' created successfully "
+        f"for database '{options.databaseCode}'."
+    )

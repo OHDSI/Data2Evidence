@@ -5,6 +5,21 @@ import axios, { AxiosRequestConfig } from "axios";
 import { env, services } from "../env.ts";
 import { ClientCredentials, HTTPMethod, Headers } from "../utils/types.ts";
 
+// Module-level token cache keyed by clientId.
+// Tokens are reused across requests until TOKEN_REFRESH_BUFFER_MS before expiry.
+interface _CachedToken { token: string; expiresAt: number; }
+const _tokenCache = new Map<string, _CachedToken>();
+const _TOKEN_REFRESH_BUFFER_MS = 60_000; // refresh 60s before expiry
+
+function _parseTokenExpiry(token: string): number {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    return (payload.exp as number) * 1000;
+  } catch {
+    return Date.now() + 55 * 60 * 1000; // fallback: assume 55-minute lifetime
+  }
+}
+
 export class FhirAPI {
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -117,6 +132,12 @@ export class FhirAPI {
   private async getAccessToken(
     clientCredentials: ClientCredentials
   ): Promise<string> {
+    const cacheKey = clientCredentials.clientId;
+    const cached = _tokenCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt - _TOKEN_REFRESH_BUFFER_MS) {
+      return cached.token;
+    }
+
     const data = {
       grant_type: "client_credentials",
       scope: "openid",
@@ -129,7 +150,9 @@ export class FhirAPI {
         new URLSearchParams(data).toString(),
         options
       );
-      return response.data.access_token;
+      const token: string = response.data.access_token;
+      _tokenCache.set(cacheKey, { token, expiresAt: _parseTokenExpiry(token) });
+      return token;
     } catch (error) {
       this.logger.error(
         `An error occurred while trying to get access token`,

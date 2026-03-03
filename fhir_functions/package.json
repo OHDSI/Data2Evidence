@@ -135,6 +135,24 @@
           "httpMethods": [
             "GET"
           ]
+        },
+        {
+          "path": "^/fhir-gateway/project/[a-zA-Z0-9_]+/bulkdata/export(.*)",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/fhir-gateway/superadmin/Binary(.*)",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
         }
       ]
     }
