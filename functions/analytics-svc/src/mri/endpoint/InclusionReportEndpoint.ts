@@ -101,7 +101,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                             configVersion,
                             datasetId,
                             bookmarkInputStr: bitmapMriquery,
-                            queryType: "totalpcount",
+                            queryType: "irtotalpcount",
                             language,
                         },
                     });
