@@ -281,32 +281,27 @@ function enrichConfigWithBasicDataInteraction(
     const countOfBasicDataFilters = attributes.filter((e) =>
         e.obj._configPath.includes("patient.interactions.basicdata")
     ).length;
+
     // For each basic data filter, add one `basicdata${index}` interaction to config
     let additionalBasicDataInteractionConfig = {};
     for (let i = 1; i < countOfBasicDataFilters + 1; i++) {
         additionalBasicDataInteractionConfig[`basicdata${i}`] =
             inclusionReportbasicDataConfig;
     }
-
     config.patient.interactions = {
         ...config.patient.interactions,
         ...additionalBasicDataInteractionConfig,
     };
 
     // Add configuration such that @PATIENT is compatible to be a generic filtercard
-    config.advancedSettings.tableTypePlaceholderMap.dimTables = [
-        ...config.advancedSettings.tableTypePlaceholderMap.dimTables,
-        {
-            placeholder: "@PATIENT",
-            attributeTables: [],
-            hierarchy: false,
-            time: true,
-            oneToN: false,
-            condition: false,
-        },
-    ];
-    config.advancedSettings.tableMapping = {
-        ...config.advancedSettings.tableMapping,
-        "@PATIENT.INTERACTION_ID": '"person_id"',
-    };
+    config.advancedSettings.tableTypePlaceholderMap.dimTables.push({
+        placeholder: "@PATIENT",
+        attributeTables: [],
+        hierarchy: false,
+        time: true,
+        oneToN: false,
+        condition: false,
+    });
+    config.advancedSettings.tableMapping["@PATIENT.INTERACTION_ID"] =
+        '"person_id"';
 }
