@@ -801,7 +801,7 @@ const StudyOverview: FC = () => {
                 <Table>
                   <TableBody>
                     <TableRow>
-                      <TableCell colSpan={5} align="center">
+                      <TableCell colSpan={6} align="center">
                         <Loader />
                       </TableCell>
                     </TableRow>
