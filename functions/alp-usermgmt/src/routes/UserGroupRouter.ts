@@ -71,11 +71,11 @@ export class UserGroupRouter {
             const allGroups = await this.userGroupService.getUserOverviewFromLogto()
 
             // Filter by query params (studyId, tenantId, role, username, system)
-            const query = (req as express.Request).query as Record<string, string | undefined>
+            const query = (req as express.Request).query
             const userGroups = allGroups.filter((entry: any) => {
               return ['studyId', 'tenantId', 'role', 'username', 'system'].every(key => {
                 const value = query[key]
-                if (!value) return true
+                if (typeof value !== 'string') return true
                 const values = value.includes(',') ? value.split(',') : [value]
                 return values.includes(entry[key])
               })
