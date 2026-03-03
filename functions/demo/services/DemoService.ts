@@ -19,6 +19,8 @@ export class DemoService {
 
   public async addDatabase(token: string, input: IDemoInput) {
     this.logger.info("Adding database");
+    this.logger.info(`2===> all env vars: \n ${env}`);
+
 
     const dbCredentialsAPI = new DbCredentialsAPI(token);
     const dbList = await dbCredentialsAPI.getDbList();

@@ -563,6 +563,44 @@ class D2ECli {
       process.exit(1);
     }
   }
+  setupHTTPTestEnv() {
+    console.log("Setting up http test database...");
+    console.log(`===> all env vars: \n ${process.env}`);
+    this.patch_demodb();
+    const database_host = `${this.PROJECT_NAME}-demodb`;
+    const zx_cmd = this.setup_zx_cmd();
+    const setupHTTPTestEnvCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setuphttptestenv.mjs -n ${this.ENVFILE}`;
+    const setupHTTPTestEnv = spawnSync(setupHTTPTestEnvCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (setupHTTPTestEnv.error) {
+      console.error("Failed to run script:", setupHTTPTestEnv.error);
+      process.exit(1);
+    }
+    if (setupHTTPTestEnv.status !== 0) {
+      console.error(`setupdemo exited with code ${setupHTTPTestEnv.status}`);
+      process.exit(1);
+    }
+
+    const checkSetupHTTPTestEnvCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE}`;
+    const check_setuphttptestenv = spawnSync(checkSetupHTTPTestEnvCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (check_setuphttptestenv.error) {
+      console.error("Failed to run script:", check_setuphttptestenv.error);
+      process.exit(1);
+    }
+    if (check_setuphttptestenv.status !== 0) {
+      console.error(
+        `check_setupdemo exited with code ${check_setuphttptestenv.status}`,
+      );
+      process.exit(1);
+    }
+  }
 
   setupdemohana() {
     console.log("Setting up demo database for hana...");
