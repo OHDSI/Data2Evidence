@@ -60,7 +60,7 @@ def load_vocab(conn, vocab_dir):
             COPY {table_name} FROM '{file}' (DATEFORMAT '%Y%m%d', DELIMITER '\t', FORMAT CSV, HEADER, QUOTE '"',ESCAPE '\"');
             """
             conn.execute(query)
-            logger.info(f"Loading {table_name.replace("mimic_staging.tmp", "")} done")
+            logger.info(f"Loading {table_name.replace("mimic_staging.tmp_", "")} done")
         except Exception as e:
             logger.error(f"Error loading {file}: {str(e)}")
             raise Exception()

@@ -1,4 +1,5 @@
 import os
+from prefect.logging import get_run_logger
 
 def execute_raw_sql_from_file(conn, dir_root, sql_files, log_messages):
     logger = get_run_logger()
