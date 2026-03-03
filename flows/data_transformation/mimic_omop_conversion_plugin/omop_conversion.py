@@ -14,14 +14,14 @@ from _shared_flow_utils.types import SupportedDatabaseDialects
 @task(log_prints=True)
 def staging_mimic_data(conn):
     create_schema(conn, 'mimic_etl')
-    execute_raw_sql_from_file(conn, StagDir, StagSql)
+    execute_raw_sql_from_file(conn, StagDir, StagSql, StagLogs)
 
 
 @task(log_prints=True)
 def ETL_transformation(conn):
     logger = get_run_logger()
     try:
-        execute_raw_sql_from_file(conn, ETLDir, ETLSqls)
+        execute_raw_sql_from_file(conn, ETLDir, ETLSqls, ETLLogs)
     except Exception as e:
         logger.error(f"Error tranforming mimic: {str(e)}")
         raise Exception()
@@ -32,7 +32,7 @@ def final_cdm_tables(conn):
     logger = get_run_logger()
     try:
         create_schema(conn, 'cdm')
-        execute_raw_sql_from_file(conn, CdmDir, CdmSqls)
+        execute_raw_sql_from_file(conn, CdmDir, CdmSqls, CdmLogs)
     except Exception as e:
         logger.error(f"Error creating final cdm data: {str(e)}")
         raise Exception()
