@@ -129,7 +129,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     ): InterfaceReportResults {
         let baseCount = 0;
         let finalCount = 0;
-        let lostCount = 0; // TODO: Check how this is calculated
+        let lostCount = 0; // lostCount is determined by exit event
 
         // Initialize treemapData
         const treemapData = {
