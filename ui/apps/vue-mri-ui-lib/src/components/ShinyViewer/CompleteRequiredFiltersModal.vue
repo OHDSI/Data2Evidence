@@ -22,9 +22,21 @@
             <!-- Date types -->
             <template v-if="isDateType(field.type)">
               <div class="date-range-group">
-                <input :id="`${field.id}_from`" class="form-control" type="date" v-model="formValues[field.id].from" @change="markFieldDirty(field.id)" />
+                <input
+                  :id="`${field.id}_from`"
+                  class="form-control"
+                  type="date"
+                  v-model="formValues[field.id].from"
+                  @change="markFieldDirty(field.id)"
+                />
                 <span>to</span>
-                <input :id="`${field.id}_to`" class="form-control" type="date" v-model="formValues[field.id].to" @change="markFieldDirty(field.id)" />
+                <input
+                  :id="`${field.id}_to`"
+                  class="form-control"
+                  type="date"
+                  v-model="formValues[field.id].to"
+                  @change="markFieldDirty(field.id)"
+                />
               </div>
             </template>
 
@@ -62,7 +74,7 @@
               <p v-if="yearErrors[field.id]" class="field-error">{{ yearErrors[field.id] }}</p>
             </template>
 
-            <!-- Numeric input -->
+            <!-- Numeric input with operator support -->
             <template v-else-if="field.type === 'num'">
               <input
                 :id="field.id"
@@ -71,7 +83,7 @@
                 type="text"
                 :placeholder="field.placeholder || getText('MRI_PA_NUMERIC_INPUT_PLACEHOLDER')"
                 v-model="formValues[field.id]"
-                @input="validateNumericField(field.id, formValues[field.id]); markFieldDirty(field.id)"
+                @input="onNumericInput(field.id)"
                 @blur="validateNumericField(field.id, formValues[field.id])"
               />
               <p v-if="numericErrors[field.id]" class="field-error">{{ numericErrors[field.id] }}</p>
@@ -88,6 +100,7 @@
                   :allow-free-text="field.allowFreeText"
                   :placeholder="field.placeholder"
                   :model-value="formValues[field.id]"
+                  :display-value="displayValues[field.id]"
                   @update:model-value="
                     (val: string | null) => {
                       formValues[field.id] = val
@@ -124,7 +137,11 @@
 
     <template #footer>
       <div class="flex-spacer"></div>
-      <appButton :click="handleSubmit" :text="getText('MRI_PA_APPLY_FILTERS_BUTTON')" :disabled="loading || !isFormValid" />
+      <appButton
+        :click="handleSubmit"
+        :text="getText('MRI_PA_APPLY_FILTERS_BUTTON')"
+        :disabled="loading || !isFormValid"
+      />
       <appButton :click="handleCancel" :text="getText('MRI_PA_BUTTON_CANCEL')" :disabled="loading" />
     </template>
   </MessageBox>
@@ -156,7 +173,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', formValues: Record<string, any>, displayValues: Record<string, string>, dirtyFieldIds: Set<string>): void
+  (
+    e: 'submit',
+    formValues: Record<string, any>,
+    displayValues: Record<string, string>,
+    dirtyFieldIds: Set<string>
+  ): void
 }>()
 
 const formValues = reactive<Record<string, any>>({})
@@ -540,6 +562,15 @@ function validateNumericField(fieldId: string, value: unknown): void {
 }
 
 /**
+ * Validates a numeric field on input
+ * Called from template @input handler
+ */
+function onNumericInput(fieldId: string): void {
+  validateNumericField(fieldId, formValues[fieldId])
+  markFieldDirty(fieldId)
+}
+
+/**
  * Validates a year range field and sets/clears error message
  * Called on blur event from either year select
  */
@@ -647,6 +678,10 @@ function validateYearRange(fieldId: string): void {
 
 .wildcard-toggle {
   margin-top: 4px;
+}
+
+.operator-help-text {
+  margin-top: 2px;
 }
 
 .checkbox-label {

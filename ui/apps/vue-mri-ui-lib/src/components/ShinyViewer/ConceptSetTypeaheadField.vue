@@ -17,7 +17,13 @@
       <span v-if="loading" class="loading-indicator">
         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       </span>
-      <button v-else-if="selectedItem" class="clear-btn" @click="clearSelection" :title="getText('MRI_PA_CLEAR_SELECTION')" type="button">
+      <button
+        v-else-if="selectedItem"
+        class="clear-btn"
+        @click="clearSelection"
+        :title="getText('MRI_PA_CLEAR_SELECTION')"
+        type="button"
+      >
         ×
       </button>
     </div>
@@ -26,7 +32,9 @@
       <div v-if="isOpen" class="concept-typeahead-dropdown" :style="dropdownStyle">
         <ul ref="suggestionsListRef" class="concept-typeahead-list">
           <li v-if="loading" class="concept-typeahead-message">{{ getText('MRI_PA_LOADING') }}</li>
-          <li v-else-if="filteredOptions.length === 0" class="concept-typeahead-message">{{ getText('MRI_PA_NO_RESULTS') }}</li>
+          <li v-else-if="filteredOptions.length === 0" class="concept-typeahead-message">
+            {{ getText('MRI_PA_NO_RESULTS') }}
+          </li>
           <li
             v-for="(item, index) in filteredOptions"
             :key="item.value"
@@ -51,7 +59,6 @@ function generateComponentUid(): string {
   return `component_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 }
 
-
 interface Option {
   value: string
   label: string
@@ -70,6 +77,7 @@ const props = defineProps<{
   required?: boolean
   allowFreeText?: boolean
   modelValue: string | null
+  displayValue?: string
   placeholder?: string
 }>()
 
@@ -300,12 +308,19 @@ onUnmounted(() => {
 })
 
 watch(
-  () => props.modelValue,
-  newValue => {
+  () => [props.modelValue, props.displayValue],
+  ([newValue, newDisplayValue]) => {
     if (!newValue) {
       selectedItem.value = null
       isCustomValue.value = false
       searchText.value = ''
+    } else {
+      // When modelValue changes from outside (e.g., initial data), update the display
+      // Use displayValue if provided, otherwise use the value itself as the label
+      const label = newDisplayValue || newValue
+      selectedItem.value = { value: newValue, label }
+      isCustomValue.value = false
+      searchText.value = label
     }
   },
   { immediate: true }

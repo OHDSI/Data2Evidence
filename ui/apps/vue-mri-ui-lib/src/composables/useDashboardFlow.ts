@@ -52,7 +52,11 @@ export interface UseDashboardFlowReturn {
   closeDashboardSelectionModal: () => void
   handleDashboardSelected: (dashboard: DashboardCode) => Promise<void>
   handleRequiredFiltersCancel: () => void
-  handleRequiredFiltersSubmit: (formValues: Record<string, any>, displayValues: Record<string, string>, dirtyFieldIds: Set<string>) => Promise<void>
+  handleRequiredFiltersSubmit: (
+    formValues: Record<string, any>,
+    displayValues: Record<string, string>,
+    dirtyFieldIds: Set<string>
+  ) => Promise<void>
   handleSaveCohortSuccess: () => void
   handleCancelSaveCohort: () => void
   closeDashboardModal: () => void
@@ -81,11 +85,13 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   const initialDisplayValues = ref<Record<string, string>>({})
   const fieldToCardMap = ref<Record<string, string>>({})
   const createdCards = ref<string[]>([])
-  const originalConstraintValues = ref<Array<{
-    filterCardId: string
-    constraintId: string
-    oldValue: any
-  }>>([])
+  const originalConstraintValues = ref<
+    Array<{
+      filterCardId: string
+      constraintId: string
+      oldValue: any
+    }>
+  >([])
   // Flag to prevent bookmark watcher from resetting state during flow
   let isProcessingDashboardFlow = false
 
@@ -151,12 +157,12 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     })
 
     // Filter by fixedAttributes
-    const matchingCards = candidateCards.filter((cardId) => {
+    const matchingCards = candidateCards.filter(cardId => {
       if (!field.fixedAttributes?.length) {
         return true // No fixedAttributes, any card matches
       }
 
-      return field.fixedAttributes!.every((fixedAttr) => {
+      return field.fixedAttributes!.every(fixedAttr => {
         const attrKey = getFieldAttrKey(fixedAttr.configPath)
         const constraint = getters.getConstraintForAttribute?.({
           filterCardId: cardId,
@@ -195,7 +201,8 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
   function extractValueFromCard(
     filterCardId: string,
-    configPath: string
+    configPath: string,
+    fieldId: string
   ): {
     value: any
     displayValue?: string
@@ -215,6 +222,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
     const constraintType = constraint.props?.type
     const constraintValue = constraint.props?.value
+    const isAgeField = fieldId.toLowerCase() === 'age'
 
     if (constraintType === 'text' || constraintType === 'conceptSet') {
       const values = Array.isArray(constraintValue) ? constraintValue : []
@@ -222,9 +230,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
         const firstValue = values[0]
         const value = typeof firstValue === 'object' ? firstValue.value : firstValue
         const displayValue =
-          typeof firstValue === 'object'
-            ? firstValue.display_value || firstValue.text || firstValue.value
-            : firstValue
+          typeof firstValue === 'object' ? firstValue.display_value || firstValue.text || firstValue.value : firstValue
         const useDescendants = values[0]?.includeDescendants
 
         console.log('[DashboardFlow] Extracted text/concept value:', {
@@ -239,11 +245,26 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     } else if (constraintType === 'num') {
       const values = Array.isArray(constraintValue) ? constraintValue : []
       if (values.length > 0) {
+        const firstValue = values[0]
+        // For Age field, format numeric value with operator for display (e.g., ">50", "[50-80]")
+        // For other numeric fields, use the raw value
+        let formattedValue: string
+
+        if (isAgeField && firstValue.and) {
+          // Range format like [50-80]
+          formattedValue = buildNumericRangeExpression(firstValue.and)
+        } else if (isAgeField) {
+          formattedValue = (firstValue.op || '=') + String(firstValue.value)
+        } else {
+          formattedValue = String(firstValue.value)
+        }
+
         console.log('[DashboardFlow] Extracted numeric value:', {
           filterCardId,
-          value: values[0].value,
+          fieldId,
+          value: formattedValue,
         })
-        return { value: values[0].value }
+        return { value: formattedValue }
       }
     } else if (constraintType === 'time' || constraintType === 'datetime') {
       const fromDate = constraint.props?.fromDate?.value
@@ -300,7 +321,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       const cardId = findFilterCardByFixedAttributes(field)
 
       if (cardId) {
-        const extracted = extractValueFromCard(cardId, field.configPath)
+        const extracted = extractValueFromCard(cardId, field.configPath!, field.id)
         if (extracted) {
           // Convert value to string for proper v-model binding
           let stringValue: string
@@ -311,7 +332,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
           } else {
             stringValue = String(extracted.value)
           }
-          
+
           formValues[field.id] = stringValue
           if (extracted.displayValue) {
             displayValues[field.id] = String(extracted.displayValue)
@@ -339,7 +360,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     const localConfig = activeDashboardWizardConfig.value
     const storeConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
     const wizardConfig = localConfig || storeConfig || null
-    const conditions: Array<{ value: string | object; displayName?: string; useDescendants?: boolean }> = 
+    const conditions: Array<{ value: string | object; displayName?: string; useDescendants?: boolean }> =
       wizardConfig?.conditions || []
 
     for (const field of wizardDef.fields) {
@@ -393,10 +414,10 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       if (yearRange) {
         const fromValue = yearRange.from !== undefined ? String(yearRange.from) : ''
         const toValue = yearRange.to !== undefined ? String(yearRange.to) : ''
-        
+
         formValues[`${field.id}_from`] = fromValue
         formValues[`${field.id}_to`] = toValue
-        
+
         console.log('[DashboardFlow] Extracted yearRange value for', field.id, ':', {
           from: fromValue,
           to: toValue,
@@ -417,7 +438,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
   ): Promise<void> {
     console.log('[DashboardFlow] Step 3: Applying changes', {
       changedCount: changedFields.length,
-      fields: changedFields.map((f) => f.field.id),
+      fields: changedFields.map(f => f.field.id),
     })
 
     dispatch('holdFireRequest')
@@ -786,8 +807,21 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
       } else if (constraintType === 'num') {
         const values = Array.isArray(constraintValue) ? constraintValue : []
         if (values.length > 0) {
-          const numValue = values[0].value
-          return { value: String(numValue) }
+          const firstValue = values[0]
+          // For Age field, format numeric value with operator for display (e.g., ">50", "[50-80]")
+          // For other numeric fields, use the raw value
+          let formattedValue: string
+          const isAgeField = field.id.toLowerCase() === 'age'
+
+          if (isAgeField && firstValue.and) {
+            formattedValue = buildNumericRangeExpression(firstValue.and)
+          } else if (isAgeField) {
+            formattedValue = (firstValue.op || '=') + String(firstValue.value)
+          } else {
+            formattedValue = String(firstValue.value)
+          }
+
+          return { value: formattedValue }
         }
       }
       break
@@ -1203,8 +1237,8 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     try {
       // Get only changed fields
       const changedFields = allWizardFields.value
-        .filter((f) => dirtyFieldIds.has(f.id))
-        .map((f) => ({
+        .filter(f => dirtyFieldIds.has(f.id))
+        .map(f => ({
           field: f,
           value: formValues[f.id],
           displayValue: displayValues[f.id],
@@ -1217,11 +1251,7 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
 
       if (selectedWizardDefinition.value) {
         // Collect wizard config data (includes condition fields and year)
-        const wizardOnlyValues = collectWizardConfigData(
-          selectedWizardDefinition.value,
-          formValues,
-          displayValues
-        )
+        const wizardOnlyValues = collectWizardConfigData(selectedWizardDefinition.value, formValues, displayValues)
 
         await prepareWizardConfigAndContinue(
           selectedWizardDefinition.value,
@@ -1319,4 +1349,13 @@ export function useDashboardFlow(dispatch: any, getters: any): UseDashboardFlowR
     closeDashboardModal,
     isProcessingDashboardFlow: isProcessingDashboardFlowFn,
   }
+}
+
+function buildNumericRangeExpression(range: Array<{ op: string; value: number }>): string {
+  if (range.length !== 2) return ''
+
+  const lowerOp = range[0].op === '>' ? ']' : '['
+  const upperOp = range[1].op === '<' ? '[' : ']'
+
+  return `${lowerOp}${range[0].value}-${range[1].value}${upperOp}`
 }
