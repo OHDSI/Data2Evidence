@@ -49,40 +49,38 @@ const portalAPI = getPortalAPI()
 
 const iframeUrl = computed(() => {
   if (!props.wizardConfig?.dashboardType) {
-    console.log('[Parent] iframeUrl: wizardConfig or dashboardType not available', props.wizardConfig)
     return ''
   }
 
   const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
   const url = `/gateway/api/dataset/shiny-live/${resourceId}/`
-  console.log('[Parent] iframeUrl computed:', url, 'wizardConfig:', props.wizardConfig)
   return url
 })
 
 // Watch for wizardConfig changes and reset state when it changes
-watch(() => props.wizardConfig, (newConfig, oldConfig) => {
-  if (newConfig !== oldConfig) {
-    console.log('[Parent] wizardConfig changed, resetting iframe state')
-    // Reset state for new dashboard
-    isIframeReady.value = false
-    tokenSent.value = false
-    loading.value = true
-    error.value = null
-  }
-}, { deep: true })
+watch(
+  () => props.wizardConfig,
+  (newConfig, oldConfig) => {
+    if (newConfig !== oldConfig) {
+      // Reset state for new dashboard
+      isIframeReady.value = false
+      tokenSent.value = false
+      loading.value = true
+      error.value = null
+    }
+  },
+  { deep: true }
+)
 
 window.addEventListener('message', handleIframeMessage)
 
 onMounted(async () => {
-  console.log('[Parent] Component mounted, fetching token')
   await fetchAuthToken()
-  console.log('[Parent] Token fetched, ready to authenticate iframe')
 })
 
 onUnmounted(() => {
   window.removeEventListener('message', handleIframeMessage)
 })
-
 
 async function fetchAuthToken() {
   try {
@@ -99,16 +97,7 @@ async function fetchAuthToken() {
 }
 
 function handleIframeMessage(event: MessageEvent) {
-  console.log('[Parent] Raw message received:', {
-    origin: event.origin,
-    type: event.data?.type,
-    timestamp: new Date().toISOString(),
-    hasData: !!event.data,
-    source: event.source === iframeRef.value?.contentWindow ? 'our-iframe' : 'unknown',
-  })
-
   const iframeOrigin = getIframeOrigin()
-  console.log('[Parent] Origin check:', { received: event.origin, expected: iframeOrigin })
 
   if (event.origin !== iframeOrigin) {
     console.warn('[Parent] ⚠️ REJECTED - Origin mismatch:', event.origin, 'Expected:', iframeOrigin)
@@ -116,27 +105,19 @@ function handleIframeMessage(event: MessageEvent) {
   }
 
   const data = event.data
-  console.log('[Parent] ✓ ACCEPTED message type:', data.type)
 
   if (data.type === 'SHINYLIVE_READY') {
-    console.log('[Parent] ShinyLive iframe is ready')
-
     if (!tokenSent.value && bearerToken.value) {
-      console.log('[Parent] Sending AUTH_TOKEN immediately')
       isIframeReady.value = true
       loading.value = false
       sendTokenToIframe(event.source)
     } else if (!bearerToken.value) {
-      console.log('[Parent] Token not ready yet, waiting...')
       isIframeReady.value = true
       loading.value = false
-    } else {
-      console.log('[Parent] Token already sent, ignoring duplicate READY')
     }
   }
 
   if (data.type === 'AUTH_READY') {
-    console.log('[Parent] Iframe confirmed authentication')
     tokenSent.value = true
   }
 
@@ -177,7 +158,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
     }
   }
 
-
   const message = {
     type: 'AUTH_TOKEN',
     token: bearerToken.value,
@@ -194,7 +174,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
 
   try {
     source?.postMessage(message)
-    console.log('[Parent] Token and context sent successfully')
   } catch (err) {
     console.error('[Parent] Error sending message to iframe:', err)
     error.value = 'Failed to authenticate with dashboard'
@@ -202,7 +181,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
 }
 
 function handleIframeLoad() {
-  console.log('ShinyLive iframe loaded')
   setTimeout(() => {
     if (!isIframeReady.value) {
       console.warn('ShinyLive app did not send ready signal, proceeding anyway')
