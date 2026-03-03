@@ -186,11 +186,13 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 return {
                     id: e.id,
                     name: e.name,
-                    percentExcluded: this.formatNumToPercentageString(
-                        e.countExcluded / baseCount
+                    percentExcluded: this.calcPercentageString(
+                        e.countExcluded,
+                        baseCount
                     ),
-                    percentSatisfying: this.formatNumToPercentageString(
-                        e.countSatisfying / baseCount
+                    percentSatisfying: this.calcPercentageString(
+                        e.countSatisfying,
+                        baseCount
                     ),
                     countSatisfying: e.countSatisfying,
                 };
@@ -201,8 +203,9 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 baseCount,
                 finalCount,
                 lostCount,
-                percentMatched: this.formatNumToPercentageString(
-                    finalCount / baseCount
+                percentMatched: this.calcPercentageString(
+                    finalCount,
+                    baseCount
                 ),
             },
             inclusionRuleStats,
@@ -309,10 +312,13 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     }
 
     /**
-     * Format float into percentage string
+     * Divides two inut numbers, then format float into percentage string
      * Example 0.123456 returns "12.34%"
      */
-    private formatNumToPercentageString(value: number): string {
-        return `${(value * 100).toFixed(2)}%`;
+    private calcPercentageString(top: number, bottom: number): string {
+        if (bottom === 0) {
+            return "0.00%";
+        }
+        return `${((top / bottom) * 100).toFixed(2)}%`;
     }
 }
