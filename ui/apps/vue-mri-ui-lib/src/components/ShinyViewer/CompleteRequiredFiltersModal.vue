@@ -474,6 +474,7 @@ function handleSubmit() {
   // Run validation to set error messages, then check if form is valid
   validateAllFields()
   if (!isFormValid.value) {
+    console.warn('[Modal] handleSubmit - Form invalid, cannot submit')
     return
   }
 

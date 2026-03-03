@@ -197,12 +197,14 @@ export function useDashboardFlow(
     const filterCardPath = field.filterCardPath || getFieldFilterCardPathForField(field)
     const candidateCards = getNonExcludedFilterCardIdsByPath(filterCardPath)
 
-    // Filter by fixedAttributes
-    const matchingCards = candidateCards.filter(cardId => {
-      if (!field.fixedAttributes?.length) {
-        return true // No fixedAttributes, any card matches
-      }
+    // If field has no fixedAttributes requirement, return first matching card by filterCardPath
+    // This allows fields like age/gender to reuse empty cards
+    if (!field.fixedAttributes?.length) {
+      return candidateCards[0] || null
+    }
 
+    // For fields WITH fixedAttributes, filter by matching constraints
+    const matchingCards = candidateCards.filter(cardId => {
       return field.fixedAttributes!.every(fixedAttr => {
         const attrKey = getFieldAttrKey(fixedAttr.configPath)
         const constraint = getters.getConstraintForAttribute?.({
@@ -317,6 +319,9 @@ export function useDashboardFlow(
       const cardId = findFilterCardByFixedAttributes(field)
 
       if (cardId) {
+        // Track card mapping even for empty cards so we UPDATE instead of CREATE
+        cardMap[field.id] = cardId
+
         const extracted = extractValueFromCard(cardId, field.configPath!, field.id)
         if (extracted) {
           // Convert value to string for proper v-model binding
@@ -336,7 +341,6 @@ export function useDashboardFlow(
           if (extracted.useDescendants !== undefined) {
             formValues[`${field.id}_wildcard`] = extracted.useDescendants
           }
-          cardMap[field.id] = cardId
         }
       }
     }
@@ -408,9 +412,14 @@ export function useDashboardFlow(
     changedFields: Array<{ field: WizardFieldDefinition; value: any; displayValue?: string }>
   ): Promise<void> {
     dispatch('holdFireRequest')
+
+    // Track newly created cards by filterCardPath to avoid duplicates
+    const newlyCreatedCardsByPath = new Map<string, string>()
+
     const operations: Array<{
-      type: 'update' | 'create'
+      type: 'update' | 'create' | 'add-to-existing'
       filterCardId?: string
+      filterCardPath?: string
       field: WizardFieldDefinition
       value: any
       displayValue?: string
@@ -423,6 +432,7 @@ export function useDashboardFlow(
       }
 
       const existingCardId = fieldToCardMap.value[field.id]
+      const filterCardPath = field.filterCardPath || getFieldFilterCardPathForField(field)
 
       if (existingCardId) {
         // UPDATE existing card
@@ -434,13 +444,28 @@ export function useDashboardFlow(
           displayValue,
         })
       } else {
-        // CREATE new card
-        operations.push({
-          type: 'create',
-          field,
-          value,
-          displayValue,
-        })
+        // Check if we already created a card for this filterCardPath in this batch
+        const reusableCardId = newlyCreatedCardsByPath.get(filterCardPath)
+
+        if (reusableCardId) {
+          // REUSE the card we just created for this same filterCardPath
+          operations.push({
+            type: 'add-to-existing',
+            filterCardId: reusableCardId,
+            field,
+            value,
+            displayValue,
+          })
+        } else {
+          // CREATE new card (first field with this filterCardPath)
+          operations.push({
+            type: 'create',
+            filterCardPath,
+            field,
+            value,
+            displayValue,
+          })
+        }
       }
     }
 
@@ -463,13 +488,31 @@ export function useDashboardFlow(
 
           await applyConstraintValue(constraint, op.value, '=', op.displayValue)
         }
+      } else if (op.type === 'add-to-existing' && op.filterCardId) {
+        // Add constraint to already-created card
+        const attrKey = getFieldAttrKey(op.field.configPath!)
+        await dispatch('addFilterCardConstraint', {
+          filterCardId: op.filterCardId,
+          key: attrKey,
+        })
+
+        const constraint = getters.getConstraintForAttribute?.({
+          filterCardId: op.filterCardId,
+          key: attrKey,
+        })
+
+        if (constraint) {
+          await applyConstraintValue(constraint, op.value, '=', op.displayValue)
+        }
       } else if (op.type === 'create') {
         // Create new card with fixedAttributes
         const newCardId = await dispatch('addFilterCard', {
-          configPath: op.field.filterCardPath || getFieldFilterCardPathForField(op.field),
+          configPath: op.filterCardPath!,
         })
 
         createdCards.value.push(newCardId)
+        // Track this new card by its filterCardPath
+        newlyCreatedCardsByPath.set(op.filterCardPath!, newCardId)
 
         // Apply fixedAttributes first
         if (op.field.fixedAttributes?.length) {
@@ -895,6 +938,7 @@ export function useDashboardFlow(
         }
       }
       if (!parsedValues.length) {
+        console.error('[DashboardFlow] Invalid numeric value:', { rawInput, constraint })
         return Promise.reject(new Error(`Invalid numeric value for ${constraint.props.name || constraint.id}`))
       }
       return dispatch('updateConstraintValue', {
@@ -986,6 +1030,7 @@ export function useDashboardFlow(
         )
       }
     } catch (error) {
+      console.error('[DashboardFlow] Error in handleRequiredFiltersSubmit:', error)
       requiredFiltersError.value = (error as Error)?.message || 'Failed to apply required filters'
       isProcessingDashboardFlow = false
     } finally {
