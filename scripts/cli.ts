@@ -1053,7 +1053,16 @@ class D2ECli {
         this.load_env_variables();
         this.setupdemo();
       });
-
+    this.program
+      .command("setuphttptestenv")
+      .description(
+        "Load d2e services. Requires d2e init and d2e setup to be run."
+      )
+      .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
+        this.setupHTTPTestEnv();
+      });
     this.program
       .command("setupdemohana")
       .description(
