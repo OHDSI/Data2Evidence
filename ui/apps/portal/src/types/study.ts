@@ -1,5 +1,5 @@
 import { Tenant } from "./tenant";
-import { StrategusStudy, NetworkStrategusStudy } from "./strategusStudy";
+import { NetworkStrategusStudy } from "./strategusStudy";
 
 export enum SourceDatasetType {
   SOURCE = "source",

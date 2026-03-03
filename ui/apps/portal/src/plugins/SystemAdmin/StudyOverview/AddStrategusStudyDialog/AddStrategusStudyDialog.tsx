@@ -19,7 +19,7 @@ interface FormError {
   };
   tokenStudyCode: {
     required: boolean;
-    valid: boolean;
+    invalid: boolean;
   };
   analysisSpec: {
     invalid: boolean;
@@ -28,7 +28,7 @@ interface FormError {
 
 const EMPTY_FORM_ERROR: FormError = {
   studyName: { required: false, invalid: false },
-  tokenStudyCode: { required: false, valid: false },
+  tokenStudyCode: { required: false, invalid: false },
   analysisSpec: { invalid: false },
 };
 
@@ -74,12 +74,12 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
     }
 
     if (!tokenStudyCode) {
-      error = { ...error, tokenStudyCode: { required: true, valid: false } };
+      error = { ...error, tokenStudyCode: { required: true, invalid: false } };
       hasError = true;
     }
 
     if (tokenStudyCode && !tokenIsValid(tokenStudyCode)) {
-      error = { ...error, tokenStudyCode: { required: false, valid: false } };
+      error = { ...error, tokenStudyCode: { required: false, invalid: true } };
       hasError = true;
     }
 

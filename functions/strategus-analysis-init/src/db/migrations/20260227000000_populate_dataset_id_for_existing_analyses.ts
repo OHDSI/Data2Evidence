@@ -48,26 +48,7 @@ export async function up(knex: Knex): Promise<void> {
         created_by: "migration_script", // TODO: change to admin user if needed
         modified_by: "migration_script", 
       }).into("dataset");
-// id
-// tenant_id
-// visibility_status
-// database_code
-// schema_name
-// token_dataset_code
-// type
-// created_by
-// created_date
-// modified_by
-// modified_date
-// data_model
-// source_dataset_id
-// pa_config_id
-// vocab_schema_name
-// dialect
-// fhir_project_id
-// plugin
-// result_schema_name
-// flow_parameters
+
       // Insert into dataset_detail table
       await knex.withSchema(env.PG_PORTAL_SCHEMA).insert({
         id: crypto.randomUUID(),
@@ -134,7 +115,7 @@ export async function down(knex: Knex): Promise<void> {
 
   // Set dataset_id to null in strategus_analysis
   await knex
-    .withSchema(env.PG_PORTAL_SCHEMA)
+    .withSchema(env.PG_SCHEMA)
     .table("strategus_analysis")
     .whereNotNull("dataset_id")
     .update({
