@@ -364,6 +364,7 @@ const StudyOverview: FC = () => {
     }));
 
     // Merge strategusStudies into strategusAnalysisDatasets
+    // TODO: Consider pre-indexing strategusStudies by datasetId for better performance if datasets list is large
     const strategusAnalysisWithData = strategusAnalysis.map((dataset) => {
       const matchingStudy = strategusStudies.find((study) => study.datasetId === dataset.id);
       return {

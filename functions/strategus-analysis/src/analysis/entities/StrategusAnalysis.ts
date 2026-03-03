@@ -40,6 +40,6 @@ export default class StrategusAnalysis {
   @Column({ name: "viewer_code", type: "text", nullable: true })
   viewerCode: string;
 
-  @Column({ name: "dataset_id", type: "varchar", nullable: true })
+  @Column({ name: "dataset_id", type: "varchar", nullable: false })
   datasetId: string;
 }
