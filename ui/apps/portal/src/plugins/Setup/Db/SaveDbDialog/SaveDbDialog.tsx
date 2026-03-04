@@ -1,6 +1,7 @@
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningIcon from "@mui/icons-material/Warning";
 import Divider from "@mui/material/Divider";
+import { FormHelperText } from "@mui/material";
 import { SxProps } from "@mui/system";
 import {
   Autocomplete,
@@ -23,7 +24,6 @@ import { useTranslation } from "../../../../contexts";
 import {
   AUTHENTICATION_MODES,
   CloseDialogType,
-  CREDENTIAL_SERVICE_SCOPES,
   CREDENTIAL_USER_SCOPES,
   DB_DIALECTS,
   DB_DIALECTS_KEY_VALUE,
@@ -37,6 +37,7 @@ import {
   INewDatabase,
   ITestConnection,
   SERVICE_SCOPE_TYPES,
+  SSL_MODES,
   USER_SCOPE_TYPES,
 } from "../../../../types";
 import { isValidJson } from "../../../../utils";
@@ -71,7 +72,25 @@ const styles: SxProps = {
 
 interface FormData extends Omit<IDatabase, "id" | "credentials.id" | "publications"> {
   publication: string;
+  sslmode: string;
+  ca: string;
 }
+
+interface FormError {
+  code: boolean;
+  host: boolean;
+  port: boolean;
+  name: boolean;
+  ca: boolean;
+}
+
+const EMPTY_FORM_ERROR: FormError = {
+  code: false,
+  host: false,
+  port: false,
+  name: false,
+  ca: false,
+};
 
 const dbCredentialProcessor = new DbCredentialProcessor();
 
@@ -121,6 +140,8 @@ const EMPTY_FORM_DATA: FormData = {
   credentials: EMPTY_CREDENTIALS,
   vocabSchemas: [],
   publication: "",
+  sslmode: "",
+  ca: "",
 };
 
 interface ITestingResult {
@@ -132,6 +153,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
   const [feedback, setFeedback] = useState<Feedback>({});
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
+  const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
 
   const [testing, setTesting] = useState(false);
   const [testingResult, setTestingResult] = useState<ITestingResult>({});
@@ -140,6 +162,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
     if (open) {
       setFormData(EMPTY_FORM_DATA);
       setFeedback({});
+      setFormError(EMPTY_FORM_ERROR);
       handleDialectChange(EMPTY_FORM_DATA.dialect);
     }
   }, [open]);
@@ -152,6 +175,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       setFormData(EMPTY_FORM_DATA);
+      setFormError(EMPTY_FORM_ERROR);
       typeof onClose === "function" && onClose(type);
     },
     [onClose]
@@ -179,15 +203,38 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
     [handleFormDataChange]
   );
 
+  const isFormError = useCallback(() => {
+    let errors: Partial<FormError> = {};
+
+    if (!formData.code.trim()) {
+      errors.code = true;
+    }
+    if (formData.dialect !== DB_DIALECTS.BIG_QUERY) {
+      if (!formData.host.trim()) errors.host = true;
+      if (!formData.port) errors.port = true;
+      if (!formData.name.trim()) errors.name = true;
+    }
+    if ((formData.sslmode === "verify-ca" || formData.sslmode === "verify-full") && !formData.ca) {
+      errors.ca = true;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormError({ ...EMPTY_FORM_ERROR, ...(errors as FormError) });
+      return true;
+    }
+
+    return false;
+  }, [formData]);
+
   const handleSave = useCallback(async () => {
     try {
       setSaving(true);
 
-      if (formData.dialect !== DB_DIALECTS.BIG_QUERY && formData.authenticationMode === AUTHENTICATION_MODES.PASSWORD) {
-        if (!validateCredentials(formData.credentials, setFeedback)) {
-          return;
-        }
+      if (isFormError()) {
+        return;
       }
+
+      setFormError(EMPTY_FORM_ERROR);
 
       if (formData.dialect === DB_DIALECTS.BIG_QUERY) {
         formData.port = 0;
@@ -195,6 +242,12 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
 
       if (!isValidDbCode(formData.code, setFeedback)) {
         return;
+      }
+
+      if (formData.dialect !== DB_DIALECTS.BIG_QUERY && formData.authenticationMode === AUTHENTICATION_MODES.PASSWORD) {
+        if (!validateCredentials(formData.credentials, setFeedback)) {
+          return;
+        }
       }
       const encryptedCredentials = formData.credentials
         .filter((cred) => Boolean(cred.username))
@@ -217,6 +270,15 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
           newExtra["Internal"] = JSON.parse(internalExtra.value);
         } else {
           newExtra["Internal"] = {};
+        }
+      }
+
+      // Merge TLS settings into Internal extra
+      if (formData.sslmode) {
+        if (!newExtra["Internal"]) newExtra["Internal"] = {};
+        (newExtra["Internal"] as Record<string, any>).sslmode = formData.sslmode;
+        if (formData.ca && formData.sslmode !== "disable") {
+          (newExtra["Internal"] as Record<string, any>).ca = formData.ca;
         }
       }
 
@@ -268,7 +330,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
     } finally {
       setSaving(false);
     }
-  }, [handleClose, formData, setFeedback, getText]);
+  }, [handleClose, formData, setFeedback, getText, isFormError]);
 
   const handleTestConnection = useCallback(async () => {
     try {
@@ -291,13 +353,23 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
           console.error("Invalid extra JSON", err);
           setFeedback({
             type: "error",
-            message: "Invalid JSON in Extra (Internal). Please correct the JSON before testing the connection.",
+            message: getText(i18nKeys.SAVE_DB_DIALOG__EXTRA_INVALID_JSON),
           });
           return;
         }
       }
 
+      // Merge TLS settings for test connection
+      if (formData.sslmode) {
+        extra = extra || {};
+        extra.sslmode = formData.sslmode;
+        if (formData.ca && formData.sslmode !== "disable") {
+          extra.ca = formData.ca;
+        }
+      }
+
       const testResult: ITestingResult = {};
+      const errorMessages: string[] = [];
       for (const cred of credentials) {
         try {
           const params: ITestConnection = {
@@ -312,9 +384,16 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
 
           testResult[cred.username] = result.success;
           setTestingResult((x) => ({ ...x, [cred.username]: result.success }));
+          if (!result.success && result.error) {
+            errorMessages.push(result.error);
+          }
         } catch (err: any) {
           testResult[cred.username] = false;
           setTestingResult((x) => ({ ...x, [cred.username]: false }));
+          const errMsg = err?.data?.error || err?.data?.message;
+          if (errMsg) {
+            errorMessages.push(errMsg);
+          }
         }
       }
 
@@ -326,7 +405,13 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
             autoClose: 5000,
           });
         } else {
-          setFeedback({ type: "error", message: getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_FAILED), autoClose: 5000 });
+          setFeedback({
+            type: "error",
+            message:
+              errorMessages.length > 0
+                ? [...new Set(errorMessages)].join("; ")
+                : getText(i18nKeys.SAVE_DB_DIALOG__CONNECTION_FAILED),
+          });
         }
       }
     } finally {
@@ -348,13 +433,18 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
       <Divider />
       <div className="save-db-dialog__content">
         <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>
-          <TextField
-            label={getText(i18nKeys.SAVE_DB_DIALOG__DATABASE_ID)}
-            variant="standard"
-            sx={{ width: "100%" }}
-            value={formData.code}
-            onChange={(event) => handleFormDataChange({ code: event.target?.value })}
-          />
+          <div style={{ flex: 1 }}>
+            <TextField
+              label={getText(i18nKeys.SAVE_DB_DIALOG__DATABASE_ID)}
+              variant="standard"
+              required
+              fullWidth
+              value={formData.code}
+              onChange={(event) => handleFormDataChange({ code: event.target?.value })}
+              error={formError.code}
+            />
+            {formError.code && <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>}
+          </div>
           <FormControl fullWidth variant="standard" sx={{ width: "300px" }}>
             <InputLabel id="dialect-select-label">{getText(i18nKeys.SAVE_DB_DIALOG__DIALECT)}</InputLabel>
             <Select
@@ -376,28 +466,49 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         ) : (
           <>
             <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>
-              <TextField
-                label={getText(i18nKeys.SAVE_DB_DIALOG__HOST)}
-                variant="standard"
-                sx={{ minWidth: "300px" }}
-                value={formData.host}
-                onChange={(event) => handleFormDataChange({ host: event.target?.value })}
-              />
-              <TextField
-                label={getText(i18nKeys.SAVE_DB_DIALOG__PORT)}
-                variant="standard"
-                type="number"
-                sx={{ width: "150px" }}
-                value={formData.port}
-                onChange={(event) => handleFormDataChange({ port: Number(event.target?.value || 0) })}
-              />
-              <TextField
-                label={getText(i18nKeys.SAVE_DB_DIALOG__DATABASE_NAME)}
-                variant="standard"
-                sx={{ minWidth: "300px" }}
-                value={formData.name}
-                onChange={(event) => handleFormDataChange({ name: event.target?.value })}
-              />
+              <div style={{ flex: 1 }}>
+                <TextField
+                  label={getText(i18nKeys.SAVE_DB_DIALOG__HOST)}
+                  variant="standard"
+                  required
+                  fullWidth
+                  value={formData.host}
+                  onChange={(event) => handleFormDataChange({ host: event.target?.value })}
+                  error={formError.host}
+                />
+                {formError.host && (
+                  <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                )}
+              </div>
+              <div>
+                <TextField
+                  label={getText(i18nKeys.SAVE_DB_DIALOG__PORT)}
+                  variant="standard"
+                  required
+                  type="number"
+                  sx={{ width: "150px" }}
+                  value={formData.port}
+                  onChange={(event) => handleFormDataChange({ port: Number(event.target?.value || 0) })}
+                  error={formError.port}
+                />
+                {formError.port && (
+                  <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <TextField
+                  label={getText(i18nKeys.SAVE_DB_DIALOG__DATABASE_NAME)}
+                  variant="standard"
+                  required
+                  fullWidth
+                  value={formData.name}
+                  onChange={(event) => handleFormDataChange({ name: event.target?.value })}
+                  error={formError.name}
+                />
+                {formError.name && (
+                  <FormHelperText error>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+                )}
+              </div>
             </div>
 
             <div style={{ fontWeight: "bold" }}>{getText(i18nKeys.SAVE_DB_DIALOG__VOCAB_SCHEMAS)}</div>
@@ -415,7 +526,11 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                   ))
                 }
                 renderInput={(params) => (
-                  <TextField {...params} variant="standard" helperText="Press enter to confirm the entry" />
+                  <TextField
+                    {...params}
+                    variant="standard"
+                    helperText={getText(i18nKeys.SAVE_DB_DIALOG__PRESS_ENTER)}
+                  />
                 )}
                 value={formData.vocabSchemas}
                 onChange={(_, vocabSchemas) => handleFormDataChange({ vocabSchemas })}
@@ -429,57 +544,70 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
             <b>{getText(i18nKeys.SAVE_DB_DIALOG__EXTRA)}</b>
           </div>
           {formData?.extra?.map((extra, index) => (
-            <div key={index} style={{ display: "flex", gap: "24px", marginBottom: "8px" }}>
-              <div style={{ flex: "1" }}>
-                <TextField
-                  label={getText(i18nKeys.SAVE_DB_DIALOG__VALUE)}
-                  variant="standard"
-                  fullWidth
-                  value={extra.value}
-                  onChange={(event) =>
-                    handleFormDataChange({
-                      extra: [
-                        ...formData.extra.slice(0, index),
-                        {
-                          ...formData.extra[index],
-                          value: event.target?.value,
-                        } as IDbExtra,
-                        ...formData.extra.slice(index + 1, formData.extra.length),
-                      ],
-                    })
-                  }
-                />
-              </div>
-              <div style={{ width: "130px" }}>
-                <FormControl fullWidth variant="standard">
-                  <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
-                  <Select
-                    labelId="service-scope-label"
-                    id="service-scope"
-                    readOnly
-                    inputProps={{
-                      tabIndex: -1,
-                    }}
-                    sx={{
-                      "::before, ::after": {
-                        borderBottom: "0 !important",
-                      },
-                      ".MuiSvgIcon-root": {
-                        display: "none",
-                      },
-                    }}
-                    value={extra.serviceScope}
-                  >
-                    {CREDENTIAL_SERVICE_SCOPES.map((scope) => (
-                      <MenuItem value={scope} key={scope}>
-                        {scope}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </div>
+            <div key={index} style={{ marginBottom: "8px" }}>
+              <TextField
+                label={getText(i18nKeys.SAVE_DB_DIALOG__VALUE)}
+                variant="standard"
+                fullWidth
+                value={extra.value}
+                onChange={(event) =>
+                  handleFormDataChange({
+                    extra: [
+                      ...formData.extra.slice(0, index),
+                      {
+                        ...formData.extra[index],
+                        value: event.target?.value,
+                      } as IDbExtra,
+                      ...formData.extra.slice(index + 1, formData.extra.length),
+                    ],
+                  })
+                }
+              />
             </div>
           ))}
+        </div>
+        <div style={{ marginBottom: "32px" }} hidden={formData.dialect === DB_DIALECTS.BIG_QUERY}>
+          <div style={{ marginBottom: "16px" }}>
+            <b>{getText(i18nKeys.SAVE_DB_DIALOG__TLS_SSL)}</b>
+          </div>
+          <div style={{ marginBottom: "16px" }}>
+            <FormControl variant="standard" sx={{ width: "250px" }}>
+              <InputLabel id="sslmode-select-label">{getText(i18nKeys.SAVE_DB_DIALOG__SSL_MODE)}</InputLabel>
+              <Select
+                labelId="sslmode-select-label"
+                id="sslmode-select"
+                value={formData.sslmode}
+                onChange={(event) => handleFormDataChange({ sslmode: event.target?.value })}
+              >
+                {SSL_MODES.map((mode) => (
+                  <MenuItem value={mode.key} key={mode.key || "__none__"}>
+                    {mode.value}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
+          {formData.sslmode && formData.sslmode !== "disable" && (
+            <div>
+              <TextField
+                label={getText(i18nKeys.SAVE_DB_DIALOG__CA_CERTIFICATE)}
+                variant="standard"
+                fullWidth
+                multiline
+                minRows={3}
+                maxRows={10}
+                required={formData.sslmode === "verify-ca" || formData.sslmode === "verify-full"}
+                value={formData.ca}
+                onChange={(event) => handleFormDataChange({ ca: event.target?.value })}
+                error={formError.ca}
+                helperText={
+                  formError.ca
+                    ? getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)
+                    : getText(i18nKeys.SAVE_DB_DIALOG__CA_HELPERTEXT)
+                }
+              />
+            </div>
+          )}
         </div>
         <div style={{ marginBottom: "32px", width: "250px" }} hidden={formData.dialect !== DB_DIALECTS.HANA}>
           <FormControl fullWidth variant="standard">
@@ -591,46 +719,6 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
                     })
                   }
                 />
-              </div>
-              <div style={{ width: "130px" }}>
-                <FormControl fullWidth variant="standard">
-                  <InputLabel id="service-scope-label">{getText(i18nKeys.SAVE_DB_DIALOG__SERVICE)}</InputLabel>
-                  <Select
-                    labelId="service-scope-label"
-                    id="service-scope"
-                    readOnly
-                    inputProps={{
-                      tabIndex: -1,
-                    }}
-                    sx={{
-                      "::before, ::after": {
-                        borderBottom: "0 !important",
-                      },
-                      ".MuiSvgIcon-root": {
-                        display: "none",
-                      },
-                    }}
-                    value={cred.serviceScope}
-                    onChange={(event) =>
-                      handleFormDataChange({
-                        credentials: [
-                          ...formData.credentials.slice(0, index),
-                          {
-                            ...formData.credentials[index],
-                            serviceScope: event.target?.value,
-                          } as IDbCredential,
-                          ...formData.credentials.slice(index + 1, formData.credentials.length),
-                        ],
-                      })
-                    }
-                  >
-                    {CREDENTIAL_SERVICE_SCOPES.map((scope) => (
-                      <MenuItem value={scope} key={scope}>
-                        {scope}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
               </div>
               <div style={{ width: "50px", alignSelf: "flex-end" }}>
                 {Object.keys(testingResult).includes(cred.username) && (

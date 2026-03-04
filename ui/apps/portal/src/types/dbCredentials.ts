@@ -87,8 +87,6 @@ export enum SERVICE_SCOPE_TYPES {
   DATA_PLATFORM = "DataPlatform",
 }
 
-export const CREDENTIAL_SERVICE_SCOPES = [SERVICE_SCOPE_TYPES.INTERNAL]; //, SERVICE_SCOPE_TYPES.DATA_PLATFORM];
-
 export type ServiceScopeType = `${SERVICE_SCOPE_TYPES}`;
 
 export interface IDbExtraAdd extends Omit<IDbExtra, "id"> {}
@@ -114,7 +112,7 @@ export interface IDatabaseDetailsUpdate
   extends Omit<IDatabase, "code" | "dialect" | "extra" | "authenticationMode" | "credentials"> {
   id: string;
   vocabSchemas: string[];
-  extra: { [key: string]: string | number | boolean };
+  extra: { [key: string]: Record<string, any> };
 }
 
 export interface ITestConnection {
@@ -129,4 +127,16 @@ export interface ITestConnection {
 export interface ITestConnectionResult {
   success: boolean;
   message: string;
+  error?: string;
+  code?: string;
 }
+
+export const SSL_MODES = [
+  { key: "", value: "None" },
+  { key: "disable", value: "Disable" },
+  { key: "allow", value: "Allow" },
+  { key: "prefer", value: "Prefer" },
+  { key: "require", value: "Require" },
+  { key: "verify-ca", value: "Verify CA" },
+  { key: "verify-full", value: "Verify Full" },
+];
