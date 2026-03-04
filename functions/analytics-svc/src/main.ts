@@ -645,11 +645,13 @@ const getTrexDbConnection = ({
             resultsSchemaName: string,
             parameters: any
         ): string => {
+            log.debug(`temp: ${temp}`);
             // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
             temp = temp.replace(
                 /\$\$SCHEMA_DIRECT_CONN\$\$./g,
                 `${trex_direct_connection_alias}.$$$$SCHEMA$$$$.`
             );
+            log.debug(`after temp: ${temp}`);
             return translateHanaToDuckdb(
                 temp,
                 schemaName,
@@ -661,7 +663,8 @@ const getTrexDbConnection = ({
 
         log.debug(`--------------------------`);
         log.debug(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
-        log.debug(`parseSql: ${JSON.stringify(parseSql)}`);
+        log.debug(`parseSql: ${parseSql}`);
+        log.debug(`parseSql stringified: ${JSON.stringify(parseSql)}`);
         log.debug(`--------------------------`);
 
         const conn = dbm.getConnection(

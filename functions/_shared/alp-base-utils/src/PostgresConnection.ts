@@ -96,10 +96,14 @@ export class PostgresConnection implements ConnectionInterface {
     callback: CallBackInterface,
   ) {
     try {
-      //logger.debug(`Sql: ${sql}`);
-      // logger.debug(
-      //   `parameters: ${JSON.stringify(flattenParameter(parameters))}`,
-      // );
+      logger.debug(`PostgresConnection.Sql: ${sql}`);
+      logger.debug(
+        `PostgresConnection.parameters: ${JSON.stringify(flattenParameter(parameters))}`,
+      );
+      console.log(`PostgresConnection.Sql: ${sql}`);
+      console.log(
+        `PostgresConnection.parameters: ${JSON.stringify(flattenParameter(parameters))}`,
+      );
       let temp = sql;
       temp = this.parseSql(temp, parameters);
       this.conn.connect((err, client, release) => {

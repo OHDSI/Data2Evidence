@@ -10,6 +10,12 @@ const hanaCommonTranslation = (
   vocabSchemaName: string,
   resultsSchemaName: string,
 ): string => {
+
+  console.log(`hanaCommonTranslation.temp:${temp}`);
+  console.log(`hanaCommonTranslation.schemaName:${schemaName}`);
+  console.log(`hanaCommonTranslation.vocabSchemaName:${vocabSchemaName}`);
+  console.log(`hanaCommonTranslation.resultsSchemaName:${resultsSchemaName}`);
+
   // The first few queries to replace are very specific query which does not require further string replacements
   // subsequent lines, hence early return is used.
   const regex1 =
