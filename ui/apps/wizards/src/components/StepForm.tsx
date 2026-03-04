@@ -6,6 +6,7 @@ import { generateFormSubmitDeepLink } from "../utils/deepLinks";
 import { fetchCdwConfig } from "../config/cdwConfig";
 import type { ConfigMeta } from "../config/cdwConfig";
 import { TypeaheadField } from "./TypeaheadField";
+import { AnalyticsIcon } from "./icons/AnalyticsIcon";
 import styles from "./StepForm.module.css";
 
 /**
@@ -382,7 +383,7 @@ export function StepForm() {
             disabled={!allRequiredFieldsFilled() || !isValid}
             className={`${styles.button} ${styles.buttonPrimary}`}
           >
-            <span>▦</span> {submitLabel}
+            <AnalyticsIcon /> {submitLabel}
           </button>
         </div>
       </form>

@@ -144,6 +144,10 @@ export class DataCharacterizationService {
     )[0];
 
     const cdmVersionNumber = await analyticsSvcApi.getCdmVersion(datasetId);
+    // Handle case where CDM version is not found for the dataset, as CDM version is required to run DC flow
+    if (!cdmVersionNumber) {
+      throw new Error(`CDM version not found for dataset ${datasetId}`);
+    }
 
     const name = `${this.flowRunNamePrefix}_${databaseCode}.${schemaName}`;
     const parameters = {

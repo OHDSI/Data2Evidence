@@ -627,6 +627,7 @@ export const i18n = {
     MRI_PA_RENAME_BMK_SUCCESS: 'Saved filter renamed.',
     MRI_PA_DELETE_BMK_ERROR: "Couldn't delete the saved filter.",
     MRI_PA_DELETE_BMK_SUCCESS: 'Saved filter deleted.',
+    MRI_PA_CHECK_MATERIALIZE_COHORT_ERROR: 'An error occurred while checking if dataset can materialize cohorts',
     MRI_PA_CONFIG_ERROR_ATTRIBUTEID_NOT_UNIQUE_AFTER_TRANSFORMATION:
       'The attribute IDs specified for the interaction are not unique in the configuration:',
     MRI_PA_CONFIG_ERROR_INTERACTIONID_NOT_UNIQUE_AFTER_TRANSFORMATION:
@@ -883,6 +884,8 @@ export const i18n = {
     MRI_PA_OR: 'OR',
     MRI_PA_FILTER_SUMMARY_DESC_LABEL: 'Showing patients with:',
     MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL: 'Download SQL',
+    MRI_PA_FILTER_SUMMARY_COPY_SQL: 'Copy SQL',
+    MRI_PA_FILTER_SUMMARY_SQL_COPIED: 'SQL copied to clipboard',
     MRI_PA_FILTER_SUMMARY_CREATE_ATLAS_COHORT_DEFINITION: 'Create ATLAS cohort definition',
     MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION: 'Create cohort definition',
     MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_WARNING:
@@ -1823,6 +1826,8 @@ export const i18n = {
     MRI_PA_OR: 'ODER',
     MRI_PA_FILTER_SUMMARY_DESC_LABEL: 'Anzeigen von Patienten mit:',
     MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL: 'SQL herunterladen',
+    MRI_PA_FILTER_SUMMARY_COPY_SQL: 'SQL kopieren',
+    MRI_PA_FILTER_SUMMARY_SQL_COPIED: 'SQL wurde in die Zwischenablage kopiert',
     MRI_PA_FILTER_SUMMARY_CREATE_ATLAS_COHORT_DEFINITION: 'ATLAS-Kohortendefinition erstellen',
     MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION: 'Kohortendefinition erstellen',
     MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_WARNING:
@@ -2679,6 +2684,8 @@ export const i18n = {
     MRI_PA_OR: '或',
     MRI_PA_FILTER_SUMMARY_DESC_LABEL: '使用下列方式显示病患：',
     MRI_PA_FILTER_SUMMARY_DOWNLOAD_SQL: '下载 SQL',
+    MRI_PA_FILTER_SUMMARY_COPY_SQL: '复制 SQL',
+    MRI_PA_FILTER_SUMMARY_SQL_COPIED: 'SQL 已复制到剪贴板',
     MRI_PA_FILTER_SUMMARY_CREATE_ATLAS_COHORT_DEFINITION: '创建 ATLAS 群组定义',
     MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION: '创建群组定义',
     MRI_PA_FILTER_SUMMARY_CREATE_COHORT_DEFINITION_WARNING:
