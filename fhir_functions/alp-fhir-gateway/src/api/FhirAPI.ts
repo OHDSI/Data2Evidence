@@ -16,7 +16,9 @@ function _parseTokenExpiry(token: string): number {
     const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
     return (payload.exp as number) * 1000;
   } catch {
-    return Date.now() + 55 * 60 * 1000; // fallback: assume 55-minute lifetime
+    // If the token cannot be parsed as a JWT with an exp claim, treat it as expired.
+    // The caller should rely on the token endpoint's expires_in value for the true expiry.
+    return Date.now();
   }
 }
 
