@@ -221,15 +221,28 @@ BackendUplink.prototype.addCdwConfiguration = function (config, configId, config
   }
 
   this.log('Storing and activating test CDW configuration')
+  this.log(`backend_uplink.BEARER_TOKEN:${process.env.BEARER_TOKEN}`)
+  this.log(`backend_uplink.reqBody:${JSON.stringify(reqBody)}`)  
+
   var that = this
   this.hanaRequest.request(setQuery, function (err, response, body) {
+    that.log(`backend_uplink.err:${err}`)
+    that.log(`backend_uplink.response:${response}`)
+    that.log(`backend_uplink.response.statusCode:${response.statusCode}`)
+    that.log(`backend_uplink.body:${body}`)
+
+
     if (err) {
+      that.log(`backend_uplink: err response...`)
+
       return cb(err)
     }
     if (response.statusCode !== 200) {
-      that.log('Non-200 reponse!', body)
+      that.log(`backend_uplink: !=200 response...`)
       return cb(new Error('Failed to activate CDW configuration!'))
     } else if (body) {
+      that.log(`backend_uplink: 200 response...`)
+
       var fnPrintError = function (errors) {
         if (typeof errors === 'undefined') {
           return false
