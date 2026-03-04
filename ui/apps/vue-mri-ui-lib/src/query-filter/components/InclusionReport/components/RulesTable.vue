@@ -112,9 +112,7 @@ function handleMoveRowDown(statId: number) {
             </template>
           </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-          <td v-if="selectedVisualization === 'ATTRITION'">
-            {{ (100 - parseFloat(stat.percentSatisfying)).toFixed(2) }}%
-          </td>
+          <td v-if="selectedVisualization === 'ATTRITION'">{{ stat.percentSatisfying }}%</td>
           <td v-else>{{ stat.percentSatisfying }}</td>
           <!-- <td>{{ stat.pctDiff }}</td> -->
         </tr>
