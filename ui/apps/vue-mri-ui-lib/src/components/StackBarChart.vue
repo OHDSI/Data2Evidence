@@ -229,20 +229,24 @@ export default {
 
       if (numTraces === 2) {
         // High contrast palette for binary comparisons
-        return ['#000080', '#EC6E41']
+        return ['#000080', '#F79409FF']
       } else if (numTraces === 3) {
-        return ['#000080', '#9e3688', '#EC6E41']
+        return ['#000080', '#3E92E0FF', '#F79409FF']
       } else if (numTraces === 4) {
-        return ['#000080', '#5d2085', '#de4b8b', '#EC6E41']
+        return ['#000080', '#3E92E0FF', '#FCD34BFF', '#F79409FF']
       } else {
         // Full palette for 5+ traces
         // return ['#000080', '#144187', '#23718c', '#529f70', '#8bcb48', '#fee727']
         // return ['#000080', '#5d2085', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
-        return ['#000080', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
-
+        // return ['#000080', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
         // return ['#000080', '#540982', '#821d80', '#ab3478', '#d04d64', '#eb7100'] // option 2
         // return ['#000080', '#FB9F9D', '#196D76', '#FFD9A5'] // option 3
+        // return ['#000080', '#FB9F9D', '#196D76', '#EC6E41'] // option 3 with amber
         // return ['#007FFFFF', '#4CC3FFFF', '#99EDFFFF', '#CCFFFFFF', '#FFFFCCFF', '#FFEE99FF', '#FFC34CFF', '#FF7F00FF']
+        // return ['#F56455FF', '#000080', '#87C785FF', '#572F30FF'] // r color palette
+        // return ['#6BBAE5FF', '#E3EEF4FF', '#000080', '#F9F5EAFF', '#81974CFF', '#553F31FF'] // r color palette 2
+        // return ['#000080', '#6DAABDFF', '#CAECB3FF', '#F3CB04FF', '#E28027FF']
+        return ['#000080', '#3E92E0FF', '#C0CED1FF', '#FCD34BFF', '#F79409FF'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
         // return [
         //   '#212E52FF',
         //   '#444E7EFF',

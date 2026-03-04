@@ -140,7 +140,7 @@ const getters = {
           meta: { fullName },
           marker: {
             line: {
-              color: 'white',
+              color: '#595757',
               width: 0.7,
             },
           },
