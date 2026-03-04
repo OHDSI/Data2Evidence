@@ -9,7 +9,11 @@ defineProps<{
 <template>
   <div class="summary-section">
     <h4>Summary Statistics</h4>
-    <table class="summary-table">
+    <div class="summary-data">
+      <p>Total Persons: {{ summary.baseCount }}</p>
+      <p>Matches: {{ summary.finalCount }} ({{ summary.percentMatched }})</p>
+    </div>
+    <!-- <table class="summary-table">
       <thead>
         <tr>
           <th>Total Persons</th>
@@ -22,7 +26,7 @@ defineProps<{
           <td>{{ summary.finalCount }} ({{ summary.percentMatched }})</td>
         </tr>
       </tbody>
-    </table>
+    </table> -->
   </div>
 </template>
 
@@ -36,13 +40,17 @@ defineProps<{
 h4 {
   margin: 0;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-primary);
+}
+.summary-data {
+  display: flex;
+  gap: 2rem;
 }
 
 .summary-table {
   align-self: flex-start;
-  min-width: 30%;
+  min-width: 50%;
   max-width: 100%;
   border-collapse: collapse;
   border: 1px solid var(--color-ui-light-border, #ddd);

@@ -64,7 +64,7 @@ function handleMoveRowDown(statId: number) {
     <table class="rules-table">
       <thead>
         <tr>
-          <th v-if="selectedVisualization === 'INTERSECT'">
+          <th class="checkbox-col" v-if="selectedVisualization === 'INTERSECT'">
             <input
               type="checkbox"
               :checked="areAllRulesChecked"
@@ -72,7 +72,7 @@ function handleMoveRowDown(statId: number) {
               title="Select/unselect all rules"
             />
           </th>
-          <th v-if="selectedVisualization === 'ATTRITION'"></th>
+          <th class="drag-icon-header" v-if="selectedVisualization === 'ATTRITION'"></th>
           <th v-if="selectedVisualization === 'ATTRITION'"></th>
           <!-- <th class="rule-id">ID</th> -->
           <th class="rule-name">Inclusion rule</th>
@@ -112,14 +112,14 @@ function handleMoveRowDown(statId: number) {
             </template>
           </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
-          <td v-if="selectedVisualization === 'ATTRITION'">{{ stat.percentSatisfying }}%</td>
+          <td v-if="selectedVisualization === 'ATTRITION'">{{ stat.percentSatisfying }}</td>
           <td v-else>{{ stat.percentSatisfying }}</td>
           <!-- <td>{{ stat.pctDiff }}</td> -->
         </tr>
       </tbody>
       <tbody v-else>
         <tr v-for="stat in inclusionRuleStats" :key="stat.id" :class="{ 'grayed-out': !isRuleChecked(stat.id) }">
-          <td>
+          <td class="checkbox-col">
             <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="handleToggleRuleSelection(stat.id)" />
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
@@ -163,17 +163,20 @@ table {
     font-weight: 500;
     border-bottom: 2px solid var(--color-ui-light-border, #ddd);
     color: #333;
+    border-right: 1px solid var(--color-ui-light-border, #ddd);
   }
 
   td {
     padding: 0.5rem;
     cursor: inherit;
+    border-right: 1px solid var(--color-ui-light-border, #ddd);
 
     &.drag-icon {
       cursor: move;
       padding: 0.1rem;
       font-size: 24px;
       text-align: center;
+      border-right: none;
     }
 
     &.reorder-buttons {
@@ -182,6 +185,11 @@ table {
       align-items: center;
       padding: 0.1rem;
     }
+  }
+
+  .checkbox-col {
+    text-align: center;
+    vertical-align: middle;
   }
 
   tr.grayed-out {
@@ -194,6 +202,10 @@ table {
 
   tbody tr:hover {
     background-color: var(--color-ui-extra-light-bg, #ddd);
+  }
+
+  .drag-icon-header {
+    border-right: none;
   }
 }
 </style>
