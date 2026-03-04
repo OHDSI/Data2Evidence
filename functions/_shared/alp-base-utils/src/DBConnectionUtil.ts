@@ -23,6 +23,11 @@ export class DBConnectionUtil {
      * @param cb Callback is typically used by tests
      */
     public static async getDbClient(credentials: IDBCredentialsType, cb?) {
+        logger.debug(`credentials: ${JSON.stringify(credentials)}`);
+        logger.info(`credentials: ${JSON.stringify(credentials)}`);
+        console.log(`credentials: ${JSON.stringify(credentials)}`);
+
+
         return new Promise((resolve, reject) => {
             if (credentials.dialect === "postgresql") {
                 if (!DBConnectionUtil.pool) {
@@ -70,7 +75,25 @@ export class DBConnectionUtil {
         });
     }
 
-    public static getConnection(dialect: string, client: any, schemaName: string, vocabSchemaName?: string, resultsSchemaName?: string, cb?, userObj?: User): Promise<ConnectionInterface> {
+    public static getConnection(dialect: string, client: any, schemaName: string, c?: string, resultsSchemaName?: string, cb?, userObj?: User): Promise<ConnectionInterface> {
+        logger.debug(`--------debug-----------`);
+        logger.debug(`dialect: ${dialect}`);
+        logger.debug(`schemaName: ${schemaName}`);
+        logger.debug(`resultsSchemaName: ${resultsSchemaName}`);
+        logger.debug(`-------------------`);
+
+        logger.info(`--------info-----------`);
+        logger.info(`dialect: ${dialect}`);
+        logger.info(`schemaName: ${schemaName}`);
+        logger.info(`resultsSchemaName: ${resultsSchemaName}`);
+        logger.info(`-------------------`);
+
+        console.log(`--------console.log-----------`);
+        console.log(`dialect: ${dialect}`);
+        console.log(`schemaName: ${schemaName}`);
+        console.log(`resultsSchemaName: ${resultsSchemaName}`);
+        console.log(`-------------------`);
+
         return new Promise((resolve, reject) => {
             const callback = cb || ((err, connection) => {
                 if (err) {
