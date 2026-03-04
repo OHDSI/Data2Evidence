@@ -6,7 +6,7 @@ import { authn } from "../auth/authn.ts";
 import { authz } from "../auth/authz.ts";
 import { Hono } from "npm:hono";
 
-const FHIR_PORT = parseInt(process.env.FHIR__INTERNAL_PORT || '8080');
+const FHIR_PORT = 33003;
 
 function _addFhirForwarding(app: Hono) {
     app.get('/fhir-server/healthcheck', async (c) => {

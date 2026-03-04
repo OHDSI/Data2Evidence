@@ -22,7 +22,7 @@ export let global = {
       ]
     }],
     ROLE_SCOPES: {
-      "ALP_SYSTEM_ADMIN": ['trex'],
+      "ALP_SYSTEM_ADMIN": ['trex', 'gateway.fhir.forward'],
       "TENANT_VIEWER": ['trex.log.write']
     },
     PLUGINS_JSON: "{}"
