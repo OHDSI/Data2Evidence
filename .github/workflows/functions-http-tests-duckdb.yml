@@ -20,7 +20,7 @@ env:
   PGHOST: localhost
   PGPORT: 15432
   PGDATABASE: postgres
-  TESTSCHEMA: HTTP_${{github.run_id}}
+  TESTSCHEMA: demo_cdm
   isTestEnv: "true"
   isHttpTestRun: "true"
   USE_TREX_DB_CONN: "true"

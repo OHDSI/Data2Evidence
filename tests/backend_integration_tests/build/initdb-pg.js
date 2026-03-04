@@ -13,7 +13,7 @@ const pool = new Pool({
 });
 const csv = require("fast-csv");
 const path = require("path");
-const TESTSCHEMA = process.env.TESTSCHEMA;
+const TESTSCHEMA = "demo_cdm"; //process.env.TESTSCHEMA;
 
 var rmOnly = process.argv[2] === "rmonly" ? true : false;
 var includeData = process.argv[2] === "test" ? true : false;
