@@ -12,8 +12,8 @@ import { useUser } from "../../contexts";
 import { PluginType } from "../../types";
 import env from "../../env";
 
-function generateAppId(path: string): string {
-  return `system-admin-plugin-${path.replace(/[^a-zA-Z0-9]/g, "-")}`;
+function generateAppId(user: string = "system-admin-plugin", path: string): string {
+  return `${user}-${path.replace(/[^a-zA-Z0-9]/g, "-")}`;
 }
 
 interface SystemAdminSingleSpaPluginRendererProps<T = any> {
@@ -44,7 +44,8 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
     if (configType === "app" && !isRegistered) {
       const registerApp = async () => {
         try {
-          const appId = generateAppId(path);
+          const appId =
+            basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
           const fullBasePath = `${env.PUBLIC_URL}/${basePath}/${route}`;
 
           console.debug(`[SystemAdminSingleSpaPluginRenderer] Registering single-spa app: ${appId}`);
@@ -82,7 +83,8 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
 
   useEffect(() => {
     if (configType === "app" && isRegistered) {
-      const appId = generateAppId(path);
+      const appId =
+        basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
       updateCustomProps(appId, {
         getToken: getAuthToken,
         userId,
@@ -94,7 +96,8 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
 
   useEffect(() => {
     if (configType === "app") {
-      const appId = generateAppId(path);
+      const appId =
+        basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
       return () => {
         console.log(`[SystemAdminSingleSpaPluginRenderer] Unmounting, unloading app: ${appId}`);
         unloadSingleSpaApp(appId);
@@ -140,7 +143,8 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
   }
 
   if (pluginType === "app") {
-    const appId = generateAppId(path);
+    const appId =
+      basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
     return <SingleSpaAppContainer appName={appId} />;
   }
 

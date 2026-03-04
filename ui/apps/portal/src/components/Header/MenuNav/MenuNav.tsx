@@ -53,9 +53,9 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin, isEtl }) => {
     let allowed = (requiredRoles.length || 0) === 0;
     if (isSysAdmin || isEtl) {
       if (featureFlag != "" && !featureFlags.includes(featureFlag)) {
-        allowed = false;
+        return false;
       }
-      return allowed;
+      return true;
     }
     if (type === MenuType.Dataset) return allowed;
     if (!allowed && requiredRoles) {

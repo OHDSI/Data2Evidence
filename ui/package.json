@@ -148,6 +148,7 @@
       ],
       "uiplugins": {
         "etl": {
+          "type": "app",
           "enabled": true,
           "name": "ETL",
           "nameI18nKey": "UI_PLUGIN_ETL",
@@ -404,15 +405,20 @@
             "route": "jobs"
           },
           {
+            "enabled": true,
+            "type": "app",
             "name": "ETL",
             "nameI18nKey": "UI_PLUGIN_ETL",
-            "enabled": true,
             "route": "etl",
+            "pluginPath": "/resources/flow/lifecycles.js",
+            "featureFlag": "etl",
+            "requiredRoles": [
+              "SYSTEM_ADMIN"
+            ],
             "data": {
               "dnBaseUrl": "https://$$FQDN$$/",
-              "mappingSuggestion": false
-            },
-            "pluginPath": "https://$$FQDN$$/flow/module.js"
+              "mappingSuggestion": true
+            }
           },
           {
             "name": "Setup",
