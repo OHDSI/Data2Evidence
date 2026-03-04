@@ -62,6 +62,15 @@
         <div class="vertical-spacer"></div>
         <patientCount :popOverPosition="patientCountPopoverPosition" />
         <span class="separator" />
+        <!-- <span class="separator" />
+      <button
+        id="idConfigSettings"
+        class="actionButton"
+        @click="openSettingsConfig"
+        :title="getText('MRI_PA_SELECT_CONFIGURATION')"
+      >
+        <span class="icon" style="font-family: app-icons"></span>
+      </button> -->
       </div>
     </div>
   </div>
