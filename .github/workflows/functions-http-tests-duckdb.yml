@@ -74,7 +74,8 @@ jobs:
           ls -la
           cat .env
           cat .env | grep -i LOGTO__D2E_APP__CLIENT_ID
-
+          grep LOGTO__D2E_APP__CLIENT_ID .env | sed -e "s/'//g" >> $GITHUB_ENV
+          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
 
       - uses: dorny/paths-filter@v3
         id: file_changes
@@ -94,6 +95,7 @@ jobs:
         if: steps.file_changes.outputs.flow_base == 'true'
         id: build_flow_base_image
         run: |
+          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
         
       - name: Build i2b2 docker image
@@ -228,6 +230,7 @@ jobs:
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
           echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
+          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
           sudo apt install -y postgresql-client
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
@@ -245,6 +248,7 @@ jobs:
 
       - name: Login to logto and get Bearer token and sub
         run: |
+          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
           # Get sign in page
           response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
           printf "%s\n" "$response"
