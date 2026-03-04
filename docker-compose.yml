@@ -40,7 +40,6 @@ x-envs:
   fhir: &x-fhir
     FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
     FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
-    FHIR_BINARY_STORAGE: ${FHIR_BINARY_STORAGE:-file:/usr/src/data/fhir-binary/}
   redis: &x-redis
     REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
     REDIS_PORT: ${REDIS_PORT:-6379}
