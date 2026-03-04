@@ -51,17 +51,43 @@
   </div>
 </template>
 
+<script lang="ts">
+interface Option {
+  value: string
+  label: string
+}
+
+/**
+ * Filter and sort options: exact matches first, then starts-with, then contains.
+ * Searches both label and value fields.
+ * Case-insensitive. Returns all options if query is empty.
+ */
+export function filterAndSort(items: Option[], query: string): Option[] {
+  if (!query) return items
+  const q = query.toLowerCase()
+  const exact: Option[] = []
+  const startsWith: Option[] = []
+  const contains: Option[] = []
+
+  for (const item of items) {
+    const label = item.label.toLowerCase()
+    const value = item.value.toLowerCase()
+    // Check both label AND value for matches
+    if (label === q || value === q) exact.push(item)
+    else if (label.startsWith(q) || value.startsWith(q)) startsWith.push(item)
+    else if (label.includes(q) || value.includes(q)) contains.push(item)
+  }
+
+  return [...exact, ...startsWith, ...contains]
+}
+</script>
+
 <script lang="ts" setup>
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 
 function generateComponentUid(): string {
   return `component_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
-}
-
-interface Option {
-  value: string
-  label: string
 }
 
 interface DomainValueItem {
@@ -112,21 +138,7 @@ const placeholder = computed(() => props.placeholder || getText('MRI_PA_SEARCH_P
 
 // Filter and sort options: exact matches first, then starts-with, then contains
 const filteredOptions = computed(() => {
-  if (!searchText.value) return options.value
-
-  const query = searchText.value.toLowerCase()
-  const exact: Option[] = []
-  const startsWith: Option[] = []
-  const contains: Option[] = []
-
-  for (const item of options.value) {
-    const label = item.label.toLowerCase()
-    if (label === query) exact.push(item)
-    else if (label.startsWith(query)) startsWith.push(item)
-    else if (label.includes(query)) contains.push(item)
-  }
-
-  return [...exact, ...startsWith, ...contains]
+  return filterAndSort(options.value, searchText.value)
 })
 
 function domainValueToOption(item: DomainValueItem): Option {
