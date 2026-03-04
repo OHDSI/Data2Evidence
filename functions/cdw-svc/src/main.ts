@@ -234,7 +234,15 @@ const initRoutes = (
     "/hc/hph/cdw/config/services/config.xsjs",
     noCache,
     (req: ICDWRequest, res) => {
+      log.info(`[main.ts] insie endpoint /hc/hph/cdw/config/services/config.xsjs ...`)
+      log.debug(`[main.ts] insie endpoint /hc/hph/cdw/config/services/config.xsjs ...`)
+
       const { configConnection } = req.dbConnections;
+      log.info(`[main.ts] configConnection: ${configConnection}`)
+      log.debug(`[main.ts] configConnection: ${configConnection}`)
+      log.debug(`[main.ts] configConnection stringified: ${JSON.stringify(configConnection)}`)
+      log.info(`[main.ts] configConnection stringified: ${JSON.stringify(configConnection)}`)
+
       const user = getUser(req);
       const token = req.headers.authorization;
       const assignment = new AssignmentProxy(req.assignment); //TODO: Send http req instead of getting it from req.
