@@ -110,7 +110,7 @@ function handleContinue() {
 
 <style scoped>
 .dashboard-selection-modal {
-  min-height: 180px;
+  min-height: 400px;
 }
 
 .description {
@@ -121,7 +121,7 @@ function handleContinue() {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 260px;
+  max-height: 400px;
   overflow: auto;
   border: 1px solid var(--color-ui-light-border, #d9d9d9);
   border-radius: 8px;
