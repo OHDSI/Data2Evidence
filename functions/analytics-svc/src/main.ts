@@ -155,7 +155,20 @@ const initRoutes = async (app: express.Application) => {
                 } else {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
+                log.log(`--------------log------------`);
+                log.log(`env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
+                log.log(`credentials.dialect: ${credentials.dialect}`);
+                log.log(`--------------------------`);
 
+                log.info(`-------------info-------------`);
+                log.info(`env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
+                log.info(`credentials.dialect: ${credentials.dialect}`);
+                log.info(`--------------------------`);
+
+                log.debug(`-----------debug---------------`);
+                log.debug(`env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
+                log.debug(`credentials.dialect: ${credentials.dialect}`);
+                log.debug(`--------------------------`);
                 if (
                     env.USE_TREX_DB_CONN === "true" &&
                     credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
@@ -227,8 +240,8 @@ const initRoutes = async (app: express.Application) => {
             let action = req.query.action
                 ? req.query.action
                 : req.method === "POST"
-                ? req.body.action
-                : "";
+                  ? req.body.action
+                  : "";
             let tmpbody =
                 (req.query.data ? JSON.parse(<string>req.query.data) : null) ||
                 req.body;
@@ -619,7 +632,23 @@ const getTrexDbConnection = ({
                 );
         }
         const trex_direct_connection_alias = `${trex_publication}${direct_connection_suffix}`;
+        log.log(`--------------log------------`);
+        log.log(`trex_publication: ${trex_publication}`);
+        log.log(`direct_connection_suffix: ${direct_connection_suffix}`);
+        log.log(`trex_direct_connection_alias: ${trex_direct_connection_alias}`);
+        log.log(`--------------------------`);
 
+        log.info(`-------------info-------------`);
+        log.info(`trex_publication: ${trex_publication}`);
+        log.info(`direct_connection_suffix: ${direct_connection_suffix}`);
+        log.info(`trex_direct_connection_alias: ${trex_direct_connection_alias}`);
+        log.info(`--------------------------`);
+
+        log.debug(`-----------debug---------------`);
+        log.debug(`trex_publication: ${trex_publication}`);
+        log.debug(`direct_connection_suffix: ${direct_connection_suffix}`);
+        log.debug(`trex_direct_connection_alias: ${trex_direct_connection_alias}`);
+        log.debug(`--------------------------`);
         const parseSql = (
             temp: string,
             schemaName: string,
@@ -640,6 +669,22 @@ const getTrexDbConnection = ({
                 parameters
             );
         };
+
+        log.log(`--------------log------------`);
+        log.log(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
+        log.log(`parseSql: ${JSON.stringify(parseSql)}`);
+        log.log(`--------------------------`);
+
+        log.info(`-------------info-------------`);
+        log.info(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
+        log.info(`parseSql: ${JSON.stringify(parseSql)}`);
+        log.info(`--------------------------`);
+
+        log.debug(`-----------debug---------------`);
+        log.debug(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
+        log.debug(`parseSql: ${JSON.stringify(parseSql)}`);
+        log.debug(`--------------------------`);
+
         const conn = dbm.getConnection(
             analyticsCredentials.code,
             analyticsCredentials.schema,
@@ -671,9 +716,8 @@ const getDBConnections = async ({
     }
 
     if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
-        analyticsCredentials[
-            "SESSIONVARIABLE:APPLICATION"
-        ] = `${env.PROJECT_NAME}-cohorts`;
+        analyticsCredentials["SESSIONVARIABLE:APPLICATION"] =
+            `${env.PROJECT_NAME}-cohorts`;
         analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
             userObj.getEmail() ?? userObj.getUser();
 
