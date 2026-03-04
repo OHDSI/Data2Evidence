@@ -613,7 +613,7 @@ function validateYearRange(fieldId: string): void {
 
 .field-label {
   margin: 0;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .required-indicator {
