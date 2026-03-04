@@ -298,3 +298,16 @@ FROM (SELECT pharmacy_id                      AS pharmacy_id,
       FROM mimiciv_hosp.pharmacy) t
 ;
 
+-- Drop source tables immediately after staging to free memory.
+-- ETL files only read from mimic_etl.src_* tables, not mimiciv_hosp directly.
+DROP TABLE IF EXISTS mimiciv_hosp.diagnoses_icd;
+DROP TABLE IF EXISTS mimiciv_hosp.services;
+DROP TABLE IF EXISTS mimiciv_hosp.labevents;
+DROP TABLE IF EXISTS mimiciv_hosp.d_labitems;
+DROP TABLE IF EXISTS mimiciv_hosp.procedures_icd;
+DROP TABLE IF EXISTS mimiciv_hosp.hcpcsevents;
+DROP TABLE IF EXISTS mimiciv_hosp.drgcodes;
+DROP TABLE IF EXISTS mimiciv_hosp.prescriptions;
+DROP TABLE IF EXISTS mimiciv_hosp.microbiologyevents;
+DROP TABLE IF EXISTS mimiciv_hosp.pharmacy;
+
