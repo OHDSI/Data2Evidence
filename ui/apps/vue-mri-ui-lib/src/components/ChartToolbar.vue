@@ -153,9 +153,9 @@
             :source-key="inclusionReportSourceKey"
             :patient-count="inclusionReportPatientCount"
             generation-status="complete"
-            :fetch-inclusion-report="fetchInclusionReportNoop"
+            :fetch-inclusion-report="fetchInclusionReport"
             :show-person-event-switch="false"
-            :use-mock-data="true"
+            :use-mock-data="false"
           />
         </div>
       </div>
@@ -322,6 +322,7 @@ export default {
       'loadValuesForAttributePath',
       'refreshPatientCount',
       'fireBookmarkQuery',
+      'fireQuery',
       'onAddCohortOkButtonPress',
       'setToastMessage',
       'ajaxAuth',
@@ -464,6 +465,15 @@ export default {
     },
     fetchInclusionReportNoop() {
       return Promise.resolve(null)
+    },
+    fetchInclusionReport() {
+      return this.fireQuery({
+        url: '/analytics-svc/api/services/population/json/inclusionreport',
+        params: {
+          mriquery: JSON.stringify(this.getBookmarksData),
+          datasetId: this.getBookmarksData.datasetId,
+        },
+      })
     },
   },
   components: {
