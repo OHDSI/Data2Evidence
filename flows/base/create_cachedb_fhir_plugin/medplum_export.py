@@ -11,6 +11,24 @@ from .config import CreateDuckdbDatabaseFileType
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 
+def _select_clause(inspector, schema: str, table: str, alias: str | None = None) -> str:
+    """
+    Build a SELECT clause for the given table. Postgres array columns (e.g.
+    varchar[], text[]) appear as '_varchar' / '_text' in DuckDB's postgres
+    scanner and cannot be resolved — cast them to VARCHAR.
+    """
+    cols_info = inspector.get_columns(schema=schema, table_name=table)
+    prefix = f'"{alias}".' if alias else ""
+    parts = []
+    for col in cols_info:
+        name = col["name"]
+        if "ARRAY" in type(col["type"]).__name__.upper():
+            parts.append(f'{prefix}"{name}"::VARCHAR AS "{name}"')
+        else:
+            parts.append(f'{prefix}"{name}"')
+    return ", ".join(parts)
+
+
 # Medplum system/admin tables that are never clinical data.
 _SYSTEM_TABLES = frozenset({
     'Project', 'ProjectMembership', 'ClientApplication', 'User', 'Bot',
@@ -108,11 +126,14 @@ def copy_fhir_resources_task(
             f'CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";'
         )
 
+        inspector = src_con.inspector
+
         for resource_type in resource_types:
             # ── Main table (project-scoped) ───────────────────────────────────
+            sel = _select_clause(inspector, fhir_schema, resource_type)
             trex_cursor.execute(
                 f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{resource_type}" AS '
-                f'SELECT * FROM "{src_db}"."{fhir_schema}"."{resource_type}" '
+                f'SELECT {sel} FROM "{src_db}"."{fhir_schema}"."{resource_type}" '
                 f"WHERE \"projectId\" = '{fhir_project_id}' AND deleted = false;"
             )
             trex_cursor.execute(
@@ -128,9 +149,10 @@ def copy_fhir_resources_task(
                 logger.info(f"  No history table for '{resource_type}', skipping.")
                 continue
 
+            h_sel = _select_clause(inspector, fhir_schema, history_src, alias="h")
             trex_cursor.execute(
                 f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{history_src}" AS '
-                f'SELECT h.* FROM "{src_db}"."{fhir_schema}"."{history_src}" h '
+                f'SELECT {h_sel} FROM "{src_db}"."{fhir_schema}"."{history_src}" h '
                 f'JOIN "{src_db}"."{fhir_schema}"."{resource_type}" p ON p.id = h.id '
                 f"WHERE p.\"projectId\" = '{fhir_project_id}';"
             )
@@ -147,9 +169,10 @@ def copy_fhir_resources_task(
                 logger.info(f"  No references table for '{resource_type}', skipping.")
                 continue
 
+            r_sel = _select_clause(inspector, fhir_schema, references_src, alias="r")
             trex_cursor.execute(
                 f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{references_src}" AS '
-                f'SELECT r.* FROM "{src_db}"."{fhir_schema}"."{references_src}" r '
+                f'SELECT {r_sel} FROM "{src_db}"."{fhir_schema}"."{references_src}" r '
                 f'JOIN "{src_db}"."{fhir_schema}"."{resource_type}" p ON p.id = r."resourceId" '
                 f"WHERE p.\"projectId\" = '{fhir_project_id}';"
             )
@@ -169,9 +192,10 @@ def copy_fhir_resources_task(
                 for rt in resource_types
             )
             for table in resourceid_tables:
+                r_sel = _select_clause(inspector, fhir_schema, table, alias="r")
                 trex_cursor.execute(
                     f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS '
-                    f'SELECT r.* FROM "{src_db}"."{fhir_schema}"."{table}" r '
+                    f'SELECT {r_sel} FROM "{src_db}"."{fhir_schema}"."{table}" r '
                     f'WHERE r."resourceId" IN ({project_ids_subquery});'
                 )
                 trex_cursor.execute(
