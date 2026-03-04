@@ -279,12 +279,6 @@ def stream_and_load_ndjson_task(
     )
     trex_conn.autocommit = True
     pg_cursor = trex_conn.cursor()
-    pg_cursor.execute("CALL pg_clear_cache();")
-
-    # Ensure schema exists
-    pg_cursor.execute(
-        f'CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";'
-    )
 
     created_tables: set[str] = set()
     skipped_files = []
@@ -304,17 +298,6 @@ def stream_and_load_ndjson_task(
 
             table_name = resource_type.lower()
 
-            if table_name not in created_tables:
-                # Create fallback single-column table if the schema creator didn't create it
-                pg_cursor.execute(
-                    f'DROP TABLE IF EXISTS "{options.databaseCode}"."{options.cacheSchemaName}"."{table_name}"'
-                )
-                pg_cursor.execute(
-                    f'CREATE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table_name}" (content JSON)'
-                )
-                created_tables.add(table_name)
-                logger.info(f"Created table '{options.cacheSchemaName}'.'{table_name}'.")
-
             # Stream the ndjson from the gateway and insert rows in batches
             logger.info(f"Streaming {resource_type} from '{url}' into table '{table_name}'")
             resp = requests.get(
@@ -324,60 +307,60 @@ def stream_and_load_ndjson_task(
                 stream=True,
             )
 
-            # Fallbacks for GET failures
-            if resp.status_code != 200:
-                logger.warning(f"Primary GET failed [{resp.status_code}]; attempting fallbacks for '{url}'")
+            # # Fallbacks for GET failures
+            # if resp.status_code != 200:
+            #     logger.warning(f"Primary GET failed [{resp.status_code}]; attempting fallbacks for '{url}'")
 
-                # Attempt superadmin rewrite when possible
-                parsed = urlparse(url)
-                segs = parsed.path.lstrip("/").split("/")
-                if "project" in segs:
-                    i = segs.index("project")
-                    if i + 2 <= len(segs):
-                        resource_path = "/".join(segs[i + 2 :])
-                        superadmin_url = f"{api.url}superadmin/{resource_path}"
-                        logger.info(f"Attempting superadmin GET: {superadmin_url}")
-                        try:
-                            super_resp = requests.get(
-                                superadmin_url,
-                                headers=api._auth_headers("application/fhir+ndjson"),
-                                verify=api.get_verify_value(),
-                                stream=True,
-                            )
-                            logger.debug(f"Superadmin GET returned [{super_resp.status_code}] for '{superadmin_url}'")
-                            if super_resp.status_code == 200:
-                                resp = super_resp
-                                logger.info(f"Superadmin GET succeeded for '{superadmin_url}'")
-                        except Exception as e:
-                            logger.debug(f"Superadmin GET attempt failed for '{superadmin_url}': {e}")
+            #     # Attempt superadmin rewrite when possible
+            #     parsed = urlparse(url)
+            #     segs = parsed.path.lstrip("/").split("/")
+            #     if "project" in segs:
+            #         i = segs.index("project")
+            #         if i + 2 <= len(segs):
+            #             resource_path = "/".join(segs[i + 2 :])
+            #             superadmin_url = f"{api.url}superadmin/{resource_path}"
+            #             logger.info(f"Attempting superadmin GET: {superadmin_url}")
+            #             try:
+            #                 super_resp = requests.get(
+            #                     superadmin_url,
+            #                     headers=api._auth_headers("application/fhir+ndjson"),
+            #                     verify=api.get_verify_value(),
+            #                     stream=True,
+            #                 )
+            #                 logger.debug(f"Superadmin GET returned [{super_resp.status_code}] for '{superadmin_url}'")
+            #                 if super_resp.status_code == 200:
+            #                     resp = super_resp
+            #                     logger.info(f"Superadmin GET succeeded for '{superadmin_url}'")
+            #             except Exception as e:
+            #                 logger.debug(f"Superadmin GET attempt failed for '{superadmin_url}': {e}")
 
-                # Try unauthenticated direct GET
-                if resp.status_code != 200:
-                    try:
-                        direct = requests.get(url, verify=api.get_verify_value(), stream=True)
-                        logger.debug(f"Direct (unauthenticated) GET returned [{direct.status_code}] for '{url}'")
-                        if direct.status_code == 200:
-                            resp = direct
-                            logger.info(f"Direct (unauthenticated) GET succeeded for '{url}'")
-                    except Exception as e:
-                        logger.debug(f"Direct (unauthenticated) GET attempt failed for '{url}': {e}")
+            #     # Try unauthenticated direct GET
+            #     if resp.status_code != 200:
+            #         try:
+            #             direct = requests.get(url, verify=api.get_verify_value(), stream=True)
+            #             logger.debug(f"Direct (unauthenticated) GET returned [{direct.status_code}] for '{url}'")
+            #             if direct.status_code == 200:
+            #                 resp = direct
+            #                 logger.info(f"Direct (unauthenticated) GET succeeded for '{url}'")
+            #         except Exception as e:
+            #             logger.debug(f"Direct (unauthenticated) GET attempt failed for '{url}': {e}")
 
-                # Try authenticated direct GET
-                if resp.status_code != 200:
-                    try:
-                        auth_headers = api._auth_headers("application/fhir+ndjson")
-                        direct_auth = requests.get(url, headers=auth_headers, verify=api.get_verify_value(), stream=True)
-                        logger.debug(f"Direct (authenticated) GET returned [{direct_auth.status_code}] for '{url}'")
-                        if direct_auth.status_code == 200:
-                            resp = direct_auth
-                            logger.info(f"Direct (authenticated) GET succeeded for '{url}'")
-                    except Exception as e:
-                        logger.debug(f"Direct (authenticated) GET attempt failed for '{url}': {e}")
+            #     # Try authenticated direct GET
+            #     if resp.status_code != 200:
+            #         try:
+            #             auth_headers = api._auth_headers("application/fhir+ndjson")
+            #             direct_auth = requests.get(url, headers=auth_headers, verify=api.get_verify_value(), stream=True)
+            #             logger.debug(f"Direct (authenticated) GET returned [{direct_auth.status_code}] for '{url}'")
+            #             if direct_auth.status_code == 200:
+            #                 resp = direct_auth
+            #                 logger.info(f"Direct (authenticated) GET succeeded for '{url}'")
+            #         except Exception as e:
+            #             logger.debug(f"Direct (authenticated) GET attempt failed for '{url}': {e}")
 
-                    if resp.status_code != 200:
-                        logger.error(f"Failed to download ndjson via fhirGateway from '{url}' after fallbacks: [{resp.status_code}] {resp.content}")
-                        skipped_files.append({"type": resource_type, "url": url, "status": resp.status_code})
-                        continue
+            #         if resp.status_code != 200:
+            #             logger.error(f"Failed to download ndjson via fhirGateway from '{url}' after fallbacks: [{resp.status_code}] {resp.content}")
+            #             skipped_files.append({"type": resource_type, "url": url, "status": resp.status_code})
+            #             continue
 
             row_count = 0
             batch: list[str] = []

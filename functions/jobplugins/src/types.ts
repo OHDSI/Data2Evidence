@@ -173,6 +173,7 @@ export interface ICreateFhirCacheFlowRunDto {
   databaseCode: string;
   schemaName: string;
   cacheSchemaName: string;
+  studyCode: string;
 }
 
 export interface IGetVersionInfoFlowRunDto {

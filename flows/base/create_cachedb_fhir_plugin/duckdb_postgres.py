@@ -54,7 +54,10 @@ def create_schema_if_not_exists_task(use_trex_conn: bool, options: CreateDuckdbD
 
     else:
         with duckdb.connect(duckdb_file_path) as file_conn:
-            file_conn.execute(f'CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";')
+            duckdb_file_exists = Path(duckdb_file_path).exists()
+
+            if not duckdb_file_exists:
+                file_conn.execute(f'CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";')
 
 @task(log_prints=True)
 def copy_schema_to_cache(con, dbdao: any, options: CreateDuckdbDatabaseFileType):
@@ -146,7 +149,7 @@ def create_indexes_for_tables(con, dbdao, schema_name, created_tables):
     log_prints=True, 
     task_run_name="create_schema_tables_from_{options.schemaName}",
     timeout_seconds=int(Variable.get("cache_task_timeout")))
-def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, options: CreateDuckdbDatabaseFileType, duckdb_file_path: str):
+def create_schema_tables_task(use_trex_conn: bool, read_conn: any, options: CreateDuckdbDatabaseFileType, duckdb_file_path: str):
     logger = get_run_logger()
 
     task_run_ctx = TaskRunContext.get()
@@ -157,8 +160,6 @@ def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, options: Crea
         pg_cursor = None
     
         try:
-            logger.info(f"Connecting to Trex SQL interface at {Variable.get('trex_sql_host')}:{Variable.get('trex_sql_port')} as user {Variable.get('trex_sql_user')}")
-            logger.info(f"Using database: {options.databaseCode}")
             trex_conn = connect(
                 host=Variable.get("trex_sql_host"),
                 port=Variable.get("trex_sql_port"),
@@ -185,7 +186,7 @@ def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, options: Crea
             create_schema_tables(file_conn, read_conn, options, logger)
 
 
-def create_schema_tables(write_conn: Any, read_conn: Any, options: CreateDuckdbDatabaseFileType, logger):
+def create_schema_tables(write_conn: any, read_conn: any, options: CreateDuckdbDatabaseFileType, logger):
     source_schema = options.schemaName
 
     # Determine tables to copy
