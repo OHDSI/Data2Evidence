@@ -74,6 +74,7 @@ export class DemoService {
       vocabSchemas: [env.DEMO_DB_CDM_SCHEMA],
       credentials: credentials,
     };
+    this.logger.info(`db: ${JSON.stringify(db)}`);
     const result = await dbCredentialsAPI.createDb(db);
     this.logger.info(`Database added: ${JSON.stringify(result)}`);
 
@@ -110,7 +111,7 @@ export class DemoService {
       vocabSchemaValue: env.DEMO_DB_CDM_SCHEMA,
       resultsSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
     };
-
+    this.logger.info(`dataset: ${JSON.stringify(dataset)}`);
     const result = await datasetAPI.createDataset(dataset);
     this.logger.info(`Dataset added: ${JSON.stringify(result)}`);
     return { ...dataset, ...result };
