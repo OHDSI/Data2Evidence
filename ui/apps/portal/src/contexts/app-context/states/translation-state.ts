@@ -278,6 +278,10 @@ export const i18nDefault = {
     CREATE_CACHE_DIALOG__RUN: "Run cache update",
     CREATE_CACHE_DIALOG__RUN_SUCCESS: "Successfully triggered cache update for dataset: {0}",
     CREATE_CACHE_DIALOG__TITLE: "Update cache for dataset: {0}",
+    CREATE_CACHE_DIALOG__MISSING_DATASET_ID: "Missing dataset identifier. Please refresh and try again.",
+    CREATE_CACHE_DIALOG__MISSING_FHIR_INFO:
+      "Missing required information for FHIR cache update. Please refresh and try again.",
+    CREATE_CACHE_DIALOG__FETCH_SOURCE_ERROR: "Failed to fetch source dataset information.",
     CREATE_RELEASE_DIALOG__CANCEL: "Cancel",
     CREATE_RELEASE_DIALOG__CREATE_RELEASE: "Create release - {0}",
     CREATE_RELEASE_DIALOG__CREATE: "Create",
