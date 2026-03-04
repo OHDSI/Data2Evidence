@@ -21,7 +21,7 @@
     <div class="actionButtonGroup">
       <div
         class="dashboardButton"
-        v-if="getActiveBookmark"
+        v-if="getActiveBookmark && canOpenDashboard"
         :title="canOpenDashboard ? '' : getText('MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED')"
       >
         <Button
@@ -146,6 +146,7 @@ import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
 import Button from './Button.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
+import { getPortalAPI } from '../utils/PortalUtils'
 
 function getBookmarkKey(bookmark) {
   if (!bookmark) {
@@ -252,8 +253,15 @@ export default {
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
+    isWizardFeatureEnabled() {
+      const portalAPI = getPortalAPI()
+      if (!portalAPI?.features) {
+        return false
+      }
+      return portalAPI.features.some(f => f.feature === 'wizard' && f.isEnabled === true)
+    },
     canOpenDashboard() {
-      return this.getCanDatasetMaterializeCohorts
+      return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
     },
   },
   methods: {
