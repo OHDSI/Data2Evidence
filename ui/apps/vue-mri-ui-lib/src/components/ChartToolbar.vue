@@ -25,7 +25,6 @@
         :title="canOpenDashboard ? '' : getText('MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED')"
       >
         <Button
-          variant="secondary"
           :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')"
           :onClick="dashboardFlow.openDashboardModal"
           :disabled="!canOpenDashboard"

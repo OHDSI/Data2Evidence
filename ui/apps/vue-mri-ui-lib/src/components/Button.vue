@@ -1,7 +1,7 @@
 <template>
   <button
     style="display: flex; align-items: center; justify-content: center; width: 100%"
-    :class="`button ${props.variant === 'secondary' ? 'button-secondary' : ''} ${props.disabled ? 'button-disabled' : ''}`"
+    :class="`button ${props.disabled ? 'button-disabled' : ''}`"
     type="submit"
     @click="onClick"
     :disabled="props.disabled"
@@ -13,12 +13,7 @@
 </template>
 
 <script setup lang="ts">
-const props = defineProps<{
-  text: string
-  disabled?: boolean
-  onClick: () => void
-  variant?: 'primary' | 'secondary'
-}>()
+const props = defineProps<{ text: string; disabled?: boolean; onClick: () => void }>()
 </script>
 
 <style lang="css" scoped>
@@ -49,28 +44,5 @@ const props = defineProps<{
   background-color: var(--color-background-button-primary-disabled);
   border-color: var(--color-border-button-primary-disabled);
   color: var(--color-text-button-primary-disabled);
-}
-
-.button-secondary {
-  background-color: var(--color-background-button-secondary-default);
-  border-color: var(--color-border-button-secondary-default);
-  color: var(--color-text-button-secondary-default);
-}
-
-.button-secondary:hover,
-.button-secondary:focus {
-  border-color: var(--color-border-button-secondary-hover);
-  background-color: var(--color-background-button-secondary-hover);
-  color: var(--color-text-button-secondary-hover);
-}
-
-.button-secondary.button-disabled,
-.button-secondary.button-disabled:hover,
-.button-secondary.button-disabled:focus,
-.button-secondary.button-disabled:active {
-  cursor: not-allowed;
-  background-color: var(--color-background-button-secondary-disabled);
-  border-color: var(--color-border-button-secondary-disabled);
-  color: var(--color-text-button-secondary-disabled);
 }
 </style>

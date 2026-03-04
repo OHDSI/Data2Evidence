@@ -166,7 +166,6 @@ d4l-button {
   --color-border-button-primary-hover: var(--color-primary-light);
   --color-border-button-primary-active: var(--color-primary-light);
   --color-border-button-primary-disabled: var(--color-primary-extra-lightest);
-  --color-background-button-secondary-default: var(--color-white, #ffffff);
   --color-background-button-secondary-hover: var(--color-neutral-lightest);
   --color-background-button-secondary-active: var(--color-neutral-lightest);
   --color-background-button-secondary-disabled: var(--color-primary-extra-lightest);
@@ -313,3 +312,4 @@ d4l-button {
   --color-cardinality-at-most: var(--color-secondary);
   --color-cardinality-exactly: var(--color-black);
 }
+
