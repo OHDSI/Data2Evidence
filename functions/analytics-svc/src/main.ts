@@ -632,19 +632,8 @@ const getTrexDbConnection = ({
                 );
         }
         const trex_direct_connection_alias = `${trex_publication}${direct_connection_suffix}`;
-        log.log(`--------------log------------`);
-        log.log(`trex_publication: ${trex_publication}`);
-        log.log(`direct_connection_suffix: ${direct_connection_suffix}`);
-        log.log(`trex_direct_connection_alias: ${trex_direct_connection_alias}`);
-        log.log(`--------------------------`);
 
-        log.info(`-------------info-------------`);
-        log.info(`trex_publication: ${trex_publication}`);
-        log.info(`direct_connection_suffix: ${direct_connection_suffix}`);
-        log.info(`trex_direct_connection_alias: ${trex_direct_connection_alias}`);
-        log.info(`--------------------------`);
-
-        log.debug(`-----------debug---------------`);
+        log.debug(`--------------------------`);
         log.debug(`trex_publication: ${trex_publication}`);
         log.debug(`direct_connection_suffix: ${direct_connection_suffix}`);
         log.debug(`trex_direct_connection_alias: ${trex_direct_connection_alias}`);
@@ -670,17 +659,7 @@ const getTrexDbConnection = ({
             );
         };
 
-        log.log(`--------------log------------`);
-        log.log(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
-        log.log(`parseSql: ${JSON.stringify(parseSql)}`);
-        log.log(`--------------------------`);
-
-        log.info(`-------------info-------------`);
-        log.info(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
-        log.info(`parseSql: ${JSON.stringify(parseSql)}`);
-        log.info(`--------------------------`);
-
-        log.debug(`-----------debug---------------`);
+        log.debug(`--------------------------`);
         log.debug(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
         log.debug(`parseSql: ${JSON.stringify(parseSql)}`);
         log.debug(`--------------------------`);
