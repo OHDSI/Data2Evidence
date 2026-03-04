@@ -137,24 +137,25 @@
   }
 }
 
-.pa-inclusion-report-dialog {
+.inclusion-report-dialog {
   background: var(--color-ui-extra-light-bg, #f9f9f9);
   border-radius: 32px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 64px);
+  height: calc(100vh - 64px);
 }
 
-.pa-inclusion-report-dialog__title {
+.inclusion-report-dialog__title {
   display: flex;
   align-items: center;
   gap: 16px;
   flex: 0 0 auto;
-  margin: 15px 25px;
+  padding: 15px 25px;
+  border-bottom: 1px solid var(--color-ui-medium-border);
 }
 
-.pa-inclusion-report-dialog__title-text {
+.inclusion-report-dialog__title-text {
   flex: 1;
   font-size: 18px;
   font-weight: 700;
@@ -162,7 +163,7 @@
   padding: 0rem 1rem;
 }
 
-.pa-inclusion-report-dialog__close-btn {
+.inclusion-report-dialog__close-btn {
   position: relative;
   width: 40px;
   height: 40px;
@@ -179,13 +180,13 @@
   flex-shrink: 0;
 }
 
-.pa-inclusion-report-dialog__close-btn:hover {
+.inclusion-report-dialog__close-btn:hover {
   background: var(--color-neutral-lightest, #f2f0f1);
   color: var(--color-ui-darkest-text, #1f425a);
   transform: scale(1.05);
 }
 
-.pa-inclusion-report-dialog__content {
+.inclusion-report-dialog__content {
   flex: 1 1 auto;
   overflow: auto;
   padding: 0 24px 24px;
