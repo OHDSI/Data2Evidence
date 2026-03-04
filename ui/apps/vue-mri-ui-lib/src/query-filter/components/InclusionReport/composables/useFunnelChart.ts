@@ -133,12 +133,9 @@ export function useFunnelChart(
         xanchor: 'left',
         yanchor: 'top',
         title: {
-          text: 'Attrition',
-          pad: {
-            // t: 20, // Top padding in pixels
-            // b: 10, // Bottom padding in pixels
-            // l: 30, // Left padding in pixels
-            r: 30, // Right padding in pixels},
+          text: '       Attrition', // leading space needed to align title with legend item text
+          font: {
+            size: 16,
           },
         },
       },
