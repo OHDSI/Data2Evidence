@@ -169,9 +169,10 @@ export async function getDataCharacterizationResult(
             analyticsConnection
         );
 
+        const vocabDatabaseSchemaValue = env.USE_TREX_DB_CONN === "false" ? vocabSchema : `${databaseName}.${vocabSchema}`;
         const dcReplacementConfig: DcReplacementConfig = {
             results_database_schema: resultsSchema,
-            vocab_database_schema: vocabSchema,
+            vocab_database_schema: vocabDatabaseSchemaValue,
         };
         logger.info(
             `Getting Data Characterization Results for schema ${resultsSchema} with sourceKey: ${sourceKey}`
@@ -233,9 +234,10 @@ export async function getDataCharacterizationDrilldownResult(
             analyticsConnection
         );
 
+        const vocabDatabaseSchemaValue = env.USE_TREX_DB_CONN === "false" ? vocabSchema : `${databaseName}.${vocabSchema}`;
         const dcReplacementConfig: DcReplacementConfig = {
             results_database_schema: resultsSchema,
-            vocab_database_schema: vocabSchema,
+            vocab_database_schema: vocabDatabaseSchemaValue,
             conceptId: conceptId,
         };
         logger.info(

@@ -116,6 +116,12 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
             value={inputData}
             onChange={(event) => setInputData(event.target.value)}
             error={inputError}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleDelete();
+              }
+            }}
           />
           {inputError && (
             <FormHelperText error={true}>
