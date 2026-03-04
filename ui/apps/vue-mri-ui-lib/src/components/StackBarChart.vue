@@ -248,7 +248,7 @@ export default {
         // return ['#000080', '#6DAABDFF', '#CAECB3FF', '#F3CB04FF', '#E28027FF']
         // return ['#000080', '#3e92e0', '#c0ced1', '#fcd34b', '#f79409'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
         // return ['#000080', '#f79409', '#3e92e0', '#FB9F9D', '#fcd34b'] //
-        return ['#56B4E9', '#0072B2', '#CC79A7', '#009E73', '#E69F00'] //
+        return ['#56B4E9', '#0072B2', '#CC79A7', '#009E73', '#E69F00'] // not colorblind safe
 
         // return [
         //   '#212E52FF',
