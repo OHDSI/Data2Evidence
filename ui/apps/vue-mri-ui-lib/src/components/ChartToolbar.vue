@@ -139,15 +139,17 @@
       :model-value="showInclusionReportModal"
       @update:modelValue="showInclusionReportModal = $event"
       max-width="90%"
+      persistent
     >
-      <div class="pa-inclusion-report-dialog">
-        <div class="pa-inclusion-report-dialog__title">
-          <div class="pa-inclusion-report-dialog__title-text">Inclusion Report</div>
-          <button class="pa-inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
+      <div class="inclusion-report-dialog">
+        <div class="inclusion-report-dialog__title">
+          <div class="inclusion-report-dialog__title-text">Inclusion Report</div>
+          <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
             <span class="icon" style="font-family: app-icons">&#x2715;</span>
           </button>
         </div>
-        <div class="pa-inclusion-report-dialog__content">
+
+        <div class="inclusion-report-dialog__content">
           <InclusionReport
             :cohort-definition-id="inclusionReportCohortDefinitionId"
             :source-key="inclusionReportSourceKey"
@@ -219,6 +221,7 @@ export default {
       showDashboardModal: false,
       showSaveCohortModal: false,
       showInclusionReportModal: false,
+      inclusionReportCache: null,
     }
   },
   watch: {
@@ -467,12 +470,23 @@ export default {
       return Promise.resolve(null)
     },
     fetchInclusionReport() {
+      const mriquery = JSON.stringify(this.getBookmarksData)
+      const datasetId = this.getBookmarksData.datasetId
+
+      if (
+        this.inclusionReportCache &&
+        this.inclusionReportCache.mriquery === mriquery &&
+        this.inclusionReportCache.datasetId === datasetId
+      ) {
+        return Promise.resolve(this.inclusionReportCache.result)
+      }
+
       return this.fireQuery({
         url: '/analytics-svc/api/services/population/json/inclusionreport',
-        params: {
-          mriquery: JSON.stringify(this.getBookmarksData),
-          datasetId: this.getBookmarksData.datasetId,
-        },
+        params: { mriquery, datasetId },
+      }).then(result => {
+        this.inclusionReportCache = { mriquery, datasetId, result }
+        return result
       })
     },
   },
