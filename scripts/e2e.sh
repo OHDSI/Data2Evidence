@@ -809,7 +809,7 @@ cmd_test() {
     mkdir -p "$temp_results" "$temp_ctrf"
 
     set +e
-    docker run --rm -it \
+    docker run --rm -i \
         --network=host \
         --ipc=host \
         -v "$(pwd)/tests:/work/tests" \
