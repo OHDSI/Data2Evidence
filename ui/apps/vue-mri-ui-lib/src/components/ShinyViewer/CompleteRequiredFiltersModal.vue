@@ -109,10 +109,10 @@
                     }
                   "
                 />
-                <!-- Condition field wildcard toggle - matches Wizards -->
-                <div v-if="isConditionField(field.id) && formValues[field.id]" class="wildcard-toggle">
+                <!-- Condition field include descendants toggle - matches Wizards -->
+                <div v-if="isConditionField(field.id) && formValues[field.id]" class="include-descendants-toggle">
                   <label class="checkbox-label">
-                    <input type="checkbox" v-model="formValues[`${field.id}_wildcard` as string]" />
+                    <input type="checkbox" v-model="formValues[`${field.id}_includeDescendants` as string]" />
                     <span>{{ getText('MRI_PA_INCLUDE_DESCENDANTS') }}</span>
                   </label>
                 </div>
@@ -401,11 +401,11 @@ watch(
         initialSnapshot[field.id] = formValues[field.id]
       }
 
-      // Initialize wildcard for condition fields
+      // Initialize includeDescendants for condition fields
       if (isConditionField(field.id)) {
-        const wildcardValue = props.initialValues[`${field.id}_wildcard`]
-        formValues[`${field.id}_wildcard`] = wildcardValue === true
-        initialSnapshot[`${field.id}_wildcard`] = formValues[`${field.id}_wildcard`]
+        const includeDescendantsValue = props.initialValues[`${field.id}_includeDescendants`]
+        formValues[`${field.id}_includeDescendants`] = includeDescendantsValue === true
+        initialSnapshot[`${field.id}_includeDescendants`] = formValues[`${field.id}_includeDescendants`]
       }
     })
   },
@@ -492,9 +492,9 @@ function handleSubmit() {
       payload[field.id] = formValues[field.id]
     }
 
-    // Include wildcard for condition fields
+    // Include includeDescendants for condition fields
     if (isConditionField(field.id)) {
-      payload[`${field.id}_wildcard`] = formValues[`${field.id}_wildcard`] || false
+      payload[`${field.id}_includeDescendants`] = formValues[`${field.id}_includeDescendants`] || false
     }
   })
 
@@ -664,7 +664,7 @@ function validateYearRange(fieldId: string): void {
   gap: 6px;
 }
 
-.wildcard-toggle {
+.include-descendants-toggle {
   margin-top: 4px;
 }
 

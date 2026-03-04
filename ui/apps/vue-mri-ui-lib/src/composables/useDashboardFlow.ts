@@ -349,7 +349,7 @@ export function useDashboardFlow(
             displayValues[field.id] = String(extracted.displayValue)
           }
           if (extracted.useDescendants !== undefined) {
-            formValues[`${field.id}_wildcard`] = extracted.useDescendants
+            formValues[`${field.id}_includeDescendants`] = extracted.useDescendants
           }
         }
       }
@@ -392,7 +392,7 @@ export function useDashboardFlow(
             displayValues[field.id] = extractedDisplayValue
           }
           if (condition.useDescendants !== undefined) {
-            formValues[`${field.id}_wildcard`] = condition.useDescendants
+            formValues[`${field.id}_includeDescendants`] = condition.useDescendants
           }
         }
       }
@@ -800,7 +800,7 @@ export function useDashboardFlow(
           conditions.push({
             value,
             displayName: displayValues?.[field.id] || value,
-            useDescendants: formValues[`${field.id}_wildcard`] === true,
+            useDescendants: formValues[`${field.id}_includeDescendants`] === true,
           })
         }
         continue
