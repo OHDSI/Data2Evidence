@@ -76,17 +76,17 @@ export default defineConfig(({ command, mode }) => {
           }
           warn(warning);
         },
-        ...(isBuild && isProduction
-          ? {
-              external: [],
-              output: {
-                entryFileNames: "lifecycles.js",
-                format: "system",
-              },
-            }
-          : {
-              external: [],
-            }),
+
+        external: ["react", "react-dom", "react-router-dom", "@emotion/react"],
+        output: {
+          globals: {
+            react: "React",
+            "react-dom": "ReactDom",
+            "react/jsx-runtime": "ReactJsxRuntime",
+          },
+          entryFileNames: "lifecycles.js",
+          format: "system",
+        },
       },
     },
     server: {
