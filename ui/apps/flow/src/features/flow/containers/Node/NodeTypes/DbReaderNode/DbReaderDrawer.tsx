@@ -1,3 +1,7 @@
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
@@ -18,6 +22,7 @@ import {
 import { NodeState } from "~/features/flow/types";
 import { RootState, dispatch } from "~/store";
 import { isValid2dArray } from "~/utils";
+import { useGetDatabasesQuery } from "~/features/flow/slices";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "../../NodeTypes";
 import { DbReaderNodeData } from "./DbReaderNode";
@@ -47,8 +52,10 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
 }) => {
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
+  const { data: databases = [], isLoading: isLoadingDatabases } =
+    useGetDatabasesQuery();
   const nodeState = useSelector((state: RootState) =>
-    selectNodeById(state, node.id)
+    selectNodeById(state, node.id),
   );
 
   useEffect(() => {
@@ -106,13 +113,22 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
         />
       </Box>
       <Box mb={4}>
-        <TextInput
-          label="Database"
-          value={formData.database}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ database: e.target.value })
-          }
-        />
+        <FormControl variant="standard" fullWidth>
+          <InputLabel>Database</InputLabel>
+          <Select
+            value={formData.database}
+            onChange={(e: SelectChangeEvent<string>) =>
+              onFormDataChange({ database: e.target.value })
+            }
+            disabled={isLoadingDatabases}
+          >
+            {databases.map((db) => (
+              <MenuItem key={db.code} value={db.code}>
+                {db.code} - {db.dialect}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
       <Editor
         language="sql"
