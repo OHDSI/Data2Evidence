@@ -283,6 +283,8 @@ function enrichConfigWithBasicDataInteraction(
     ).length;
 
     // For each basic data filter, add one `basicdata${index}` interaction to config
+    // NOTE: Separate patient.interaction.basicdata configs are required for each basicdata filter.
+    // This is because query-gen-svc adds a `ON {filter_1_alias} != {filter_2_alias}` on the JOIN for filters that have the same configPath
     let additionalBasicDataInteractionConfig = {};
     for (let i = 1; i < countOfBasicDataFilters + 1; i++) {
         additionalBasicDataInteractionConfig[`basicdata${i}`] =
