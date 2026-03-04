@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
 import GroupButtons from '../GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
@@ -12,6 +12,8 @@ import { useTreemapChart } from './composables/useTreemapChart'
 import VButton from '@/components/vuetify/VButton.vue'
 import bsDropdown from '@/lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '@/lib/ui/bs-dropdown-item.vue'
+import appTab from '@/lib/ui/app-tab.vue'
+import { set } from 'lodash'
 
 const props = withDefaults(
   defineProps<{
@@ -33,6 +35,8 @@ const props = withDefaults(
   }
 )
 
+const isFading = ref(false)
+
 // View state
 const selectedPersonEventView = ref<'PERSON' | 'EVENT'>('PERSON')
 const selectedVisualization = ref<'ATTRITION' | 'INTERSECT'>('ATTRITION')
@@ -42,8 +46,8 @@ const personEventOptions = [
   { value: 'EVENT', label: 'By event' },
 ]
 const visualizationOptions = [
-  { value: 'ATTRITION', label: 'Attrition' },
-  { value: 'INTERSECT', label: 'Intersect' },
+  { value: 'ATTRITION', text: 'Attrition' },
+  { value: 'INTERSECT', text: 'Intersect' },
 ]
 
 // Use composables - order matters here!
@@ -110,8 +114,12 @@ function handlePersonEventViewChange(newView: 'PERSON' | 'EVENT') {
   }
 }
 
-function handleVisualizationChange(newView: 'ATTRITION' | 'INTERSECT') {
+async function handleVisualizationChange(newView: 'ATTRITION' | 'INTERSECT') {
+  isFading.value = true
+  await new Promise(r => setTimeout(r, 200))
   selectedVisualization.value = newView
+  await nextTick()
+  isFading.value = false
 }
 
 // Lifecycle hooks
@@ -138,7 +146,7 @@ onUnmounted(() => {
     <p v-else>using all events</p>
   </div>
 
-  <div v-if="isLoadingInclusionReport" class="status-message loading">Loading inclusion report...</div>
+  <div v-if="isLoadingInclusionReport" class="status-message loading"><d4l-spinner /></div>
 
   <div v-else-if="inclusionReportResponse" class="inclusion-report-container">
     <!-- Summary Table -->
@@ -147,72 +155,79 @@ onUnmounted(() => {
     <div v-if="hasInclusionRules" class="inclusion-rules-detail">
       <!-- Visualization Type Selector -->
       <div class="group-buttons-container">
-        <group-buttons
+        <!-- <group-buttons
           :options="visualizationOptions"
           :limit-value="selectedVisualization"
           @update-limit-value="handleVisualizationChange($event as 'ATTRITION' | 'INTERSECT')"
           class="person-event-view-buttons"
+        /> -->
+        <appTab
+          class="visualization-tabs"
+          :tabItems="visualizationOptions"
+          :value="selectedVisualization"
+          @onSelectedChange="handleVisualizationChange($event as 'ATTRITION' | 'INTERSECT')"
         />
       </div>
-
-      <!-- Filter Controls (only show in INTERSECT view) -->
-      <FilterControls
-        v-if="selectedVisualization === 'INTERSECT'"
-        :all-any-option="allAnyOption"
-        :passed-failed-option="passedFailedOption"
-        @update:all-any-option="handleAllAnyChange"
-        @update:passed-failed-option="handlePassedFailedChange"
-      />
-
-      <div class="rules-section">
-        <!-- Rules Table -->
-        <RulesTable
-          :selected-visualization="selectedVisualization"
-          :selected-person-event-view="selectedPersonEventView"
-          :draggable-attrition-stats="draggableAttritionStats"
-          :inclusion-rule-stats="inclusionReportResponse.inclusionRuleStats"
-          :are-all-rules-checked="areAllRulesChecked()"
-          :is-rule-checked="isRuleChecked"
-          :get-row-index="getRowIndex"
-          @toggle-all-rules="toggleAllRules"
-          @toggle-rule-selection="toggleRuleSelection"
-          @drag-end="handleDragEnd"
-          @move-row-up="moveRowUp"
-          @move-row-down="moveRowDown"
-          @update:draggable-attrition-stats="draggableAttritionStats = $event"
+      <div class="tab-content" :class="{ 'tab-fading': isFading }">
+        <!-- Filter Controls (only show in INTERSECT view) -->
+        <FilterControls
+          v-if="selectedVisualization === 'INTERSECT'"
+          :all-any-option="allAnyOption"
+          :passed-failed-option="passedFailedOption"
+          @update:all-any-option="handleAllAnyChange"
+          @update:passed-failed-option="handlePassedFailedChange"
         />
 
-        <!-- Filtered Summary (only show in INTERSECT view) -->
-        <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
-          <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
-        </div>
+        <div class="rules-section">
+          <!-- Rules Table -->
+          <RulesTable
+            :selected-visualization="selectedVisualization"
+            :selected-person-event-view="selectedPersonEventView"
+            :draggable-attrition-stats="draggableAttritionStats"
+            :inclusion-rule-stats="inclusionReportResponse.inclusionRuleStats"
+            :are-all-rules-checked="areAllRulesChecked()"
+            :is-rule-checked="isRuleChecked"
+            :get-row-index="getRowIndex"
+            @toggle-all-rules="toggleAllRules"
+            @toggle-rule-selection="toggleRuleSelection"
+            @drag-end="handleDragEnd"
+            @move-row-up="moveRowUp"
+            @move-row-down="moveRowDown"
+            @update:draggable-attrition-stats="draggableAttritionStats = $event"
+          />
 
-        <!-- Charts -->
-        <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
-          <div class="chart-header">
-            <h4>Attrition plot</h4>
-            <bs-dropdown variant="link" size="sm" no-caret align="right">
-              <template v-slot:button-content>
-                <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
-              </template>
-              <bs-dropdown-item @click="downloadFunnelChartCSV">Export to CSV File</bs-dropdown-item>
-              <bs-dropdown-item @click="downloadFunnelChart">Export to PNG File</bs-dropdown-item>
-            </bs-dropdown>
+          <!-- Filtered Summary (only show in INTERSECT view) -->
+          <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
+            <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
           </div>
-          <div ref="funnelChartRef" class="funnel-chart"></div>
-        </div>
-        <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
-          <div class="chart-header">
-            <h4>Population treemap</h4>
-            <bs-dropdown variant="link" size="sm" no-caret align="right">
-              <template v-slot:button-content>
-                <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
-              </template>
-              <bs-dropdown-item @click="downloadTreemapCSV">Export to CSV File</bs-dropdown-item>
-              <bs-dropdown-item @click="downloadTreemapImage">Export to PNG File</bs-dropdown-item>
-            </bs-dropdown>
+
+          <!-- Charts -->
+          <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
+            <div class="chart-header">
+              <h4>Attrition plot</h4>
+              <bs-dropdown variant="link" size="sm" no-caret align="right">
+                <template v-slot:button-content>
+                  <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
+                </template>
+                <bs-dropdown-item @click="downloadFunnelChartCSV">Export to CSV File</bs-dropdown-item>
+                <bs-dropdown-item @click="downloadFunnelChart">Export to PNG File</bs-dropdown-item>
+              </bs-dropdown>
+            </div>
+            <div ref="funnelChartRef" class="funnel-chart"></div>
           </div>
-          <div ref="treemapChartRef" class="treemap-chart"></div>
+          <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
+            <div class="chart-header">
+              <h4>Population treemap</h4>
+              <bs-dropdown variant="link" size="sm" no-caret align="right">
+                <template v-slot:button-content>
+                  <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
+                </template>
+                <bs-dropdown-item @click="downloadTreemapCSV">Export to CSV File</bs-dropdown-item>
+                <bs-dropdown-item @click="downloadTreemapImage">Export to PNG File</bs-dropdown-item>
+              </bs-dropdown>
+            </div>
+            <div ref="treemapChartRef" class="treemap-chart"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -239,6 +254,28 @@ onUnmounted(() => {
   .group-button {
     width: 80%;
   }
+
+  .visualization-tabs {
+    width: 100%;
+    z-index: 1;
+    padding-bottom: 4px;
+    :deep(.app-list) {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+
+      .app-listItem {
+        width: 100%;
+        background-color: transparent !important;
+        color: var(--color-primary) !important;
+        font-size: 16px !important;
+        // font-weight: bold;
+        &.app-listItemSelected {
+          font-weight: 500;
+        }
+      }
+    }
+  }
 }
 
 .inclusion-report-container {
@@ -260,15 +297,21 @@ onUnmounted(() => {
 h4 {
   margin: 0;
   font-size: 1rem;
-  font-weight: 600;
   color: var(--color-primary);
+  font-weight: 500;
 }
 
-.status-message,
-.no-data {
+.status-message.no-data {
   padding: 2rem;
   text-align: center;
   color: var(--color-neutral);
+}
+
+.status-message.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
 .filtered-summary {
@@ -320,5 +363,14 @@ h4 {
     border: 1px solid var(--color-ui-light-border, #ddd);
     border-radius: 4px;
   }
+}
+
+.tab-content {
+  transition: opacity 0.2s ease;
+  opacity: 1;
+}
+
+.tab-fading {
+  opacity: 0.1;
 }
 </style>
