@@ -11,6 +11,11 @@ export let global = {
         "trex"
       ]
     },{
+      "path": "^/fhir-server/(.*)",
+      "scopes": [
+        "gateway.fhir.forward"
+      ]
+    },{
       "path": "^/trex/log",
       "scopes": [
         "trex.log.write"
