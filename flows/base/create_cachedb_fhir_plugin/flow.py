@@ -6,7 +6,7 @@ from prefect.logging import get_run_logger
 from _shared_flow_utils.dao.DBDao import DBDao
 
 from .config import CreateDuckdbDatabaseFileType
-from .medplum_export import get_fhir_project_id_task, copy_fhir_resources_task
+from .duckdb_postgres import get_fhir_project_id_task, copy_fhir_resources_task
 
 os.environ["plugin_name"] = "create_cachedb_fhir_plugin"
 

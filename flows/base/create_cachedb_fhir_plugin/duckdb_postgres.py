@@ -1,234 +1,217 @@
+import requests
+
+from psycopg2 import connect
+
 from prefect import task
-from prefect.logging import get_run_logger
-from prefect.context import TaskRunContext
-from prefect.tasks import exponential_backoff
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
-
-from typing import Any
-from psycopg2 import connect
-import duckdb
+from prefect.logging import get_run_logger
 
 from .config import CreateDuckdbDatabaseFileType
+from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
-@task(retries=3, 
-      retry_delay_seconds=exponential_backoff(backoff_factor=2),
-      log_prints=True, 
-      task_run_name="create_schema_if_not_exists_{options.cacheSchemaName}",
-      timeout_seconds=int(Variable.get("cache_task_timeout")))
-def create_schema_if_not_exists_task(use_trex_conn: bool, options: CreateDuckdbDatabaseFileType, duckdb_file_path: str):
-    logger = get_run_logger()
 
-    task_run_ctx = TaskRunContext.get()
-    logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
+def _select_clause(inspector, schema: str, table: str, alias: str | None = None) -> str:
+    """
+    Build a SELECT clause for the given table. Postgres array columns (e.g.
+    varchar[], text[]) appear as '_varchar' / '_text' in DuckDB's postgres
+    scanner and cannot be resolved — cast them to VARCHAR.
+    """
+    cols_info = inspector.get_columns(schema=schema, table_name=table)
+    prefix = f'"{alias}".' if alias else ""
+    parts = []
+    for col in cols_info:
+        name = col["name"]
+        if "ARRAY" in type(col["type"]).__name__.upper():
+            parts.append(f'{prefix}"{name}"::VARCHAR AS "{name}"')
+        else:
+            parts.append(f'{prefix}"{name}"')
+    return ", ".join(parts)
 
-    if use_trex_conn:
-        trex_conn = None
-        pg_cursor = None
 
-        try:
-            trex_conn = connect(
-                host=Variable.get("trex_sql_host"),
-                port=Variable.get("trex_sql_port"),
-                user=Variable.get("trex_sql_user"),
-                password=Secret.load("trex-sql-password").get(),
-                dbname=options.databaseCode,
-            )
-            trex_conn.autocommit = True
-            pg_cursor = trex_conn.cursor()
-            pg_cursor.execute("CALL pg_clear_cache();")
+# Medplum system/admin tables that are never clinical data.
+_SYSTEM_TABLES = frozenset({
+    'Project', 'ProjectMembership', 'ClientApplication', 'User', 'Bot',
+    'AccessPolicy', 'UserConfiguration', 'JsonWebKey', 'Login',
+    'PasswordChangeRequest', 'SmartAppLaunch', 'DomainConfiguration',
+    'AsyncJob', 'Agent', 'IdentityProvider', 'UserSecurityRequest',
+    'ViewDefinition', 'BulkDataExport', 'DatabaseMigration',
+})
 
-            # Create target schema if it doesn't exist
-            pg_cursor.execute(
-                f'CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";'
-            )
-
-        except Exception as e:
-            logger.error(f"Failed to create schema through Trex SQL interface: {e}")
-            raise
-        finally:
-            if pg_cursor:
-                pg_cursor.close()
-            if trex_conn:
-                trex_conn.close()
-
-    else:
-        with duckdb.connect(duckdb_file_path) as file_conn:
-            duckdb_file_exists = Path(duckdb_file_path).exists()
-
-            if not duckdb_file_exists:
-                file_conn.execute(f'CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";')
 
 @task(log_prints=True)
-def copy_schema_to_cache(con, dbdao: any, options: CreateDuckdbDatabaseFileType):
+def get_fhir_project_id_task(study_code: str) -> str:
+    """
+    Look up the medplum fhir_project_id for the dataset identified by studyCode.
+    Uses client credentials (OpenIdAPI) — does not require flow run input.
+    """
     logger = get_run_logger()
-    logger.info(
-        f"Copying FHIR tables from source schema '{options.schemaName}' to cache schema '{options.cacheSchemaName}'..."
+    auth = OpenIdAPI()
+    token = auth.getClientCredentialToken()
+
+    service_routes = Variable.get("service_routes")
+    datasets_url = service_routes["portalServer"] + "/dataset/list/systemadmin"
+    logger.info(f"Retrieving datasets from portal: {datasets_url}")
+
+    result = requests.get(
+        datasets_url,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        verify=auth.get_verify_value(),
+        timeout=30,
     )
-    created_tables = []
-    try:
-        con.execute(f'''CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";''')
-        table_names = dbdao.get_table_names(options.schemaName)
-        logger.info(f"Found {len(table_names)} tables to create in cache schema.")
+    if result.status_code >= 400:
+        raise Exception(f"[{result.status_code}] Failed to retrieve datasets from portal")
 
-        # Helper to safely quote identifiers and escape embedded quotes
-        def qi(name: str) -> str:
-            if name is None:
-                return '""'
-            return '"' + name.replace('"', '""') + '"'
+    datasets = result.json()
+    dataset = next((d for d in datasets if d.get("tokenStudyCode") == study_code), None)
+    if not dataset:
+        raise Exception(f"No dataset found for studyCode '{study_code}'")
+    fhir_project_id = dataset.get("fhir_project_id")
+    if not fhir_project_id:
+        raise Exception(f"Dataset '{study_code}' has no fhir_project_id set")
+    logger.info(f"Resolved fhir_project_id='{fhir_project_id}' for study '{study_code}'")
+    return fhir_project_id
 
-        for table in table_names:
-            try:
-                logger.info(f"Creating empty cache table for: {table}")
-                columns = dbdao.get_columns(options.schemaName, table)
-
-                casted_columns = []
-                for col in columns:
-                    if col.lower() == 'content':
-                        casted_columns.append(f"CAST({qi(col)} AS JSON) AS {qi(col)}")
-                    else:
-                        casted_columns.append(qi(col))
-
-                select_columns = ', '.join(casted_columns)
-                # Drop table if exists to ensure fresh create
-                con.execute(f'DROP TABLE IF EXISTS "{options.databaseCode}"."{options.cacheSchemaName}"."{table}"')
-                create_sql = f'CREATE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS FROM (SELECT {select_columns} FROM "{options.sourceDatabase}"."{options.schemaName}"."{table}" LIMIT 0)'
-                con.execute(create_sql)
-                created_tables.append(table)
-            except Exception as e:
-                logger.error(f"Table creation for '{options.schemaName}'.'{table}' failed with error: {e}")
-                raise e
-
-        return created_tables
-    except Exception as err:
-        logger.error(f"Table creation failed with error: {err}")
-        raise (err)
 
 @task(log_prints=True)
-def create_indexes_for_tables(con, dbdao, schema_name, created_tables):
+def copy_fhir_resources_task(
+    fhir_project_id: str,
+    src_con,
+    options: CreateDuckdbDatabaseFileType,
+) -> None:
+    """
+    Copy FHIR resource tables directly from medplum postgres to the trex
+    cache schema.
+    """
     logger = get_run_logger()
+    fhir_schema = options.schemaName
+
+    # Discover and categorize tables via DBDao — no manual src_conn needed
+    all_tables = src_con.get_table_names(fhir_schema)
+    history_tables = {t for t in all_tables if t.endswith('_History')}
+    references_tables = {t for t in all_tables if t.endswith('_References')}
+
+    resource_types = []    # main tables: have projectId, filtered by project
+    resourceid_tables = [] # search index tables: have resourceId, joined via subquery
+
+    for t in all_tables:
+        if t in _SYSTEM_TABLES or t.endswith('_History') or t.endswith('_References'):
+            continue
+        cols = src_con.get_columns(fhir_schema, t)
+        if 'projectId' in cols:
+            resource_types.append(t)
+        elif 'resourceId' in cols:
+            resourceid_tables.append(t)
+
+    logger.info(f"Copying {len(resource_types)} resource type(s): {resource_types}")
+    logger.info(f"Copying {len(history_tables)} history table(s): {sorted(history_tables)}")
+    logger.info(f"Copying {len(references_tables)} references table(s): {sorted(references_tables)}")
+    logger.info(f"Copying {len(resourceid_tables)} search index table(s): {resourceid_tables}")
+
+    src_db = options.sourceDatabase
+
+    trex_conn = connect(
+        host=Variable.get("trex_sql_host"),
+        port=Variable.get("trex_sql_port"),
+        user=Variable.get("trex_sql_user"),
+        password=Secret.load("trex-sql-password").get(),
+        dbname=options.databaseCode,
+    )
+    trex_conn.autocommit = True
+    trex_cursor = trex_conn.cursor()
+
     try:
-        for table in created_tables:
-            try:
-                indexes = dbdao.get_indexes_for_table(schema_name, table)
-                for index in indexes:
-                    index_name = index.get("name")
-                    column_names = index.get("column_names")
-                    columns_str = ', '.join(column_names)
-                    unique = index.get("unique")
-                    if unique:
-                        index_query = f"CREATE UNIQUE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
-                    else:
-                        index_query = f"CREATE INDEX {index_name} ON {schema_name}.{table} ({columns_str})"
-                    logger.info(f"Running query: {index_query}")
-                    try:
-                        con.execute(index_query)
-                    except Exception as idx_err:
-                        logger.warning(f"Index creation failed for {schema_name}.{table}: {idx_err}")
-                pk_index = dbdao.get_indexes_for_pk(schema_name, table)
-                pk_index_name = pk_index.get("name")
-                pk_index_columns = pk_index.get("constrained_columns")
-                if pk_index_name is not None and pk_index_columns != []:
-                    pk_index_query = f"CREATE UNIQUE INDEX {pk_index_name} ON {schema_name}.{table} ({', '.join(pk_index_columns)})"
-                    logger.info(f"Running query: {pk_index_query}")
-                    try:
-                        con.execute(pk_index_query)
-                    except Exception as pk_idx_err:
-                        logger.warning(f"PK index creation failed for {schema_name}.{table}: {pk_idx_err}")
-            except Exception as e:
-                logger.error(f"Index creation for table '{schema_name}.{table}' failed with error: {e}")
-    except Exception as err:
-        logger.error(f"Index creation failed with error: {err}")
-        raise (err)
+        trex_cursor.execute("CALL pg_clear_cache();")
+        trex_cursor.execute(
+            f'CREATE SCHEMA IF NOT EXISTS "{options.databaseCode}"."{options.cacheSchemaName}";'
+        )
 
+        inspector = src_con.inspector
 
-
-@task(retries=3, 
-    retry_delay_seconds=exponential_backoff(backoff_factor=2),
-    tags=["flow-level-concurrency"],
-    log_prints=True, 
-    task_run_name="create_schema_tables_from_{options.schemaName}",
-    timeout_seconds=int(Variable.get("cache_task_timeout")))
-def create_schema_tables_task(use_trex_conn: bool, read_conn: any, options: CreateDuckdbDatabaseFileType, duckdb_file_path: str):
-    logger = get_run_logger()
-
-    task_run_ctx = TaskRunContext.get()
-    logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
-
-    if use_trex_conn:
-        trex_conn = None
-        pg_cursor = None
-    
-        try:
-            trex_conn = connect(
-                host=Variable.get("trex_sql_host"),
-                port=Variable.get("trex_sql_port"),
-                user=Variable.get("trex_sql_user"),
-                password=Secret.load("trex-sql-password").get(),
-                dbname=options.databaseCode,
+        for resource_type in resource_types:
+            # ── Main table (project-scoped) ───────────────────────────────────
+            sel = _select_clause(inspector, fhir_schema, resource_type)
+            trex_cursor.execute(
+                f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{resource_type}" AS '
+                f'SELECT {sel} FROM "{src_db}"."{fhir_schema}"."{resource_type}" '
+                f"WHERE \"projectId\" = '{fhir_project_id}' AND deleted = false;"
             )
-            trex_conn.autocommit = True
-            pg_cursor = trex_conn.cursor()
+            trex_cursor.execute(
+                f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{resource_type}"'
+            )
+            count = trex_cursor.fetchone()[0]
+            logger.info(f"  {resource_type}: {count} rows.")
 
-            create_schema_tables(pg_cursor, read_conn, options, logger)
+            # ── History table (scoped via join on resource id) ─────────────────
+            history_src = f"{resource_type}_History"
 
-        except Exception as e:
-            logger.error(f"Failed to copy schema tables through Trex SQL interface: {e}")
-            raise
-        finally:
-            if pg_cursor:
-                pg_cursor.close()
-            if trex_conn:
-                trex_conn.close()
+            if history_src not in history_tables:
+                logger.info(f"  No history table for '{resource_type}', skipping.")
+                continue
 
-    else:
-        with duckdb.connect(duckdb_file_path) as file_conn:
-            create_schema_tables(file_conn, read_conn, options, logger)
+            h_sel = _select_clause(inspector, fhir_schema, history_src, alias="h")
+            trex_cursor.execute(
+                f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{history_src}" AS '
+                f'SELECT {h_sel} FROM "{src_db}"."{fhir_schema}"."{history_src}" h '
+                f'JOIN "{src_db}"."{fhir_schema}"."{resource_type}" p ON p.id = h.id '
+                f"WHERE p.\"projectId\" = '{fhir_project_id}';"
+            )
+            trex_cursor.execute(
+                f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{history_src}"'
+            )
+            history_count = trex_cursor.fetchone()[0]
+            logger.info(f"  {history_src}: {history_count} rows.")
 
+            # ── References table (scoped via join on resourceId) ───────────────
+            references_src = f"{resource_type}_References"
 
-def create_schema_tables(write_conn: any, read_conn: any, options: CreateDuckdbDatabaseFileType, logger):
-    source_schema = options.schemaName
+            if references_src not in references_tables:
+                logger.info(f"  No references table for '{resource_type}', skipping.")
+                continue
 
-    # Determine tables to copy
-    source_tables = read_conn.get_table_names(source_schema)
-    tables_to_copy = sorted(source_tables)
+            r_sel = _select_clause(inspector, fhir_schema, references_src, alias="r")
+            trex_cursor.execute(
+                f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{references_src}" AS '
+                f'SELECT {r_sel} FROM "{src_db}"."{fhir_schema}"."{references_src}" r '
+                f'JOIN "{src_db}"."{fhir_schema}"."{resource_type}" p ON p.id = r."resourceId" '
+                f"WHERE p.\"projectId\" = '{fhir_project_id}';"
+            )
+            trex_cursor.execute(
+                f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{references_src}"'
+            )
+            references_count = trex_cursor.fetchone()[0]
+            logger.info(f"  {references_src}: {references_count} rows.")
 
-    for idx, table in enumerate(tables_to_copy, start=1):
-        logger.info(f"[{idx}/{len(tables_to_copy)}] Creating table '{table}' from schema '{source_schema}'...")
+        # ── Search index tables (HumanName, Identifier, etc.) ────────────────
+        # These have resourceId referencing any resource type, so scope by
+        # checking membership across all project resource ids.
+        if resource_types:
+            project_ids_subquery = " UNION ALL ".join(
+                f'SELECT id FROM "{src_db}"."{fhir_schema}"."{rt}" '
+                f"WHERE \"projectId\" = '{fhir_project_id}' AND deleted = false"
+                for rt in resource_types
+            )
+            for table in resourceid_tables:
+                r_sel = _select_clause(inspector, fhir_schema, table, alias="r")
+                trex_cursor.execute(
+                    f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS '
+                    f'SELECT {r_sel} FROM "{src_db}"."{fhir_schema}"."{table}" r '
+                    f'WHERE r."resourceId" IN ({project_ids_subquery});'
+                )
+                trex_cursor.execute(
+                    f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{table}"'
+                )
+                count = trex_cursor.fetchone()[0]
+                logger.info(f"  {table}: {count} rows.")
 
-        try:
-            # Get column names from the source
-            columns = read_conn.get_columns(source_schema, table)
+        logger.info(
+            f"Done. Cache schema '{options.cacheSchemaName}' populated "
+            f"for project '{fhir_project_id}'."
+        )
 
-            # Safely quote identifiers
-            def qi(name: str) -> str:
-                if name is None:
-                    return '""'
-                return '"' + name.replace('"', '""') + '"'
-
-            casted_columns = []
-            for col in columns:
-                if col.lower() == 'content':
-                    casted_columns.append(f"CAST({qi(col)} AS JSON) AS {qi(col)}")
-                else:
-                    casted_columns.append(qi(col))
-
-            select_columns = ', '.join(casted_columns) if casted_columns else '*'
-
-            target_table_q = f'"{options.databaseCode}"."{options.cacheSchemaName}"."{table}"'
-            source_table_q = f'"{options.sourceDatabase}"."{options.schemaName}"."{table}"'
-
-            # Drop any existing target table and create an empty table with the same columns
-            write_conn.execute(f'DROP TABLE IF EXISTS {target_table_q}')
-            create_sql = f'CREATE TABLE {target_table_q} AS SELECT {select_columns} FROM {source_table_q} LIMIT 0'
-            logger.info(f"Running create SQL for table '{table}': {create_sql}")
-            write_conn.execute(create_sql)
-
-            # Do NOT copy rows here — create an empty target table with the
-            # same columns. Row-level copying should be performed later using
-            # project-scoped WHERE clauses so only project-specific rows are
-            # selected.
-            logger.info(f"Table '{table}' created empty (rows not copied).")
-        except Exception as e:
-            logger.error(f"Failed to create or copy table '{table}': {e}")
-            raise
+    except Exception as e:
+        logger.error(f"Error copying FHIR resources: {e}")
+        raise
+    finally:
+        trex_cursor.close()
+        trex_conn.close()
