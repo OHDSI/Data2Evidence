@@ -240,6 +240,7 @@ const hanaCommonTranslation = (
   temp = temp.replace(/\$\$SCHEMA\$\$./g, `"${schemaName}".`);
   temp = temp.replace(/\$\$VOCAB_SCHEMA\$\$./g, `"${vocabSchemaName}".`);
   temp = temp.replace(/\$\$RESULT_SCHEMA\$\$./g, `"${resultsSchemaName}".`);
+  console.log(`After hanaCommonTranslation.temp:${temp}`);
 
   return temp;
 };
@@ -278,6 +279,10 @@ export const translateHanaToDuckdb = (
   resultsSchemaName: string,
   parameters?: ParameterInterface[],
 ): string => {
+  console.log(`translateHanaToDuckdb.temp:${temp}`);
+  console.log(`translateHanaToDuckdb.schemaName:${schemaName}`);
+  console.log(`translateHanaToDuckdb.vocabSchemaName:${vocabSchemaName}`);
+  console.log(`translateHanaToDuckdb.resultsSchemaName:${resultsSchemaName}`);
   temp = hanaCommonTranslation(
     temp,
     schemaName,
@@ -318,5 +323,6 @@ export const translateHanaToDuckdb = (
       return match;
     });
   }
+  console.log(`After translateHanaToDuckdb.temp:${temp}`);
   return temp;
 };
