@@ -1,12 +1,7 @@
-import re
-import time
 import requests
-from urllib.parse import urlparse
 from prefect.logging import get_run_logger
 from _shared_flow_utils.api.BaseAPI import BaseAPI
 from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
-
-_FHIR_VERSION_RE = re.compile(r'^(R\d+|DSTU\d+|STU\d+)$')
 
 class FhirAPI(BaseAPI):
     def __init__(self):
