@@ -6,7 +6,7 @@ import { TableSourceHandleData, TableTargetHandleData } from "../states/table-st
 
 export const useTable = () => {
   const {
-    table: { nodes, edges, sourceHandles, targetHandles },
+    table: { nodes, edges, sourceHandles = [], targetHandles = [] },
   } = useContext(AppContext);
   const dispatch = useContext(AppDispatchContext);
 
