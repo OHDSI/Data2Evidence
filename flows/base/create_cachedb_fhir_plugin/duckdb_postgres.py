@@ -129,13 +129,28 @@ def copy_fhir_resources_task(
 
         inspector = src_con.inspector
 
+        # ── Temp table of all project resource ids ────────────────────────────
+        # One parameterised INSERT per resource type keeps each statement small
+        # and ensures fhir_project_id is never interpolated into SQL strings.
+        # Search-index tables join against this temp table instead of inlining
+        # a large UNION ALL.
+        trex_cursor.execute('CREATE TEMP TABLE "_project_resource_ids" (id VARCHAR);')
+        for rt in resource_types:
+            trex_cursor.execute(
+                f'INSERT INTO "_project_resource_ids" '
+                f'SELECT id FROM "{src_db}"."{fhir_schema}"."{rt}" '
+                f'WHERE "projectId" = %s AND deleted = false;',
+                (fhir_project_id,),
+            )
+
         for resource_type in resource_types:
             # ── Main table (project-scoped) ───────────────────────────────────
             sel = _select_clause(inspector, fhir_schema, resource_type)
             trex_cursor.execute(
                 f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{resource_type}" AS '
                 f'SELECT {sel} FROM "{src_db}"."{fhir_schema}"."{resource_type}" '
-                f"WHERE \"projectId\" = '{fhir_project_id}' AND deleted = false;"
+                f'WHERE "projectId" = %s AND deleted = false;',
+                (fhir_project_id,),
             )
             trex_cursor.execute(
                 f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{resource_type}"'
@@ -155,7 +170,8 @@ def copy_fhir_resources_task(
                 f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{history_src}" AS '
                 f'SELECT {h_sel} FROM "{src_db}"."{fhir_schema}"."{history_src}" h '
                 f'JOIN "{src_db}"."{fhir_schema}"."{resource_type}" p ON p.id = h.id '
-                f"WHERE p.\"projectId\" = '{fhir_project_id}';"
+                f'WHERE p."projectId" = %s;',
+                (fhir_project_id,),
             )
             trex_cursor.execute(
                 f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{history_src}"'
@@ -175,7 +191,8 @@ def copy_fhir_resources_task(
                 f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{references_src}" AS '
                 f'SELECT {r_sel} FROM "{src_db}"."{fhir_schema}"."{references_src}" r '
                 f'JOIN "{src_db}"."{fhir_schema}"."{resource_type}" p ON p.id = r."resourceId" '
-                f"WHERE p.\"projectId\" = '{fhir_project_id}';"
+                f'WHERE p."projectId" = %s;',
+                (fhir_project_id,),
             )
             trex_cursor.execute(
                 f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{references_src}"'
@@ -184,26 +201,19 @@ def copy_fhir_resources_task(
             logger.info(f"  {references_src}: {references_count} rows.")
 
         # ── Search index tables (HumanName, Identifier, etc.) ────────────────
-        # These have resourceId referencing any resource type, so scope by
-        # checking membership across all project resource ids.
-        if resource_types:
-            project_ids_subquery = " UNION ALL ".join(
-                f'SELECT id FROM "{src_db}"."{fhir_schema}"."{rt}" '
-                f"WHERE \"projectId\" = '{fhir_project_id}' AND deleted = false"
-                for rt in resource_types
+        # Join against the temp table — no large UNION ALL, no interpolation.
+        for table in resourceid_tables:
+            r_sel = _select_clause(inspector, fhir_schema, table, alias="r")
+            trex_cursor.execute(
+                f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS '
+                f'SELECT {r_sel} FROM "{src_db}"."{fhir_schema}"."{table}" r '
+                f'JOIN "_project_resource_ids" p ON p.id = r."resourceId";'
             )
-            for table in resourceid_tables:
-                r_sel = _select_clause(inspector, fhir_schema, table, alias="r")
-                trex_cursor.execute(
-                    f'CREATE OR REPLACE TABLE "{options.databaseCode}"."{options.cacheSchemaName}"."{table}" AS '
-                    f'SELECT {r_sel} FROM "{src_db}"."{fhir_schema}"."{table}" r '
-                    f'WHERE r."resourceId" IN ({project_ids_subquery});'
-                )
-                trex_cursor.execute(
-                    f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{table}"'
-                )
-                count = trex_cursor.fetchone()[0]
-                logger.info(f"  {table}: {count} rows.")
+            trex_cursor.execute(
+                f'SELECT COUNT(*) FROM "{options.databaseCode}"."{options.cacheSchemaName}"."{table}"'
+            )
+            count = trex_cursor.fetchone()[0]
+            logger.info(f"  {table}: {count} rows.")
 
         logger.info(
             f"Done. Cache schema '{options.cacheSchemaName}' populated "
