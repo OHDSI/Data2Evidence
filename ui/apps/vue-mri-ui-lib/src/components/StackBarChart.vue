@@ -241,12 +241,14 @@ export default {
         // return ['#000080', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
         // return ['#000080', '#540982', '#821d80', '#ab3478', '#d04d64', '#eb7100'] // option 2
         // return ['#000080', '#FB9F9D', '#196D76', '#FFD9A5'] // option 3
-        // return ['#000080', '#FB9F9D', '#196D76', '#EC6E41'] // option 3 with amber
+        // return ['#000080', '#FB9F9D', '#196D76', '#D4820A'] // option 3 with amber
         // return ['#007FFFFF', '#4CC3FFFF', '#99EDFFFF', '#CCFFFFFF', '#FFFFCCFF', '#FFEE99FF', '#FFC34CFF', '#FF7F00FF']
         // return ['#F56455FF', '#000080', '#87C785FF', '#572F30FF'] // r color palette
         // return ['#6BBAE5FF', '#E3EEF4FF', '#000080', '#F9F5EAFF', '#81974CFF', '#553F31FF'] // r color palette 2
         // return ['#000080', '#6DAABDFF', '#CAECB3FF', '#F3CB04FF', '#E28027FF']
-        return ['#000080', '#3E92E0FF', '#C0CED1FF', '#FCD34BFF', '#F79409FF'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
+        // return ['#000080', '#3e92e0', '#c0ced1', '#fcd34b', '#f79409'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
+        return ['#000080', '#f79409', '#3e92e0', '#FB9F9D', '#fcd34b'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
+
         // return [
         //   '#212E52FF',
         //   '#444E7EFF',
