@@ -178,6 +178,8 @@ function tearDownTestDatabase(dbSetupManager, cb) {
  */
 function runMochaSuite(mochaSuite, dbSetupManager, logger, cb) {
   logger('--- Entering HTTP test suite ---')
+  logger(`process.env.BEARER_TOKEN: ${process.env.BEARER_TOKEN}`)
+
   var startTime = process.hrtime()
   mochaSuite.run(function (failures) {
     var timeDiff = process.hrtime(startTime)

@@ -40,7 +40,7 @@ const app_client_id = process.env.LOGTO__D2E_APP__CLIENT_ID || process.env.LOGTO
 const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
 let port = ":41100"; //process.env.PORT ? `:${process.env.PORT}` : ":443";
-let CADDY__D2E__PUBLIC_FQDN = `${public_fqdn}${port}`;
+let CADDY__D2E__PUBLIC_FQDN = "localhost:41100"; //`${public_fqdn}${port}`;
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
 var url= `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
