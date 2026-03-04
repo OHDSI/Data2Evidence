@@ -19,8 +19,16 @@
       </button>
     </div>
     <div class="actionButtonGroup">
-      <div class="dashboardButton" v-if="getActiveBookmark">
-        <Button :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')" :onClick="dashboardFlow.openDashboardModal"> </Button>
+      <div
+        class="dashboardButton"
+        v-if="getActiveBookmark"
+        :title="canOpenDashboard ? '' : getText('MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED')"
+      >
+        <Button
+          :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')"
+          :onClick="dashboardFlow.openDashboardModal"
+          :disabled="!canOpenDashboard"
+        />
       </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
@@ -233,6 +241,7 @@ export default {
       'getConstraintForAttribute',
       'getBookmarkFromIFR',
       'getConstraint',
+      'getCanDatasetMaterializeCohorts',
     ]),
     chartSelection() {
       return this.getChartSelection()
@@ -242,6 +251,9 @@ export default {
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
+    },
+    canOpenDashboard() {
+      return this.getCanDatasetMaterializeCohorts
     },
   },
   methods: {
