@@ -13,9 +13,10 @@ from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 def _select_clause(inspector, schema: str, table: str, alias: str | None = None) -> str:
     """
-    Build a SELECT clause for the given table. Postgres array columns (e.g.
-    varchar[], text[]) appear as '_varchar' / '_text' in DuckDB's postgres
-    scanner and cannot be resolved — cast them to VARCHAR.
+    Build a SELECT clause for the given Postgres table. Array-typed columns
+    (e.g. varchar[], text[]) are cast to VARCHAR to ensure they can be
+    consumed consistently by downstream queries executed via the Trex/Postgres
+    interface.
     """
     cols_info = inspector.get_columns(schema=schema, table_name=table)
     prefix = f'"{alias}".' if alias else ""
