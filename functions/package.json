@@ -573,7 +573,7 @@
           "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
           "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}",
           "MIMIC_DUCKDB_THREADS": "${MIMIC_DUCKDB_THREADS:-8}",
-          "MIMIC_DUCKDB_MEMORY_LIMIT": "${MIMIC_DUCKDB_MEMORY_LIMIT:-6G}"
+          "MIMIC_DUCKDB_MEMORY_LIMIT": "${MIMIC_DUCKDB_MEMORY_LIMIT:-6GB}"
         },
         "jupyter-gateway": {},
         "jupyter-gateway-viewer": {},
