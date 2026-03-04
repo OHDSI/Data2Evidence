@@ -64,6 +64,7 @@ def export_data(duckdb_file_name, schema_name, to_dbdao, overwrite_schema, chunk
                 tables = conn.execute(f"SELECT table_name FROM duckdb_tables() WHERE (database_name = 'pg')").fetchall()
                 tables = [x[0] for x in tables]
                 for table in tables:
+                    logger.info(f"Inserting into {schema_name}.{table}")
                     conn.execute(f"""
                     INSERT INTO pg.{schema_name}.{table}
                     SELECT * FROM cdm.{table};    
@@ -78,6 +79,7 @@ def export_data(duckdb_file_name, schema_name, to_dbdao, overwrite_schema, chunk
                     hana_conn.commit()
             tables = to_dbdao.get_table_names(schema=schema_name)
             for table in tables:
+                logger.info(f"Inserting into {schema_name}.{table}")
                 tmp = 0
                 for chunk, percent in read_table_chunks(duckdb_file_name, table, chunk_size=chunk_size):   
                     if percent != tmp: 

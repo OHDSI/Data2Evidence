@@ -3,22 +3,33 @@
 -- "standard" script
 -- -------------------------------------------------------------------
 
-DROP TABLE IF EXISTS mimic_etl.lk_join_voc_drug;
-CREATE TABLE mimic_etl.lk_join_voc_drug
-AS
-SELECT DISTINCT ca.descendant_concept_id AS descendant_concept_id,
-                ca.ancestor_concept_id   AS ancestor_concept_id,
-                c.concept_id             AS concept_id
-FROM mimic_etl.voc_concept_ancestor ca
-         JOIN
-     mimic_etl.voc_concept c
-     ON ca.ancestor_concept_id = c.concept_id
-         AND c.vocabulary_id IN ('RxNorm', 'RxNorm Extension') -- selects RxNorm, RxNorm Extension vocabulary_id
-         AND c.concept_class_id = 'Ingredient'
--- selects the Ingredients only.
--- There are other concept_classes in RxNorm that
--- we are not interested in.
+-- Flush buffer pool before this memory-intensive computation.
+CHECKPOINT;
+
+-- 202602 Update:
+-- Refactor the drug era logic to use window functions instead of DISTINCT
+-- and multiple joins
+-- Materialize only the RxNorm Ingredient concept_ids (small set, ~10K rows).
+-- Joining concept_ancestor against this small table lets DuckDB build the
+-- hash table from the small side and stream the large drug_exposure table
+DROP TABLE IF EXISTS mimic_etl.lk_rxnorm_ingredients;
+CREATE TABLE mimic_etl.lk_rxnorm_ingredients AS
+SELECT concept_id
+FROM mimic_etl.voc_concept
+WHERE vocabulary_id IN ('RxNorm', 'RxNorm Extension')
+  AND concept_class_id = 'Ingredient'
 ;
+
+DROP TABLE IF EXISTS mimic_etl.lk_join_voc_drug;
+CREATE TABLE mimic_etl.lk_join_voc_drug AS
+SELECT ca.descendant_concept_id AS descendant_concept_id,
+       ca.ancestor_concept_id   AS ancestor_concept_id,
+       ca.ancestor_concept_id   AS concept_id
+FROM mimic_etl.voc_concept_ancestor ca
+         JOIN mimic_etl.lk_rxnorm_ingredients i
+              ON ca.ancestor_concept_id = i.concept_id
+;
+DROP TABLE mimic_etl.lk_rxnorm_ingredients;
 
 -- -------------------------------------------------------------------
 -- Defining spans of time when the Person
@@ -42,6 +53,8 @@ FROM mimic_etl.cdm_drug_exposure d
      ON v.descendant_concept_id = d.drug_concept_id
 WHERE d.drug_concept_id != 0
 ;
+-- lk_join_voc_drug is no longer needed.
+DROP TABLE mimic_etl.lk_join_voc_drug;
 
 DROP TABLE IF EXISTS mimic_etl.tmp_subenddates_un_drug;
 CREATE TABLE mimic_etl.tmp_subenddates_un_drug
@@ -93,6 +106,7 @@ SELECT person_id                     AS person_id,
        -- this re-numbers the inner UNION so all rows are numbered ordered by the event date
 FROM mimic_etl.tmp_subenddates_un_drug
 ;
+DROP TABLE mimic_etl.tmp_subenddates_un_drug;
 
 DROP TABLE IF EXISTS mimic_etl.tmp_subenddates_drug;
 CREATE TABLE mimic_etl.tmp_subenddates_drug
@@ -103,6 +117,7 @@ SELECT person_id             AS person_id,
 FROM mimic_etl.tmp_subenddates_rows_drug e
 WHERE (2 * e.start_ordinal) - e.overall_ord = 0
 ;
+DROP TABLE mimic_etl.tmp_subenddates_rows_drug;
 
 DROP TABLE IF EXISTS mimic_etl.temp_ends_drug;
 CREATE TABLE mimic_etl.temp_ends_drug
@@ -122,6 +137,8 @@ GROUP BY dt.drug_exposure_id,
          dt.ingredient_concept_id,
          dt.drug_exposure_start_date
 ;
+DROP TABLE mimic_etl.tmp_subenddates_drug;
+DROP TABLE mimic_etl.tmp_pretarget_drug;
 
 DROP TABLE IF EXISTS mimic_etl.tmp_sub_drug;
 CREATE TABLE mimic_etl.tmp_sub_drug
@@ -146,6 +163,7 @@ GROUP BY person_id,
 ORDER BY person_id,
          drug_concept_id
 ;
+DROP TABLE mimic_etl.temp_ends_drug;
 
 DROP TABLE IF EXISTS mimic_etl.tmp_finaltarget_drug;
 CREATE TABLE mimic_etl.tmp_finaltarget_drug
@@ -163,6 +181,7 @@ SELECT row_number                                                  AS row_number
                          drug_sub_exposure_start_date::timestamp)) AS days_exposed
 FROM mimic_etl.tmp_sub_drug
 ;
+DROP TABLE mimic_etl.tmp_sub_drug;
 
 DROP TABLE IF EXISTS mimic_etl.tmp_enddates_un_drug;
 CREATE TABLE mimic_etl.tmp_enddates_un_drug
@@ -215,6 +234,7 @@ SELECT person_id                     AS person_id,
        -- this re-numbers the inner UNION so all rows are numbered ordered by the event date
 FROM mimic_etl.tmp_enddates_un_drug
 ;
+DROP TABLE mimic_etl.tmp_enddates_un_drug;
 
 DROP TABLE IF EXISTS mimic_etl.tmp_enddates_drug;
 CREATE TABLE mimic_etl.tmp_enddates_drug
@@ -225,6 +245,7 @@ SELECT person_id                       AS person_id,
 FROM mimic_etl.tmp_enddates_rows_drug e
 WHERE (2 * e.start_ordinal) - e.overall_ord = 0
 ;
+DROP TABLE mimic_etl.tmp_enddates_rows_drug;
 
 DROP TABLE IF EXISTS mimic_etl.tmp_drugera_ends_drug;
 CREATE TABLE mimic_etl.tmp_drugera_ends_drug
@@ -247,6 +268,8 @@ GROUP BY ft.person_id,
          ft.ingredient_concept_id,
          ft.drug_sub_exposure_start_date
 ;
+DROP TABLE mimic_etl.tmp_finaltarget_drug;
+DROP TABLE mimic_etl.tmp_enddates_drug;
 
 -- -------------------------------------------------------------------
 -- Load Table: Drug_era
@@ -263,7 +286,7 @@ CREATE TABLE mimic_etl.cdm_drug_era
     drug_era_end_date   DATE   not null,
     drug_exposure_count bigint,
     gap_days            bigint,
-    -- 
+    --
     unit_id             text,
     load_table_id       text,
     load_row_id         bigint
@@ -296,21 +319,8 @@ FROM (SELECT person_id                         AS person_id,
       ORDER BY person_id,
                ingredient_concept_id) t
 ;
+DROP TABLE mimic_etl.tmp_drugera_ends_drug;
 
--- -------------------------------------------------------------------
--- Drop temporary table
--- -------------------------------------------------------------------
-DROP TABLE IF EXISTS mimic_etl.tmp_drugera_ends_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_enddates_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_finaltarget_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_enddates_un_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_sub_drug;
-DROP TABLE IF EXISTS mimic_etl.temp_ends_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_pretarget_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_subenddates_un_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_subenddates_rows_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_subenddates_drug;
-DROP TABLE IF EXISTS mimic_etl.tmp_enddates_rows_drug;
 -- -------------------------------------------------------------------
 -- Loading finished
 -- -------------------------------------------------------------------

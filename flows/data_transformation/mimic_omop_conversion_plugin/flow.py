@@ -74,7 +74,6 @@ def duckdb_to_database_flow(options:MimicOMOPOptionsType):
     overwrite_schema = options.overwrite_schema
     chunk_size = options.chunk_size
     # Export OMOP tables to Database
-    logger.info("*** Exporting CDM tables to Database ***") 
     export_data(duckdb_file_name=duckdb_file_name, schema_name=schema_name, to_dbdao=to_dbdao, overwrite_schema=overwrite_schema, chunk_size=chunk_size)
 
 def cleanup(options:MimicOMOPOptionsType):

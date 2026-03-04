@@ -22,3 +22,4 @@ def create_schema(conn, schema_name:str):
 def config_duckdb(conn, memory_limit="6GB", threads=4):
     conn.execute(f"SET memory_limit='{memory_limit}'")
     conn.execute(f"SET threads={threads}")
+    conn.execute("SET preserve_insertion_order=false")
