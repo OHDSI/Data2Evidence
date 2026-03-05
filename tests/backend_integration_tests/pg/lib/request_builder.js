@@ -665,6 +665,7 @@ RequestBuilder.prototype.submit = function (hanaRequest, urlPath, parameters, cb
 
   // Append datasetId as query param for trex auth
   parameters['datasetId'] = process.env.DATASET_ID
+  console.log(`parameters: ${JSON.stringify(parameters)}`)
 
   var setQuery = {
     method: parameters[`httpMethod`],
