@@ -255,7 +255,7 @@ const PlotlyFont = {
 const PlotlyConsts = {
   layout: {
     barmode: 'stack',
-    bargap: 0.5,
+    bargap: 0.3,
     clickmode: 'event+select',
     colorway: [
       '#FDA2A2',
