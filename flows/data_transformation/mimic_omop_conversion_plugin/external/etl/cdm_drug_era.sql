@@ -6,12 +6,13 @@
 -- Flush buffer pool before this memory-intensive computation.
 CHECKPOINT;
 
--- 202602 Update:
--- Refactor the drug era logic to use window functions instead of DISTINCT
--- and multiple joins
--- Materialize only the RxNorm Ingredient concept_ids (small set, ~10K rows).
--- Joining concept_ancestor against this small table lets DuckDB build the
--- hash table from the small side and stream the large drug_exposure table
+-- -------------------------------------------------------------------
+-- Use window functions instead of DISTINCT and multiple joins.
+-- Materialize the RxNorm Ingredient concept_ids (~10K rows).
+-- Joining concept_ancestor against this small table lets 
+-- DuckDB build the hash table from the small side and 
+-- stream the large drug_exposure table
+-- -------------------------------------------------------------------
 DROP TABLE IF EXISTS mimic_etl.lk_rxnorm_ingredients;
 CREATE TABLE mimic_etl.lk_rxnorm_ingredients AS
 SELECT concept_id

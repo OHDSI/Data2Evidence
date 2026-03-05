@@ -38,7 +38,7 @@ def mimic_to_duckdb_flow(options:MimicOMOPOptionsType):
 
     # Load data to duckdb
     if load_mimic_vocab:
-        logger.info("*** Loading MIMICIV data and Vocabulories ***")
+        logger.info("*** Loading MIMICIV data and Vocabularies ***")
         # every connection in duckdb will release the memory
         with duckdb.connect(duckdb_file_name) as conn:
             config_duckdb(conn, memory_limit=DUCKDB_MEMORY_LIMIT, threads=DUCKDB_THREADS)

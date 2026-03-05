@@ -44,8 +44,8 @@ export const env = {
     logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
     fhir_database_code: _env.FHIR_DATABASE_CODE,
     cache_task_timeout: _env.CACHE_TASK_TIMEOUT || "10800", // Default to 3 hours
-    mimic_duckdb_threads: _env.MIMIC_DUCKDB_THREADS || "8", // Default to 8 threads
-    mimic_duckdb_memory_limit: _env.MIMIC_DUCKDB_MEMORY_LIMIT || "6GB", // Default to 6GB
+    mimic_duckdb_threads: _env.MIMIC_DUCKDB_THREADS || "4", // Default to 4 threads
+    mimic_duckdb_memory_limit: _env.MIMIC_DUCKDB_MEMORY_LIMIT || "15GB", // Default to 15GB
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
