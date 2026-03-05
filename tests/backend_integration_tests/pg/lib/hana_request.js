@@ -260,18 +260,20 @@ HanaRequest.prototype._makeRequestOptions = function (query) {
  */
 HanaRequest.prototype.request = function (query, cb) {
   var that = this
+logToConsole(`[hana_request]body:${JSON.stringify(body)}`)
 
   log.debug('initializing request')
+  logToConsole(`[hana_request]body:${JSON.stringify(query)}`)
   logToConsole(`query:${JSON.stringify(query)}`)
   var theRequest = function theRequest() {
     var options = that._makeRequestOptions(query)
 
     log.debug('theRequest is executed')
     request(options, function (error, response, body) {
-      logToConsole(`>>>error:${error}`)
-      logToConsole(`>>>response.statusCode:${response.statusCode}`)
-      logToConsole(`>>>response:${JSON.stringify(response)}`)
-      logToConsole(`>>>body:${JSON.stringify(body)}`)
+      logToConsole(`[hana_request]error:${error}`)
+      logToConsole(`[hana_request]response.statusCode:${response.statusCode}`)
+      logToConsole(`[hana_request]response:${JSON.stringify(response)}`)
+      logToConsole(`[hana_request]body:${JSON.stringify(body)}`)
 
       if (error) {
         log.debug('Error executing request', request, error)
