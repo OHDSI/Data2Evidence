@@ -258,7 +258,7 @@ export default {
       if (!portalAPI?.features) {
         return false
       }
-      return portalAPI.features.some(f => f.feature === 'wizard' && f.isEnabled === true)
+      return portalAPI.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
     },
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
