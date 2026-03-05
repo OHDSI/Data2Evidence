@@ -50,16 +50,16 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
     }
   }, [idTokenClaims, fetchUserGroups]);
 
-  const handleSwitch = useCallback(() => {
-    navigate(portalType === "researcher" ? config.ROUTES.systemadmin : config.ROUTES.researcher);
-  }, [navigate, portalType]);
-
-  const handleSwitchToEtl = useCallback(() => {
-    navigate(config.ROUTES.etl);
+  const handleSwitchToResearcher = useCallback(() => {
+    navigate(config.ROUTES.researcher);
   }, [navigate]);
 
   const handleSwitchToAdmin = useCallback(() => {
     navigate(config.ROUTES.systemadmin);
+  }, [navigate]);
+
+  const handleSwitchToEtl = useCallback(() => {
+    navigate(config.ROUTES.etl);
   }, [navigate]);
 
   const handleLogout = useCallback(() => {
@@ -92,11 +92,11 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                     <Button
                       block
                       text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
-                      onClick={handleSwitch}
+                      onClick={handleSwitchToResearcher}
                     />
                   )}
                   {portalType === "researcher" && user.canAccessSystemAdminPortal && (
-                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitch} />
+                    <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ADMIN_PORTAL)} onClick={handleSwitchToAdmin} />
                   )}
                   {(portalType === "system_admin" || portalType === "researcher") && user.canAccessEtlPortal && (
                     <Button block text={getText(i18nKeys.ACCOUNT__SWITCH_TO_ETL_PORTAL)} onClick={handleSwitchToEtl} />
@@ -112,7 +112,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                     <Button
                       block
                       text={getText(i18nKeys.ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL)}
-                      onClick={handleSwitch}
+                      onClick={handleSwitchToResearcher}
                     />
                   )}
                   <Button block text={getText(i18nKeys.ACCOUNT__LOGOUT)} onClick={handleLogout} />

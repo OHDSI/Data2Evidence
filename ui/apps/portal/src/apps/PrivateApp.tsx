@@ -25,6 +25,8 @@ export const PrivateApp: FC = () => {
       defaultRoute = postLoginRedirectUri;
     } else if (user.canAccessSystemAdminPortal && !user.isResearcher) {
       defaultRoute = config.ROUTES.systemadmin;
+    } else if (!user.canAccessResearcherPortal && !user.canAccessSystemAdminPortal && user.canAccessEtlPortal) {
+      defaultRoute = config.ROUTES.etl;
     } else if (!user.canAccessResearcherPortal && !user.canAccessSystemAdminPortal) {
       defaultRoute = config.ROUTES.noAccess;
     }

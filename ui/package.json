@@ -147,7 +147,7 @@
         }
       ],
       "uiplugins": {
-        "etl": {
+        "etl": [{
           "type": "app",
           "enabled": true,
           "name": "ETL",
@@ -162,7 +162,7 @@
             "dnBaseUrl": "https://$$FQDN$$/",
             "mappingSuggestion": true
           }
-        },
+        }],
         "researcher": [
           {
             "enabled": true,

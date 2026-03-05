@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useRef, useState } from "react";
 import { loadPlugin } from "./pluginLoader";
 import {
   SingleSpaAppContainer,
@@ -39,13 +39,18 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
   const [pluginType, setPluginType] = useState<PluginType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const appId = useMemo(
+    () =>
+      basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path),
+    [basePath, path]
+  );
 
   useEffect(() => {
     if (configType === "app" && !isRegistered) {
       const registerApp = async () => {
         try {
-          const appId =
-            basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
           const fullBasePath = `${env.PUBLIC_URL}/${basePath}/${route}`;
 
           console.debug(`[SystemAdminSingleSpaPluginRenderer] Registering single-spa app: ${appId}`);
@@ -66,7 +71,7 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
           setPluginType("app");
           setIsRegistered(true);
 
-          setTimeout(() => {
+          startTimerRef.current = setTimeout(() => {
             try {
               startSingleSpa({ urlRerouteOnly: true });
             } catch (e) {
@@ -78,13 +83,13 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
         }
       };
       registerApp();
+
+      return () => clearTimeout(startTimerRef.current);
     }
-  }, [path, route, configType, isRegistered, userId, system, data]);
+  }, [appId, path, route, configType, isRegistered, userId, system, data]);
 
   useEffect(() => {
     if (configType === "app" && isRegistered) {
-      const appId =
-        basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
       updateCustomProps(appId, {
         getToken: getAuthToken,
         userId,
@@ -92,18 +97,16 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
         ...data,
       });
     }
-  }, [userId, system, data, path, configType, isRegistered]);
+  }, [appId, userId, system, data, configType, isRegistered]);
 
   useEffect(() => {
     if (configType === "app") {
-      const appId =
-        basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
       return () => {
         console.log(`[SystemAdminSingleSpaPluginRenderer] Unmounting, unloading app: ${appId}`);
         unloadSingleSpaApp(appId);
       };
     }
-  }, [configType, path]);
+  }, [appId, configType]);
 
   useEffect(() => {
     if (configType !== "app") {
@@ -143,8 +146,6 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
   }
 
   if (pluginType === "app") {
-    const appId =
-      basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path);
     return <SingleSpaAppContainer appName={appId} />;
   }
 
